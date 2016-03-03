@@ -69,15 +69,6 @@ var (
 	oLong     = flag.Bool("long", false, "Enable long tests. (false)")
 	oRE       = flag.String("re", "", "Regexp filter.")
 
-	blacklist = []string{
-		"testdata/gcc-4.9.1/fixincludes/tests/",
-		"testdata/gcc-4.9.1/gcc/limitx.h",
-		"testdata/gcc-4.9.1/gcc/limity.h",
-		"testdata/gcc-4.9.1/gcc/testsuite/gcc.dg/cpp/",
-		"testdata/gcc-4.9.1/zlib/contrib/minizip/miniunz.c",
-		"testdata/gcc-4.9.1/zlib/contrib/minizip/minizip.c",
-	}
-
 	includes = []string{}
 
 	predefinedMacros = `
@@ -89,9 +80,7 @@ var (
 
 void __GO__(char *s, ...);
 `
-	sysIncludes = []string{
-		"../ccgo/sysinclude/",
-	}
+	sysIncludes = []string{}
 
 	testTweaks = &tweaks{
 		enableDefineOmitCommaBeforeDDD: true,
