@@ -303,6 +303,7 @@ func (n *CompoundStatement) Pos() token.Pos {
 type ConstantExpression struct {
 	Type       Type        // Type of expression.
 	Value      interface{} // Non nil for certain constant expressions.
+	toks       []xc.Token  //
 	Expression *Expression
 }
 

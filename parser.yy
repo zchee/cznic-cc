@@ -414,13 +414,20 @@ ExpressionListOpt:
 // [0](6.6)
 //yy:field	Type	Type		// Type of expression.
 //yy:field	Value	interface{}	// Non nil for certain constant expressions.
+//yy:field	toks	[]xc.Token	//
 ConstantExpression:
+	{
+		lx.constExprToks = []xc.Token{lx.last}
+	}
 	Expression
 	{
 		lhs.Value, lhs.Type = lhs.Expression.eval(lx)
 		if lhs.Value == nil {
 			lx.report.Err(lhs.Pos(), "not a constant expression")
 		}
+		l := lx.constExprToks
+		lhs.toks = l[:len(l)-1]
+		lx.constExprToks = nil
 	}
 
 // [0](6.7)

@@ -756,3 +756,61 @@ unpacked: JBLOCKIMAGE short Short
 		t.Fatalf("got:\n%s\nexp:\n%s", g, e)
 	}
 }
+
+func TestEnumConstToks(t *testing.T) {
+	tu, err := Parse("", []string{"testdata/enum.c"}, newTestModel())
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	sc := tu.Declarations
+	foo := sc.Lookup(NSIdentifiers, xc.Dict.SID("foo"))
+	if foo.Node == nil {
+		t.Fatal()
+	}
+
+	switch x := foo.Node.(type) {
+	case *DirectDeclarator:
+		typ := x.TopDeclarator().Type
+		if g, e := typ.Kind(), Enum; g != e {
+			t.Fatal(g, e)
+		}
+
+		l := typ.EnumeratorList()
+		if g, e := PrettyString(
+			l),
+			`[]cc.EnumConstant{ // len 2
+· 0: cc.EnumConstant{
+· · Value: 18,
+· · Tokens: []xc.Token{ // len 3
+· · · 0: testdata/enum.c:4:6: INTCONST "42",
+· · · 1: testdata/enum.c:4:9: '-',
+· · · 2: testdata/enum.c:4:11: INTCONST "24",
+· · },
+· },
+· 1: cc.EnumConstant{
+· · Value: 592,
+· · Tokens: []xc.Token{ // len 3
+· · · 0: testdata/enum.c:5:6: INTCONST "314",
+· · · 1: testdata/enum.c:5:10: '+',
+· · · 2: testdata/enum.c:1:11: INTCONST "278",
+· · },
+· },
+}`; g != e {
+			t.Fatalf("got\n%s\nexp\n%s", g, e)
+		}
+		var a []string
+		for _, e := range l {
+			var b []string
+			for _, t := range e.Tokens {
+				b = append(b, TokSrc(t))
+			}
+			a = append(a, strings.Join(b, " "))
+		}
+		if g, e := strings.Join(a, "\n"), "42 - 24\n314 + 278"; g != e {
+			t.Fatalf("got\n%s\nexp\n%s", g, e)
+		}
+	default:
+		t.Fatalf("%T", x)
+	}
+}

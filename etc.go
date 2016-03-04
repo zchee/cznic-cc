@@ -53,8 +53,9 @@ var (
 
 // EnumConstant represents the name/value pair defined by an Enumerator.
 type EnumConstant struct {
-	ID    int         // Numeric id of the name.
-	Value interface{} // Value represented by name. Type of Value is C int.
+	ID     int         // Numeric id of the name.
+	Value  interface{} // Value represented by name. Type of Value is C int.
+	Tokens []xc.Token  // The tokens the constant expression consists of.
 }
 
 // Specifier describes a combination of {Function,StorageClass,Type}Specifiers
@@ -967,7 +968,7 @@ func (n *ctype) EnumeratorList() (r []EnumConstant) {
 	case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
 		for l := es.EnumeratorList; l != nil; l = l.EnumeratorList {
 			e := l.Enumerator
-			r = append(r, EnumConstant{e.Token.Val, e.enumVal})
+			r = append(r, EnumConstant{e.Token.Val, e.enumVal, e.ConstantExpression.toks})
 		}
 		return r
 	case 1: // "enum" IDENTIFIER

@@ -50,6 +50,7 @@ type lexer struct {
 	ch                 chan []xc.Token     //
 	commentPos0        token.Pos           //
 	constantExpression *ConstantExpression //
+	constExprToks      []xc.Token          //
 	cpp                func([]xc.Token)    //
 	ddBuf              []*DirectDeclarator //
 	encBuf             []byte              // PPTokens
@@ -282,6 +283,9 @@ func (l *lexer) scanToken() (tok xc.Token) {
 // Lex implements yyLexer
 func (l *lexer) Lex(lval *yySymType) int {
 	tok := l.scanToken()
+	if l.constExprToks != nil {
+		l.constExprToks = append(l.constExprToks, tok)
+	}
 	l.last = tok
 	if tok.Rune == lex.RuneEOF {
 		lval.Token = tok

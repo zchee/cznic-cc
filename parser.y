@@ -921,17 +921,24 @@ ExpressionListOpt:
 	}
 
 ConstantExpression:
+	{
+		lx := yylex.(*lexer)
+		lx.constExprToks = []xc.Token{lx.last}
+	}
 	Expression
 	{
 		lx := yylex.(*lexer)
 		lhs := &ConstantExpression{
-			Expression:  $1.(*Expression),
+			Expression:  $2.(*Expression),
 		}
 		$$ = lhs
 		lhs.Value, lhs.Type = lhs.Expression.eval(lx)
 		if lhs.Value == nil {
 			lx.report.Err(lhs.Pos(), "not a constant expression")
 		}
+		l := lx.constExprToks
+		lhs.toks = l[:len(l)-1]
+		lx.constExprToks = nil
 	}
 
 Declaration:
