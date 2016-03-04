@@ -547,6 +547,9 @@ func (n *ctype) AlignOf() int {
 		DoubleComplex,
 		LongDoubleComplex:
 		return n.model.Items[k].Align
+	case Enum:
+		kind := kindofEnum(n.model, n.TypeSpecifier().EnumSpecifier, UInt)
+		return n.model.Items[kind].Align
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
 		case 1: // StructOrUnion IDENTIFIER
@@ -972,6 +975,9 @@ func (n *ctype) SizeOf() int {
 		DoubleComplex,
 		LongDoubleComplex:
 		return n.model.Items[k].Size
+	case Enum:
+		kind := kindofEnum(n.model, n.TypeSpecifier().EnumSpecifier, UInt)
+		return n.model.Items[kind].Size
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
 		case 1: // StructOrUnion IDENTIFIER
@@ -986,6 +992,31 @@ func (n *ctype) SizeOf() int {
 	default:
 		panic(n.Kind().String())
 	}
+}
+
+func kindofEnumerator(e *Enumerator, fallback Kind) Kind {
+	switch e.Case {
+	case 0: // EnumerationConstant
+	case 1: // EnumerationConstant '=' ConstantExpression
+		return e.ConstantExpression.Type.Kind()
+	}
+	return fallback
+}
+
+func kindofEnum(m *Model, enumSpec *EnumSpecifier, kind Kind) Kind {
+	switch enumSpec.Case {
+	case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
+		list := enumSpec.EnumeratorList
+		for list != nil {
+			elemKind := kindofEnumerator(list.Enumerator, kind)
+			if m.Items[elemKind].Size > m.Items[kind].Size {
+				kind = elemKind
+			}
+			list = list.EnumeratorList
+		}
+	case 2: // "enum" IDENTIFIER
+	}
+	return kind
 }
 
 // Specifier implements Type.
@@ -1147,6 +1178,9 @@ func (n *ctype) StructAlignOf() int {
 		DoubleComplex,
 		LongDoubleComplex:
 		return n.model.Items[k].StructAlign
+	case Enum:
+		kind := kindofEnum(n.model, n.TypeSpecifier().EnumSpecifier, UInt)
+		return n.model.Items[kind].StructAlign
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
 		case 1: // StructOrUnion IDENTIFIER
