@@ -7,6 +7,7 @@ package cc
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 
@@ -80,6 +81,42 @@ func (m *Model) initialize(lx *lexer) {
 	m.VoidType = m.makeType(lx, 0, tsVoid)
 	m.UintPtrType = m.makeType(lx, 0, tsUintptr) // Pseudo type.
 	m.initialized = true
+}
+
+func (m *Model) toInt(v interface{}) (interface{}, bool) {
+	switch x := v.(type) {
+	case byte, int8, int16, uint16, int32:
+		return m.MustConvert(x, m.IntType), true
+	case uint32:
+		switch sz := m.Items[Int].Size; sz {
+		case 4:
+			return m.MustConvert(x, m.IntType), x <= math.MaxInt32
+		case 8:
+			return m.MustConvert(x, m.IntType), true
+		default:
+			panic(sz)
+		}
+	case int64:
+		switch sz := m.Items[Int].Size; sz {
+		case 4:
+			return m.MustConvert(x, m.IntType), x <= math.MaxInt32
+		case 8:
+			return m.MustConvert(x, m.IntType), true
+		default:
+			panic(sz)
+		}
+	case uint64:
+		switch sz := m.Items[Int].Size; sz {
+		case 4:
+			return m.MustConvert(x, m.IntType), x <= math.MaxInt32
+		case 8:
+			return m.MustConvert(x, m.IntType), x <= math.MaxInt64
+		default:
+			panic(sz)
+		}
+	default:
+		panic(fmt.Errorf("%T", x))
+	}
 }
 
 // sanityCheck reports model errors, if any.
@@ -424,12 +461,16 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			switch w {
 			case 4:
 				return float32(x)
+			case 8:
+				return float64(x)
 			default:
 				panic(w)
 			}
 		case float64:
 			switch w {
-			case 4, 8:
+			case 4:
+				return float32(x)
+			case 8:
 				return float64(x)
 			default:
 				panic(w)

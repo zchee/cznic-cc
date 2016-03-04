@@ -552,8 +552,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 			dd := b.Node.(*DirectDeclarator)
 			n.Type = dd.top().declarator.Type
-			if dd.IsEnumConst {
-				n.Value = m.MustConvert(int32(dd.EnumVal), m.IntType)
+			if v := dd.enumVal; v != nil {
+				n.Value = v
 			}
 		case 1: // CHARCONST
 			n.Value, n.Type = m.charConst(n.Token)

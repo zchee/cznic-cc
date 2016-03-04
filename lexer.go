@@ -62,7 +62,7 @@ type lexer struct {
 	file               *token.File         //
 	finalNLInjected    bool                //
 	includePaths       []string            //
-	iota               int                 //
+	iota               int64               //
 	isPreprocessing    bool                //
 	last               xc.Token            //
 	model              *Model              //

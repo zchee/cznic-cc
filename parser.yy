@@ -969,33 +969,37 @@ EnumeratorList:
 |	EnumeratorList ',' Enumerator
 
 // [0](6.7.2.2)
+//yy:field	enumVal		interface{}
 Enumerator:
 	EnumerationConstant
 	{
-		lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, lx.iota)
+		m := lx.model
+		v := m.MustConvert(lx.iota, m.IntType)
+		lhs.enumVal = v
+		lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, v)
 	}
 |	EnumerationConstant '=' ConstantExpression
 	{
 		m := lx.model
 		e := lhs.ConstantExpression
-		if e.Type.Kind() != Int {
+		var v interface{}
+		// [0], 6.7.2.2
+		// The expression that defines the value of an enumeration
+		// constant shall be an integer constant expression that has a
+		// value representable as an int.
+		switch {
+		case !IsIntType(e.Type):
 			lx.report.Err(e.Pos(), "not an integer constant expression (have '%s')", e.Type)
-			e.Value, e.Type = m.value2(1, m.IntType)
-			break
+			v = m.MustConvert(0, m.IntType)
+		default:
+			var ok bool
+			if v, ok = m.toInt(e.Value); !ok {
+				lx.report.Err(e.Pos(), "overflow in enumeration value: %v", e.Value)
+			}
 		}
 
-		var val int
-		switch x := e.Value.(type) {
-		case int16:
-			val = int(x)
-		case int32:
-			val = int(x)
-		case int64:
-			val = int(x)
-		default:
-			panic("internal error")
-		}
-		lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, val)
+		lhs.enumVal = v
+		lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, v)
 	}
 
 // [0](6.7.3)
@@ -1044,10 +1048,9 @@ DeclaratorOpt:
 |	Declarator
 
 // [0](6.7.5)
-//yy:field	EnumVal		int	// Valid if IsEnumConst == true.
-//yy:field	IsEnumConst	bool	// Whether IDENTIFIER defines an enumeration constant.
 //yy:field	declarator	*Declarator
 //yy:field	elements	int
+//yy:field	enumVal		interface{}
 //yy:field	idScope		*Bindings	// Of case 0: IDENTIFIER.
 //yy:field	paramsScope	*Bindings
 //yy:field	parent		*DirectDeclarator

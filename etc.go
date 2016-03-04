@@ -51,6 +51,12 @@ var (
 	debugTypeStrings bool
 )
 
+// EnumConstant represents the name/value pair defined by an Enumerator.
+type EnumConstant struct {
+	ID    int         // Numeric id of the name.
+	Value interface{} // Value represented by name. Type of Value is C int.
+}
+
 // Specifier describes a combination of {Function,StorageClass,Type}Specifiers
 // and TypeQualifiers.
 type Specifier interface {
@@ -86,7 +92,8 @@ type Type interface {
 	// this type. The returned declarator is possibly artificial.
 	Declarator() *Declarator
 
-	// Element returns the type this Ptr type points to.
+	// Element returns the type this Ptr type points to or the element type
+	// of an Array type.
 	Element() Type
 
 	// Elements returns the number of elements an Array type has. The
@@ -94,7 +101,11 @@ type Type interface {
 	// is not of a constant size.
 	Elements() int
 
-	// Kidn returns one of Ptr, Void, Int, ...
+	// EnumeratorList returns the enumeration constants defined by an Enum
+	// type, if any.
+	EnumeratorList() []EnumConstant
+
+	// Kind returns one of Ptr, Void, Int, ...
 	Kind() Kind
 
 	// Member returns the type of a member of this Struct or Union type,
@@ -126,15 +137,12 @@ type Type interface {
 	Result() Type
 
 	// Sizeof returns the number of bytes needed to store a value of this
-	// type. Incomplete struct types have no alignment and the value
-	// returned will be < 0.
+	// type. Incomplete struct types have no size and the value returned
+	// will be < 0.
 	SizeOf() int
 
 	// Specifier returns the Specifier of this type.
 	Specifier() Specifier
-
-	// TypeSpecifier returns the TypeSpecifier of this type.
-	TypeSpecifier() *TypeSpecifier
 
 	// String returns a C-like type specifier of this type.
 	String() string
@@ -144,7 +152,7 @@ type Type interface {
 	// have no alignment and the value returned will be < 0.
 	StructAlignOf() int
 
-	// Tag returns the ID of a tag of a Struct or Union type, if any.
+	// Tag returns the ID of a tag of a Struct, Union or Enum type, if any.
 	// Otherwise the returned value is zero.
 	Tag() int
 }
@@ -330,15 +338,23 @@ func (b *Bindings) defineEnumTag(tok xc.Token, n node, report *xc.Report) {
 	m[tok.Val] = Binding{n, true}
 }
 
-func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v int) {
+func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v interface{}) {
 	d := lx.model.makeDeclarator(0, tsInt)
 	dd := d.DirectDeclarator
 	dd.Token = tok
-	dd.IsEnumConst = true
-	dd.EnumVal = v
+	dd.enumVal = v
 	d.setFull(lx)
 	b.declareIdentifier(tok, dd, lx.report)
-	lx.iota = v + 1
+	switch x := v.(type) {
+	case int16:
+		lx.iota = int64(x) + 1
+	case int32:
+		lx.iota = int64(x) + 1
+	case int64:
+		lx.iota = int64(x) + 1
+	default:
+		panic(fmt.Errorf("%T", x))
+	}
 }
 
 func (b *Bindings) declareStructTag(tok xc.Token, report *xc.Report) {
@@ -548,8 +564,7 @@ func (n *ctype) AlignOf() int {
 		LongDoubleComplex:
 		return n.model.Items[k].Align
 	case Enum:
-		kind := kindofEnum(n.model, n.TypeSpecifier().EnumSpecifier, UInt)
-		return n.model.Items[kind].Align
+		return n.model.Items[Int].Align
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
 		case 1: // StructOrUnion IDENTIFIER
@@ -716,6 +731,11 @@ func (n *ctype) Member(nm int) (*Member, error) {
 	}
 
 	return n.resultSpecifier.member(nm)
+}
+
+// Returns nil if type kind != Enum
+func (n *ctype) enumSpecifier() *EnumSpecifier {
+	return n.resultSpecifier.firstTypeSpecifier().EnumSpecifier
 }
 
 func (n *ctype) structOrUnionSpecifier() *StructOrUnionSpecifier {
@@ -937,6 +957,26 @@ func (n *ctype) Elements() int {
 	return -1
 }
 
+// EnumeratorList implements Type
+func (n *ctype) EnumeratorList() (r []EnumConstant) {
+	if n.Kind() != Enum {
+		return nil
+	}
+
+	switch es := n.enumSpecifier(); es.Case {
+	case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
+		for l := es.EnumeratorList; l != nil; l = l.EnumeratorList {
+			e := l.Enumerator
+			r = append(r, EnumConstant{e.Token.Val, e.enumVal})
+		}
+		return r
+	case 1: // "enum" IDENTIFIER
+		return nil
+	default:
+		panic(es.Case)
+	}
+}
+
 // SizeOf implements Type.
 func (n *ctype) SizeOf() int {
 	if n == undefined {
@@ -976,8 +1016,7 @@ func (n *ctype) SizeOf() int {
 		LongDoubleComplex:
 		return n.model.Items[k].Size
 	case Enum:
-		kind := kindofEnum(n.model, n.TypeSpecifier().EnumSpecifier, UInt)
-		return n.model.Items[kind].Size
+		return n.model.Items[Int].Size
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
 		case 1: // StructOrUnion IDENTIFIER
@@ -994,36 +1033,8 @@ func (n *ctype) SizeOf() int {
 	}
 }
 
-func kindofEnumerator(e *Enumerator, fallback Kind) Kind {
-	switch e.Case {
-	case 0: // EnumerationConstant
-	case 1: // EnumerationConstant '=' ConstantExpression
-		return e.ConstantExpression.Type.Kind()
-	}
-	return fallback
-}
-
-func kindofEnum(m *Model, enumSpec *EnumSpecifier, kind Kind) Kind {
-	switch enumSpec.Case {
-	case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
-		list := enumSpec.EnumeratorList
-		for list != nil {
-			elemKind := kindofEnumerator(list.Enumerator, kind)
-			if m.Items[elemKind].Size > m.Items[kind].Size {
-				kind = elemKind
-			}
-			list = list.EnumeratorList
-		}
-	case 2: // "enum" IDENTIFIER
-	}
-	return kind
-}
-
 // Specifier implements Type.
 func (n *ctype) Specifier() Specifier { return &spec{n.resultAttr, n.resultSpecifier.typeSpecifiers()} }
-
-// TypeSpecifier implements Type.
-func (n *ctype) TypeSpecifier() *TypeSpecifier { return n.resultSpecifier.firstTypeSpecifier() }
 
 // String implements Type.
 func (n *ctype) String() string {
@@ -1179,8 +1190,7 @@ func (n *ctype) StructAlignOf() int {
 		LongDoubleComplex:
 		return n.model.Items[k].StructAlign
 	case Enum:
-		kind := kindofEnum(n.model, n.TypeSpecifier().EnumSpecifier, UInt)
-		return n.model.Items[kind].StructAlign
+		return n.model.Items[Int].StructAlign
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
 		case 1: // StructOrUnion IDENTIFIER
@@ -1197,21 +1207,40 @@ func (n *ctype) StructAlignOf() int {
 
 // Tag implements Type.
 func (n *ctype) Tag() int {
-	if k := n.Kind(); k != Struct && k != Union {
-		return 0
-	}
+	switch k := n.Kind(); k {
+	case Struct, Union:
+		switch sus := n.structOrUnionSpecifier(); sus.Case {
+		case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
+			if o := sus.IdentifierOpt; o != nil {
+				return o.Token.Val
+			}
 
-	switch sus := n.structOrUnionSpecifier(); sus.Case {
-	case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
-		if o := sus.IdentifierOpt; o != nil {
-			return o.Token.Val
+			return 0
+		case 1: // StructOrUnion IDENTIFIER
+			return sus.Token.Val
+		default:
+			panic(sus.Case)
+		}
+	case Enum:
+		es := n.enumSpecifier()
+		if es == nil {
+			return 0
 		}
 
-		return 0
-	case 1: // StructOrUnion IDENTIFIER
-		return sus.Token.Val
+		switch es.Case {
+		case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
+			if o := es.IdentifierOpt; o != nil {
+				return o.Token.Val
+			}
+
+			return 0
+		case 1: // "enum" IDENTIFIER
+			return es.Token.Val
+		default:
+			panic(es.Case)
+		}
 	default:
-		panic(sus.Case)
+		return 0
 	}
 }
 

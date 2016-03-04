@@ -791,10 +791,9 @@ func (n *DirectAbstractDeclaratorOpt) Pos() token.Pos {
 //	|       DirectDeclarator '(' ParameterTypeList ')'                         // Case 6
 //	|       DirectDeclarator '(' IdentifierListOpt ')'                         // Case 7
 type DirectDeclarator struct {
-	EnumVal              int  // Valid if IsEnumConst == true.
-	IsEnumConst          bool // Whether IDENTIFIER defines an enumeration constant.
 	declarator           *Declarator
 	elements             int
+	enumVal              interface{}
 	idScope              *Bindings // Of case 0: IDENTIFIER.
 	paramsScope          *Bindings
 	parent               *DirectDeclarator
@@ -1048,6 +1047,7 @@ func (n *EnumerationConstant) Pos() token.Pos {
 //	        EnumerationConstant
 //	|       EnumerationConstant '=' ConstantExpression  // Case 1
 type Enumerator struct {
+	enumVal             interface{}
 	Case                int
 	ConstantExpression  *ConstantExpression
 	EnumerationConstant *EnumerationConstant
