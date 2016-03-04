@@ -968,7 +968,17 @@ func (n *ctype) EnumeratorList() (r []EnumConstant) {
 	case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
 		for l := es.EnumeratorList; l != nil; l = l.EnumeratorList {
 			e := l.Enumerator
-			r = append(r, EnumConstant{e.EnumerationConstant.Token.Val, e.enumVal, e.ConstantExpression.toks})
+			if e.ConstantExpression != nil {
+				r = append(r, EnumConstant{
+					ID:     e.EnumerationConstant.Token.Val,
+					Value:  e.enumVal,
+					Tokens: e.ConstantExpression.toks})
+				continue
+			}
+			r = append(r, EnumConstant{
+				ID:    e.EnumerationConstant.Token.Val,
+				Value: e.enumVal,
+			})
 		}
 		return r
 	case 1: // "enum" IDENTIFIER
