@@ -794,6 +794,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				n.Value = x % b.(uint32)
 			case int64:
 				n.Value = x % b.(int64)
+			case uint64:
+				n.Value = x % b.(uint64)
 			default:
 				panic(fmt.Errorf("internal error: %T", x))
 			}
