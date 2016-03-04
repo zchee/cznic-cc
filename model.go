@@ -418,6 +418,25 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
+	case Float:
+		switch x := v.(type) {
+		case float32:
+			switch w {
+			case 4:
+				return float32(x)
+			default:
+				panic(w)
+			}
+		case float64:
+			switch w {
+			case 4, 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
+		default:
+			panic(fmt.Errorf("internal error %T", x))
+		}
 	case Double:
 		switch x := v.(type) {
 		case int32:
@@ -932,6 +951,17 @@ func (m *Model) binOpType(a, b Type) Type {
 			return m.ULongLongType
 		case Double:
 			return m.DoubleType
+		default:
+			panic(bk)
+		}
+	case Float:
+		switch bk {
+		case Float:
+			return m.FloatType
+		case Double:
+			return m.DoubleType
+		case LongDouble:
+			return m.LongDoubleType
 		default:
 			panic(bk)
 		}
