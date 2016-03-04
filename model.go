@@ -1026,6 +1026,17 @@ func (m *Model) binOpType(a, b Type) Type {
 		default:
 			panic(bk)
 		}
+	case ULong:
+		switch bk {
+		case ULong:
+			return m.ULongType
+		case ULongLong:
+			return m.ULongLongType
+		case Double:
+			return m.DoubleType
+		default:
+			panic(bk)
+		}
 	case ULongLong:
 		switch bk {
 		case ULongLong:
