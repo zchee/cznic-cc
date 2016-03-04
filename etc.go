@@ -133,6 +133,9 @@ type Type interface {
 	// Specifier returns the Specifier of this type.
 	Specifier() Specifier
 
+	// TypeSpecifier returns the TypeSpecifier of this type.
+	TypeSpecifier() *TypeSpecifier
+
 	// String returns a C-like type specifier of this type.
 	String() string
 
@@ -987,6 +990,9 @@ func (n *ctype) SizeOf() int {
 
 // Specifier implements Type.
 func (n *ctype) Specifier() Specifier { return &spec{n.resultAttr, n.resultSpecifier.typeSpecifiers()} }
+
+// TypeSpecifier implements Type.
+func (n *ctype) TypeSpecifier() *TypeSpecifier { return n.resultSpecifier.firstTypeSpecifier() }
 
 // String implements Type.
 func (n *ctype) String() string {
