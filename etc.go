@@ -53,7 +53,7 @@ var (
 
 // EnumConstant represents the name/value pair defined by an Enumerator.
 type EnumConstant struct {
-	ID     int         // Numeric id of the name.
+	DefTok xc.Token    // Enumeration constant name definition token.
 	Value  interface{} // Value represented by name. Type of Value is C int.
 	Tokens []xc.Token  // The tokens the constant expression consists of.
 }
@@ -970,14 +970,14 @@ func (n *ctype) EnumeratorList() (r []EnumConstant) {
 			e := l.Enumerator
 			if e.ConstantExpression != nil {
 				r = append(r, EnumConstant{
-					ID:     e.EnumerationConstant.Token.Val,
+					DefTok: e.EnumerationConstant.Token,
 					Value:  e.enumVal,
 					Tokens: e.ConstantExpression.toks})
 				continue
 			}
 			r = append(r, EnumConstant{
-				ID:    e.EnumerationConstant.Token.Val,
-				Value: e.enumVal,
+				DefTok: e.EnumerationConstant.Token,
+				Value:  e.enumVal,
 			})
 		}
 		return r

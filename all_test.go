@@ -781,7 +781,7 @@ func TestEnumConstToks(t *testing.T) {
 			l),
 			`[]cc.EnumConstant{ // len 2
 · 0: cc.EnumConstant{
-· · ID: 100,
+· · DefTok: testdata/enum.c:4:2: IDENTIFIER "c",
 · · Value: 18,
 · · Tokens: []xc.Token{ // len 3
 · · · 0: testdata/enum.c:4:6: INTCONST "42",
@@ -790,7 +790,7 @@ func TestEnumConstToks(t *testing.T) {
 · · },
 · },
 · 1: cc.EnumConstant{
-· · ID: 101,
+· · DefTok: testdata/enum.c:5:2: IDENTIFIER "d",
 · · Value: 592,
 · · Tokens: []xc.Token{ // len 3
 · · · 0: testdata/enum.c:5:6: INTCONST "314",
