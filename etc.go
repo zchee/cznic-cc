@@ -343,7 +343,7 @@ func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v interface{}) {
 	d := lx.model.makeDeclarator(0, tsInt)
 	dd := d.DirectDeclarator
 	dd.Token = tok
-	dd.enumVal = v
+	dd.EnumVal = v
 	d.setFull(lx)
 	b.declareIdentifier(tok, dd, lx.report)
 	switch x := v.(type) {

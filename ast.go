@@ -794,8 +794,8 @@ func (n *DirectAbstractDeclaratorOpt) Pos() token.Pos {
 type DirectDeclarator struct {
 	declarator           *Declarator
 	elements             int
-	enumVal              interface{}
-	idScope              *Bindings // Of case 0: IDENTIFIER.
+	EnumVal              interface{} // Non nil if DD declares an enumeration constant.
+	idScope              *Bindings   // Of case 0: IDENTIFIER.
 	paramsScope          *Bindings
 	parent               *DirectDeclarator
 	prev                 *Binding // Existing declaration in same scope, if any.

@@ -1057,7 +1057,7 @@ DeclaratorOpt:
 // [0](6.7.5)
 //yy:field	declarator	*Declarator
 //yy:field	elements	int
-//yy:field	enumVal		interface{}
+//yy:field	EnumVal		interface{}	// Non nil if DD declares an enumeration constant.
 //yy:field	idScope		*Bindings	// Of case 0: IDENTIFIER.
 //yy:field	paramsScope	*Bindings
 //yy:field	parent		*DirectDeclarator

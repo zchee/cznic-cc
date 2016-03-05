@@ -552,7 +552,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 			dd := b.Node.(*DirectDeclarator)
 			n.Type = dd.top().declarator.Type
-			if v := dd.enumVal; v != nil {
+			if v := dd.EnumVal; v != nil {
 				n.Value = v
 			}
 		case 1: // CHARCONST
