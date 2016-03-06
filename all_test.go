@@ -584,7 +584,7 @@ func testParse(t *testing.T, paths []string) *TranslationUnit {
 	var a []string
 	crash := nopOpt()
 	if *oFailFast {
-		crash = crashOnError()
+		crash = CrashOnError()
 	}
 	ast, err := Parse(
 		predefinedMacros,

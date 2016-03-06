@@ -204,8 +204,10 @@ func ErrLimit(n int) Opt {
 // Trigraphs enables processing of trigraphs.
 func Trigraphs() Opt { return func(lx *lexer) { lx.tweaks.enableTrigraphs = true } }
 
-func crashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }
-func nopOpt() Opt       { return func(*lexer) {} }
+// CrashOnError is an debugging option.
+func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }
+
+func nopOpt() Opt { return func(*lexer) {} }
 
 // Parse defines any macros in predefine. Then Parse preprocesses and parses
 // the translation unit consisting of files in paths. The m communicates the
