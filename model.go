@@ -627,6 +627,18 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
+	case LongDouble:
+		switch x := v.(type) {
+		case float64:
+			switch w {
+			case 8:
+				return x
+			default:
+				panic(w)
+			}
+		default:
+			panic(fmt.Errorf("internal error %T", x))
+		}
 	default:
 		panic(fmt.Errorf("internal error %s, %s", typ, typ.Kind()))
 	}
