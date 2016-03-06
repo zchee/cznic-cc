@@ -796,6 +796,8 @@ func (p *pp) controlLine(n *ControlLine) {
 	switch n.Case {
 	case 0: // PPDEFINE IDENTIFIER ReplacementList
 		p.defineMacro(n.Token2, n.ReplacementList)
+	case 1: // PPDEFINE IDENTIFIER_LPAREN "..." ')' ReplacementList
+		p.defineFnMacro(n.Token2, nil, n.ReplacementList)
 	case 2: // PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' "..." ')' ReplacementList
 		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList)
 	case 3: // PPDEFINE IDENTIFIER_LPAREN IdentifierListOpt ')' ReplacementList
