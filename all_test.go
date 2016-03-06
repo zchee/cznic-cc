@@ -1077,3 +1077,7 @@ func TestGCCPredefs(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPaste2(t *testing.T) {
+	testParse(t, []string{"testdata/paste2.c"})
+}

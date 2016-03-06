@@ -544,15 +544,16 @@ next:
 	}
 
 	var y []xc.Token
-	for i := 0; i < len(r0); i++ {
+	for i := 0; i < len(r0); {
 		tok := r0[i]
 		switch {
 		case i+1 <= len(r0)-2 && r0[i+1].Rune == PPPASTE:
 			tok.Val = dict.ID(append(tok.S(), r0[i+2].S()...))
-			y = append(y, tok)
 			i += 2
+			r0[i] = tok
 		default:
 			y = append(y, tok)
+			i++
 		}
 	}
 
