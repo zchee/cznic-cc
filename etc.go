@@ -197,8 +197,27 @@ func PrettyString(v interface{}) string {
 func position(pos token.Pos) token.Position { return fset.Position(pos) }
 
 // Binding records the declaration Node of a declared name.
+//
+// In the NSIdentifiers namespace the dynamic type of Node for deckared names
+// is always *DirectDeclarator.  The *Declarator associated with the direct
+// declarator is available via (*DirectDeclarator).TopDeclarator().
+//
+//	int* p;
+//
+// In the NSTags namespace the dynamic type of Node is xc.Token when a tag is
+// declared:
+//
+//	struct foo;
+//	enum bar;
+//
+// When a tag is defined, the dynamic type of Node is *EnumSpecifier or
+// *StructOrUnionSpecifier:
+//
+//	struct foo { int i; };
+//	enum bar { a = 1 };
+//
 type Binding struct {
-	Node node
+	Node Node
 	enum bool
 }
 
@@ -321,7 +340,7 @@ func (b *Bindings) declareEnumTag(tok xc.Token, report *xc.Report) {
 	m[tok.Val] = Binding{tok, true}
 }
 
-func (b *Bindings) defineEnumTag(tok xc.Token, n node, report *xc.Report) {
+func (b *Bindings) defineEnumTag(tok xc.Token, n Node, report *xc.Report) {
 	b = b.root()
 	m := b.boot(NSTags)
 	if ex, ok := m[tok.Val]; ok {
@@ -371,7 +390,7 @@ func (b *Bindings) declareStructTag(tok xc.Token, report *xc.Report) {
 	m[tok.Val] = Binding{tok, false}
 }
 
-func (b *Bindings) defineStructTag(tok xc.Token, n node, report *xc.Report) {
+func (b *Bindings) defineStructTag(tok xc.Token, n Node, report *xc.Report) {
 	b = b.root()
 	m := b.boot(NSTags)
 	if ex, ok := m[tok.Val]; ok {

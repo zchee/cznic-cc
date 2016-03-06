@@ -14,10 +14,11 @@ import (
 
 type operand interface {
 	eval(*lexer) (value interface{}, typ Type)
-	node
+	Node
 }
 
-type node interface {
+// Node represents an AST node.
+type Node interface {
 	Pos() token.Pos
 }
 

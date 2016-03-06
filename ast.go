@@ -1419,7 +1419,7 @@ func (n *FunctionSpecifier) Pos() token.Pos {
 type GroupList struct {
 	Case      int
 	GroupList *GroupList
-	GroupPart node
+	GroupPart Node
 }
 
 func (n *GroupList) reverse() *GroupList {

@@ -53,8 +53,8 @@ import (
 type yySymType struct {
 	yys       int
 	Token     xc.Token
-	groupPart node
-	node      node
+	groupPart Node
+	node      Node
 	toks      PPTokenList
 }
 
@@ -4808,11 +4808,11 @@ yynewstate:
 		}
 	case 246:
 		{
-			yyVAL.groupPart = yyS[yypt-0].node.(node)
+			yyVAL.groupPart = yyS[yypt-0].node.(Node)
 		}
 	case 247:
 		{
-			yyVAL.groupPart = yyS[yypt-0].node.(node)
+			yyVAL.groupPart = yyS[yypt-0].node.(Node)
 		}
 	case 248:
 		{

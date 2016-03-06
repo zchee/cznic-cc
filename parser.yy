@@ -50,8 +50,8 @@ import (
 
 %union {
 	Token			xc.Token
-	groupPart		node
-	node			node
+	groupPart		Node
+	node			Node
 	toks			PPTokenList
 }
 
@@ -1641,11 +1641,11 @@ GroupListOpt:
 GroupPart:
 	ControlLine
 	{
-		$$ = $1.(node)
+		$$ = $1.(Node)
 	}
 |	IfSection
 	{
-		$$ = $1.(node)
+		$$ = $1.(Node)
 	}
 |	PPNONDIRECTIVE PPTokenList '\n'
 	{
