@@ -421,8 +421,18 @@ func (p *pp) expandDefined(tok xc.Token, r tokenReader, w func([]xc.Token)) {
 			p.report.ErrTok(tok, "expected identifier")
 			return
 		}
+	case IDENTIFIER:
+		v := tok
+		v.Rune = INTCONST
+		if p.macros.m[tok.Val] != nil {
+			v.Val = id1
+		} else {
+			v.Val = id0
+		}
+
+		w([]xc.Token{v})
 	default:
-		panic(PrettyString(tok)) //TODO defined IDENTIFIER
+		panic(PrettyString(tok))
 	}
 }
 
