@@ -816,3 +816,7 @@ func TestEnumConstToks(t *testing.T) {
 		t.Fatalf("%T", x)
 	}
 }
+
+func TestPaste(t *testing.T) {
+	testParse(t, []string{"testdata/paste.c"})
+}
