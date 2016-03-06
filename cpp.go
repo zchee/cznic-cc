@@ -548,15 +548,12 @@ next:
 	var y []xc.Token
 	for i := 0; i < len(r0); i++ {
 		tok := r0[i]
-		println(PrettyString(tok), i, len(r0))
 		switch {
 		case i+1 <= len(r0)-2 && r0[i+1].Rune == PPPASTE:
-			println(554)
 			tok.Val = dict.ID(append(tok.S(), r0[i+2].S()...))
 			y = append(y, tok)
 			i += 2
 		default:
-			println(559)
 			y = append(y, tok)
 		}
 	}
