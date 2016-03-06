@@ -300,7 +300,7 @@ func (p *pp) defineMacro(tok xc.Token, repl PPTokenList) {
 	p.checkCompatibleReplacementTokenList(tok, m.repl, repl)
 }
 
-func (p *pp) defineFnMacro(tok xc.Token, ilo *IdentifierListOpt, repl PPTokenList) {
+func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList) {
 	nm0 := tok.S()
 	nm := dict.ID(nm0[:len(nm0)-1])
 	if protectedMacros[nm] && p.protectMacros {
@@ -309,14 +309,12 @@ func (p *pp) defineFnMacro(tok xc.Token, ilo *IdentifierListOpt, repl PPTokenLis
 	}
 
 	var args []int
-	if ilo != nil {
-		for il := ilo.IdentifierList; il != nil; il = il.IdentifierList {
-			tok := il.Token2
-			if !tok.IsValid() {
-				tok = il.Token
-			}
-			args = append(args, tok.Val)
+	for ; il != nil; il = il.IdentifierList {
+		tok := il.Token2
+		if !tok.IsValid() {
+			tok = il.Token
 		}
+		args = append(args, tok.Val)
 	}
 	m := p.macros.m[nm]
 	if m == nil {
@@ -799,9 +797,13 @@ func (p *pp) controlLine(n *ControlLine) {
 	case 0: // PPDEFINE IDENTIFIER ReplacementList
 		p.defineMacro(n.Token2, n.ReplacementList)
 	case 2: // PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' "..." ')' ReplacementList
-		p.defineFnMacro(n.Token2, n.IdentifierListOpt, n.ReplacementList)
+		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList)
 	case 3: // PPDEFINE IDENTIFIER_LPAREN IdentifierListOpt ')' ReplacementList
-		p.defineFnMacro(n.Token2, n.IdentifierListOpt, n.ReplacementList)
+		var l *IdentifierList
+		if o := n.IdentifierListOpt; o != nil {
+			l = o.IdentifierList
+		}
+		p.defineFnMacro(n.Token2, l, n.ReplacementList)
 	case 4: // PPERROR PPTokenListOpt
 		var sep string
 		toks := decodeTokens(n.PPTokenListOpt, nil)
