@@ -491,8 +491,17 @@ func (p *pp) expandFnMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined 
 
 	args := p.parseMacroArgs(r)
 	if g, e := len(args), len(m.Args); g != e {
-		p.report.ErrTok(tok, "macro argument count mismatch: got %v, expected %v", g, e)
-		return
+		switch {
+		case g == 1 && e == 0 && len(args[0]) == 0:
+			// Spacial case: Handling of empty args to macros with
+			// one parameter makes it non distinguishable of
+			// passing no argument to a macro with no parameters.
+
+			// ok, nop.
+		default:
+			p.report.ErrTok(tok, "macro argument count mismatch: got %v, expected %v", g, e)
+			return
+		}
 	}
 
 	for i, arg := range args {
