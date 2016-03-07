@@ -1085,3 +1085,7 @@ func TestPaste2(t *testing.T) {
 func TestFunc(t *testing.T) {
 	testParse(t, []string{"testdata/func.c"})
 }
+
+func TestEmptyMacroArg(t *testing.T) {
+	testParse(t, []string{"testdata/empty.c"})
+}

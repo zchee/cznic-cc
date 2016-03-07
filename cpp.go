@@ -623,13 +623,16 @@ func (p *pp) parseMacroArgs(r tokenReader) (args [][]xc.Token) {
 		return nil
 	}
 
-	for {
-		arg := p.parseMacroArg(r)
-		if arg == nil {
-			break
+	for !r.eof(true) {
+		arg, more := p.parseMacroArg(r)
+		args = append(args, arg)
+		if more {
+			continue
 		}
 
-		args = append(args, arg)
+		if r.peek().Rune == ')' {
+			break
+		}
 	}
 
 	if r.eof(true) {
@@ -645,17 +648,13 @@ func (p *pp) parseMacroArgs(r tokenReader) (args [][]xc.Token) {
 	return args
 }
 
-func (p *pp) parseMacroArg(r tokenReader) (arg []xc.Token) {
-	if r.eof(true) {
-		return nil
-	}
-
+func (p *pp) parseMacroArg(r tokenReader) (arg []xc.Token, more bool) {
 	n := 0
 	tok := r.peek()
 	for {
 		if r.eof(true) {
 			p.report.ErrTok(tok, "unexpected end of line after token")
-			return arg
+			return arg, false
 		}
 
 		tok = r.peek()
@@ -665,7 +664,7 @@ func (p *pp) parseMacroArg(r tokenReader) (arg []xc.Token) {
 			n++
 		case ')':
 			if n == 0 {
-				return arg
+				return arg, false
 			}
 
 			arg = append(arg, r.read())
@@ -673,7 +672,7 @@ func (p *pp) parseMacroArg(r tokenReader) (arg []xc.Token) {
 		case ',':
 			if n == 0 {
 				r.read()
-				return arg
+				return arg, true
 			}
 
 			arg = append(arg, r.read())
