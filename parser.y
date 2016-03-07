@@ -1535,19 +1535,11 @@ StructDeclaration:
 			Token:                   $3,
 		}
 		$$ = lhs
-		ts := tsDecode(lhs.SpecifierQualifierList.typeSpecifier)
-		ok := false
-		for _, v := range ts {
-			if v == tsStructSpecifier || v == tsUnionSpecifier {
-				ok = true
-				break
-			}
-		}
-		if !ok {
+		s := lhs.SpecifierQualifierList
+		if k := s.kind(); k != Struct && k != Union {
 			break
 		}
 
-		s := lhs.SpecifierQualifierList
 		d := &Declarator{specifier: s}
 		dd := &DirectDeclarator{
 			Token: xc.Token{Char: lex.NewChar(lhs.Pos(), 0)},
