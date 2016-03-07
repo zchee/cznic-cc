@@ -44,7 +44,7 @@ func init() {
 	printHooks[lcRT] = lcH
 	printHooks[reflect.TypeOf(xc.Token{})] = func(f strutil.Formatter, v interface{}, prefix, suffix string) {
 		t := v.(xc.Token)
-		if !t.Pos().IsValid() {
+		if !t.Pos().IsValid() && t.Rune == 0 && t.Val == 0 {
 			return
 		}
 

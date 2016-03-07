@@ -355,16 +355,20 @@ var (
 
 	id0                = dict.SID("0")
 	id1                = dict.SID("1")
+	idChar             = dict.SID("char")
+	idConst            = dict.SID("const")
 	idDate             = dict.SID("__DATE__")
 	idDefined          = dict.SID("defined")
 	idEmptyString      = dict.SID(`""`)
 	idFile             = dict.SID("__FILE__")
 	idID               = dict.SID("ID")
 	idLine             = dict.SID("__LINE__")
+	idMagicFunc        = dict.SID("__func__")
 	idSTDC             = dict.SID("__STDC__")
 	idSTDCHosted       = dict.SID("__STDC_HOSTED__")
 	idSTDCMBMightNeqWc = dict.SID("__STDC_MB_MIGHT_NEQ_WC__")
 	idSTDCVersion      = dict.SID("__STDC_VERSION__")
+	idStatic           = dict.SID("static")
 	idTDate            = dict.SID(tuTime.Format("Jan _2 2006")) // The date of translation of the preprocessing translation unit.
 	idTTtime           = dict.SID(tuTime.Format("15:04:05"))    // The time of translation of the preprocessing translation unit.
 	idTime             = dict.SID("__TIME__")

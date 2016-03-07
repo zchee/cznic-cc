@@ -49,8 +49,8 @@ type lexer struct {
 	adjustFnArgs       bool                //
 	ch                 chan []xc.Token     //
 	commentPos0        token.Pos           //
-	constantExpression *ConstantExpression //
 	constExprToks      []xc.Token          //
+	constantExpression *ConstantExpression //
 	cpp                func([]xc.Token)    //
 	ddBuf              []*DirectDeclarator //
 	encBuf             []byte              // PPTokens
@@ -63,6 +63,7 @@ type lexer struct {
 	file               *token.File         //
 	finalNLInjected    bool                //
 	includePaths       []string            //
+	injectFunc         []xc.Token          // [0], 6.4.2.2.
 	iota               int64               //
 	isPreprocessing    bool                //
 	last               xc.Token            //
@@ -282,7 +283,13 @@ func (l *lexer) scanToken() (tok xc.Token) {
 
 // Lex implements yyLexer
 func (l *lexer) Lex(lval *yySymType) int {
-	tok := l.scanToken()
+	var tok xc.Token
+	if x := l.injectFunc; l.exampleRule == 0 && len(x) != 0 {
+		tok = x[0]
+		l.injectFunc = x[1:]
+	} else {
+		tok = l.scanToken()
+	}
 	if l.constExprToks != nil {
 		l.constExprToks = append(l.constExprToks, tok)
 	}

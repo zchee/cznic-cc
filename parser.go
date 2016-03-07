@@ -46,6 +46,8 @@ package cc
 import __yyfmt__ "fmt"
 
 import (
+	"fmt"
+
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/xc"
 )
@@ -4724,6 +4726,20 @@ yynewstate:
 				lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, k)
 			}
 			lx.scope.mergeScope = d.DirectDeclarator.paramsScope
+
+			// Handle __func__, [0], 6.4.2.2.
+			id, _ := (yyS[yypt-1].node).(*Declarator).Identifier()
+			lx.injectFunc = []xc.Token{
+				{lex.Char{Rune: STATIC}, idStatic},
+				{lex.Char{Rune: CONST}, idConst},
+				{lex.Char{Rune: CHAR}, idChar},
+				{lex.Char{Rune: IDENTIFIER}, idMagicFunc},
+				{lex.Char{Rune: '['}, 0},
+				{lex.Char{Rune: ']'}, 0},
+				{lex.Char{Rune: '='}, 0},
+				{lex.Char{Rune: STRINGLITERAL}, xc.Dict.SID(fmt.Sprintf("%q", xc.Dict.S(id)))},
+				{lex.Char{Rune: ';'}, 0},
+			}
 		}
 	case 236:
 		{

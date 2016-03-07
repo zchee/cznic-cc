@@ -1081,3 +1081,7 @@ func TestGCCPredefs(t *testing.T) {
 func TestPaste2(t *testing.T) {
 	testParse(t, []string{"testdata/paste2.c"})
 }
+
+func TestFunc(t *testing.T) {
+	testParse(t, []string{"testdata/func.c"})
+}
