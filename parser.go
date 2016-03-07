@@ -3353,9 +3353,6 @@ yynewstate:
 					d.padding = lhs.sizeOf - off
 				}
 			}
-			if lhs.sizeOf == 0 {
-				panic("internal error")
-			}
 
 			lx.popScope(lhs.Token2)
 			if o := lhs.IdentifierOpt; o != nil {
@@ -3449,13 +3446,11 @@ yynewstate:
 			}
 			yyVAL.node = lhs
 			s := lhs.SpecifierQualifierList
-			if k := s.kind(); k != Struct && k != Union {
+			if !lx.tweaks.enableAnonymousStructFields {
+				lx.report.Err(lhs.Token.Pos(), "unnamed fields not allowed")
+			} else if k := s.kind(); k != Struct && k != Union {
 				lx.report.Err(lhs.Token.Pos(), "only unnamed structs and unions are allowed")
 				break
-			}
-
-			if !lx.tweaks.enableAnonymousStructFields {
-				lx.report.Err(lhs.Token.Pos(), "unnamed structs and unions not allowed")
 			}
 
 			d := &Declarator{specifier: s}
