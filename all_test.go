@@ -1089,3 +1089,7 @@ func TestFunc(t *testing.T) {
 func TestEmptyMacroArg(t *testing.T) {
 	testParse(t, []string{"testdata/empty.c"})
 }
+
+func TestFuncFuncParams(t *testing.T) {
+	testParse(t, []string{"testdata/funcfunc.c"})
+}

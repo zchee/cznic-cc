@@ -2948,10 +2948,16 @@ FunctionDefinition:
 		if k := d.Type.Kind(); k != Function {
 			lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, k)
 		}
-		lx.scope.mergeScope = d.DirectDeclarator.paramsScope
+
+		for dd := d.DirectDeclarator.bottom(); dd != nil; dd = dd.parent {
+			if dd.Case == 6 { // DirectDeclarator '(' ParameterTypeList ')'
+				lx.scope.mergeScope = dd.paramsScope
+				break
+			}
+		}
 
 		// Handle __func__, [0], 6.4.2.2.
-		id, _ := ($2).(*Declarator).Identifier()
+		id, _ := d.Identifier()
 		lx.injectFunc = []xc.Token{
 			{lex.Char{Rune: STATIC}, idStatic},
 			{lex.Char{Rune: CONST}, idConst},
