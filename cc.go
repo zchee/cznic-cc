@@ -41,6 +41,7 @@ type tweaks struct {
 	enableTrigraphs                bool // ??=define foo(bar)
 	enableUndefExtraTokens         bool // #undef foo(bar)
 	enableWarnings                 bool // #warning
+	includeLastTokenInfoInErrors   bool //
 }
 
 func exampleAST(rule int, src string) interface{} {
@@ -161,6 +162,12 @@ func EnableDlrInIdentifiers() Opt {
 //	#define
 func EnableEmptyDefine() Opt {
 	return func(l *lexer) { l.tweaks.enableEmptyDefine = true }
+}
+
+// IncludeLastTokenInfoInErrors extends error messages with information about
+// the last lexer token.
+func IncludeLastTokenInfoInErrors() Opt {
+	return func(l *lexer) { l.tweaks.includeLastTokenInfoInErrors = true }
 }
 
 // EnableUndefExtraTokens makes the parser accept non standard

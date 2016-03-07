@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go/token"
 	"io"
+	"strings"
 
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/xc"
@@ -360,8 +361,8 @@ func (l *lexer) Lex(lval *yySymType) int {
 
 // Error Implements yyLexer.
 func (l *lexer) Error(msg string) {
-	if isTesting {
-		msg = fmt.Sprintf("%s (last lexer token: %s)", msg, PrettyString(l.tokLast))
+	if isTesting || l.tweaks.includeLastTokenInfoInErrors {
+		msg = strings.Join([]string{msg, fmt.Sprintf("(last lexer token: %s)", PrettyString(l.tokLast))}, " ")
 	}
 	l.report.Err(errPos(l.tokLast.Pos()), "%s", msg)
 }
