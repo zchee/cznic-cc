@@ -317,8 +317,11 @@ func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList) {
 		args = append(args, tok.Val)
 	}
 	m := p.macros.m[nm]
+	defTok := tok
+	defTok.Rune = IDENTIFIER
+	defTok.Val = nm
 	if m == nil {
-		p.macros.m[nm] = &Macro{Args: args, DefTok: tok, IsFnLike: true, repl: repl}
+		p.macros.m[nm] = &Macro{Args: args, DefTok: defTok, IsFnLike: true, repl: repl}
 		return
 	}
 
