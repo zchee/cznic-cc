@@ -2255,11 +2255,13 @@ func (n *StorageClassSpecifier) Pos() token.Pos {
 	return n.Token.Pos()
 }
 
-// StructDeclaration represents data reduced by production:
+// StructDeclaration represents data reduced by productions:
 //
 //	StructDeclaration:
 //	        SpecifierQualifierList StructDeclaratorList ';'
+//	|       SpecifierQualifierList ';'                       // Case 1
 type StructDeclaration struct {
+	Case                   int
 	SpecifierQualifierList *SpecifierQualifierList
 	StructDeclaratorList   *StructDeclaratorList
 	Token                  xc.Token

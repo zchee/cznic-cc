@@ -35,6 +35,7 @@ import (
 )
 
 type tweaks struct {
+	enableAnonymousStructFields    bool //
 	enableDefineOmitCommaBeforeDDD bool // #define foo(a, b...)
 	enableDlrInIdentifiers         bool // foo$bar
 	enableEmptyDefine              bool // #define
@@ -142,6 +143,19 @@ func ppParse(fn string, report *xc.Report, tweaks *tweaks) (*PreprocessingFile, 
 // Opt is a configuration/setup function that can be passed to the Parser
 // function.
 type Opt func(*lexer)
+
+// EnableAnonymousStructFields makes the parser accept non standard
+//
+//	struct {
+//		int i;
+//		struct {
+//			int j;
+//		};
+//		int k;
+//	};
+func EnableAnonymousStructFields() Opt {
+	return func(l *lexer) { l.tweaks.enableAnonymousStructFields = true }
+}
 
 // EnableDefineOmitCommaBeforeDDD makes the parser accept non standard
 //

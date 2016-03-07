@@ -1017,7 +1017,7 @@ func TestEnumConstToks(t *testing.T) {
 	sc := tu.Declarations
 	foo := sc.Lookup(NSIdentifiers, xc.Dict.SID("foo"))
 	if foo.Node == nil {
-		t.Fatal()
+		t.Fatal("internal error")
 	}
 
 	switch x := foo.Node.(type) {

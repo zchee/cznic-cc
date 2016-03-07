@@ -1564,6 +1564,49 @@ StructDeclaration:
 			break
 		}
 	}
+|	SpecifierQualifierList ';'
+	{
+		lx := yylex.(*lexer)
+		lhs := &StructDeclaration{
+			Case:                    1,
+			SpecifierQualifierList:  $1.(*SpecifierQualifierList),
+			Token:                   $2,
+		}
+		$$ = lhs
+		s := lhs.SpecifierQualifierList
+		if k := s.kind(); k != Struct && k != Union {
+			lx.report.Err(lhs.Token.Pos(), "only unnamed structs and unions are allowed")
+			break
+		}
+
+		if !lx.tweaks.enableAnonymousStructFields {
+			lx.report.Err(lhs.Token.Pos(), "unnamed structs and unions not allowed")
+		}
+
+		d := &Declarator{specifier: s}
+		dd := &DirectDeclarator{
+			Token: xc.Token{Char: lex.NewChar(lhs.Pos(), 0)},
+			declarator: d,
+			idScope: lx.scope,
+			specifier: s,
+		}
+		d.DirectDeclarator = dd
+		d.setFull(lx)
+		for l := lhs.SpecifierQualifierList; l != nil; {
+			ts := l.TypeSpecifier
+			if ts != nil && ts.Case == 11 && ts.StructOrUnionSpecifier.Case == 0 { // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
+				ts.StructOrUnionSpecifier.declarator = d
+				break
+			}
+
+			if o := l.SpecifierQualifierListOpt; o != nil {
+				l = o.SpecifierQualifierList
+				continue
+			}
+
+			break
+		}
+	}
 
 SpecifierQualifierList:
 	TypeSpecifier SpecifierQualifierListOpt
