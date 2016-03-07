@@ -815,10 +815,10 @@ func TestFinalInjection(t *testing.T) {
 }
 
 func TestRedecl(t *testing.T) {
-	testParse(t, []string{"testdata/redecl.c"})
+	testParse(t, []string{"testdata/redecl.c"}, "")
 }
 
-func testParse(t *testing.T, paths []string) *TranslationUnit {
+func testParse(t *testing.T, paths []string, ignoreError string, opts ...Opt) *TranslationUnit {
 	last := paths[len(paths)-1]
 	ln := filepath.Base(last)
 	f, err := os.Create("log-" + ln)
@@ -837,10 +837,8 @@ func testParse(t *testing.T, paths []string) *TranslationUnit {
 	if *oFailFast {
 		crash = CrashOnError()
 	}
-	ast, err := Parse(
-		predefinedMacros,
-		paths,
-		newTestModel(),
+	opts = append(
+		opts,
 		IncludePaths(includes),
 		SysIncludePaths(sysIncludes),
 		Cpp(func(toks []xc.Token) {
@@ -850,11 +848,19 @@ func testParse(t *testing.T, paths []string) *TranslationUnit {
 			}
 			fmt.Fprintf(b, "%s\n", strings.Join(a, " "))
 		}),
-		ErrLimit(-1),
 		crash,
+		ErrLimit(-1),
+	)
+	ast, err := Parse(
+		predefinedMacros,
+		paths,
+		newTestModel(),
+		opts...,
 	)
 	if err != nil {
-		t.Fatal(errString(err))
+		if s := strings.TrimSpace(errString(err)); s != ignoreError {
+			t.Fatal(errString(err))
+		}
 	}
 
 	t.Log(paths)
@@ -1069,7 +1075,7 @@ func TestEnumConstToks(t *testing.T) {
 }
 
 func TestPaste(t *testing.T) {
-	testParse(t, []string{"testdata/paste.c"})
+	testParse(t, []string{"testdata/paste.c"}, "")
 }
 
 func TestGCCPredefs(t *testing.T) {
@@ -1079,17 +1085,27 @@ func TestGCCPredefs(t *testing.T) {
 }
 
 func TestPaste2(t *testing.T) {
-	testParse(t, []string{"testdata/paste2.c"})
+	testParse(t, []string{"testdata/paste2.c"}, "")
 }
 
 func TestFunc(t *testing.T) {
-	testParse(t, []string{"testdata/func.c"})
+	testParse(t, []string{"testdata/func.c"}, "")
 }
 
 func TestEmptyMacroArg(t *testing.T) {
-	testParse(t, []string{"testdata/empty.c"})
+	testParse(t, []string{"testdata/empty.c"}, "")
 }
 
 func TestFuncFuncParams(t *testing.T) {
-	testParse(t, []string{"testdata/funcfunc.c"})
+	testParse(t, []string{"testdata/funcfunc.c"}, "")
+}
+
+func TestAnonStructField(t *testing.T) {
+	//testParse(t, []string{"testdata/anon.c"})
+	testParse(
+		t,
+		[]string{"testdata/anon.c"},
+		"testdata/anon.c:4:7: only unnamed structs and unions are allowed",
+		EnableAnonymousStructFields(),
+	)
 }

@@ -159,6 +159,7 @@ func (l *lexer) pop() {
 func (l *lexer) pushScope(kind Scope) (old *Bindings) {
 	old = l.scope
 	l.scope = newBindings(old, kind)
+	l.scope.maxAlign = 1
 	return old
 }
 
