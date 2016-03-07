@@ -945,6 +945,8 @@ func (m *Model) binOpType(a, b Type) Type {
 			return m.UIntType
 		case Long:
 			return m.LongType
+		case ULong:
+			return m.ULongType
 		case LongLong:
 			return m.LongLongType
 		case ULongLong:
@@ -960,6 +962,8 @@ func (m *Model) binOpType(a, b Type) Type {
 			return m.UIntType
 		case Long:
 			return m.LongType
+		case ULong:
+			return m.ULongType
 		case ULongLong:
 			return m.ULongLongType
 		default:
@@ -973,6 +977,8 @@ func (m *Model) binOpType(a, b Type) Type {
 			return m.UIntType
 		case Long:
 			return m.LongType
+		case ULong:
+			return m.ULongType
 		case LongLong, ULongLong:
 			return m.ULongLongType
 		default:
@@ -1003,7 +1009,7 @@ func (m *Model) binOpType(a, b Type) Type {
 		switch bk {
 		case UInt:
 			return m.UIntType
-		case Long:
+		case Long, ULong:
 			return m.ULongType
 		case LongLong, ULongLong:
 			return m.ULongLongType
@@ -1042,7 +1048,7 @@ func (m *Model) binOpType(a, b Type) Type {
 		switch bk {
 		case ULong:
 			return m.ULongType
-		case ULongLong:
+		case LongLong, ULongLong:
 			return m.ULongLongType
 		case Double:
 			return m.DoubleType
