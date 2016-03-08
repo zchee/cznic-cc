@@ -255,6 +255,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case int64:
+			switch w {
+			case 2:
+				return int16(x)
+			default:
+				panic(w)
+			}
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
