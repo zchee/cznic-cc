@@ -536,7 +536,30 @@ func (n *ctype) isCompatible(m *ctype) (r bool) {
 	case Struct, Union:
 		return n.structOrUnionSpecifier().isCompatible(m.structOrUnionSpecifier())
 	case Enum:
-		panic("internal error")
+		/*TODO
+		6.2.7 Compatible type and composite type
+
+		1 Two types have compatible type if their types are the same.
+		Additional rules for determining whether two types are
+		compatible are described in 6.7.2 for type specifiers, in 6.7.3
+		for type qualifiers, and in 6.7.5 for declarators.46) Moreover,
+		two structure, union, or enumerated types declared in separate
+		translation units are compatible if their tags and members
+		satisfy the following requirements: If one is declared with a
+		tag, the other shall be declared with the same tag. If both are
+		complete types, then the following additional requirements
+		apply: there shall be a one-to-one correspondence between their
+		members such that each pair of corresponding members are
+		declared with compatible types, and such that if one member of
+		a corresponding pair is declared with a name, the other member
+		is declared with the same name. For two structures,
+		corresponding members shall be declared in the same order. For
+		two structures or unions, corresponding bit-fields shall have
+		the same widths. For two enumerations, corresponding members
+		shall have the same values.
+
+		*/
+		return ms.kind() == Enum
 	case TypedefName:
 		panic("internal error")
 	default:
@@ -1314,6 +1337,8 @@ func specifierString(sp Specifier) string {
 					buf.WriteString(" " + string(xc.Dict.S(o.Token.Val)))
 				}
 				buf.WriteString(" { ... }")
+			case 1: // "enum" IDENTIFIER
+				fmt.Fprintf(&buf, "enum %s", xc.Dict.S(es.Token2.Val))
 			default:
 				panic(es.Case)
 			}
