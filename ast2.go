@@ -710,6 +710,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				n.Value = ^x
 			case uint32:
 				n.Value = ^x
+			case int64:
+				n.Value = ^x
 			case uint64:
 				n.Value = ^x
 			default:
