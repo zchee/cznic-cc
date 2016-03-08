@@ -1091,6 +1091,13 @@ func (m *Model) binOpType(a, b Type) Type {
 		default:
 			panic(bk)
 		}
+	case Enum:
+		switch bk {
+		case Enum:
+			return m.IntType
+		default:
+			panic(bk)
+		}
 	case Undefined:
 		return undefined
 	default:
