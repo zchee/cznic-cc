@@ -942,6 +942,15 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 					default:
 						n.Value = x
 					}
+				case int64:
+					switch {
+					case y > 0:
+						n.Value = x << uint(y)
+					case y < 0:
+						n.Value = x >> uint(-y)
+					default:
+						n.Value = x
+					}
 				default:
 					panic(fmt.Errorf("internal error: %T", y))
 				}
