@@ -47,18 +47,19 @@ type Model struct {
 	IntType        Type
 	LongDoubleType Type
 	LongLongType   Type
-	longStrType    Type
 	LongType       Type
-	ptrDiffType    Type
 	ShortType      Type
-	sizeType       Type
-	strType        Type
 	UCharType      Type
-	UintPtrType    Type
 	UIntType       Type
 	ULongLongType  Type
 	ULongType      Type
+	UShortType     Type
+	UintPtrType    Type
 	VoidType       Type
+	longStrType    Type
+	ptrDiffType    Type
+	sizeType       Type
+	strType        Type
 
 	initialized bool
 }
@@ -73,13 +74,14 @@ func (m *Model) initialize(lx *lexer) {
 	m.LongLongType = m.makeType(lx, 0, tsLong, tsLong)
 	m.LongType = m.makeType(lx, 0, tsLong)
 	m.ShortType = m.makeType(lx, 0, tsShort)
-	m.strType = m.makeType(lx, 0, tsChar).Pointer()
 	m.UCharType = m.makeType(lx, 0, tsUnsigned, tsChar)
 	m.UIntType = m.makeType(lx, 0, tsUnsigned)
 	m.ULongLongType = m.makeType(lx, 0, tsUnsigned, tsLong, tsLong)
 	m.ULongType = m.makeType(lx, 0, tsUnsigned, tsLong)
-	m.VoidType = m.makeType(lx, 0, tsVoid)
+	m.UShortType = m.makeType(lx, 0, tsUnsigned, tsShort)
 	m.UintPtrType = m.makeType(lx, 0, tsUintptr) // Pseudo type.
+	m.VoidType = m.makeType(lx, 0, tsVoid)
+	m.strType = m.makeType(lx, 0, tsChar).Pointer()
 	m.initialized = true
 }
 
@@ -968,6 +970,8 @@ func (m *Model) binOpType(a, b Type) Type {
 		switch bk {
 		case Short, Int:
 			return m.IntType
+		case UShort:
+			return m.UShortType
 		case UInt:
 			return m.UIntType
 		case Long:
