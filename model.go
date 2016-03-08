@@ -1003,6 +1003,8 @@ func (m *Model) binOpType(a, b Type) Type {
 			return m.LongLongType
 		case ULongLong:
 			return m.ULongLongType
+		case Float:
+			return m.FloatType
 		case Double:
 			return m.DoubleType
 		default:
