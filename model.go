@@ -988,7 +988,7 @@ func (m *Model) binOpType(a, b Type) Type {
 		switch bk {
 		case Array:
 			return b.(*ctype).arrayDecay()
-		case Int:
+		case Int, Enum:
 			return m.IntType
 		case UInt:
 			return m.UIntType
