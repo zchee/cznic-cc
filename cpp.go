@@ -543,7 +543,11 @@ next:
 					if i > 0 && repl[i-1].Rune == '#' {
 						r0 = append(r0[:len(r0)-1], stringify(args[ia]))
 					} else {
-						r0 = append(r0, args[ia]...)
+						arg := args[ia]
+						if len(arg) == 0 {
+							arg = []xc.Token{{}}
+						}
+						r0 = append(r0, arg...)
 					}
 					continue next
 				}
@@ -573,7 +577,7 @@ next:
 }
 
 func stringify(toks []xc.Token) xc.Token {
-	if len(toks) == 0 {
+	if len(toks) == 0 || (toks[0] == xc.Token{}) {
 		return xc.Token{Char: lex.NewChar(0, STRINGLITERAL), Val: idEmptyString}
 	}
 
