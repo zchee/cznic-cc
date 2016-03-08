@@ -562,6 +562,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			n.Value, n.Type = m.floatConst(lx, n.Token)
 		case 3: // INTCONST
 			n.Value, n.Type = m.intConst(lx, n.Token)
+		case 4: // LONGCHARCONST
+			n.Value, n.Type = m.charConst(n.Token)
 		case 6: // STRINGLITERAL
 			n.Value, n.Type = m.strConst(lx, n.Token)
 		case 7: //  '(' ExpressionList ')'
@@ -1054,6 +1056,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 					// nop
 				case int32:
 					n.Value = m.cBool(x > b.(int32))
+				case int64:
+					n.Value = m.cBool(x > b.(int64))
 				case uint32:
 					n.Value = m.cBool(x > b.(uint32))
 				default:
