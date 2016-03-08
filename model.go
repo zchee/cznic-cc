@@ -236,6 +236,9 @@ func (m *Model) sanityCheck() error {
 //
 // Conversion an integer type to any pointer type yields an uintptr.
 func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
+	if typ.Kind() == Enum {
+		typ = m.IntType
+	}
 	mi, ok := m.Items[typ.Kind()]
 	if !ok && typ.Kind() != Function {
 		panic(fmt.Errorf("internal error: no model item for %s, %s", typ, typ.Kind()))
