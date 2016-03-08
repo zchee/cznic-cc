@@ -1418,6 +1418,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			51, // Expression "<<=" Expression
 			52, // Expression ">>=" Expression
 			53, // Expression "&=" Expression
+			54, // Expression "^=" Expression
 			55: // Expression "|=" Expression
 			m.checkIntegerType(lx, n.Expression, n.Expression2)
 			n.Type = n.Expression.Type
