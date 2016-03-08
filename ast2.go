@@ -839,6 +839,9 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		case 30: // Expression '-' Expression
 			_, at := n.Expression.eval(lx)
 			_, bt := n.Expression2.eval(lx)
+			if at.Kind() == Array {
+				at = at.Element().Pointer()
+			}
 			if bt.Kind() == Array {
 				bt = bt.Element().Pointer()
 			}
