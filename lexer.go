@@ -325,6 +325,16 @@ func (l *lexer) Lex(lval *yySymType) int {
 			case PPINCLUDE:
 				l.sc = scHEADER
 				l.state = lsTokens
+			case PPINCLUDE_NEXT:
+				if l.tweaks.enableIncludeNext {
+					l.sc = scHEADER
+					l.state = lsTokens
+					break
+				}
+
+				l.state = lsTokens
+				tok.Char = lex.NewChar(tok.Pos(), PPNONDIRECTIVE)
+				tok.Val = xc.Dict.SID("include_next")
 			default:
 				l.state = lsTokens
 				tok.Char = lex.NewChar(tok.Pos(), PPNONDIRECTIVE)

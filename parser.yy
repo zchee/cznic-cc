@@ -83,6 +83,7 @@ import (
 	/*yy:token "\n#ifdef"        */	PPIFDEF			"#ifdef"
 	/*yy:token "\n#ifndef"       */	PPIFNDEF		"#ifndef"
 	/*yy:token "\n#include"      */	PPINCLUDE		"#include"
+	/*yy:token "\n#include_next" */	PPINCLUDE_NEXT		"#include_next"
 	/*yy:token "\n#line"         */	PPLINE			"#line"
 	/*yy:token "\n#foo"          */	PPNONDIRECTIVE		"#foo"
 	/*yy:token "other_%c"        */ PPOTHER			"ppother"
@@ -1777,6 +1778,7 @@ ControlLine:
 			lx.report.ErrTok(decodeTokens(lhs.PPTokenList, nil)[0], "extra tokens after #undef argument")
 		}
 	}
+|	PPINCLUDE_NEXT PPTokenList '\n'
 
 // [0](6.10)
 //yy:ignore

@@ -145,6 +145,7 @@ import (
 	PPIFDEF                      "#ifdef"
 	PPIFNDEF                     "#ifndef"
 	PPINCLUDE                    "#include"
+	PPINCLUDE_NEXT               "#include_next"
 	PPLINE                       "#line"
 	PPNONDIRECTIVE               "#foo"
 	PPNUMBER                     "preprocessing number"
@@ -3377,6 +3378,15 @@ ControlLine:
 		$$ = lhs
 		if !lx.tweaks.enableUndefExtraTokens {
 			lx.report.ErrTok(decodeTokens(lhs.PPTokenList, nil)[0], "extra tokens after #undef argument")
+		}
+	}
+|	PPINCLUDE_NEXT PPTokenList '\n'
+	{
+		$$ = &ControlLine{
+			Case:         14,
+			Token:        $1,
+			PPTokenList:  $2,
+			Token2:       $3,
 		}
 	}
 

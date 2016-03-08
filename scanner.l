@@ -145,6 +145,7 @@ unsigned-suffix                 [uU]
 <DIRECTIVE>"ifdef"              l.pop(); return PPIFDEF
 <DIRECTIVE>"ifndef"             l.pop(); return PPIFNDEF
 <DIRECTIVE>"include"            l.pop(); return PPINCLUDE
+<DIRECTIVE>"include_next"       l.pop(); return PPINCLUDE_NEXT
 <DIRECTIVE>"line"               l.pop(); return PPLINE
 <DIRECTIVE>"pragma"             l.pop(); return PPPRAGMA
 <DIRECTIVE>"undef"              l.pop(); return PPUNDEF

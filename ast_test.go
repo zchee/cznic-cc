@@ -404,6 +404,19 @@ func ExampleControlLine_case13() {
 	// }
 }
 
+func ExampleControlLine_case14() {
+	fmt.Println(exampleAST(278, "\U00100000 \n#include_next other_a "))
+	// Output:
+	// &cc.ControlLine{
+	// · Case: 14,
+	// · PPTokenList: []xc.Token{ // len 1
+	// · · 0: example278.c:2:15: IDENTIFIER "other_a",
+	// · },
+	// · Token: example278.c:2:2: PPINCLUDE_NEXT,
+	// · Token2: example278.c:2:23: '\n',
+	// }
+}
+
 func ExampleDeclaration() {
 	fmt.Println(exampleAST(76, "\U00100002 auto ;"))
 	// Output:

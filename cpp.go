@@ -725,7 +725,7 @@ func (p *pp) groupList(n *GroupList) {
 			<-p.ack
 		case xc.Token:
 			if p.tweaks.enableWarnings {
-				fmt.Printf("[INFO] %s at %s\n", string(gp.S()), xc.FileSet.Position(gp.Pos()).String())
+				fmt.Printf("[INFO] %s at %s\n", gp.S(), xc.FileSet.Position(gp.Pos()).String())
 			}
 		default:
 			panic("internal error")
@@ -886,6 +886,62 @@ func (p *pp) controlLine(n *ControlLine) {
 		}
 
 		delete(p.macros.m, nm)
+	case 14: // PPINCLUDE_NEXT PPTokenList '\n'
+		toks := decodeTokens(n.PPTokenList, nil)
+		if len(toks) == 0 {
+			p.report.ErrTok(n.Token, "invalid #include_next argument")
+			break
+		}
+
+		if p.includeLevel == maxIncludeLevel {
+			p.report.ErrTok(toks[0], "too many include nesting levels")
+			break
+		}
+
+		arg := string(toks[0].S())
+		arg = arg[1 : len(arg)-1]
+		origin := filepath.Dir(n.Token.Position().Filename)
+		var dirs []string
+		found := false
+		for i, dir := range p.includes {
+			if dir == origin {
+				dirs = p.includes[i+1:]
+				found = true
+				break
+			}
+		}
+		if !found {
+			for i, dir := range p.sysIncludes {
+				if dir == origin {
+					dirs = p.sysIncludes[i+1:]
+					found = true
+					break
+				}
+			}
+		}
+
+		for _, dir := range dirs {
+			pth := filepath.Join(dir, arg)
+			if _, err := os.Stat(pth); err != nil {
+				if !os.IsNotExist(err) {
+					p.report.ErrTok(toks[0], err.Error())
+				}
+				continue
+			}
+
+			ppf, err := ppParse(pth, p.report, p.tweaks)
+			if err != nil {
+				p.report.ErrTok(toks[0], err.Error())
+				return
+			}
+
+			p.includeLevel++
+			p.preprocessingFile(ppf)
+			p.includeLevel--
+			return
+		}
+
+		p.report.ErrTok(toks[0], "include file not found: %s", arg)
 	default:
 		panic(n.Case)
 	}

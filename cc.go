@@ -39,6 +39,7 @@ type tweaks struct {
 	enableDefineOmitCommaBeforeDDD bool // #define foo(a, b...)
 	enableDlrInIdentifiers         bool // foo$bar
 	enableEmptyDefine              bool // #define
+	enableIncludeNext              bool //
 	enableTrigraphs                bool // ??=define foo(bar)
 	enableUndefExtraTokens         bool // #undef foo(bar)
 	enableWarnings                 bool // #warning
@@ -53,7 +54,7 @@ func exampleAST(rule int, src string) interface{} {
 		len(src)+1, // Plus final injected NL
 		bytes.NewBufferString(src),
 		report,
-		&tweaks{},
+		&tweaks{enableIncludeNext: true},
 	)
 	lx.model = &Model{ // 64 bit
 		Items: map[Kind]ModelItem{
@@ -155,6 +156,13 @@ type Opt func(*lexer)
 //	};
 func EnableAnonymousStructFields() Opt {
 	return func(l *lexer) { l.tweaks.enableAnonymousStructFields = true }
+}
+
+// EnableIncludeNext makes the parser accept non standard
+//
+//	#include_next "foo.h"
+func EnableIncludeNext() Opt {
+	return func(l *lexer) { l.tweaks.enableIncludeNext = true }
 }
 
 // EnableDefineOmitCommaBeforeDDD makes the parser accept non standard

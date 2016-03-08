@@ -336,6 +336,7 @@ func (n *ConstantExpression) Pos() token.Pos {
 //	|       PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' IDENTIFIER "..." ')' ReplacementList  // Case 11
 //	|       PPDEFINE '\n'                                                                       // Case 12
 //	|       PPUNDEF IDENTIFIER PPTokenList '\n'                                                 // Case 13
+//	|       PPINCLUDE_NEXT PPTokenList '\n'                                                     // Case 14
 type ControlLine struct {
 	Case              int
 	IdentifierList    *IdentifierList
