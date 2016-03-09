@@ -1550,3 +1550,16 @@ func toInt(v interface{}) (int, error) {
 		return -1, fmt.Errorf("not a constant integer expression: %v", x)
 	}
 }
+
+func dedup(a []string) (r []string) {
+	m := map[string]struct{}{}
+	for _, v := range a {
+		if _, ok := m[v]; ok {
+			continue
+		}
+
+		r = append(r, v)
+		m[v] = struct{}{}
+	}
+	return r
+}

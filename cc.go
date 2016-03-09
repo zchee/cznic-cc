@@ -199,15 +199,20 @@ func EnableUndefExtraTokens() Opt {
 	return func(l *lexer) { l.tweaks.enableUndefExtraTokens = true }
 }
 
-// SysIncludePaths option configures where to search for system include files.
-// (<name.h>)
+// SysIncludePaths option configures where to search for system include files
+// (eg. <name.h>). Multiple SysIncludePaths options may be used, the resulting
+// search path list is produced by appending the option arguments in order of
+// appearance.
 func SysIncludePaths(paths []string) Opt {
-	return func(l *lexer) { l.sysIncludePaths = fromSlashes(paths) }
+	return func(l *lexer) { l.sysIncludePaths = dedup(append(l.sysIncludePaths, fromSlashes(paths)...)) }
 }
 
-// IncludePaths option configures where to search for include files. ("name.h")
+// IncludePaths option configures where to search for include files (eg.
+// "name.h").  Multiple IncludePaths options may be used, the resulting search
+// path list is the produce by appending the option arguments in order of
+// appearance.
 func IncludePaths(paths []string) Opt {
-	return func(l *lexer) { l.includePaths = fromSlashes(paths) }
+	return func(l *lexer) { l.includePaths = dedup(append(l.includePaths, fromSlashes(paths)...)) }
 }
 
 // YyDebug sets the parser debug level.
