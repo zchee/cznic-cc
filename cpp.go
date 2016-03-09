@@ -617,7 +617,11 @@ func whitespace(toks []xc.Token) []byte {
 		pos1 := int(tok.Pos())
 		d := byte(0)
 		if pos0 != pos1 {
-			d = 1
+			p0 := ltok.Position()
+			p1 := tok.Position()
+			if p0.Filename == p1.Filename && p0.Line == p1.Line {
+				d = 1
+			}
 		}
 		r = append(r, d)
 		ltok = tok
