@@ -12,8 +12,10 @@ import (
 	"go/scanner"
 	"go/token"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -469,6 +471,114 @@ func TestLexer2(t *testing.T) {
 			{"\x000", x{{0, 1}, {INTCONST, 2}, {-1, 3}}},
 		},
 	)
+}
+
+func testPreprocessor(t *testing.T, predefine string, src []string, opts ...Opt) {
+	for _, v := range src {
+		fi, err := os.Stat(v)
+		if err != nil {
+			if os.IsNotExist(err) {
+				t.Logf("skipping: %v", err)
+				return
+			}
+		}
+
+		if !fi.Mode().IsRegular() {
+			t.Errorf("%s: not a regular file", v)
+			return
+		}
+	}
+
+	var got, exp []xc.Token
+
+	if _, err := Parse(
+		predefine,
+		src,
+		newTestModel(),
+		append(
+			opts,
+			preprocessOnly(),
+			Cpp(func(toks []xc.Token) { got = append(got, toks...) }),
+		)...,
+	); err != nil {
+		t.Error(err)
+		return
+	}
+
+	out, err := exec.Command("cpp", src...).CombinedOutput()
+	if err != nil {
+		t.Fatalf("%v: %v", src, err)
+		return
+	}
+
+	f, err := ioutil.TempFile("", "cc-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		os.Remove(f.Name())
+		f.Close()
+	}()
+
+	w := bufio.NewWriter(f)
+	for _, v := range bytes.SplitAfter(out, []byte{'\n'}) {
+		if !bytes.HasPrefix(v, []byte{'#'}) {
+			if _, err := w.Write(v); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if err := w.Flush(); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := Parse(
+		predefine,
+		[]string{f.Name()},
+		newTestModel(),
+		append(
+			opts,
+			preprocessOnly(),
+			Cpp(func(toks []xc.Token) { exp = append(exp, toks...) }),
+		)...,
+	); err != nil {
+		t.Error(err)
+		return
+	}
+
+	if g, e := len(got), len(exp); g != e {
+		t.Errorf("%v: got %d tokens, expected %d tokens", src, g, e)
+		return
+	}
+
+	for i, gt := range got {
+		et := exp[i]
+		if gt.Rune != et.Rune || gt.Val != et.Val {
+			t.Errorf("\ngot %s\nexp %s", PrettyString(gt), PrettyString(et))
+		}
+	}
+}
+
+func TestPreprocessor(t *testing.T) {
+	predefined, err := cppPredefined()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	sysIncludePaths, err := cppSysIncludePaths()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	sysIncludes := SysIncludePaths(sysIncludePaths)
+	testPreprocessor(t, predefined, []string{"testdata/arith-1.c"})
+	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/shell.c"}, sysIncludes)
+	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/sqlite3.c"}, sysIncludes)
+	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/sqlite3.h"}, sysIncludes)
+	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/sqlite3ext.h"}, sysIncludes)
 }
 
 func TestPPParse1(t *testing.T) {

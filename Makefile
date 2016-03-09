@@ -28,6 +28,7 @@ edit:
 
 editor: parser.go scanner.go trigraphs.go
 	gofmt -l -s -w *.go
+	rm -f log-*.c log-*.h
 	go test 2>&1 | tee log
 	go install
 

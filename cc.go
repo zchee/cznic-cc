@@ -28,11 +28,60 @@ import (
 	"fmt"
 	"go/token"
 	"os"
+	"os/exec"
+	"strings"
+	"sync"
 
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/mathutil"
 	"github.com/cznic/xc"
 )
+
+var (
+	cppPredefine       string
+	cppPredefineError  error
+	cppPredefineOnce   sync.Once
+	cppSysInclude      []string
+	cppSysIncludeError error
+	cppSysIncludeOnce  sync.Once
+)
+
+func cppPredefined() (string, error) {
+	cppPredefineOnce.Do(func() {
+		var out []byte
+		if out, cppPredefineError = exec.Command("cpp", "-dM", "/dev/null").Output(); cppPredefineError != nil {
+			return
+		}
+
+		cppPredefine = string(out)
+	})
+	return cppPredefine, cppPredefineError
+}
+
+func cppSysIncludePaths() ([]string, error) {
+	cppSysIncludeOnce.Do(func() {
+		var out []byte
+		if out, cppSysIncludeError = exec.Command("cpp", "-v", "/dev/null").CombinedOutput(); cppSysIncludeError != nil {
+			return
+		}
+
+		a := strings.Split(string(out), "\n")
+		for i, v := range a {
+			if v == "#include <...> search starts here:" {
+				for _, v := range a[i+1:] {
+					if v == "End of search list." {
+						cppSysInclude = dedup(cppSysInclude)
+						return
+					}
+
+					cppSysInclude = append(cppSysInclude, strings.TrimSpace(v))
+				}
+			}
+		}
+		cppSysIncludeError = fmt.Errorf("failed parsing cpp -v output")
+	})
+	return cppSysInclude, cppSysIncludeError
+}
 
 type tweaks struct {
 	enableAnonymousStructFields    bool //
@@ -44,6 +93,7 @@ type tweaks struct {
 	enableUndefExtraTokens         bool // #undef foo(bar)
 	enableWarnings                 bool // #warning
 	includeLastTokenInfoInErrors   bool //
+	preprocessOnly                 bool //
 }
 
 func exampleAST(rule int, src string) interface{} {
@@ -241,6 +291,8 @@ func Trigraphs() Opt { return func(lx *lexer) { lx.tweaks.enableTrigraphs = true
 // CrashOnError is an debugging option.
 func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }
 
+func preprocessOnly() Opt { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
+
 func nopOpt() Opt { return func(*lexer) {} }
 
 // Parse defines any macros in predefine. Then Parse preprocesses and parses
@@ -314,6 +366,13 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 	lx.ch = ch
 	lx.state = lsTranslationUnit0
 	lx.model = m
+	if lx.tweaks.preprocessOnly {
+		var lval yySymType
+		for lx.Lex(&lval) != 0 {
+		}
+		return nil, report.Errors(true)
+	}
+
 	yyParse(lx)
 	if tu := lx.translationUnit; tu != nil {
 		tu.Macros = macros.macros()
