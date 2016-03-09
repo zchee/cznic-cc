@@ -291,7 +291,8 @@ func Trigraphs() Opt { return func(lx *lexer) { lx.tweaks.enableTrigraphs = true
 // CrashOnError is an debugging option.
 func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }
 
-func preprocessOnly() Opt { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
+func preprocessOnly() Opt  { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
+func disableWarnings() Opt { return func(lx *lexer) { lx.tweaks.enableWarnings = false } }
 
 func nopOpt() Opt { return func(*lexer) {} }
 

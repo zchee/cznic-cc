@@ -489,6 +489,17 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 		}
 	}
 
+	logf, err := os.Create("log-" + filepath.Base(src[len(src)-1]))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer logf.Close()
+
+	logw := bufio.NewWriter(logf)
+
+	defer logw.Flush()
+
 	var got, exp []xc.Token
 
 	if _, err := Parse(
@@ -498,7 +509,15 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 		append(
 			opts,
 			preprocessOnly(),
-			Cpp(func(toks []xc.Token) { got = append(got, toks...) }),
+			Cpp(func(toks []xc.Token) {
+				got = append(got, toks...)
+				for _, v := range toks {
+					logw.WriteString(TokSrc(toC(v)))
+					logw.WriteByte(' ')
+				}
+				logw.WriteByte('\n')
+			}),
+			disableWarnings(),
 		)...,
 	); err != nil {
 		t.Error(err)
@@ -521,15 +540,7 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 		f.Close()
 	}()
 
-	w := bufio.NewWriter(f)
-	for _, v := range bytes.SplitAfter(out, []byte{'\n'}) {
-		if !bytes.HasPrefix(v, []byte{'#'}) {
-			if _, err := w.Write(v); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	if err := w.Flush(); err != nil {
+	if _, err := f.Write(out); err != nil {
 		t.Fatal(err)
 	}
 
@@ -541,6 +552,7 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 			opts,
 			preprocessOnly(),
 			Cpp(func(toks []xc.Token) { exp = append(exp, toks...) }),
+			disableWarnings(),
 		)...,
 	); err != nil {
 		t.Error(err)
@@ -594,7 +606,10 @@ func TestPreprocessor(t *testing.T) {
 #define _FORTIFY_SOURCE 1
 `
 	opts := []Opt{
-		IncludePaths([]string{"testdata/dev/vim/vim/src/proto/"}),
+		IncludePaths([]string{
+			"testdata/dev/vim/vim/src/",
+			"testdata/dev/vim/vim/src/proto/",
+		}),
 		sysIncludes,
 		EnableIncludeNext(),
 	}
@@ -989,7 +1004,7 @@ func TestEnumConstToks(t *testing.T) {
 · · Tokens: []xc.Token{ // len 3
 · · · 0: testdata/enum.c:5:6: INTCONST "314",
 · · · 1: testdata/enum.c:5:10: '+',
-· · · 2: testdata/enum.c:1:11: INTCONST "278",
+· · · 2: testdata/enum.c:5:12: INTCONST "278",
 · · },
 · },
 }`; g != e {

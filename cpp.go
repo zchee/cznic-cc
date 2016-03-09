@@ -7,6 +7,7 @@ package cc
 import (
 	"bytes"
 	"fmt"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -460,8 +461,17 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 		return
 	}
 
+	repl := decodeTokens(m.repl, nil)
+	var pos token.Pos
+	for i, v := range repl {
+		if i == 0 {
+			pos = tok.Pos()
+		}
+		repl[i].Char = lex.NewChar(pos, v.Rune)
+		pos += token.Pos(len(dict.S(tokVal(v))))
+	}
 	p.expand(
-		&tokenBuf{p.expandLineNo(decodeTokens(m.repl, nil), tok)},
+		&tokenBuf{p.expandLineNo(repl, tok)},
 		handleDefined,
 		w,
 	)
@@ -616,7 +626,7 @@ func whitespace(toks []xc.Token) []byte {
 		pos0 := int(ltok.Pos()) + len(dict.S(tokVal(ltok)))
 		pos1 := int(tok.Pos())
 		d := byte(0)
-		if pos0 != pos1 {
+		if pos1 > pos0 {
 			p0 := ltok.Position()
 			p1 := tok.Position()
 			if p0.Filename == p1.Filename && p0.Line == p1.Line {
