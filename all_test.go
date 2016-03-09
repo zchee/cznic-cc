@@ -473,7 +473,7 @@ func TestLexer2(t *testing.T) {
 	)
 }
 
-func testPreprocessor(t *testing.T, predefine string, src []string, opts ...Opt) {
+func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opts ...Opt) {
 	for _, v := range src {
 		fi, err := os.Stat(v)
 		if err != nil {
@@ -505,7 +505,7 @@ func testPreprocessor(t *testing.T, predefine string, src []string, opts ...Opt)
 		return
 	}
 
-	out, err := exec.Command("cpp", src...).CombinedOutput()
+	out, err := exec.Command("cpp", append(cppOpts, src...)...).CombinedOutput()
 	if err != nil {
 		t.Fatalf("%v: %v", src, err)
 		return
@@ -548,14 +548,21 @@ func testPreprocessor(t *testing.T, predefine string, src []string, opts ...Opt)
 	}
 
 	if g, e := len(got), len(exp); g != e {
-		t.Errorf("%v: got %d tokens, expected %d tokens", src, g, e)
-		return
+		t.Errorf("%v: got %d tokens, expected %d tokens (∆ %d)", src, g, e, g-e)
+		switch {
+		case g < e:
+			exp = exp[:g]
+		default:
+			got = got[:e]
+		}
 	}
 
-	for i, gt := range got {
-		et := exp[i]
-		if gt.Rune != et.Rune || gt.Val != et.Val {
-			t.Errorf("\ngot %s\nexp %s", PrettyString(gt), PrettyString(et))
+	for i, g := range got {
+		g = toC(g)
+		e := toC(exp[i])
+		if g.Rune != e.Rune || g.Val != e.Val {
+			t.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))
+			return
 		}
 	}
 }
@@ -574,11 +581,82 @@ func TestPreprocessor(t *testing.T) {
 	}
 
 	sysIncludes := SysIncludePaths(sysIncludePaths)
-	testPreprocessor(t, predefined, []string{"testdata/arith-1.c"})
-	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/shell.c"}, sysIncludes)
-	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/sqlite3.c"}, sysIncludes)
-	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/sqlite3.h"}, sysIncludes)
-	testPreprocessor(t, predefined, []string{"testdata/dev/sqlite3/sqlite3ext.h"}, sysIncludes)
+
+	testPreprocessor(t, predefined, nil, []string{"testdata/arith-1.c"})
+
+	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/shell.c"}, sysIncludes)
+	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3.c"}, sysIncludes)
+	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3.h"}, sysIncludes)
+	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3ext.h"}, sysIncludes)
+
+	predefine := predefined + `
+#define HAVE_CONFIG_H
+#define _FORTIFY_SOURCE 1
+`
+	opts := []Opt{
+		IncludePaths([]string{"testdata/dev/vim/vim/src/proto/"}),
+		sysIncludes,
+		EnableIncludeNext(),
+	}
+	cppOpts := []string{
+		"-Itestdata/dev/vim/vim/src/proto",
+		"-DHAVE_CONFIG_H",
+		"-U_FORTIFY_SOURCE",
+		"-D_FORTIFY_SOURCE=1",
+	}
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/buffer.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/blowfish.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/charset.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/crypt.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/crypt_zip.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/diff.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/digraph.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/edit.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/eval.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_cmds.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_cmds2.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_docmd.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_eval.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_getln.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/fileio.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/fold.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/getchar.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/hardcopy.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/hashtab.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/if_cscope.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/if_xcmdsrv.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/mark.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/memline.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/menu.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/message.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/misc1.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/misc2.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/move.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/mbyte.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/normal.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ops.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/option.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/os_unix.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/auto/pathdef.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/popupmnu.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/quickfix.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/regexp.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/screen.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/search.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/sha256.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/spell.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/syntax.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/tag.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/term.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ui.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/undo.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/window.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/netbeans.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/channel.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/json.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/main.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/memfile.c"}, opts...)
+	testPreprocessor(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/version.c"}, opts...)
 }
 
 func TestPPParse1(t *testing.T) {
