@@ -462,11 +462,8 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 	}
 
 	repl := decodeTokens(m.repl, nil)
-	var pos token.Pos
+	pos := tok.Pos()
 	for i, v := range repl {
-		if i == 0 {
-			pos = tok.Pos()
-		}
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 		pos += token.Pos(len(dict.S(tokVal(v))))
 	}
@@ -627,11 +624,7 @@ func whitespace(toks []xc.Token) []byte {
 		pos1 := int(tok.Pos())
 		d := byte(0)
 		if pos1 > pos0 {
-			p0 := ltok.Position()
-			p1 := tok.Position()
-			if p0.Filename == p1.Filename && p0.Line == p1.Line {
-				d = 1
-			}
+			d = 1
 		}
 		r = append(r, d)
 		ltok = tok
