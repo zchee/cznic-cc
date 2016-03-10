@@ -579,6 +579,24 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 	}
 }
 
+func dirExists(dir string) bool {
+	dir = filepath.FromSlash(dir)
+	fi, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+
+		panic(err)
+	}
+
+	if !fi.IsDir() {
+		panic(err)
+	}
+
+	return true
+}
+
 func TestPreprocessor(t *testing.T) {
 	predefined, err := cppPredefined()
 	if err != nil {
@@ -596,10 +614,18 @@ func TestPreprocessor(t *testing.T) {
 
 	testPreprocessor(t, predefined, nil, []string{"testdata/arith-1.c"})
 
+	if !dirExists("testdata/dev/sqlite3") {
+		return
+	}
+
 	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/shell.c"}, sysIncludes)
 	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3.c"}, sysIncludes)
 	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3.h"}, sysIncludes)
 	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3ext.h"}, sysIncludes)
+
+	if !dirExists("testdata/dev/vim") {
+		return
+	}
 
 	predefine := predefined + `
 #define HAVE_CONFIG_H
@@ -614,6 +640,7 @@ func TestPreprocessor(t *testing.T) {
 		EnableIncludeNext(),
 	}
 	cppOpts := []string{
+		"-Itestdata/dev/vim/vim/src/",
 		"-Itestdata/dev/vim/vim/src/proto",
 		"-DHAVE_CONFIG_H",
 		"-U_FORTIFY_SOURCE",
