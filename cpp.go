@@ -258,6 +258,8 @@ func (p *pp) pp2(ch chan []xc.Token) {
 	pipe := &tokenPipe{ack: p.ack, r: p.in, w: ch}
 	for !pipe.eof(true) {
 		pipe.ackMore = true
+		m := p.macros
+		m.nonRepl = m.nonRepl[:0]
 		p.expand(pipe, false, func(toks []xc.Token) { pipe.out = append(pipe.out, toks...) })
 		pipe.ackMore = false
 		p.ack <- struct{}{}
@@ -454,6 +456,7 @@ again:
 
 func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bool, w func([]xc.Token)) {
 	nm := tok.Val
+
 	p.expandingMacros[nm]++
 	defer func() { p.expandingMacros[nm]-- }()
 
@@ -464,12 +467,6 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 		}
 	}
 
-	if p.expandingMacros[nm] > 1 {
-		p.macros.nonRepl = append(p.macros.nonRepl, nm)
-		w([]xc.Token{tok})
-		return
-	}
-
 	if m.IsFnLike {
 		p.expandFnMacro(tok, r, m, handleDefined, w)
 		return
@@ -478,6 +475,9 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 	repl := trimSpace(decodeTokens(m.repl, nil, true))
 	pos := tok.Pos()
 	for i, v := range repl {
+		if v.Rune == IDENTIFIER && p.expandingMacros[v.Val] != 0 {
+			p.macros.nonRepl = append(p.macros.nonRepl, v.Val)
+		}
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
 	p.expand(
@@ -537,6 +537,11 @@ again:
 		args[i] = trimSpace(arg)
 	}
 	repl := trimSpace(decodeTokens(m.repl, nil, true))
+	for _, v := range repl {
+		if v.Rune == IDENTIFIER && p.expandingMacros[v.Val] != 0 {
+			p.macros.nonRepl = append(p.macros.nonRepl, v.Val)
+		}
+	}
 	if len(repl) != 0 {
 		for i := 0; i < len(repl)-1; {
 			switch tok := repl[i]; tok.Rune {
