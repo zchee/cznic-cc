@@ -267,8 +267,8 @@ func (p *pp) pp2(ch chan []xc.Token) {
 }
 
 func (p *pp) checkCompatibleReplacementTokenList(tok xc.Token, oldList, newList PPTokenList) {
-	ex := decodeTokens(oldList, nil, true)
-	toks := decodeTokens(newList, nil, true)
+	ex := trimSpace(decodeTokens(oldList, nil, true))
+	toks := trimSpace(decodeTokens(newList, nil, true))
 
 	if g, e := len(toks), len(ex); g != e && len(ex) > 0 {
 		p.report.ErrTok(tok, "cannot redefine macro using a replacement list of different length")
