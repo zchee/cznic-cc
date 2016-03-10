@@ -240,6 +240,9 @@ func ExampleControlLine() {
 	fmt.Println(exampleAST(264, "\U00100000 \n#define a "))
 	// Output:
 	// &cc.ControlLine{
+	// · ReplacementList: []xc.Token{ // len 1
+	// · · 0: example264.c:2:10: ' ',
+	// · },
 	// · Token: example264.c:2:2: PPDEFINE,
 	// · Token2: example264.c:2:9: IDENTIFIER "a",
 	// }
@@ -250,6 +253,9 @@ func ExampleControlLine_case01() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 1,
+	// · ReplacementList: []xc.Token{ // len 1
+	// · · 0: example265.c:2:17: ' ',
+	// · },
 	// · Token: example265.c:2:2: PPDEFINE,
 	// · Token2: example265.c:2:9: IDENTIFIER_LPAREN "a(",
 	// · Token3: example265.c:2:12: DDD,
@@ -265,6 +271,9 @@ func ExampleControlLine_case02() {
 	// · IdentifierList: &cc.IdentifierList{
 	// · · Token: example266.c:2:12: IDENTIFIER "b",
 	// · },
+	// · ReplacementList: []xc.Token{ // len 1
+	// · · 0: example266.c:2:21: ' ',
+	// · },
 	// · Token: example266.c:2:2: PPDEFINE,
 	// · Token2: example266.c:2:9: IDENTIFIER_LPAREN "a(",
 	// · Token3: example266.c:2:14: ',',
@@ -278,6 +287,9 @@ func ExampleControlLine_case03() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 3,
+	// · ReplacementList: []xc.Token{ // len 1
+	// · · 0: example267.c:2:13: ' ',
+	// · },
 	// · Token: example267.c:2:2: PPDEFINE,
 	// · Token2: example267.c:2:9: IDENTIFIER_LPAREN "a(",
 	// · Token3: example267.c:2:12: ')',
@@ -289,6 +301,9 @@ func ExampleControlLine_case04() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 4,
+	// · PPTokenListOpt: []xc.Token{ // len 1
+	// · · 0: example268.c:2:7: ' ',
+	// · },
 	// · Token: example268.c:2:2: PPERROR,
 	// }
 }
@@ -307,8 +322,10 @@ func ExampleControlLine_case06() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 6,
-	// · PPTokenList: []xc.Token{ // len 1
-	// · · 0: example270.c:2:10: IDENTIFIER "other_a",
+	// · PPTokenList: []xc.Token{ // len 3
+	// · · 0: example270.c:2:9: ' ',
+	// · · 1: example270.c:2:10: IDENTIFIER "other_a",
+	// · · 2: example270.c:2:17: ' ',
 	// · },
 	// · Token: example270.c:2:2: PPINCLUDE,
 	// · Token2: example270.c:2:18: '\n',
@@ -320,8 +337,10 @@ func ExampleControlLine_case07() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 7,
-	// · PPTokenList: []xc.Token{ // len 1
-	// · · 0: example271.c:2:7: IDENTIFIER "other_a",
+	// · PPTokenList: []xc.Token{ // len 3
+	// · · 0: example271.c:2:6: ' ',
+	// · · 1: example271.c:2:7: IDENTIFIER "other_a",
+	// · · 2: example271.c:2:14: ' ',
 	// · },
 	// · Token: example271.c:2:2: PPLINE,
 	// · Token2: example271.c:2:15: '\n',
@@ -333,18 +352,21 @@ func ExampleControlLine_case08() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 8,
+	// · PPTokenListOpt: []xc.Token{ // len 1
+	// · · 0: example272.c:2:8: ' ',
+	// · },
 	// · Token: example272.c:2:2: PPPRAGMA,
 	// }
 }
 
 func ExampleControlLine_case09() {
-	fmt.Println(exampleAST(273, "\U00100000 \n#undef a "))
+	fmt.Println(exampleAST(273, "\U00100000 \n#undef foo"))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 9,
 	// · Token: example273.c:2:2: PPUNDEF,
-	// · Token2: example273.c:2:8: IDENTIFIER "a",
-	// · Token3: example273.c:2:10: '\n',
+	// · Token2: example273.c:2:8: IDENTIFIER "foo",
+	// · Token3: example273.c:2:11: '\n',
 	// }
 }
 
@@ -353,6 +375,9 @@ func ExampleControlLine_case10() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 10,
+	// · ReplacementList: []xc.Token{ // len 1
+	// · · 0: example274.c:2:19: ' ',
+	// · },
 	// · Token: example274.c:2:2: PPDEFINE,
 	// · Token2: example274.c:2:9: IDENTIFIER_LPAREN "a(",
 	// · Token3: example274.c:2:12: IDENTIFIER "b",
@@ -368,6 +393,9 @@ func ExampleControlLine_case11() {
 	// · Case: 11,
 	// · IdentifierList: &cc.IdentifierList{
 	// · · Token: example275.c:2:12: IDENTIFIER "b",
+	// · },
+	// · ReplacementList: []xc.Token{ // len 1
+	// · · 0: example275.c:2:23: ' ',
 	// · },
 	// · Token: example275.c:2:2: PPDEFINE,
 	// · Token2: example275.c:2:9: IDENTIFIER_LPAREN "a(",
@@ -409,8 +437,10 @@ func ExampleControlLine_case14() {
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 14,
-	// · PPTokenList: []xc.Token{ // len 1
-	// · · 0: example278.c:2:15: IDENTIFIER "other_a",
+	// · PPTokenList: []xc.Token{ // len 3
+	// · · 0: example278.c:2:14: ' ',
+	// · · 1: example278.c:2:15: IDENTIFIER "other_a",
+	// · · 2: example278.c:2:22: ' ',
 	// · },
 	// · Token: example278.c:2:2: PPINCLUDE_NEXT,
 	// · Token2: example278.c:2:23: '\n',
@@ -963,8 +993,10 @@ func ExampleElifGroup() {
 	fmt.Println(exampleAST(259, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif"))
 	// Output:
 	// &cc.ElifGroup{
-	// · PPTokenList: []xc.Token{ // len 1
-	// · · 0: example259.c:3:7: IDENTIFIER "other_b",
+	// · PPTokenList: []xc.Token{ // len 3
+	// · · 0: example259.c:3:6: ' ',
+	// · · 1: example259.c:3:7: IDENTIFIER "other_b",
+	// · · 2: example259.c:3:14: ' ',
 	// · },
 	// · Token: example259.c:3:2: PPELIF,
 	// · Token2: example259.c:3:16: '\n',
@@ -976,8 +1008,10 @@ func ExampleElifGroupList() {
 	// Output:
 	// &cc.ElifGroupList{
 	// · ElifGroup: &cc.ElifGroup{
-	// · · PPTokenList: []xc.Token{ // len 1
-	// · · · 0: example255.c:3:7: IDENTIFIER "other_b",
+	// · · PPTokenList: []xc.Token{ // len 3
+	// · · · 0: example255.c:3:6: ' ',
+	// · · · 1: example255.c:3:7: IDENTIFIER "other_b",
+	// · · · 2: example255.c:3:14: ' ',
 	// · · },
 	// · · Token: example255.c:3:2: PPELIF,
 	// · · Token2: example255.c:3:16: '\n',
@@ -990,8 +1024,10 @@ func ExampleElifGroupList_case1() {
 	// Output:
 	// &cc.ElifGroupList{
 	// · ElifGroup: &cc.ElifGroup{
-	// · · PPTokenList: []xc.Token{ // len 1
-	// · · · 0: example256.c:3:7: IDENTIFIER "other_b",
+	// · · PPTokenList: []xc.Token{ // len 3
+	// · · · 0: example256.c:3:6: ' ',
+	// · · · 1: example256.c:3:7: IDENTIFIER "other_b",
+	// · · · 2: example256.c:3:14: ' ',
 	// · · },
 	// · · Token: example256.c:3:2: PPELIF,
 	// · · Token2: example256.c:3:16: '\n',
@@ -999,8 +1035,10 @@ func ExampleElifGroupList_case1() {
 	// · ElifGroupList: &cc.ElifGroupList{
 	// · · Case: 1,
 	// · · ElifGroup: &cc.ElifGroup{
-	// · · · PPTokenList: []xc.Token{ // len 1
-	// · · · · 0: example256.c:4:7: IDENTIFIER "other_c",
+	// · · · PPTokenList: []xc.Token{ // len 3
+	// · · · · 0: example256.c:4:6: ' ',
+	// · · · · 1: example256.c:4:7: IDENTIFIER "other_c",
+	// · · · · 2: example256.c:4:14: ' ',
 	// · · · },
 	// · · · Token: example256.c:4:2: PPELIF,
 	// · · · Token2: example256.c:4:16: '\n',
@@ -1021,8 +1059,10 @@ func ExampleElifGroupListOpt_case1() {
 	// &cc.ElifGroupListOpt{
 	// · ElifGroupList: &cc.ElifGroupList{
 	// · · ElifGroup: &cc.ElifGroup{
-	// · · · PPTokenList: []xc.Token{ // len 1
-	// · · · · 0: example258.c:3:7: IDENTIFIER "other_b",
+	// · · · PPTokenList: []xc.Token{ // len 3
+	// · · · · 0: example258.c:3:6: ' ',
+	// · · · · 1: example258.c:3:7: IDENTIFIER "other_b",
+	// · · · · 2: example258.c:3:14: ' ',
 	// · · · },
 	// · · · Token: example258.c:3:2: PPELIF,
 	// · · · Token2: example258.c:3:16: '\n',
@@ -2207,12 +2247,13 @@ func ExampleGroupList_case1() {
 	// &cc.GroupList{
 	// · GroupList: &cc.GroupList{
 	// · · Case: 1,
-	// · · GroupPart: []xc.Token{ // len 5
+	// · · GroupPart: []xc.Token{ // len 6
 	// · · · 0: example244.c:2:1: IDENTIFIER "f",
 	// · · · 1: example244.c:2:2: '(',
 	// · · · 2: example244.c:2:3: ')',
-	// · · · 3: example244.c:2:5: '{',
-	// · · · 4: example244.c:2:6: '}',
+	// · · · 3: example244.c:2:4: ' ',
+	// · · · 4: example244.c:2:5: '{',
+	// · · · 5: example244.c:2:6: '}',
 	// · · },
 	// · },
 	// · GroupPart: []xc.Token{ // len 1
@@ -2294,8 +2335,10 @@ func ExampleIfGroup() {
 	fmt.Println(exampleAST(252, "\U00100000 \n#if other_a  \n#elif"))
 	// Output:
 	// &cc.IfGroup{
-	// · PPTokenList: []xc.Token{ // len 1
-	// · · 0: example252.c:2:5: IDENTIFIER "other_a",
+	// · PPTokenList: []xc.Token{ // len 3
+	// · · 0: example252.c:2:4: ' ',
+	// · · 1: example252.c:2:5: IDENTIFIER "other_a",
+	// · · 2: example252.c:2:12: ' ',
 	// · },
 	// · Token: example252.c:2:2: PPIF,
 	// · Token2: example252.c:2:14: '\n',
@@ -2332,8 +2375,10 @@ func ExampleIfSection() {
 	// · · Token: example251.c:3:2: PPENDIF,
 	// · },
 	// · IfGroup: &cc.IfGroup{
-	// · · PPTokenList: []xc.Token{ // len 1
-	// · · · 0: example251.c:2:5: IDENTIFIER "other_a",
+	// · · PPTokenList: []xc.Token{ // len 3
+	// · · · 0: example251.c:2:4: ' ',
+	// · · · 1: example251.c:2:5: IDENTIFIER "other_a",
+	// · · · 2: example251.c:2:12: ' ',
 	// · · },
 	// · · Token: example251.c:2:2: PPIF,
 	// · · Token2: example251.c:2:14: '\n',

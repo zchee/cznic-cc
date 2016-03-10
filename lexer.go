@@ -178,8 +178,13 @@ func (l *lexer) popScope(tok xc.Token) (old, new *Bindings) {
 var dlr = []byte{'$'}
 
 func (l *lexer) scanChar() (c lex.Char) {
+again:
 	r := rune(l.scan())
 	switch r {
+	case ' ':
+		if l.state != lsTokens {
+			goto again
+		}
 	case '\n':
 		l.state = lsBOL
 		l.sc = scINITIAL
@@ -222,8 +227,9 @@ func (l *lexer) scanToken() (tok xc.Token) {
 				l.cpp(l.textLine)
 			}
 		}
-		tok = l.scope.lexerHack(l.textLine[0], l.tokLast)
+		tok = l.textLine[0]
 		l.textLine = l.textLine[1:]
+		tok = l.scope.lexerHack(tok, l.tokLast)
 	default:
 		c := l.scanChar()
 		if c.Rune == ccEOF {
@@ -397,11 +403,15 @@ func (l *lexer) Reduced(rule, state int, lval *yySymType) (stop bool) {
 
 func (l *lexer) parsePPConstExpr0(list PPTokenList, p *pp) (interface{}, Type) {
 	l.toks = l.toks[:0]
-	p.expand(&tokenBuf{decodeTokens(list, nil)}, true, func(toks []xc.Token) {
+	p.expand(&tokenBuf{decodeTokens(list, nil, true)}, true, func(toks []xc.Token) {
 		l.toks = append(l.toks, toks...)
 	})
-	for i, tok := range l.toks {
-		if tok.Rune == IDENTIFIER {
+	w := 0
+	for _, tok := range l.toks {
+		switch tok.Rune {
+		case ' ':
+			// nop
+		case IDENTIFIER:
 			if p.macros.m[tok.Val] != nil {
 				l.report.ErrTok(tok, "expected constant expression")
 				return nil, nil
@@ -409,9 +419,13 @@ func (l *lexer) parsePPConstExpr0(list PPTokenList, p *pp) (interface{}, Type) {
 
 			tok.Rune = INTCONST
 			tok.Val = id0
-			l.toks[i] = tok
+			fallthrough
+		default:
+			l.toks[w] = tok
+			w++
 		}
 	}
+	l.toks = l.toks[:w]
 	l.state = lsConstExpr0
 	if yyParse(l) == 0 {
 		e := l.constantExpression

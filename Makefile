@@ -7,6 +7,7 @@
 grep=--include=*.go --include=*.l --include=*.y
 
 all: editor
+	rm -f log-*.c log-*.h
 	go vet || true
 	golint || true
 	make todo
@@ -47,6 +48,7 @@ nuke: clean
 	go clean -i
 
 parser.go scanner.go trigraphs.go: parser.yy trigraphs.l scanner.l
+	rm -f log-*.c log-*.h
 	go test -i
 	go generate
 

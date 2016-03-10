@@ -3235,11 +3235,10 @@ yystate241:
 	}
 
 yyrule1: // [ \t\f\v]+
-
-	goto yystate0
 yyrule2: // "//".*
-
-	goto yystate0
+	{
+		return ' '
+	}
 yyrule3: // "/*"
 	{
 		l.commentPos0 = l.First.Pos()
@@ -3249,7 +3248,8 @@ yyrule3: // "/*"
 yyrule4: // {comment-close}
 	{
 		l.pop()
-		goto yystate0
+		l.First = lex.NewChar(l.commentPos0, l.First.Rune)
+		return ' '
 	}
 yyrule5: // {eof}
 	{

@@ -7,7 +7,6 @@ package cc
 import (
 	"bytes"
 	"fmt"
-	"go/token"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -47,7 +46,7 @@ type Macro struct {
 }
 
 // ReplacementToks returns the tokens that replace m.
-func (m *Macro) ReplacementToks() (r []xc.Token) { return decodeTokens(m.repl, nil) }
+func (m *Macro) ReplacementToks() (r []xc.Token) { return decodeTokens(m.repl, nil, false) }
 
 func (m *Macro) findArg(nm int) int {
 	for i, v := range m.Args {
@@ -157,6 +156,7 @@ func (t *tokenPipe) peek() xc.Token { return t.in[0] }
 func (t *tokenPipe) read() xc.Token { r := t.peek(); t.in = t.in[1:]; return r }
 
 func (t *tokenPipe) flush(final bool) {
+	t.out = trimSpace(t.out)
 	if n := len(t.out); !final && n != 0 {
 		if tok := t.out[n-1]; tok.Rune == STRINGLITERAL || tok.Rune == LONGSTRINGLITERAL {
 			// Accumulate lines b/c of possible string concatenation of preprocessing phase 6.
@@ -164,12 +164,23 @@ func (t *tokenPipe) flush(final bool) {
 		}
 	}
 
+	w := 0
+	for _, v := range t.out {
+		switch v.Rune {
+		case ' ':
+			// nop
+		default:
+			t.out[w] = v
+			w++
+		}
+	}
+	t.out = t.out[:w]
 	if len(t.out) == 0 {
 		return
 	}
 
 	// Preproc phase 6. Adjacent string literal tokens are concatenated.
-	w := 0
+	w = 0
 	for r := 0; r < len(t.out); r++ {
 		v := t.out[r]
 		switch v.Rune {
@@ -256,8 +267,8 @@ func (p *pp) pp2(ch chan []xc.Token) {
 }
 
 func (p *pp) checkCompatibleReplacementTokenList(tok xc.Token, oldList, newList PPTokenList) {
-	ex := decodeTokens(oldList, nil)
-	toks := decodeTokens(newList, nil)
+	ex := decodeTokens(oldList, nil, true)
+	toks := decodeTokens(newList, nil, true)
 
 	if g, e := len(toks), len(ex); g != e && len(ex) > 0 {
 		p.report.ErrTok(tok, "cannot redefine macro using a replacement list of different length")
@@ -268,15 +279,15 @@ func (p *pp) checkCompatibleReplacementTokenList(tok xc.Token, oldList, newList 
 		return
 	}
 
+	if g, e := whitespace(toks), whitespace(ex); !bytes.Equal(g, e) {
+		p.report.ErrTok(tok, "cannot redefine macro, whitespace differs")
+	}
+
 	for i, g := range toks {
 		if e := ex[i]; g.Rune != e.Rune || g.Val != e.Val {
 			p.report.ErrTok(tok, "cannot redefine macro using a different replacement list")
 			return
 		}
-	}
-
-	if g, e := whitespace(toks), whitespace(ex); !bytes.Equal(g, e) {
-		p.report.ErrTok(tok, "cannot redefine macro, whitespace differs")
 	}
 }
 
@@ -384,12 +395,15 @@ func (p *pp) expand(r tokenReader, handleDefined bool, w func([]xc.Token)) {
 }
 
 func (p *pp) expandDefined(tok xc.Token, r tokenReader, w func([]xc.Token)) {
+again:
 	if r.eof(false) {
 		p.report.ErrTok(tok, "'defined' with no argument")
 		return
 	}
 
 	switch tok = r.read(); tok.Rune {
+	case ' ':
+		goto again
 	case '(': // defined (IDENTIFIER)
 		if r.eof(false) {
 			p.report.ErrTok(tok, "'defined' with no argument")
@@ -461,11 +475,10 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 		return
 	}
 
-	repl := decodeTokens(m.repl, nil)
+	repl := trimSpace(decodeTokens(m.repl, nil, true))
 	pos := tok.Pos()
 	for i, v := range repl {
 		repl[i].Char = lex.NewChar(pos, v.Rune)
-		pos += token.Pos(len(dict.S(tokVal(v))))
 	}
 	p.expand(
 		&tokenBuf{p.expandLineNo(repl, tok)},
@@ -486,12 +499,17 @@ func (p *pp) expandLineNo(toks []xc.Token, lineTok xc.Token) []xc.Token {
 }
 
 func (p *pp) expandFnMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bool, w func([]xc.Token)) {
+again:
 	if r.eof(true) {
 		w([]xc.Token{tok})
 		return
 	}
 
-	if r.peek().Rune != '(' { // != name()
+	switch c := r.peek().Rune; {
+	case c == ' ':
+		r.read()
+		goto again
+	case c != '(': // != name()
 		w([]xc.Token{tok})
 		return
 	}
@@ -515,8 +533,32 @@ func (p *pp) expandFnMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined 
 		args[i] = nil
 		p.expand(&tokenBuf{p.expandLineNo(arg, tok)}, handleDefined, func(toks []xc.Token) { args[i] = append(args[i], toks...) })
 	}
-	repl := decodeTokens(m.repl, nil)
+	for i, arg := range args {
+		args[i] = trimSpace(arg)
+	}
+	repl := trimSpace(decodeTokens(m.repl, nil, true))
 	if len(repl) != 0 {
+		for i := 0; i < len(repl)-1; {
+			switch tok := repl[i]; tok.Rune {
+			case ' ':
+				if repl[i+1].Rune == PPPASTE {
+					repl = append(repl[:i], repl[i+1:]...)
+					if i > 0 {
+						i--
+					}
+					break
+				}
+
+				if i > 0 && repl[i-1].Rune == PPPASTE {
+					repl = append(repl[:i], repl[i+1:]...)
+					break
+				}
+
+				i++
+			default:
+				i++
+			}
+		}
 		for i, tok := range repl[:len(repl)-1] {
 			switch tok.Rune {
 			case PPPASTE:
@@ -584,18 +626,15 @@ next:
 }
 
 func stringify(toks []xc.Token) xc.Token {
+	toks = trimSpace(toks)
 	if len(toks) == 0 || (toks[0] == xc.Token{}) {
 		return xc.Token{Char: lex.NewChar(0, STRINGLITERAL), Val: idEmptyString}
 	}
 
 	v := tokVal(toks[0])
-	w := whitespace(toks)
 	s := append([]byte{'"'}, unquote(dict.S(v))...)
-	for i, t := range toks[1:] {
+	for _, t := range toks[1:] {
 		v = tokVal(t)
-		if w[i] != 0 {
-			s = append(s, ' ')
-		}
 		s = append(s, unquote(dict.S(v))...)
 	}
 	s = append(s, '"')
@@ -620,13 +659,16 @@ func whitespace(toks []xc.Token) []byte {
 	r := make([]byte, 0, len(toks)-1)
 	ltok := toks[0]
 	for _, tok := range toks[1:] {
-		pos0 := int(ltok.Pos()) + len(dict.S(tokVal(ltok)))
-		pos1 := int(tok.Pos())
-		d := byte(0)
-		if pos1 > pos0 {
-			d = 1
+		if ltok.Rune == ' ' {
+			continue
 		}
-		r = append(r, d)
+
+		switch {
+		case tok.Rune == ' ':
+			r = append(r, 1)
+		default:
+			r = append(r, 0)
+		}
 		ltok = tok
 	}
 	return r
@@ -727,7 +769,7 @@ func (p *pp) groupList(n *GroupList) {
 				break
 			}
 
-			toks := decodeTokens(gp, nil)
+			toks := decodeTokens(gp, nil, true)
 			p.in <- toks
 			<-p.ack
 		case xc.Token:
@@ -831,14 +873,14 @@ func (p *pp) controlLine(n *ControlLine) {
 		p.defineFnMacro(n.Token2, l, n.ReplacementList)
 	case 4: // PPERROR PPTokenListOpt
 		var sep string
-		toks := decodeTokens(n.PPTokenListOpt, nil)
+		toks := decodeTokens(n.PPTokenListOpt, nil, true)
 		s := stringify(toks)
 		if s.Val != 0 {
 			sep = ": "
 		}
 		p.report.ErrTok(n.Token, "error%s%s", sep, s.S())
 	case 6: // PPINCLUDE PPTokenList
-		toks := decodeTokens(n.PPTokenList, nil)
+		toks := decodeTokens(n.PPTokenList, nil, false)
 		if len(toks) == 0 {
 			p.report.ErrTok(n.Token, "invalid #include argument")
 			break
@@ -885,7 +927,9 @@ func (p *pp) controlLine(n *ControlLine) {
 	case 8: // PPPRAGMA PPTokenListOpt
 		// simply ignore pragmas (#pragma once already works)
 		return
-	case 9: // PPUNDEF IDENTIFIER '\n'
+	case
+		9,  // PPUNDEF IDENTIFIER '\n'
+		13: // PPUNDEF IDENTIFIER PPTokenList '\n'
 		nm := n.Token2.Val
 		if protectedMacros[nm] && p.protectMacros {
 			p.report.ErrTok(n.Token2, "cannot undefine protected macro")
@@ -894,7 +938,7 @@ func (p *pp) controlLine(n *ControlLine) {
 
 		delete(p.macros.m, nm)
 	case 14: // PPINCLUDE_NEXT PPTokenList '\n'
-		toks := decodeTokens(n.PPTokenList, nil)
+		toks := decodeTokens(n.PPTokenList, nil, false)
 		if len(toks) == 0 {
 			p.report.ErrTok(n.Token, "invalid #include_next argument")
 			break

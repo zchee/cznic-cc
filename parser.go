@@ -5136,9 +5136,13 @@ yynewstate:
 				Token3:      yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
-			if !lx.tweaks.enableUndefExtraTokens {
-				lx.report.ErrTok(decodeTokens(lhs.PPTokenList, nil)[0], "extra tokens after #undef argument")
+			toks := decodeTokens(lhs.PPTokenList, nil, false)
+			if len(toks) == 0 {
+				lhs.Case = 9 // PPUNDEF IDENTIFIER '\n'
+				break
 			}
+
+			lx.report.ErrTok(toks[0], "extra tokens after #undef argument")
 		}
 	case 278:
 		{

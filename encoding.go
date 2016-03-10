@@ -119,7 +119,7 @@ func (p PPTokenList) Pos() token.Pos {
 		return 0
 	}
 
-	return decodeTokens(p, nil)[0].Pos()
+	return decodeTokens(p, nil, false)[0].Pos()
 }
 
 // Linkage is a C linkage kind ([0], 6.2.2, p. 30)
@@ -533,12 +533,17 @@ func decodeToken(p *[]byte, pos *token.Pos) xc.Token {
 	return xc.Token{Char: c, Val: int(v)}
 }
 
-func decodeTokens(id PPTokenList, r []xc.Token) []xc.Token {
+func decodeTokens(id PPTokenList, r []xc.Token, withSpaces bool) []xc.Token {
 	b := dict.S(int(id))
 	var pos token.Pos
 	r = r[:0]
 	for len(b) != 0 {
-		r = append(r, decodeToken(&b, &pos))
+		tok := decodeToken(&b, &pos)
+		if tok.Rune == ' ' && !withSpaces {
+			continue
+		}
+
+		r = append(r, tok)
 	}
 	return r
 }

@@ -70,6 +70,7 @@ var (
 	oFailFast = flag.Bool("ff", false, "crash on first reported error (in some tests.)")
 	oLong     = flag.Bool("long", false, "Enable long tests. (false)")
 	oRE       = flag.String("re", "", "Regexp filter.")
+	oTmp      = flag.Bool("tmp", false, "keep certain temp files.")
 
 	includes = []string{}
 
@@ -489,6 +490,7 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 		}
 	}
 
+	t.Log(src)
 	logf, err := os.Create("log-" + filepath.Base(src[len(src)-1]))
 	if err != nil {
 		t.Fatal(err)
@@ -502,7 +504,7 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 
 	var got, exp []xc.Token
 
-	if _, err := Parse(
+	_, err = Parse(
 		predefine,
 		src,
 		newTestModel(),
@@ -519,8 +521,9 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 			}),
 			disableWarnings(),
 		)...,
-	); err != nil {
-		t.Error(err)
+	)
+	if err != nil {
+		t.Error(errString(err))
 		return
 	}
 
@@ -536,7 +539,9 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 	}
 
 	defer func() {
-		os.Remove(f.Name())
+		if !*oTmp {
+			os.Remove(f.Name())
+		}
 		f.Close()
 	}()
 
@@ -579,7 +584,7 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 	}
 }
 
-func dirExists(dir string) bool {
+func dirExists(t *testing.T, dir string) bool {
 	dir = filepath.FromSlash(dir)
 	fi, err := os.Stat(dir)
 	if err != nil {
@@ -587,11 +592,11 @@ func dirExists(dir string) bool {
 			return false
 		}
 
-		panic(err)
+		t.Fatal(err)
 	}
 
 	if !fi.IsDir() {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	return true
@@ -614,7 +619,7 @@ func TestPreprocessor(t *testing.T) {
 
 	testPreprocessor(t, predefined, nil, []string{"testdata/arith-1.c"})
 
-	if !dirExists("testdata/dev/sqlite3") {
+	if !dirExists(t, "testdata/dev/sqlite3") {
 		return
 	}
 
@@ -623,7 +628,7 @@ func TestPreprocessor(t *testing.T) {
 	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3.h"}, sysIncludes)
 	testPreprocessor(t, predefined, nil, []string{"testdata/dev/sqlite3/sqlite3ext.h"}, sysIncludes)
 
-	if !dirExists("testdata/dev/vim") {
+	if !dirExists(t, "testdata/dev/vim") {
 		return
 	}
 

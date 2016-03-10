@@ -1749,6 +1749,7 @@ ControlLine:
 |	PPINCLUDE PPTokenList '\n'
 |	PPLINE PPTokenList '\n'
 |	PPPRAGMA PPTokenListOpt
+//yy:example	"\U00100000 \n#undef foo"
 |	PPUNDEF IDENTIFIER '\n'
 
 	// Non standard stuff.
@@ -1774,9 +1775,13 @@ ControlLine:
 //yy:example	"\U00100000 \n#undef foo(bar)"
 |	PPUNDEF IDENTIFIER PPTokenList '\n'
 	{
-		if !lx.tweaks.enableUndefExtraTokens {
-			lx.report.ErrTok(decodeTokens(lhs.PPTokenList, nil)[0], "extra tokens after #undef argument")
+		toks := decodeTokens(lhs.PPTokenList, nil, false)
+		if len(toks) == 0 {
+			lhs.Case = 9 // PPUNDEF IDENTIFIER '\n' 
+			break
 		}
+
+		lx.report.ErrTok(toks[0], "extra tokens after #undef argument")
 	}
 |	PPINCLUDE_NEXT PPTokenList '\n'
 

@@ -61,7 +61,7 @@ func init() {
 			return
 		}
 
-		a := strings.Split(prefix+PrettyString(decodeTokens(x, nil))+",", "\n")
+		a := strings.Split(prefix+PrettyString(decodeTokens(x, nil, true))+",", "\n")
 		for _, v := range a {
 			f.Format("%s\n", v)
 		}
