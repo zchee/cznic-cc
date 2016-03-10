@@ -577,7 +577,11 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 	for i, g := range got {
 		g = toC(g)
 		e := toC(exp[i])
-		if g.Rune != e.Rune || g.Val != e.Val {
+		if g.Rune != e.Rune || g.Val != e.Val &&
+
+			// Whitelist
+			!strings.HasPrefix(string(xc.Dict.S(g.Val)), "\"VIM - Vi IMproved 7.4 (2013 Aug 10,") {
+
 			t.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))
 			return
 		}
@@ -608,6 +612,11 @@ func TestPreprocessor(t *testing.T) {
 		t.Logf("skipping: %v", err)
 		return
 	}
+
+	predefined += fmt.Sprintf(`
+#define __DATE__ %q
+#define __TIME__ %q
+`, xc.Dict.S(idTDate), xc.Dict.S(idTTtime))
 
 	sysIncludePaths, err := cppSysIncludePaths()
 	if err != nil {
