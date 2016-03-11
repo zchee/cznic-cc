@@ -474,7 +474,12 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 		return
 	}
 
-	repl := trimSpace(decodeTokens(m.repl, nil, true))
+	//dbg("====")
+	//dbg("expanding %s", string(m.DefTok.S()))
+	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)))
+	//dbg("repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
+	repl = pasteToks(repl)
+	//dbg("processed repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
 	pos := tok.Pos()
 	for i, v := range repl {
 		if v.Rune == IDENTIFIER && p.expandingMacros[v.Val] != 0 {
@@ -489,12 +494,73 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 	)
 }
 
+func pasteToks(toks []xc.Token) []xc.Token {
+	for i := 0; i < len(toks); {
+		switch tok := toks[i]; tok.Rune {
+		case PPPASTE:
+			var b []byte
+			var r rune
+			if i > 0 {
+				i--
+				t := toks[i]
+				r = t.Rune
+				b = append(b, xc.Dict.S(tokVal(t))...)
+				toks = append(toks[:i], toks[i+1:]...) // Remove left arg.
+			}
+			if i < len(toks)-1 {
+				i++
+				b = append(b, xc.Dict.S(tokVal(toks[i]))...)
+				toks = append(toks[:i], toks[i+1:]...) // Remove right arg.
+				i--
+			}
+			tok.Rune = r
+			tok.Val = xc.Dict.ID(b)
+			if tok.Rune < 0x80 && tok.Val > 0x80 {
+				tok.Rune = PPOTHER
+			}
+			toks[i] = tok
+		default:
+			i++
+		}
+	}
+	return toks
+}
+
 func (p *pp) expandLineNo(toks []xc.Token, lineTok xc.Token) []xc.Token {
 	for i, v := range toks {
 		if v.Rune == IDENTIFIER && v.Val == idLine {
 			v.Rune = INTCONST
 			v.Val = dict.SID(strconv.Itoa(position(lineTok.Pos()).Line))
 			toks[i] = v
+		}
+	}
+	return toks
+}
+
+func normalizeToks(toks []xc.Token) []xc.Token {
+	if len(toks) == 0 {
+		return toks
+	}
+	for i := 0; i < len(toks); {
+		switch toks[i].Rune {
+		case PPPASTE:
+			if i > 0 && toks[i-1].Rune == ' ' {
+				i--
+				toks = append(toks[:i], toks[i+1:]...)
+				break
+			}
+
+			fallthrough
+		case '#':
+			if i < len(toks)-1 && toks[i+1].Rune == ' ' {
+				j := i + 1
+				toks = append(toks[:j], toks[j+1:]...)
+				break
+			}
+
+			fallthrough
+		default:
+			i++
 		}
 	}
 	return toks
@@ -516,6 +582,8 @@ again:
 		return
 	}
 
+	//dbg("====")
+	//dbg("expanding %s", string(m.DefTok.S()))
 	args := p.parseMacroArgs(r)
 	if g, e := len(args), len(m.Args); g != e {
 		switch {
@@ -531,13 +599,15 @@ again:
 		}
 	}
 
+	//dbg("args of %s\n%s", string(m.DefTok.S()), PrettyString(args))
 	for i, arg := range args {
 		args[i] = nil
 		p.expand(&tokenBuf{p.expandLineNo(arg, tok)}, handleDefined, func(toks []xc.Token) { args[i] = append(args[i], toks...) })
 	}
 	for i, arg := range args {
-		args[i] = trimSpace(arg)
+		args[i] = trimSpace(normalizeToks(arg))
 	}
+	//dbg("expanded args of %s\n%s", string(m.DefTok.S()), PrettyString(args))
 	repl := trimSpace(decodeTokens(m.repl, nil, true))
 	for _, v := range repl {
 		if v.Rune == IDENTIFIER && p.expandingMacros[v.Val] != 0 {
@@ -545,27 +615,7 @@ again:
 		}
 	}
 	if len(repl) != 0 {
-		for i := 0; i < len(repl)-1; {
-			switch tok := repl[i]; tok.Rune {
-			case ' ':
-				if repl[i+1].Rune == PPPASTE {
-					repl = append(repl[:i], repl[i+1:]...)
-					if i > 0 {
-						i--
-					}
-					break
-				}
-
-				if i > 0 && repl[i-1].Rune == PPPASTE {
-					repl = append(repl[:i], repl[i+1:]...)
-					break
-				}
-
-				i++
-			default:
-				i++
-			}
-		}
+		repl = normalizeToks(repl)
 		for i, tok := range repl[:len(repl)-1] {
 			switch tok.Rune {
 			case PPPASTE:
@@ -589,6 +639,7 @@ again:
 			}
 		}
 	}
+	//dbg("repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
 	var r0 []xc.Token
 next:
 	for i, tok := range repl {
@@ -615,21 +666,9 @@ next:
 		}
 	}
 
-	var y []xc.Token
-	for i := 0; i < len(r0); {
-		tok := r0[i]
-		switch {
-		case i+1 <= len(r0)-2 && r0[i+1].Rune == PPPASTE:
-			tok.Val = dict.ID(append(tok.S(), r0[i+2].S()...))
-			i += 2
-			r0[i] = tok
-		default:
-			y = append(y, tok)
-			i++
-		}
-	}
-
-	p.expand(&tokenBuf{p.expandLineNo(y, tok)}, handleDefined, w)
+	r0 = pasteToks(r0)
+	//dbg("substitued repl of %s\n%s", string(m.DefTok.S()), PrettyString(r0))
+	p.expand(&tokenBuf{p.expandLineNo(r0, tok)}, handleDefined, w)
 }
 
 func stringify(toks []xc.Token) xc.Token {

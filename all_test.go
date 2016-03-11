@@ -474,6 +474,34 @@ func TestLexer2(t *testing.T) {
 	)
 }
 
+func testPreprocessorExample(t *testing.T, fname string) string {
+	var buf bytes.Buffer
+	_, err := Parse(
+		"",
+		[]string{fname},
+		newTestModel(),
+		preprocessOnly(),
+		Cpp(func(toks []xc.Token) {
+			for _, v := range toks {
+				buf.WriteString(TokSrc(v))
+			}
+			buf.WriteByte('\n')
+		}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := strings.TrimSpace(buf.String())
+	t.Log(r)
+	return r
+}
+
+func TestStdExample6_10_3_3_4(t *testing.T) {
+	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.3-4.h"), `char p[] = "x ## y";`; g != e {
+		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
+	}
+}
+
 func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opts ...Opt) {
 	for _, v := range src {
 		fi, err := os.Stat(v)

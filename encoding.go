@@ -550,8 +550,12 @@ func decodeTokens(id PPTokenList, r []xc.Token, withSpaces bool) []xc.Token {
 
 func tokVal(t xc.Token) int {
 	r := t.Rune
-	if tokHasVal[r] {
-		return t.Val
+	if r == 0 {
+		return 0
+	}
+
+	if v := t.Val; v != 0 {
+		return v
 	}
 
 	if r != 0 && r < 0x80 {
