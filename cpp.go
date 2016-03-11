@@ -164,30 +164,24 @@ func (t *tokenPipe) flush(final bool) {
 		}
 	}
 
-	w := 0
-	for _, v := range t.out {
-		switch v.Rune {
-		case ' ':
-			// nop
-		default:
-			t.out[w] = v
-			w++
-		}
-	}
-	t.out = t.out[:w]
-	if len(t.out) == 0 {
-		return
-	}
-
 	// Preproc phase 6. Adjacent string literal tokens are concatenated.
-	w = 0
+	w := 0
 	for r := 0; r < len(t.out); r++ {
 		v := t.out[r]
 		switch v.Rune {
 		case STRINGLITERAL, LONGSTRINGLITERAL:
 			to := r
-			for to < len(t.out)-1 && t.out[to+1].Rune == STRINGLITERAL {
-				to++
+		loop:
+			for to < len(t.out)-1 {
+				switch t.out[to+1].Rune {
+				case STRINGLITERAL, LONGSTRINGLITERAL, ' ':
+					to++
+				default:
+					break loop
+				}
+			}
+			for t.out[to].Rune == ' ' {
+				to--
 			}
 			if to == r {
 				t.out[w] = v
@@ -200,6 +194,10 @@ func (t *tokenPipe) flush(final bool) {
 			s = s[:len(s)-1] // Remove trailing "
 			buf.Write(s)
 			for i := r + 1; i <= to; i++ {
+				if t.out[i].Rune == ' ' {
+					continue
+				}
+
 				s = dict.S(t.out[i].Val)
 				s = s[1 : len(s)-1] // Remove leading and trailing "
 				buf.Write(s)
@@ -213,6 +211,21 @@ func (t *tokenPipe) flush(final bool) {
 			w++
 		}
 	}
+	t.out = t.out[:w]
+	w = 0
+	for _, v := range t.out {
+		switch v.Rune {
+		case ' ':
+			// nop
+		default:
+			t.out[w] = v
+			w++
+		}
+	}
+	if w == 0 {
+		return
+	}
+
 	t.w <- t.out[:w]
 	t.out = nil
 }
