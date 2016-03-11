@@ -512,10 +512,11 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 			opts,
 			preprocessOnly(),
 			Cpp(func(toks []xc.Token) {
-				got = append(got, toks...)
 				for _, v := range toks {
 					logw.WriteString(TokSrc(toC(v)))
-					logw.WriteByte(' ')
+					if v.Rune != ' ' {
+						got = append(got, v)
+					}
 				}
 				logw.WriteByte('\n')
 			}),
@@ -556,7 +557,13 @@ func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opt
 		append(
 			opts,
 			preprocessOnly(),
-			Cpp(func(toks []xc.Token) { exp = append(exp, toks...) }),
+			Cpp(func(toks []xc.Token) {
+				for _, tok := range toks {
+					if tok.Rune != ' ' {
+						exp = append(exp, tok)
+					}
+				}
+			}),
 			disableWarnings(),
 		)...,
 	); err != nil {

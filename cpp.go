@@ -211,17 +211,6 @@ func (t *tokenPipe) flush(final bool) {
 			w++
 		}
 	}
-	t.out = t.out[:w]
-	w = 0
-	for _, v := range t.out {
-		switch v.Rune {
-		case ' ':
-			// nop
-		default:
-			t.out[w] = v
-			w++
-		}
-	}
 	if w == 0 {
 		return
 	}

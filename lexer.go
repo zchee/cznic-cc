@@ -217,6 +217,7 @@ func (l *lexer) scanToken() (tok xc.Token) {
 		l.state = lsTranslationUnit
 		l.toC = true
 	case lsTranslationUnit:
+	again:
 		if len(l.textLine) == 0 {
 			var ok bool
 			if l.textLine, ok = <-l.ch; !ok {
@@ -229,6 +230,10 @@ func (l *lexer) scanToken() (tok xc.Token) {
 		}
 		tok = l.textLine[0]
 		l.textLine = l.textLine[1:]
+		if tok.Rune == ' ' {
+			goto again
+		}
+
 		tok = l.scope.lexerHack(tok, l.tokLast)
 	default:
 		c := l.scanChar()
