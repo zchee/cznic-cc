@@ -482,6 +482,7 @@ func testPreprocessorExample(t *testing.T, fname string) string {
 		newTestModel(),
 		preprocessOnly(),
 		Cpp(func(toks []xc.Token) {
+			//dbg("____ cpp toks\n%s", PrettyString(toks))
 			for _, v := range toks {
 				buf.WriteString(TokSrc(v))
 			}
@@ -507,6 +508,18 @@ f(2 * (2+(3,4)-0,1)) | f(2 * (~ 5)) &
 f(2 * (0,1))^m(0,1);
 int i[] = { 1, 23, 4, 5,  };
 char c[2][6] = { "hello", "" };`; g != e {
+		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
+	}
+}
+
+func TestStdExample6_10_3_5_4(t *testing.T) {
+	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-4.h"),
+		`printf("x1= %d, x2= %s", x1, x2);
+fputs(
+"strncmp(\"abc\\0d\", \"abc\", '\\4') == 0: @\n", s);
+vers2.h included from testdata/example-6.10.3.5-4.h
+"hello";
+"hello, world"`; g != e {
 		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
 	}
 }
