@@ -524,6 +524,14 @@ vers2.h included from testdata/example-6.10.3.5-4.h
 	}
 }
 
+func TestStdExample6_10_3_5_5(t *testing.T) {
+	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-5.h"),
+		`int j[] = { 123, 45, 67, 89,
+10, 11, 12,  };`; g != e {
+		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
+	}
+}
+
 func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opts ...Opt) {
 	for _, v := range src {
 		fi, err := os.Stat(v)
