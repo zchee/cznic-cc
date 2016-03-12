@@ -797,7 +797,7 @@ double __builtin_inff();
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/diff.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/digraph.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/edit.c"}, opts...)
-	//TODO testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/eval.c"}, opts...)
+	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/eval.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_cmds.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_cmds2.c"}, opts...)
 	//TODO testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_docmd.c"}, opts...)
