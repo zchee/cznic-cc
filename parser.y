@@ -2981,6 +2981,7 @@ FunctionDefinition:
 			lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, k)
 		}
 
+		lx.scope.mergeScope = nil
 		for dd := d.DirectDeclarator.bottom(); dd != nil; dd = dd.parent {
 			if dd.Case == 6 { // DirectDeclarator '(' ParameterTypeList ')'
 				lx.scope.mergeScope = dd.paramsScope

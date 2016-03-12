@@ -359,6 +359,7 @@ func (b *Bindings) defineEnumTag(tok xc.Token, n Node, report *xc.Report) {
 }
 
 func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v interface{}) {
+	b = b.root()
 	d := lx.model.makeDeclarator(0, tsInt)
 	dd := d.DirectDeclarator
 	dd.Token = tok
@@ -633,6 +634,14 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 	}
 
 	if IsArithmeticType(n) && IsArithmeticType(dst) {
+		return true
+	}
+
+	if IsIntType(n) && dst.Kind() == Enum {
+		return true
+	}
+
+	if n.Kind() == Enum && IsIntType(dst) {
 		return true
 	}
 
@@ -1511,7 +1520,7 @@ func elements(v interface{}) (int, error) {
 		return -1, err
 	}
 
-	if r <= 0 {
+	if r < 0 {
 		return -1, fmt.Errorf("array size must be positive: %v", v)
 	}
 

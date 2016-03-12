@@ -475,7 +475,16 @@ func (n *DirectDeclarator) isCompatible(m *DirectDeclarator) (r bool) {
 		return true
 	}
 
+	if n.Case > m.Case {
+		n, m = m, n
+	}
 	if n.Case != m.Case {
+		if n.Case == 6 && // DirectDeclarator '(' ParameterTypeList ')'
+			m.Case == 7 && // // DirectDeclarator '(' IdentifierListOpt ')'
+			m.IdentifierListOpt == nil {
+			return n.ParameterTypeList.isCompatible(nil) // f(void), f()
+		}
+
 		return false
 	}
 
@@ -553,6 +562,9 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 			dd := b.Node.(*DirectDeclarator)
 			n.Type = dd.top().declarator.Type
+			if n.Type.Kind() == Function {
+				n.Type = n.Type.Pointer()
+			}
 			if v := dd.EnumVal; v != nil {
 				n.Value = v
 			}
@@ -675,7 +687,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			n.Type = t.Pointer()
 		case 18: // '*' Expression
 			_, t := n.Expression.eval(lx)
-			if t.Kind() != Ptr {
+			if k := t.Kind(); k != Ptr && k != Array {
 				lx.report.ErrTok(n.Token, "invalid type argument of unary * (have '%v')", t)
 				break
 			}
@@ -1530,7 +1542,17 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 	case 0: // Expression
 		st := n.Expression.Type
 		if !st.CanAssignTo(dt) {
-			lx.report.Err(n.Expression.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, st)
+			switch n.Expression.Case {
+			case 6: // STRINGLITERAL
+				if dt.Kind() == Array {
+					switch dt.Element().Kind() {
+					case Char, SChar, UChar:
+						return // ok
+					}
+				}
+			default:
+				lx.report.Err(n.Expression.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, st)
+			}
 		}
 	case 1: // '{' InitializerList CommaOpt '}'
 		switch dk := dt.Kind(); dk {
@@ -1599,6 +1621,10 @@ func (n *ParameterList) isCompatible(m *ParameterList) (r bool) {
 // ---------------------------------------------------------- ParameterTypeList
 
 func (n *ParameterTypeList) isCompatible(m *ParameterTypeList) (r bool) {
+	if m == nil && len(n.params) == 0 { // f(void) is compatible with f()
+		return true
+	}
+
 	return n == m || n.Case == m.Case && n.ParameterList.isCompatible(m.ParameterList)
 }
 
@@ -1756,20 +1782,6 @@ func (n *StructDeclarator) post(lx *lexer) {
 		sc.prevStructDeclarator = n.Declarator
 	case 1: // DeclaratorOpt ':' ConstantExpression
 		t := lx.model.IntType
-		if o := n.DeclaratorOpt; o != nil {
-			o.Declarator.offsetOf = sc.offset
-			o.Declarator.bitOffset = sc.bitOffset
-			o.Declarator.bitFieldGroup = sc.bitFieldGroup
-			sc.prevStructDeclarator = o.Declarator
-			t = o.Declarator.Type
-			switch t.Kind() {
-			case Int, UInt, Long, ULong, Short, UShort:
-				// ok
-			default:
-				lx.report.Err(n.ConstantExpression.Pos(), "bit field has invalid type")
-				t = lx.model.IntType
-			}
-		}
 		var w int
 		switch x := n.ConstantExpression.Value.(type) {
 		case int32:
@@ -1782,16 +1794,22 @@ func (n *StructDeclarator) post(lx *lexer) {
 			w = m
 		}
 		maxBits := lx.model.LongType.SizeOf() * 8
-		switch {
-		case sc.bitOffset+w > maxBits:
-			panic("TODO")
-		case sc.bitOffset+w == maxBits:
-			panic("TODO")
-		default:
-			sc.bitOffset += w
-			maxBits := lx.model.LongType.SizeOf() * 8
-			if sc.bitOffset >= maxBits {
-				finishBitField(lx)
+		if sc.bitOffset+w > maxBits {
+			finishBitField(lx)
+		}
+		sc.bitOffset += w
+		if o := n.DeclaratorOpt; o != nil {
+			o.Declarator.offsetOf = sc.offset
+			o.Declarator.bitOffset = sc.bitOffset
+			o.Declarator.bitFieldGroup = sc.bitFieldGroup
+			sc.prevStructDeclarator = o.Declarator
+			t = o.Declarator.Type
+			switch t.Kind() {
+			case Int, UInt, Long, ULong, Short, UShort:
+				// ok
+			default:
+				lx.report.Err(n.ConstantExpression.Pos(), "bit field has invalid type")
+				t = lx.model.IntType
 			}
 		}
 	default:
