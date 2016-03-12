@@ -800,7 +800,7 @@ double __builtin_inff();
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/eval.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_cmds.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_cmds2.c"}, opts...)
-	//TODO testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_docmd.c"}, opts...)
+	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_docmd.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_eval.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ex_getln.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/fileio.c"}, opts...)

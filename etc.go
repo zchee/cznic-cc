@@ -1493,7 +1493,7 @@ func IsArithmeticType(t Type) bool {
 }
 
 // IsIntType reports t.Kind() is one of Char, SChar, UChar, Short, UShort, Int,
-// UInt, Long, ULong, LongLong or ULongLong.
+// UInt, Long, ULong, LongLong, ULongLong or Enum.
 func IsIntType(t Type) bool {
 	switch t.Kind() {
 	case
@@ -1507,7 +1507,8 @@ func IsIntType(t Type) bool {
 		Long,
 		ULong,
 		LongLong,
-		ULongLong:
+		ULongLong,
+		Enum:
 		return true
 	default:
 		return false
