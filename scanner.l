@@ -89,9 +89,9 @@ unsigned-suffix                 [uU]
                                 c = l.Rule0()
 
 [ \t\f\v]+			|
-[ \t\f\v]*"//".*		return ' '
+"//".*				return ' '
 
-[ \t\f\v]*"/*"                  l.commentPos0 = l.First.Pos()
+"/*"				l.commentPos0 = l.First.Pos()
                                 l.push(scCOMMENT)
 
 <COMMENT>{comment-close}        l.pop()

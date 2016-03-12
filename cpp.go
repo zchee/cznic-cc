@@ -289,6 +289,8 @@ func (p *pp) checkCompatibleReplacementTokenList(tok xc.Token, oldList, newList 
 	toks := trimSpace(decodeTokens(newList, nil, true))
 
 	if g, e := len(toks), len(ex); g != e && len(ex) > 0 {
+		//dbg("", PrettyString(ex))
+		//dbg("", PrettyString(toks))
 		p.report.ErrTok(tok, "cannot redefine macro using a replacement list of different length")
 		return
 	}

@@ -532,6 +532,13 @@ func TestStdExample6_10_3_5_5(t *testing.T) {
 	}
 }
 
+func TestStdExample6_10_3_5_6(t *testing.T) {
+	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-6.h"),
+		`ok`; g != e {
+		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
+	}
+}
+
 func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opts ...Opt) {
 	for _, v := range src {
 		fi, err := os.Stat(v)

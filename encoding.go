@@ -385,6 +385,7 @@ var (
 		LONGSTRINGLITERAL: true,
 		PPHEADER_NAME:     true,
 		PPNUMBER:          true,
+		PPOTHER:           true,
 		STRINGLITERAL:     true,
 	}
 

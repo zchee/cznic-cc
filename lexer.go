@@ -182,7 +182,7 @@ again:
 	r := rune(l.scan())
 	switch r {
 	case ' ':
-		if l.state != lsTokens {
+		if l.state != lsTokens || l.tokLast.Rune == ' ' {
 			goto again
 		}
 	case '\n':
@@ -303,6 +303,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 	} else {
 		tok = l.scanToken()
 	}
+	//dbg("Lex %s", PrettyString(tok))
 	if l.constExprToks != nil {
 		l.constExprToks = append(l.constExprToks, tok)
 	}
