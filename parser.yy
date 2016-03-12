@@ -61,6 +61,7 @@ import (
 	/*yy:token "'%c'"            */ CHARCONST		"character constant"
 	/*yy:token "1.%d"            */ FLOATCONST		"floating-point constant"
 	/*yy:token "%c"              */ IDENTIFIER		"identifier"
+	/*yy:token "%c"              */ IDENTIFIER_NONREPL	"non replaceable identifier"
 	/*yy:token "%c("             */ IDENTIFIER_LPAREN	"identifier immediatelly followed by '('"
 	/*yy:token "%d"              */ INTCONST		"integer constant"
 	/*yy:token "L'%c'"           */ LONGCHARCONST		"long character constant"

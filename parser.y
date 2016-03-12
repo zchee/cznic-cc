@@ -117,6 +117,7 @@ import (
 	GOTO                         "goto"
 	IDENTIFIER                   "identifier"
 	IDENTIFIER_LPAREN            "identifier immediatelly followed by '('"
+	IDENTIFIER_NONREPL           "non replaceable identifier"
 	IF                           "if"
 	INC                          "++"
 	INLINE                       "inline"

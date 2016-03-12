@@ -16,6 +16,11 @@ import (
 	"github.com/cznic/xc"
 )
 
+var (
+	_ tokenReader = (*tokenBuf)(nil)
+	_ tokenReader = (*tokenPipe)(nil)
+)
+
 const (
 	maxIncludeLevel = 100
 )
@@ -59,9 +64,8 @@ func (m *Macro) findArg(nm int) int {
 }
 
 type macros struct {
-	m       map[int]*Macro
-	nonRepl []int
-	pp      *pp
+	m  map[int]*Macro
+	pp *pp
 }
 
 func newMacros() *macros { return &macros{m: map[int]*Macro{}} }
@@ -97,6 +101,7 @@ type tokenReader interface {
 	eof(more bool) bool
 	peek() xc.Token
 	read() xc.Token
+	unget([]xc.Token)
 }
 
 type tokenBuf struct {
@@ -111,6 +116,9 @@ func (t *tokenBuf) peek() xc.Token { return t.toks[0] }
 
 // Implements tokenReader.
 func (t *tokenBuf) read() xc.Token { r := t.peek(); t.toks = t.toks[1:]; return r }
+
+// Implements tokenReader.
+func (t *tokenBuf) unget(toks []xc.Token) { t.toks = append(toks[:len(toks):len(toks)], t.toks...) }
 
 type tokenPipe struct {
 	ack     chan struct{}
@@ -155,6 +163,9 @@ func (t *tokenPipe) peek() xc.Token { return t.in[0] }
 // Implements tokenReader.
 func (t *tokenPipe) read() xc.Token { r := t.peek(); t.in = t.in[1:]; return r }
 
+// Implements tokenReader.
+func (t *tokenPipe) unget(toks []xc.Token) { t.in = append(toks[:len(toks):len(toks)], t.in...) }
+
 func (t *tokenPipe) flush(final bool) {
 	t.out = trimSpace(t.out)
 	if n := len(t.out); !final && n != 0 {
@@ -169,6 +180,10 @@ func (t *tokenPipe) flush(final bool) {
 	for r := 0; r < len(t.out); r++ {
 		v := t.out[r]
 		switch v.Rune {
+		case IDENTIFIER_NONREPL:
+			v.Rune = IDENTIFIER
+			t.out[w] = v
+			w++
 		case STRINGLITERAL, LONGSTRINGLITERAL:
 			to := r
 		loop:
@@ -260,8 +275,6 @@ func (p *pp) pp2(ch chan []xc.Token) {
 	pipe := &tokenPipe{ack: p.ack, r: p.in, w: ch}
 	for !pipe.eof(true) {
 		pipe.ackMore = true
-		m := p.macros
-		m.nonRepl = m.nonRepl[:0]
 		p.expand(pipe, false, func(toks []xc.Token) { pipe.out = append(pipe.out, toks...) })
 		pipe.ackMore = false
 		p.ack <- struct{}{}
@@ -458,40 +471,44 @@ again:
 
 func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bool, w func([]xc.Token)) {
 	nm := tok.Val
-
-	p.expandingMacros[nm]++
-	defer func() { p.expandingMacros[nm]-- }()
-
-	for _, v := range p.macros.nonRepl {
-		if v == nm {
-			w([]xc.Token{tok})
-			return
-		}
-	}
-
 	if m.IsFnLike {
 		p.expandFnMacro(tok, r, m, handleDefined, w)
 		return
 	}
 
-	//dbg("====")
-	//dbg("expanding %s", string(m.DefTok.S()))
+	p.expandingMacros[nm]++
+	defer func() { p.expandingMacros[nm]-- }()
+
+	//dbg("==== expanding %s", string(m.DefTok.S()))
 	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)))
 	//dbg("repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
 	repl = pasteToks(repl)
 	//dbg("processed repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
 	pos := tok.Pos()
 	for i, v := range repl {
-		if v.Rune == IDENTIFIER && p.expandingMacros[v.Val] != 0 {
-			p.macros.nonRepl = append(p.macros.nonRepl, v.Val)
-		}
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
-	p.expand(
-		&tokenBuf{p.expandLineNo(repl, tok)},
-		handleDefined,
-		w,
-	)
+	r.unget(p.expandLineNo(p.sanitize(repl), tok))
+	//dbg("finished expanding %s", string(m.DefTok.S()))
+}
+
+func (p *pp) sanitize(toks []xc.Token) []xc.Token {
+	w := 0
+	for _, v := range toks {
+		switch v.Rune {
+		case 0:
+			// nop
+		case IDENTIFIER:
+			if p.expandingMacros[v.Val] != 0 {
+				v.Rune = IDENTIFIER_NONREPL
+			}
+			fallthrough
+		default:
+			toks[w] = v
+			w++
+		}
+	}
+	return toks[:w]
 }
 
 func pasteToks(toks []xc.Token) []xc.Token {
@@ -509,7 +526,11 @@ func pasteToks(toks []xc.Token) []xc.Token {
 			}
 			if i < len(toks)-1 {
 				i++
-				b = append(b, xc.Dict.S(tokVal(toks[i]))...)
+				t := toks[i]
+				if r == 0 {
+					r = t.Rune
+				}
+				b = append(b, xc.Dict.S(tokVal(t))...)
 				toks = append(toks[:i], toks[i+1:]...) // Remove right arg.
 				i--
 			}
@@ -567,6 +588,7 @@ func normalizeToks(toks []xc.Token) []xc.Token {
 }
 
 func (p *pp) expandFnMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bool, w func([]xc.Token)) {
+	nm := tok.Val
 again:
 	if r.eof(true) {
 		w([]xc.Token{tok})
@@ -582,8 +604,10 @@ again:
 		return
 	}
 
-	//dbg("====")
-	//dbg("expanding %s", string(m.DefTok.S()))
+	p.expandingMacros[nm]++
+	defer func() { p.expandingMacros[nm]-- }()
+
+	//dbg("==== expanding %s", string(m.DefTok.S()))
 	args := p.parseMacroArgs(r)
 	if g, e := len(args), len(m.Args); g != e {
 		switch {
@@ -609,11 +633,6 @@ again:
 	}
 	//dbg("expanded args of %s\n%s", string(m.DefTok.S()), PrettyString(args))
 	repl := trimSpace(decodeTokens(m.repl, nil, true))
-	for _, v := range repl {
-		if v.Rune == IDENTIFIER && p.expandingMacros[v.Val] != 0 {
-			p.macros.nonRepl = append(p.macros.nonRepl, v.Val)
-		}
-	}
 	if len(repl) != 0 {
 		repl = normalizeToks(repl)
 		for i, tok := range repl[:len(repl)-1] {
@@ -668,7 +687,8 @@ next:
 
 	r0 = pasteToks(r0)
 	//dbg("substitued repl of %s\n%s", string(m.DefTok.S()), PrettyString(r0))
-	p.expand(&tokenBuf{p.expandLineNo(r0, tok)}, handleDefined, w)
+	r.unget(p.sanitize(p.expandLineNo(r0, tok)))
+	//dbg("finished expanding %s", string(m.DefTok.S()))
 }
 
 func stringify(toks []xc.Token) xc.Token {

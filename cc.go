@@ -369,7 +369,8 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 	lx.model = m
 	if lx.tweaks.preprocessOnly {
 		var lval yySymType
-		for lx.Lex(&lval) != 0 {
+		for lval.Token.Rune != lex.RuneEOF {
+			lx.Lex(&lval)
 		}
 		return nil, report.Errors(true)
 	}

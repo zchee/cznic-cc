@@ -230,7 +230,7 @@ func (l *lexer) scanToken() (tok xc.Token) {
 		}
 		tok = l.textLine[0]
 		l.textLine = l.textLine[1:]
-		if tok.Rune == ' ' || tok.Rune == 0 {
+		if tok.Rune == ' ' {
 			goto again
 		}
 

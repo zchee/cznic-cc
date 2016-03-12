@@ -500,16 +500,16 @@ func TestStdExample6_10_3_3_4(t *testing.T) {
 	}
 }
 
-//TODO func TestStdExample6_10_3_5_3(t *testing.T) {
-//TODO 	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-3.h"),
-//TODO 		`f(2 * (y+1)) + f(2 * (f(2 * (z[0])))) % f(2 * (0)) + t(1);
-//TODO f(2 * (2+(3,4)-0,1)) | f(2 * (~ 5)) & f(2 * (0,1))^m(0,1);
-//TODO int i[] = { 1, 23, 4, 5, };
-//TODO char c[2][6] = { "hello", "" };
-//TODO `; g != e {
-//TODO 		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
-//TODO 	}
-//TODO }
+func TestStdExample6_10_3_5_3(t *testing.T) {
+	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-3.h"),
+		`f(2 * (y+1)) + f(2 * (f(2 * (z[0])))) % f(2 * (0)) + t(1);
+f(2 * (2+(3,4)-0,1)) | f(2 * (~ 5)) &
+f(2 * (0,1))^m(0,1);
+int i[] = { 1, 23, 4, 5,  };
+char c[2][6] = { "hello", "" };`; g != e {
+		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
+	}
+}
 
 func testPreprocessor(t *testing.T, predefine string, cppOpts, src []string, opts ...Opt) {
 	for _, v := range src {

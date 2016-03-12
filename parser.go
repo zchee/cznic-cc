@@ -65,7 +65,7 @@ type yyXError struct {
 }
 
 const (
-	yyDefault           = 57449
+	yyDefault           = 57450
 	yyEofCode           = 57344
 	ADDASSIGN           = 57346
 	ANDAND              = 57347
@@ -99,66 +99,67 @@ const (
 	GOTO                = 57374
 	IDENTIFIER          = 57375
 	IDENTIFIER_LPAREN   = 57376
-	IF                  = 57377
-	INC                 = 57378
-	INLINE              = 57379
-	INT                 = 57380
-	INTCONST            = 57381
-	LEQ                 = 57382
-	LONG                = 57383
-	LONGCHARCONST       = 57384
-	LONGSTRINGLITERAL   = 57385
-	LSH                 = 57386
-	LSHASSIGN           = 57387
-	MODASSIGN           = 57388
-	MULASSIGN           = 57389
-	NEQ                 = 57390
-	NOELSE              = 57391
-	ORASSIGN            = 57392
-	OROR                = 57393
-	PPDEFINE            = 57394
-	PPELIF              = 57395
-	PPELSE              = 57396
-	PPENDIF             = 57397
-	PPERROR             = 57398
-	PPHASH_NL           = 57399
-	PPHEADER_NAME       = 57400
-	PPIF                = 57401
-	PPIFDEF             = 57402
-	PPIFNDEF            = 57403
-	PPINCLUDE           = 57404
-	PPINCLUDE_NEXT      = 57405
-	PPLINE              = 57406
-	PPNONDIRECTIVE      = 57407
-	PPNUMBER            = 57408
-	PPOTHER             = 57409
-	PPPASTE             = 57410
-	PPPRAGMA            = 57411
-	PPUNDEF             = 57412
+	IDENTIFIER_NONREPL  = 57377
+	IF                  = 57378
+	INC                 = 57379
+	INLINE              = 57380
+	INT                 = 57381
+	INTCONST            = 57382
+	LEQ                 = 57383
+	LONG                = 57384
+	LONGCHARCONST       = 57385
+	LONGSTRINGLITERAL   = 57386
+	LSH                 = 57387
+	LSHASSIGN           = 57388
+	MODASSIGN           = 57389
+	MULASSIGN           = 57390
+	NEQ                 = 57391
+	NOELSE              = 57392
+	ORASSIGN            = 57393
+	OROR                = 57394
+	PPDEFINE            = 57395
+	PPELIF              = 57396
+	PPELSE              = 57397
+	PPENDIF             = 57398
+	PPERROR             = 57399
+	PPHASH_NL           = 57400
+	PPHEADER_NAME       = 57401
+	PPIF                = 57402
+	PPIFDEF             = 57403
+	PPIFNDEF            = 57404
+	PPINCLUDE           = 57405
+	PPINCLUDE_NEXT      = 57406
+	PPLINE              = 57407
+	PPNONDIRECTIVE      = 57408
+	PPNUMBER            = 57409
+	PPOTHER             = 57410
+	PPPASTE             = 57411
+	PPPRAGMA            = 57412
+	PPUNDEF             = 57413
 	PREPROCESSING_FILE  = 1048576
-	REGISTER            = 57413
-	RESTRICT            = 57414
-	RETURN              = 57415
-	RSH                 = 57416
-	RSHASSIGN           = 57417
-	SHORT               = 57418
-	SIGNED              = 57419
-	SIZEOF              = 57420
-	STATIC              = 57421
-	STRINGLITERAL       = 57422
-	STRUCT              = 57423
-	SUBASSIGN           = 57424
-	SWITCH              = 57425
+	REGISTER            = 57414
+	RESTRICT            = 57415
+	RETURN              = 57416
+	RSH                 = 57417
+	RSHASSIGN           = 57418
+	SHORT               = 57419
+	SIGNED              = 57420
+	SIZEOF              = 57421
+	STATIC              = 57422
+	STRINGLITERAL       = 57423
+	STRUCT              = 57424
+	SUBASSIGN           = 57425
+	SWITCH              = 57426
 	TRANSLATION_UNIT    = 1048578
-	TYPEDEF             = 57426
-	TYPEDEFNAME         = 57427
-	UNARY               = 57428
-	UNION               = 57429
-	UNSIGNED            = 57430
-	VOID                = 57431
-	VOLATILE            = 57432
-	WHILE               = 57433
-	XORASSIGN           = 57434
+	TYPEDEF             = 57427
+	TYPEDEFNAME         = 57428
+	UNARY               = 57429
+	UNION               = 57430
+	UNSIGNED            = 57431
+	VOID                = 57432
+	VOLATILE            = 57433
+	WHILE               = 57434
+	XORASSIGN           = 57435
 	yyErrCode           = 57345
 
 	yyMaxDepth = 200
@@ -174,7 +175,7 @@ var (
 		43:      4,   // '+' (199x)
 		45:      5,   // '-' (199x)
 		57361:   6,   // DEC (199x)
-		57378:   7,   // INC (199x)
+		57379:   7,   // INC (199x)
 		59:      8,   // ';' (181x)
 		41:      9,   // ')' (176x)
 		44:      10,  // ',' (168x)
@@ -183,14 +184,14 @@ var (
 		126:     13,  // '~' (132x)
 		57356:   14,  // CHARCONST (132x)
 		57371:   15,  // FLOATCONST (132x)
-		57381:   16,  // INTCONST (132x)
-		57384:   17,  // LONGCHARCONST (132x)
-		57385:   18,  // LONGSTRINGLITERAL (132x)
-		57420:   19,  // SIZEOF (132x)
-		57422:   20,  // STRINGLITERAL (132x)
+		57382:   16,  // INTCONST (132x)
+		57385:   17,  // LONGCHARCONST (132x)
+		57386:   18,  // LONGSTRINGLITERAL (132x)
+		57421:   19,  // SIZEOF (132x)
+		57423:   20,  // STRINGLITERAL (132x)
 		57358:   21,  // CONST (113x)
-		57414:   22,  // RESTRICT (113x)
-		57432:   23,  // VOLATILE (113x)
+		57415:   22,  // RESTRICT (113x)
+		57433:   23,  // VOLATILE (113x)
 		125:     24,  // '}' (110x)
 		57351:   25,  // BOOL (103x)
 		57355:   26,  // CHAR (103x)
@@ -198,25 +199,25 @@ var (
 		57365:   28,  // DOUBLE (103x)
 		57367:   29,  // ENUM (103x)
 		57370:   30,  // FLOAT (103x)
-		57380:   31,  // INT (103x)
-		57383:   32,  // LONG (103x)
-		57418:   33,  // SHORT (103x)
-		57419:   34,  // SIGNED (103x)
-		57423:   35,  // STRUCT (103x)
-		57427:   36,  // TYPEDEFNAME (103x)
-		57429:   37,  // UNION (103x)
-		57430:   38,  // UNSIGNED (103x)
-		57431:   39,  // VOID (103x)
+		57381:   31,  // INT (103x)
+		57384:   32,  // LONG (103x)
+		57419:   33,  // SHORT (103x)
+		57420:   34,  // SIGNED (103x)
+		57424:   35,  // STRUCT (103x)
+		57428:   36,  // TYPEDEFNAME (103x)
+		57430:   37,  // UNION (103x)
+		57431:   38,  // UNSIGNED (103x)
+		57432:   39,  // VOID (103x)
 		58:      40,  // ':' (102x)
-		57421:   41,  // STATIC (97x)
+		57422:   41,  // STATIC (97x)
 		57344:   42,  // $end (96x)
 		57350:   43,  // AUTO (91x)
 		57369:   44,  // EXTERN (91x)
-		57379:   45,  // INLINE (91x)
-		57413:   46,  // REGISTER (91x)
-		57426:   47,  // TYPEDEF (91x)
+		57380:   45,  // INLINE (91x)
+		57414:   46,  // REGISTER (91x)
+		57427:   47,  // TYPEDEF (91x)
 		61:      48,  // '=' (87x)
-		57485:   49,  // Expression (83x)
+		57486:   49,  // Expression (83x)
 		93:      50,  // ']' (81x)
 		46:      51,  // '.' (76x)
 		123:     52,  // '{' (75x)
@@ -234,23 +235,23 @@ var (
 		57363:   64,  // DIVASSIGN (68x)
 		57368:   65,  // EQ (68x)
 		57373:   66,  // GEQ (68x)
-		57382:   67,  // LEQ (68x)
-		57386:   68,  // LSH (68x)
-		57387:   69,  // LSHASSIGN (68x)
-		57388:   70,  // MODASSIGN (68x)
-		57389:   71,  // MULASSIGN (68x)
-		57390:   72,  // NEQ (68x)
-		57392:   73,  // ORASSIGN (68x)
-		57393:   74,  // OROR (68x)
-		57416:   75,  // RSH (68x)
-		57417:   76,  // RSHASSIGN (68x)
-		57424:   77,  // SUBASSIGN (68x)
-		57434:   78,  // XORASSIGN (68x)
+		57383:   67,  // LEQ (68x)
+		57387:   68,  // LSH (68x)
+		57388:   69,  // LSHASSIGN (68x)
+		57389:   70,  // MODASSIGN (68x)
+		57390:   71,  // MULASSIGN (68x)
+		57391:   72,  // NEQ (68x)
+		57393:   73,  // ORASSIGN (68x)
+		57394:   74,  // OROR (68x)
+		57417:   75,  // RSH (68x)
+		57418:   76,  // RSHASSIGN (68x)
+		57425:   77,  // SUBASSIGN (68x)
+		57435:   78,  // XORASSIGN (68x)
 		10:      79,  // '\n' (60x)
-		57409:   80,  // PPOTHER (54x)
-		57397:   81,  // PPENDIF (45x)
-		57396:   82,  // PPELSE (41x)
-		57433:   83,  // WHILE (41x)
+		57410:   80,  // PPOTHER (54x)
+		57398:   81,  // PPENDIF (45x)
+		57397:   82,  // PPELSE (41x)
+		57434:   83,  // WHILE (41x)
 		57352:   84,  // BREAK (40x)
 		57353:   85,  // CASE (40x)
 		57359:   86,  // CONTINUE (40x)
@@ -258,138 +259,139 @@ var (
 		57364:   88,  // DO (40x)
 		57372:   89,  // FOR (40x)
 		57374:   90,  // GOTO (40x)
-		57377:   91,  // IF (40x)
-		57395:   92,  // PPELIF (40x)
-		57415:   93,  // RETURN (40x)
-		57425:   94,  // SWITCH (40x)
-		57394:   95,  // PPDEFINE (36x)
-		57398:   96,  // PPERROR (36x)
-		57399:   97,  // PPHASH_NL (36x)
-		57401:   98,  // PPIF (36x)
-		57402:   99,  // PPIFDEF (36x)
-		57403:   100, // PPIFNDEF (36x)
-		57404:   101, // PPINCLUDE (36x)
-		57405:   102, // PPINCLUDE_NEXT (36x)
-		57406:   103, // PPLINE (36x)
-		57407:   104, // PPNONDIRECTIVE (36x)
-		57411:   105, // PPPRAGMA (36x)
-		57412:   106, // PPUNDEF (36x)
-		57535:   107, // TypeQualifier (28x)
-		57486:   108, // ExpressionList (26x)
-		57509:   109, // PPTokenList (23x)
-		57511:   110, // PPTokens (23x)
+		57378:   91,  // IF (40x)
+		57396:   92,  // PPELIF (40x)
+		57416:   93,  // RETURN (40x)
+		57426:   94,  // SWITCH (40x)
+		57395:   95,  // PPDEFINE (36x)
+		57399:   96,  // PPERROR (36x)
+		57400:   97,  // PPHASH_NL (36x)
+		57402:   98,  // PPIF (36x)
+		57403:   99,  // PPIFDEF (36x)
+		57404:   100, // PPIFNDEF (36x)
+		57405:   101, // PPINCLUDE (36x)
+		57406:   102, // PPINCLUDE_NEXT (36x)
+		57407:   103, // PPLINE (36x)
+		57408:   104, // PPNONDIRECTIVE (36x)
+		57412:   105, // PPPRAGMA (36x)
+		57413:   106, // PPUNDEF (36x)
+		57536:   107, // TypeQualifier (28x)
+		57487:   108, // ExpressionList (26x)
+		57510:   109, // PPTokenList (23x)
+		57512:   110, // PPTokens (23x)
 		57366:   111, // ELSE (22x)
-		57481:   112, // EnumSpecifier (20x)
-		57530:   113, // StructOrUnion (20x)
-		57531:   114, // StructOrUnionSpecifier (20x)
-		57538:   115, // TypeSpecifier (20x)
-		57487:   116, // ExpressionListOpt (18x)
-		57510:   117, // PPTokenListOpt (16x)
-		57464:   118, // DeclarationSpecifiers (15x)
-		57492:   119, // FunctionSpecifier (15x)
-		57525:   120, // StorageClassSpecifier (15x)
-		57458:   121, // CompoundStatement (13x)
-		57489:   122, // ExpressionStatement (12x)
-		57506:   123, // IterationStatement (12x)
-		57507:   124, // JumpStatement (12x)
-		57508:   125, // LabeledStatement (12x)
-		57520:   126, // SelectionStatement (12x)
-		57524:   127, // Statement (12x)
-		57516:   128, // Pointer (11x)
-		57517:   129, // PointerOpt (10x)
-		57460:   130, // ControlLine (8x)
-		57466:   131, // Declarator (8x)
-		57495:   132, // GroupPart (8x)
-		57499:   133, // IfGroup (8x)
-		57500:   134, // IfSection (8x)
-		57532:   135, // TextLine (8x)
-		57461:   136, // Declaration (7x)
-		57493:   137, // GroupList (6x)
-		57519:   138, // ReplacementList (6x)
-		57443:   139, // $@4 (5x)
-		57459:   140, // ConstantExpression (5x)
+		57482:   112, // EnumSpecifier (20x)
+		57531:   113, // StructOrUnion (20x)
+		57532:   114, // StructOrUnionSpecifier (20x)
+		57539:   115, // TypeSpecifier (20x)
+		57488:   116, // ExpressionListOpt (18x)
+		57511:   117, // PPTokenListOpt (16x)
+		57465:   118, // DeclarationSpecifiers (15x)
+		57493:   119, // FunctionSpecifier (15x)
+		57526:   120, // StorageClassSpecifier (15x)
+		57459:   121, // CompoundStatement (13x)
+		57490:   122, // ExpressionStatement (12x)
+		57507:   123, // IterationStatement (12x)
+		57508:   124, // JumpStatement (12x)
+		57509:   125, // LabeledStatement (12x)
+		57521:   126, // SelectionStatement (12x)
+		57525:   127, // Statement (12x)
+		57517:   128, // Pointer (11x)
+		57518:   129, // PointerOpt (10x)
+		57461:   130, // ControlLine (8x)
+		57467:   131, // Declarator (8x)
+		57496:   132, // GroupPart (8x)
+		57500:   133, // IfGroup (8x)
+		57501:   134, // IfSection (8x)
+		57533:   135, // TextLine (8x)
+		57462:   136, // Declaration (7x)
+		57494:   137, // GroupList (6x)
+		57520:   138, // ReplacementList (6x)
+		57444:   139, // $@4 (5x)
+		57460:   140, // ConstantExpression (5x)
 		57360:   141, // DDD (5x)
-		57494:   142, // GroupListOpt (5x)
-		57521:   143, // SpecifierQualifierList (5x)
-		57536:   144, // TypeQualifierList (5x)
-		57450:   145, // AbstractDeclarator (4x)
-		57465:   146, // DeclarationSpecifiersOpt (4x)
-		57470:   147, // Designator (4x)
-		57512:   148, // ParameterDeclaration (4x)
-		57537:   149, // TypeQualifierListOpt (4x)
-		57457:   150, // CommaOpt (3x)
-		57468:   151, // Designation (3x)
-		57469:   152, // DesignationOpt (3x)
-		57471:   153, // DesignatorList (3x)
-		57488:   154, // ExpressionOpt (3x)
-		57501:   155, // InitDeclarator (3x)
-		57504:   156, // Initializer (3x)
-		57513:   157, // ParameterList (3x)
-		57514:   158, // ParameterTypeList (3x)
-		57436:   159, // $@10 (2x)
-		57437:   160, // $@11 (2x)
-		57444:   161, // $@5 (2x)
-		57451:   162, // AbstractDeclaratorOpt (2x)
-		57454:   163, // BlockItem (2x)
-		57467:   164, // DeclaratorOpt (2x)
-		57472:   165, // DirectAbstractDeclarator (2x)
-		57473:   166, // DirectAbstractDeclaratorOpt (2x)
-		57474:   167, // DirectDeclarator (2x)
-		57475:   168, // ElifGroup (2x)
-		57482:   169, // EnumerationConstant (2x)
-		57483:   170, // Enumerator (2x)
-		57490:   171, // ExternalDeclaration (2x)
-		57491:   172, // FunctionDefinition (2x)
-		57496:   173, // IdentifierList (2x)
-		57497:   174, // IdentifierListOpt (2x)
-		57498:   175, // IdentifierOpt (2x)
-		57502:   176, // InitDeclaratorList (2x)
-		57503:   177, // InitDeclaratorListOpt (2x)
-		57505:   178, // InitializerList (2x)
-		57515:   179, // ParameterTypeListOpt (2x)
-		57522:   180, // SpecifierQualifierListOpt (2x)
-		57526:   181, // StructDeclaration (2x)
-		57528:   182, // StructDeclarator (2x)
-		57534:   183, // TypeName (2x)
-		57435:   184, // $@1 (1x)
-		57438:   185, // $@12 (1x)
-		57439:   186, // $@13 (1x)
-		57440:   187, // $@14 (1x)
-		57441:   188, // $@2 (1x)
-		57442:   189, // $@3 (1x)
-		57445:   190, // $@6 (1x)
-		57446:   191, // $@7 (1x)
-		57447:   192, // $@8 (1x)
-		57448:   193, // $@9 (1x)
-		57452:   194, // ArgumentExpressionList (1x)
-		57453:   195, // ArgumentExpressionListOpt (1x)
-		57455:   196, // BlockItemList (1x)
-		57456:   197, // BlockItemListOpt (1x)
+		57495:   142, // GroupListOpt (5x)
+		57522:   143, // SpecifierQualifierList (5x)
+		57537:   144, // TypeQualifierList (5x)
+		57451:   145, // AbstractDeclarator (4x)
+		57466:   146, // DeclarationSpecifiersOpt (4x)
+		57471:   147, // Designator (4x)
+		57513:   148, // ParameterDeclaration (4x)
+		57538:   149, // TypeQualifierListOpt (4x)
+		57458:   150, // CommaOpt (3x)
+		57469:   151, // Designation (3x)
+		57470:   152, // DesignationOpt (3x)
+		57472:   153, // DesignatorList (3x)
+		57489:   154, // ExpressionOpt (3x)
+		57502:   155, // InitDeclarator (3x)
+		57505:   156, // Initializer (3x)
+		57514:   157, // ParameterList (3x)
+		57515:   158, // ParameterTypeList (3x)
+		57437:   159, // $@10 (2x)
+		57438:   160, // $@11 (2x)
+		57445:   161, // $@5 (2x)
+		57452:   162, // AbstractDeclaratorOpt (2x)
+		57455:   163, // BlockItem (2x)
+		57468:   164, // DeclaratorOpt (2x)
+		57473:   165, // DirectAbstractDeclarator (2x)
+		57474:   166, // DirectAbstractDeclaratorOpt (2x)
+		57475:   167, // DirectDeclarator (2x)
+		57476:   168, // ElifGroup (2x)
+		57483:   169, // EnumerationConstant (2x)
+		57484:   170, // Enumerator (2x)
+		57491:   171, // ExternalDeclaration (2x)
+		57492:   172, // FunctionDefinition (2x)
+		57497:   173, // IdentifierList (2x)
+		57498:   174, // IdentifierListOpt (2x)
+		57499:   175, // IdentifierOpt (2x)
+		57503:   176, // InitDeclaratorList (2x)
+		57504:   177, // InitDeclaratorListOpt (2x)
+		57506:   178, // InitializerList (2x)
+		57516:   179, // ParameterTypeListOpt (2x)
+		57523:   180, // SpecifierQualifierListOpt (2x)
+		57527:   181, // StructDeclaration (2x)
+		57529:   182, // StructDeclarator (2x)
+		57535:   183, // TypeName (2x)
+		57436:   184, // $@1 (1x)
+		57439:   185, // $@12 (1x)
+		57440:   186, // $@13 (1x)
+		57441:   187, // $@14 (1x)
+		57442:   188, // $@2 (1x)
+		57443:   189, // $@3 (1x)
+		57446:   190, // $@6 (1x)
+		57447:   191, // $@7 (1x)
+		57448:   192, // $@8 (1x)
+		57449:   193, // $@9 (1x)
+		57453:   194, // ArgumentExpressionList (1x)
+		57454:   195, // ArgumentExpressionListOpt (1x)
+		57456:   196, // BlockItemList (1x)
+		57457:   197, // BlockItemListOpt (1x)
 		1048577: 198, // CONSTANT_EXPRESSION (1x)
-		57462:   199, // DeclarationList (1x)
-		57463:   200, // DeclarationListOpt (1x)
-		57476:   201, // ElifGroupList (1x)
-		57477:   202, // ElifGroupListOpt (1x)
-		57478:   203, // ElseGroup (1x)
-		57479:   204, // ElseGroupOpt (1x)
-		57480:   205, // EndifLine (1x)
-		57484:   206, // EnumeratorList (1x)
+		57463:   199, // DeclarationList (1x)
+		57464:   200, // DeclarationListOpt (1x)
+		57477:   201, // ElifGroupList (1x)
+		57478:   202, // ElifGroupListOpt (1x)
+		57479:   203, // ElseGroup (1x)
+		57480:   204, // ElseGroupOpt (1x)
+		57481:   205, // EndifLine (1x)
+		57485:   206, // EnumeratorList (1x)
 		57376:   207, // IDENTIFIER_LPAREN (1x)
 		1048576: 208, // PREPROCESSING_FILE (1x)
-		57518:   209, // PreprocessingFile (1x)
-		57523:   210, // Start (1x)
-		57527:   211, // StructDeclarationList (1x)
-		57529:   212, // StructDeclaratorList (1x)
+		57519:   209, // PreprocessingFile (1x)
+		57524:   210, // Start (1x)
+		57528:   211, // StructDeclarationList (1x)
+		57530:   212, // StructDeclaratorList (1x)
 		1048578: 213, // TRANSLATION_UNIT (1x)
-		57533:   214, // TranslationUnit (1x)
-		57449:   215, // $default (0x)
+		57534:   214, // TranslationUnit (1x)
+		57450:   215, // $default (0x)
 		57354:   216, // CAST (0x)
 		57345:   217, // error (0x)
-		57391:   218, // NOELSE (0x)
-		57400:   219, // PPHEADER_NAME (0x)
-		57408:   220, // PPNUMBER (0x)
-		57410:   221, // PPPASTE (0x)
-		57428:   222, // UNARY (0x)
+		57377:   218, // IDENTIFIER_NONREPL (0x)
+		57392:   219, // NOELSE (0x)
+		57401:   220, // PPHEADER_NAME (0x)
+		57409:   221, // PPNUMBER (0x)
+		57411:   222, // PPPASTE (0x)
+		57429:   223, // UNARY (0x)
 	}
 
 	yySymNames = []string{
@@ -611,6 +613,7 @@ var (
 		"$default",
 		"CAST",
 		"error",
+		"IDENTIFIER_NONREPL",
 		"NOELSE",
 		"PPHEADER_NAME",
 		"PPNUMBER",
