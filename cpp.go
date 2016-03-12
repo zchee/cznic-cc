@@ -47,6 +47,7 @@ type Macro struct {
 	IsFnLike bool        // Whether the macro is function like.
 	Type     Type        // Non nil if macro expands to a constant expression.
 	Value    interface{} // Non nil if macro expands to a constant expression.
+	ellipsis bool        //
 	nonRepl  []bool      // Non replaceable, due to # or ##, arguments of a fn-like macro.
 	repl     PPTokenList //
 }
@@ -59,6 +60,10 @@ func (m *Macro) findArg(nm int) int {
 		if v == nm {
 			return i
 		}
+	}
+
+	if m.ellipsis && nm == idVAARGS {
+		return len(m.Args)
 	}
 
 	return -1
@@ -168,7 +173,7 @@ func (t *tokenPipe) read() xc.Token { r := t.peek(); t.in = t.in[1:]; return r }
 func (t *tokenPipe) unget(toks []xc.Token) { t.in = append(toks[:len(toks):len(toks)], t.in...) }
 
 func (t *tokenPipe) flush(final bool) {
-	t.out = trimSpace(t.out)
+	t.out = trimSpace(t.out, false)
 	if n := len(t.out); !final && n != 0 {
 		if tok := t.out[n-1]; tok.Rune == STRINGLITERAL || tok.Rune == LONGSTRINGLITERAL {
 			// Accumulate lines b/c of possible string concatenation of preprocessing phase 6.
@@ -285,12 +290,10 @@ func (p *pp) pp2(ch chan []xc.Token) {
 }
 
 func (p *pp) checkCompatibleReplacementTokenList(tok xc.Token, oldList, newList PPTokenList) {
-	ex := trimSpace(decodeTokens(oldList, nil, true))
-	toks := trimSpace(decodeTokens(newList, nil, true))
+	ex := trimSpace(decodeTokens(oldList, nil, true), false)
+	toks := trimSpace(decodeTokens(newList, nil, true), false)
 
 	if g, e := len(toks), len(ex); g != e && len(ex) > 0 {
-		//dbg("", PrettyString(ex))
-		//dbg("", PrettyString(toks))
 		p.report.ErrTok(tok, "cannot redefine macro using a replacement list of different length")
 		return
 	}
@@ -332,7 +335,7 @@ func (p *pp) defineMacro(tok xc.Token, repl PPTokenList) {
 	p.checkCompatibleReplacementTokenList(tok, m.repl, repl)
 }
 
-func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList) {
+func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList, ellipsis bool) {
 	nm0 := tok.S()
 	nm := dict.ID(nm0[:len(nm0)-1])
 	if protectedMacros[nm] && p.protectMacros {
@@ -373,9 +376,9 @@ func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList) {
 				}
 			}
 		}
-		m := &Macro{Args: args, DefTok: defTok, IsFnLike: true, repl: repl}
+		m := &Macro{Args: args, DefTok: defTok, IsFnLike: true, repl: repl, ellipsis: ellipsis}
 		for nm := range mp {
-			if i := m.findArg(nm); i >= 0 {
+			if i := m.findArg(nm); i >= 0 && i < len(nonRepl) {
 				nonRepl[i] = true
 			}
 		}
@@ -509,18 +512,33 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 	p.expandingMacros[nm]++
 	defer func() { p.expandingMacros[nm]-- }()
 
-	//dbg("==== expanding %s", string(m.DefTok.S()))
-	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)))
-	//dbg("repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
+	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)), false)
 	repl = pasteToks(repl)
-	//dbg("processed repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
 	pos := tok.Pos()
 	for i, v := range repl {
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
 	u := p.expandLineNo(p.sanitize(repl), tok)
 	r.unget(u)
-	//dbg("finished expanding %s\n%s", string(m.DefTok.S()), PrettyString(u))
+}
+
+func trimSpace(toks []xc.Token, removeTrailingComma bool) []xc.Token {
+	if len(toks) == 0 {
+		return nil
+	}
+
+	if removeTrailingComma {
+		if tok := toks[len(toks)-1]; tok.Rune == ',' {
+			toks = toks[:len(toks)-1]
+		}
+	}
+	for len(toks) != 0 && toks[0].Rune == ' ' {
+		toks = toks[1:]
+	}
+	for len(toks) != 0 && toks[len(toks)-1].Rune == ' ' {
+		toks = toks[:len(toks)-1]
+	}
+	return toks
 }
 
 func (p *pp) sanitize(toks []xc.Token) []xc.Token {
@@ -639,7 +657,6 @@ again:
 	p.expandingMacros[nm]++
 	defer func() { p.expandingMacros[nm]-- }()
 
-	//dbg("==== expanding %s, nonRepl %v", string(m.DefTok.S()), m.nonRepl)
 	args := p.parseMacroArgs(r)
 	if g, e := len(args), len(m.Args); g != e {
 		switch {
@@ -649,6 +666,16 @@ again:
 			// passing no argument to a macro with no parameters.
 
 			// ok, nop.
+		case m.ellipsis:
+			if g < e {
+				p.report.ErrTok(tok, "not enough macro arguments, expected at least %v", e+1)
+				return
+			}
+
+			for i := e + 1; i < len(args); i++ {
+				args[e] = append(args[e], args[i]...)
+			}
+			args = args[:e+1]
 		default:
 			p.report.ErrTok(tok, "macro argument count mismatch: got %v, expected %v", g, e)
 			return
@@ -656,17 +683,12 @@ again:
 	}
 
 	for i, arg := range args {
-		args[i] = trimSpace(arg)
+		args[i] = trimSpace(arg, true)
 	}
-	//dbg("args of %s\n%s", string(m.DefTok.S()), PrettyString(args))
 	for i, arg := range args {
 		args[i] = nil
-		if i >= len(m.nonRepl) {
-			continue
-		}
-
 		toks := p.expandLineNo(arg, tok)
-		if m.nonRepl[i] {
+		if i < len(m.nonRepl) && m.nonRepl[i] {
 			if len(toks) != 0 {
 				args[i] = toks
 			}
@@ -675,29 +697,25 @@ again:
 
 		p.expand(&tokenBuf{toks}, handleDefined, func(toks []xc.Token) { args[i] = append(args[i], toks...) })
 	}
-	//dbg("expanded args of %s\n%s", string(m.DefTok.S()), PrettyString(args))
-	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)))
-	//dbg("repl of %s\n%s", string(m.DefTok.S()), PrettyString(repl))
+	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)), false)
 	var r0 []xc.Token
 next:
 	for i, tok := range repl {
 		switch tok.Rune {
 		case IDENTIFIER:
-			for ia, v := range m.Args {
-				if v == tok.Val {
-					if i > 0 && repl[i-1].Rune == '#' {
-						r0 = append(r0[:len(r0)-1], stringify(args[ia]))
-						continue next
-					}
-
-					arg := args[ia]
-					if len(arg) == 0 {
-						arg = []xc.Token{{}}
-					}
-					r0 = append(r0, arg...)
-
+			if ia := m.findArg(tok.Val); ia >= 0 {
+				if i > 0 && repl[i-1].Rune == '#' {
+					r0 = append(r0[:len(r0)-1], stringify(args[ia]))
 					continue next
 				}
+
+				arg := args[ia]
+				if len(arg) == 0 {
+					arg = []xc.Token{{}}
+				}
+				r0 = append(r0, arg...)
+
+				continue next
 			}
 
 			r0 = append(r0, tok)
@@ -707,15 +725,12 @@ next:
 	}
 
 	r0 = pasteToks(r0)
-	//dbg("substitued repl of %s\n%s", string(m.DefTok.S()), PrettyString(r0))
 	u := p.sanitize(p.expandLineNo(r0, tok))
 	r.unget(u)
-	//dbg("finished expanding %s\n%s", string(m.DefTok.S()), PrettyString(u))
 }
 
 func stringify(toks []xc.Token) xc.Token {
-	//dbg("stringify\n%s", PrettyString(toks))
-	toks = trimSpace(toks)
+	toks = trimSpace(toks, false)
 	if len(toks) == 0 || (toks[0] == xc.Token{}) {
 		return xc.Token{Char: lex.NewChar(0, STRINGLITERAL), Val: idEmptyString}
 	}
@@ -738,7 +753,6 @@ func stringify(toks []xc.Token) xc.Token {
 	}
 	s = append(s, '"')
 	r := xc.Token{Char: lex.NewChar(toks[0].Pos(), STRINGLITERAL), Val: dict.ID(s)}
-	//dbg("stringify result %s", PrettyString(r))
 	return r
 }
 
@@ -834,7 +848,7 @@ func (p *pp) parseMacroArg(r tokenReader) (arg []xc.Token, more bool) {
 			n--
 		case ',':
 			if n == 0 {
-				r.read()
+				arg = append(arg, r.read())
 				return arg, true
 			}
 
@@ -963,15 +977,15 @@ func (p *pp) controlLine(n *ControlLine) {
 	case 0: // PPDEFINE IDENTIFIER ReplacementList
 		p.defineMacro(n.Token2, n.ReplacementList)
 	case 1: // PPDEFINE IDENTIFIER_LPAREN "..." ')' ReplacementList
-		p.defineFnMacro(n.Token2, nil, n.ReplacementList)
+		p.defineFnMacro(n.Token2, nil, n.ReplacementList, true)
 	case 2: // PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' "..." ')' ReplacementList
-		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList)
+		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList, true)
 	case 3: // PPDEFINE IDENTIFIER_LPAREN IdentifierListOpt ')' ReplacementList
 		var l *IdentifierList
 		if o := n.IdentifierListOpt; o != nil {
 			l = o.IdentifierList
 		}
-		p.defineFnMacro(n.Token2, l, n.ReplacementList)
+		p.defineFnMacro(n.Token2, l, n.ReplacementList, false)
 	case 4: // PPERROR PPTokenListOpt
 		var sep string
 		toks := decodeTokens(n.PPTokenListOpt, nil, true)
@@ -982,7 +996,6 @@ func (p *pp) controlLine(n *ControlLine) {
 		p.report.ErrTok(n.Token, "error%s%s", sep, s.S())
 	case 6: // PPINCLUDE PPTokenList
 		toks := decodeTokens(n.PPTokenList, nil, false)
-		//dbg("#include toks\n%s", PrettyString(toks))
 		var exp []xc.Token
 		p.expand(&tokenBuf{toks}, false, func(toks []xc.Token) { exp = append(exp, toks...) })
 		toks = exp

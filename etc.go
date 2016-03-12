@@ -1563,13 +1563,3 @@ func dedup(a []string) (r []string) {
 	}
 	return r
 }
-
-func trimSpace(toks []xc.Token) []xc.Token {
-	for len(toks) != 0 && toks[0].Rune == ' ' {
-		toks = toks[1:]
-	}
-	for len(toks) != 0 && toks[len(toks)-1].Rune == ' ' {
-		toks = toks[:len(toks)-1]
-	}
-	return toks
-}
