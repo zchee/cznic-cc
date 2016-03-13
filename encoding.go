@@ -505,22 +505,6 @@ func tsDecode(n int) (r []int) {
 	return r
 }
 
-func tsHasTypedefname(n int) bool {
-	if n == 0 {
-		return false
-	}
-
-	n >>= 1 // Remove value is valid bit.
-	for n != 0 {
-		if n&tsMask == tsTypedefName {
-			return true
-		}
-
-		n >>= tsBits
-	}
-	return false
-}
-
 func (l *lexer) encodeToken(tok xc.Token) {
 	n := binary.PutUvarint(l.encBuf1[:], uint64(tok.Rune))
 	pos := tok.Pos()

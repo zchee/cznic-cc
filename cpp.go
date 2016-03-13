@@ -756,16 +756,6 @@ func stringify(toks []xc.Token) xc.Token {
 	return r
 }
 
-func unquote(b []byte) []byte {
-	if len(b) != 0 && b[0] == '"' {
-		b = b[1:]
-	}
-	if n := len(b); n != 0 && b[n-1] == '"' {
-		b = b[:n-1]
-	}
-	return b
-}
-
 func whitespace(toks []xc.Token) []byte {
 	if len(toks) < 2 {
 		return nil

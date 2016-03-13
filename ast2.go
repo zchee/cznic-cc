@@ -1716,12 +1716,6 @@ func (n *InitializerList) Len() (r int) {
 	return r
 }
 
-// ------------------------------------------------------- ParameterDeclaration
-
-func (n *ParameterDeclaration) isCompatible(m *ParameterDeclaration) (r bool) {
-	return n == m || n.declarator.isCompatible(m.declarator)
-}
-
 // ---------------------------------------------------------- ParameterTypeList
 
 func (n *ParameterTypeList) post() {

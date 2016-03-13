@@ -906,10 +906,6 @@ func (m *Model) cBool(v bool) interface{} {
 	return m.MustConvert(int32(0), m.IntType)
 }
 
-func (m *Model) cBool2(v bool) (interface{}, Type) {
-	return m.cBool(v), m.IntType
-}
-
 func (m *Model) binOp(lx *lexer, a, b operand) (interface{}, interface{}, Type) {
 	av, at := a.eval(lx)
 	bv, bt := b.eval(lx)

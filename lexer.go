@@ -53,7 +53,6 @@ type lexer struct {
 	constExprToks      []xc.Token          //
 	constantExpression *ConstantExpression //
 	cpp                func([]xc.Token)    //
-	ddBuf              []*DirectDeclarator //
 	encBuf             []byte              // PPTokens
 	encBuf1            [30]byte            // Rune, position, optional value ID.
 	encPos             token.Pos           // For delta pos encoding
@@ -178,8 +177,6 @@ func (l *lexer) popScopePos(pos token.Pos) (old, new *Bindings) {
 	l.scope = new
 	return old, new
 }
-
-var dlr = []byte{'$'}
 
 func (l *lexer) scanChar() (c lex.Char) {
 again:
