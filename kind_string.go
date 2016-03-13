@@ -4,9 +4,9 @@ package cc
 
 import "fmt"
 
-const _Kind_name = "UndefinedVoidPtrUintPtrCharSCharUCharShortUShortIntUIntLongULongLongLongULongLongFloatDoubleLongDoubleBoolFloatComplexDoubleComplexLongDoubleComplexStructUnionEnumTypedefNameFunctionArray"
+const _Kind_name = "UndefinedVoidPtrUintPtrCharSCharUCharShortUShortIntUIntLongULongLongLongULongLongFloatDoubleLongDoubleBoolFloatComplexDoubleComplexLongDoubleComplexStructUnionEnumTypedefNameFunctionArraytypeof"
 
-var _Kind_index = [...]uint8{0, 9, 13, 16, 23, 27, 32, 37, 42, 48, 51, 55, 59, 64, 72, 81, 86, 92, 102, 106, 118, 131, 148, 154, 159, 163, 174, 182, 187}
+var _Kind_index = [...]uint8{0, 9, 13, 16, 23, 27, 32, 37, 42, 48, 51, 55, 59, 64, 72, 81, 86, 92, 102, 106, 118, 131, 148, 154, 159, 163, 174, 182, 187, 193}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

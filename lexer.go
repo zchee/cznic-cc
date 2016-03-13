@@ -291,7 +291,7 @@ func (l *lexer) scanToken() (tok xc.Token) {
 		}
 	}
 	if l.toC {
-		tok = toC(tok)
+		tok = toC(tok, l.tweaks)
 	}
 	l.tokPrev = l.tokLast
 	l.tokLast = tok

@@ -90,6 +90,7 @@ type tweaks struct {
 	enableEmptyDefine              bool // #define
 	enableIncludeNext              bool //
 	enableTrigraphs                bool // ??=define foo(bar)
+	enableTypeof                   bool //
 	enableUndefExtraTokens         bool // #undef foo(bar)
 	enableWarnings                 bool // #warning
 	includeLastTokenInfoInErrors   bool //
@@ -104,7 +105,10 @@ func exampleAST(rule int, src string) interface{} {
 		len(src)+1, // Plus final injected NL
 		bytes.NewBufferString(src),
 		report,
-		&tweaks{enableIncludeNext: true},
+		&tweaks{
+			enableIncludeNext: true,
+			enableTypeof:      true,
+		},
 	)
 	lx.model = &Model{ // 64 bit
 		Items: map[Kind]ModelItem{
@@ -288,11 +292,15 @@ func ErrLimit(n int) Opt {
 // Trigraphs enables processing of trigraphs.
 func Trigraphs() Opt { return func(lx *lexer) { lx.tweaks.enableTrigraphs = true } }
 
+// EnableTypeOf enables recognizing the reserved word typeof.
+func EnableTypeOf() Opt { return func(lx *lexer) { lx.tweaks.enableTypeof = true } }
+
 // CrashOnError is an debugging option.
 func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }
 
-func preprocessOnly() Opt  { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
-func disableWarnings() Opt { return func(lx *lexer) { lx.tweaks.enableWarnings = false } }
+func preprocessOnly() Opt       { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
+func disableWarnings() Opt      { return func(lx *lexer) { lx.tweaks.enableWarnings = false } }
+func getTweaks(dst *tweaks) Opt { return func(lx *lexer) { *dst = *lx.tweaks } }
 
 func nopOpt() Opt { return func(*lexer) {} }
 

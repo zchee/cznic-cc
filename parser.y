@@ -171,6 +171,7 @@ import (
 	TRANSLATION_UNIT 1048578     "translation unit prefix"
 	TYPEDEF                      "typedef"
 	TYPEDEFNAME                  "typedefname"
+	TYPEOF                       "typeof"
 	UNARY
 	UNION                        "union"
 	UNSIGNED                     "unsigned"
@@ -1406,6 +1407,33 @@ TypeSpecifier:
 		$$ = lhs
 		lhs.typeSpecifier = tsEncode(tsTypedefName)
 		_, lhs.scope = lx.scope.Lookup2(NSIdentifiers, lhs.Token.Val)
+	}
+|	"typeof" '(' Expression ')'
+	{
+		lx := yylex.(*lexer)
+		lhs := &TypeSpecifier{
+			Case:        14,
+			Token:       $1,
+			Token2:      $2,
+			Expression:  $3.(*Expression),
+			Token3:      $4,
+		}
+		$$ = lhs
+		lhs.typeSpecifier = tsEncode(tsTypeof)
+		_, lhs.Type = lhs.Expression.eval(lx)
+	}
+|	"typeof" '(' TypeName ')'
+	{
+		lhs := &TypeSpecifier{
+			Case:      15,
+			Token:     $1,
+			Token2:    $2,
+			TypeName:  $3.(*TypeName),
+			Token3:    $4,
+		}
+		$$ = lhs
+		lhs.typeSpecifier = tsEncode(tsTypeof)
+		lhs.Type = lhs.TypeName.Type
 	}
 
 StructOrUnionSpecifier:

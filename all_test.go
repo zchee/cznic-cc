@@ -580,16 +580,18 @@ func testDev(t *testing.T, predefine string, cppOpts, src []string, opts ...Opt)
 
 	var got, exp []xc.Token
 
+	var tw tweaks
 	_, err = Parse(
 		predefine,
 		src,
 		newTestModel(),
 		append(
 			opts,
+			getTweaks(&tw),
 			preprocessOnly(),
 			Cpp(func(toks []xc.Token) {
 				for _, v := range toks {
-					logw.WriteString(TokSrc(toC(v)))
+					logw.WriteString(TokSrc(toC(v, &tw)))
 					if v.Rune != ' ' {
 						got = append(got, v)
 					}
@@ -658,8 +660,8 @@ func testDev(t *testing.T, predefine string, cppOpts, src []string, opts ...Opt)
 	}
 
 	for i, g := range got {
-		g = toC(g)
-		e := toC(exp[i])
+		g = toC(g, &tw)
+		e := toC(exp[i], &tw)
 		if g.Rune != e.Rune || g.Val != e.Val &&
 
 			// Whitelist
@@ -769,6 +771,7 @@ double __builtin_inff();
 	predefine := predefined + `
 #define HAVE_CONFIG_H
 #define _FORTIFY_SOURCE 1
+#define __typeof typeof
 `
 	opts = []Opt{
 		IncludePaths([]string{
@@ -778,6 +781,7 @@ double __builtin_inff();
 		sysIncludes,
 		EnableIncludeNext(),
 		EnableAnonymousStructFields(),
+		EnableTypeOf(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())

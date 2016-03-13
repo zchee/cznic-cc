@@ -37,7 +37,6 @@ const (
 	ccUCNNonDigit // [0], Annex D, Universal character names for identifiers - non digits.
 )
 
-// Values of TypeSpecifier.Case.
 const (
 	tsVoid            = iota // "void"
 	tsChar                   // "char"
@@ -54,6 +53,7 @@ const (
 	tsUnionSpecifier         // StructOrUnionSpecifier: union
 	tsEnumSpecifier          // EnumSpecifier
 	tsTypedefName            // TYPEDEFNAME
+	tsTypeof                 // "typeof"
 	tsUintptr                // Pseudo type
 )
 
@@ -166,6 +166,7 @@ const (
 	TypedefName
 	Function
 	Array
+	typeof
 )
 
 func (k Kind) CString() string {
@@ -372,6 +373,7 @@ var (
 	idTDate            = dict.SID(tuTime.Format("Jan _2 2006")) // The date of translation of the preprocessing translation unit.
 	idTTtime           = dict.SID(tuTime.Format("15:04:05"))    // The time of translation of the preprocessing translation unit.
 	idTime             = dict.SID("__TIME__")
+	idTypeof           = dict.SID("typeof")
 	idVAARGS           = dict.SID("__VA_ARGS__")
 	tuTime             = time.Now()
 
@@ -418,6 +420,7 @@ var (
 		tsEncode(tsSigned, tsShort, tsInt):          Short,             // signed short int
 		tsEncode(tsStructSpecifier):                 Struct,            // struct
 		tsEncode(tsTypedefName):                     TypedefName,       // typedef name
+		tsEncode(tsTypeof):                          typeof,            // typeof name
 		tsEncode(tsUintptr):                         UintPtr,           // Pseudo type.
 		tsEncode(tsUnionSpecifier):                  Union,             // union
 		tsEncode(tsUnsigned):                        UInt,              // unsigned
@@ -456,13 +459,17 @@ func rune2class(r rune) (c int) {
 	}
 }
 
-func toC(t xc.Token) xc.Token {
+func toC(t xc.Token, tw *tweaks) xc.Token {
 	if t.Rune != IDENTIFIER {
 		return t
 	}
 
 	if x, ok := cwords[t.Val]; ok {
 		t.Rune = x
+	}
+
+	if tw.enableTypeof && t.Val == idTypeof {
+		t.Rune = TYPEOF
 	}
 
 	return t

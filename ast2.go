@@ -151,6 +151,7 @@ func (n *Declarator) isCompatible(m *Declarator) (r bool) {
 }
 
 func (n *Declarator) setFull(lx *lexer) Type {
+	//dbg("==== setFull %v", position(n.Pos()))
 	d := n
 	var dds0, dds []*DirectDeclarator
 	for dd := d.DirectDeclarator; dd != nil; dd = dd.directDeclarator() {
@@ -165,26 +166,46 @@ func (n *Declarator) setFull(lx *lexer) Type {
 	if d.specifier != nil && d.specifier.IsTypedef() {
 		dds0 = append([]*DirectDeclarator(nil), dds...)
 	}
-	for d.specifier != nil && d.specifier.kind() == TypedefName {
-		resultAttr |= d.specifier.attrs()
-		ts := d.specifier.firstTypeSpecifier()
-		dd := ts.scope.Lookup(NSIdentifiers, ts.Token.Val).Node.(*DirectDeclarator) // eg. typedef T dd, (*dd), dd(int), ...
-		if dd.Case != 0 {                                                           // IDENTIFIER
-			panic("internal error")
-		}
+loop0:
+	for d.specifier != nil {
+		switch d.specifier.kind() {
+		case TypedefName:
+			resultAttr |= d.specifier.attrs()
+			ts := d.specifier.firstTypeSpecifier()
+			dd := ts.scope.Lookup(NSIdentifiers, ts.Token.Val).Node.(*DirectDeclarator) // eg. typedef T dd, (*dd), dd(int), ...
+			if dd.Case != 0 {                                                           // IDENTIFIER
+				panic("internal error")
+			}
 
-		nd := dd.top().declarator
-		mask = saTypedef // nd.specifier.IsTypedef() == true
-		dds2 := nd.Type.(*ctype).dds0
-		d2 := d.clone()
-		d2.specifier = nil
-		dd2 := &DirectDeclarator{
-			Case:       1, //  '(' Declarator ')'
-			Declarator: d2,
+			nd := dd.top().declarator
+			mask = saTypedef // nd.specifier.IsTypedef() == true
+			dds2 := nd.Type.(*ctype).dds0
+			d2 := d.clone()
+			d2.specifier = nil
+			dd2 := &DirectDeclarator{
+				Case:       1, //  '(' Declarator ')'
+				Declarator: d2,
+			}
+			dds = append(dds, dd2)
+			dds = append(dds, dds2[1:]...)
+			d = nd
+		case typeof:
+			resultAttr |= d.specifier.attrs()
+			ts := d.specifier.firstTypeSpecifier()
+			nd := ts.Type.Declarator()
+			dds2 := ts.Type.(*ctype).dds0
+			d2 := d.clone()
+			d2.specifier = nil
+			dd2 := &DirectDeclarator{
+				Case:       1, //  '(' Declarator ')'
+				Declarator: d2,
+			}
+			dds = append(dds, dd2)
+			dds = append(dds, dds2...)
+			d = nd
+		default:
+			break loop0
 		}
-		dds = append(dds, dd2)
-		dds = append(dds, dds2[1:]...)
-		d = nd
 	}
 
 	// Inner ((...)) -> (...)
@@ -318,7 +339,7 @@ func (n *Declarator) setFull(lx *lexer) Type {
 		stars:           stars,
 	}
 	n.Type = t
-	//dbg("==== %v", position(n.Pos()))
+	//dbg("@@@@ %v", position(n.Pos()))
 	//dbg("setFull %v: %v, %v %v", t, t.Kind(), t.resultStars, t.stars)
 	//dbg("", t.str())
 	//dbg("", t)
@@ -692,6 +713,9 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			n.Value, n.Type = n.Expression.eval(lx)
 		case 13: // Expression "--"
 			n.Value, n.Type = n.Expression.eval(lx)
+		case 14: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
+			n.Type = n.TypeName.Type
+			//TODO typecheck InitializerList
 		case 15: // "++" Expression
 			n.Value, n.Type = n.Expression.eval(lx)
 		case 16: // "--" Expression
@@ -1494,6 +1518,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			m.checkIntegerType(lx, n.Expression, n.Expression2)
 			n.Type = n.Expression.Type
 		default:
+			//dbg("", PrettyString(n))
 			panic(n.Case)
 		}
 	}

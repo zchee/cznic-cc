@@ -145,6 +145,7 @@ import (
 	SWITCH				"switch"
 	TYPEDEF				"typedef"
 	TYPEDEFNAME			"typedefname"
+	TYPEOF				"typeof"
 	UNION				"union"
 	UNSIGNED			"unsigned"
 	VOID				"void"
@@ -682,6 +683,7 @@ StorageClassSpecifier:
 // [0](6.7.2)
 //yy:field	scope		*Bindings	// If case TYPEDEFNAME.
 //yy:field	typeSpecifier	int		// Encoded combination of tsVoid, tsInt, ...
+//yy:field	Type		Type		// Type of typeof.
 TypeSpecifier:
 	"void"
 	{
@@ -740,6 +742,16 @@ TypeSpecifier:
 	{
 		lhs.typeSpecifier = tsEncode(tsTypedefName)
 		_, lhs.scope = lx.scope.Lookup2(NSIdentifiers, lhs.Token.Val)
+	}
+|	"typeof" '(' Expression ')'
+	{
+		lhs.typeSpecifier = tsEncode(tsTypeof)
+		_, lhs.Type = lhs.Expression.eval(lx)
+	}
+|	"typeof" '(' TypeName ')'
+	{
+		lhs.typeSpecifier = tsEncode(tsTypeof)
+		lhs.Type = lhs.TypeName.Type
 	}
 
 // [0](6.7.2.1)

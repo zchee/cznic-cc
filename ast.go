@@ -2639,26 +2639,33 @@ func (n *TypeQualifierListOpt) Pos() token.Pos {
 //
 //	TypeSpecifier:
 //	        "void"
-//	|       "char"                  // Case 1
-//	|       "short"                 // Case 2
-//	|       "int"                   // Case 3
-//	|       "long"                  // Case 4
-//	|       "float"                 // Case 5
-//	|       "double"                // Case 6
-//	|       "signed"                // Case 7
-//	|       "unsigned"              // Case 8
-//	|       "_Bool"                 // Case 9
-//	|       "_Complex"              // Case 10
-//	|       StructOrUnionSpecifier  // Case 11
-//	|       EnumSpecifier           // Case 12
-//	|       TYPEDEFNAME             // Case 13
+//	|       "char"                       // Case 1
+//	|       "short"                      // Case 2
+//	|       "int"                        // Case 3
+//	|       "long"                       // Case 4
+//	|       "float"                      // Case 5
+//	|       "double"                     // Case 6
+//	|       "signed"                     // Case 7
+//	|       "unsigned"                   // Case 8
+//	|       "_Bool"                      // Case 9
+//	|       "_Complex"                   // Case 10
+//	|       StructOrUnionSpecifier       // Case 11
+//	|       EnumSpecifier                // Case 12
+//	|       TYPEDEFNAME                  // Case 13
+//	|       "typeof" '(' Expression ')'  // Case 14
+//	|       "typeof" '(' TypeName ')'    // Case 15
 type TypeSpecifier struct {
 	scope                  *Bindings // If case TYPEDEFNAME.
 	typeSpecifier          int       // Encoded combination of tsVoid, tsInt, ...
+	Type                   Type      // Type of typeof.
 	Case                   int
 	EnumSpecifier          *EnumSpecifier
+	Expression             *Expression
 	StructOrUnionSpecifier *StructOrUnionSpecifier
 	Token                  xc.Token
+	Token2                 xc.Token
+	Token3                 xc.Token
+	TypeName               *TypeName
 }
 
 func (n *TypeSpecifier) fragment() interface{} { return n }
@@ -2675,7 +2682,7 @@ func (n *TypeSpecifier) Pos() token.Pos {
 		return n.EnumSpecifier.Pos()
 	case 11:
 		return n.StructOrUnionSpecifier.Pos()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15:
 		return n.Token.Pos()
 	default:
 		panic("internal error")
