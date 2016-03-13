@@ -1109,6 +1109,9 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			}
 			switch {
 			case at.Kind() == Ptr:
+				if bt.Kind() == Array {
+					bt = bt.Element().Pointer()
+				}
 				if !at.CanAssignTo(bt) {
 					lx.report.ErrTok(n.Token, "incompatible types ('%s' > '%s')", a0, b0)
 				}

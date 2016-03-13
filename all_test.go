@@ -811,7 +811,7 @@ double __builtin_inff();
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/if_cscope.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/if_xcmdsrv.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/mark.c"}, opts...)
-	//TODO testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/memline.c"}, opts...)
+	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/memline.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/menu.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/message.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/misc1.c"}, opts...)
