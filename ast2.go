@@ -586,941 +586,949 @@ func (n *DirectDeclarator) directDeclarator() *DirectDeclarator {
 
 func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	m := lx.model
-	if n.Type == nil {
-		n.Type = undefined
-		switch n.Case {
-		case 0: // IDENTIFIER
-			b := n.scope.Lookup(NSIdentifiers, n.Token.Val)
-			if b.Node == nil {
-				lx.report.ErrTok(n.Token, "undefined: %s", n.Token.S())
-				break
-			}
+	if n.Type != nil {
+		return n.Value, n.Type
+	}
 
-			dd := b.Node.(*DirectDeclarator)
-			n.Type = dd.top().declarator.Type
-			if n.Type.Kind() == Function {
-				n.Type = n.Type.Pointer()
-			}
-			if v := dd.EnumVal; v != nil {
-				n.Value = v
-			}
-		case 1: // CHARCONST
-			n.Value, n.Type = m.charConst(n.Token)
-		case 2: // FLOATCONST
-			n.Value, n.Type = m.floatConst(lx, n.Token)
-		case 3: // INTCONST
-			n.Value, n.Type = m.intConst(lx, n.Token)
-		case 4: // LONGCHARCONST
-			n.Value, n.Type = m.charConst(n.Token)
-		case 6: // STRINGLITERAL
-			n.Value, n.Type = m.strConst(lx, n.Token)
-		case 7: //  '(' ExpressionList ')'
-			n.Value, n.Type = n.ExpressionList.eval(lx)
-		case 8: // Expression '[' ExpressionList ']'
-			_, t := n.Expression.eval(lx)
-			if k := t.Kind(); k != Ptr && k != Array {
-				lx.report.ErrTok(n.Token, "subscripted value is not a pointer (have '%s')", t)
-				break
-			}
+	n.Type = undefined
+	switch n.Case {
+	case 0: // IDENTIFIER
+		b := n.scope.Lookup(NSIdentifiers, n.Token.Val)
+		if b.Node == nil {
+			lx.report.ErrTok(n.Token, "undefined: %s", n.Token.S())
+			break
+		}
 
-			_, t2 := n.ExpressionList.eval(lx)
-			if !IsIntType(t2) {
-				lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer (have '%s')", t2)
-			}
-			n.Type = t.Element()
-		case 9: // Expression '(' ArgumentExpressionListOpt ')'
-			_, t := n.Expression.eval(lx)
-			if t.Kind() == Ptr {
-				t = t.Element()
-			}
-			if t.Kind() != Function {
-				lx.report.Err(n.Expression.Pos(), "called object is not a function or function pointer (have '%s')", t)
-				break
-			}
+		dd := b.Node.(*DirectDeclarator)
+		n.Type = dd.top().declarator.Type
+		if n.Type.Kind() == Function {
+			n.Type = n.Type.Pointer()
+		}
+		if v := dd.EnumVal; v != nil {
+			n.Value = v
+		}
+	case 1: // CHARCONST
+		n.Value, n.Type = m.charConst(n.Token)
+	case 2: // FLOATCONST
+		n.Value, n.Type = m.floatConst(lx, n.Token)
+	case 3: // INTCONST
+		n.Value, n.Type = m.intConst(lx, n.Token)
+	case 4: // LONGCHARCONST
+		n.Value, n.Type = m.charConst(n.Token)
+	case 6: // STRINGLITERAL
+		n.Value, n.Type = m.strConst(lx, n.Token)
+	case 7: //  '(' ExpressionList ')'
+		n.Value, n.Type = n.ExpressionList.eval(lx)
+	case 8: // Expression '[' ExpressionList ']'
+		_, t := n.Expression.eval(lx)
+		if k := t.Kind(); k != Ptr && k != Array {
+			lx.report.ErrTok(n.Token, "subscripted value is not a pointer (have '%s')", t)
+			break
+		}
 
-			n.Type = t.Result()
-			params, isVariadic := t.Parameters()
-			if params == nil {
-				panic("internal error")
-			}
-
-			var args []*Expression
-			var types []Type
-			if o := n.ArgumentExpressionListOpt; o != nil {
-				for l := o.ArgumentExpressionList; l != nil; l = l.ArgumentExpressionList {
-					ex := l.Expression
-					args = append(args, ex)
-					_, t := ex.eval(lx)
-					types = append(types, t)
-				}
-			}
-
-			if g, e := len(args), len(params); g < e {
-				lx.report.ErrTok(n.Token, "too few arguments to function (have %v, want %v)", g, e)
-				break
-			}
-
-			if !isVariadic {
-				if len(args) > len(params) {
-					lx.report.Err(n.ArgumentExpressionListOpt.Pos(), "too many arguments to function")
-					break
-				}
-			}
-
-			for i, param := range params {
-				pt := param.Type
-				if pt.Kind() == Array {
-					pt = pt.(*ctype).arrayDecay()
-				}
-				typ := types[i]
-				if !typ.CanAssignTo(pt) {
-					lx.report.Err(args[i].Pos(), "expected '%s' but argument is of type '%s'", pt, typ)
-				}
-			}
-		case 10: // Expression '.' IDENTIFIER
-			_, t := n.Expression.eval(lx)
-			mb, err := t.Member(n.Token2.Val)
-			if err != nil {
-				lx.report.Err(n.Token2.Pos(), "%v", err)
-				break
-			}
-
-			n.Type = mb.Type
-		case 11: // Expression "->" IDENTIFIER
-			v, t := n.Expression.eval(lx)
-			if t.Kind() != Ptr {
-				lx.report.ErrTok(n.Token2, "invalid type argument of -> (have '%v')", t)
-				break
-			}
-
+		_, t2 := n.ExpressionList.eval(lx)
+		if !IsIntType(t2) {
+			lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer (have '%s')", t2)
+		}
+		n.Type = t.Element()
+	case 9: // Expression '(' ArgumentExpressionListOpt ')'
+		_, t := n.Expression.eval(lx)
+		if t.Kind() == Ptr {
 			t = t.Element()
-			mb, err := t.Member(n.Token2.Val)
-			if err != nil {
-				lx.report.Err(n.Token2.Pos(), "%v", err)
+		}
+		if t.Kind() != Function {
+			lx.report.Err(n.Expression.Pos(), "called object is not a function or function pointer (have '%s')", t)
+			break
+		}
+
+		n.Type = t.Result()
+		params, isVariadic := t.Parameters()
+		if params == nil {
+			panic("internal error")
+		}
+
+		var args []*Expression
+		var types []Type
+		if o := n.ArgumentExpressionListOpt; o != nil {
+			for l := o.ArgumentExpressionList; l != nil; l = l.ArgumentExpressionList {
+				ex := l.Expression
+				args = append(args, ex)
+				_, t := ex.eval(lx)
+				types = append(types, t)
+			}
+		}
+
+		if g, e := len(args), len(params); g < e {
+			lx.report.ErrTok(n.Token, "too few arguments to function (have %v, want %v)", g, e)
+			break
+		}
+
+		if !isVariadic {
+			if len(args) > len(params) {
+				lx.report.Err(n.ArgumentExpressionListOpt.Pos(), "too many arguments to function")
 				break
 			}
+		}
 
-			n.Type = mb.Type
-			switch x := v.(type) {
-			case nil:
-				// nop
-			case uintptr:
-				n.Value = x + uintptr(mb.OffsetOf)
-			default:
-				panic("internal error")
+		for i, param := range params {
+			pt := param.Type
+			if pt.Kind() == Array {
+				pt = pt.(*ctype).arrayDecay()
 			}
-		case 12: // Expression "++"
-			n.Value, n.Type = n.Expression.eval(lx)
-		case 13: // Expression "--"
-			n.Value, n.Type = n.Expression.eval(lx)
-		case 14: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
-			n.Type = n.TypeName.Type
-			//TODO typecheck InitializerList
-		case 15: // "++" Expression
-			n.Value, n.Type = n.Expression.eval(lx)
-		case 16: // "--" Expression
-			n.Value, n.Type = n.Expression.eval(lx)
-		case 17: // '&' Expression
-			var t Type
-			n.Value, t = n.Expression.eval(lx)
-			n.Type = t.Pointer()
-		case 18: // '*' Expression
-			_, t := n.Expression.eval(lx)
-			if k := t.Kind(); k != Ptr && k != Array {
-				lx.report.ErrTok(n.Token, "invalid type argument of unary * (have '%v')", t)
-				break
+			typ := types[i]
+			if !typ.CanAssignTo(pt) {
+				lx.report.Err(args[i].Pos(), "expected '%s' but argument is of type '%s'", pt, typ)
 			}
+		}
+	case 10: // Expression '.' IDENTIFIER
+		_, t := n.Expression.eval(lx)
+		mb, err := t.Member(n.Token2.Val)
+		if err != nil {
+			lx.report.Err(n.Token2.Pos(), "%v", err)
+			break
+		}
 
-			n.Type = t.Element()
-		case 19: // '+' Expression
-			n.Value, n.Type = n.Expression.eval(lx)
-		case 20: // '-' Expression
-			v, t := n.Expression.eval(lx)
-			n.Type = t
-			switch x := v.(type) {
-			case nil:
-				// nop
-			case int32:
-				n.Value = -x
-			case uint32:
-				n.Value = -x
-			case int64:
-				n.Value = -x
-			case float64:
-				n.Value = -x
-			default:
-				panic(fmt.Errorf("internal error: %T", x))
-			}
-		case 21: // '~' Expression
-			v, t := n.Expression.eval(lx)
-			n.Type = t
-			switch x := v.(type) {
-			case nil:
-				// nop
-			case int32:
-				n.Value = ^x
-			case uint32:
-				n.Value = ^x
-			case int64:
-				n.Value = ^x
-			case uint64:
-				n.Value = ^x
-			default:
-				panic(fmt.Errorf("internal error: %T", x))
-			}
-		case 22: // '!' Expression
-			v, _ := n.Expression.eval(lx)
-			n.Type = m.IntType
-			if v == nil {
-				break
+		n.Type = mb.Type
+	case 11: // Expression "->" IDENTIFIER
+		v, t := n.Expression.eval(lx)
+		if t.Kind() != Ptr {
+			lx.report.ErrTok(n.Token2, "invalid type argument of -> (have '%v')", t)
+			break
+		}
+
+		t = t.Element()
+		mb, err := t.Member(n.Token2.Val)
+		if err != nil {
+			lx.report.Err(n.Token2.Pos(), "%v", err)
+			break
+		}
+
+		n.Type = mb.Type
+		switch x := v.(type) {
+		case nil:
+			// nop
+		case uintptr:
+			n.Value = x + uintptr(mb.OffsetOf)
+		default:
+			panic("internal error")
+		}
+	case 12: // Expression "++"
+		n.Value, n.Type = n.Expression.eval(lx)
+	case 13: // Expression "--"
+		n.Value, n.Type = n.Expression.eval(lx)
+	case 14: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
+		n.Type = n.TypeName.Type
+		for l := n.InitializerList; l != nil; l = l.InitializerList {
+			if l.DesignationOpt != nil {
+				panic("TODO")
 			}
 
-			n.Value = m.cBool(isZero(v))
-		case 23: // "sizeof" Expression
-			n.Type = m.getSizeType(lx, n.Token)
-			_, t := n.Expression.eval(lx)
-			n.Value = m.MustConvert(int32(t.SizeOf()), n.Type)
-		case 24: // "sizeof" '(' TypeName ')'
-			n.Type = m.getSizeType(lx, n.Token)
-			n.Value = m.MustConvert(int32(n.TypeName.declarator.Type.SizeOf()), n.Type)
-		case 25: // '(' TypeName ')' Expression
-			v, _ := n.Expression.eval(lx)
-			n.Type = n.TypeName.declarator.Type
-			if v != nil {
-				n.Value = m.MustConvert(v, n.Type)
-			}
-		case 26: // Expression '*' Expression
-			var a, b interface{}
-			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+			l.Initializer.typeCheck(n.Type, nil, 0, -1, lx)
+		}
+	case 15: // "++" Expression
+		n.Value, n.Type = n.Expression.eval(lx)
+	case 16: // "--" Expression
+		n.Value, n.Type = n.Expression.eval(lx)
+	case 17: // '&' Expression
+		var t Type
+		n.Value, t = n.Expression.eval(lx)
+		n.Type = t.Pointer()
+	case 18: // '*' Expression
+		_, t := n.Expression.eval(lx)
+		if k := t.Kind(); k != Ptr && k != Array {
+			lx.report.ErrTok(n.Token, "invalid argument type of unary * (have '%v')", t)
+			break
+		}
 
-			switch x := a.(type) {
-			case nil:
-				// nop
-			case int32:
-				n.Value = x * b.(int32)
-			case uint32:
-				n.Value = x * b.(uint32)
-			case int64:
-				n.Value = x * b.(int64)
-			case uint64:
-				n.Value = x * b.(uint64)
-			case float64:
-				n.Value = x * b.(float64)
-			default:
-				panic(fmt.Errorf("internal error: %T", x))
-			}
-		case 27: // Expression '/' Expression
-			var a, b interface{}
-			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
-			if b != nil && isZero(b) {
-				lx.report.Err(n.Expression2.Pos(), "division by zero")
-				break
-			}
+		n.Type = t.Element()
+	case 19: // '+' Expression
+		n.Value, n.Type = n.Expression.eval(lx)
+	case 20: // '-' Expression
+		v, t := n.Expression.eval(lx)
+		n.Type = t
+		switch x := v.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = -x
+		case uint32:
+			n.Value = -x
+		case int64:
+			n.Value = -x
+		case float64:
+			n.Value = -x
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 21: // '~' Expression
+		v, t := n.Expression.eval(lx)
+		n.Type = t
+		switch x := v.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = ^x
+		case uint32:
+			n.Value = ^x
+		case int64:
+			n.Value = ^x
+		case uint64:
+			n.Value = ^x
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 22: // '!' Expression
+		v, _ := n.Expression.eval(lx)
+		n.Type = m.IntType
+		if v == nil {
+			break
+		}
 
-			switch x := a.(type) {
-			case nil:
-				// nop
-			case int32:
-				n.Value = x / b.(int32)
-			case uint32:
-				n.Value = x / b.(uint32)
-			case int64:
-				n.Value = x / b.(int64)
-			case uint64:
-				n.Value = x / b.(uint64)
-			case float64:
-				n.Value = x / b.(float64)
-			default:
-				panic(fmt.Errorf("internal error: %T", x))
-			}
-		case 28: // Expression '%' Expression
-			var a, b interface{}
-			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
-			if b != nil && isZero(b) {
-				lx.report.Err(n.Expression2.Pos(), "division by zero")
-				break
-			}
+		n.Value = m.cBool(isZero(v))
+	case 23: // "sizeof" Expression
+		n.Type = m.getSizeType(lx, n.Token)
+		_, t := n.Expression.eval(lx)
+		n.Value = m.MustConvert(int32(t.SizeOf()), n.Type)
+	case 24: // "sizeof" '(' TypeName ')'
+		n.Type = m.getSizeType(lx, n.Token)
+		n.Value = m.MustConvert(int32(n.TypeName.declarator.Type.SizeOf()), n.Type)
+	case 25: // '(' TypeName ')' Expression
+		v, _ := n.Expression.eval(lx)
+		n.Type = n.TypeName.declarator.Type
+		if v != nil {
+			n.Value = m.MustConvert(v, n.Type)
+		}
+	case 26: // Expression '*' Expression
+		var a, b interface{}
+		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
 
-			switch x := a.(type) {
-			case nil:
-				// nop
-			case int32:
-				n.Value = x % b.(int32)
-			case uint32:
-				n.Value = x % b.(uint32)
-			case int64:
-				n.Value = x % b.(int64)
-			case uint64:
-				n.Value = x % b.(uint64)
-			default:
-				panic(fmt.Errorf("internal error: %T", x))
-			}
-		case 29: // Expression '+' Expression
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			if at.Kind() == Array {
-				at = at.Element().Pointer()
-			}
-			if bt.Kind() == Array {
-				bt = bt.Element().Pointer()
-			}
-			if at.Kind() > bt.Kind() {
-				at, bt = bt, at
-			}
-			switch {
-			case at.Kind() == Ptr:
-				if IsIntType(bt) {
-					n.Type = at
-					break
-				}
+		switch x := a.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = x * b.(int32)
+		case uint32:
+			n.Value = x * b.(uint32)
+		case int64:
+			n.Value = x * b.(int64)
+		case uint64:
+			n.Value = x * b.(uint64)
+		case float64:
+			n.Value = x * b.(float64)
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 27: // Expression '/' Expression
+		var a, b interface{}
+		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		if b != nil && isZero(b) {
+			lx.report.Err(n.Expression2.Pos(), "division by zero")
+			break
+		}
 
-				lx.report.ErrTok(n.Token, "incompatible types ('%s' + '%s')", at, bt)
-			case IsArithmeticType(at):
-				fallthrough
-			default:
-				var a, b interface{}
-				a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
-				switch x := a.(type) {
-				case nil:
-					// nop
-				case int32:
-					n.Value = x + b.(int32)
-				case uint32:
-					n.Value = x + b.(uint32)
-				case int64:
-					n.Value = x + b.(int64)
-				case uint64:
-					n.Value = x + b.(uint64)
-				default:
-					panic(fmt.Errorf("internal error: %T", x))
-				}
-			}
-		case 30: // Expression '-' Expression
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			if at.Kind() == Array {
-				at = at.Element().Pointer()
-			}
-			if bt.Kind() == Array {
-				bt = bt.Element().Pointer()
-			}
-			if at.Kind() == Ptr && bt.Kind() == Ptr {
-				if !at.CanAssignTo(bt) {
-					n.Type = undefined
-					lx.report.Err(n.Expression2.Pos(), "incompatible types ('%s' - '%s')", at, bt)
-					break
-				}
+		switch x := a.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = x / b.(int32)
+		case uint32:
+			n.Value = x / b.(uint32)
+		case int64:
+			n.Value = x / b.(int64)
+		case uint64:
+			n.Value = x / b.(uint64)
+		case float64:
+			n.Value = x / b.(float64)
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 28: // Expression '%' Expression
+		var a, b interface{}
+		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		if b != nil && isZero(b) {
+			lx.report.Err(n.Expression2.Pos(), "division by zero")
+			break
+		}
 
-				n.Type = m.getPtrDiffType(lx, n.Token)
-				break
-			}
-
-			if at.Kind() == Ptr && IsIntType(bt) {
+		switch x := a.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = x % b.(int32)
+		case uint32:
+			n.Value = x % b.(uint32)
+		case int64:
+			n.Value = x % b.(int64)
+		case uint64:
+			n.Value = x % b.(uint64)
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 29: // Expression '+' Expression
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		if at.Kind() == Array {
+			at = at.Element().Pointer()
+		}
+		if bt.Kind() == Array {
+			bt = bt.Element().Pointer()
+		}
+		if at.Kind() > bt.Kind() {
+			at, bt = bt, at
+		}
+		switch {
+		case at.Kind() == Ptr:
+			if IsIntType(bt) {
 				n.Type = at
 				break
 			}
 
+			lx.report.ErrTok(n.Token, "incompatible types ('%s' + '%s')", at, bt)
+		case IsArithmeticType(at):
+			fallthrough
+		default:
 			var a, b interface{}
 			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
 			switch x := a.(type) {
 			case nil:
 				// nop
 			case int32:
-				n.Value = x - b.(int32)
+				n.Value = x + b.(int32)
 			case uint32:
-				n.Value = x - b.(uint32)
+				n.Value = x + b.(uint32)
 			case int64:
-				n.Value = x - b.(int64)
+				n.Value = x + b.(int64)
 			case uint64:
-				n.Value = x - b.(uint64)
+				n.Value = x + b.(uint64)
 			default:
 				panic(fmt.Errorf("internal error: %T", x))
 			}
-		case 31: // Expression "<<" Expression
-			av, at := n.Expression.eval(lx)
-			bv, _ := n.Expression2.eval(lx)
+		}
+	case 30: // Expression '-' Expression
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		if at.Kind() == Array {
+			at = at.Element().Pointer()
+		}
+		if bt.Kind() == Array {
+			bt = bt.Element().Pointer()
+		}
+		if at.Kind() == Ptr && bt.Kind() == Ptr {
+			if !at.CanAssignTo(bt) {
+				n.Type = undefined
+				lx.report.Err(n.Expression2.Pos(), "incompatible types ('%s' - '%s')", at, bt)
+				break
+			}
+
+			n.Type = m.getPtrDiffType(lx, n.Token)
+			break
+		}
+
+		if at.Kind() == Ptr && IsIntType(bt) {
 			n.Type = at
-			if av == nil || bv == nil {
-				break
-			}
+			break
+		}
 
-			switch x := av.(type) {
+		var a, b interface{}
+		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		switch x := a.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = x - b.(int32)
+		case uint32:
+			n.Value = x - b.(uint32)
+		case int64:
+			n.Value = x - b.(int64)
+		case uint64:
+			n.Value = x - b.(uint64)
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 31: // Expression "<<" Expression
+		av, at := n.Expression.eval(lx)
+		bv, _ := n.Expression2.eval(lx)
+		n.Type = at
+		if av == nil || bv == nil {
+			break
+		}
+
+		switch x := av.(type) {
+		case int32:
+			switch y := bv.(type) {
 			case int32:
-				switch y := bv.(type) {
-				case int32:
-					switch {
-					case y > 0:
-						n.Value = x << uint(y)
-					case y < 0:
-						n.Value = x >> uint(-y)
-					default:
-						n.Value = x
-					}
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
 				default:
-					panic(fmt.Errorf("internal error: %T", y))
+					n.Value = x
 				}
-			case uint32:
-				switch y := bv.(type) {
-				case int32:
-					switch {
-					case y > 0:
-						n.Value = x << uint(y)
-					case y < 0:
-						n.Value = x >> uint(-y)
-					default:
-						n.Value = x
-					}
-				case uint64:
-					switch {
-					case y > 0:
-						n.Value = x << uint(y)
-					case y < 0:
-						n.Value = x >> uint(-y)
-					default:
-						n.Value = x
-					}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
+		case uint32:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
 				default:
-					panic(fmt.Errorf("internal error: %T", y))
-				}
-			case int64:
-				switch y := bv.(type) {
-				case int32:
-					switch {
-					case y > 0:
-						n.Value = x << uint(y)
-					case y < 0:
-						n.Value = x >> uint(-y)
-					default:
-						n.Value = x
-					}
-				case int64:
-					switch {
-					case y > 0:
-						n.Value = x << uint(y)
-					case y < 0:
-						n.Value = x >> uint(-y)
-					default:
-						n.Value = x
-					}
-				default:
-					panic(fmt.Errorf("internal error: %T", y))
+					n.Value = x
 				}
 			case uint64:
-				switch y := bv.(type) {
-				case int32:
-					switch {
-					case y > 0:
-						n.Value = x << uint(y)
-					case y < 0:
-						n.Value = x >> uint(-y)
-					default:
-						n.Value = x
-					}
-				case uint64:
-					switch {
-					case y > 0:
-						n.Value = x << uint(y)
-					case y < 0:
-						n.Value = x >> uint(-y)
-					default:
-						n.Value = x
-					}
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
 				default:
-					panic(fmt.Errorf("internal error: %T", y))
+					n.Value = x
 				}
 			default:
-				panic(fmt.Errorf("internal error: %T", x))
+				panic(fmt.Errorf("internal error: %T", y))
 			}
-		case 32: // Expression ">>" Expression
-			av, at := n.Expression.eval(lx)
-			bv, _ := n.Expression2.eval(lx)
-			n.Type = at
-			if av == nil || bv == nil {
-				break
-			}
-
-			switch x := av.(type) {
+		case int64:
+			switch y := bv.(type) {
 			case int32:
-				switch y := bv.(type) {
-				case int32:
-					switch {
-					case y > 0:
-						n.Value = x >> uint(y)
-					case y < 0:
-						n.Value = x << uint(-y)
-					default:
-						n.Value = x
-					}
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
 				default:
-					panic(fmt.Errorf("internal error: %T", y))
-				}
-			case uint32:
-				switch y := bv.(type) {
-				case int32:
-					switch {
-					case y > 0:
-						n.Value = x >> uint(y)
-					case y < 0:
-						n.Value = x << uint(-y)
-					default:
-						n.Value = x
-					}
-				default:
-					panic(fmt.Errorf("internal error: %T", y))
+					n.Value = x
 				}
 			case int64:
-				switch y := bv.(type) {
-				case int32:
-					switch {
-					case y > 0:
-						n.Value = x >> uint(y)
-					case y < 0:
-						n.Value = x << uint(-y)
-					default:
-						n.Value = x
-					}
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
 				default:
-					panic(fmt.Errorf("internal error: %T", y))
+					n.Value = x
 				}
 			default:
-				panic(fmt.Errorf("internal error: %T", x))
+				panic(fmt.Errorf("internal error: %T", y))
 			}
-		case 33: // Expression '<' Expression
-			n.Type = m.IntType
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			a0, b0 := at, bt
-			if at.Kind() > bt.Kind() {
-				at, bt = bt, at
-			}
-			switch {
-			case at.Kind() == Ptr:
-				if bt.Kind() == Array {
-					bt = bt.Element().Pointer()
-				}
-				if !at.CanAssignTo(bt) {
-					lx.report.ErrTok(n.Token, "incompatible types ('%s' < '%s')", a0, b0)
-				}
-				break
-			case IsArithmeticType(at):
-				fallthrough
-			default:
-				n.Type = m.IntType
-				var a, b interface{}
-				a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
-				switch x := a.(type) {
-				case nil:
-					// nop
-				case int32:
-					n.Value = m.cBool(x < b.(int32))
-				case uint32:
-					n.Value = m.cBool(x < b.(uint32))
-				case int64:
-					n.Value = m.cBool(x < b.(int64))
-				case uint64:
-					n.Value = m.cBool(x < b.(uint64))
+		case uint64:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
 				default:
-					panic(fmt.Errorf("internal error: %T", x))
+					n.Value = x
 				}
-			}
-		case 34: // Expression '>' Expression
-			n.Type = m.IntType
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			a0, b0 := at, bt
-			if at.Kind() > bt.Kind() {
-				at, bt = bt, at
-			}
-			switch {
-			case at.Kind() == Ptr:
-				if bt.Kind() == Array {
-					bt = bt.Element().Pointer()
-				}
-				if !at.CanAssignTo(bt) {
-					lx.report.ErrTok(n.Token, "incompatible types ('%s' > '%s')", a0, b0)
-				}
-				break
-			case IsArithmeticType(at):
-				fallthrough
-			default:
-				n.Type = m.IntType
-				var a, b interface{}
-				a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
-				switch x := a.(type) {
-				case nil:
-					// nop
-				case int32:
-					n.Value = m.cBool(x > b.(int32))
-				case int64:
-					n.Value = m.cBool(x > b.(int64))
-				case uint32:
-					n.Value = m.cBool(x > b.(uint32))
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
 				default:
-					panic(fmt.Errorf("internal error: %T", x))
+					n.Value = x
 				}
-			}
-		case 35: // Expression "<=" Expression
-			n.Type = m.IntType
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			a0, b0 := at, bt
-			if at.Kind() > bt.Kind() {
-				at, bt = bt, at
-			}
-			switch {
-			case at.Kind() == Ptr:
-				if !at.CanAssignTo(bt) {
-					lx.report.ErrTok(n.Token, "incompatible types ('%s' <= '%s')", a0, b0)
-				}
-				break
-			case IsArithmeticType(at):
-				fallthrough
 			default:
-				n.Type = m.IntType
-				var a, b interface{}
-				a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
-				switch x := a.(type) {
-				case nil:
-					// nop
-				case int32:
-					n.Value = m.cBool(x <= b.(int32))
-				case uint32:
-					n.Value = m.cBool(x <= b.(uint32))
-				case int64:
-					n.Value = m.cBool(x <= b.(int64))
-				case uint64:
-					n.Value = m.cBool(x <= b.(uint64))
-				default:
-					panic(fmt.Errorf("internal error: %T", x))
-				}
+				panic(fmt.Errorf("internal error: %T", y))
 			}
-		case 36: // Expression ">=" Expression
-			n.Type = m.IntType
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			a0, b0 := at, bt
-			if at.Kind() > bt.Kind() {
-				at, bt = bt, at
-			}
-			switch {
-			case at.Kind() == Ptr:
-				if !at.CanAssignTo(bt) {
-					lx.report.ErrTok(n.Token, "incompatible types ('%s' >= '%s')", a0, b0)
-				}
-				break
-			case IsArithmeticType(at):
-				fallthrough
-			default:
-				var a, b interface{}
-				a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
-				switch x := a.(type) {
-				case nil:
-					// nop
-				case int32:
-					n.Value = m.cBool(x >= b.(int32))
-				case uint32:
-					n.Value = m.cBool(x >= b.(uint32))
-				case int64:
-					n.Value = m.cBool(x >= b.(int64))
-				case uint64:
-					n.Value = m.cBool(x >= b.(uint64))
-				default:
-					panic(fmt.Errorf("internal error: %T", x))
-				}
-			}
-		case 37: // Expression "==" Expression
-			n.Type = m.IntType
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			a0, b0 := at, bt
-			if at.Kind() > bt.Kind() {
-				at, bt = bt, at
-			}
-			switch {
-			case at.Kind() == Ptr:
-				if IsIntType(bt) {
-					break
-				}
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 32: // Expression ">>" Expression
+		av, at := n.Expression.eval(lx)
+		bv, _ := n.Expression2.eval(lx)
+		n.Type = at
+		if av == nil || bv == nil {
+			break
+		}
 
-				if bt.Kind() == Array {
-					bt = bt.(*ctype).arrayDecay()
+		switch x := av.(type) {
+		case int32:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
 				}
-				if bt.Kind() == Function && at.Element().Kind() == Function {
-					bt = bt.Pointer()
-				}
-				if !at.CanAssignTo(bt) {
-					lx.report.ErrTok(n.Token, "incompatible types ('%s' == '%s')", a0, b0)
-				}
-				break
-			case IsArithmeticType(at):
-				fallthrough
 			default:
-				var a, b interface{}
-				a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
-				if a == nil {
-					break
-				}
-
-				n.Value = m.cBool(a == b)
+				panic(fmt.Errorf("internal error: %T", y))
 			}
-		case 38: // Expression "!=" Expression
+		case uint32:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
+		case int64:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 33: // Expression '<' Expression
+		n.Type = m.IntType
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		a0, b0 := at, bt
+		if at.Kind() > bt.Kind() {
+			at, bt = bt, at
+		}
+		switch {
+		case at.Kind() == Ptr:
+			if bt.Kind() == Array {
+				bt = bt.Element().Pointer()
+			}
+			if !at.CanAssignTo(bt) {
+				lx.report.ErrTok(n.Token, "incompatible types ('%s' < '%s')", a0, b0)
+			}
+			break
+		case IsArithmeticType(at):
+			fallthrough
+		default:
 			n.Type = m.IntType
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			if at.Kind() > bt.Kind() {
-				at, bt = bt, at
-			}
-			switch {
-			case at.Kind() == Ptr:
-				if IsIntType(bt) {
-					break
-				}
-
-				if bt.Kind() == Function && at.Element().Kind() == Function {
-					bt = bt.Pointer()
-				}
-				if bt.Kind() == Array {
-					bt = bt.(*ctype).arrayDecay()
-				}
-				if !at.CanAssignTo(bt) {
-					lx.report.ErrTok(n.Token, "incompatible types ('%s' != '%s')", at, bt)
-				}
-				break
-			case IsArithmeticType(at):
-				fallthrough
-			default:
-				var a, b interface{}
-				a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
-				if a == nil {
-					break
-				}
-
-				n.Value = m.cBool(a != b)
-			}
-		case 39: // Expression '&' Expression
 			var a, b interface{}
-			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+			a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
 			switch x := a.(type) {
 			case nil:
 				// nop
 			case int32:
-				n.Value = x & b.(int32)
+				n.Value = m.cBool(x < b.(int32))
 			case uint32:
-				n.Value = x & b.(uint32)
+				n.Value = m.cBool(x < b.(uint32))
 			case int64:
-				n.Value = x & b.(int64)
+				n.Value = m.cBool(x < b.(int64))
 			case uint64:
-				n.Value = x & b.(uint64)
+				n.Value = m.cBool(x < b.(uint64))
 			default:
 				panic(fmt.Errorf("internal error: %T", x))
 			}
-		case 40: // Expression '^' Expression
-			var a, b interface{}
-			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
-			switch x := a.(type) {
-			case nil:
-				// nop
-			case int32:
-				n.Value = x ^ b.(int32)
-			case uint32:
-				n.Value = x ^ b.(uint32)
-			default:
-				panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 34: // Expression '>' Expression
+		n.Type = m.IntType
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		a0, b0 := at, bt
+		if at.Kind() > bt.Kind() {
+			at, bt = bt, at
+		}
+		switch {
+		case at.Kind() == Ptr:
+			if bt.Kind() == Array {
+				bt = bt.Element().Pointer()
 			}
-		case 41: // Expression '|' Expression
-			var a, b interface{}
-			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
-			switch x := a.(type) {
-			case nil:
-				// nop
-			case int32:
-				n.Value = x | b.(int32)
-			case uint32:
-				n.Value = x | b.(uint32)
-			case int64:
-				n.Value = x | b.(int64)
-			case uint64:
-				n.Value = x | b.(uint64)
-			default:
-				panic(fmt.Sprintf("internal error: %T", x))
+			if !at.CanAssignTo(bt) {
+				lx.report.ErrTok(n.Token, "incompatible types ('%s' > '%s')", a0, b0)
 			}
-		case 42: // Expression "&&" Expression
+			break
+		case IsArithmeticType(at):
+			fallthrough
+		default:
 			n.Type = m.IntType
-			a, _ := n.Expression.eval(lx)
-			if a != nil && isZero(a) {
+			var a, b interface{}
+			a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
+			switch x := a.(type) {
+			case nil:
+				// nop
+			case int32:
+				n.Value = m.cBool(x > b.(int32))
+			case int64:
+				n.Value = m.cBool(x > b.(int64))
+			case uint32:
+				n.Value = m.cBool(x > b.(uint32))
+			default:
+				panic(fmt.Errorf("internal error: %T", x))
+			}
+		}
+	case 35: // Expression "<=" Expression
+		n.Type = m.IntType
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		a0, b0 := at, bt
+		if at.Kind() > bt.Kind() {
+			at, bt = bt, at
+		}
+		switch {
+		case at.Kind() == Ptr:
+			if !at.CanAssignTo(bt) {
+				lx.report.ErrTok(n.Token, "incompatible types ('%s' <= '%s')", a0, b0)
+			}
+			break
+		case IsArithmeticType(at):
+			fallthrough
+		default:
+			n.Type = m.IntType
+			var a, b interface{}
+			a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
+			switch x := a.(type) {
+			case nil:
+				// nop
+			case int32:
+				n.Value = m.cBool(x <= b.(int32))
+			case uint32:
+				n.Value = m.cBool(x <= b.(uint32))
+			case int64:
+				n.Value = m.cBool(x <= b.(int64))
+			case uint64:
+				n.Value = m.cBool(x <= b.(uint64))
+			default:
+				panic(fmt.Errorf("internal error: %T", x))
+			}
+		}
+	case 36: // Expression ">=" Expression
+		n.Type = m.IntType
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		a0, b0 := at, bt
+		if at.Kind() > bt.Kind() {
+			at, bt = bt, at
+		}
+		switch {
+		case at.Kind() == Ptr:
+			if !at.CanAssignTo(bt) {
+				lx.report.ErrTok(n.Token, "incompatible types ('%s' >= '%s')", a0, b0)
+			}
+			break
+		case IsArithmeticType(at):
+			fallthrough
+		default:
+			var a, b interface{}
+			a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
+			switch x := a.(type) {
+			case nil:
+				// nop
+			case int32:
+				n.Value = m.cBool(x >= b.(int32))
+			case uint32:
+				n.Value = m.cBool(x >= b.(uint32))
+			case int64:
+				n.Value = m.cBool(x >= b.(int64))
+			case uint64:
+				n.Value = m.cBool(x >= b.(uint64))
+			default:
+				panic(fmt.Errorf("internal error: %T", x))
+			}
+		}
+	case 37: // Expression "==" Expression
+		n.Type = m.IntType
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		a0, b0 := at, bt
+		if at.Kind() > bt.Kind() {
+			at, bt = bt, at
+		}
+		switch {
+		case at.Kind() == Ptr:
+			if IsIntType(bt) {
+				break
+			}
+
+			if bt.Kind() == Array {
+				bt = bt.(*ctype).arrayDecay()
+			}
+			if bt.Kind() == Function && at.Element().Kind() == Function {
+				bt = bt.Pointer()
+			}
+			if !at.CanAssignTo(bt) {
+				lx.report.ErrTok(n.Token, "incompatible types ('%s' == '%s')", a0, b0)
+			}
+			break
+		case IsArithmeticType(at):
+			fallthrough
+		default:
+			var a, b interface{}
+			a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
+			if a == nil {
+				break
+			}
+
+			n.Value = m.cBool(a == b)
+		}
+	case 38: // Expression "!=" Expression
+		n.Type = m.IntType
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		if at.Kind() > bt.Kind() {
+			at, bt = bt, at
+		}
+		switch {
+		case at.Kind() == Ptr:
+			if IsIntType(bt) {
+				break
+			}
+
+			if bt.Kind() == Function && at.Element().Kind() == Function {
+				bt = bt.Pointer()
+			}
+			if bt.Kind() == Array {
+				bt = bt.(*ctype).arrayDecay()
+			}
+			if !at.CanAssignTo(bt) {
+				lx.report.ErrTok(n.Token, "incompatible types ('%s' != '%s')", at, bt)
+			}
+			break
+		case IsArithmeticType(at):
+			fallthrough
+		default:
+			var a, b interface{}
+			a, b, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2)
+			if a == nil {
+				break
+			}
+
+			n.Value = m.cBool(a != b)
+		}
+	case 39: // Expression '&' Expression
+		var a, b interface{}
+		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		switch x := a.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = x & b.(int32)
+		case uint32:
+			n.Value = x & b.(uint32)
+		case int64:
+			n.Value = x & b.(int64)
+		case uint64:
+			n.Value = x & b.(uint64)
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 40: // Expression '^' Expression
+		var a, b interface{}
+		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		switch x := a.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = x ^ b.(int32)
+		case uint32:
+			n.Value = x ^ b.(uint32)
+		default:
+			panic(fmt.Errorf("internal error: %T", x))
+		}
+	case 41: // Expression '|' Expression
+		var a, b interface{}
+		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		switch x := a.(type) {
+		case nil:
+			// nop
+		case int32:
+			n.Value = x | b.(int32)
+		case uint32:
+			n.Value = x | b.(uint32)
+		case int64:
+			n.Value = x | b.(int64)
+		case uint64:
+			n.Value = x | b.(uint64)
+		default:
+			panic(fmt.Sprintf("internal error: %T", x))
+		}
+	case 42: // Expression "&&" Expression
+		n.Type = m.IntType
+		a, _ := n.Expression.eval(lx)
+		if a != nil && isZero(a) {
+			n.Value = m.cBool(false)
+			break
+		}
+
+		b, _ := n.Expression2.eval(lx)
+		if a != nil && b != nil {
+			if isZero(b) {
 				n.Value = m.cBool(false)
 				break
 			}
 
-			b, _ := n.Expression2.eval(lx)
-			if a != nil && b != nil {
-				if isZero(b) {
-					n.Value = m.cBool(false)
-					break
-				}
-
-				n.Value = m.cBool(true)
-				break
-			}
-		case 43: // Expression "||" Expression
-			n.Type = m.IntType
-			av, _ := n.Expression.eval(lx)
-			if av != nil && isNonZero(av) {
-				n.Value = m.cBool(true)
-				break
-			}
-
-			bv, _ := n.Expression2.eval(lx)
-			if av != nil && bv != nil {
-				n.Value = m.cBool(isNonZero(bv))
-				break
-			}
-		case 44: // Expression '?' ExpressionList ':' Expression
-			lv, _ := n.Expression.eval(lx)
-			if lv == nil {
-				_, at := n.ExpressionList.eval(lx)
-				_, bt := n.Expression2.eval(lx)
-				if IsArithmeticType(at) && IsArithmeticType(bt) {
-					n.Type = m.binOpType(at, bt)
-					break
-				}
-
-				ak := at.Kind()
-				bk := bt.Kind()
-				if ak == Struct && bk == Struct ||
-					ak == Union && bk == Union {
-					if at.CanAssignTo(bt) {
-						n.Type = at
-						break
-					}
-				}
-
-				if ak == Void && bk == Void {
-					n.Type = at
-					break
-				}
-
-				if ak == Array && bk == Array {
-					if at.(*ctype).isCompatible(bt.(*ctype)) {
-						n.Type = at
-						break
-					}
-
-					at = at.(*ctype).arrayDecay()
-					ak = at.Kind()
-					bt = bt.(*ctype).arrayDecay()
-					bk = bt.Kind()
-				}
-
-				if ak == Array && bk == Ptr && at.CanAssignTo(bt) {
-					n.Type = bt
-					break
-				}
-
-				if ak == Ptr && bk == Array && bt.CanAssignTo(at) {
-					n.Type = at
-					break
-				}
-
-				if ak == Ptr && bk == Ptr {
-					if at.CanAssignTo(bt) {
-						n.Type = at
-						break
-					}
-				}
-
-				if ak == Ptr && IsIntType(bt) {
-					n.Type = at
-					break
-				}
-
-				if bk == Ptr && IsIntType(at) {
-					n.Type = bt
-					break
-				}
-
-				if ak == Ptr && at.Element().Kind() == Void && bk == Ptr {
-					n.Type = bt
-					break
-				}
-
-				if bk == Ptr && bt.Element().Kind() == Void && ak == Ptr {
-					n.Type = at
-					break
-				}
-
-				lx.report.ErrTok(n.Token2, "'%s'/'%s' mismatch in conditional expression", at, bt)
-				break
-			}
-
-			if isNonZero(lv) {
-				n.Value, n.Type = n.ExpressionList.eval(lx)
-				break
-			}
-
-			n.Value, n.Type = n.Expression2.eval(lx)
-		case 45: // Expression '=' Expression
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			if bt.Kind() == Function {
-				bt = bt.Pointer()
-			}
-			if !bt.CanAssignTo(at) {
-				lx.report.Err(n.Expression2.Pos(), "assignment from incompatible type ('%s' = '%s')", at, bt)
-				break
-			}
-
-			n.Type = at
-		case 46: // Expression "*=" Expression
-			_, n.Type = n.Expression.eval(lx)
-			if _, _, t := m.binOp(lx, n.Expression, n.Expression2); t.Kind() == Undefined {
-				lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
-			}
-		case
-			47, // Expression "/=" Expression
-			48: // Expression "%=" Expression
-			m.checkArithmeticType(lx, n.Expression, n.Expression2)
-			n.Type = n.Expression.Type
-			if v := n.Expression2.Value; v != nil && isZero(v) {
-				lx.report.Err(n.Expression2.Pos(), "division by zero")
-				break
-			}
-
-			if _, _, t := m.binOp(lx, n.Expression, n.Expression2); t.Kind() == Undefined {
-				lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
-			}
-		case
-			49, // Expression "+=" Expression
-			50: // Expression "-=" Expression
-			_, at := n.Expression.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			n.Type = at
-			switch {
-			case at.Kind() == Ptr:
-				if IsIntType(bt) {
-					break
-				}
-
-				panic("TODO")
-			case IsArithmeticType(at):
-				fallthrough
-			default:
-				if _, _, n.Type = m.binOp(lx, n.Expression, n.Expression2); n.Type.Kind() == Undefined {
-					lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
-				}
-			}
-		case
-			51, // Expression "<<=" Expression
-			52, // Expression ">>=" Expression
-			53, // Expression "&=" Expression
-			54, // Expression "^=" Expression
-			55: // Expression "|=" Expression
-			m.checkIntegerType(lx, n.Expression, n.Expression2)
-			n.Type = n.Expression.Type
-		default:
-			//dbg("", PrettyString(n))
-			panic(n.Case)
+			n.Value = m.cBool(true)
+			break
 		}
+	case 43: // Expression "||" Expression
+		n.Type = m.IntType
+		av, _ := n.Expression.eval(lx)
+		if av != nil && isNonZero(av) {
+			n.Value = m.cBool(true)
+			break
+		}
+
+		bv, _ := n.Expression2.eval(lx)
+		if av != nil && bv != nil {
+			n.Value = m.cBool(isNonZero(bv))
+			break
+		}
+	case 44: // Expression '?' ExpressionList ':' Expression
+		lv, _ := n.Expression.eval(lx)
+		if lv == nil {
+			_, at := n.ExpressionList.eval(lx)
+			_, bt := n.Expression2.eval(lx)
+			if IsArithmeticType(at) && IsArithmeticType(bt) {
+				n.Type = m.binOpType(at, bt)
+				break
+			}
+
+			ak := at.Kind()
+			bk := bt.Kind()
+			if ak == Struct && bk == Struct ||
+				ak == Union && bk == Union {
+				if at.CanAssignTo(bt) {
+					n.Type = at
+					break
+				}
+			}
+
+			if ak == Void && bk == Void {
+				n.Type = at
+				break
+			}
+
+			if ak == Array && bk == Array {
+				if at.(*ctype).isCompatible(bt.(*ctype)) {
+					n.Type = at
+					break
+				}
+
+				at = at.(*ctype).arrayDecay()
+				ak = at.Kind()
+				bt = bt.(*ctype).arrayDecay()
+				bk = bt.Kind()
+			}
+
+			if ak == Array && bk == Ptr && at.CanAssignTo(bt) {
+				n.Type = bt
+				break
+			}
+
+			if ak == Ptr && bk == Array && bt.CanAssignTo(at) {
+				n.Type = at
+				break
+			}
+
+			if ak == Ptr && bk == Ptr {
+				if at.CanAssignTo(bt) {
+					n.Type = at
+					break
+				}
+			}
+
+			if ak == Ptr && IsIntType(bt) {
+				n.Type = at
+				break
+			}
+
+			if bk == Ptr && IsIntType(at) {
+				n.Type = bt
+				break
+			}
+
+			if ak == Ptr && at.Element().Kind() == Void && bk == Ptr {
+				n.Type = bt
+				break
+			}
+
+			if bk == Ptr && bt.Element().Kind() == Void && ak == Ptr {
+				n.Type = at
+				break
+			}
+
+			lx.report.ErrTok(n.Token2, "'%s'/'%s' mismatch in conditional expression", at, bt)
+			break
+		}
+
+		if isNonZero(lv) {
+			n.Value, n.Type = n.ExpressionList.eval(lx)
+			break
+		}
+
+		n.Value, n.Type = n.Expression2.eval(lx)
+	case 45: // Expression '=' Expression
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		if bt.Kind() == Function {
+			bt = bt.Pointer()
+		}
+		if !bt.CanAssignTo(at) {
+			lx.report.Err(n.Expression2.Pos(), "assignment from incompatible type ('%s' = '%s')", at, bt)
+			break
+		}
+
+		n.Type = at
+	case 46: // Expression "*=" Expression
+		_, n.Type = n.Expression.eval(lx)
+		if _, _, t := m.binOp(lx, n.Expression, n.Expression2); t.Kind() == Undefined {
+			lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
+		}
+	case
+		47, // Expression "/=" Expression
+		48: // Expression "%=" Expression
+		m.checkArithmeticType(lx, n.Expression, n.Expression2)
+		n.Type = n.Expression.Type
+		if v := n.Expression2.Value; v != nil && isZero(v) {
+			lx.report.Err(n.Expression2.Pos(), "division by zero")
+			break
+		}
+
+		if _, _, t := m.binOp(lx, n.Expression, n.Expression2); t.Kind() == Undefined {
+			lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
+		}
+	case
+		49, // Expression "+=" Expression
+		50: // Expression "-=" Expression
+		_, at := n.Expression.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		n.Type = at
+		switch {
+		case at.Kind() == Ptr:
+			if IsIntType(bt) {
+				break
+			}
+
+			panic("TODO")
+		case IsArithmeticType(at):
+			fallthrough
+		default:
+			if _, _, n.Type = m.binOp(lx, n.Expression, n.Expression2); n.Type.Kind() == Undefined {
+				lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
+			}
+		}
+	case
+		51, // Expression "<<=" Expression
+		52, // Expression ">>=" Expression
+		53, // Expression "&=" Expression
+		54, // Expression "^=" Expression
+		55: // Expression "|=" Expression
+		m.checkIntegerType(lx, n.Expression, n.Expression2)
+		n.Type = n.Expression.Type
+	default:
+		//dbg("", PrettyString(n))
+		panic(n.Case)
 	}
 	//ct := n.Type.(*ctype)
 	//s := ""
@@ -1663,6 +1671,10 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 			dt := dt.Element()
 			i := 0
 			for l := n.InitializerList; l != nil; l = l.InitializerList {
+				if l.DesignationOpt != nil {
+					panic("TODO")
+				}
+
 				l.Initializer.typeCheck(dt, nil, i, lim, lx)
 				i++
 			}
@@ -1678,6 +1690,10 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 			}
 			i := 0
 			for l := n.InitializerList; l != nil; l = l.InitializerList {
+				if l.DesignationOpt != nil {
+					panic("TODO")
+				}
+
 				l.Initializer.typeCheck(nil, mb, i, lim, lx)
 				i++
 			}

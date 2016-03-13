@@ -1227,6 +1227,10 @@ InitDeclarator:
 			values := 0
 			for l := i.InitializerList; l != nil; l = l.InitializerList {
 				values++
+				if l.DesignationOpt != nil {
+					panic("TODO")
+				}
+
 				l.Initializer.typeCheck(checkType, mb, values-1, limit, lx)
 			}
 		default:
@@ -1433,7 +1437,10 @@ TypeSpecifier:
 		}
 		$$ = lhs
 		lhs.typeSpecifier = tsEncode(tsTypeof)
-		lhs.Type = lhs.TypeName.Type
+		lhs.Type = undefined
+		if t := lhs.TypeName.Type; t != nil {
+			lhs.Type = t
+		}
 	}
 
 StructOrUnionSpecifier:
