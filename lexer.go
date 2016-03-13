@@ -388,9 +388,12 @@ func (l *lexer) Lex(lval *yySymType) int {
 
 // Error Implements yyLexer.
 func (l *lexer) Error(msg string) {
-	if isTesting || l.tweaks.includeLastTokenInfoInErrors {
-		msg = strings.Join([]string{msg, fmt.Sprintf("(last lexer token: %s)", PrettyString(l.tokLast))}, " ")
+	t := l.tokLast
+	s := ""
+	if tokHasVal[t.Rune] {
+		s = fmt.Sprintf(" %s", t.S())
 	}
+	msg = strings.Join([]string{fmt.Sprintf("unexpected %s%s,", yySymName(int(l.tokLast.Rune)), s), msg}, " ")
 	l.report.Err(errPos(l.tokLast.Pos()), "%s", msg)
 }
 

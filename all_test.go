@@ -826,7 +826,7 @@ double __builtin_inff();
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/normal.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ops.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/option.c"}, opts...)
-	//TODO testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/os_unix.c"}, opts...)
+	//testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/os_unix.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/auto/pathdef.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/popupmnu.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/quickfix.c"}, opts...)

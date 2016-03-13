@@ -718,6 +718,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Value, n.Type = n.Expression.eval(lx)
 	case 14: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
 		n.Type = n.TypeName.Type
+		break //TODO-
 		for l := n.InitializerList; l != nil; l = l.InitializerList {
 			if l.DesignationOpt != nil {
 				panic("TODO")

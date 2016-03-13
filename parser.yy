@@ -96,6 +96,7 @@ import (
 	ANDAND				"&&"
 	ANDASSIGN			"&="
 	ARROW				"->"
+	ASM				"asm"
 	AUTO				"auto"
 	BOOL				"_Bool"
 	BREAK				"break"
@@ -167,6 +168,8 @@ import (
 	AbstractDeclaratorOpt		"optional abstract declarator"
 	ArgumentExpressionList		"argument expression list"
 	ArgumentExpressionListOpt	"optional argument expression list"
+	AssemblerInstructions		"assembler instructions"
+	BasicAsmStatement		"basic assembler statement"
 	BlockItem			"block item"
 	BlockItemList			"block item list"
 	BlockItemListOpt		"optional block item list"
@@ -244,6 +247,7 @@ import (
 	TypeQualifierList		"type qualifier list"
 	TypeQualifierListOpt		"optional type qualifier list"
 	TypeSpecifier			"type specifier"
+	VolatileOpt			"optional volatile"
 
 %precedence	NOELSE
 %precedence	ELSE
@@ -1625,6 +1629,7 @@ TranslationUnit:
 ExternalDeclaration:
 	FunctionDefinition
 |	Declaration
+|	BasicAsmStatement
 
 // [0](6.9.1)
 FunctionDefinition:
@@ -1698,6 +1703,18 @@ DeclarationListOpt:
 	{
 		lhs.paramsScope, _ = lx.popScopePos(lhs.Pos())
 	}
+
+//yy:list
+AssemblerInstructions:
+	STRINGLITERAL
+|	AssemblerInstructions STRINGLITERAL
+
+BasicAsmStatement:
+	"asm" VolatileOpt '(' AssemblerInstructions ')'
+
+VolatileOpt:
+	/* empty */ {}
+|	"volatile"
 
 // ========================================================= PREPROCESSING_FILE
 

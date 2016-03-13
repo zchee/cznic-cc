@@ -85,6 +85,7 @@ func cppSysIncludePaths() ([]string, error) {
 
 type tweaks struct {
 	enableAnonymousStructFields    bool //
+	enableAsm                      bool //
 	enableDefineOmitCommaBeforeDDD bool // #define foo(a, b...)
 	enableDlrInIdentifiers         bool // foo$bar
 	enableEmptyDefine              bool // #define
@@ -93,7 +94,6 @@ type tweaks struct {
 	enableTypeof                   bool //
 	enableUndefExtraTokens         bool // #undef foo(bar)
 	enableWarnings                 bool // #warning
-	includeLastTokenInfoInErrors   bool //
 	preprocessOnly                 bool //
 }
 
@@ -106,6 +106,7 @@ func exampleAST(rule int, src string) interface{} {
 		bytes.NewBufferString(src),
 		report,
 		&tweaks{
+			enableAsm:         true,
 			enableIncludeNext: true,
 			enableTypeof:      true,
 		},
@@ -240,12 +241,6 @@ func EnableEmptyDefine() Opt {
 	return func(l *lexer) { l.tweaks.enableEmptyDefine = true }
 }
 
-// IncludeLastTokenInfoInErrors extends error messages with information about
-// the last lexer token.
-func IncludeLastTokenInfoInErrors() Opt {
-	return func(l *lexer) { l.tweaks.includeLastTokenInfoInErrors = true }
-}
-
 // EnableUndefExtraTokens makes the parser accept non standard
 //
 //	#undef foo(bar)
@@ -291,6 +286,9 @@ func ErrLimit(n int) Opt {
 
 // Trigraphs enables processing of trigraphs.
 func Trigraphs() Opt { return func(lx *lexer) { lx.tweaks.enableTrigraphs = true } }
+
+// EnableAsm enables recognizing the reserved word asm.
+func EnableAsm() Opt { return func(lx *lexer) { lx.tweaks.enableAsm = true } }
 
 // EnableTypeOf enables recognizing the reserved word typeof.
 func EnableTypeOf() Opt { return func(lx *lexer) { lx.tweaks.enableTypeof = true } }

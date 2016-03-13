@@ -146,6 +146,77 @@ func (n *ArgumentExpressionListOpt) Pos() token.Pos {
 	return n.ArgumentExpressionList.Pos()
 }
 
+// AssemblerInstructions represents data reduced by productions:
+//
+//	AssemblerInstructions:
+//	        STRINGLITERAL
+//	|       AssemblerInstructions STRINGLITERAL  // Case 1
+type AssemblerInstructions struct {
+	AssemblerInstructions *AssemblerInstructions
+	Case                  int
+	Token                 xc.Token
+}
+
+func (n *AssemblerInstructions) reverse() *AssemblerInstructions {
+	if n == nil {
+		return nil
+	}
+
+	na := n
+	nb := na.AssemblerInstructions
+	for nb != nil {
+		nc := nb.AssemblerInstructions
+		nb.AssemblerInstructions = na
+		na = nb
+		nb = nc
+	}
+	n.AssemblerInstructions = nil
+	return na
+}
+
+func (n *AssemblerInstructions) fragment() interface{} { return n.reverse() }
+
+// String implements fmt.Stringer.
+func (n *AssemblerInstructions) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *AssemblerInstructions) Pos() token.Pos {
+	switch n.Case {
+	case 1:
+		return n.AssemblerInstructions.Pos()
+	case 0:
+		return n.Token.Pos()
+	default:
+		panic("internal error")
+	}
+}
+
+// BasicAsmStatement represents data reduced by production:
+//
+//	BasicAsmStatement:
+//	        "asm" VolatileOpt '(' AssemblerInstructions ')'
+type BasicAsmStatement struct {
+	AssemblerInstructions *AssemblerInstructions
+	Token                 xc.Token
+	Token2                xc.Token
+	Token3                xc.Token
+	VolatileOpt           *VolatileOpt
+}
+
+func (n *BasicAsmStatement) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *BasicAsmStatement) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *BasicAsmStatement) Pos() token.Pos {
+	return n.Token.Pos()
+}
+
 // BlockItem represents data reduced by productions:
 //
 //	BlockItem:
@@ -1344,7 +1415,9 @@ func (n *ExpressionStatement) Pos() token.Pos {
 //	ExternalDeclaration:
 //	        FunctionDefinition
 //	|       Declaration         // Case 1
+//	|       BasicAsmStatement   // Case 2
 type ExternalDeclaration struct {
+	BasicAsmStatement  *BasicAsmStatement
 	Case               int
 	Declaration        *Declaration
 	FunctionDefinition *FunctionDefinition
@@ -1360,6 +1433,8 @@ func (n *ExternalDeclaration) String() string {
 // Pos reports the position of the first component of n or zero if it's empty.
 func (n *ExternalDeclaration) Pos() token.Pos {
 	switch n.Case {
+	case 2:
+		return n.BasicAsmStatement.Pos()
 	case 1:
 		return n.Declaration.Pos()
 	case 0:
@@ -2687,4 +2762,29 @@ func (n *TypeSpecifier) Pos() token.Pos {
 	default:
 		panic("internal error")
 	}
+}
+
+// VolatileOpt represents data reduced by productions:
+//
+//	VolatileOpt:
+//	        /* empty */
+//	|       "volatile"   // Case 1
+type VolatileOpt struct {
+	Token xc.Token
+}
+
+func (n *VolatileOpt) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *VolatileOpt) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *VolatileOpt) Pos() token.Pos {
+	if n == nil {
+		return 0
+	}
+
+	return n.Token.Pos()
 }

@@ -297,6 +297,7 @@ var (
 		ANDAND:    dict.SID("&&"),
 		ANDASSIGN: dict.SID("&="),
 		ARROW:     dict.SID("->"),
+		ASM:       dict.SID("asm"),
 		AUTO:      dict.SID("auto"),
 		BOOL:      dict.SID("_Bool"),
 		BREAK:     dict.SID("break"),
@@ -346,6 +347,7 @@ var (
 		SUBASSIGN: dict.SID("-="),
 		SWITCH:    dict.SID("switch"),
 		TYPEDEF:   dict.SID("typedef"),
+		TYPEOF:    dict.SID("typeof"),
 		UNION:     dict.SID("union"),
 		UNSIGNED:  dict.SID("unsigned"),
 		VOID:      dict.SID("void"),
@@ -356,6 +358,7 @@ var (
 
 	id0                = dict.SID("0")
 	id1                = dict.SID("1")
+	idAsm              = dict.SID("asm")
 	idChar             = dict.SID("char")
 	idConst            = dict.SID("const")
 	idDate             = dict.SID("__DATE__")
@@ -470,6 +473,12 @@ func toC(t xc.Token, tw *tweaks) xc.Token {
 
 	if tw.enableTypeof && t.Val == idTypeof {
 		t.Rune = TYPEOF
+		return t
+	}
+
+	if tw.enableAsm && t.Val == idAsm {
+		t.Rune = ASM
+		return t
 	}
 
 	return t

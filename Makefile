@@ -28,6 +28,7 @@ edit:
 	gvim -p Makefile trigraphs.l scanner.l parser.yy parser.y y.output *.go
 
 editor: parser.go scanner.go trigraphs.go
+	rm -f log-*.c log-*.h
 	gofmt -l -s -w *.go
 	rm -f log-*.c log-*.h
 	go test 2>&1 | tee log
