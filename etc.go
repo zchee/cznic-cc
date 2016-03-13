@@ -515,6 +515,12 @@ func (n *ctype) isCompatible(m *ctype) (r bool) {
 		return false
 	}
 
+	if n.Kind() == Function && m.Kind() == Function {
+		a, va := n.Parameters()
+		b, vb := m.Parameters()
+		return isCompatibleParamaters(a, b, va, vb)
+	}
+
 	for i, n := range n.dds {
 		if !n.isCompatible(m.dds[i]) {
 			return false
@@ -890,11 +896,12 @@ func (n *ctype) Parameters() ([]Parameter, bool) {
 		l := dd.ParameterTypeList
 		return l.params, l.Case == 1 // ParameterList ',' "..."
 	case 7: // DirectDeclarator '(' IdentifierListOpt ')'
-		if o := dd.IdentifierListOpt; o == nil {
+		o := dd.IdentifierListOpt
+		if o == nil {
 			return make([]Parameter, 0), false
 		}
 
-		panic("TODO")
+		return o.params, false
 	default:
 		//dbg("", dd.Case)
 		panic("internal error")
@@ -1114,48 +1121,12 @@ func (n *ctype) String() string {
 	buf.WriteString(s)
 	buf.WriteString(strings.Repeat("*", n.resultStars))
 
-	pd := func(n *ParameterDeclaration) {
-		t := n.declarator.Type
-		buf.WriteString(t.String())
-	}
-
-	pl := func(n *ParameterList) {
-		first := true
-		for ; n != nil; n = n.ParameterList {
-			if !first {
-				buf.WriteString(",")
+	params := func(p []Parameter) {
+		for i, v := range p {
+			fmt.Fprintf(&buf, "%s", v.Type)
+			if i != len(p)-1 {
+				buf.WriteByte(',')
 			}
-			pd(n.ParameterDeclaration)
-			first = false
-		}
-	}
-
-	ptl := func(n *ParameterTypeList) {
-		pl(n.ParameterList)
-		if n.Case == 1 { // ParameterList ',' "..."
-			buf.WriteString(",...")
-		}
-	}
-
-	il := func(n *IdentifierList) {
-		first := true
-		for ; n != nil; n = n.IdentifierList {
-			if !first {
-				buf.WriteString(",")
-			}
-			first = false
-			switch n.Case {
-			case 0: // IDENTIFIER
-				fmt.Fprintf(&buf, "%s", n.Token.S())
-			case 1: // IdentifierList ',' IDENTIFIER
-				fmt.Fprintf(&buf, "%s", n.Token2.S())
-			}
-		}
-	}
-
-	ilo := func(n *IdentifierListOpt) {
-		if n != nil {
-			il(n.IdentifierList)
 		}
 	}
 
@@ -1203,12 +1174,14 @@ func (n *ctype) String() string {
 		case 6: // DirectDeclarator '(' ParameterTypeList ')'
 			f(x - 1)
 			buf.WriteString("(")
-			ptl(dd.ParameterTypeList)
+			params(dd.ParameterTypeList.params)
 			buf.WriteString(")")
 		case 7: // DirectDeclarator '(' IdentifierListOpt ')'
 			f(x - 1)
 			buf.WriteString("(")
-			ilo(dd.IdentifierListOpt)
+			if o := dd.IdentifierListOpt; o != nil {
+				params(o.params)
+			}
 			buf.WriteString(")")
 		default:
 			panic(dd.Case)
@@ -1572,4 +1545,18 @@ func dedup(a []string) (r []string) {
 		m[v] = struct{}{}
 	}
 	return r
+}
+
+func isCompatibleParamaters(a, b []Parameter, va, vb bool) bool {
+	if len(a) != len(b) || va != vb {
+		return false
+	}
+
+	for i, v := range a {
+		if !v.Type.CanAssignTo(b[i].Type) {
+			return false
+		}
+	}
+
+	return true
 }

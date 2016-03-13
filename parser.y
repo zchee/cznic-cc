@@ -2977,15 +2977,39 @@ FunctionDefinition:
 		lx := yylex.(*lexer)
 		d := $2.(*Declarator)
 		d.setFull(lx)
-		if k := d.Type.Kind(); k != Function {
-			lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, k)
-		}
-
 		lx.scope.mergeScope = nil
-		for dd := d.DirectDeclarator.bottom(); dd != nil; dd = dd.parent {
-			if dd.Case == 6 { // DirectDeclarator '(' ParameterTypeList ')'
-				lx.scope.mergeScope = dd.paramsScope
-				break
+		if d.Type.Kind() != Function {
+			lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, d.Type.Kind())
+		} else {
+			dlo := $3.(*DeclarationListOpt)
+			done := false
+			for dd := d.DirectDeclarator.bottom(); !done && dd != nil; dd = dd.parent {
+				switch dd.Case {
+				case 6: // DirectDeclarator '(' ParameterTypeList ')'
+					done = true
+					lx.scope.mergeScope = dd.paramsScope
+					if dlo != nil {
+						lx.report.Err(dlo.Pos(), "declaration list not allowed in a function definition with parameter type list")
+					}
+				case 7: // DirectDeclarator '(' IdentifierListOpt ')'
+					done = true
+					ilo := dd.IdentifierListOpt
+					if ilo != nil && dlo == nil {
+						lx.report.Err(ilo.Pos(), "missing parameter declaration list")
+						break
+					}
+
+					if ilo == nil {
+						if dlo != nil {
+							lx.report.Err(dlo.Pos(), "unexpected parameter declaration list")
+						}
+						break
+					}
+
+					// ilo != nil && dlo != nil
+					lx.scope.mergeScope = dlo.paramsScope
+					ilo.post(lx.report, dlo.DeclarationList)
+				}
 			}
 		}
 
@@ -3005,26 +3029,11 @@ FunctionDefinition:
 	}
 	CompoundStatement
 	{
-		lx := yylex.(*lexer)
-		lhs := &FunctionDefinition{
+		$$ = &FunctionDefinition{
 			DeclarationSpecifiers:  $1.(*DeclarationSpecifiers),
 			Declarator:             $2.(*Declarator),
 			DeclarationListOpt:     $3.(*DeclarationListOpt),
 			CompoundStatement:      $5.(*CompoundStatement),
-		}
-		$$ = lhs
-		d := lhs.Declarator
-		switch dd := d.DirectDeclarator; dd.Case {
-		case 6: // DirectDeclarator '(' ParameterTypeList ')'
-			if o := lhs.DeclarationListOpt; o != nil {
-				lx.report.Err(o.Pos(), "declaration list not allowed in a function definition with parameter type list")
-			}
-		case 7: // DirectDeclarator '(' IdentifierListOpt ')'
-			if o1, o2 := dd.IdentifierListOpt, lhs.DeclarationListOpt; o1 != nil && o2 == nil {
-				lx.report.Err(o1.Pos(), "declaration list required in a function definition without a parameter type list")
-			}
-		default:
-			lx.report.Err(lhs.Declarator.Pos(), "invalid function definition declarator")
 		}
 	}
 
@@ -3049,11 +3058,18 @@ DeclarationListOpt:
 	{
 		$$ = (*DeclarationListOpt)(nil)
 		}
-|	DeclarationList
+|	{
+		lx := yylex.(*lexer)
+		lx.pushScope(ScopeParams)
+	}
+	DeclarationList
 	{
-		$$ = &DeclarationListOpt{
-			DeclarationList:  $1.(*DeclarationList).reverse(),
+		lx := yylex.(*lexer)
+		lhs := &DeclarationListOpt{
+			DeclarationList:  $2.(*DeclarationList).reverse(),
 		}
+		$$ = lhs
+		lhs.paramsScope, _ = lx.popScopePos(lhs.Pos())
 	}
 
 PreprocessingFile:

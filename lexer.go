@@ -164,10 +164,14 @@ func (l *lexer) pushScope(kind Scope) (old *Bindings) {
 }
 
 func (l *lexer) popScope(tok xc.Token) (old, new *Bindings) {
+	return l.popScopePos(tok.Pos())
+}
+
+func (l *lexer) popScopePos(pos token.Pos) (old, new *Bindings) {
 	old = l.scope
 	new = l.scope.parent
 	if new == nil {
-		l.report.ErrTok(tok, "cannot pop scope")
+		l.report.Err(pos, "cannot pop scope")
 		return nil, old
 	}
 

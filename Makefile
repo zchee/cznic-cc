@@ -13,8 +13,8 @@ all: editor
 	make todo
 
 clean:
+	rm -f log-*.c log-*.h *~ cpu.test mem.test
 	go clean
-	rm -f *~ cpu.test mem.test
 
 cover:
 	t=$(shell tempfile) ; go test -coverprofile $$t && go tool cover -html $$t && unlink $$t

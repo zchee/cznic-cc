@@ -478,14 +478,20 @@ func (n *DirectDeclarator) isCompatible(m *DirectDeclarator) (r bool) {
 	if n.Case > m.Case {
 		n, m = m, n
 	}
-	if n.Case != m.Case {
-		if n.Case == 6 && // DirectDeclarator '(' ParameterTypeList ')'
-			m.Case == 7 && // // DirectDeclarator '(' IdentifierListOpt ')'
-			m.IdentifierListOpt == nil {
-			return n.ParameterTypeList.isCompatible(nil) // f(void), f()
-		}
 
-		return false
+	if n.Case != m.Case {
+		if n.Case == 6 && m.Case == 7 {
+			var b []Parameter
+			if o := m.IdentifierListOpt; o != nil {
+				b = o.params
+			}
+			return isCompatibleParamaters(
+				n.ParameterTypeList.params,
+				b,
+				n.ParameterTypeList.Case == 1, // ParameterList ',' "..."
+				false,
+			)
+		}
 	}
 
 	switch n.Case {
@@ -515,13 +521,22 @@ func (n *DirectDeclarator) isCompatible(m *DirectDeclarator) (r bool) {
 
 		return true
 	case 6: // DirectDeclarator '(' ParameterTypeList ')'
-		return n.ParameterTypeList.isCompatible(m.ParameterTypeList)
+		return isCompatibleParamaters(
+			n.ParameterTypeList.params,
+			m.ParameterTypeList.params,
+			n.ParameterTypeList.Case == 1, // ParameterList ',' "..."
+			m.ParameterTypeList.Case == 1, // ParameterList ',' "..."
+		)
 	case 7: // DirectDeclarator '(' IdentifierListOpt ')'
+		var a, b []Parameter
 		if o := n.IdentifierListOpt; o != nil {
-			panic("TODO")
+			a = o.params
+		}
+		if o := m.IdentifierListOpt; o != nil {
+			b = o.params
 		}
 
-		return true
+		return isCompatibleParamaters(a, b, false, false)
 	default:
 		panic(n.Case)
 	}
@@ -1529,6 +1544,62 @@ func (n *ExpressionList) Len() (r int) {
 	return r
 }
 
+// ---------------------------------------------------------- IdentifierListOpt
+
+func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
+	type r struct {
+		pos token.Pos
+		i   int
+	}
+	var a []r
+	ilm := map[int]r{}
+	i := 0
+	for il := n.IdentifierList; il != nil; il, i = il.IdentifierList, i+1 {
+		t := il.Token
+		nm := t.Val
+		if r, ok := ilm[nm]; ok {
+			report.ErrTok(t, "duplicate parameter name declaration, previous at %s", r.pos)
+			continue
+		}
+
+		v := r{t.Pos(), i}
+		ilm[nm] = v
+		a = append(a, v)
+	}
+	params := make([]Parameter, len(ilm))
+	for ; dl != nil; dl = dl.DeclarationList {
+		decl := dl.Declaration
+		o := decl.InitDeclaratorListOpt
+		if o == nil {
+			report.Err(decl.Pos(), "invalid parameter declaration")
+			continue
+		}
+
+		for l := o.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
+			id := l.InitDeclarator
+			if id.Case == 1 { // Declarator '=' Initializer
+				report.Err(id.Pos(), "invalid parameter declarator")
+			}
+
+			d := id.Declarator
+			nm, _ := d.Identifier()
+			r, ok := ilm[nm]
+			if !ok {
+				report.Err(d.Pos(), "parameter name not declared")
+				continue
+			}
+
+			params[r.i] = Parameter{d, nm, d.Type}
+		}
+	}
+	for i, v := range params {
+		if v.Declarator == nil {
+			report.Err(a[i].pos, "missing paramater type declaration")
+		}
+	}
+	n.params = params
+}
+
 // ---------------------------------------------------------------- Initializer
 
 func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
@@ -1606,30 +1677,7 @@ func (n *ParameterDeclaration) isCompatible(m *ParameterDeclaration) (r bool) {
 	return n == m || n.declarator.isCompatible(m.declarator)
 }
 
-// -------------------------------------------------------------- ParameterList
-
-func (n *ParameterList) isCompatible(m *ParameterList) (r bool) {
-	if n == m {
-		return true
-	}
-
-	for ; n != nil; n, m = n.ParameterList, m.ParameterList {
-		if m == nil || !n.ParameterDeclaration.isCompatible(m.ParameterDeclaration) {
-			return false
-		}
-	}
-	return m == nil
-}
-
 // ---------------------------------------------------------- ParameterTypeList
-
-func (n *ParameterTypeList) isCompatible(m *ParameterTypeList) (r bool) {
-	if m == nil && len(n.params) == 0 { // f(void) is compatible with f()
-		return true
-	}
-
-	return n == m || n.Case == m.Case && n.ParameterList.isCompatible(m.ParameterList)
-}
 
 func (n *ParameterTypeList) post() {
 	for l := n.ParameterList; l != nil; l = l.ParameterList {

@@ -237,213 +237,213 @@ func ExampleConstantExpression() {
 }
 
 func ExampleControlLine() {
-	fmt.Println(exampleAST(264, "\U00100000 \n#define a "))
+	fmt.Println(exampleAST(265, "\U00100000 \n#define a "))
 	// Output:
 	// &cc.ControlLine{
 	// · ReplacementList: []xc.Token{ // len 1
-	// · · 0: example264.c:2:10: ' ',
+	// · · 0: example265.c:2:10: ' ',
 	// · },
-	// · Token: example264.c:2:2: PPDEFINE,
-	// · Token2: example264.c:2:9: IDENTIFIER "a",
+	// · Token: example265.c:2:2: PPDEFINE,
+	// · Token2: example265.c:2:9: IDENTIFIER "a",
 	// }
 }
 
 func ExampleControlLine_case01() {
-	fmt.Println(exampleAST(265, "\U00100000 \n#define a( ... ) "))
+	fmt.Println(exampleAST(266, "\U00100000 \n#define a( ... ) "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 1,
 	// · ReplacementList: []xc.Token{ // len 1
-	// · · 0: example265.c:2:17: ' ',
+	// · · 0: example266.c:2:17: ' ',
 	// · },
-	// · Token: example265.c:2:2: PPDEFINE,
-	// · Token2: example265.c:2:9: IDENTIFIER_LPAREN "a(",
-	// · Token3: example265.c:2:12: DDD,
-	// · Token4: example265.c:2:16: ')',
+	// · Token: example266.c:2:2: PPDEFINE,
+	// · Token2: example266.c:2:9: IDENTIFIER_LPAREN "a(",
+	// · Token3: example266.c:2:12: DDD,
+	// · Token4: example266.c:2:16: ')',
 	// }
 }
 
 func ExampleControlLine_case02() {
-	fmt.Println(exampleAST(266, "\U00100000 \n#define a( b , ... ) "))
+	fmt.Println(exampleAST(267, "\U00100000 \n#define a( b , ... ) "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 2,
 	// · IdentifierList: &cc.IdentifierList{
-	// · · Token: example266.c:2:12: IDENTIFIER "b",
+	// · · Token: example267.c:2:12: IDENTIFIER "b",
 	// · },
 	// · ReplacementList: []xc.Token{ // len 1
-	// · · 0: example266.c:2:21: ' ',
+	// · · 0: example267.c:2:21: ' ',
 	// · },
-	// · Token: example266.c:2:2: PPDEFINE,
-	// · Token2: example266.c:2:9: IDENTIFIER_LPAREN "a(",
-	// · Token3: example266.c:2:14: ',',
-	// · Token4: example266.c:2:16: DDD,
-	// · Token5: example266.c:2:20: ')',
+	// · Token: example267.c:2:2: PPDEFINE,
+	// · Token2: example267.c:2:9: IDENTIFIER_LPAREN "a(",
+	// · Token3: example267.c:2:14: ',',
+	// · Token4: example267.c:2:16: DDD,
+	// · Token5: example267.c:2:20: ')',
 	// }
 }
 
 func ExampleControlLine_case03() {
-	fmt.Println(exampleAST(267, "\U00100000 \n#define a( ) "))
+	fmt.Println(exampleAST(268, "\U00100000 \n#define a( ) "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 3,
 	// · ReplacementList: []xc.Token{ // len 1
-	// · · 0: example267.c:2:13: ' ',
+	// · · 0: example268.c:2:13: ' ',
 	// · },
-	// · Token: example267.c:2:2: PPDEFINE,
-	// · Token2: example267.c:2:9: IDENTIFIER_LPAREN "a(",
-	// · Token3: example267.c:2:12: ')',
+	// · Token: example268.c:2:2: PPDEFINE,
+	// · Token2: example268.c:2:9: IDENTIFIER_LPAREN "a(",
+	// · Token3: example268.c:2:12: ')',
 	// }
 }
 
 func ExampleControlLine_case04() {
-	fmt.Println(exampleAST(268, "\U00100000 \n#error "))
+	fmt.Println(exampleAST(269, "\U00100000 \n#error "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 4,
 	// · PPTokenListOpt: []xc.Token{ // len 1
-	// · · 0: example268.c:2:7: ' ',
+	// · · 0: example269.c:2:7: ' ',
 	// · },
-	// · Token: example268.c:2:2: PPERROR,
+	// · Token: example269.c:2:2: PPERROR,
 	// }
 }
 
 func ExampleControlLine_case05() {
-	fmt.Println(exampleAST(269, "\U00100000 \n#"))
+	fmt.Println(exampleAST(270, "\U00100000 \n#"))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 5,
-	// · Token: example269.c:2:2: PPHASH_NL,
+	// · Token: example270.c:2:2: PPHASH_NL,
 	// }
 }
 
 func ExampleControlLine_case06() {
-	fmt.Println(exampleAST(270, "\U00100000 \n#include other_a "))
+	fmt.Println(exampleAST(271, "\U00100000 \n#include other_a "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 6,
 	// · PPTokenList: []xc.Token{ // len 3
-	// · · 0: example270.c:2:9: ' ',
-	// · · 1: example270.c:2:10: IDENTIFIER "other_a",
-	// · · 2: example270.c:2:17: ' ',
+	// · · 0: example271.c:2:9: ' ',
+	// · · 1: example271.c:2:10: IDENTIFIER "other_a",
+	// · · 2: example271.c:2:17: ' ',
 	// · },
-	// · Token: example270.c:2:2: PPINCLUDE,
-	// · Token2: example270.c:2:18: '\n',
+	// · Token: example271.c:2:2: PPINCLUDE,
+	// · Token2: example271.c:2:18: '\n',
 	// }
 }
 
 func ExampleControlLine_case07() {
-	fmt.Println(exampleAST(271, "\U00100000 \n#line other_a "))
+	fmt.Println(exampleAST(272, "\U00100000 \n#line other_a "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 7,
 	// · PPTokenList: []xc.Token{ // len 3
-	// · · 0: example271.c:2:6: ' ',
-	// · · 1: example271.c:2:7: IDENTIFIER "other_a",
-	// · · 2: example271.c:2:14: ' ',
+	// · · 0: example272.c:2:6: ' ',
+	// · · 1: example272.c:2:7: IDENTIFIER "other_a",
+	// · · 2: example272.c:2:14: ' ',
 	// · },
-	// · Token: example271.c:2:2: PPLINE,
-	// · Token2: example271.c:2:15: '\n',
+	// · Token: example272.c:2:2: PPLINE,
+	// · Token2: example272.c:2:15: '\n',
 	// }
 }
 
 func ExampleControlLine_case08() {
-	fmt.Println(exampleAST(272, "\U00100000 \n#pragma "))
+	fmt.Println(exampleAST(273, "\U00100000 \n#pragma "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 8,
 	// · PPTokenListOpt: []xc.Token{ // len 1
-	// · · 0: example272.c:2:8: ' ',
+	// · · 0: example273.c:2:8: ' ',
 	// · },
-	// · Token: example272.c:2:2: PPPRAGMA,
+	// · Token: example273.c:2:2: PPPRAGMA,
 	// }
 }
 
 func ExampleControlLine_case09() {
-	fmt.Println(exampleAST(273, "\U00100000 \n#undef foo"))
+	fmt.Println(exampleAST(274, "\U00100000 \n#undef foo"))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 9,
-	// · Token: example273.c:2:2: PPUNDEF,
-	// · Token2: example273.c:2:8: IDENTIFIER "foo",
-	// · Token3: example273.c:2:11: '\n',
+	// · Token: example274.c:2:2: PPUNDEF,
+	// · Token2: example274.c:2:8: IDENTIFIER "foo",
+	// · Token3: example274.c:2:11: '\n',
 	// }
 }
 
 func ExampleControlLine_case10() {
-	fmt.Println(exampleAST(274, "\U00100000 \n#define a( b ... ) "))
+	fmt.Println(exampleAST(275, "\U00100000 \n#define a( b ... ) "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 10,
 	// · ReplacementList: []xc.Token{ // len 1
-	// · · 0: example274.c:2:19: ' ',
+	// · · 0: example275.c:2:19: ' ',
 	// · },
-	// · Token: example274.c:2:2: PPDEFINE,
-	// · Token2: example274.c:2:9: IDENTIFIER_LPAREN "a(",
-	// · Token3: example274.c:2:12: IDENTIFIER "b",
-	// · Token4: example274.c:2:14: DDD,
-	// · Token5: example274.c:2:18: ')',
+	// · Token: example275.c:2:2: PPDEFINE,
+	// · Token2: example275.c:2:9: IDENTIFIER_LPAREN "a(",
+	// · Token3: example275.c:2:12: IDENTIFIER "b",
+	// · Token4: example275.c:2:14: DDD,
+	// · Token5: example275.c:2:18: ')',
 	// }
 }
 
 func ExampleControlLine_case11() {
-	fmt.Println(exampleAST(275, "\U00100000 \n#define a( b , c ... ) "))
+	fmt.Println(exampleAST(276, "\U00100000 \n#define a( b , c ... ) "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 11,
 	// · IdentifierList: &cc.IdentifierList{
-	// · · Token: example275.c:2:12: IDENTIFIER "b",
+	// · · Token: example276.c:2:12: IDENTIFIER "b",
 	// · },
 	// · ReplacementList: []xc.Token{ // len 1
-	// · · 0: example275.c:2:23: ' ',
+	// · · 0: example276.c:2:23: ' ',
 	// · },
-	// · Token: example275.c:2:2: PPDEFINE,
-	// · Token2: example275.c:2:9: IDENTIFIER_LPAREN "a(",
-	// · Token3: example275.c:2:14: ',',
-	// · Token4: example275.c:2:16: IDENTIFIER "c",
-	// · Token5: example275.c:2:18: DDD,
-	// · Token6: example275.c:2:22: ')',
+	// · Token: example276.c:2:2: PPDEFINE,
+	// · Token2: example276.c:2:9: IDENTIFIER_LPAREN "a(",
+	// · Token3: example276.c:2:14: ',',
+	// · Token4: example276.c:2:16: IDENTIFIER "c",
+	// · Token5: example276.c:2:18: DDD,
+	// · Token6: example276.c:2:22: ')',
 	// }
 }
 
 func ExampleControlLine_case12() {
-	fmt.Println(exampleAST(276, "\U00100000 \n#define "))
+	fmt.Println(exampleAST(277, "\U00100000 \n#define "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 12,
-	// · Token: example276.c:2:2: PPDEFINE,
-	// · Token2: example276.c:2:9: '\n',
+	// · Token: example277.c:2:2: PPDEFINE,
+	// · Token2: example277.c:2:9: '\n',
 	// }
 }
 
 func ExampleControlLine_case13() {
-	fmt.Println(exampleAST(277, "\U00100000 \n#undef foo(bar)"))
+	fmt.Println(exampleAST(278, "\U00100000 \n#undef foo(bar)"))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 13,
 	// · PPTokenList: []xc.Token{ // len 3
-	// · · 0: example277.c:2:11: '(',
-	// · · 1: example277.c:2:12: IDENTIFIER "bar",
-	// · · 2: example277.c:2:15: ')',
+	// · · 0: example278.c:2:11: '(',
+	// · · 1: example278.c:2:12: IDENTIFIER "bar",
+	// · · 2: example278.c:2:15: ')',
 	// · },
-	// · Token: example277.c:2:2: PPUNDEF,
-	// · Token2: example277.c:2:8: IDENTIFIER "foo",
-	// · Token3: example277.c:2:16: '\n',
+	// · Token: example278.c:2:2: PPUNDEF,
+	// · Token2: example278.c:2:8: IDENTIFIER "foo",
+	// · Token3: example278.c:2:16: '\n',
 	// }
 }
 
 func ExampleControlLine_case14() {
-	fmt.Println(exampleAST(278, "\U00100000 \n#include_next other_a "))
+	fmt.Println(exampleAST(279, "\U00100000 \n#include_next other_a "))
 	// Output:
 	// &cc.ControlLine{
 	// · Case: 14,
 	// · PPTokenList: []xc.Token{ // len 3
-	// · · 0: example278.c:2:14: ' ',
-	// · · 1: example278.c:2:15: IDENTIFIER "other_a",
-	// · · 2: example278.c:2:22: ' ',
+	// · · 0: example279.c:2:14: ' ',
+	// · · 1: example279.c:2:15: IDENTIFIER "other_a",
+	// · · 2: example279.c:2:22: ' ',
 	// · },
-	// · Token: example278.c:2:2: PPINCLUDE_NEXT,
-	// · Token2: example278.c:2:23: '\n',
+	// · Token: example279.c:2:2: PPINCLUDE_NEXT,
+	// · Token2: example279.c:2:23: '\n',
 	// }
 }
 
@@ -512,7 +512,7 @@ func ExampleDeclarationListOpt() {
 }
 
 func ExampleDeclarationListOpt_case1() {
-	fmt.Println(exampleAST(241, "\U00100002 auto a auto ; {"))
+	fmt.Println(exampleAST(242, "\U00100002 auto a auto ; {"))
 	// Output:
 	// &cc.DeclarationListOpt{
 	// · DeclarationList: &cc.DeclarationList{
@@ -520,10 +520,10 @@ func ExampleDeclarationListOpt_case1() {
 	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example241.c:1:13: AUTO "auto",
+	// · · · · · Token: example242.c:1:13: AUTO "auto",
 	// · · · · },
 	// · · · },
-	// · · · Token: example241.c:1:18: ';',
+	// · · · Token: example242.c:1:18: ';',
 	// · · },
 	// · },
 	// }
@@ -990,37 +990,21 @@ func ExampleDirectDeclarator_case7() {
 }
 
 func ExampleElifGroup() {
-	fmt.Println(exampleAST(259, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif"))
+	fmt.Println(exampleAST(260, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif"))
 	// Output:
 	// &cc.ElifGroup{
 	// · PPTokenList: []xc.Token{ // len 3
-	// · · 0: example259.c:3:6: ' ',
-	// · · 1: example259.c:3:7: IDENTIFIER "other_b",
-	// · · 2: example259.c:3:14: ' ',
+	// · · 0: example260.c:3:6: ' ',
+	// · · 1: example260.c:3:7: IDENTIFIER "other_b",
+	// · · 2: example260.c:3:14: ' ',
 	// · },
-	// · Token: example259.c:3:2: PPELIF,
-	// · Token2: example259.c:3:16: '\n',
+	// · Token: example260.c:3:2: PPELIF,
+	// · Token2: example260.c:3:16: '\n',
 	// }
 }
 
 func ExampleElifGroupList() {
-	fmt.Println(exampleAST(255, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif"))
-	// Output:
-	// &cc.ElifGroupList{
-	// · ElifGroup: &cc.ElifGroup{
-	// · · PPTokenList: []xc.Token{ // len 3
-	// · · · 0: example255.c:3:6: ' ',
-	// · · · 1: example255.c:3:7: IDENTIFIER "other_b",
-	// · · · 2: example255.c:3:14: ' ',
-	// · · },
-	// · · Token: example255.c:3:2: PPELIF,
-	// · · Token2: example255.c:3:16: '\n',
-	// · },
-	// }
-}
-
-func ExampleElifGroupList_case1() {
-	fmt.Println(exampleAST(256, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif other_c  \n#elif"))
+	fmt.Println(exampleAST(256, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif"))
 	// Output:
 	// &cc.ElifGroupList{
 	// · ElifGroup: &cc.ElifGroup{
@@ -1032,76 +1016,92 @@ func ExampleElifGroupList_case1() {
 	// · · Token: example256.c:3:2: PPELIF,
 	// · · Token2: example256.c:3:16: '\n',
 	// · },
+	// }
+}
+
+func ExampleElifGroupList_case1() {
+	fmt.Println(exampleAST(257, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif other_c  \n#elif"))
+	// Output:
+	// &cc.ElifGroupList{
+	// · ElifGroup: &cc.ElifGroup{
+	// · · PPTokenList: []xc.Token{ // len 3
+	// · · · 0: example257.c:3:6: ' ',
+	// · · · 1: example257.c:3:7: IDENTIFIER "other_b",
+	// · · · 2: example257.c:3:14: ' ',
+	// · · },
+	// · · Token: example257.c:3:2: PPELIF,
+	// · · Token2: example257.c:3:16: '\n',
+	// · },
 	// · ElifGroupList: &cc.ElifGroupList{
 	// · · Case: 1,
 	// · · ElifGroup: &cc.ElifGroup{
 	// · · · PPTokenList: []xc.Token{ // len 3
-	// · · · · 0: example256.c:4:6: ' ',
-	// · · · · 1: example256.c:4:7: IDENTIFIER "other_c",
-	// · · · · 2: example256.c:4:14: ' ',
+	// · · · · 0: example257.c:4:6: ' ',
+	// · · · · 1: example257.c:4:7: IDENTIFIER "other_c",
+	// · · · · 2: example257.c:4:14: ' ',
 	// · · · },
-	// · · · Token: example256.c:4:2: PPELIF,
-	// · · · Token2: example256.c:4:16: '\n',
+	// · · · Token: example257.c:4:2: PPELIF,
+	// · · · Token2: example257.c:4:16: '\n',
 	// · · },
 	// · },
 	// }
 }
 
 func ExampleElifGroupListOpt() {
-	fmt.Println(exampleAST(257, "\U00100000 \n#if other_a  \n#else") == (*ElifGroupListOpt)(nil))
+	fmt.Println(exampleAST(258, "\U00100000 \n#if other_a  \n#else") == (*ElifGroupListOpt)(nil))
 	// Output:
 	// true
 }
 
 func ExampleElifGroupListOpt_case1() {
-	fmt.Println(exampleAST(258, "\U00100000 \n#if other_a  \n#elif other_b  \n#else"))
+	fmt.Println(exampleAST(259, "\U00100000 \n#if other_a  \n#elif other_b  \n#else"))
 	// Output:
 	// &cc.ElifGroupListOpt{
 	// · ElifGroupList: &cc.ElifGroupList{
 	// · · ElifGroup: &cc.ElifGroup{
 	// · · · PPTokenList: []xc.Token{ // len 3
-	// · · · · 0: example258.c:3:6: ' ',
-	// · · · · 1: example258.c:3:7: IDENTIFIER "other_b",
-	// · · · · 2: example258.c:3:14: ' ',
+	// · · · · 0: example259.c:3:6: ' ',
+	// · · · · 1: example259.c:3:7: IDENTIFIER "other_b",
+	// · · · · 2: example259.c:3:14: ' ',
 	// · · · },
-	// · · · Token: example258.c:3:2: PPELIF,
-	// · · · Token2: example258.c:3:16: '\n',
+	// · · · Token: example259.c:3:2: PPELIF,
+	// · · · Token2: example259.c:3:16: '\n',
 	// · · },
 	// · },
 	// }
 }
 
 func ExampleElseGroup() {
-	fmt.Println(exampleAST(260, "\U00100000 \n#if other_a  \n#else  \n#endif"))
+	fmt.Println(exampleAST(261, "\U00100000 \n#if other_a  \n#else  \n#endif"))
 	// Output:
 	// &cc.ElseGroup{
-	// · Token: example260.c:3:2: PPELSE,
-	// · Token2: example260.c:3:8: '\n',
+	// · Token: example261.c:3:2: PPELSE,
+	// · Token2: example261.c:3:8: '\n',
 	// }
 }
 
 func ExampleElseGroupOpt() {
-	fmt.Println(exampleAST(261, "\U00100000 \n#if other_a  \n#endif") == (*ElseGroupOpt)(nil))
+	fmt.Println(exampleAST(262, "\U00100000 \n#if other_a  \n#endif") == (*ElseGroupOpt)(nil))
 	// Output:
 	// true
 }
 
 func ExampleElseGroupOpt_case1() {
-	fmt.Println(exampleAST(262, "\U00100000 \n#if other_a  \n#else  \n#endif"))
+	fmt.Println(exampleAST(263, "\U00100000 \n#if other_a  \n#else  \n#endif"))
 	// Output:
 	// &cc.ElseGroupOpt{
 	// · ElseGroup: &cc.ElseGroup{
-	// · · Token: example262.c:3:2: PPELSE,
-	// · · Token2: example262.c:3:8: '\n',
+	// · · Token: example263.c:3:2: PPELSE,
+	// · · Token2: example263.c:3:8: '\n',
 	// · },
 	// }
 }
 
 func ExampleEndifLine() {
-	fmt.Println(exampleAST(263, "\U00100000 \n#if other_a  \n#endif"))
+	fmt.Println(exampleAST(264, "\U00100000 \n#if other_a  \n#endif"))
 	// Output:
 	// &cc.EndifLine{
-	// · Token: example263.c:3:2: PPENDIF,
+	// · Token: example264.c:3:2: PPENDIF,
 	// }
 }
 
@@ -2235,46 +2235,46 @@ func ExampleFunctionSpecifier() {
 }
 
 func ExampleGroupList() {
-	fmt.Println(exampleAST(243, "\U00100000 "))
+	fmt.Println(exampleAST(244, "\U00100000 "))
 	// Output:
 	// &cc.GroupList{
 	// }
 }
 
 func ExampleGroupList_case1() {
-	fmt.Println(exampleAST(244, "\U00100000int\nf() {}"))
+	fmt.Println(exampleAST(245, "\U00100000int\nf() {}"))
 	// Output:
 	// &cc.GroupList{
 	// · GroupList: &cc.GroupList{
 	// · · Case: 1,
 	// · · GroupPart: []xc.Token{ // len 6
-	// · · · 0: example244.c:2:1: IDENTIFIER "f",
-	// · · · 1: example244.c:2:2: '(',
-	// · · · 2: example244.c:2:3: ')',
-	// · · · 3: example244.c:2:4: ' ',
-	// · · · 4: example244.c:2:5: '{',
-	// · · · 5: example244.c:2:6: '}',
+	// · · · 0: example245.c:2:1: IDENTIFIER "f",
+	// · · · 1: example245.c:2:2: '(',
+	// · · · 2: example245.c:2:3: ')',
+	// · · · 3: example245.c:2:4: ' ',
+	// · · · 4: example245.c:2:5: '{',
+	// · · · 5: example245.c:2:6: '}',
 	// · · },
 	// · },
 	// · GroupPart: []xc.Token{ // len 1
-	// · · 0: example244.c:1:5: IDENTIFIER "int",
+	// · · 0: example245.c:1:5: IDENTIFIER "int",
 	// · },
 	// }
 }
 
 func ExampleGroupListOpt() {
-	fmt.Println(exampleAST(245, "\U00100000 \n#ifndef a  \n#elif") == (*GroupListOpt)(nil))
+	fmt.Println(exampleAST(246, "\U00100000 \n#ifndef a  \n#elif") == (*GroupListOpt)(nil))
 	// Output:
 	// true
 }
 
 func ExampleGroupListOpt_case1() {
-	fmt.Println(exampleAST(246, "\U00100000 \n#ifndef a\nb\n#elif"))
+	fmt.Println(exampleAST(247, "\U00100000 \n#ifndef a\nb\n#elif"))
 	// Output:
 	// &cc.GroupListOpt{
 	// · GroupList: &cc.GroupList{
 	// · · GroupPart: []xc.Token{ // len 1
-	// · · · 0: example246.c:3:1: IDENTIFIER "b",
+	// · · · 0: example247.c:3:1: IDENTIFIER "b",
 	// · · },
 	// · },
 	// }
@@ -2332,56 +2332,56 @@ func ExampleIdentifierOpt_case1() {
 }
 
 func ExampleIfGroup() {
-	fmt.Println(exampleAST(252, "\U00100000 \n#if other_a  \n#elif"))
+	fmt.Println(exampleAST(253, "\U00100000 \n#if other_a  \n#elif"))
 	// Output:
 	// &cc.IfGroup{
 	// · PPTokenList: []xc.Token{ // len 3
-	// · · 0: example252.c:2:4: ' ',
-	// · · 1: example252.c:2:5: IDENTIFIER "other_a",
-	// · · 2: example252.c:2:12: ' ',
+	// · · 0: example253.c:2:4: ' ',
+	// · · 1: example253.c:2:5: IDENTIFIER "other_a",
+	// · · 2: example253.c:2:12: ' ',
 	// · },
-	// · Token: example252.c:2:2: PPIF,
-	// · Token2: example252.c:2:14: '\n',
+	// · Token: example253.c:2:2: PPIF,
+	// · Token2: example253.c:2:14: '\n',
 	// }
 }
 
 func ExampleIfGroup_case1() {
-	fmt.Println(exampleAST(253, "\U00100000 \n#ifdef a  \n#elif"))
+	fmt.Println(exampleAST(254, "\U00100000 \n#ifdef a  \n#elif"))
 	// Output:
 	// &cc.IfGroup{
 	// · Case: 1,
-	// · Token: example253.c:2:2: PPIFDEF,
-	// · Token2: example253.c:2:8: IDENTIFIER "a",
-	// · Token3: example253.c:2:11: '\n',
+	// · Token: example254.c:2:2: PPIFDEF,
+	// · Token2: example254.c:2:8: IDENTIFIER "a",
+	// · Token3: example254.c:2:11: '\n',
 	// }
 }
 
 func ExampleIfGroup_case2() {
-	fmt.Println(exampleAST(254, "\U00100000 \n#ifndef a  \n#elif"))
+	fmt.Println(exampleAST(255, "\U00100000 \n#ifndef a  \n#elif"))
 	// Output:
 	// &cc.IfGroup{
 	// · Case: 2,
-	// · Token: example254.c:2:2: PPIFNDEF,
-	// · Token2: example254.c:2:9: IDENTIFIER "a",
-	// · Token3: example254.c:2:12: '\n',
+	// · Token: example255.c:2:2: PPIFNDEF,
+	// · Token2: example255.c:2:9: IDENTIFIER "a",
+	// · Token3: example255.c:2:12: '\n',
 	// }
 }
 
 func ExampleIfSection() {
-	fmt.Println(exampleAST(251, "\U00100000 \n#if other_a  \n#endif"))
+	fmt.Println(exampleAST(252, "\U00100000 \n#if other_a  \n#endif"))
 	// Output:
 	// &cc.IfSection{
 	// · EndifLine: &cc.EndifLine{
-	// · · Token: example251.c:3:2: PPENDIF,
+	// · · Token: example252.c:3:2: PPENDIF,
 	// · },
 	// · IfGroup: &cc.IfGroup{
 	// · · PPTokenList: []xc.Token{ // len 3
-	// · · · 0: example251.c:2:4: ' ',
-	// · · · 1: example251.c:2:5: IDENTIFIER "other_a",
-	// · · · 2: example251.c:2:12: ' ',
+	// · · · 0: example252.c:2:4: ' ',
+	// · · · 1: example252.c:2:5: IDENTIFIER "other_a",
+	// · · · 2: example252.c:2:12: ' ',
 	// · · },
-	// · · Token: example251.c:2:2: PPIF,
-	// · · Token2: example251.c:2:14: '\n',
+	// · · Token: example252.c:2:2: PPIF,
+	// · · Token2: example252.c:2:14: '\n',
 	// · },
 	// }
 }
@@ -2947,7 +2947,7 @@ func ExamplePointerOpt_case1() {
 }
 
 func ExamplePreprocessingFile() {
-	fmt.Println(exampleAST(242, "\U00100000 "))
+	fmt.Println(exampleAST(243, "\U00100000 "))
 	// Output:
 	// &cc.PreprocessingFile{
 	// · GroupList: &cc.GroupList{

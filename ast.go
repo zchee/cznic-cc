@@ -440,6 +440,7 @@ func (n *DeclarationList) Pos() token.Pos {
 //	        /* empty */
 //	|       DeclarationList  // Case 1
 type DeclarationListOpt struct {
+	paramsScope     *Bindings
 	DeclarationList *DeclarationList
 }
 
@@ -1538,6 +1539,7 @@ func (n *IdentifierList) Pos() token.Pos {
 //	        /* empty */
 //	|       IdentifierList  // Case 1
 type IdentifierListOpt struct {
+	params         []Parameter
 	IdentifierList *IdentifierList
 }
 
