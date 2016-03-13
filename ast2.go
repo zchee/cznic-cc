@@ -485,7 +485,7 @@ func (n *DirectDeclarator) isCompatible(m *DirectDeclarator) (r bool) {
 			if o := m.IdentifierListOpt; o != nil {
 				b = o.params
 			}
-			return isCompatibleParamaters(
+			return isCompatibleParameters(
 				n.ParameterTypeList.params,
 				b,
 				n.ParameterTypeList.Case == 1, // ParameterList ',' "..."
@@ -521,7 +521,7 @@ func (n *DirectDeclarator) isCompatible(m *DirectDeclarator) (r bool) {
 
 		return true
 	case 6: // DirectDeclarator '(' ParameterTypeList ')'
-		return isCompatibleParamaters(
+		return isCompatibleParameters(
 			n.ParameterTypeList.params,
 			m.ParameterTypeList.params,
 			n.ParameterTypeList.Case == 1, // ParameterList ',' "..."
@@ -536,7 +536,7 @@ func (n *DirectDeclarator) isCompatible(m *DirectDeclarator) (r bool) {
 			b = o.params
 		}
 
-		return isCompatibleParamaters(a, b, false, false)
+		return isCompatibleParameters(a, b, false, false)
 	default:
 		panic(n.Case)
 	}

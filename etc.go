@@ -518,7 +518,7 @@ func (n *ctype) isCompatible(m *ctype) (r bool) {
 	if n.Kind() == Function && m.Kind() == Function {
 		a, va := n.Parameters()
 		b, vb := m.Parameters()
-		return isCompatibleParamaters(a, b, va, vb)
+		return isCompatibleParameters(a, b, va, vb)
 	}
 
 	for i, n := range n.dds {
@@ -672,6 +672,16 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 		}
 		if t.Kind() == Ptr || u.Kind() == Ptr {
 			return false
+		}
+
+		if t.Kind() == Function && u.Kind() == Function {
+			a, _ := t.Parameters()
+			b, _ := u.Parameters()
+			if (len(a) == 0) != (len(b) == 0) {
+				a := t.Result()
+				b := u.Result()
+				return a.Kind() == Void && b.Kind() == Void || t.Result().CanAssignTo(u.Result())
+			}
 		}
 
 		return t.(*ctype).isCompatible(u.(*ctype))
@@ -1547,7 +1557,7 @@ func dedup(a []string) (r []string) {
 	return r
 }
 
-func isCompatibleParamaters(a, b []Parameter, va, vb bool) bool {
+func isCompatibleParameters(a, b []Parameter, va, vb bool) bool {
 	if len(a) != len(b) || va != vb {
 		return false
 	}
