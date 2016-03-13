@@ -4773,41 +4773,40 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			d := yyS[yypt-1].node.(*Declarator)
-			d.setFull(lx)
 			lx.scope.mergeScope = nil
-			if d.Type.Kind() != Function {
-				lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, d.Type.Kind())
-			} else {
-				dlo := yyS[yypt-0].node.(*DeclarationListOpt)
-				done := false
-				for dd := d.DirectDeclarator.bottom(); !done && dd != nil; dd = dd.parent {
-					switch dd.Case {
-					case 6: // DirectDeclarator '(' ParameterTypeList ')'
-						done = true
-						lx.scope.mergeScope = dd.paramsScope
-						if dlo != nil {
-							lx.report.Err(dlo.Pos(), "declaration list not allowed in a function definition with parameter type list")
-						}
-					case 7: // DirectDeclarator '(' IdentifierListOpt ')'
-						done = true
-						ilo := dd.IdentifierListOpt
-						if ilo != nil && dlo == nil {
-							lx.report.Err(ilo.Pos(), "missing parameter declaration list")
-							break
-						}
-
-						if ilo == nil {
-							if dlo != nil {
-								lx.report.Err(dlo.Pos(), "unexpected parameter declaration list")
-							}
-							break
-						}
-
-						// ilo != nil && dlo != nil
-						lx.scope.mergeScope = dlo.paramsScope
-						ilo.post(lx.report, dlo.DeclarationList)
+			dlo := yyS[yypt-0].node.(*DeclarationListOpt)
+			done := false
+			for dd := d.DirectDeclarator.bottom(); !done && dd != nil; dd = dd.parent {
+				switch dd.Case {
+				case 6: // DirectDeclarator '(' ParameterTypeList ')'
+					done = true
+					lx.scope.mergeScope = dd.paramsScope
+					if dlo != nil {
+						lx.report.Err(dlo.Pos(), "declaration list not allowed in a function definition with parameter type list")
 					}
+				case 7: // DirectDeclarator '(' IdentifierListOpt ')'
+					done = true
+					ilo := dd.IdentifierListOpt
+					if ilo != nil && dlo == nil {
+						lx.report.Err(ilo.Pos(), "missing parameter declaration list")
+						break
+					}
+
+					if ilo == nil {
+						if dlo != nil {
+							lx.report.Err(dlo.Pos(), "unexpected parameter declaration list")
+						}
+						break
+					}
+
+					// ilo != nil && dlo != nil
+					lx.scope.mergeScope = dlo.paramsScope
+					ilo.post(lx.report, dlo.DeclarationList)
 				}
+			}
+			d.setFull(lx)
+			if !done {
+				lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, d.Type.Kind())
 			}
 
 			// Handle __func__, [0], 6.4.2.2.
