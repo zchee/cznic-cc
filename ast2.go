@@ -427,10 +427,17 @@ loop0:
 		// particular identifier with external linkage denotes the same
 		// object or function.
 		if prev, ok := lx.externs[id]; ok && !n.isCompatible(prev) {
-			lx.report.Err(n.Pos(),
-				"conflicting types for %s '%s' with external linkage, previous declaration at %s '%s'",
-				xc.Dict.S(id), n.Type, position(prev.Pos()), prev.Type)
-			break
+			t, isA := compositeType(prev.Type, n.Type)
+			if t == nil {
+				lx.report.Err(n.Pos(),
+					"conflicting types for %s '%s' with external linkage, previous declaration at %s '%s'",
+					xc.Dict.S(id), n.Type, position(prev.Pos()), prev.Type)
+				break
+			}
+
+			if !isA {
+				dd.prev.Node = n.DirectDeclarator.bottom()
+			}
 		}
 
 		lx.externs[id] = n
@@ -439,9 +446,17 @@ loop0:
 		// of an identifier with internal linkage denotes the same
 		// object or function.
 		if prev != nil && !n.isCompatible(prev) {
-			lx.report.Err(n.Pos(),
-				"conflicting types for %s '%s' with internal linkage, previous declaration at %s '%s'",
-				xc.Dict.S(id), n.Type, position(prev.Pos()), prev.Type)
+			t, isA := compositeType(prev.Type, n.Type)
+			if t == nil {
+				lx.report.Err(n.Pos(),
+					"conflicting types for %s '%s' with internal linkage, previous declaration at %s '%s'",
+					xc.Dict.S(id), n.Type, position(prev.Pos()), prev.Type)
+				break
+			}
+
+			if !isA {
+				dd.prev.Node = n.DirectDeclarator.bottom()
+			}
 		}
 	case None:
 		// [0]6.2.2, 2: Each declaration of an identifier with no

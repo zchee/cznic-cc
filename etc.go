@@ -1570,3 +1570,50 @@ func isCompatibleParameters(a, b []Parameter, va, vb bool) bool {
 
 	return true
 }
+
+// [0], 6.2.7-3
+//
+// A composite type can be constructed from two types that are compatible; it
+// is a type that is compatible with both of the two types and satisfies the
+// following conditions:
+//
+// — If one type is an array of known constant size, the composite type is an
+// array of that size; otherwise, if one type is a variable length array, the
+// composite type is that type.
+//
+// — If only one type is a function type with a parameter type list (a function
+// prototype), the composite type is a function prototype with the parameter
+// type list.
+//
+// — If both types are function types with parameter type lists, the type of
+// each parameter in the composite parameter type list is the composite type of
+// the corresponding parameters.
+//
+// These rules apply recursively to the types from which the two types are
+// derived.
+func compositeType(a, b Type) (c Type, isA bool) {
+	t, u := a, b
+	for t.Kind() == Ptr && u.Kind() == Ptr {
+		t = t.Element()
+		u = u.Element()
+	}
+
+	if t.Kind() == Function && u.Kind() == Function {
+		if !t.Result().CanAssignTo(u.Result()) {
+			return nil, false
+		}
+
+		p, _ := t.Parameters()
+		q, _ := u.Parameters()
+
+		if len(p) == 0 && len(q) != 0 {
+			return b, false
+		}
+
+		if len(p) != 0 && len(q) == 0 {
+			return a, true
+		}
+	}
+
+	return nil, false
+}

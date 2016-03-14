@@ -942,6 +942,7 @@ func TestDevBash(t *testing.T) {
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/support/bashversion.c", opts...)
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/shell.c", opts...)
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/eval.c", opts...)
+	testDev(t, predefined, cppOpts, "testdata/dev/bash/builtins/mkbuiltins.c", opts...)
 	//TODO
 }
 
