@@ -868,6 +868,70 @@ func TestDevVim(t *testing.T) {
 	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/version.c", opts...)
 }
 
+func TestDevBash(t *testing.T) {
+	if !dirExists(t, "testdata/dev/bash") {
+		return
+	}
+
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	predefined += testDevAdditionalPredefines + `
+#define PROGRAM "bash"
+#define CONF_HOSTTYPE "x86_64"
+#define CONF_OSTYPE "linux-gnu"
+#define CONF_MACHTYPE "x86_64-unknown-linux-gnu"
+#defien CONF_VENDOR "unknown"
+#define LOCALEDIR "/usr/local/share/locale"
+#define PACKAGE "bash"
+#define SHELL
+#define HAVE_CONFIG_H
+`
+	includes := IncludePaths(
+		append(
+			includePaths,
+			"testdata/dev/bash/",
+			"testdata/dev/bash/include",
+			"testdata/dev/bash/lib/",
+		),
+	)
+	sysIncludes := SysIncludePaths(sysIncludePaths)
+
+	opts := []Opt{
+		includes,
+		sysIncludes,
+		EnableAnonymousStructFields(),
+		EnableAsm(),
+	}
+
+	cppOpts := []string{
+		`-DPROGRAM="bash"`,
+		`-DCONF_HOSTTYPE="x86_64"`,
+		`-DCONF_OSTYPE="linux-gnu"`,
+		`-DCONF_MACHTYPE="x86_64-unknown-linux-gnu"`,
+		`-DCONF_VENDOR="unknown"`,
+		`-DLOCALEDIR="/usr/local/share/locale"`,
+		`-DPACKAGE="bash"`,
+		"-DSHELL",
+		"-DHAVE_CONFIG_H",
+		"-Itestdata/dev/bash/",
+		"-Itestdata/dev/bash/include",
+		"-Itestdata/dev/bash/lib",
+	}
+
+	if *oFailFast {
+		opts = append(opts, CrashOnError())
+	}
+
+	testDev(t, predefined, cppOpts, "testdata/dev/bash/mksyntax.c", opts...)
+	testDev(t, predefined, cppOpts, "testdata/dev/bash/version.c", opts...)
+	testDev(t, predefined, cppOpts, "testdata/dev/bash/support/bashversion.c", opts...)
+	//TODO
+}
+
 func TestPPParse1(t *testing.T) {
 	path := *o1
 	if path == "" {

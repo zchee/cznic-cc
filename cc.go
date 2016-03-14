@@ -260,7 +260,10 @@ func EnableUndefExtraTokens() Opt {
 // search path list is produced by appending the option arguments in order of
 // appearance.
 func SysIncludePaths(paths []string) Opt {
-	return func(l *lexer) { l.sysIncludePaths = dedup(append(l.sysIncludePaths, fromSlashes(paths)...)) }
+	return func(l *lexer) {
+		l.sysIncludePaths = dedup(append(l.sysIncludePaths, fromSlashes(paths)...))
+		l.sysIncludePaths = l.sysIncludePaths[:len(l.sysIncludePaths):len(l.sysIncludePaths)]
+	}
 }
 
 // IncludePaths option configures where to search for include files (eg.
@@ -268,7 +271,10 @@ func SysIncludePaths(paths []string) Opt {
 // path list is the produce by appending the option arguments in order of
 // appearance.
 func IncludePaths(paths []string) Opt {
-	return func(l *lexer) { l.includePaths = dedup(append(l.includePaths, fromSlashes(paths)...)) }
+	return func(l *lexer) {
+		l.includePaths = dedup(append(l.includePaths, fromSlashes(paths)...))
+		l.includePaths = l.includePaths[:len(l.includePaths):len(l.includePaths)]
+	}
 }
 
 // YyDebug sets the parser debug level.

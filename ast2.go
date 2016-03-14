@@ -1593,6 +1593,9 @@ func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
 	i := 0
 	for il := n.IdentifierList; il != nil; il, i = il.IdentifierList, i+1 {
 		t := il.Token
+		if il.Case == 1 {
+			t = il.Token2
+		}
 		nm := t.Val
 		if r, ok := ilm[nm]; ok {
 			report.ErrTok(t, "duplicate parameter name declaration, previous at %s", r.pos)

@@ -11,7 +11,7 @@ all: editor
 	go vet || true
 	golint || true
 	make todo
-	unused .
+	unused . || true
 
 clean:
 	rm -f log-*.c log-*.h *~ cpu.test mem.test
