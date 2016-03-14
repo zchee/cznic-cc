@@ -1039,6 +1039,8 @@ func (p *pp) controlLine(n *ControlLine) {
 		}
 
 		p.report.ErrTok(toks[0], "include file not found: %s", arg)
+	case 7: // PPLINE PPTokenList '\n'
+		// ignored
 	case 8: // PPPRAGMA PPTokenListOpt
 		// simply ignore pragmas (#pragma once already works)
 		return

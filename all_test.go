@@ -943,6 +943,7 @@ func TestDevBash(t *testing.T) {
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/shell.c", opts...)
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/eval.c", opts...)
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/builtins/mkbuiltins.c", opts...)
+	//TODO must change cwd: testDev(t, predefined, cppOpts, "testdata/dev/bash/y.tab.c", opts...)
 	//TODO
 }
 
