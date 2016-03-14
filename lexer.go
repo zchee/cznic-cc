@@ -218,7 +218,7 @@ func (l *lexer) scanToken() (tok xc.Token) {
 		l.toC = true
 	case lsTranslationUnit:
 	again:
-		if len(l.textLine) == 0 {
+		for len(l.textLine) == 0 {
 			var ok bool
 			if l.textLine, ok = <-l.ch; !ok {
 				return xc.Token{Char: lex.NewChar(l.tokLast.Pos(), lex.RuneEOF)}

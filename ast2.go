@@ -664,7 +664,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 
 		if !isVariadic {
-			if len(args) > len(params) {
+			if len(args) > len(params) && len(params) != 0 /* composite type */ {
 				lx.report.Err(n.ArgumentExpressionListOpt.Pos(), "too many arguments to function")
 				break
 			}

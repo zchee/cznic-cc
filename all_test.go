@@ -609,6 +609,7 @@ func testDev(t *testing.T, predefine string, cppOpts []string, src string, opts 
 	defer logw.Flush()
 
 	var got, exp []xc.Token
+	var lpos token.Position
 
 	var tw tweaks
 	_, err = Parse(
@@ -620,6 +621,15 @@ func testDev(t *testing.T, predefine string, cppOpts []string, src string, opts 
 			getTweaks(&tw),
 			preprocessOnly(),
 			Cpp(func(toks []xc.Token) {
+				if len(toks) == 0 {
+					return
+				}
+
+				p := toks[0].Position()
+				if p.Filename != lpos.Filename {
+					fmt.Fprintf(logw, "# %d %q\n", p.Line, p.Filename)
+				}
+				lpos = p
 				for _, v := range toks {
 					logw.WriteString(TokSrc(toC(v, &tw)))
 					if v.Rune != ' ' {
@@ -893,9 +903,9 @@ func TestDevBash(t *testing.T) {
 	includes := IncludePaths(
 		append(
 			includePaths,
-			"testdata/dev/bash/",
+			"testdata/dev/bash",
 			"testdata/dev/bash/include",
-			"testdata/dev/bash/lib/",
+			"testdata/dev/bash/lib",
 		),
 	)
 	sysIncludes := SysIncludePaths(sysIncludePaths)
@@ -905,6 +915,7 @@ func TestDevBash(t *testing.T) {
 		sysIncludes,
 		EnableAnonymousStructFields(),
 		EnableAsm(),
+		EnableIncludeNext(),
 	}
 
 	cppOpts := []string{
@@ -917,7 +928,7 @@ func TestDevBash(t *testing.T) {
 		`-DPACKAGE="bash"`,
 		"-DSHELL",
 		"-DHAVE_CONFIG_H",
-		"-Itestdata/dev/bash/",
+		"-Itestdata/dev/bash",
 		"-Itestdata/dev/bash/include",
 		"-Itestdata/dev/bash/lib",
 	}
@@ -929,6 +940,8 @@ func TestDevBash(t *testing.T) {
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/mksyntax.c", opts...)
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/version.c", opts...)
 	testDev(t, predefined, cppOpts, "testdata/dev/bash/support/bashversion.c", opts...)
+	testDev(t, predefined, cppOpts, "testdata/dev/bash/shell.c", opts...)
+	testDev(t, predefined, cppOpts, "testdata/dev/bash/eval.c", opts...)
 	//TODO
 }
 

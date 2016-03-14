@@ -1054,6 +1054,9 @@ func (p *pp) controlLine(n *ControlLine) {
 		delete(p.macros.m, nm)
 	case 14: // PPINCLUDE_NEXT PPTokenList '\n'
 		toks := decodeTokens(n.PPTokenList, nil, false)
+		var exp []xc.Token
+		p.expand(&tokenBuf{toks}, false, func(toks []xc.Token) { exp = append(exp, toks...) })
+		toks = exp
 		if len(toks) == 0 {
 			p.report.ErrTok(n.Token, "invalid #include_next argument")
 			break
