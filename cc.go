@@ -30,57 +30,64 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/mathutil"
 	"github.com/cznic/xc"
 )
 
-var (
-	cppPredefine       string
-	cppPredefineError  error
-	cppPredefineOnce   sync.Once
-	cppSysInclude      []string
-	cppSysIncludeError error
-	cppSysIncludeOnce  sync.Once
-)
+// HostConfig returns the system C compiler configuration, or an error, if any.
+// The configuration is obtained by running the 'cpp' command. For the
+// predefined macros list the '-dM' options is added. For the include paths
+// lists, the option '-v' is added and the output is parsed to extract the
+// "..." include and <...> include paths. To add any other options to cpp, list
+// them in opts.
+//
+// The function relies on a POSIX compatible C preprocessor installed.
+// Execution of HostConfig is not free, so caching the results is recommended
+// whenever possible.
+func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) {
+	args := append(append([]string{"-dM"}, opts...), "/dev/null")
+	pre, err := exec.Command("cpp", args...).Output()
+	if err != nil {
+		return "", nil, nil, err
+	}
 
-func cppPredefined() (string, error) {
-	cppPredefineOnce.Do(func() {
-		var out []byte
-		if out, cppPredefineError = exec.Command("cpp", "-dM", "/dev/null").Output(); cppPredefineError != nil {
-			return
-		}
+	args = append(append([]string{"-v"}, opts...), "/dev/null")
+	out, err := exec.Command("cpp", args...).CombinedOutput()
+	if err != nil {
+		return "", nil, nil, err
+	}
 
-		cppPredefine = string(out)
-	})
-	return cppPredefine, cppPredefineError
-}
-
-func cppSysIncludePaths() ([]string, error) {
-	cppSysIncludeOnce.Do(func() {
-		var out []byte
-		if out, cppSysIncludeError = exec.Command("cpp", "-v", "/dev/null").CombinedOutput(); cppSysIncludeError != nil {
-			return
-		}
-
-		a := strings.Split(string(out), "\n")
-		for i, v := range a {
-			if v == "#include <...> search starts here:" {
-				for _, v := range a[i+1:] {
-					if v == "End of search list." {
-						cppSysInclude = dedup(cppSysInclude)
-						return
-					}
-
-					cppSysInclude = append(cppSysInclude, strings.TrimSpace(v))
+	a := strings.Split(string(out), "\n")
+	for i := 0; i < len(a); {
+		switch a[i] {
+		case "#include \"...\" search starts here:":
+		loop:
+			for i = i + 1; i < len(a); {
+				switch v := a[i]; {
+				case strings.HasPrefix(v, "#") || v == "End of search list.":
+					break loop
+				default:
+					includePaths = append(includePaths, strings.TrimSpace(v))
+					i++
 				}
 			}
+		case "#include <...> search starts here:":
+			for i = i + 1; i < len(a); {
+				switch v := a[i]; {
+				case strings.HasPrefix(v, "#") || v == "End of search list.":
+					return string(pre), includePaths, sysIncludePaths, nil
+				default:
+					sysIncludePaths = append(sysIncludePaths, strings.TrimSpace(v))
+					i++
+				}
+			}
+		default:
+			i++
 		}
-		cppSysIncludeError = fmt.Errorf("failed parsing cpp -v output")
-	})
-	return cppSysInclude, cppSysIncludeError
+	}
+	return "", nil, nil, fmt.Errorf("failed parsing cpp -v output")
 }
 
 type tweaks struct {

@@ -699,7 +699,7 @@ again:
 	}
 	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)), false)
 	for i, v := range repl {
-		repl[i].Char = lex.NewChar(tok.Pos(), v.Rune)	
+		repl[i].Char = lex.NewChar(tok.Pos(), v.Rune)
 	}
 	var r0 []xc.Token
 next:
