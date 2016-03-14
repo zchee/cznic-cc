@@ -190,11 +190,16 @@ import (
 	ArgumentExpressionList       "argument expression list"
 	ArgumentExpressionListOpt    "optional argument expression list"
 	AssemblerInstructions        "assembler instructions"
-	BasicAsmStatement            "basic assembler statement"
+	AssemblerOperand             "assembler operand"
+	AssemblerOperands            "assembler operands"
+	AssemblerStatement           "assembler statement"
+	AssemblerSymbolicNameOpt     "optional assembler symbolic name"
+	BasicAssemblerStatement      "basic assembler statement"
 	BlockItem                    "block item"
 	BlockItemList                "block item list"
 	BlockItemListOpt             "optional block item list"
-	CommaOpt
+	Clobbers                     "clobbers"
+	CommaOpt                     "optional comma"
 	CompoundStatement            "compound statement"
 	ConstantExpression           "constant expression"
 	ControlLine                  "control line"
@@ -228,6 +233,7 @@ import (
 	ExpressionOpt                "optional expression"
 	ExpressionStatement          "expression statement"
 	ExternalDeclaration          "external declaration"
+	FunctionBody                 "function body"
 	FunctionDefinition           "function definition"
 	FunctionSpecifier            "function specifier"
 	GroupList                    "group list"
@@ -2733,6 +2739,13 @@ Statement:
 			JumpStatement:  $1.(*JumpStatement),
 		}
 	}
+|	AssemblerStatement
+	{
+		$$ = &Statement{
+			Case:                6,
+			AssemblerStatement:  $1.(*AssemblerStatement),
+		}
+	}
 
 LabeledStatement:
 	IDENTIFIER ':' Statement
@@ -3009,11 +3022,11 @@ ExternalDeclaration:
 			Declaration:  $1.(*Declaration),
 		}
 	}
-|	BasicAsmStatement
+|	BasicAssemblerStatement
 	{
 		$$ = &ExternalDeclaration{
-			Case:               2,
-			BasicAsmStatement:  $1.(*BasicAsmStatement),
+			Case:                     2,
+			BasicAssemblerStatement:  $1.(*BasicAssemblerStatement),
 		}
 	}
 
@@ -3057,9 +3070,23 @@ FunctionDefinition:
 		if !done {
 			lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, d.Type.Kind())
 		}
+		lx.fnDeclarator = d
+	}
+	FunctionBody
+	{
+		$$ = &FunctionDefinition{
+			DeclarationSpecifiers:  $1.(*DeclarationSpecifiers),
+			Declarator:             $2.(*Declarator),
+			DeclarationListOpt:     $3.(*DeclarationListOpt),
+			FunctionBody:           $5.(*FunctionBody),
+		}
+	}
 
+FunctionBody:
+	{
+		lx := yylex.(*lexer)
 		// Handle __func__, [0], 6.4.2.2.
-		id, _ := d.Identifier()
+		id, _ := lx.fnDeclarator.Identifier()
 		lx.injectFunc = []xc.Token{
 			{lex.Char{Rune: STATIC}, idStatic},
 			{lex.Char{Rune: CONST}, idConst},
@@ -3074,12 +3101,32 @@ FunctionDefinition:
 	}
 	CompoundStatement
 	{
-		$$ = &FunctionDefinition{
-			DeclarationSpecifiers:  $1.(*DeclarationSpecifiers),
-			Declarator:             $2.(*Declarator),
-			DeclarationListOpt:     $3.(*DeclarationListOpt),
-			CompoundStatement:      $5.(*CompoundStatement),
+		lhs := &FunctionBody{
+			CompoundStatement:  $2.(*CompoundStatement),
 		}
+		$$ = lhs
+		lhs.scope = lhs.CompoundStatement.scope
+	}
+|	{
+		lx := yylex.(*lexer)
+		m := lx.scope.mergeScope
+		lx.pushScope(ScopeBlock)
+		if m != nil {
+			lx.scope.merge(m)
+		}
+		lx.scope.mergeScope = nil
+	}
+	AssemblerStatement ';'
+	{
+		lx := yylex.(*lexer)
+		lhs := &FunctionBody{
+			Case:                1,
+			AssemblerStatement:  $2.(*AssemblerStatement),
+			Token:               $3,
+		}
+		$$ = lhs
+		lhs.scope = lx.scope
+		lx.popScope(lx.tokPrev)
 	}
 
 DeclarationList:
@@ -3133,10 +3180,10 @@ AssemblerInstructions:
 		}
 	}
 
-BasicAsmStatement:
+BasicAssemblerStatement:
 	"asm" VolatileOpt '(' AssemblerInstructions ')'
 	{
-		$$ = &BasicAsmStatement{
+		$$ = &BasicAssemblerStatement{
 			Token:                  $1,
 			VolatileOpt:            $2.(*VolatileOpt),
 			Token2:                 $3,
@@ -3154,6 +3201,138 @@ VolatileOpt:
 	{
 		$$ = &VolatileOpt{
 			Token:  $1,
+		}
+	}
+
+AssemblerOperand:
+	AssemblerSymbolicNameOpt STRINGLITERAL '(' Expression ')'
+	{
+		$$ = &AssemblerOperand{
+			AssemblerSymbolicNameOpt:  $1.(*AssemblerSymbolicNameOpt),
+			Token:                     $2,
+			Token2:                    $3,
+			Expression:                $4.(*Expression),
+			Token3:                    $5,
+		}
+	}
+
+AssemblerOperands:
+	AssemblerOperand
+	{
+		$$ = &AssemblerOperands{
+			AssemblerOperand:  $1.(*AssemblerOperand),
+		}
+	}
+|	AssemblerOperands ',' AssemblerOperand
+	{
+		$$ = &AssemblerOperands{
+			Case:               1,
+			AssemblerOperands:  $1.(*AssemblerOperands),
+			Token:              $2,
+			AssemblerOperand:   $3.(*AssemblerOperand),
+		}
+	}
+
+AssemblerSymbolicNameOpt:
+	/* empty */
+	{
+		$$ = (*AssemblerSymbolicNameOpt)(nil)
+		}
+|	'[' IDENTIFIER ']'
+	{
+		$$ = &AssemblerSymbolicNameOpt{
+			Token:   $1,
+			Token2:  $2,
+			Token3:  $3,
+		}
+	}
+
+Clobbers:
+	STRINGLITERAL
+	{
+		$$ = &Clobbers{
+			Token:  $1,
+		}
+	}
+|	Clobbers ',' STRINGLITERAL
+	{
+		$$ = &Clobbers{
+			Case:      1,
+			Clobbers:  $1.(*Clobbers),
+			Token:     $2,
+			Token2:    $3,
+		}
+	}
+
+AssemblerStatement:
+	BasicAssemblerStatement
+	{
+		$$ = &AssemblerStatement{
+			BasicAssemblerStatement:  $1.(*BasicAssemblerStatement),
+		}
+	}
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ')'
+	{
+		$$ = &AssemblerStatement{
+			Case:                   1,
+			Token:                  $1,
+			VolatileOpt:            $2.(*VolatileOpt),
+			Token2:                 $3,
+			AssemblerInstructions:  $4.(*AssemblerInstructions).reverse(),
+			Token3:                 $5,
+			AssemblerOperands:      $6.(*AssemblerOperands).reverse(),
+			Token4:                 $7,
+		}
+	}
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ')'
+	{
+		$$ = &AssemblerStatement{
+			Case:                   2,
+			Token:                  $1,
+			VolatileOpt:            $2.(*VolatileOpt),
+			Token2:                 $3,
+			AssemblerInstructions:  $4.(*AssemblerInstructions).reverse(),
+			Token3:                 $5,
+			AssemblerOperands:      $6.(*AssemblerOperands).reverse(),
+			Token4:                 $7,
+			AssemblerOperands2:     $8.(*AssemblerOperands).reverse(),
+			Token5:                 $9,
+		}
+	}
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ':' Clobbers ')'
+	{
+		$$ = &AssemblerStatement{
+			Case:                   3,
+			Token:                  $1,
+			VolatileOpt:            $2.(*VolatileOpt),
+			Token2:                 $3,
+			AssemblerInstructions:  $4.(*AssemblerInstructions).reverse(),
+			Token3:                 $5,
+			AssemblerOperands:      $6.(*AssemblerOperands).reverse(),
+			Token4:                 $7,
+			AssemblerOperands2:     $8.(*AssemblerOperands).reverse(),
+			Token5:                 $9,
+			Clobbers:               $10.(*Clobbers).reverse(),
+			Token6:                 $11,
+		}
+	}
+|	"asm" VolatileOpt "goto" '(' AssemblerInstructions ':' ':' AssemblerOperands ':' Clobbers ':' IdentifierList ')'
+	{
+		$$ = &AssemblerStatement{
+			Case:                   4,
+			Token:                  $1,
+			VolatileOpt:            $2.(*VolatileOpt),
+			Token2:                 $3,
+			Token3:                 $4,
+			AssemblerInstructions:  $5.(*AssemblerInstructions).reverse(),
+			Token4:                 $6,
+			Token5:                 $7,
+			AssemblerOperands:      $8.(*AssemblerOperands).reverse(),
+			Token6:                 $9,
+			Clobbers:               $10.(*Clobbers).reverse(),
+			Token7:                 $11,
+			IdentifierList:         $12.(*IdentifierList).reverse(),
+			Token8:                 $13,
 		}
 	}
 

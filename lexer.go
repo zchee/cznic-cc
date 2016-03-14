@@ -5,10 +5,8 @@
 package cc
 
 import (
-	"fmt"
 	"go/token"
 	"io"
-	"strings"
 
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/xc"
@@ -62,6 +60,7 @@ type lexer struct {
 	externs            map[int]*Declarator //
 	file               *token.File         //
 	finalNLInjected    bool                //
+	fnDeclarator       *Declarator         //
 	includePaths       []string            //
 	injectFunc         []xc.Token          // [0], 6.4.2.2.
 	iota               int64               //
@@ -386,12 +385,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 // Error Implements yyLexer.
 func (l *lexer) Error(msg string) {
 	t := l.tokLast
-	s := ""
-	if tokHasVal[t.Rune] {
-		s = fmt.Sprintf(" %s", t.S())
-	}
-	msg = strings.Join([]string{fmt.Sprintf("unexpected %s%s,", yySymName(int(l.tokLast.Rune)), s), msg}, " ")
-	l.report.Err(errPos(l.tokLast.Pos()), "%s", msg)
+	l.report.Err(errPos(t.Pos()), "unexpected %s, %s", yySymName(int(t.Rune)), msg)
 }
 
 // Reduced implements yyLexerEx

@@ -698,6 +698,9 @@ again:
 		p.expand(&tokenBuf{toks}, handleDefined, func(toks []xc.Token) { args[i] = append(args[i], toks...) })
 	}
 	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)), false)
+	for i, v := range repl {
+		repl[i].Char = lex.NewChar(tok.Pos(), v.Rune)	
+	}
 	var r0 []xc.Token
 next:
 	for i, tok := range repl {

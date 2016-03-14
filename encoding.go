@@ -315,7 +315,7 @@ var (
 		ELSE:      dict.SID("else"),
 		ENUM:      dict.SID("enum"),
 		EQ:        dict.SID("=="),
-		EXTERN:    dict.SID("extrn"),
+		EXTERN:    dict.SID("extern"),
 		FLOAT:     dict.SID("float"),
 		FOR:       dict.SID("for"),
 		GEQ:       dict.SID(">="),

@@ -721,7 +721,7 @@ func TestDev(t *testing.T) {
 #define __TIME__ %q
 
 #define __PRETTY_FUNCTION__ __func__
-#define __asm__(x)
+#define __asm__ asm
 #define __attribute__(...)
 #define __builtin_bswap32(bsx) ( 0U )
 #define __builtin_bswap64(bsx) ( (__uint64_t)0 )
@@ -730,6 +730,7 @@ func TestDev(t *testing.T) {
 #define __builtin_va_end(v)
 #define __builtin_va_list void*
 #define __builtin_va_start(x, y)
+#define __const
 #define __extension__
 #define __inline
 #define __restrict
@@ -757,6 +758,7 @@ double __builtin_inff();
 	opts := []Opt{
 		sysIncludes,
 		EnableAnonymousStructFields(),
+		EnableAsm(),
 	}
 
 	testDev(t, predefined, nil, []string{"testdata/dev/sqlite3/shell.c"}, opts...)
@@ -782,6 +784,7 @@ double __builtin_inff();
 		EnableIncludeNext(),
 		EnableAnonymousStructFields(),
 		EnableTypeOf(),
+		EnableAsm(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
@@ -826,7 +829,7 @@ double __builtin_inff();
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/normal.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/ops.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/option.c"}, opts...)
-	//testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/os_unix.c"}, opts...)
+	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/os_unix.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/auto/pathdef.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/popupmnu.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/quickfix.c"}, opts...)
@@ -842,7 +845,7 @@ double __builtin_inff();
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/undo.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/window.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/netbeans.c"}, opts...)
-	//TODO testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/channel.c"}, opts...)
+	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/channel.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/json.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/main.c"}, opts...)
 	testDev(t, predefine, cppOpts, []string{"testdata/dev/vim/vim/src/memfile.c"}, opts...)

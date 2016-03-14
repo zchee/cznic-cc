@@ -193,11 +193,160 @@ func (n *AssemblerInstructions) Pos() token.Pos {
 	}
 }
 
-// BasicAsmStatement represents data reduced by production:
+// AssemblerOperand represents data reduced by production:
 //
-//	BasicAsmStatement:
+//	AssemblerOperand:
+//	        AssemblerSymbolicNameOpt STRINGLITERAL '(' Expression ')'
+type AssemblerOperand struct {
+	AssemblerSymbolicNameOpt *AssemblerSymbolicNameOpt
+	Expression               *Expression
+	Token                    xc.Token
+	Token2                   xc.Token
+	Token3                   xc.Token
+}
+
+func (n *AssemblerOperand) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *AssemblerOperand) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *AssemblerOperand) Pos() token.Pos {
+	if p := n.AssemblerSymbolicNameOpt.Pos(); p != 0 {
+		return p
+	}
+
+	return n.Token.Pos()
+}
+
+// AssemblerOperands represents data reduced by productions:
+//
+//	AssemblerOperands:
+//	        AssemblerOperand
+//	|       AssemblerOperands ',' AssemblerOperand  // Case 1
+type AssemblerOperands struct {
+	AssemblerOperand  *AssemblerOperand
+	AssemblerOperands *AssemblerOperands
+	Case              int
+	Token             xc.Token
+}
+
+func (n *AssemblerOperands) reverse() *AssemblerOperands {
+	if n == nil {
+		return nil
+	}
+
+	na := n
+	nb := na.AssemblerOperands
+	for nb != nil {
+		nc := nb.AssemblerOperands
+		nb.AssemblerOperands = na
+		na = nb
+		nb = nc
+	}
+	n.AssemblerOperands = nil
+	return na
+}
+
+func (n *AssemblerOperands) fragment() interface{} { return n.reverse() }
+
+// String implements fmt.Stringer.
+func (n *AssemblerOperands) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *AssemblerOperands) Pos() token.Pos {
+	switch n.Case {
+	case 0:
+		return n.AssemblerOperand.Pos()
+	case 1:
+		return n.AssemblerOperands.Pos()
+	default:
+		panic("internal error")
+	}
+}
+
+// AssemblerStatement represents data reduced by productions:
+//
+//	AssemblerStatement:
+//	        BasicAssemblerStatement
+//	|       "asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ')'                                             // Case 1
+//	|       "asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ')'                       // Case 2
+//	|       "asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ':' Clobbers ')'          // Case 3
+//	|       "asm" VolatileOpt "goto" '(' AssemblerInstructions ':' ':' AssemblerOperands ':' Clobbers ':' IdentifierList ')'  // Case 4
+type AssemblerStatement struct {
+	AssemblerInstructions   *AssemblerInstructions
+	AssemblerOperands       *AssemblerOperands
+	AssemblerOperands2      *AssemblerOperands
+	BasicAssemblerStatement *BasicAssemblerStatement
+	Case                    int
+	Clobbers                *Clobbers
+	IdentifierList          *IdentifierList
+	Token                   xc.Token
+	Token2                  xc.Token
+	Token3                  xc.Token
+	Token4                  xc.Token
+	Token5                  xc.Token
+	Token6                  xc.Token
+	Token7                  xc.Token
+	Token8                  xc.Token
+	VolatileOpt             *VolatileOpt
+}
+
+func (n *AssemblerStatement) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *AssemblerStatement) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *AssemblerStatement) Pos() token.Pos {
+	switch n.Case {
+	case 0:
+		return n.BasicAssemblerStatement.Pos()
+	case 1, 2, 3, 4:
+		return n.Token.Pos()
+	default:
+		panic("internal error")
+	}
+}
+
+// AssemblerSymbolicNameOpt represents data reduced by productions:
+//
+//	AssemblerSymbolicNameOpt:
+//	        /* empty */
+//	|       '[' IDENTIFIER ']'  // Case 1
+type AssemblerSymbolicNameOpt struct {
+	Token  xc.Token
+	Token2 xc.Token
+	Token3 xc.Token
+}
+
+func (n *AssemblerSymbolicNameOpt) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *AssemblerSymbolicNameOpt) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *AssemblerSymbolicNameOpt) Pos() token.Pos {
+	if n == nil {
+		return 0
+	}
+
+	return n.Token.Pos()
+}
+
+// BasicAssemblerStatement represents data reduced by production:
+//
+//	BasicAssemblerStatement:
 //	        "asm" VolatileOpt '(' AssemblerInstructions ')'
-type BasicAsmStatement struct {
+type BasicAssemblerStatement struct {
 	AssemblerInstructions *AssemblerInstructions
 	Token                 xc.Token
 	Token2                xc.Token
@@ -205,15 +354,15 @@ type BasicAsmStatement struct {
 	VolatileOpt           *VolatileOpt
 }
 
-func (n *BasicAsmStatement) fragment() interface{} { return n }
+func (n *BasicAssemblerStatement) fragment() interface{} { return n }
 
 // String implements fmt.Stringer.
-func (n *BasicAsmStatement) String() string {
+func (n *BasicAssemblerStatement) String() string {
 	return PrettyString(n)
 }
 
 // Pos reports the position of the first component of n or zero if it's empty.
-func (n *BasicAsmStatement) Pos() token.Pos {
+func (n *BasicAssemblerStatement) Pos() token.Pos {
 	return n.Token.Pos()
 }
 
@@ -317,6 +466,54 @@ func (n *BlockItemListOpt) Pos() token.Pos {
 	}
 
 	return n.BlockItemList.Pos()
+}
+
+// Clobbers represents data reduced by productions:
+//
+//	Clobbers:
+//	        STRINGLITERAL
+//	|       Clobbers ',' STRINGLITERAL  // Case 1
+type Clobbers struct {
+	Case     int
+	Clobbers *Clobbers
+	Token    xc.Token
+	Token2   xc.Token
+}
+
+func (n *Clobbers) reverse() *Clobbers {
+	if n == nil {
+		return nil
+	}
+
+	na := n
+	nb := na.Clobbers
+	for nb != nil {
+		nc := nb.Clobbers
+		nb.Clobbers = na
+		na = nb
+		nb = nc
+	}
+	n.Clobbers = nil
+	return na
+}
+
+func (n *Clobbers) fragment() interface{} { return n.reverse() }
+
+// String implements fmt.Stringer.
+func (n *Clobbers) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *Clobbers) Pos() token.Pos {
+	switch n.Case {
+	case 1:
+		return n.Clobbers.Pos()
+	case 0:
+		return n.Token.Pos()
+	default:
+		panic("internal error")
+	}
 }
 
 // CommaOpt represents data reduced by productions:
@@ -1414,13 +1611,13 @@ func (n *ExpressionStatement) Pos() token.Pos {
 //
 //	ExternalDeclaration:
 //	        FunctionDefinition
-//	|       Declaration         // Case 1
-//	|       BasicAsmStatement   // Case 2
+//	|       Declaration              // Case 1
+//	|       BasicAssemblerStatement  // Case 2
 type ExternalDeclaration struct {
-	BasicAsmStatement  *BasicAsmStatement
-	Case               int
-	Declaration        *Declaration
-	FunctionDefinition *FunctionDefinition
+	BasicAssemblerStatement *BasicAssemblerStatement
+	Case                    int
+	Declaration             *Declaration
+	FunctionDefinition      *FunctionDefinition
 }
 
 func (n *ExternalDeclaration) fragment() interface{} { return n }
@@ -1434,7 +1631,7 @@ func (n *ExternalDeclaration) String() string {
 func (n *ExternalDeclaration) Pos() token.Pos {
 	switch n.Case {
 	case 2:
-		return n.BasicAsmStatement.Pos()
+		return n.BasicAssemblerStatement.Pos()
 	case 1:
 		return n.Declaration.Pos()
 	case 0:
@@ -1444,15 +1641,47 @@ func (n *ExternalDeclaration) Pos() token.Pos {
 	}
 }
 
+// FunctionBody represents data reduced by productions:
+//
+//	FunctionBody:
+//	        CompoundStatement
+//	|       AssemblerStatement ';'  // Case 1
+type FunctionBody struct {
+	scope              *Bindings // Scope of the FunctionBody.
+	AssemblerStatement *AssemblerStatement
+	Case               int
+	CompoundStatement  *CompoundStatement
+	Token              xc.Token
+}
+
+func (n *FunctionBody) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *FunctionBody) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *FunctionBody) Pos() token.Pos {
+	switch n.Case {
+	case 1:
+		return n.AssemblerStatement.Pos()
+	case 0:
+		return n.CompoundStatement.Pos()
+	default:
+		panic("internal error")
+	}
+}
+
 // FunctionDefinition represents data reduced by production:
 //
 //	FunctionDefinition:
-//	        DeclarationSpecifiers Declarator DeclarationListOpt CompoundStatement
+//	        DeclarationSpecifiers Declarator DeclarationListOpt FunctionBody
 type FunctionDefinition struct {
-	CompoundStatement     *CompoundStatement
 	DeclarationListOpt    *DeclarationListOpt
 	DeclarationSpecifiers *DeclarationSpecifiers
 	Declarator            *Declarator
+	FunctionBody          *FunctionBody
 }
 
 func (n *FunctionDefinition) fragment() interface{} { return n }
@@ -2270,7 +2499,9 @@ func (n *SpecifierQualifierListOpt) Pos() token.Pos {
 //	|       SelectionStatement   // Case 3
 //	|       IterationStatement   // Case 4
 //	|       JumpStatement        // Case 5
+//	|       AssemblerStatement   // Case 6
 type Statement struct {
+	AssemblerStatement  *AssemblerStatement
 	Case                int
 	CompoundStatement   *CompoundStatement
 	ExpressionStatement *ExpressionStatement
@@ -2290,6 +2521,8 @@ func (n *Statement) String() string {
 // Pos reports the position of the first component of n or zero if it's empty.
 func (n *Statement) Pos() token.Pos {
 	switch n.Case {
+	case 6:
+		return n.AssemblerStatement.Pos()
 	case 1:
 		return n.CompoundStatement.Pos()
 	case 2:

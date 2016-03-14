@@ -169,10 +169,16 @@ import (
 	ArgumentExpressionList		"argument expression list"
 	ArgumentExpressionListOpt	"optional argument expression list"
 	AssemblerInstructions		"assembler instructions"
-	BasicAsmStatement		"basic assembler statement"
+	AssemblerOperand		"assembler operand"
+	AssemblerOperands		"assembler operands"
+	AssemblerStatement		"assembler statement"
+	AssemblerSymbolicNameOpt	"optional assembler symbolic name"
+	BasicAssemblerStatement		"basic assembler statement"
 	BlockItem			"block item"
 	BlockItemList			"block item list"
 	BlockItemListOpt		"optional block item list"
+	Clobbers			"clobbers"
+	CommaOpt			"optional comma"
 	CompoundStatement		"compound statement"
 	ConstantExpression		"constant expression"
 	ControlLine			"control line"
@@ -207,6 +213,7 @@ import (
 	ExpressionStatement		"expression statement"
 	ExternalDeclaration		"external declaration"
 	FunctionDefinition		"function definition"
+	FunctionBody			"function body"
 	FunctionSpecifier		"function specifier"
 	GroupList			"group list"
 	GroupListOpt			"optional group list"
@@ -1538,6 +1545,7 @@ Statement:
 |	SelectionStatement
 |	IterationStatement
 |	JumpStatement
+|	AssemblerStatement
 
 // [0](6.8.1)
 LabeledStatement:
@@ -1629,7 +1637,7 @@ TranslationUnit:
 ExternalDeclaration:
 	FunctionDefinition
 |	Declaration
-|	BasicAsmStatement
+|	BasicAssemblerStatement
 
 // [0](6.9.1)
 FunctionDefinition:
@@ -1671,9 +1679,15 @@ FunctionDefinition:
 		if !done {
 			lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, d.Type.Kind())
 		}
+		lx.fnDeclarator = d
+	}
+	FunctionBody
 
+//yy:field	scope	*Bindings	// Scope of the FunctionBody.
+FunctionBody:
+	{
 		// Handle __func__, [0], 6.4.2.2.
-		id, _ := d.Identifier()
+		id, _ := lx.fnDeclarator.Identifier()
 		lx.injectFunc = []xc.Token{
 			{lex.Char{Rune: STATIC}, idStatic},
 			{lex.Char{Rune: CONST}, idConst},
@@ -1687,6 +1701,23 @@ FunctionDefinition:
 		}
 	}
 	CompoundStatement
+	{
+		lhs.scope = lhs.CompoundStatement.scope
+	}
+|	
+	{
+		m := lx.scope.mergeScope
+		lx.pushScope(ScopeBlock)
+		if m != nil {
+			lx.scope.merge(m)
+		}
+		lx.scope.mergeScope = nil
+	}
+	AssemblerStatement ';'
+	{
+		lhs.scope = lx.scope
+		lx.popScope(lx.tokPrev)
+	}
 
 // [0](6.9.1)
 DeclarationList:
@@ -1709,12 +1740,36 @@ AssemblerInstructions:
 	STRINGLITERAL
 |	AssemblerInstructions STRINGLITERAL
 
-BasicAsmStatement:
+BasicAssemblerStatement:
 	"asm" VolatileOpt '(' AssemblerInstructions ')'
 
 VolatileOpt:
 	/* empty */ {}
 |	"volatile"
+
+AssemblerOperand:
+	AssemblerSymbolicNameOpt STRINGLITERAL '(' Expression ')'
+
+//yy:list
+AssemblerOperands:
+	AssemblerOperand
+|	AssemblerOperands ',' AssemblerOperand
+
+AssemblerSymbolicNameOpt:
+	/* empty */ {}
+|	'[' IDENTIFIER ']'
+
+//yy:list
+Clobbers:
+	STRINGLITERAL
+|	Clobbers ',' STRINGLITERAL
+
+AssemblerStatement:
+	BasicAssemblerStatement
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ')'
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ')'
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ':' Clobbers ')'
+|	"asm" VolatileOpt "goto" '(' AssemblerInstructions ':' ':' AssemblerOperands ':' Clobbers ':' IdentifierList ')'
 
 // ========================================================= PREPROCESSING_FILE
 
