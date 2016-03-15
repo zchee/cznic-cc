@@ -421,7 +421,7 @@ func (p *pp) expand(r tokenReader, handleDefined bool, w func([]xc.Token)) {
 				continue
 			}
 
-			if tok.Val == idLine {
+			if tok.Val == idLine && !p.tweaks.disablePredefinedLineMacro {
 				tok.Rune = INTCONST
 				tok.Val = dict.SID(strconv.Itoa(position(tok.Pos()).Line))
 				w([]xc.Token{tok})
@@ -603,7 +603,7 @@ func pasteToks(toks []xc.Token) []xc.Token {
 
 func (p *pp) expandLineNo(toks []xc.Token) []xc.Token {
 	for i, v := range toks {
-		if v.Rune == IDENTIFIER && v.Val == idLine {
+		if v.Rune == IDENTIFIER && v.Val == idLine && !p.tweaks.disablePredefinedLineMacro {
 			v.Rune = INTCONST
 			v.Val = dict.SID(strconv.Itoa(position(v.Pos()).Line))
 			toks[i] = v

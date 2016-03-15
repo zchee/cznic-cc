@@ -91,6 +91,7 @@ func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePath
 }
 
 type tweaks struct {
+	disablePredefinedLineMacro     bool // __LINE__ will not expand.
 	enableAnonymousStructFields    bool //
 	enableAsm                      bool //
 	enableDefineOmitCommaBeforeDDD bool // #define foo(a, b...)
@@ -313,6 +314,10 @@ func disableWarnings() Opt      { return func(lx *lexer) { lx.tweaks.enableWarni
 func getTweaks(dst *tweaks) Opt { return func(lx *lexer) { *dst = *lx.tweaks } }
 func nopOpt() Opt               { return func(*lexer) {} }
 func preprocessOnly() Opt       { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
+
+func disablePredefinedLineMacro() Opt {
+	return func(lx *lexer) { lx.tweaks.disablePredefinedLineMacro = true }
+}
 
 // Parse defines any macros in predefine. Then Parse preprocesses and parses
 // the translation unit consisting of files in paths. The m communicates the

@@ -20,11 +20,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode"
 
 	"github.com/cznic/golex/lex"
+	"github.com/cznic/mathutil"
 	"github.com/cznic/xc"
 )
 
@@ -621,6 +623,7 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 				logw.WriteByte('\n')
 			}),
 			disableWarnings(),
+			disablePredefinedLineMacro(),
 		)...,
 	)
 	if err != nil {
@@ -690,6 +693,22 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 
 			if g.Rune == STRINGLITERAL && e.Rune == STRINGLITERAL && bytes.Contains(g.S(), []byte(fakeTime)) {
 				continue
+			}
+
+			if g.Rune == IDENTIFIER && e.Rune == INTCONST && g.Val == idLine {
+				n, err := strconv.ParseUint(string(e.S()), 10, mathutil.IntBits-1)
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				d := g.Position().Line - int(n)
+				if d < 0 {
+					d = -d
+				}
+				if d <= 3 {
+					continue
+				}
 			}
 
 			t.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))
@@ -947,38 +966,38 @@ void* __builtin_alloca(int);
 			"support/bashversion.c",
 			"shell.c",
 			"eval.c",
-			//"y.tab.c",
+			"y.tab.c",
 			"general.c",
 			"make_cmd.c",
 			"print_cmd.c",
 			"dispose_cmd.c",
 			//"execute_cmd.c",
-			//"variables.c",
+			"variables.c",
 			"copy_cmd.c",
 			"error.c",
 			"expr.c",
 			"flags.c",
 			"jobs.c",
-			//"subst.c",
+			//VLA "subst.c",
 			"hashcmd.c",
 			"hashlib.c",
-			//"mailcheck.c",
+			"mailcheck.c",
 			"support/mksignames.c",
 			"support/signames.c",
 			//"trap.c",
-			//"input.c",
+			"input.c",
 			"unwind_prot.c",
 			"pathexp.c",
 			"sig.c",
 			"test.c",
 			"version.c",
 			"alias.c",
-			//"array.c",
+			"array.c",
 			"arrayfunc.c",
 			"assoc.c",
 			"braces.c",
 			"bracecomp.c",
-			//"bashhist.c",
+			"bashhist.c",
 			//"bashline.c",
 			"list.c",
 			"stringlib.c",
