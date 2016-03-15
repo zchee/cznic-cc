@@ -1006,7 +1006,7 @@ func (p *pp) controlLine(n *ControlLine) {
 		var dirs []string
 		switch {
 		case strings.HasPrefix(arg, "<"):
-			dirs = append(p.sysIncludes, p.includes...)
+			dirs = append(p.includes, p.sysIncludes...)
 		case strings.HasPrefix(arg, "\""):
 			dirs = p.includes
 		default:

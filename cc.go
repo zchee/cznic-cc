@@ -395,6 +395,9 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 	}
 
 	yyParse(lx)
+	stop <- 1
+	for range ch { // Drain.
+	}
 	if tu := lx.translationUnit; tu != nil {
 		tu.Macros = macros.macros()
 		tu.Model = m

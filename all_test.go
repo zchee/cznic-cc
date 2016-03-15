@@ -60,16 +60,9 @@ func TODO(...interface{}) string {
 	return fmt.Sprintf("TODO: %s:%d:\n", path.Base(fn), fl)
 }
 
-func use(...interface{}) {}
+func use(...interface{}) int { return 42 }
 
-var ( // Silence 'unused'.
-	_ = printStack
-	_ = caller
-	_ = dbg
-	_ = TODO
-	_ = use
-	_ = (*ctype).str
-)
+var _ = use(printStack, caller, dbg, TODO, (*ctype).str, yyDefault, yyErrCode, yyMaxDepth)
 
 // ============================================================================
 
@@ -581,25 +574,12 @@ puts("The first, second, and third items.");
 	}
 }
 
-func testDev(t *testing.T, predefine string, cppOpts []string, src string, opts ...Opt) {
-	fi, err := os.Stat(src)
-	if err != nil {
-		if os.IsNotExist(err) {
-			t.Logf("skipping: %v", err)
-			return
-		}
-	}
-
-	if !fi.Mode().IsRegular() {
-		t.Errorf("%s: not a regular file", src)
-		return
-	}
-
-	t.Log(src)
-
+func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, opts ...Opt) {
+	t.Log(filepath.Join(wd, src))
 	logf, err := os.Create("log-" + filepath.Base(src))
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 
 	defer logf.Close()
@@ -648,13 +628,14 @@ func testDev(t *testing.T, predefine string, cppOpts []string, src string, opts 
 
 	out, err := exec.Command("cpp", append(cppOpts, src)...).CombinedOutput()
 	if err != nil {
-		t.Fatalf("%v: %v", src, err)
+		t.Errorf("%v: %v", src, err)
 		return
 	}
 
 	f, err := ioutil.TempFile("", "cc-test-")
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 
 	defer func() {
@@ -665,7 +646,8 @@ func testDev(t *testing.T, predefine string, cppOpts []string, src string, opts 
 	}()
 
 	if _, err := f.Write(out); err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 
 	if _, err := Parse(
@@ -727,6 +709,28 @@ func testDev(t *testing.T, predefine string, cppOpts []string, src string, opts 
 	}
 }
 
+func testDev(t *testing.T, predefine string, cppOpts, src []string, wd string, opts ...Opt) {
+	if !dirExists(t, wd) {
+		t.Logf("skipping: %v", wd)
+		return
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Chdir(wd); err != nil {
+		t.Fatal(err)
+	}
+
+	defer os.Chdir(cwd)
+
+	for _, src := range src {
+		testDev1(t, predefine, cppOpts, wd, src, opts...)
+	}
+}
+
 func dirExists(t *testing.T, dir string) bool {
 	dir = filepath.FromSlash(dir)
 	fi, err := os.Stat(dir)
@@ -739,34 +743,26 @@ func dirExists(t *testing.T, dir string) bool {
 	}
 
 	if !fi.IsDir() {
-		t.Fatal(err)
+		t.Fatal(dir, "is not a directory")
 	}
 
 	return true
 }
 
 func TestPreprocessor(t *testing.T) {
-	testDev(t, "", nil, "testdata/arith-1.h")
+	testDev1(t, "", nil, "", "testdata/arith-1.h")
 }
 
 func TestDevSqlite(t *testing.T) {
-	if !dirExists(t, "testdata/dev/sqlite3") {
-		return
-	}
-
 	predefined, includePaths, sysIncludePaths, err := HostConfig()
 	if err != nil {
 		t.Logf("skipping: %v", err)
 		return
 	}
 
-	predefined += testDevAdditionalPredefines
-	includes := IncludePaths(includePaths)
-	sysIncludes := SysIncludePaths(sysIncludePaths)
-
 	opts := []Opt{
-		includes,
-		sysIncludes,
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
 		EnableAnonymousStructFields(),
 		EnableAsm(),
 	}
@@ -774,122 +770,144 @@ func TestDevSqlite(t *testing.T) {
 		opts = append(opts, CrashOnError())
 	}
 
-	testDev(t, predefined, nil, "testdata/dev/sqlite3/shell.c", opts...)
-	testDev(t, predefined, nil, "testdata/dev/sqlite3/sqlite3.c", opts...)
-	testDev(t, predefined, nil, "testdata/dev/sqlite3/sqlite3.h", opts...)
-	testDev(t, predefined, nil, "testdata/dev/sqlite3/sqlite3ext.h", opts...)
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines,
+		nil,
+		[]string{
+			"shell.c",
+			"sqlite3.c",
+			"sqlite3.h",
+			"sqlite3ext.h",
+		},
+		"testdata/dev/sqlite3",
+		opts...,
+	)
 }
 
 func TestDevVim(t *testing.T) {
-	if !dirExists(t, "testdata/dev/vim") {
-		return
-	}
-
 	predefined, includePaths, sysIncludePaths, err := HostConfig()
 	if err != nil {
 		t.Logf("skipping: %v", err)
 		return
 	}
 
-	predefined += testDevAdditionalPredefines
-	includes := IncludePaths(includePaths)
-	sysIncludes := SysIncludePaths(sysIncludePaths)
-
-	predefine := predefined + `
-#define HAVE_CONFIG_H
-#define _FORTIFY_SOURCE 1
-#define __typeof typeof
-`
 	opts := []Opt{
 		IncludePaths([]string{
-			"testdata/dev/vim/vim/src/",
-			"testdata/dev/vim/vim/src/proto/",
+			".",
+			"proto",
 		}),
-		includes,
-		sysIncludes,
-		EnableIncludeNext(),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
 		EnableAnonymousStructFields(),
-		EnableTypeOf(),
 		EnableAsm(),
+		EnableIncludeNext(),
+		EnableTypeOf(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
 	}
 
-	cppOpts := []string{
-		"-Itestdata/dev/vim/vim/src/",
-		"-Itestdata/dev/vim/vim/src/proto",
-		"-DHAVE_CONFIG_H",
-		"-U_FORTIFY_SOURCE",
-		"-D_FORTIFY_SOURCE=1",
-	}
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/buffer.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/blowfish.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/charset.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/crypt.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/crypt_zip.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/diff.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/digraph.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/edit.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/eval.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/ex_cmds.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/ex_cmds2.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/ex_docmd.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/ex_eval.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/ex_getln.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/fileio.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/fold.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/getchar.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/hardcopy.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/hashtab.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/if_cscope.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/if_xcmdsrv.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/mark.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/memline.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/menu.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/message.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/misc1.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/misc2.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/move.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/mbyte.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/normal.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/ops.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/option.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/os_unix.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/auto/pathdef.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/popupmnu.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/quickfix.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/regexp.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/screen.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/search.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/sha256.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/spell.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/syntax.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/tag.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/term.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/ui.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/undo.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/window.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/netbeans.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/channel.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/json.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/main.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/memfile.c", opts...)
-	testDev(t, predefine, cppOpts, "testdata/dev/vim/vim/src/version.c", opts...)
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+#define _FORTIFY_SOURCE 1
+#define __typeof typeof
+`,
+		[]string{
+			"-I.",
+			"-Iproto",
+			"-DHAVE_CONFIG_H",
+			"-U_FORTIFY_SOURCE",
+			"-D_FORTIFY_SOURCE=1",
+		},
+		[]string{
+			"buffer.c",
+			"blowfish.c",
+			"charset.c",
+			"crypt.c",
+			"crypt_zip.c",
+			"diff.c",
+			"digraph.c",
+			"edit.c",
+			"eval.c",
+			"ex_cmds.c",
+			"ex_cmds2.c",
+			"ex_docmd.c",
+			"ex_eval.c",
+			"ex_getln.c",
+			"fileio.c",
+			"fold.c",
+			"getchar.c",
+			"hardcopy.c",
+			"hashtab.c",
+			"if_cscope.c",
+			"if_xcmdsrv.c",
+			"mark.c",
+			"memline.c",
+			"menu.c",
+			"message.c",
+			"misc1.c",
+			"misc2.c",
+			"move.c",
+			"mbyte.c",
+			"normal.c",
+			"ops.c",
+			"option.c",
+			"os_unix.c",
+			"auto/pathdef.c",
+			"popupmnu.c",
+			"quickfix.c",
+			"regexp.c",
+			"screen.c",
+			"search.c",
+			"sha256.c",
+			"spell.c",
+			"syntax.c",
+			"tag.c",
+			"term.c",
+			"ui.c",
+			"undo.c",
+			"window.c",
+			"netbeans.c",
+			"channel.c",
+			"json.c",
+			"main.c",
+			"memfile.c",
+			"version.c",
+		},
+		"testdata/dev/vim/vim/src",
+		opts...,
+	)
 }
 
 func TestDevBash(t *testing.T) {
-	if !dirExists(t, "testdata/dev/bash") {
-		return
-	}
-
 	predefined, includePaths, sysIncludePaths, err := HostConfig()
 	if err != nil {
 		t.Logf("skipping: %v", err)
 		return
 	}
 
-	predefined += testDevAdditionalPredefines + `
+	opts := []Opt{
+		IncludePaths([]string{
+			".",
+			"include",
+			"lib",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableAnonymousStructFields(),
+		EnableAsm(),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		opts = append(opts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
 #define PROGRAM "bash"
 #define CONF_HOSTTYPE "x86_64"
 #define CONF_OSTYPE "linux-gnu"
@@ -899,52 +917,69 @@ func TestDevBash(t *testing.T) {
 #define PACKAGE "bash"
 #define SHELL
 #define HAVE_CONFIG_H
-`
-	includes := IncludePaths(
-		append(
-			includePaths,
-			"testdata/dev/bash",
-			"testdata/dev/bash/include",
-			"testdata/dev/bash/lib",
-		),
+`,
+		[]string{
+			`-DPROGRAM="bash"`,
+			`-DCONF_HOSTTYPE="x86_64"`,
+			`-DCONF_OSTYPE="linux-gnu"`,
+			`-DCONF_MACHTYPE="x86_64-unknown-linux-gnu"`,
+			`-DCONF_VENDOR="unknown"`,
+			`-DLOCALEDIR="/usr/local/share/locale"`,
+			`-DPACKAGE="bash"`,
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-Iinclude",
+			"-Ilib",
+		},
+		[]string{
+			"mksyntax.c",
+			"version.c",
+			"support/bashversion.c",
+			"shell.c",
+			"eval.c",
+			// Needs #line interpreted: "y.tab.c",
+		},
+		"testdata/dev/bash",
+		opts...,
 	)
-	sysIncludes := SysIncludePaths(sysIncludePaths)
 
-	opts := []Opt{
-		includes,
-		sysIncludes,
+	opts = []Opt{
+		IncludePaths([]string{
+			".",
+			"..",
+			"../include",
+			"../lib",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
 		EnableAnonymousStructFields(),
 		EnableAsm(),
 		EnableIncludeNext(),
 	}
-
-	cppOpts := []string{
-		`-DPROGRAM="bash"`,
-		`-DCONF_HOSTTYPE="x86_64"`,
-		`-DCONF_OSTYPE="linux-gnu"`,
-		`-DCONF_MACHTYPE="x86_64-unknown-linux-gnu"`,
-		`-DCONF_VENDOR="unknown"`,
-		`-DLOCALEDIR="/usr/local/share/locale"`,
-		`-DPACKAGE="bash"`,
-		"-DSHELL",
-		"-DHAVE_CONFIG_H",
-		"-Itestdata/dev/bash",
-		"-Itestdata/dev/bash/include",
-		"-Itestdata/dev/bash/lib",
-	}
-
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
 	}
-
-	testDev(t, predefined, cppOpts, "testdata/dev/bash/mksyntax.c", opts...)
-	testDev(t, predefined, cppOpts, "testdata/dev/bash/version.c", opts...)
-	testDev(t, predefined, cppOpts, "testdata/dev/bash/support/bashversion.c", opts...)
-	testDev(t, predefined, cppOpts, "testdata/dev/bash/shell.c", opts...)
-	testDev(t, predefined, cppOpts, "testdata/dev/bash/eval.c", opts...)
-	testDev(t, predefined, cppOpts, "testdata/dev/bash/builtins/mkbuiltins.c", opts...)
-	//TODO must change cwd: testDev(t, predefined, cppOpts, "testdata/dev/bash/y.tab.c", opts...)
-	//TODO
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+#define SHELL
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I..",
+			"-I../include",
+			"-I../lib",
+		},
+		[]string{
+			"mkbuiltins.c",
+		},
+		"testdata/dev/bash/builtins",
+		opts...,
+	)
 }
 
 func TestPPParse1(t *testing.T) {
