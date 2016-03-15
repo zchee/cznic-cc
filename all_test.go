@@ -920,6 +920,7 @@ func TestDevBash(t *testing.T) {
 #define __builtin_memcpy(dest, src, n)
 #define __typeof typeof
 
+void* __builtin_alloca(int);
 `,
 		[]string{
 			`-DPROGRAM="bash"`,
@@ -960,6 +961,25 @@ func TestDevBash(t *testing.T) {
 			"support/mksignames.c",
 			"support/signames.c",
 			//"trap.c",
+			//"input.c",
+			"unwind_prot.c",
+			"pathexp.c",
+			"sig.c",
+			"test.c",
+			"version.c",
+			"alias.c",
+			//"array.c",
+			"arrayfunc.c",
+			"assoc.c",
+			"braces.c",
+			"bracecomp.c",
+			//"bashhist.c",
+			//"bashline.c",
+			"list.c",
+			"stringlib.c",
+			"locale.c",
+			"findcmd.c",
+			"redir.c",
 		},
 		"testdata/dev/bash",
 		opts...,
