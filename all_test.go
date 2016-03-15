@@ -898,6 +898,7 @@ func TestDevBash(t *testing.T) {
 		EnableAnonymousStructFields(),
 		EnableAsm(),
 		EnableIncludeNext(),
+		EnableTypeOf(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
@@ -917,6 +918,7 @@ func TestDevBash(t *testing.T) {
 #define HAVE_CONFIG_H
 
 #define __builtin_memcpy(dest, src, n)
+#define __typeof typeof
 
 `,
 		[]string{
@@ -950,6 +952,14 @@ func TestDevBash(t *testing.T) {
 			"error.c",
 			"expr.c",
 			"flags.c",
+			"jobs.c",
+			//"subst.c",
+			"hashcmd.c",
+			"hashlib.c",
+			//"mailcheck.c",
+			"support/mksignames.c",
+			"support/signames.c",
+			//"trap.c",
 		},
 		"testdata/dev/bash",
 		opts...,

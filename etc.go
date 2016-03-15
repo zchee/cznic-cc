@@ -785,6 +785,7 @@ func (n *ctype) Kind() Kind {
 			7: // DirectDeclarator '(' IdentifierListOpt ')'
 			return Function
 		default:
+			//dbg("", position(n.Declarator().Pos()))
 			//dbg("", n)
 			//dbg("", n.str())
 			panic(dd.Case)
