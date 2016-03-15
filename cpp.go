@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/cznic/golex/lex"
+	"github.com/cznic/mathutil"
 	"github.com/cznic/xc"
 )
 
@@ -232,11 +233,12 @@ func (t *tokenPipe) flush(final bool) {
 			w++
 		}
 	}
+	t.out = t.out[:w]
 	if w == 0 {
 		return
 	}
 
-	t.w <- t.out[:w]
+	t.w <- t.out
 	t.out = nil
 }
 
@@ -414,7 +416,7 @@ func (p *pp) expand(r tokenReader, handleDefined bool, w func([]xc.Token)) {
 		case IDENTIFIER:
 			if tok.Val == idFile {
 				tok.Rune = STRINGLITERAL
-				tok.Val = dict.SID(fmt.Sprintf("%q", p.ppf.path))
+				tok.Val = dict.SID(fmt.Sprintf("%q", tok.Position().Filename))
 				w([]xc.Token{tok})
 				continue
 			}
@@ -455,6 +457,7 @@ again:
 	case ' ':
 		goto again
 	case '(': // defined (IDENTIFIER)
+	again2:
 		if r.eof(false) {
 			p.report.ErrTok(tok, "'defined' with no argument")
 			return
@@ -483,6 +486,8 @@ again:
 			}
 
 			w([]xc.Token{v})
+		case ' ':
+			goto again2
 		default:
 			p.report.ErrTok(tok, "expected identifier")
 			return
@@ -518,7 +523,7 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 	for i, v := range repl {
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
-	u := p.expandLineNo(p.sanitize(repl), tok)
+	u := p.expandLineNo(p.sanitize(repl))
 	r.unget(u)
 }
 
@@ -596,11 +601,11 @@ func pasteToks(toks []xc.Token) []xc.Token {
 	return toks
 }
 
-func (p *pp) expandLineNo(toks []xc.Token, lineTok xc.Token) []xc.Token {
+func (p *pp) expandLineNo(toks []xc.Token) []xc.Token {
 	for i, v := range toks {
 		if v.Rune == IDENTIFIER && v.Val == idLine {
 			v.Rune = INTCONST
-			v.Val = dict.SID(strconv.Itoa(position(lineTok.Pos()).Line))
+			v.Val = dict.SID(strconv.Itoa(position(v.Pos()).Line))
 			toks[i] = v
 		}
 	}
@@ -687,7 +692,7 @@ again:
 	}
 	for i, arg := range args {
 		args[i] = nil
-		toks := p.expandLineNo(arg, tok)
+		toks := p.expandLineNo(arg)
 		if i < len(m.nonRepl) && m.nonRepl[i] {
 			if len(toks) != 0 {
 				args[i] = toks
@@ -728,7 +733,7 @@ next:
 	}
 
 	r0 = pasteToks(r0)
-	u := p.sanitize(p.expandLineNo(r0, tok))
+	u := p.sanitize(p.expandLineNo(r0))
 	r.unget(u)
 }
 
@@ -1040,7 +1045,22 @@ func (p *pp) controlLine(n *ControlLine) {
 
 		p.report.ErrTok(toks[0], "include file not found: %s", arg)
 	case 7: // PPLINE PPTokenList '\n'
-		// ignored
+		toks := decodeTokens(n.PPTokenList, nil, false)
+		// lineno, fname
+		if len(toks) < 2 || toks[0].Rune != INTCONST || toks[1].Rune != STRINGLITERAL {
+			break
+		}
+
+		ln, err := strconv.ParseUint(string(toks[0].S()), 10, mathutil.IntBits-1)
+		if err != nil {
+			break
+		}
+
+		fn := string(toks[1].S())
+		fn = fn[1 : len(fn)-1] // Unquote.
+		nl := n.Token2
+		tf := xc.FileSet.File(nl.Pos())
+		tf.AddLineInfo(tf.Offset(nl.Pos()+1), fn, int(ln))
 	case 8: // PPPRAGMA PPTokenListOpt
 		// simply ignore pragmas (#pragma once already works)
 		return

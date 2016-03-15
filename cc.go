@@ -345,7 +345,7 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 	}
 
 	tweaks := lx0.tweaks
-	predefined, err := ppParseString("", predefine, report, tweaks)
+	predefined, err := ppParseString("<predefine>", predefine, report, tweaks)
 	if err != nil {
 		return nil, err
 	}

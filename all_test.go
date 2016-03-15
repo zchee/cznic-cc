@@ -601,15 +601,13 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 			getTweaks(&tw),
 			preprocessOnly(),
 			Cpp(func(toks []xc.Token) {
-				if len(toks) == 0 {
-					return
+				if len(toks) != 0 {
+					p := toks[0].Position()
+					if p.Filename != lpos.Filename {
+						fmt.Fprintf(logw, "# %d %q\n", p.Line, p.Filename)
+					}
+					lpos = p
 				}
-
-				p := toks[0].Position()
-				if p.Filename != lpos.Filename {
-					fmt.Fprintf(logw, "# %d %q\n", p.Line, p.Filename)
-				}
-				lpos = p
 				for _, v := range toks {
 					logw.WriteString(TokSrc(toC(v, &tw)))
 					if v.Rune != ' ' {
@@ -917,6 +915,9 @@ func TestDevBash(t *testing.T) {
 #define PACKAGE "bash"
 #define SHELL
 #define HAVE_CONFIG_H
+
+#define __builtin_memcpy(dest, src, n)
+
 `,
 		[]string{
 			`-DPROGRAM="bash"`,
@@ -938,7 +939,12 @@ func TestDevBash(t *testing.T) {
 			"support/bashversion.c",
 			"shell.c",
 			"eval.c",
-			// Needs #line interpreted: "y.tab.c",
+			//"y.tab.c",
+			"general.c",
+			"make_cmd.c",
+			"print_cmd.c",
+			"dispose_cmd.c",
+			//"execute_cmd.c",
 		},
 		"testdata/dev/bash",
 		opts...,
