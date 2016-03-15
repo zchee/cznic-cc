@@ -510,6 +510,14 @@ func (n *ctype) isCompatible(m *ctype) (r bool) {
 		return true
 	}
 
+	if n.Kind() == Array {
+		n = n.arrayDecay()
+	}
+
+	if m.Kind() == Array {
+		m = m.arrayDecay()
+	}
+
 	if len(n.dds) != len(m.dds) || n.resultAttr&^ignore != m.resultAttr&^ignore ||
 		n.resultStars != m.resultStars || n.stars != m.stars {
 		return false
@@ -1603,8 +1611,11 @@ func compositeType(a, b Type) (c Type, isA bool) {
 			return nil, false
 		}
 
-		p, _ := t.Parameters()
-		q, _ := u.Parameters()
+		p, va := t.Parameters()
+		q, vb := u.Parameters()
+		if va != vb {
+			return nil, false
+		}
 
 		if len(p) == 0 && len(q) != 0 {
 			return b, false
@@ -1613,6 +1624,21 @@ func compositeType(a, b Type) (c Type, isA bool) {
 		if len(p) != 0 && len(q) == 0 {
 			return a, true
 		}
+
+		if len(p) != len(q) {
+			return nil, false
+		}
+
+		for i, v := range p {
+			w := q[i]
+			if v.Type != undefined && w.Type == undefined || v.Type.CanAssignTo(w.Type) {
+				continue
+			}
+
+			return nil, false
+		}
+
+		return a, true
 	}
 
 	return nil, false

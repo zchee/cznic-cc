@@ -1603,7 +1603,7 @@ func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
 		pos token.Pos
 		i   int
 	}
-	var a []r
+	var a []int
 	ilm := map[int]r{}
 	i := 0
 	for il := n.IdentifierList; il != nil; il, i = il.IdentifierList, i+1 {
@@ -1619,7 +1619,7 @@ func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
 
 		v := r{t.Pos(), i}
 		ilm[nm] = v
-		a = append(a, v)
+		a = append(a, nm)
 	}
 	params := make([]Parameter, len(ilm))
 	for ; dl != nil; dl = dl.DeclarationList {
@@ -1649,7 +1649,7 @@ func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
 	}
 	for i, v := range params {
 		if v.Declarator == nil {
-			report.Err(a[i].pos, "missing paramater type declaration")
+			params[i] = Parameter{nil, a[i], undefined}
 		}
 	}
 	n.params = params
