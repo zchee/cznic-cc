@@ -749,6 +749,17 @@ func testDev(t *testing.T, predefine string, cppOpts, src []string, wd string, o
 	defer os.Chdir(cwd)
 
 	for _, src := range src {
+		fi, err := os.Stat(src)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		if !fi.Mode().IsRegular() {
+			t.Errorf("not a regular file: %s", filepath.Join(wd, src))
+			continue
+		}
+
 		testDev1(t, predefine, cppOpts, wd, src, opts...)
 	}
 }
@@ -845,8 +856,10 @@ func TestDevVim(t *testing.T) {
 			"-D_FORTIFY_SOURCE=1",
 		},
 		[]string{
-			"buffer.c",
+			"auto/pathdef.c",
 			"blowfish.c",
+			"buffer.c",
+			"channel.c",
 			"charset.c",
 			"crypt.c",
 			"crypt_zip.c",
@@ -866,19 +879,22 @@ func TestDevVim(t *testing.T) {
 			"hashtab.c",
 			"if_cscope.c",
 			"if_xcmdsrv.c",
+			"json.c",
+			"main.c",
 			"mark.c",
+			"mbyte.c",
+			"memfile.c",
 			"memline.c",
 			"menu.c",
 			"message.c",
 			"misc1.c",
 			"misc2.c",
 			"move.c",
-			"mbyte.c",
+			"netbeans.c",
 			"normal.c",
 			"ops.c",
 			"option.c",
 			"os_unix.c",
-			"auto/pathdef.c",
 			"popupmnu.c",
 			"quickfix.c",
 			"regexp.c",
@@ -891,13 +907,8 @@ func TestDevVim(t *testing.T) {
 			"term.c",
 			"ui.c",
 			"undo.c",
-			"window.c",
-			"netbeans.c",
-			"channel.c",
-			"json.c",
-			"main.c",
-			"memfile.c",
 			"version.c",
+			"window.c",
 		},
 		"testdata/dev/vim/vim/src",
 		opts...,
@@ -961,53 +972,53 @@ void* __builtin_alloca(int);
 			"-Ilib",
 		},
 		[]string{
-			"mksyntax.c",
-			"version.c",
-			"support/bashversion.c",
-			"shell.c",
-			"eval.c",
-			"y.tab.c",
-			"general.c",
-			"make_cmd.c",
-			"print_cmd.c",
-			"dispose_cmd.c",
-			//"execute_cmd.c",
-			"variables.c",
-			"copy_cmd.c",
-			"error.c",
-			"expr.c",
-			"flags.c",
-			"jobs.c",
-			//VLA "subst.c",
-			"hashcmd.c",
-			"hashlib.c",
-			"mailcheck.c",
-			"support/mksignames.c",
-			"support/signames.c",
-			//"trap.c",
-			"input.c",
-			"unwind_prot.c",
-			"pathexp.c",
-			"sig.c",
-			"test.c",
-			"version.c",
 			"alias.c",
 			"array.c",
 			"arrayfunc.c",
 			"assoc.c",
-			"braces.c",
-			"bracecomp.c",
 			"bashhist.c",
-			//"bashline.c",
-			"list.c",
-			"stringlib.c",
-			"locale.c",
+			"bracecomp.c",
+			"braces.c",
+			"copy_cmd.c",
+			"dispose_cmd.c",
+			"error.c",
+			"eval.c",
+			"expr.c",
 			"findcmd.c",
-			"redir.c",
+			"flags.c",
+			"general.c",
+			"hashcmd.c",
+			"hashlib.c",
+			"input.c",
+			"jobs.c",
+			"list.c",
+			"locale.c",
+			"mailcheck.c",
+			"make_cmd.c",
+			"mksyntax.c",
+			"pathexp.c",
 			"pcomplete.c",
 			"pcomplib.c",
+			"print_cmd.c",
+			"redir.c",
+			"shell.c",
+			"sig.c",
+			"stringlib.c",
+			"support/bashversion.c",
+			"support/mksignames.c",
+			"support/signames.c",
 			"syntax.c",
+			"test.c",
+			"unwind_prot.c",
+			"variables.c",
+			"version.c",
+			"version.c",
 			"xmalloc.c",
+			"y.tab.c",
+			//"bashline.c",
+			//"execute_cmd.c",
+			//"subst.c", // VLA
+			//"trap.c",
 		},
 		"testdata/dev/bash",
 		opts...,
@@ -1029,6 +1040,7 @@ void* __builtin_alloca(int);
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
 	}
+
 	testDev(
 		t,
 		predefined+testDevAdditionalPredefines+`
@@ -1044,14 +1056,208 @@ void* __builtin_alloca(int);
 			"-I../lib",
 		},
 		[]string{
-			"mkbuiltins.c",
 			"builtins.c",
 			"common.c",
 			"evalfile.c",
 			"evalstring.c",
+			"mkbuiltins.c",
 			"psize.c",
 		},
 		"testdata/dev/bash/builtins",
+		opts...,
+	)
+
+	opts = []Opt{
+		IncludePaths([]string{
+			".",
+			"../..",
+			"../../include",
+			"../../lib",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableAnonymousStructFields(),
+		EnableAsm(),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		opts = append(opts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+#define SHELL
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I../..",
+			"-I../../include",
+			"-I../../lib",
+		},
+		[]string{
+			"gmisc.c",
+			"strmatch.c",
+			"xmbsrtowcs.c",
+			//"glob.c",   // LONGCHARCONST
+			//"smatch.c", // LONGCHARCONST
+		},
+		"testdata/dev/bash/lib/glob",
+		opts...,
+	)
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+#define SHELL
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I../..",
+			"-I../../include",
+			"-I../../lib",
+		},
+		[]string{
+			"casemod.c",
+			"clktck.c",
+			"clock.c",
+			"eaccess.c",
+			"fmtullong.c",
+			"fmtulong.c",
+			"fmtumax.c",
+			"fnxform.c",
+			"fpurge.c",
+			"getenv.c",
+			"input_avail.c",
+			"itos.c",
+			"mailstat.c",
+			"makepath.c",
+			"mbscasecmp.c",
+			"mbschr.c",
+			"mbscmp.c",
+			"oslib.c",
+			"pathcanon.c",
+			"pathphys.c",
+			"setlinebuf.c",
+			"shmatch.c",
+			"shmbchar.c",
+			"shquote.c",
+			"shtty.c",
+			"snprintf.c",
+			"spell.c",
+			"stringlist.c",
+			"stringvec.c",
+			"strnlen.c",
+			"strtrans.c",
+			"timeval.c",
+			"tmpfile.c",
+			"uconvert.c",
+			"ufuncs.c",
+			"unicode.c",
+			"wcsdup.c",
+			"wcsnwidth.c",
+			"winsize.c",
+			"zcatfd.c",
+			"zgetline.c",
+			"zmapfd.c",
+			"zread.c",
+			"zwrite.c",
+			//"netconn.c", // fail on arg type
+			//"netopen.c", // fail on arg type
+		},
+		"testdata/dev/bash/lib/sh",
+		opts...,
+	)
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+#define SHELL
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I../..",
+			"-I../../include",
+			"-I../../lib",
+		},
+		[]string{
+			"bind.c",
+			"callback.c",
+			"colors.c",
+			"compat.c",
+			"complete.c",
+			"display.c",
+			"funmap.c",
+			"histexpand.c",
+			"histfile.c",
+			"history.c",
+			"histsearch.c",
+			"input.c",
+			"isearch.c",
+			"keymaps.c",
+			"kill.c",
+			"macro.c",
+			"mbutil.c",
+			"misc.c",
+			"nls.c",
+			"parens.c",
+			"readline.c",
+			"rltty.c",
+			"savestring.c",
+			"search.c",
+			"shell.c",
+			"signals.c",
+			"terminal.c",
+			"text.c",
+			"tilde.c",
+			"undo.c",
+			"util.c",
+			"vi_mode.c",
+			"xfree.c",
+			"xmalloc.c",
+			//"parse-colors.c", // fail on arg type
+		},
+		"testdata/dev/bash/lib/readline",
+		opts...,
+	)
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+#define SHELL
+#define RCHECK
+#define botch programming_error
+
+#define __builtin_memcpy(dest, src, n)
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-DRCHECK",
+			"-Dbotch=programming_error",
+			"-I.",
+			"-I../..",
+			"-I../../include",
+			"-I../../lib",
+		},
+		[]string{
+			"malloc.c",
+			"trace.c",
+			"stats.c",
+			"table.c",
+			"watch.c",
+		},
+		"testdata/dev/bash/lib/malloc",
 		opts...,
 	)
 }

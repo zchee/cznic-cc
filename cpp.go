@@ -746,7 +746,7 @@ func stringify(toks []xc.Token) xc.Token {
 	s := []byte{'"'}
 	for _, tok := range toks {
 		switch tok.Rune {
-		case CHARCONST, STRINGLITERAL, LONGSTRINGLITERAL:
+		case CHARCONST, STRINGLITERAL, LONGSTRINGLITERAL, LONGCHARCONST:
 			for _, c := range tok.S() {
 				switch c {
 				case '"', '\\':
@@ -984,6 +984,8 @@ func (p *pp) controlLine(n *ControlLine) {
 			l = o.IdentifierList
 		}
 		p.defineFnMacro(n.Token2, l, n.ReplacementList, false)
+	case 5: // PPHASH_NL
+		// nop
 	case 4: // PPERROR PPTokenListOpt
 		var sep string
 		toks := decodeTokens(n.PPTokenListOpt, nil, true)
