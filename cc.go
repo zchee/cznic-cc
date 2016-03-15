@@ -309,11 +309,10 @@ func EnableTypeOf() Opt { return func(lx *lexer) { lx.tweaks.enableTypeof = true
 // CrashOnError is an debugging option.
 func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }
 
-func preprocessOnly() Opt       { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
 func disableWarnings() Opt      { return func(lx *lexer) { lx.tweaks.enableWarnings = false } }
 func getTweaks(dst *tweaks) Opt { return func(lx *lexer) { *dst = *lx.tweaks } }
-
-func nopOpt() Opt { return func(*lexer) {} }
+func nopOpt() Opt               { return func(*lexer) {} }
+func preprocessOnly() Opt       { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
 
 // Parse defines any macros in predefine. Then Parse preprocesses and parses
 // the translation unit consisting of files in paths. The m communicates the

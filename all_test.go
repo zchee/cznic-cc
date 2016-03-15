@@ -66,6 +66,10 @@ var _ = use(printStack, caller, dbg, TODO, (*ctype).str, yyDefault, yyErrCode, y
 
 // ============================================================================
 
+const (
+	fakeTime = "__TESTING_TIME__"
+)
+
 var (
 	o1        = flag.String("1", "", "Single file argument of TestPPParse1.")
 	oFailFast = flag.Bool("ff", false, "crash on first reported error (in some tests.)")
@@ -106,7 +110,7 @@ void __GO__(char *s, ...);
 
 double __builtin_nanf(char *);
 double __builtin_inff();
-`, xc.Dict.S(idTDate), xc.Dict.S(idTTtime))
+`, xc.Dict.S(idTDate), fakeTime)
 
 	sysIncludes = []string{}
 
@@ -682,10 +686,11 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 	for i, g := range got {
 		g = toC(g, &tw)
 		e := toC(exp[i], &tw)
-		if g.Rune != e.Rune || g.Val != e.Val &&
+		if g.Rune != e.Rune || g.Val != e.Val {
 
-			// Whitelist
-			!strings.HasPrefix(string(xc.Dict.S(g.Val)), "\"VIM - Vi IMproved 7.4 (2013 Aug 10,") {
+			if g.Rune == STRINGLITERAL && e.Rune == STRINGLITERAL && bytes.Contains(g.S(), []byte(fakeTime)) {
+				continue
+			}
 
 			t.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))
 			return

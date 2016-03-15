@@ -374,7 +374,7 @@ var (
 	idSTDCVersion      = dict.SID("__STDC_VERSION__")
 	idStatic           = dict.SID("static")
 	idTDate            = dict.SID(tuTime.Format("Jan _2 2006")) // The date of translation of the preprocessing translation unit.
-	idTTtime           = dict.SID(tuTime.Format("15:04:05"))    // The time of translation of the preprocessing translation unit.
+	idTTime            = dict.SID(tuTime.Format("15:04:05"))    // The time of translation of the preprocessing translation unit.
 	idTime             = dict.SID("__TIME__")
 	idTypeof           = dict.SID("typeof")
 	idVAARGS           = dict.SID("__VA_ARGS__")
