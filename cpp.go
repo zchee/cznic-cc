@@ -659,9 +659,6 @@ again:
 		return
 	}
 
-	p.expandingMacros[nm]++
-	defer func() { p.expandingMacros[nm]-- }()
-
 	args := p.parseMacroArgs(r)
 	if g, e := len(args), len(m.Args); g != e {
 		switch {
@@ -733,6 +730,10 @@ next:
 	}
 
 	r0 = pasteToks(r0)
+
+	p.expandingMacros[nm]++
+	defer func() { p.expandingMacros[nm]-- }()
+
 	u := p.sanitize(p.expandLineNo(r0))
 	r.unget(u)
 }
