@@ -662,6 +662,9 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 		return
 	}
 
+	if *oTrace {
+		fmt.Println(f.Name())
+	}
 	defer func() {
 		if !*oTmp {
 			os.Remove(f.Name())
@@ -1298,6 +1301,7 @@ func TestDevMake(t *testing.T) {
 		SysIncludePaths(sysIncludePaths),
 		EnableAsm(),
 		EnableIncludeNext(),
+		EnableTypeOf(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
@@ -1310,6 +1314,8 @@ func TestDevMake(t *testing.T) {
 #define LIBDIR "/usr/local/lib"
 #define INCLUDEDIR "/usr/local/include"
 #define HAVE_CONFIG_H
+
+#define __typeof typeof
 
 #undef __const
 #define __const const
@@ -1337,6 +1343,7 @@ void* __builtin_alloca(int);
 			"guile.c",
 			"hash.c",
 			"implicit.c",
+			"job.c",
 			"load.c",
 			"loadapi.c",
 			"main.c",
@@ -1349,7 +1356,6 @@ void* __builtin_alloca(int);
 			"variable.c",
 			"version.c",
 			"vpath.c",
-			//"job.c",
 			//"remake.c",
 			//"strcache.c",
 		},
