@@ -1299,6 +1299,7 @@ func TestDevMake(t *testing.T) {
 		}),
 		IncludePaths(includePaths),
 		SysIncludePaths(sysIncludePaths),
+		EnableAnonymousStructFields(),
 		EnableAsm(),
 		EnableIncludeNext(),
 		EnableTypeOf(),
