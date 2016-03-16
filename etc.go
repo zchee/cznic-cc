@@ -644,15 +644,11 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 	}
 
 	if n.Kind() == Function {
-		dbg("n from %s")
 		n = n.Pointer().(*ctype)
-		dbg("n to %s")
 	}
 
 	if dst.Kind() == Function {
-		dbg("dst from %s")
 		dst = dst.Pointer().(*ctype)
-		dbg("dst to %s")
 	}
 
 	if n.Kind() == Array && dst.Kind() == Ptr {
