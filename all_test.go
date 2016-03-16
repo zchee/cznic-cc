@@ -1279,6 +1279,81 @@ void* __builtin_alloca(int);
 	)
 }
 
+func TestDevMake(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	opts := []Opt{
+		IncludePaths([]string{
+			".",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableAsm(),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		opts = append(opts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define LOCALEDIR "/usr/local/share/locale"
+#define LIBDIR "/usr/local/lib"
+#define INCLUDEDIR "/usr/local/include"
+#define HAVE_CONFIG_H
+
+#undef __const
+#define __const const
+
+void* __builtin_alloca(int);
+`,
+		[]string{
+			"-DLOCALEDIR=\"/usr/local/share/locale\"",
+			"-DLIBDIR=\"/usr/local/lib\"",
+			"-DINCLUDEDIR=\"/usr/local/include\"",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+		},
+		[]string{
+			"ar.c",
+			"arscan.c",
+			"commands.c",
+			"default.c",
+			"dir.c",
+			"expand.c",
+			"function.c",
+			"getopt.c",
+			"getopt1.c",
+			"guile.c",
+			"implicit.c",
+			"load.c",
+			"loadapi.c",
+			"main.c",
+			"misc.c",
+			"output.c",
+			"read.c",
+			"remote-stub.c",
+			"rule.c",
+			"signame.c",
+			"variable.c",
+			"version.c",
+			"vpath.c",
+			//"file.c",
+			//"hash.c",
+			//"job.c",
+			//"remake.c",
+			//"strcache.c",
+		},
+		"testdata/dev/make",
+		opts...,
+	)
+}
+
 func TestPPParse1(t *testing.T) {
 	path := *o1
 	if path == "" {
