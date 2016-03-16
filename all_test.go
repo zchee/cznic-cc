@@ -585,9 +585,6 @@ puts("The first, second, and third items.");
 
 func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, opts ...Opt) {
 	fp := filepath.Join(wd, src)
-	if *oTrace {
-		fmt.Println(fp)
-	}
 	if re := *oRe; re != "" {
 		ok, err := regexp.MatchString(re, fp)
 		if err != nil {
@@ -600,6 +597,9 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 		}
 	}
 
+	if *oTrace {
+		fmt.Println(fp)
+	}
 	t.Log(fp)
 	logf, err := os.Create("log-" + filepath.Base(src))
 	if err != nil {
@@ -1335,6 +1335,7 @@ void* __builtin_alloca(int);
 			"getopt.c",
 			"getopt1.c",
 			"guile.c",
+			"hash.c",
 			"implicit.c",
 			"load.c",
 			"loadapi.c",
@@ -1348,7 +1349,6 @@ void* __builtin_alloca(int);
 			"variable.c",
 			"version.c",
 			"vpath.c",
-			//"hash.c",
 			//"job.c",
 			//"remake.c",
 			//"strcache.c",

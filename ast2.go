@@ -1199,6 +1199,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				n.Value = m.cBool(x > b.(int64))
 			case uint32:
 				n.Value = m.cBool(x > b.(uint32))
+			case uint64:
+				n.Value = m.cBool(x > b.(uint64))
 			default:
 				panic(fmt.Errorf("internal error: %T", x))
 			}
