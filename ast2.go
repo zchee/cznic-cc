@@ -1433,6 +1433,17 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 			ak := at.Kind()
 			bk := bt.Kind()
+
+			if ak == Enum && IsIntType(bt) {
+				n.Type = at
+				break
+			}
+
+			if bk == Enum && IsIntType(at) {
+				n.Type = bt
+				break
+			}
+
 			if ak == Struct && bk == Struct ||
 				ak == Union && bk == Union {
 				if at.CanAssignTo(bt) {
