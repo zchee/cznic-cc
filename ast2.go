@@ -630,6 +630,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Value, n.Type = m.intConst(lx, n.Token)
 	case 4: // LONGCHARCONST
 		n.Value, n.Type = m.charConst(n.Token)
+	case 5: // LONGSTRINGLITERAL
+		n.Value, n.Type = m.strConst(lx, n.Token)
 	case 6: // STRINGLITERAL
 		n.Value, n.Type = m.strConst(lx, n.Token)
 	case 7: //  '(' ExpressionList ')'

@@ -762,8 +762,8 @@ func (m *Model) getLongStrType(lx *lexer, tok xc.Token) Type {
 		return m.longStrType
 	}
 
-	d := b.Node.(*DirectDeclarator).declarator
-	if d.specifier.kind() != TypedefName {
+	d := b.Node.(*DirectDeclarator)
+	if !d.TopDeclarator().RawSpecifier().IsTypedef() {
 		lx.report.Err(d.Pos(), "wchar_t is not a typedef name")
 		m.longStrType = undefined
 		return m.longStrType

@@ -504,7 +504,7 @@ func (n *ctype) setElements(elems int) *ctype {
 }
 
 func (n *ctype) isCompatible(m *ctype) (r bool) {
-	const ignore = saConst | saStatic | saExtern | saRegister | saVolatile | saInline
+	const ignore = saInline | saTypedef | saExtern | saStatic | saAuto | saRegister | saConst | saRestrict | saVolatile
 
 	if n == m {
 		return true

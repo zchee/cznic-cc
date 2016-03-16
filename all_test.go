@@ -1118,9 +1118,9 @@ void* __builtin_alloca(int);
 		[]string{
 			"glob.c",
 			"gmisc.c",
+			"smatch.c",
 			"strmatch.c",
 			"xmbsrtowcs.c",
-			//"smatch.c",
 		},
 		"testdata/dev/bash/lib/glob",
 		opts...,
