@@ -1112,6 +1112,20 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			default:
 				panic(fmt.Errorf("internal error: %T", y))
 			}
+		case uint64:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
 		default:
 			panic(fmt.Errorf("internal error: %T", x))
 		}

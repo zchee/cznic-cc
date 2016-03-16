@@ -78,6 +78,7 @@ var (
 	oFailFast = flag.Bool("ff", false, "crash on first reported error (in some tests.)")
 	oRe       = flag.String("re", "", "regexp filter.")
 	oTmp      = flag.Bool("tmp", false, "keep certain temp files.")
+	oTrace    = flag.Bool("trc", false, "print testDev path")
 
 	includes = []string{}
 
@@ -584,6 +585,9 @@ puts("The first, second, and third items.");
 
 func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, opts ...Opt) {
 	fp := filepath.Join(wd, src)
+	if *oTrace {
+		fmt.Println(fp)
+	}
 	if re := *oRe; re != "" {
 		ok, err := regexp.MatchString(re, fp)
 		if err != nil {
@@ -1326,6 +1330,7 @@ void* __builtin_alloca(int);
 			"default.c",
 			"dir.c",
 			"expand.c",
+			"file.c",
 			"function.c",
 			"getopt.c",
 			"getopt1.c",
@@ -1343,7 +1348,6 @@ void* __builtin_alloca(int);
 			"variable.c",
 			"version.c",
 			"vpath.c",
-			//"file.c",
 			//"hash.c",
 			//"job.c",
 			//"remake.c",
