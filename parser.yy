@@ -1137,9 +1137,8 @@ DirectDeclarator:
 	{
 		lhs.elements = -1
 		if o := lhs.ExpressionOpt; o != nil {
-			o.Expression.eval(lx)
 			var err error
-			if lhs.elements, err = elements(o.Expression.Value); err != nil {
+			if lhs.elements, err = elements(o.Expression.eval(lx)); err != nil {
 				lx.report.Err(o.Expression.Pos(), "%s", err)
 			}
 			
@@ -1148,18 +1147,16 @@ DirectDeclarator:
 	}
 |	DirectDeclarator '[' "static" TypeQualifierListOpt Expression ']'
 	{
-		lhs.Expression.eval(lx)
 		var err error
-		if lhs.elements, err = elements(lhs.Expression.Value); err != nil {
+		if lhs.elements, err = elements(lhs.Expression.eval(lx)); err != nil {
 			lx.report.Err(lhs.Expression.Pos(), "%s", err)
 		}
 		lhs.DirectDeclarator.parent = lhs
 	}
 |	DirectDeclarator '[' TypeQualifierList "static" Expression ']'
 	{
-		lhs.Expression.eval(lx)
 		var err error
-		if lhs.elements, err = elements(lhs.Expression.Value); err != nil {
+		if lhs.elements, err = elements(lhs.Expression.eval(lx)); err != nil {
 			lx.report.Err(lhs.Expression.Pos(), "%s", err)
 		}
 		lhs.DirectDeclarator.parent = lhs

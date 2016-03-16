@@ -4022,9 +4022,8 @@ yynewstate:
 			yyVAL.node = lhs
 			lhs.elements = -1
 			if o := lhs.ExpressionOpt; o != nil {
-				o.Expression.eval(lx)
 				var err error
-				if lhs.elements, err = elements(o.Expression.Value); err != nil {
+				if lhs.elements, err = elements(o.Expression.eval(lx)); err != nil {
 					lx.report.Err(o.Expression.Pos(), "%s", err)
 				}
 
@@ -4044,9 +4043,8 @@ yynewstate:
 				Token3:               yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
-			lhs.Expression.eval(lx)
 			var err error
-			if lhs.elements, err = elements(lhs.Expression.Value); err != nil {
+			if lhs.elements, err = elements(lhs.Expression.eval(lx)); err != nil {
 				lx.report.Err(lhs.Expression.Pos(), "%s", err)
 			}
 			lhs.DirectDeclarator.parent = lhs
@@ -4064,9 +4062,8 @@ yynewstate:
 				Token3:            yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
-			lhs.Expression.eval(lx)
 			var err error
-			if lhs.elements, err = elements(lhs.Expression.Value); err != nil {
+			if lhs.elements, err = elements(lhs.Expression.eval(lx)); err != nil {
 				lx.report.Err(lhs.Expression.Pos(), "%s", err)
 			}
 			lhs.DirectDeclarator.parent = lhs

@@ -1507,7 +1507,15 @@ func IsIntType(t Type) bool {
 	}
 }
 
-func elements(v interface{}) (int, error) {
+func elements(v interface{}, t Type) (int, error) {
+	if !IsIntType(t) {
+		return -1, fmt.Errorf("expression shall have integer type")
+	}
+
+	if v == nil {
+		return -1, nil
+	}
+
 	r, err := toInt(v)
 	if err != nil {
 		return -1, err

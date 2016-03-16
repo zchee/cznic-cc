@@ -977,6 +977,7 @@ void* __builtin_alloca(int);
 			"arrayfunc.c",
 			"assoc.c",
 			"bashhist.c",
+			"bashline.c",
 			"bracecomp.c",
 			"braces.c",
 			"copy_cmd.c",
@@ -1004,6 +1005,7 @@ void* __builtin_alloca(int);
 			"shell.c",
 			"sig.c",
 			"stringlib.c",
+			"subst.c",
 			"support/bashversion.c",
 			"support/mksignames.c",
 			"support/signames.c",
@@ -1015,9 +1017,7 @@ void* __builtin_alloca(int);
 			"version.c",
 			"xmalloc.c",
 			"y.tab.c",
-			"bashline.c",
-			//"execute_cmd.c",
-			//"subst.c", // VLA
+			//"execute_cmd.c", // Composite type K&R fn def style vs prototype decl lefts an undefined param.
 			//"trap.c",
 		},
 		"testdata/dev/bash",
