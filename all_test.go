@@ -1015,7 +1015,7 @@ void* __builtin_alloca(int);
 			"version.c",
 			"xmalloc.c",
 			"y.tab.c",
-			//"bashline.c",
+			"bashline.c",
 			//"execute_cmd.c",
 			//"subst.c", // VLA
 			//"trap.c",

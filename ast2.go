@@ -691,6 +691,9 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				pt = pt.(*ctype).arrayDecay()
 			}
 			typ := types[i]
+			if pt.Kind() == Function && typ.Kind() == Ptr && typ.Element().Kind() == Function {
+				typ = typ.Element()
+			}
 			if !typ.CanAssignTo(pt) {
 				lx.report.Err(args[i].Pos(), "expected '%s' but argument is of type '%s'", pt, typ)
 			}
@@ -1454,12 +1457,12 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				}
 			}
 
-			if ak == Ptr && IsIntType(bt) {
+			if (ak == Ptr || ak == Array) && IsIntType(bt) {
 				n.Type = at
 				break
 			}
 
-			if bk == Ptr && IsIntType(at) {
+			if (bk == Ptr || bk == Array) && IsIntType(at) {
 				n.Type = bt
 				break
 			}
