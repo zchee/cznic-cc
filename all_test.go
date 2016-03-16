@@ -1227,6 +1227,7 @@ void* __builtin_alloca(int);
 			"misc.c",
 			"nls.c",
 			"parens.c",
+			"parse-colors.c",
 			"readline.c",
 			"rltty.c",
 			"savestring.c",
@@ -1241,7 +1242,6 @@ void* __builtin_alloca(int);
 			"vi_mode.c",
 			"xfree.c",
 			"xmalloc.c",
-			//"parse-colors.c", // fail on arg type
 		},
 		"testdata/dev/bash/lib/readline",
 		opts...,

@@ -658,6 +658,14 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 		return false
 	}
 
+	if n.Kind() == Bool && IsIntType(dst) {
+		return true
+	}
+
+	if dst.Kind() == Bool && IsIntType(n) {
+		return true
+	}
+
 	if n.Kind() == Union && n.unionCanAssignTo(dst) {
 		return true
 	}
