@@ -637,10 +637,33 @@ func (n *ctype) AlignOf() int {
 	}
 }
 
+func (n *ctype) unionCanAssignTo(dst Type) bool {
+	m, isIncomplete := n.Members()
+	if isIncomplete {
+		return false
+	}
+
+	for _, v := range m {
+		if v.Type.CanAssignTo(dst) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // CanAssignTo implements Type.
 func (n *ctype) CanAssignTo(dst Type) bool {
 	if n == undefined || dst.Kind() == Undefined {
 		return false
+	}
+
+	if n.Kind() == Union && n.unionCanAssignTo(dst) {
+		return true
+	}
+
+	if dst.Kind() == Union && dst.(*ctype).unionCanAssignTo(n) {
+		return true
 	}
 
 	if n.Kind() == Function {

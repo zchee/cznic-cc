@@ -1158,6 +1158,8 @@ void* __builtin_alloca(int);
 			"mbscasecmp.c",
 			"mbschr.c",
 			"mbscmp.c",
+			"netconn.c",
+			"netopen.c",
 			"oslib.c",
 			"pathcanon.c",
 			"pathphys.c",
@@ -1185,8 +1187,6 @@ void* __builtin_alloca(int);
 			"zmapfd.c",
 			"zread.c",
 			"zwrite.c",
-			//"netconn.c", // fail on arg type
-			//"netopen.c", // fail on arg type
 		},
 		"testdata/dev/bash/lib/sh",
 		opts...,
