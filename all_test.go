@@ -1042,7 +1042,7 @@ void* __builtin_alloca(int);
 			"y.tab.c",
 			//"execute_cmd.c", // Composite type K&R fn def style vs prototype decl lefts an undefined param.
 		},
-		"testdata/dev/bash",
+		"testdata/dev/bash-4.3/",
 		opts...,
 	)
 
@@ -1085,7 +1085,7 @@ void* __builtin_alloca(int);
 			"mkbuiltins.c",
 			"psize.c",
 		},
-		"testdata/dev/bash/builtins",
+		"testdata/dev/bash-4.3/builtins",
 		opts...,
 	)
 
@@ -1129,7 +1129,7 @@ void* __builtin_alloca(int);
 			"strmatch.c",
 			"xmbsrtowcs.c",
 		},
-		"testdata/dev/bash/lib/glob",
+		"testdata/dev/bash-4.3/lib/glob",
 		opts...,
 	)
 
@@ -1195,7 +1195,7 @@ void* __builtin_alloca(int);
 			"zread.c",
 			"zwrite.c",
 		},
-		"testdata/dev/bash/lib/sh",
+		"testdata/dev/bash-4.3/lib/sh",
 		opts...,
 	)
 
@@ -1250,7 +1250,7 @@ void* __builtin_alloca(int);
 			"xfree.c",
 			"xmalloc.c",
 		},
-		"testdata/dev/bash/lib/readline",
+		"testdata/dev/bash-4.3/lib/readline",
 		opts...,
 	)
 
@@ -1281,7 +1281,7 @@ void* __builtin_alloca(int);
 			"table.c",
 			"watch.c",
 		},
-		"testdata/dev/bash/lib/malloc",
+		"testdata/dev/bash-4.3/lib/malloc",
 		opts...,
 	)
 }
@@ -1359,7 +1359,7 @@ void* __builtin_alloca(int);
 			"version.c",
 			"vpath.c",
 		},
-		"testdata/dev/make",
+		"testdata/dev/make-4.1/",
 		opts...,
 	)
 }
