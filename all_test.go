@@ -1011,6 +1011,7 @@ void* __builtin_alloca(int);
 			"support/signames.c",
 			"syntax.c",
 			"test.c",
+			"trap.c",
 			"unwind_prot.c",
 			"variables.c",
 			"version.c",
@@ -1018,7 +1019,6 @@ void* __builtin_alloca(int);
 			"xmalloc.c",
 			"y.tab.c",
 			//"execute_cmd.c", // Composite type K&R fn def style vs prototype decl lefts an undefined param.
-			//"trap.c",
 		},
 		"testdata/dev/bash",
 		opts...,

@@ -643,6 +643,18 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 		return false
 	}
 
+	if n.Kind() == Function {
+		dbg("n from %s")
+		n = n.Pointer().(*ctype)
+		dbg("n to %s")
+	}
+
+	if dst.Kind() == Function {
+		dbg("dst from %s")
+		dst = dst.Pointer().(*ctype)
+		dbg("dst to %s")
+	}
+
 	if n.Kind() == Array && dst.Kind() == Ptr {
 		n = n.arrayDecay()
 	}
@@ -744,9 +756,14 @@ func (n *ctype) Element() Type {
 	case 2: // DirectDeclarator '[' TypeQualifierListOpt ExpressionOpt ']'
 		m := *n
 		m.dds = append([]*DirectDeclarator{n.dds[0]}, n.dds[2:]...)
-		if len(m.dds) == 1 {
+		switch {
+		case len(m.dds) == 1:
 			m.stars += m.resultStars
 			m.resultStars = 0
+		default:
+			if dd := m.dds[1]; dd.Case == 1 { // '(' Declarator ')'
+				m.stars = dd.Declarator.stars()
+			}
 		}
 		return &m
 	default:
