@@ -1365,6 +1365,103 @@ void* __builtin_alloca(int);
 	)
 }
 
+func TestDevBc(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	opts := []Opt{
+		IncludePaths([]string{
+			".",
+			"..",
+			"./../h",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableAnonymousStructFields(),
+		EnableAsm(),
+	}
+	if *oFailFast {
+		opts = append(opts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+`,
+		[]string{
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I..",
+			"-I./../h",
+		},
+		[]string{
+			"getopt.c",
+			"getopt1.c",
+			"vfprintf.c",
+			//"number.c", // ? memset
+		},
+		"testdata/dev/bc-1.06/lib/",
+		opts...,
+	)
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+
+#define __builtin_memcpy(dest, src, n)
+
+void* __builtin_alloca(int);
+`,
+		[]string{
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I..",
+			"-I./../h",
+		},
+		[]string{
+			"main.c",
+			"bc.c",
+			"scan.c",
+			"execute.c",
+			"load.c",
+			"storage.c",
+			"util.c",
+			"global.c",
+		},
+		"testdata/dev/bc-1.06/bc",
+		opts...,
+	)
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+`,
+		[]string{
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I..",
+			"-I./../h",
+		},
+		[]string{
+			"dc.c",
+			"misc.c",
+			"eval.c",
+			"stack.c",
+			"array.c",
+			"numeric.c",
+			"string.c",
+		},
+		"testdata/dev/bc-1.06/dc",
+		opts...,
+	)
+}
+
 func TestPPParse1(t *testing.T) {
 	path := *o1
 	if path == "" {
