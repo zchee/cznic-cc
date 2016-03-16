@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strconv"
@@ -73,8 +74,9 @@ const (
 )
 
 var (
-	o1        = flag.String("1", "", "Single file argument of TestPPParse1.")
+	o1        = flag.String("1", "", "single file argument of TestPPParse1.")
 	oFailFast = flag.Bool("ff", false, "crash on first reported error (in some tests.)")
+	oRe       = flag.String("re", "", "regexp filter.")
 	oTmp      = flag.Bool("tmp", false, "keep certain temp files.")
 
 	includes = []string{}
@@ -581,7 +583,20 @@ puts("The first, second, and third items.");
 }
 
 func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, opts ...Opt) {
-	t.Log(filepath.Join(wd, src))
+	fp := filepath.Join(wd, src)
+	if re := *oRe; re != "" {
+		ok, err := regexp.MatchString(re, fp)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if !ok {
+			return
+		}
+	}
+
+	t.Log(fp)
 	logf, err := os.Create("log-" + filepath.Base(src))
 	if err != nil {
 		t.Error(err)
@@ -1089,6 +1104,8 @@ void* __builtin_alloca(int);
 		predefined+testDevAdditionalPredefines+`
 #define HAVE_CONFIG_H
 #define SHELL
+
+void* __builtin_alloca(int);
 `,
 		[]string{
 			"-DSHELL",
@@ -1099,11 +1116,11 @@ void* __builtin_alloca(int);
 			"-I../../lib",
 		},
 		[]string{
+			"glob.c",
 			"gmisc.c",
 			"strmatch.c",
 			"xmbsrtowcs.c",
-			//"glob.c",   // LONGCHARCONST
-			//"smatch.c", // LONGCHARCONST
+			//"smatch.c",
 		},
 		"testdata/dev/bash/lib/glob",
 		opts...,

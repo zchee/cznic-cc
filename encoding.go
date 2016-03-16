@@ -366,6 +366,7 @@ var (
 	idEmptyString      = dict.SID(`""`)
 	idFile             = dict.SID("__FILE__")
 	idID               = dict.SID("ID")
+	idL                = dict.SID("L")
 	idLine             = dict.SID("__LINE__")
 	idMagicFunc        = dict.SID("__func__")
 	idSTDC             = dict.SID("__STDC__")

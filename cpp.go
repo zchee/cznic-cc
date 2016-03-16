@@ -571,18 +571,28 @@ func pasteToks(toks []xc.Token) []xc.Token {
 		case PPPASTE:
 			var b []byte
 			var r rune
+			var v int
 			if i > 0 {
 				i--
 				t := toks[i]
 				r = t.Rune
+				v = t.Val
 				b = append(b, xc.Dict.S(tokVal(t))...)
 				toks = append(toks[:i], toks[i+1:]...) // Remove left arg.
 			}
 			if i < len(toks)-1 {
 				i++
 				t := toks[i]
-				if r == 0 {
+				switch {
+				case r == 0:
 					r = t.Rune
+				case r == IDENTIFIER && v == idL:
+					switch t.Rune {
+					case CHARCONST:
+						r = LONGCHARCONST
+					case STRINGLITERAL:
+						r = LONGSTRINGLITERAL
+					}
 				}
 				b = append(b, xc.Dict.S(tokVal(t))...)
 				toks = append(toks[:i], toks[i+1:]...) // Remove right arg.
