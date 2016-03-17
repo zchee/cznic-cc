@@ -1494,6 +1494,9 @@ func TestDevEmacs(t *testing.T) {
 		t,
 		predefined+testDevAdditionalPredefines+`
 #define HAVE_CONFIG_H
+#define _GCC_MAX_ALIGN_T
+#define _Noreturn
+
 `,
 		[]string{
 			"-std=gnu99",
@@ -1516,7 +1519,7 @@ func TestDevEmacs(t *testing.T) {
 			"file-has-acl.c",
 			"filemode.c",
 			"getopt.c",
-			"getopt1.c",
+			//"getopt1.c",
 			"gettime.c",
 			"openat-die.c",
 			"pipe2.c",
