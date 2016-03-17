@@ -262,7 +262,10 @@ func EnableUndefExtraTokens() Opt {
 // appearance.
 func SysIncludePaths(paths []string) Opt {
 	return func(l *lexer) {
-		l.sysIncludePaths = dedup(append(l.sysIncludePaths, fromSlashes(paths)...))
+		var err error
+		if l.sysIncludePaths, err = dedupAbsPaths(append(l.sysIncludePaths, fromSlashes(paths)...)); err != nil {
+			l.report.Err(0, "synIncludepaths option: %v", err)
+		}
 		l.sysIncludePaths = l.sysIncludePaths[:len(l.sysIncludePaths):len(l.sysIncludePaths)]
 	}
 }
@@ -273,7 +276,10 @@ func SysIncludePaths(paths []string) Opt {
 // appearance.
 func IncludePaths(paths []string) Opt {
 	return func(l *lexer) {
-		l.includePaths = dedup(append(l.includePaths, fromSlashes(paths)...))
+		var err error
+		if l.includePaths, err = dedupAbsPaths(append(l.includePaths, fromSlashes(paths)...)); err != nil {
+			l.report.Err(0, "includepaths option: %v", err)
+		}
 		l.includePaths = l.includePaths[:len(l.includePaths):len(l.includePaths)]
 	}
 }

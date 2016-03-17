@@ -1618,6 +1618,24 @@ func dedup(a []string) (r []string) {
 	return r
 }
 
+func dedupAbsPaths(a []string) (r []string, _ error) {
+	m := map[string]struct{}{}
+	for _, v := range a {
+		av, err := filepath.Abs(v)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := m[av]; ok {
+			continue
+		}
+
+		r = append(r, v)
+		m[v] = struct{}{}
+	}
+	return r, nil
+}
+
 func isCompatibleParameters(a, b []Parameter, va, vb bool) bool {
 	if len(a) != len(b) || va != vb {
 		return false

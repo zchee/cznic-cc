@@ -1760,8 +1760,8 @@ StructDeclarator:
 		if e.Value == nil {
 			e.Value, e.Type = m.value2(1, m.IntType)
 		}
-		if e.Type.Kind() != Int {
-			lx.report.Err(e.Pos(), "bit field width not an integer")
+		if !IsIntType(e.Type) {
+			lx.report.Err(e.Pos(), "bit field width not an integer (have '%s')", e.Type)
 			e.Value, e.Type = m.value2(1, m.IntType)
 		}
 		if o := lhs.DeclaratorOpt; o != nil {

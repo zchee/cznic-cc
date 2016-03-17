@@ -113,6 +113,10 @@ void __GO__(char *s, ...);
 #define __signed__ signed
 #define __volatile__
 
+#ifndef __STDC_VERSION__
+	#define __STDC_VERSION__ 199901L
+#endif
+
 double __builtin_nanf(char *);
 double __builtin_inff();
 `, xc.Dict.S(idTDate), fakeTime)
@@ -1460,6 +1464,123 @@ void* __builtin_alloca(int);
 		"testdata/dev/bc-1.06/dc",
 		opts...,
 	)
+}
+
+func TestDevEmacs(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	opts := []Opt{
+		IncludePaths([]string{
+			".",
+			"../lib",
+			"../src",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		opts = append(opts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define HAVE_CONFIG_H
+`,
+		[]string{
+			"-std=gnu99",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I../lib",
+			"-I../src",
+		},
+		[]string{
+			"acl-errno-valid.c",
+			"allocator.c",
+			"c-ctype.c",
+			"c-strcasecmp.c",
+			"c-strncasecmp.c",
+			"close-stream.c",
+			"filemode.c",
+			"getopt1.c",
+			//"binary-io.c", // _Pragma
+			//"careadlinkat.c", // _Pragma
+			//"count-one-bits.c", // _Pragma
+			//"count-trailing-zeros.c", // _Pragma
+			//"dtoastr.c",
+			//"dtotimespec.c", // _Pragma
+			//"fcntl.c", // _Pragma
+			//"file-has-acl.c", // _Pragma
+			//"getopt.c", // _Pragma
+			//"gettime.c", // _Pragma
+			//"md5.c",
+			//"openat-die.c", // _Pragma
+			//"pipe2.c", // _Pragma
+			//"pthread_sigmask.c",
+			//"qcopy-acl.c", // _Pragma
+			//"qset-acl.c", // _Pragma
+			//"save-cwd.c", // _Pragma
+			//"sha1.c",
+			//"sha256.c",
+			//"sha512.c", // _Pragma
+			//"sig2str.c",
+			//"stat-time.c", // _Pragma
+			//"strftime.c",
+			//"timespec-add.c", // _Pragma
+			//"timespec-sub.c", // _Pragma
+			//"timespec.c", // _Pragma
+			//"u64.c", // _Pragma
+			//"unistd.c", // _Pragma
+			//"utimens.c", // _Pragma
+		},
+		"testdata/dev/emacs-24.5/lib",
+		opts...,
+	)
+	/*
+		make[2]: Entering directory `/home/jnml/src/gnu.org/emacs/emacs-24.5/lib'
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT allocator.o -MD -MP -MF .deps/allocator.Tpo -c -o allocator.o allocator.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT binary-io.o -MD -MP -MF .deps/binary-io.Tpo -c -o binary-io.o binary-io.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT c-ctype.o -MD -MP -MF .deps/c-ctype.Tpo -c -o c-ctype.o c-ctype.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT c-strcasecmp.o -MD -MP -MF .deps/c-strcasecmp.Tpo -c -o c-strcasecmp.o c-strcasecmp.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT c-strncasecmp.o -MD -MP -MF .deps/c-strncasecmp.Tpo -c -o c-strncasecmp.o c-strncasecmp.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT careadlinkat.o -MD -MP -MF .deps/careadlinkat.Tpo -c -o careadlinkat.o careadlinkat.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT close-stream.o -MD -MP -MF .deps/close-stream.Tpo -c -o close-stream.o close-stream.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT count-one-bits.o -MD -MP -MF .deps/count-one-bits.Tpo -c -o count-one-bits.o count-one-bits.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT count-trailing-zeros.o -MD -MP -MF .deps/count-trailing-zeros.Tpo -c -o count-trailing-zeros.o count-trailing-zeros.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT md5.o -MD -MP -MF .deps/md5.Tpo -c -o md5.o md5.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT sha1.o -MD -MP -MF .deps/sha1.Tpo -c -o sha1.o sha1.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT sha256.o -MD -MP -MF .deps/sha256.Tpo -c -o sha256.o sha256.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT sha512.o -MD -MP -MF .deps/sha512.Tpo -c -o sha512.o sha512.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT dtoastr.o -MD -MP -MF .deps/dtoastr.Tpo -c -o dtoastr.o dtoastr.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT dtotimespec.o -MD -MP -MF .deps/dtotimespec.Tpo -c -o dtotimespec.o dtotimespec.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT filemode.o -MD -MP -MF .deps/filemode.Tpo -c -o filemode.o filemode.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT gettime.o -MD -MP -MF .deps/gettime.Tpo -c -o gettime.o gettime.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT pipe2.o -MD -MP -MF .deps/pipe2.Tpo -c -o pipe2.o pipe2.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT acl-errno-valid.o -MD -MP -MF .deps/acl-errno-valid.Tpo -c -o acl-errno-valid.o acl-errno-valid.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT file-has-acl.o -MD -MP -MF .deps/file-has-acl.Tpo -c -o file-has-acl.o file-has-acl.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT qcopy-acl.o -MD -MP -MF .deps/qcopy-acl.Tpo -c -o qcopy-acl.o qcopy-acl.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT qset-acl.o -MD -MP -MF .deps/qset-acl.Tpo -c -o qset-acl.o qset-acl.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT stat-time.o -MD -MP -MF .deps/stat-time.Tpo -c -o stat-time.o stat-time.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT strftime.o -MD -MP -MF .deps/strftime.Tpo -c -o strftime.o strftime.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT timespec.o -MD -MP -MF .deps/timespec.Tpo -c -o timespec.o timespec.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT timespec-add.o -MD -MP -MF .deps/timespec-add.Tpo -c -o timespec-add.o timespec-add.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT timespec-sub.o -MD -MP -MF .deps/timespec-sub.Tpo -c -o timespec-sub.o timespec-sub.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT u64.o -MD -MP -MF .deps/u64.Tpo -c -o u64.o u64.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT unistd.o -MD -MP -MF .deps/unistd.Tpo -c -o unistd.o unistd.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT utimens.o -MD -MP -MF .deps/utimens.Tpo -c -o utimens.o utimens.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT openat-die.o -MD -MP -MF .deps/openat-die.Tpo -c -o openat-die.o openat-die.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT save-cwd.o -MD -MP -MF .deps/save-cwd.Tpo -c -o save-cwd.o save-cwd.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT fcntl.o -MD -MP -MF .deps/fcntl.Tpo -c -o fcntl.o fcntl.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT getopt.o -MD -MP -MF .deps/getopt.Tpo -c -o getopt.o getopt.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT getopt1.o -MD -MP -MF .deps/getopt1.Tpo -c -o getopt1.o getopt1.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT pthread_sigmask.o -MD -MP -MF .deps/pthread_sigmask.Tpo -c -o pthread_sigmask.o pthread_sigmask.c
+		gcc -std=gnu99 -DHAVE_CONFIG_H -I. -I../lib -I../src -I../src       -g3 -O2 -MT sig2str.o -MD -MP -MF .deps/sig2str.Tpo -c -o sig2str.o sig2str.c
+	*/
 }
 
 func TestPPParse1(t *testing.T) {

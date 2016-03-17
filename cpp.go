@@ -243,19 +243,20 @@ func (t *tokenPipe) flush(final bool) {
 }
 
 type pp struct {
-	ack             chan struct{}      // Must be unbuffered.
-	expandingMacros map[int]int        //
-	in              chan []xc.Token    // Must be unbuffered.
-	includeLevel    int                //
-	includes        []string           //
-	lx              *lexer             //
-	macros          *macros            //
-	model           *Model             //
-	ppf             *PreprocessingFile //
-	protectMacros   bool               //
-	report          *xc.Report         //
-	sysIncludes     []string           //
-	tweaks          *tweaks            //
+	ack                chan struct{}      // Must be unbuffered.
+	expandingMacros    map[int]int        //
+	in                 chan []xc.Token    // Must be unbuffered.
+	includeLevel       int                //
+	includedSearchPath string             //
+	includes           []string           //
+	lx                 *lexer             //
+	macros             *macros            //
+	model              *Model             //
+	ppf                *PreprocessingFile //
+	protectMacros      bool               //
+	report             *xc.Report         //
+	sysIncludes        []string           //
+	tweaks             *tweaks            //
 }
 
 func newPP(ch chan []xc.Token, includes, sysIncludes []string, macros *macros, protectMacros bool, model *Model, report *xc.Report, tweaks *tweaks) *pp {
@@ -1051,7 +1052,10 @@ func (p *pp) controlLine(n *ControlLine) {
 			}
 
 			p.includeLevel++
+			save := p.includedSearchPath
+			p.includedSearchPath = dir
 			p.preprocessingFile(ppf)
+			p.includedSearchPath = save
 			p.includeLevel--
 			return
 		}
@@ -1104,12 +1108,18 @@ func (p *pp) controlLine(n *ControlLine) {
 
 		arg := string(toks[0].S())
 		arg = arg[1 : len(arg)-1]
-		origin := filepath.Dir(n.Token.Position().Filename)
+		origin := p.includedSearchPath
 		var dirs []string
 		found := false
 		for i, dir := range p.includes {
 			if dir == origin {
 				dirs = p.includes[i+1:]
+				var err error
+				if dirs, err = dedupAbsPaths(append(dirs, p.sysIncludes...)); err != nil {
+					p.report.ErrTok(toks[0], "%s", err)
+					return
+				}
+
 				found = true
 				break
 			}
@@ -1140,7 +1150,10 @@ func (p *pp) controlLine(n *ControlLine) {
 			}
 
 			p.includeLevel++
+			save := p.includedSearchPath
+			p.includedSearchPath = dir
 			p.preprocessingFile(ppf)
+			p.includedSearchPath = save
 			p.includeLevel--
 			return
 		}

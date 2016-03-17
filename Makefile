@@ -14,7 +14,7 @@ all: editor
 	unused . || true
 
 clean:
-	rm -f log-*.c log-*.h *~ cpu.test mem.test
+	rm -f log-*.c log-*.h *~ cpu.test mem.test /tmp/cc-test-*
 	go clean
 
 cover:

@@ -1929,6 +1929,12 @@ func (n *StructDeclarator) post(lx *lexer) {
 		switch x := n.ConstantExpression.Value.(type) {
 		case int32:
 			w = int(x)
+		case int64:
+			w = int(x)
+			if m := t.SizeOf() * 8; x > int64(m) {
+				lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds its type")
+				w = m
+			}
 		default:
 			panic("internal error")
 		}
