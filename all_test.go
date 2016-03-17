@@ -1508,6 +1508,15 @@ func TestRedecl(t *testing.T) {
 	testParse(t, []string{"testdata/redecl.c"}, "")
 }
 
+func TestParse1(t *testing.T) {
+	path := *o1
+	if path == "" {
+		return
+	}
+
+	testParse(t, []string{path}, "")
+}
+
 func testParse(t *testing.T, paths []string, ignoreError string, opts ...Opt) *TranslationUnit {
 	last := paths[len(paths)-1]
 	ln := filepath.Base(last)

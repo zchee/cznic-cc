@@ -651,6 +651,101 @@ var (
 		"UNARY",
 	}
 
+	yyTokenLiteralStrings = map[int]string{
+		57376:   "identifier",
+		57362:   "--",
+		57380:   "++",
+		57424:   "string literal",
+		57357:   "character constant",
+		57372:   "floating-point constant",
+		57383:   "integer constant",
+		57386:   "long character constant",
+		57387:   "long string constant",
+		57422:   "sizeof",
+		57435:   "volatile",
+		57359:   "const",
+		57416:   "restrict",
+		57352:   "_Bool",
+		57356:   "char",
+		57358:   "_Complex",
+		57366:   "double",
+		57368:   "enum",
+		57371:   "float",
+		57382:   "int",
+		57385:   "long",
+		57420:   "short",
+		57421:   "signed",
+		57425:   "struct",
+		57429:   "typedefname",
+		57430:   "typeof",
+		57432:   "union",
+		57433:   "unsigned",
+		57434:   "void",
+		57423:   "static",
+		57351:   "auto",
+		57370:   "extern",
+		57381:   "inline",
+		57415:   "register",
+		57428:   "typedef",
+		57350:   "asm",
+		57346:   "+=",
+		57347:   "&&",
+		57348:   "&=",
+		57349:   "->",
+		57364:   "/=",
+		57369:   "==",
+		57374:   ">=",
+		57384:   "<=",
+		57388:   "<<",
+		57389:   "<<=",
+		57390:   "%=",
+		57391:   "*=",
+		57392:   "!=",
+		57394:   "|=",
+		57395:   "||",
+		57418:   ">>",
+		57419:   ">>=",
+		57426:   "-=",
+		57437:   "^=",
+		57411:   "ppother",
+		57375:   "goto",
+		57436:   "while",
+		57353:   "break",
+		57354:   "case",
+		57360:   "continue",
+		57363:   "default",
+		57365:   "do",
+		57373:   "for",
+		57379:   "if",
+		57417:   "return",
+		57427:   "switch",
+		57399:   "#endif",
+		57398:   "#else",
+		57397:   "#elif",
+		57396:   "#define",
+		57400:   "#error",
+		57401:   "#",
+		57403:   "#if",
+		57404:   "#ifdef",
+		57405:   "#ifndef",
+		57406:   "#include",
+		57407:   "#include_next",
+		57408:   "#line",
+		57409:   "#foo",
+		57413:   "#pragma",
+		57414:   "#undef",
+		57367:   "else",
+		57361:   "...",
+		1048577: "constant expression prefix",
+		57377:   "identifier immediatelly followed by '('",
+		1048576: "preprocessing file prefix",
+		1048578: "translation unit prefix",
+		57378:   "non replaceable identifier",
+		57402:   "header name",
+		57410:   "preprocessing number",
+		57412:   "##",
+	}
+
 	yyReductions = map[int]struct{ xsym, components int }{
 		0:   {0, 1},
 		1:   {194, 0},
@@ -2225,6 +2320,10 @@ func yySymName(c int) (s string) {
 		return yySymNames[x]
 	}
 
+	if c < 0x7f {
+		return __yyfmt__.Sprintf("'%c'", c)
+	}
+
 	return __yyfmt__.Sprintf("%d", c)
 }
 
@@ -2341,7 +2440,21 @@ yynewstate:
 			if !ok {
 				msg, ok = yyXErrors[yyXError{yyshift, -1}]
 			}
-			if !ok || msg == "" {
+			if yychar > 0 {
+				ls := yyTokenLiteralStrings[yychar]
+				if ls == "" {
+					ls = yySymName(yychar)
+				}
+				if ls != "" {
+					switch {
+					case msg == "":
+						msg = __yyfmt__.Sprintf("unexpected %s", ls)
+					default:
+						msg = __yyfmt__.Sprintf("unexpected %s, %s", ls, msg)
+					}
+				}
+			}
+			if msg == "" {
 				msg = "syntax error"
 			}
 			yylex.Error(msg)

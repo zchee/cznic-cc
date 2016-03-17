@@ -384,8 +384,8 @@ func (l *lexer) Lex(lval *yySymType) int {
 
 // Error Implements yyLexer.
 func (l *lexer) Error(msg string) {
-	t := l.tokLast
-	l.report.Err(errPos(t.Pos()), "unexpected %s, %s", yySymName(int(t.Rune)), msg)
+	t := l.last
+	l.report.Err(errPos(t.Pos()), "%s", msg)
 }
 
 // Reduced implements yyLexerEx
