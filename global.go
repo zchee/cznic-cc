@@ -19,10 +19,11 @@ const (
 )
 
 var (
+	debugMacros  bool
 	dict         = xc.Dict
 	fset         = xc.FileSet
-	isTesting    bool // Test hook.
 	isGenerating bool // go generate hook.
+	isTesting    bool // Test hook.
 	printHooks   = strutil.PrettyPrintHooks{}
 )
 

@@ -925,6 +925,13 @@ func (m *Model) binOpType(a, b Type) Type {
 		a, b = b, a
 	}
 	switch ak {
+	case Bool:
+		switch bk {
+		case Bool:
+			return m.BoolType
+		default:
+			panic(bk)
+		}
 	case Char:
 		switch bk {
 		case Char, Int:

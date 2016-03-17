@@ -369,6 +369,7 @@ var (
 	idL                = dict.SID("L")
 	idLine             = dict.SID("__LINE__")
 	idMagicFunc        = dict.SID("__func__")
+	idPragma           = dict.SID("_Pragma")
 	idSTDC             = dict.SID("__STDC__")
 	idSTDCHosted       = dict.SID("__STDC_HOSTED__")
 	idSTDCMBMightNeqWc = dict.SID("__STDC_MB_MIGHT_NEQ_WC__")

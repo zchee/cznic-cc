@@ -326,6 +326,14 @@ func (p *pp) defineMacro(tok xc.Token, repl PPTokenList) {
 
 	m := p.macros.m[nm]
 	if m == nil {
+		if debugMacros {
+			toks := trimSpace(decodeTokens(repl, nil, true), false)
+			var a [][]byte
+			for _, v := range toks {
+				a = append(a, xc.Dict.S(tokVal(v)))
+			}
+			fmt.Fprintf(os.Stderr, "#define %s at %s as %s\n", tok.S(), tok.Position(), bytes.Join(a, nil))
+		}
 		p.macros.m[nm] = &Macro{DefTok: tok, repl: repl}
 		return
 	}
@@ -524,7 +532,7 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 	for i, v := range repl {
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
-	u := p.expandLineNo(p.sanitize(repl))
+	u := p.expandLineNo(p.pragmas(p.sanitize(repl)))
 	r.unget(u)
 }
 
@@ -545,6 +553,62 @@ func trimSpace(toks []xc.Token, removeTrailingComma bool) []xc.Token {
 		toks = toks[:len(toks)-1]
 	}
 	return toks
+}
+
+func (p *pp) pragmas(toks []xc.Token) []xc.Token {
+	var r []xc.Token
+	for len(toks) != 0 {
+		switch tok := toks[0]; {
+		case tok.Rune == IDENTIFIER && tok.Val == idPragma:
+			toks = toks[1:]
+			for len(toks) != 0 && toks[0].Rune == ' ' {
+				toks = toks[1:]
+			}
+			if len(toks) == 0 {
+				p.report.ErrTok(tok, "malformed _Pragma unary operator expression.")
+				return r
+			}
+
+			if toks[0].Rune != '(' {
+				p.report.ErrTok(toks[0], "expected '('")
+				return r
+			}
+
+			toks = toks[1:]
+			for len(toks) != 0 && toks[0].Rune == ' ' {
+				toks = toks[1:]
+			}
+			if len(toks) == 0 {
+				p.report.ErrTok(tok, "malformed _Pragma unary operator expression.")
+				return r
+			}
+
+			if toks[0].Rune != STRINGLITERAL && toks[0].Rune != LONGSTRINGLITERAL {
+				p.report.ErrTok(toks[0], "expected string literal or long string literal")
+				return r
+			}
+
+			toks = toks[1:]
+			for len(toks) != 0 && toks[0].Rune == ' ' {
+				toks = toks[1:]
+			}
+			if len(toks) == 0 {
+				p.report.ErrTok(tok, "malformed _Pragma unary operator expression.")
+				return r
+			}
+
+			if toks[0].Rune != ')' {
+				p.report.ErrTok(toks[0], "expected ')'")
+				return r
+			}
+
+			toks = toks[1:]
+		default:
+			r = append(r, tok)
+			toks = toks[1:]
+		}
+	}
+	return r
 }
 
 func (p *pp) sanitize(toks []xc.Token) []xc.Token {
@@ -745,7 +809,7 @@ next:
 	p.expandingMacros[nm]++
 	defer func() { p.expandingMacros[nm]-- }()
 
-	u := p.sanitize(p.expandLineNo(r0))
+	u := p.pragmas(p.sanitize(p.expandLineNo(r0)))
 	r.unget(u)
 }
 

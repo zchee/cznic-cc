@@ -1605,19 +1605,6 @@ func toInt(v interface{}) (int, error) {
 	}
 }
 
-func dedup(a []string) (r []string) {
-	m := map[string]struct{}{}
-	for _, v := range a {
-		if _, ok := m[v]; ok {
-			continue
-		}
-
-		r = append(r, v)
-		m[v] = struct{}{}
-	}
-	return r
-}
-
 func dedupAbsPaths(a []string) (r []string, _ error) {
 	m := map[string]struct{}{}
 	for _, v := range a {
