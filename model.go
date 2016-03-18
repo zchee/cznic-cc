@@ -269,6 +269,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case UShort:
 		switch x := v.(type) {
+		case uint16:
+			switch w {
+			case 2:
+				return x
+			default:
+				panic(w)
+			}
 		case int32:
 			switch w {
 			case 2:
@@ -328,6 +335,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case uint16:
+			switch w {
+			case 4:
+				return uint32(x)
+			default:
+				panic(w)
+			}
 		case int32:
 			switch w {
 			case 4:
@@ -376,6 +390,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 	case Long:
 		switch x := v.(type) {
 		case int32:
+			switch w {
+			case 8:
+				return int64(x)
+			default:
+				panic(w)
+			}
+		case uint32:
 			switch w {
 			case 8:
 				return int64(x)
@@ -1001,7 +1022,7 @@ func (m *Model) binOpType(a, b Type) Type {
 		switch bk {
 		case Array:
 			return b.(*ctype).arrayDecay()
-		case UShort, Int, UInt:
+		case UShort, Int, UInt, Bool:
 			return m.UIntType
 		case Long:
 			return m.LongType
@@ -1009,6 +1030,10 @@ func (m *Model) binOpType(a, b Type) Type {
 			return m.ULongType
 		case LongLong, ULongLong:
 			return m.ULongLongType
+		case Float:
+			return m.FloatType
+		case Double:
+			return m.DoubleType
 		default:
 			panic(bk)
 		}
@@ -1016,7 +1041,7 @@ func (m *Model) binOpType(a, b Type) Type {
 		switch bk {
 		case Array:
 			return b.(*ctype).arrayDecay()
-		case Int, Enum:
+		case Int, Enum, Bool:
 			return m.IntType
 		case UInt:
 			return m.UIntType
@@ -1037,18 +1062,22 @@ func (m *Model) binOpType(a, b Type) Type {
 		}
 	case UInt:
 		switch bk {
-		case UInt:
+		case Int, UInt, Enum:
 			return m.UIntType
 		case Long, ULong:
 			return m.ULongType
 		case LongLong, ULongLong:
 			return m.ULongLongType
+		case Float:
+			return m.FloatType
+		case Double:
+			return m.DoubleType
 		default:
 			panic(bk)
 		}
 	case Long:
 		switch bk {
-		case Long:
+		case Long, Bool:
 			return m.LongType
 		case ULong:
 			return m.ULongType

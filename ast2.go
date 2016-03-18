@@ -990,6 +990,33 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
+				default:
+					n.Value = x
+				}
 			default:
 				panic(fmt.Errorf("internal error: %T", y))
 			}
@@ -1790,6 +1817,8 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 			i := 0
 			for l := n.InitializerList; l != nil; l = l.InitializerList {
 				if l.DesignationOpt != nil {
+					i++
+					continue //TODO
 					panic("TODO")
 				}
 
