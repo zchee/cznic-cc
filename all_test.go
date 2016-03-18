@@ -121,6 +121,9 @@ void __GO__(char *s, ...);
 
 double __builtin_inff();
 double __builtin_nanf(char *);
+int __builtin_ctz (unsigned int x);
+int __builtin_ctzl (unsigned long);
+int __builtin_ctzll (unsigned long long);
 int __builtin_popcount (unsigned int x);
 int __builtin_popcountl (unsigned long);
 int __builtin_popcountll (unsigned long long);
@@ -1518,6 +1521,7 @@ func TestDevEmacs(t *testing.T) {
 			"careadlinkat.c",
 			"close-stream.c",
 			"count-one-bits.c",
+			"count-trailing-zeros.c",
 			"dtotimespec.c",
 			"fcntl.c",
 			"file-has-acl.c",
@@ -1537,7 +1541,6 @@ func TestDevEmacs(t *testing.T) {
 			"u64.c",
 			"unistd.c",
 			"utimens.c",
-			//"count-trailing-zeros.c",
 			//"dtoastr.c",
 			//"md5.c",
 			//"pthread_sigmask.c",
