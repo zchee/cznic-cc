@@ -1493,6 +1493,7 @@ func TestDevEmacs(t *testing.T) {
 		SysIncludePaths(sysIncludePaths),
 		EnableIncludeNext(),
 		EnableTypeOf(),
+		EnableAsm(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
@@ -1534,6 +1535,7 @@ func TestDevEmacs(t *testing.T) {
 			"gettime.c",
 			"openat-die.c",
 			"pipe2.c",
+			"pthread_sigmask.c",
 			"qcopy-acl.c",
 			"qset-acl.c",
 			"save-cwd.c",
@@ -1544,8 +1546,7 @@ func TestDevEmacs(t *testing.T) {
 			"u64.c",
 			"unistd.c",
 			"utimens.c",
-			//"md5.c",
-			//"pthread_sigmask.c",
+			//"md5.c", // _Alignof
 			//"sha1.c",
 			//"sha256.c",
 			//"sha512.c",
