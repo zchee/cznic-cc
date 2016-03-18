@@ -69,10 +69,6 @@ var _ = use(printStack, caller, dbg, TODO, (*ctype).str, yyDefault, yyErrCode, y
 
 // ============================================================================
 
-const (
-	fakeTime = "__TESTING_TIME__"
-)
-
 var (
 	o1        = flag.String("1", "", "single file argument of TestPPParse1.")
 	oFailFast = flag.Bool("ff", false, "crash on first reported error (in some tests.)")
@@ -91,45 +87,6 @@ var (
 
 void __GO__(char *s, ...);
 `
-
-	testDevAdditionalPredefines = fmt.Sprintf(`
-#define __DATE__ %q
-#define __TIME__ %q
-
-#define __PRETTY_FUNCTION__ __func__
-#define __asm__ asm
-#define __attribute__(...)
-#define __builtin_bswap32(bsx) ( 0U )
-#define __builtin_bswap64(bsx) ( (__uint64_t)0 )
-#define __builtin_offsetof(st, m) ((size_t)(&((st *)0)->m))
-#define __builtin_va_arg(ap, type) ( *( type* )ap )
-#define __builtin_va_end(v)
-#define __builtin_va_list void*
-#define __builtin_va_start(x, y)
-#define __const
-#define __extension__
-#define __inline inline
-#define __restrict
-#define __signed__ signed
-#define __volatile__
-
-#define __GNUC_STDC_INLINE__ 1
-
-#ifndef __STDC_VERSION__
-	#define __STDC_VERSION__ 199901L
-#endif
-
-double __builtin_inff();
-double __builtin_nanf(char *);
-int __builtin_ctz (unsigned int x);
-int __builtin_ctzl (unsigned long);
-int __builtin_ctzll (unsigned long long);
-int __builtin_popcount (unsigned int x);
-int __builtin_popcountl (unsigned long);
-int __builtin_popcountll (unsigned long long);
-
-`, xc.Dict.S(idTDate), fakeTime)
-
 	sysIncludes = []string{}
 
 	testTweaks = &tweaks{
@@ -835,8 +792,7 @@ func TestDevSqlite(t *testing.T) {
 	opts := []Opt{
 		IncludePaths(includePaths),
 		SysIncludePaths(sysIncludePaths),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
+		devTest(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
@@ -844,7 +800,7 @@ func TestDevSqlite(t *testing.T) {
 
 	testDev(
 		t,
-		predefined+testDevAdditionalPredefines,
+		predefined,
 		nil,
 		[]string{
 			"shell.c",
@@ -857,904 +813,904 @@ func TestDevSqlite(t *testing.T) {
 	)
 }
 
-func TestDevVim(t *testing.T) {
-	predefined, includePaths, sysIncludePaths, err := HostConfig()
-	if err != nil {
-		t.Logf("skipping: %v", err)
-		return
-	}
-
-	opts := []Opt{
-		IncludePaths([]string{
-			".",
-			"proto",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-		EnableIncludeNext(),
-		EnableTypeOf(),
-	}
-	if *oFailFast {
-		opts = append(opts, CrashOnError())
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-#define _FORTIFY_SOURCE 1
-#define __typeof typeof
-`,
-		[]string{
-			"-I.",
-			"-Iproto",
-			"-DHAVE_CONFIG_H",
-			"-U_FORTIFY_SOURCE",
-			"-D_FORTIFY_SOURCE=1",
-		},
-		[]string{
-			"auto/pathdef.c",
-			"blowfish.c",
-			"buffer.c",
-			"channel.c",
-			"charset.c",
-			"crypt.c",
-			"crypt_zip.c",
-			"diff.c",
-			"digraph.c",
-			"edit.c",
-			"eval.c",
-			"ex_cmds.c",
-			"ex_cmds2.c",
-			"ex_docmd.c",
-			"ex_eval.c",
-			"ex_getln.c",
-			"fileio.c",
-			"fold.c",
-			"getchar.c",
-			"hardcopy.c",
-			"hashtab.c",
-			"if_cscope.c",
-			"if_xcmdsrv.c",
-			"json.c",
-			"main.c",
-			"mark.c",
-			"mbyte.c",
-			"memfile.c",
-			"memline.c",
-			"menu.c",
-			"message.c",
-			"misc1.c",
-			"misc2.c",
-			"move.c",
-			"netbeans.c",
-			"normal.c",
-			"ops.c",
-			"option.c",
-			"os_unix.c",
-			"popupmnu.c",
-			"quickfix.c",
-			"regexp.c",
-			"screen.c",
-			"search.c",
-			"sha256.c",
-			"spell.c",
-			"syntax.c",
-			"tag.c",
-			"term.c",
-			"ui.c",
-			"undo.c",
-			"version.c",
-			"window.c",
-		},
-		"testdata/dev/vim/vim/src",
-		opts...,
-	)
-}
-
-func TestDevBash(t *testing.T) {
-	predefined, includePaths, sysIncludePaths, err := HostConfig()
-	if err != nil {
-		t.Logf("skipping: %v", err)
-		return
-	}
-
-	opts := []Opt{
-		IncludePaths([]string{
-			".",
-			"include",
-			"lib",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-		EnableIncludeNext(),
-		EnableTypeOf(),
-	}
-	if *oFailFast {
-		opts = append(opts, CrashOnError())
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define PROGRAM "bash"
-#define CONF_HOSTTYPE "x86_64"
-#define CONF_OSTYPE "linux-gnu"
-#define CONF_MACHTYPE "x86_64-unknown-linux-gnu"
-#defien CONF_VENDOR "unknown"
-#define LOCALEDIR "/usr/local/share/locale"
-#define PACKAGE "bash"
-#define SHELL
-#define HAVE_CONFIG_H
-
-#define __builtin_memcpy(dest, src, n)
-#define __typeof typeof
-
-void* __builtin_alloca(int);
-`,
-		[]string{
-			`-DPROGRAM="bash"`,
-			`-DCONF_HOSTTYPE="x86_64"`,
-			`-DCONF_OSTYPE="linux-gnu"`,
-			`-DCONF_MACHTYPE="x86_64-unknown-linux-gnu"`,
-			`-DCONF_VENDOR="unknown"`,
-			`-DLOCALEDIR="/usr/local/share/locale"`,
-			`-DPACKAGE="bash"`,
-			"-DSHELL",
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-Iinclude",
-			"-Ilib",
-		},
-		[]string{
-			"alias.c",
-			"array.c",
-			"arrayfunc.c",
-			"assoc.c",
-			"bashhist.c",
-			"bashline.c",
-			"bracecomp.c",
-			"braces.c",
-			"copy_cmd.c",
-			"dispose_cmd.c",
-			"error.c",
-			"eval.c",
-			"expr.c",
-			"findcmd.c",
-			"flags.c",
-			"general.c",
-			"hashcmd.c",
-			"hashlib.c",
-			"input.c",
-			"jobs.c",
-			"list.c",
-			"locale.c",
-			"mailcheck.c",
-			"make_cmd.c",
-			"mksyntax.c",
-			"pathexp.c",
-			"pcomplete.c",
-			"pcomplib.c",
-			"print_cmd.c",
-			"redir.c",
-			"shell.c",
-			"sig.c",
-			"stringlib.c",
-			"subst.c",
-			"support/bashversion.c",
-			"support/mksignames.c",
-			"support/signames.c",
-			"syntax.c",
-			"test.c",
-			"trap.c",
-			"unwind_prot.c",
-			"variables.c",
-			"version.c",
-			"version.c",
-			"xmalloc.c",
-			"y.tab.c",
-			//"execute_cmd.c", // Composite type K&R fn def style vs prototype decl lefts an undefined param.
-		},
-		"testdata/dev/bash-4.3/",
-		opts...,
-	)
-
-	opts = []Opt{
-		IncludePaths([]string{
-			".",
-			"..",
-			"../include",
-			"../lib",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-		EnableIncludeNext(),
-	}
-	if *oFailFast {
-		opts = append(opts, CrashOnError())
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-#define SHELL
-`,
-		[]string{
-			"-DSHELL",
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I..",
-			"-I../include",
-			"-I../lib",
-		},
-		[]string{
-			"builtins.c",
-			"common.c",
-			"evalfile.c",
-			"evalstring.c",
-			"mkbuiltins.c",
-			"psize.c",
-		},
-		"testdata/dev/bash-4.3/builtins",
-		opts...,
-	)
-
-	opts = []Opt{
-		IncludePaths([]string{
-			".",
-			"../..",
-			"../../include",
-			"../../lib",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-		EnableIncludeNext(),
-	}
-	if *oFailFast {
-		opts = append(opts, CrashOnError())
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-#define SHELL
-
-void* __builtin_alloca(int);
-`,
-		[]string{
-			"-DSHELL",
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I../..",
-			"-I../../include",
-			"-I../../lib",
-		},
-		[]string{
-			"glob.c",
-			"gmisc.c",
-			"smatch.c",
-			"strmatch.c",
-			"xmbsrtowcs.c",
-		},
-		"testdata/dev/bash-4.3/lib/glob",
-		opts...,
-	)
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-#define SHELL
-`,
-		[]string{
-			"-DSHELL",
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I../..",
-			"-I../../include",
-			"-I../../lib",
-		},
-		[]string{
-			"casemod.c",
-			"clktck.c",
-			"clock.c",
-			"eaccess.c",
-			"fmtullong.c",
-			"fmtulong.c",
-			"fmtumax.c",
-			"fnxform.c",
-			"fpurge.c",
-			"getenv.c",
-			"input_avail.c",
-			"itos.c",
-			"mailstat.c",
-			"makepath.c",
-			"mbscasecmp.c",
-			"mbschr.c",
-			"mbscmp.c",
-			"netconn.c",
-			"netopen.c",
-			"oslib.c",
-			"pathcanon.c",
-			"pathphys.c",
-			"setlinebuf.c",
-			"shmatch.c",
-			"shmbchar.c",
-			"shquote.c",
-			"shtty.c",
-			"snprintf.c",
-			"spell.c",
-			"stringlist.c",
-			"stringvec.c",
-			"strnlen.c",
-			"strtrans.c",
-			"timeval.c",
-			"tmpfile.c",
-			"uconvert.c",
-			"ufuncs.c",
-			"unicode.c",
-			"wcsdup.c",
-			"wcsnwidth.c",
-			"winsize.c",
-			"zcatfd.c",
-			"zgetline.c",
-			"zmapfd.c",
-			"zread.c",
-			"zwrite.c",
-		},
-		"testdata/dev/bash-4.3/lib/sh",
-		opts...,
-	)
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-#define SHELL
-`,
-		[]string{
-			"-DSHELL",
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I../..",
-			"-I../../include",
-			"-I../../lib",
-		},
-		[]string{
-			"bind.c",
-			"callback.c",
-			"colors.c",
-			"compat.c",
-			"complete.c",
-			"display.c",
-			"funmap.c",
-			"histexpand.c",
-			"histfile.c",
-			"history.c",
-			"histsearch.c",
-			"input.c",
-			"isearch.c",
-			"keymaps.c",
-			"kill.c",
-			"macro.c",
-			"mbutil.c",
-			"misc.c",
-			"nls.c",
-			"parens.c",
-			"parse-colors.c",
-			"readline.c",
-			"rltty.c",
-			"savestring.c",
-			"search.c",
-			"shell.c",
-			"signals.c",
-			"terminal.c",
-			"text.c",
-			"tilde.c",
-			"undo.c",
-			"util.c",
-			"vi_mode.c",
-			"xfree.c",
-			"xmalloc.c",
-		},
-		"testdata/dev/bash-4.3/lib/readline",
-		opts...,
-	)
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-#define SHELL
-#define RCHECK
-#define botch programming_error
-
-#define __builtin_memcpy(dest, src, n)
-`,
-		[]string{
-			"-DSHELL",
-			"-DHAVE_CONFIG_H",
-			"-DRCHECK",
-			"-Dbotch=programming_error",
-			"-I.",
-			"-I../..",
-			"-I../../include",
-			"-I../../lib",
-		},
-		[]string{
-			"malloc.c",
-			"trace.c",
-			"stats.c",
-			"table.c",
-			"watch.c",
-		},
-		"testdata/dev/bash-4.3/lib/malloc",
-		opts...,
-	)
-}
-
-func TestDevMake(t *testing.T) {
-	predefined, includePaths, sysIncludePaths, err := HostConfig()
-	if err != nil {
-		t.Logf("skipping: %v", err)
-		return
-	}
-
-	opts := []Opt{
-		IncludePaths([]string{
-			".",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-		EnableIncludeNext(),
-		EnableTypeOf(),
-	}
-	if *oFailFast {
-		opts = append(opts, CrashOnError())
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define LOCALEDIR "/usr/local/share/locale"
-#define LIBDIR "/usr/local/lib"
-#define INCLUDEDIR "/usr/local/include"
-#define HAVE_CONFIG_H
-
-#define __typeof typeof
-
-#undef __const
-#define __const const
-
-void* __builtin_alloca(int);
-`,
-		[]string{
-			"-DLOCALEDIR=\"/usr/local/share/locale\"",
-			"-DLIBDIR=\"/usr/local/lib\"",
-			"-DINCLUDEDIR=\"/usr/local/include\"",
-			"-DHAVE_CONFIG_H",
-			"-I.",
-		},
-		[]string{
-			"ar.c",
-			"arscan.c",
-			"commands.c",
-			"default.c",
-			"dir.c",
-			"expand.c",
-			"file.c",
-			"function.c",
-			"getopt.c",
-			"getopt1.c",
-			"guile.c",
-			"hash.c",
-			"implicit.c",
-			"job.c",
-			"load.c",
-			"loadapi.c",
-			"main.c",
-			"misc.c",
-			"output.c",
-			"read.c",
-			"remake.c",
-			"remote-stub.c",
-			"rule.c",
-			"signame.c",
-			"strcache.c",
-			"variable.c",
-			"version.c",
-			"vpath.c",
-		},
-		"testdata/dev/make-4.1/",
-		opts...,
-	)
-}
-
-func TestDevBc(t *testing.T) {
-	predefined, includePaths, sysIncludePaths, err := HostConfig()
-	if err != nil {
-		t.Logf("skipping: %v", err)
-		return
-	}
-
-	opts := []Opt{
-		IncludePaths([]string{
-			".",
-			"..",
-			"./../h",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-	}
-	if *oFailFast {
-		opts = append(opts, CrashOnError())
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-`,
-		[]string{
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I..",
-			"-I./../h",
-		},
-		[]string{
-			"getopt.c",
-			"getopt1.c",
-			"vfprintf.c",
-			//"number.c", // ? memset
-		},
-		"testdata/dev/bc-1.06/lib/",
-		opts...,
-	)
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-
-#define __builtin_memcpy(dest, src, n)
-
-void* __builtin_alloca(int);
-`,
-		[]string{
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I..",
-			"-I./../h",
-		},
-		[]string{
-			"main.c",
-			"bc.c",
-			"scan.c",
-			"execute.c",
-			"load.c",
-			"storage.c",
-			"util.c",
-			"global.c",
-		},
-		"testdata/dev/bc-1.06/bc",
-		opts...,
-	)
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-`,
-		[]string{
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I..",
-			"-I./../h",
-		},
-		[]string{
-			"dc.c",
-			"misc.c",
-			"eval.c",
-			"stack.c",
-			"array.c",
-			"numeric.c",
-			"string.c",
-		},
-		"testdata/dev/bc-1.06/dc",
-		opts...,
-	)
-}
-
-func TestDevEmacs(t *testing.T) {
-	predefined, includePaths, sysIncludePaths, err := HostConfig()
-	if err != nil {
-		t.Logf("skipping: %v", err)
-		return
-	}
-
-	opts := []Opt{
-		IncludePaths([]string{
-			".",
-			"../lib",
-			"../src",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAlignOf(),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-		EnableIncludeNext(),
-		EnableTypeOf(),
-	}
-	if *oFailFast {
-		opts = append(opts, CrashOnError())
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define HAVE_CONFIG_H
-#define _GCC_MAX_ALIGN_T
-#define _Noreturn
-#define __getopt_argv_const
-#define __inline__ inline
-#define __typeof__ typeof
-`,
-		[]string{
-			"-std=gnu99",
-			"-DHAVE_CONFIG_H",
-			"-I.",
-			"-I../lib",
-			"-I../src",
-		},
-		[]string{
-			"acl-errno-valid.c",
-			"allocator.c",
-			"binary-io.c",
-			"c-ctype.c",
-			"c-strcasecmp.c",
-			"c-strncasecmp.c",
-			"careadlinkat.c",
-			"close-stream.c",
-			"count-one-bits.c",
-			"count-trailing-zeros.c",
-			"dtoastr.c",
-			"dtotimespec.c",
-			"fcntl.c",
-			"file-has-acl.c",
-			"filemode.c",
-			"getopt.c",
-			"getopt1.c",
-			"gettime.c",
-			"md5.c",
-			"openat-die.c",
-			"pipe2.c",
-			"pthread_sigmask.c",
-			"qcopy-acl.c",
-			"qset-acl.c",
-			"save-cwd.c",
-			"sha1.c",
-			"sha256.c",
-			"sha512.c",
-			"sig2str.c",
-			"stat-time.c",
-			"strftime.c",
-			"timespec-add.c",
-			"timespec-sub.c",
-			"timespec.c",
-			"u64.c",
-			"unistd.c",
-			"utimens.c",
-		},
-		"testdata/dev/emacs-24.5/lib",
-		opts...,
-	)
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define CTAGS
-#define EMACS_NAME "GNU Emacs"
-#define HAVE_CONFIG_H
-#define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
-#define VERSION "24.5"
-#define _GCC_MAX_ALIGN_T
-#define _Noreturn
-#define __inline__ inline
-#define __typeof__ typeof
-#define __typeof typeof
-
-void* __builtin_alloca(int);
-`,
-		[]string{
-			"-std=gnu99",
-			"-I.",
-			"-I../lib",
-			"-I../src",
-			"-DEMACS_NAME=\"GNU Emacs\"",
-			"-DCTAGS",
-			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
-			"-DVERSION=\"24.5\"",
-		},
-		[]string{
-			"./../src/regex.c",
-			"./ebrowse.c",
-			"./emacsclient.c",
-			"./etags.c",
-			"./hexl.c",
-			"./make-docfile.c",
-			"./movemail.c",
-			"./pop.c",
-			"./profile.c",
-			"./test-distrib.c",
-			"./update-game-score.c",
-		},
-		"testdata/dev/emacs-24.5/lib-src/",
-		opts...,
-	)
-
-	opts = []Opt{
-		IncludePaths([]string{
-			".",
-			"../lib",
-			"/usr/include/gtk-3.0",
-			"/usr/include/pango-1.0",
-			"/usr/include/gio-unix-2.0/",
-			"/usr/include/atk-1.0",
-			"/usr/include/cairo",
-			"/usr/include/gdk-pixbuf-2.0",
-			"/usr/include/freetype2",
-			"/usr/include/glib-2.0",
-			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
-			"/usr/include/pixman-1",
-			"/usr/include/libpng12",
-		}),
-		IncludePaths(includePaths),
-		SysIncludePaths(sysIncludePaths),
-		EnableAlignOf(),
-		EnableAnonymousStructFields(),
-		EnableAsm(),
-		EnableDefineOmitCommaBeforeDDD(),
-		EnableIncludeNext(),
-		EnableStaticAssert(),
-		EnableTypeOf(),
-	}
-
-	testDev(
-		t,
-		predefined+testDevAdditionalPredefines+`
-#define _GCC_MAX_ALIGN_T
-#define _Noreturn
-#define __inline__ inline
-#define __typeof typeof
-#define __typeof__ typeof
-#define emacs
-#define _Alignas(x)
-
-void* __builtin_alloca(int);
-void __builtin_unreachable (void);
-`,
-		[]string{
-			"-std=gnu99",
-			"-Demacs",
-			"-I.",
-			"-I../lib",
-			"-I/usr/include/gtk-3.0",
-			"-I/usr/include/pango-1.0",
-			"-I/usr/include/gio-unix-2.0/",
-			"-I/usr/include/atk-1.0",
-			"-I/usr/include/cairo",
-			"-I/usr/include/gdk-pixbuf-2.0",
-			"-I/usr/include/freetype2",
-			"-I/usr/include/glib-2.0",
-			"-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
-			"-I/usr/include/pixman-1",
-			"-I/usr/include/libpng12",
-		},
-		[]string{
-			"atimer.c",
-			"bidi.c",
-			"callint.c",
-			"callproc.c",
-			"casetab.c",
-			"category.c",
-			"cm.c",
-			"composite.c",
-			"decompress.c",
-			"doc.c",
-			"fileio.c",
-			"filelock.c",
-			"floatfns.c",
-			"fontset.c",
-			"frame.c",
-			"fringe.c",
-			"gfilenotify.c",
-			"gnutls.c",
-			"gtkutil.c",
-			"indent.c",
-			"intervals.c",
-			"keyboard.c",
-			"lastfile.c",
-			"macros.c",
-			"marker.c",
-			"menu.c",
-			"minibuf.c",
-			"profiler.c",
-			"region-cache.c",
-			"scroll.c",
-			"sound.c",
-			"sysdep.c",
-			"terminfo.c",
-			"undo.c",
-			"vm-limit.c",
-			"window.c",
-			"xfaces.c",
-			"xfns.c",
-			"xgselect.c",
-			"xmenu.c",
-			"xml.c",
-			"xrdb.c",
-			"xselect.c",
-			"xsmfns.c",
-			//"alloc.c",
-			//"buffer.c",
-			//"bytecode.c",
-			//"casefiddle.c",
-			//"ccl.c",
-			//"character.c",
-			//"charset.c",
-			//"chartab.c",
-			//"cmds.c",
-			//"coding.c",
-			//"data.c",
-			//"dired.c",
-			//"dispnew.c",
-			//"doprnt.c",
-			//"editfns.c",
-			//"emacs.c",
-			//"emacsgtkfixed.c",
-			//"eval.c",
-			//"fns.c",
-			//"font.c",
-			//"ftfont.c",
-			//"ftxfont.c",
-			//"image.c",
-			//"insdel.c",
-			//"keymap.c",
-			//"lread.c",
-			//"print.c",
-			//"process.c",
-			//"regex.c",
-			//"search.c",
-			//"syntax.c",
-			//"term.c",
-			//"terminal.c",
-			//"textprop.c",
-			//"unexelf.c",
-			//"xdisp.c",
-			//"xfont.c",
-			//"xftfont.c",
-			//"xsettings.c",
-			//"xterm.c",
-		},
-		"testdata/dev/emacs-24.5/src/",
-		opts...,
-	)
-}
+//func TestDevVim(t *testing.T) {
+//	predefined, includePaths, sysIncludePaths, err := HostConfig()
+//	if err != nil {
+//		t.Logf("skipping: %v", err)
+//		return
+//	}
+//
+//	opts := []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"proto",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//		EnableIncludeNext(),
+//		EnableTypeOf(),
+//	}
+//	if *oFailFast {
+//		opts = append(opts, CrashOnError())
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//#define _FORTIFY_SOURCE 1
+//#define __typeof typeof
+//`,
+//		[]string{
+//			"-I.",
+//			"-Iproto",
+//			"-DHAVE_CONFIG_H",
+//			"-U_FORTIFY_SOURCE",
+//			"-D_FORTIFY_SOURCE=1",
+//		},
+//		[]string{
+//			"auto/pathdef.c",
+//			"blowfish.c",
+//			"buffer.c",
+//			"channel.c",
+//			"charset.c",
+//			"crypt.c",
+//			"crypt_zip.c",
+//			"diff.c",
+//			"digraph.c",
+//			"edit.c",
+//			"eval.c",
+//			"ex_cmds.c",
+//			"ex_cmds2.c",
+//			"ex_docmd.c",
+//			"ex_eval.c",
+//			"ex_getln.c",
+//			"fileio.c",
+//			"fold.c",
+//			"getchar.c",
+//			"hardcopy.c",
+//			"hashtab.c",
+//			"if_cscope.c",
+//			"if_xcmdsrv.c",
+//			"json.c",
+//			"main.c",
+//			"mark.c",
+//			"mbyte.c",
+//			"memfile.c",
+//			"memline.c",
+//			"menu.c",
+//			"message.c",
+//			"misc1.c",
+//			"misc2.c",
+//			"move.c",
+//			"netbeans.c",
+//			"normal.c",
+//			"ops.c",
+//			"option.c",
+//			"os_unix.c",
+//			"popupmnu.c",
+//			"quickfix.c",
+//			"regexp.c",
+//			"screen.c",
+//			"search.c",
+//			"sha256.c",
+//			"spell.c",
+//			"syntax.c",
+//			"tag.c",
+//			"term.c",
+//			"ui.c",
+//			"undo.c",
+//			"version.c",
+//			"window.c",
+//		},
+//		"testdata/dev/vim/vim/src",
+//		opts...,
+//	)
+//}
+//
+//func TestDevBash(t *testing.T) {
+//	predefined, includePaths, sysIncludePaths, err := HostConfig()
+//	if err != nil {
+//		t.Logf("skipping: %v", err)
+//		return
+//	}
+//
+//	opts := []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"include",
+//			"lib",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//		EnableIncludeNext(),
+//		EnableTypeOf(),
+//	}
+//	if *oFailFast {
+//		opts = append(opts, CrashOnError())
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define PROGRAM "bash"
+//#define CONF_HOSTTYPE "x86_64"
+//#define CONF_OSTYPE "linux-gnu"
+//#define CONF_MACHTYPE "x86_64-unknown-linux-gnu"
+//#defien CONF_VENDOR "unknown"
+//#define LOCALEDIR "/usr/local/share/locale"
+//#define PACKAGE "bash"
+//#define SHELL
+//#define HAVE_CONFIG_H
+//
+//#define __builtin_memcpy(dest, src, n)
+//#define __typeof typeof
+//
+//void* __builtin_alloca(int);
+//`,
+//		[]string{
+//			`-DPROGRAM="bash"`,
+//			`-DCONF_HOSTTYPE="x86_64"`,
+//			`-DCONF_OSTYPE="linux-gnu"`,
+//			`-DCONF_MACHTYPE="x86_64-unknown-linux-gnu"`,
+//			`-DCONF_VENDOR="unknown"`,
+//			`-DLOCALEDIR="/usr/local/share/locale"`,
+//			`-DPACKAGE="bash"`,
+//			"-DSHELL",
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-Iinclude",
+//			"-Ilib",
+//		},
+//		[]string{
+//			"alias.c",
+//			"array.c",
+//			"arrayfunc.c",
+//			"assoc.c",
+//			"bashhist.c",
+//			"bashline.c",
+//			"bracecomp.c",
+//			"braces.c",
+//			"copy_cmd.c",
+//			"dispose_cmd.c",
+//			"error.c",
+//			"eval.c",
+//			"expr.c",
+//			"findcmd.c",
+//			"flags.c",
+//			"general.c",
+//			"hashcmd.c",
+//			"hashlib.c",
+//			"input.c",
+//			"jobs.c",
+//			"list.c",
+//			"locale.c",
+//			"mailcheck.c",
+//			"make_cmd.c",
+//			"mksyntax.c",
+//			"pathexp.c",
+//			"pcomplete.c",
+//			"pcomplib.c",
+//			"print_cmd.c",
+//			"redir.c",
+//			"shell.c",
+//			"sig.c",
+//			"stringlib.c",
+//			"subst.c",
+//			"support/bashversion.c",
+//			"support/mksignames.c",
+//			"support/signames.c",
+//			"syntax.c",
+//			"test.c",
+//			"trap.c",
+//			"unwind_prot.c",
+//			"variables.c",
+//			"version.c",
+//			"version.c",
+//			"xmalloc.c",
+//			"y.tab.c",
+//			//"execute_cmd.c", // Composite type K&R fn def style vs prototype decl lefts an undefined param.
+//		},
+//		"testdata/dev/bash-4.3/",
+//		opts...,
+//	)
+//
+//	opts = []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"..",
+//			"../include",
+//			"../lib",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//		EnableIncludeNext(),
+//	}
+//	if *oFailFast {
+//		opts = append(opts, CrashOnError())
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//#define SHELL
+//`,
+//		[]string{
+//			"-DSHELL",
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I..",
+//			"-I../include",
+//			"-I../lib",
+//		},
+//		[]string{
+//			"builtins.c",
+//			"common.c",
+//			"evalfile.c",
+//			"evalstring.c",
+//			"mkbuiltins.c",
+//			"psize.c",
+//		},
+//		"testdata/dev/bash-4.3/builtins",
+//		opts...,
+//	)
+//
+//	opts = []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"../..",
+//			"../../include",
+//			"../../lib",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//		EnableIncludeNext(),
+//	}
+//	if *oFailFast {
+//		opts = append(opts, CrashOnError())
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//#define SHELL
+//
+//void* __builtin_alloca(int);
+//`,
+//		[]string{
+//			"-DSHELL",
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I../..",
+//			"-I../../include",
+//			"-I../../lib",
+//		},
+//		[]string{
+//			"glob.c",
+//			"gmisc.c",
+//			"smatch.c",
+//			"strmatch.c",
+//			"xmbsrtowcs.c",
+//		},
+//		"testdata/dev/bash-4.3/lib/glob",
+//		opts...,
+//	)
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//#define SHELL
+//`,
+//		[]string{
+//			"-DSHELL",
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I../..",
+//			"-I../../include",
+//			"-I../../lib",
+//		},
+//		[]string{
+//			"casemod.c",
+//			"clktck.c",
+//			"clock.c",
+//			"eaccess.c",
+//			"fmtullong.c",
+//			"fmtulong.c",
+//			"fmtumax.c",
+//			"fnxform.c",
+//			"fpurge.c",
+//			"getenv.c",
+//			"input_avail.c",
+//			"itos.c",
+//			"mailstat.c",
+//			"makepath.c",
+//			"mbscasecmp.c",
+//			"mbschr.c",
+//			"mbscmp.c",
+//			"netconn.c",
+//			"netopen.c",
+//			"oslib.c",
+//			"pathcanon.c",
+//			"pathphys.c",
+//			"setlinebuf.c",
+//			"shmatch.c",
+//			"shmbchar.c",
+//			"shquote.c",
+//			"shtty.c",
+//			"snprintf.c",
+//			"spell.c",
+//			"stringlist.c",
+//			"stringvec.c",
+//			"strnlen.c",
+//			"strtrans.c",
+//			"timeval.c",
+//			"tmpfile.c",
+//			"uconvert.c",
+//			"ufuncs.c",
+//			"unicode.c",
+//			"wcsdup.c",
+//			"wcsnwidth.c",
+//			"winsize.c",
+//			"zcatfd.c",
+//			"zgetline.c",
+//			"zmapfd.c",
+//			"zread.c",
+//			"zwrite.c",
+//		},
+//		"testdata/dev/bash-4.3/lib/sh",
+//		opts...,
+//	)
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//#define SHELL
+//`,
+//		[]string{
+//			"-DSHELL",
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I../..",
+//			"-I../../include",
+//			"-I../../lib",
+//		},
+//		[]string{
+//			"bind.c",
+//			"callback.c",
+//			"colors.c",
+//			"compat.c",
+//			"complete.c",
+//			"display.c",
+//			"funmap.c",
+//			"histexpand.c",
+//			"histfile.c",
+//			"history.c",
+//			"histsearch.c",
+//			"input.c",
+//			"isearch.c",
+//			"keymaps.c",
+//			"kill.c",
+//			"macro.c",
+//			"mbutil.c",
+//			"misc.c",
+//			"nls.c",
+//			"parens.c",
+//			"parse-colors.c",
+//			"readline.c",
+//			"rltty.c",
+//			"savestring.c",
+//			"search.c",
+//			"shell.c",
+//			"signals.c",
+//			"terminal.c",
+//			"text.c",
+//			"tilde.c",
+//			"undo.c",
+//			"util.c",
+//			"vi_mode.c",
+//			"xfree.c",
+//			"xmalloc.c",
+//		},
+//		"testdata/dev/bash-4.3/lib/readline",
+//		opts...,
+//	)
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//#define SHELL
+//#define RCHECK
+//#define botch programming_error
+//
+//#define __builtin_memcpy(dest, src, n)
+//`,
+//		[]string{
+//			"-DSHELL",
+//			"-DHAVE_CONFIG_H",
+//			"-DRCHECK",
+//			"-Dbotch=programming_error",
+//			"-I.",
+//			"-I../..",
+//			"-I../../include",
+//			"-I../../lib",
+//		},
+//		[]string{
+//			"malloc.c",
+//			"trace.c",
+//			"stats.c",
+//			"table.c",
+//			"watch.c",
+//		},
+//		"testdata/dev/bash-4.3/lib/malloc",
+//		opts...,
+//	)
+//}
+//
+//func TestDevMake(t *testing.T) {
+//	predefined, includePaths, sysIncludePaths, err := HostConfig()
+//	if err != nil {
+//		t.Logf("skipping: %v", err)
+//		return
+//	}
+//
+//	opts := []Opt{
+//		IncludePaths([]string{
+//			".",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//		EnableIncludeNext(),
+//		EnableTypeOf(),
+//	}
+//	if *oFailFast {
+//		opts = append(opts, CrashOnError())
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define LOCALEDIR "/usr/local/share/locale"
+//#define LIBDIR "/usr/local/lib"
+//#define INCLUDEDIR "/usr/local/include"
+//#define HAVE_CONFIG_H
+//
+//#define __typeof typeof
+//
+//#undef __const
+//#define __const const
+//
+//void* __builtin_alloca(int);
+//`,
+//		[]string{
+//			"-DLOCALEDIR=\"/usr/local/share/locale\"",
+//			"-DLIBDIR=\"/usr/local/lib\"",
+//			"-DINCLUDEDIR=\"/usr/local/include\"",
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//		},
+//		[]string{
+//			"ar.c",
+//			"arscan.c",
+//			"commands.c",
+//			"default.c",
+//			"dir.c",
+//			"expand.c",
+//			"file.c",
+//			"function.c",
+//			"getopt.c",
+//			"getopt1.c",
+//			"guile.c",
+//			"hash.c",
+//			"implicit.c",
+//			"job.c",
+//			"load.c",
+//			"loadapi.c",
+//			"main.c",
+//			"misc.c",
+//			"output.c",
+//			"read.c",
+//			"remake.c",
+//			"remote-stub.c",
+//			"rule.c",
+//			"signame.c",
+//			"strcache.c",
+//			"variable.c",
+//			"version.c",
+//			"vpath.c",
+//		},
+//		"testdata/dev/make-4.1/",
+//		opts...,
+//	)
+//}
+//
+//func TestDevBc(t *testing.T) {
+//	predefined, includePaths, sysIncludePaths, err := HostConfig()
+//	if err != nil {
+//		t.Logf("skipping: %v", err)
+//		return
+//	}
+//
+//	opts := []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"..",
+//			"./../h",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//	}
+//	if *oFailFast {
+//		opts = append(opts, CrashOnError())
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//`,
+//		[]string{
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I..",
+//			"-I./../h",
+//		},
+//		[]string{
+//			"getopt.c",
+//			"getopt1.c",
+//			"vfprintf.c",
+//			//"number.c", // ? memset
+//		},
+//		"testdata/dev/bc-1.06/lib/",
+//		opts...,
+//	)
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//
+//#define __builtin_memcpy(dest, src, n)
+//
+//void* __builtin_alloca(int);
+//`,
+//		[]string{
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I..",
+//			"-I./../h",
+//		},
+//		[]string{
+//			"main.c",
+//			"bc.c",
+//			"scan.c",
+//			"execute.c",
+//			"load.c",
+//			"storage.c",
+//			"util.c",
+//			"global.c",
+//		},
+//		"testdata/dev/bc-1.06/bc",
+//		opts...,
+//	)
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//`,
+//		[]string{
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I..",
+//			"-I./../h",
+//		},
+//		[]string{
+//			"dc.c",
+//			"misc.c",
+//			"eval.c",
+//			"stack.c",
+//			"array.c",
+//			"numeric.c",
+//			"string.c",
+//		},
+//		"testdata/dev/bc-1.06/dc",
+//		opts...,
+//	)
+//}
+//
+//func TestDevEmacs(t *testing.T) {
+//	predefined, includePaths, sysIncludePaths, err := HostConfig()
+//	if err != nil {
+//		t.Logf("skipping: %v", err)
+//		return
+//	}
+//
+//	opts := []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"../lib",
+//			"../src",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAlignOf(),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//		EnableIncludeNext(),
+//		EnableTypeOf(),
+//	}
+//	if *oFailFast {
+//		opts = append(opts, CrashOnError())
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define HAVE_CONFIG_H
+//#define _GCC_MAX_ALIGN_T
+//#define _Noreturn
+//#define __getopt_argv_const
+//#define __inline__ inline
+//#define __typeof__ typeof
+//`,
+//		[]string{
+//			"-std=gnu99",
+//			"-DHAVE_CONFIG_H",
+//			"-I.",
+//			"-I../lib",
+//			"-I../src",
+//		},
+//		[]string{
+//			"acl-errno-valid.c",
+//			"allocator.c",
+//			"binary-io.c",
+//			"c-ctype.c",
+//			"c-strcasecmp.c",
+//			"c-strncasecmp.c",
+//			"careadlinkat.c",
+//			"close-stream.c",
+//			"count-one-bits.c",
+//			"count-trailing-zeros.c",
+//			"dtoastr.c",
+//			"dtotimespec.c",
+//			"fcntl.c",
+//			"file-has-acl.c",
+//			"filemode.c",
+//			"getopt.c",
+//			"getopt1.c",
+//			"gettime.c",
+//			"md5.c",
+//			"openat-die.c",
+//			"pipe2.c",
+//			"pthread_sigmask.c",
+//			"qcopy-acl.c",
+//			"qset-acl.c",
+//			"save-cwd.c",
+//			"sha1.c",
+//			"sha256.c",
+//			"sha512.c",
+//			"sig2str.c",
+//			"stat-time.c",
+//			"strftime.c",
+//			"timespec-add.c",
+//			"timespec-sub.c",
+//			"timespec.c",
+//			"u64.c",
+//			"unistd.c",
+//			"utimens.c",
+//		},
+//		"testdata/dev/emacs-24.5/lib",
+//		opts...,
+//	)
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define CTAGS
+//#define EMACS_NAME "GNU Emacs"
+//#define HAVE_CONFIG_H
+//#define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
+//#define VERSION "24.5"
+//#define _GCC_MAX_ALIGN_T
+//#define _Noreturn
+//#define __inline__ inline
+//#define __typeof__ typeof
+//#define __typeof typeof
+//
+//void* __builtin_alloca(int);
+//`,
+//		[]string{
+//			"-std=gnu99",
+//			"-I.",
+//			"-I../lib",
+//			"-I../src",
+//			"-DEMACS_NAME=\"GNU Emacs\"",
+//			"-DCTAGS",
+//			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
+//			"-DVERSION=\"24.5\"",
+//		},
+//		[]string{
+//			"./../src/regex.c",
+//			"./ebrowse.c",
+//			"./emacsclient.c",
+//			"./etags.c",
+//			"./hexl.c",
+//			"./make-docfile.c",
+//			"./movemail.c",
+//			"./pop.c",
+//			"./profile.c",
+//			"./test-distrib.c",
+//			"./update-game-score.c",
+//		},
+//		"testdata/dev/emacs-24.5/lib-src/",
+//		opts...,
+//	)
+//
+//	opts = []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"../lib",
+//			"/usr/include/gtk-3.0",
+//			"/usr/include/pango-1.0",
+//			"/usr/include/gio-unix-2.0/",
+//			"/usr/include/atk-1.0",
+//			"/usr/include/cairo",
+//			"/usr/include/gdk-pixbuf-2.0",
+//			"/usr/include/freetype2",
+//			"/usr/include/glib-2.0",
+//			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+//			"/usr/include/pixman-1",
+//			"/usr/include/libpng12",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		EnableAlignOf(),
+//		EnableAnonymousStructFields(),
+//		EnableAsm(),
+//		EnableDefineOmitCommaBeforeDDD(),
+//		EnableIncludeNext(),
+//		EnableStaticAssert(),
+//		EnableTypeOf(),
+//	}
+//
+//	testDev(
+//		t,
+//		predefined+testDevAdditionalPredefines+`
+//#define _GCC_MAX_ALIGN_T
+//#define _Noreturn
+//#define __inline__ inline
+//#define __typeof typeof
+//#define __typeof__ typeof
+//#define emacs
+//#define _Alignas(x)
+//
+//void* __builtin_alloca(int);
+//void __builtin_unreachable (void);
+//`,
+//		[]string{
+//			"-std=gnu99",
+//			"-Demacs",
+//			"-I.",
+//			"-I../lib",
+//			"-I/usr/include/gtk-3.0",
+//			"-I/usr/include/pango-1.0",
+//			"-I/usr/include/gio-unix-2.0/",
+//			"-I/usr/include/atk-1.0",
+//			"-I/usr/include/cairo",
+//			"-I/usr/include/gdk-pixbuf-2.0",
+//			"-I/usr/include/freetype2",
+//			"-I/usr/include/glib-2.0",
+//			"-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+//			"-I/usr/include/pixman-1",
+//			"-I/usr/include/libpng12",
+//		},
+//		[]string{
+//			"atimer.c",
+//			"bidi.c",
+//			"callint.c",
+//			"callproc.c",
+//			"casetab.c",
+//			"category.c",
+//			"cm.c",
+//			"composite.c",
+//			"decompress.c",
+//			"doc.c",
+//			"fileio.c",
+//			"filelock.c",
+//			"floatfns.c",
+//			"fontset.c",
+//			"frame.c",
+//			"fringe.c",
+//			"gfilenotify.c",
+//			"gnutls.c",
+//			"gtkutil.c",
+//			"indent.c",
+//			"intervals.c",
+//			"keyboard.c",
+//			"lastfile.c",
+//			"macros.c",
+//			"marker.c",
+//			"menu.c",
+//			"minibuf.c",
+//			"profiler.c",
+//			"region-cache.c",
+//			"scroll.c",
+//			"sound.c",
+//			"sysdep.c",
+//			"terminfo.c",
+//			"undo.c",
+//			"vm-limit.c",
+//			"window.c",
+//			"xfaces.c",
+//			"xfns.c",
+//			"xgselect.c",
+//			"xmenu.c",
+//			"xml.c",
+//			"xrdb.c",
+//			"xselect.c",
+//			"xsmfns.c",
+//			//"alloc.c",
+//			//"buffer.c",
+//			//"bytecode.c",
+//			//"casefiddle.c",
+//			//"ccl.c",
+//			//"character.c",
+//			//"charset.c",
+//			//"chartab.c",
+//			//"cmds.c",
+//			//"coding.c",
+//			//"data.c",
+//			//"dired.c",
+//			//"dispnew.c",
+//			//"doprnt.c",
+//			//"editfns.c",
+//			//"emacs.c",
+//			//"emacsgtkfixed.c",
+//			//"eval.c",
+//			//"fns.c",
+//			//"font.c",
+//			//"ftfont.c",
+//			//"ftxfont.c",
+//			//"image.c",
+//			//"insdel.c",
+//			//"keymap.c",
+//			//"lread.c",
+//			//"print.c",
+//			//"process.c",
+//			//"regex.c",
+//			//"search.c",
+//			//"syntax.c",
+//			//"term.c",
+//			//"terminal.c",
+//			//"textprop.c",
+//			//"unexelf.c",
+//			//"xdisp.c",
+//			//"xfont.c",
+//			//"xftfont.c",
+//			//"xsettings.c",
+//			//"xterm.c",
+//		},
+//		"testdata/dev/emacs-24.5/src/",
+//		opts...,
+//	)
+//}
 
 func TestPPParse1(t *testing.T) {
 	path := *o1

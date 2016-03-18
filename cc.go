@@ -36,6 +36,31 @@ import (
 	"github.com/cznic/xc"
 )
 
+const (
+	fakeTime = "__TESTING_TIME__"
+
+	gccPredefine = `
+#define __PRETTY_FUNCTION__ __func__
+#define __asm asm
+#define __asm__ asm
+#define __attribute__(x)
+#define __builtin_offsetof(type, member) ((size_t)(&((type *)0)->member))
+#define __builtin_va_arg(ap, type) ( *( type* )ap )
+#define __builtin_va_end(x)
+#define __builtin_va_list void*
+#define __builtin_va_start(x, y)
+#define __extension__
+#define __inline inline
+#define __inline__ inline
+#define __restrict
+#define __restrict__
+
+unsigned __builtin_bswap32 (unsigned x);
+unsigned long long __builtin_bswap64 (unsigned long long x);
+unsigned short __builtin_bswap16 (unsigned short x);
+`
+)
+
 // HostConfig returns the system C compiler configuration, or an error, if any.
 // The configuration is obtained by running the 'cpp' command. For the
 // predefined macros list the '-dM' options is added. For the include paths
@@ -91,6 +116,7 @@ func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePath
 }
 
 type tweaks struct {
+	devTest                        bool //
 	disablePredefinedLineMacro     bool // __LINE__ will not expand.
 	enableAlignof                  bool //
 	enableAnonymousStructFields    bool //
@@ -104,6 +130,7 @@ type tweaks struct {
 	enableTypeof                   bool //
 	enableUndefExtraTokens         bool // #undef foo(bar)
 	enableWarnings                 bool // #warning
+	gccEmu                         bool //
 	preprocessOnly                 bool //
 }
 
@@ -115,13 +142,7 @@ func exampleAST(rule int, src string) interface{} {
 		len(src)+1, // Plus final injected NL
 		bytes.NewBufferString(src),
 		report,
-		&tweaks{
-			enableAlignof:      true,
-			enableAsm:          true,
-			enableIncludeNext:  true,
-			enableStaticAssert: true,
-			enableTypeof:       true,
-		},
+		&tweaks{gccEmu: true},
 	)
 	lx.model = &Model{ // 64 bit
 		Items: map[Kind]ModelItem{
@@ -327,9 +348,14 @@ func EnableStaticAssert() Opt { return func(lx *lexer) { lx.tweaks.enableStaticA
 func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }
 
 func disableWarnings() Opt      { return func(lx *lexer) { lx.tweaks.enableWarnings = false } }
+func gccEmu() Opt               { return func(lx *lexer) { lx.tweaks.gccEmu = true } }
 func getTweaks(dst *tweaks) Opt { return func(lx *lexer) { *dst = *lx.tweaks } }
 func nopOpt() Opt               { return func(*lexer) {} }
 func preprocessOnly() Opt       { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
+
+func devTest() Opt {
+	return func(lx *lexer) { lx.tweaks.devTest = true; lx.tweaks.gccEmu = true }
+}
 
 func disablePredefinedLineMacro() Opt {
 	return func(lx *lexer) { lx.tweaks.disablePredefinedLineMacro = true }
@@ -356,6 +382,29 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 	}
 	if err := report.Errors(true); err != nil {
 		return nil, err
+	}
+
+	if lx0.tweaks.devTest {
+		predefine += fmt.Sprintf(`
+#define __DATE__ %q
+#define __TIME__ %q
+`, xc.Dict.S(idTDate), fakeTime)
+	}
+
+	if t := lx0.tweaks; t.gccEmu {
+		t.enableAlignof = true
+		t.enableAnonymousStructFields = true
+		t.enableAsm = true
+		t.enableDefineOmitCommaBeforeDDD = true
+		t.enableDlrInIdentifiers = true
+		t.enableEmptyDefine = true
+		t.enableIncludeNext = true
+		t.enableStaticAssert = true
+		t.enableTypeof = true
+		t.enableUndefExtraTokens = true
+		t.enableWarnings = false
+
+		predefine += gccPredefine
 	}
 
 	m.initialize(lx0)
