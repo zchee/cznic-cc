@@ -1495,6 +1495,7 @@ func TestDevEmacs(t *testing.T) {
 		IncludePaths(includePaths),
 		SysIncludePaths(sysIncludePaths),
 		EnableAlignOf(),
+		EnableAnonymousStructFields(),
 		EnableAsm(),
 		EnableIncludeNext(),
 		EnableTypeOf(),
@@ -1509,8 +1510,9 @@ func TestDevEmacs(t *testing.T) {
 #define HAVE_CONFIG_H
 #define _GCC_MAX_ALIGN_T
 #define _Noreturn
-#define __typeof__ typeof
+#define __getopt_argv_const
 #define __inline__ inline
+#define __typeof__ typeof
 `,
 		[]string{
 			"-std=gnu99",
