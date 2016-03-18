@@ -941,8 +941,10 @@ func (m *Model) binOpType(a, b Type) Type {
 		}
 	case Char:
 		switch bk {
-		case Char, Int:
+		case Char, Int, Enum:
 			return m.IntType
+		case Long:
+			return m.LongType
 		case UChar, UInt:
 			return m.UIntType
 		case LongLong:
@@ -956,6 +958,8 @@ func (m *Model) binOpType(a, b Type) Type {
 		switch bk {
 		case SChar, Int:
 			return m.IntType
+		case UChar:
+			return m.UIntType
 		default:
 			panic(bk)
 		}

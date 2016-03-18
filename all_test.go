@@ -1558,6 +1558,49 @@ func TestDevEmacs(t *testing.T) {
 		"testdata/dev/emacs-24.5/lib",
 		opts...,
 	)
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define CTAGS
+#define EMACS_NAME "GNU Emacs"
+#define HAVE_CONFIG_H
+#define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
+#define VERSION "24.5"
+#define _GCC_MAX_ALIGN_T
+#define _Noreturn
+#define __inline__ inline
+#define __typeof__ typeof
+#define __typeof typeof
+
+void* __builtin_alloca(int);
+`,
+		[]string{
+			"-std=gnu99",
+			"-I.",
+			"-I../lib",
+			"-I../src",
+			"-DEMACS_NAME=\"GNU Emacs\"",
+			"-DCTAGS",
+			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
+			"-DVERSION=\"24.5\"",
+		},
+		[]string{
+			"./../src/regex.c",
+			"./etags.c",
+			"./emacsclient.c",
+			"./ebrowse.c",
+			"./profile.c",
+			"./pop.c",
+			"./movemail.c",
+			"./hexl.c",
+			"./update-game-score.c",
+			"./test-distrib.c",
+			"./make-docfile.c",
+		},
+		"testdata/dev/emacs-24.5/lib-src/",
+		opts...,
+	)
 }
 
 func TestPPParse1(t *testing.T) {
