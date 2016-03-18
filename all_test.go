@@ -1506,6 +1506,7 @@ func TestDevEmacs(t *testing.T) {
 #define _GCC_MAX_ALIGN_T
 #define _Noreturn
 #define __typeof__ typeof
+#define __inline__ inline
 `,
 		[]string{
 			"-std=gnu99",
@@ -1539,7 +1540,9 @@ func TestDevEmacs(t *testing.T) {
 			"qcopy-acl.c",
 			"qset-acl.c",
 			"save-cwd.c",
+			"sig2str.c",
 			"stat-time.c",
+			"strftime.c",
 			"timespec-add.c",
 			"timespec-sub.c",
 			"timespec.c",
@@ -1547,11 +1550,9 @@ func TestDevEmacs(t *testing.T) {
 			"unistd.c",
 			"utimens.c",
 			//"md5.c", // _Alignof
-			//"sha1.c",
-			//"sha256.c",
-			//"sha512.c",
-			//"sig2str.c",
-			//"strftime.c",
+			//"sha1.c", // _Alignof
+			//"sha256.c", // _Alignof
+			//"sha512.c", // _Alignof
 		},
 		"testdata/dev/emacs-24.5/lib",
 		opts...,
