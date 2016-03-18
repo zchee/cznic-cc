@@ -40,7 +40,6 @@ const (
 	fakeTime = "__TESTING_TIME__"
 
 	gccPredefine = `
-#define __PRETTY_FUNCTION__ __func__
 #define __asm asm
 #define __asm__ asm
 #define __attribute__(x)
@@ -52,6 +51,7 @@ const (
 #define __extension__
 #define __inline inline
 #define __inline__ inline
+#define __PRETTY_FUNCTION__ __func__
 #define __restrict
 #define __restrict__
 
