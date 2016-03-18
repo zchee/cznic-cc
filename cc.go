@@ -92,6 +92,7 @@ func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePath
 
 type tweaks struct {
 	disablePredefinedLineMacro     bool // __LINE__ will not expand.
+	enableAlignof                  bool //
 	enableAnonymousStructFields    bool //
 	enableAsm                      bool //
 	enableDefineOmitCommaBeforeDDD bool // #define foo(a, b...)
@@ -114,6 +115,7 @@ func exampleAST(rule int, src string) interface{} {
 		bytes.NewBufferString(src),
 		report,
 		&tweaks{
+			enableAlignof:     true,
 			enableAsm:         true,
 			enableIncludeNext: true,
 			enableTypeof:      true,
@@ -312,6 +314,9 @@ func EnableAsm() Opt { return func(lx *lexer) { lx.tweaks.enableAsm = true } }
 
 // EnableTypeOf enables recognizing the reserved word typeof.
 func EnableTypeOf() Opt { return func(lx *lexer) { lx.tweaks.enableTypeof = true } }
+
+// EnableAlignOf enables recognizing the reserved word _Alignof.
+func EnableAlignOf() Opt { return func(lx *lexer) { lx.tweaks.enableAlignof = true } }
 
 // CrashOnError is an debugging option.
 func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }

@@ -1491,9 +1491,10 @@ func TestDevEmacs(t *testing.T) {
 		}),
 		IncludePaths(includePaths),
 		SysIncludePaths(sysIncludePaths),
+		EnableAlignOf(),
+		EnableAsm(),
 		EnableIncludeNext(),
 		EnableTypeOf(),
-		EnableAsm(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
@@ -1534,12 +1535,16 @@ func TestDevEmacs(t *testing.T) {
 			"getopt.c",
 			"getopt1.c",
 			"gettime.c",
+			"md5.c",
 			"openat-die.c",
 			"pipe2.c",
 			"pthread_sigmask.c",
 			"qcopy-acl.c",
 			"qset-acl.c",
 			"save-cwd.c",
+			"sha1.c",
+			"sha256.c",
+			"sha512.c",
 			"sig2str.c",
 			"stat-time.c",
 			"strftime.c",
@@ -1549,10 +1554,6 @@ func TestDevEmacs(t *testing.T) {
 			"u64.c",
 			"unistd.c",
 			"utimens.c",
-			//"md5.c", // _Alignof
-			//"sha1.c", // _Alignof
-			//"sha256.c", // _Alignof
-			//"sha512.c", // _Alignof
 		},
 		"testdata/dev/emacs-24.5/lib",
 		opts...,

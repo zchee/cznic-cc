@@ -429,6 +429,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case ULong:
 		switch x := v.(type) {
+		case int:
+			switch w {
+			case 8:
+				return uint64(x)
+			default:
+				panic(w)
+			}
 		case int32:
 			switch w {
 			case 8:

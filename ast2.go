@@ -1590,6 +1590,38 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		55: // Expression "|=" Expression
 		m.checkIntegerType(lx, n.Expression, n.Expression2)
 		n.Type = n.Expression.Type
+	case 56: // "_Alignof" '(' TypeName ')'
+		n.Type = lx.model.getSizeType(lx, n.Token)
+		t := n.TypeName.Type
+		el := true
+	again:
+		switch t.Kind() {
+		case Undefined, Function:
+			t = nil
+		case Struct, Union:
+			if _, isIncomplete := t.Members(); isIncomplete {
+				t = nil
+				break
+			}
+		case Array:
+			if el {
+				el = false
+				t = t.Element()
+				goto again
+			}
+		}
+		if t == nil {
+			lx.report.Err(n.TypeName.Pos(), "invalid argument of _Alignof")
+			n.Value = lx.model.MustConvert(1, n.Type)
+			break
+		}
+
+		al := t.AlignOf()
+		if al < 0 {
+			lx.report.Err(n.TypeName.Pos(), "invalid argument of _Alignof")
+			al = 1
+		}
+		n.Value = lx.model.MustConvert(al, n.Type)
 	default:
 		//dbg("", PrettyString(n))
 		panic(n.Case)

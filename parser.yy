@@ -93,6 +93,7 @@ import (
 	/*yy:token "\n#undef"        */	PPUNDEF			"#undef"
 
 	ADDASSIGN			"+="
+	ALIGNOF				"_Alignof"
 	ANDAND				"&&"
 	ANDASSIGN			"&="
 	ARROW				"->"
@@ -403,6 +404,7 @@ Expression:
 |	Expression "&=" Expression
 |	Expression "^=" Expression
 |	Expression "|=" Expression
+|	"_Alignof" '(' TypeName ')'
 
 
 ExpressionOpt:

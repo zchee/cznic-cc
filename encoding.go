@@ -358,6 +358,7 @@ var (
 
 	id0                = dict.SID("0")
 	id1                = dict.SID("1")
+	idAlignof          = dict.SID("_Alignof")
 	idAsm              = dict.SID("asm")
 	idChar             = dict.SID("char")
 	idConst            = dict.SID("const")
@@ -471,6 +472,11 @@ func toC(t xc.Token, tw *tweaks) xc.Token {
 
 	if x, ok := cwords[t.Val]; ok {
 		t.Rune = x
+	}
+
+	if tw.enableAlignof && t.Val == idAlignof {
+		t.Rune = ALIGNOF
+		return t
 	}
 
 	if tw.enableTypeof && t.Val == idTypeof {

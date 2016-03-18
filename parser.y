@@ -86,6 +86,7 @@ import (
 	'}'
 	'~'
 	ADDASSIGN                    "+="
+	ALIGNOF                      "_Alignof"
 	ANDAND                       "&&"
 	ANDASSIGN                    "&="
 	ARROW                        "->"
@@ -885,6 +886,16 @@ Expression:
 			Expression:   $1.(*Expression),
 			Token:        $2,
 			Expression2:  $3.(*Expression),
+		}
+	}
+|	"_Alignof" '(' TypeName ')'
+	{
+		$$ = &Expression{
+			Case:      56,
+			Token:     $1,
+			Token2:    $2,
+			TypeName:  $3.(*TypeName),
+			Token3:    $4,
 		}
 	}
 
