@@ -1492,6 +1492,7 @@ func TestDevEmacs(t *testing.T) {
 		IncludePaths(includePaths),
 		SysIncludePaths(sysIncludePaths),
 		EnableIncludeNext(),
+		EnableTypeOf(),
 	}
 	if *oFailFast {
 		opts = append(opts, CrashOnError())
@@ -1503,6 +1504,7 @@ func TestDevEmacs(t *testing.T) {
 #define HAVE_CONFIG_H
 #define _GCC_MAX_ALIGN_T
 #define _Noreturn
+#define __typeof__ typeof
 `,
 		[]string{
 			"-std=gnu99",
@@ -1522,6 +1524,7 @@ func TestDevEmacs(t *testing.T) {
 			"close-stream.c",
 			"count-one-bits.c",
 			"count-trailing-zeros.c",
+			"dtoastr.c",
 			"dtotimespec.c",
 			"fcntl.c",
 			"file-has-acl.c",
@@ -1541,7 +1544,6 @@ func TestDevEmacs(t *testing.T) {
 			"u64.c",
 			"unistd.c",
 			"utimens.c",
-			//"dtoastr.c",
 			//"md5.c",
 			//"pthread_sigmask.c",
 			//"sha1.c",
