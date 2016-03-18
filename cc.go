@@ -99,6 +99,7 @@ type tweaks struct {
 	enableDlrInIdentifiers         bool // foo$bar
 	enableEmptyDefine              bool // #define
 	enableIncludeNext              bool //
+	enableStaticAssert             bool // _Static_assert
 	enableTrigraphs                bool // ??=define foo(bar)
 	enableTypeof                   bool //
 	enableUndefExtraTokens         bool // #undef foo(bar)
@@ -115,10 +116,11 @@ func exampleAST(rule int, src string) interface{} {
 		bytes.NewBufferString(src),
 		report,
 		&tweaks{
-			enableAlignof:     true,
-			enableAsm:         true,
-			enableIncludeNext: true,
-			enableTypeof:      true,
+			enableAlignof:      true,
+			enableAsm:          true,
+			enableIncludeNext:  true,
+			enableStaticAssert: true,
+			enableTypeof:       true,
 		},
 	)
 	lx.model = &Model{ // 64 bit
@@ -232,7 +234,7 @@ func EnableIncludeNext() Opt {
 
 // EnableDefineOmitCommaBeforeDDD makes the parser accept non standard
 //
-//	#define foo(a, b...)
+//	#define foo(a, b...) // Note the missing comma after identifier list.
 func EnableDefineOmitCommaBeforeDDD() Opt {
 	return func(l *lexer) { l.tweaks.enableDefineOmitCommaBeforeDDD = true }
 }
@@ -317,6 +319,9 @@ func EnableTypeOf() Opt { return func(lx *lexer) { lx.tweaks.enableTypeof = true
 
 // EnableAlignOf enables recognizing the reserved word _Alignof.
 func EnableAlignOf() Opt { return func(lx *lexer) { lx.tweaks.enableAlignof = true } }
+
+// EnableStaticAssert enables recognizing the reserved word _Static_assert.
+func EnableStaticAssert() Opt { return func(lx *lexer) { lx.tweaks.enableStaticAssert = true } }
 
 // CrashOnError is an debugging option.
 func CrashOnError() Opt { return func(lx *lexer) { lx.report.PanicOnError = true } }

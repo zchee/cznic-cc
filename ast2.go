@@ -1450,12 +1450,12 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			ak := at.Kind()
 			bk := bt.Kind()
 
-			if ak == Enum && IsIntType(bt) {
+			if (ak == Enum || ak == Bool) && IsIntType(bt) {
 				n.Type = at
 				break
 			}
 
-			if bk == Enum && IsIntType(at) {
+			if (bk == Enum || bk == Bool) && IsIntType(at) {
 				n.Type = bt
 				break
 			}

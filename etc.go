@@ -1482,7 +1482,15 @@ func finishBitField(lx *lexer) {
 	}
 	switch {
 	case sc.isUnion:
-		panic("TODO")
+		off := 0
+		sc.offset = align(sc.offset, al)
+		if pd := sc.prevStructDeclarator; pd != nil {
+			pd.padding = sc.offset - off
+			pd.bitOffset = sc.bitOffset
+			pd.offsetOf = sc.offset
+		}
+		sc.bitOffset = 0
+		sc.bitFieldGroup++
 	default:
 		off := sc.offset
 		sc.offset = align(sc.offset, al)

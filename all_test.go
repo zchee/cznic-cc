@@ -152,7 +152,8 @@ func newTestReport() *xc.Report {
 func init() {
 	isTesting = true
 	log.SetFlags(log.Llongfile)
-	flag.BoolVar(&debugMacros, "dbgm", false, "debug object-like macros")
+	flag.BoolVar(&debugIncludes, "dbgi", false, "debug include searches")
+	flag.BoolVar(&debugMacros, "dbgm", false, "debug macros")
 	flag.BoolVar(&debugTypeStrings, "xtypes", false, "add debug info to type strings")
 	flag.BoolVar(&isGenerating, "generating", false, "go generate is executing (false).")
 	flag.IntVar(&yyDebug, "yydebug", 0, "")
@@ -610,6 +611,8 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 			return
 		}
 	}
+
+	xc.Files = xc.NewFileCentral()
 
 	if *oTrace {
 		fmt.Println(fp)
@@ -1587,18 +1590,166 @@ void* __builtin_alloca(int);
 		},
 		[]string{
 			"./../src/regex.c",
-			"./etags.c",
-			"./emacsclient.c",
 			"./ebrowse.c",
-			"./profile.c",
-			"./pop.c",
-			"./movemail.c",
+			"./emacsclient.c",
+			"./etags.c",
 			"./hexl.c",
-			"./update-game-score.c",
-			"./test-distrib.c",
 			"./make-docfile.c",
+			"./movemail.c",
+			"./pop.c",
+			"./profile.c",
+			"./test-distrib.c",
+			"./update-game-score.c",
 		},
 		"testdata/dev/emacs-24.5/lib-src/",
+		opts...,
+	)
+
+	return //TODO
+
+	opts = []Opt{
+		IncludePaths([]string{
+			".",
+			"../lib",
+			"/usr/include/gtk-3.0",
+			"/usr/include/pango-1.0",
+			"/usr/include/gio-unix-2.0/",
+			"/usr/include/atk-1.0",
+			"/usr/include/cairo",
+			"/usr/include/gdk-pixbuf-2.0",
+			"/usr/include/freetype2",
+			"/usr/include/glib-2.0",
+			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+			"/usr/include/pixman-1",
+			"/usr/include/libpng12",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableAlignOf(),
+		EnableAsm(),
+		EnableDefineOmitCommaBeforeDDD(),
+		EnableIncludeNext(),
+		EnableStaticAssert(),
+		EnableTypeOf(),
+	}
+
+	testDev(
+		t,
+		predefined+testDevAdditionalPredefines+`
+#define _GCC_MAX_ALIGN_T
+#define _Noreturn
+#define __inline__ inline
+#define __typeof typeof
+#define __typeof__ typeof
+#define emacs
+
+void* __builtin_alloca(int);
+void __builtin_unreachable (void);
+`,
+		[]string{
+			"-std=gnu99",
+			"-Demacs",
+			"-I.",
+			"-I../lib",
+			"-I/usr/include/gtk-3.0",
+			"-I/usr/include/pango-1.0",
+			"-I/usr/include/gio-unix-2.0/",
+			"-I/usr/include/atk-1.0",
+			"-I/usr/include/cairo",
+			"-I/usr/include/gdk-pixbuf-2.0",
+			"-I/usr/include/freetype2",
+			"-I/usr/include/glib-2.0",
+			"-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+			"-I/usr/include/pixman-1",
+			"-I/usr/include/libpng12",
+		},
+		[]string{
+			"atimer.c",
+			"bidi.c",
+			"buffer.c",
+			"bytecode.c",
+			"callint.c",
+			"callproc.c",
+			"casefiddle.c",
+			"casetab.c",
+			"category.c",
+			"ccl.c",
+			"character.c",
+			"charset.c",
+			"chartab.c",
+			"cm.c",
+			"cmds.c",
+			"coding.c",
+			"composite.c",
+			"data.c",
+			"decompress.c",
+			"dired.c",
+			"dispnew.c",
+			"doc.c",
+			"doprnt.c",
+			"editfns.c",
+			"emacs.c",
+			"emacsgtkfixed.c",
+			"eval.c",
+			"fileio.c",
+			"filelock.c",
+			"floatfns.c",
+			"fns.c",
+			"font.c",
+			"fontset.c",
+			"frame.c",
+			"fringe.c",
+			"ftfont.c",
+			"ftxfont.c",
+			"gfilenotify.c",
+			"gnutls.c",
+			"gtkutil.c",
+			"image.c",
+			"indent.c",
+			"insdel.c",
+			"intervals.c",
+			"keyboard.c",
+			"keymap.c",
+			"lastfile.c",
+			"lread.c",
+			"macros.c",
+			"marker.c",
+			"menu.c",
+			"minibuf.c",
+			"print.c",
+			"process.c",
+			"profiler.c",
+			"regex.c",
+			"region-cache.c",
+			"scroll.c",
+			"search.c",
+			"sound.c",
+			"syntax.c",
+			"sysdep.c",
+			"term.c",
+			"terminal.c",
+			"terminfo.c",
+			"textprop.c",
+			"undo.c",
+			"unexelf.c",
+			"vm-limit.c",
+			"window.c",
+			"xdisp.c",
+			"xfaces.c",
+			"xfns.c",
+			"xfont.c",
+			"xftfont.c",
+			"xgselect.c",
+			"xmenu.c",
+			"xml.c",
+			"xrdb.c",
+			"xselect.c",
+			"xsettings.c",
+			"xsmfns.c",
+			"xterm.c",
+			//"alloc.c",
+		},
+		"testdata/dev/emacs-24.5/src/",
 		opts...,
 	)
 }

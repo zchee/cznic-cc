@@ -591,20 +591,19 @@ func (n *ConstantExpression) Pos() token.Pos {
 //
 //	ControlLine:
 //	        PPDEFINE IDENTIFIER ReplacementList
-//	|       PPDEFINE IDENTIFIER_LPAREN "..." ')' ReplacementList                                // Case 1
-//	|       PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' "..." ')' ReplacementList             // Case 2
-//	|       PPDEFINE IDENTIFIER_LPAREN IdentifierListOpt ')' ReplacementList                    // Case 3
-//	|       PPERROR PPTokenListOpt                                                              // Case 4
-//	|       PPHASH_NL                                                                           // Case 5
-//	|       PPINCLUDE PPTokenList '\n'                                                          // Case 6
-//	|       PPLINE PPTokenList '\n'                                                             // Case 7
-//	|       PPPRAGMA PPTokenListOpt                                                             // Case 8
-//	|       PPUNDEF IDENTIFIER '\n'                                                             // Case 9
-//	|       PPDEFINE IDENTIFIER_LPAREN IDENTIFIER "..." ')' ReplacementList                     // Case 10
-//	|       PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' IDENTIFIER "..." ')' ReplacementList  // Case 11
-//	|       PPDEFINE '\n'                                                                       // Case 12
-//	|       PPUNDEF IDENTIFIER PPTokenList '\n'                                                 // Case 13
-//	|       PPINCLUDE_NEXT PPTokenList '\n'                                                     // Case 14
+//	|       PPDEFINE IDENTIFIER_LPAREN "..." ')' ReplacementList                     // Case 1
+//	|       PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' "..." ')' ReplacementList  // Case 2
+//	|       PPDEFINE IDENTIFIER_LPAREN IdentifierListOpt ')' ReplacementList         // Case 3
+//	|       PPERROR PPTokenListOpt                                                   // Case 4
+//	|       PPHASH_NL                                                                // Case 5
+//	|       PPINCLUDE PPTokenList '\n'                                               // Case 6
+//	|       PPLINE PPTokenList '\n'                                                  // Case 7
+//	|       PPPRAGMA PPTokenListOpt                                                  // Case 8
+//	|       PPUNDEF IDENTIFIER '\n'                                                  // Case 9
+//	|       PPDEFINE IDENTIFIER_LPAREN IdentifierList "..." ')' ReplacementList      // Case 10
+//	|       PPDEFINE '\n'                                                            // Case 11
+//	|       PPUNDEF IDENTIFIER PPTokenList '\n'                                      // Case 12
+//	|       PPINCLUDE_NEXT PPTokenList '\n'                                          // Case 13
 type ControlLine struct {
 	Case              int
 	IdentifierList    *IdentifierList
@@ -617,7 +616,6 @@ type ControlLine struct {
 	Token3            xc.Token
 	Token4            xc.Token
 	Token5            xc.Token
-	Token6            xc.Token
 }
 
 func (n *ControlLine) fragment() interface{} { return n }
@@ -1612,13 +1610,16 @@ func (n *ExpressionStatement) Pos() token.Pos {
 //
 //	ExternalDeclaration:
 //	        FunctionDefinition
-//	|       Declaration              // Case 1
-//	|       BasicAssemblerStatement  // Case 2
+//	|       Declaration                  // Case 1
+//	|       BasicAssemblerStatement ';'  // Case 2
+//	|       StaticAssert                 // Case 3
 type ExternalDeclaration struct {
 	BasicAssemblerStatement *BasicAssemblerStatement
 	Case                    int
 	Declaration             *Declaration
 	FunctionDefinition      *FunctionDefinition
+	StaticAssert            *StaticAssert
+	Token                   xc.Token
 }
 
 func (n *ExternalDeclaration) fragment() interface{} { return n }
@@ -1637,6 +1638,8 @@ func (n *ExternalDeclaration) Pos() token.Pos {
 		return n.Declaration.Pos()
 	case 0:
 		return n.FunctionDefinition.Pos()
+	case 3:
+		return n.StaticAssert.Pos()
 	default:
 		panic("internal error")
 	}
@@ -2539,6 +2542,32 @@ func (n *Statement) Pos() token.Pos {
 	default:
 		panic("internal error")
 	}
+}
+
+// StaticAssert represents data reduced by production:
+//
+//	StaticAssert:
+//	        "_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'
+type StaticAssert struct {
+	ConstantExpression *ConstantExpression
+	Token              xc.Token
+	Token2             xc.Token
+	Token3             xc.Token
+	Token4             xc.Token
+	Token5             xc.Token
+	Token6             xc.Token
+}
+
+func (n *StaticAssert) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *StaticAssert) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *StaticAssert) Pos() token.Pos {
+	return n.Token.Pos()
 }
 
 // StorageClassSpecifier represents data reduced by productions:

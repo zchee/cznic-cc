@@ -166,6 +166,7 @@ import (
 	SIGNED                       "signed"
 	SIZEOF                       "sizeof"
 	STATIC                       "static"
+	STATIC_ASSERT                "_Static_assert"
 	STRINGLITERAL                "string literal"
 	STRUCT                       "struct"
 	SUBASSIGN                    "-="
@@ -265,6 +266,7 @@ import (
 	SpecifierQualifierListOpt    "optional specifier qualifier list"
 	Start
 	Statement                    "statement"
+	StaticAssert                 "static assert"
 	StorageClassSpecifier        "storage class specifier"
 	StructDeclaration            "struct declaration"
 	StructDeclarationList        "struct declaration list"
@@ -3030,11 +3032,19 @@ ExternalDeclaration:
 			Declaration:  $1.(*Declaration),
 		}
 	}
-|	BasicAssemblerStatement
+|	BasicAssemblerStatement ';'
 	{
 		$$ = &ExternalDeclaration{
 			Case:                     2,
 			BasicAssemblerStatement:  $1.(*BasicAssemblerStatement),
+			Token:                    $2,
+		}
+	}
+|	StaticAssert
+	{
+		$$ = &ExternalDeclaration{
+			Case:          3,
+			StaticAssert:  $1.(*StaticAssert),
 		}
 	}
 
@@ -3344,6 +3354,31 @@ AssemblerStatement:
 		}
 	}
 
+StaticAssert:
+	"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'
+	{
+		lx := yylex.(*lexer)
+		lhs := &StaticAssert{
+			Token:               $1,
+			Token2:              $2,
+			ConstantExpression:  $3.(*ConstantExpression),
+			Token3:              $4,
+			Token4:              $5,
+			Token5:              $6,
+			Token6:              $7,
+		}
+		$$ = lhs
+		ce := lhs.ConstantExpression
+		if ce.Type == nil || ce.Type.Kind() == Undefined || ce.Value == nil || !IsIntType(ce.Type) {
+			lx.report.Err(ce.Pos(), "invalid static assert expression (have '%v')", ce.Type)
+			break
+		}
+
+		if !isNonZero(ce.Value) {
+			lx.report.ErrTok(lhs.Token, "%s", lhs.Token4.S())
+		}
+	}
+
 PreprocessingFile:
 	GroupList
 	{
@@ -3606,16 +3641,16 @@ ControlLine:
 			Token3:  $3,
 		}
 	}
-|	PPDEFINE IDENTIFIER_LPAREN IDENTIFIER "..." ')' ReplacementList
+|	PPDEFINE IDENTIFIER_LPAREN IdentifierList "..." ')' ReplacementList
 	{
 		lx := yylex.(*lexer)
 		lhs := &ControlLine{
 			Case:             10,
 			Token:            $1,
 			Token2:           $2,
-			Token3:           $3,
-			Token4:           $4,
-			Token5:           $5,
+			IdentifierList:   $3.(*IdentifierList).reverse(),
+			Token3:           $4,
+			Token4:           $5,
 			ReplacementList:  $6,
 		}
 		$$ = lhs
@@ -3623,30 +3658,11 @@ ControlLine:
 			lx.report.ErrTok(lhs.Token4, "missing comma before \"...\"")
 		}
 	}
-|	PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' IDENTIFIER "..." ')' ReplacementList
-	{
-		lx := yylex.(*lexer)
-		lhs := &ControlLine{
-			Case:             11,
-			Token:            $1,
-			Token2:           $2,
-			IdentifierList:   $3.(*IdentifierList).reverse(),
-			Token3:           $4,
-			Token4:           $5,
-			Token5:           $6,
-			Token6:           $7,
-			ReplacementList:  $8,
-		}
-		$$ = lhs
-		if !lx.tweaks.enableDefineOmitCommaBeforeDDD {
-			lx.report.ErrTok(lhs.Token6, "missing comma before \"...\"")
-		}
-	}
 |	PPDEFINE '\n'
 	{
 		lx := yylex.(*lexer)
 		lhs := &ControlLine{
-			Case:    12,
+			Case:    11,
 			Token:   $1,
 			Token2:  $2,
 		}
@@ -3659,7 +3675,7 @@ ControlLine:
 	{
 		lx := yylex.(*lexer)
 		lhs := &ControlLine{
-			Case:         13,
+			Case:         12,
 			Token:        $1,
 			Token2:       $2,
 			PPTokenList:  $3,
@@ -3677,7 +3693,7 @@ ControlLine:
 |	PPINCLUDE_NEXT PPTokenList '\n'
 	{
 		$$ = &ControlLine{
-			Case:         14,
+			Case:         13,
 			Token:        $1,
 			PPTokenList:  $2,
 			Token2:       $3,

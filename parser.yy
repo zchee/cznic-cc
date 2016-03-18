@@ -142,6 +142,7 @@ import (
 	SIGNED				"signed"
 	SIZEOF				"sizeof"
 	STATIC				"static"
+	STATIC_ASSERT			"_Static_assert"
 	STRUCT				"struct"
 	SUBASSIGN			"-="
 	SWITCH				"switch"
@@ -242,6 +243,7 @@ import (
 	SpecifierQualifierList		"specifier qualifier list"
 	SpecifierQualifierListOpt	"optional specifier qualifier list"
 	Statement			"statement"
+	StaticAssert			"static assert"
 	StorageClassSpecifier		"storage class specifier"
 	StructDeclaration		"struct declaration"
 	StructDeclarationList		"struct declaration list"
@@ -1636,7 +1638,8 @@ TranslationUnit:
 ExternalDeclaration:
 	FunctionDefinition
 |	Declaration
-|	BasicAssemblerStatement
+|	BasicAssemblerStatement ';'
+|	StaticAssert
 
 // [0](6.9.1)
 FunctionDefinition:
@@ -1770,6 +1773,20 @@ AssemblerStatement:
 |	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ':' Clobbers ')'
 |	"asm" VolatileOpt "goto" '(' AssemblerInstructions ':' ':' AssemblerOperands ':' Clobbers ':' IdentifierList ')'
 
+StaticAssert:
+	"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'
+	{
+		ce := lhs.ConstantExpression
+		if ce.Type == nil || ce.Type.Kind() == Undefined || ce.Value == nil || !IsIntType(ce.Type) {
+			lx.report.Err(ce.Pos(), "invalid static assert expression (have '%v')", ce.Type)
+			break
+		}
+
+		if !isNonZero(ce.Value) {
+			lx.report.ErrTok(lhs.Token, "%s", lhs.Token4.S())
+		}
+	}
+
 // ========================================================= PREPROCESSING_FILE
 
 // [0](6.10)
@@ -1862,16 +1879,10 @@ ControlLine:
 
 	// Non standard stuff.
 
-|	PPDEFINE IDENTIFIER_LPAREN IDENTIFIER "..." ')' ReplacementList
+|	PPDEFINE IDENTIFIER_LPAREN IdentifierList "..." ')' ReplacementList
 	{
 		if !lx.tweaks.enableDefineOmitCommaBeforeDDD {
 			lx.report.ErrTok(lhs.Token4, "missing comma before \"...\"")
-		}
-	}
-|	PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' IDENTIFIER "..." ')' ReplacementList
-	{
-		if !lx.tweaks.enableDefineOmitCommaBeforeDDD {
-			lx.report.ErrTok(lhs.Token6, "missing comma before \"...\"")
 		}
 	}
 |	PPDEFINE '\n'

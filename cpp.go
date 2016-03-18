@@ -332,7 +332,7 @@ func (p *pp) defineMacro(tok xc.Token, repl PPTokenList) {
 			for _, v := range toks {
 				a = append(a, xc.Dict.S(tokVal(v)))
 			}
-			fmt.Fprintf(os.Stderr, "#define %s at %s as %s\n", tok.S(), tok.Position(), bytes.Join(a, nil))
+			fmt.Fprintf(os.Stderr, "%s: #define %s %s\n", tok.Position(), tok.S(), bytes.Join(a, nil))
 		}
 		p.macros.m[nm] = &Macro{DefTok: tok, repl: repl}
 		return
@@ -368,6 +368,18 @@ func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList, e
 	defTok.Val = nm
 	if m == nil {
 		replToks := decodeTokens(repl, nil, false)
+		if debugMacros {
+			toks := trimSpace(replToks, false)
+			var p [][]byte
+			for _, v := range args {
+				p = append(p, xc.Dict.S(v))
+			}
+			var a [][]byte
+			for _, v := range toks {
+				a = append(a, xc.Dict.S(tokVal(v)))
+			}
+			fmt.Fprintf(os.Stderr, "%s: #define %s%s) %s\n", tok.Position(), tok.S(), bytes.Join(p, []byte(", ")), bytes.Join(a, nil))
+		}
 		nonRepl := make([]bool, len(args))
 		mp := map[int]struct{}{}
 		for i, v := range replToks {
@@ -483,12 +495,17 @@ again:
 				v.Val = id0
 			}
 
+		again3:
 			if r.eof(false) {
 				p.report.ErrTok(tok, "must be followed by ')'")
 				return
 			}
 
 			tok = r.read()
+			if tok.Rune == ' ' {
+				goto again3
+			}
+
 			if tok.Rune != ')' {
 				p.report.ErrTok(tok, "expected ')'")
 				return
@@ -972,9 +989,11 @@ func (p *pp) groupList(n *GroupList) {
 }
 
 func (p *pp) ifSection(n *IfSection) {
-	_ = p.ifGroup(n.IfGroup) ||
-		p.elifGroupListOpt(n.ElifGroupListOpt) ||
-		p.elseGroupOpt(n.ElseGroupOpt)
+	if p.ifGroup(n.IfGroup) || p.elifGroupListOpt(n.ElifGroupListOpt) {
+		return
+	}
+
+	p.elseGroupOpt(n.ElseGroupOpt)
 }
 
 func (p *pp) ifGroup(n *IfGroup) bool {
@@ -1025,17 +1044,12 @@ func (p *pp) elifGroup(n *ElifGroup) bool {
 	return true
 }
 
-func (p *pp) elseGroupOpt(n *ElseGroupOpt) bool {
+func (p *pp) elseGroupOpt(n *ElseGroupOpt) {
 	if n == nil {
-		return false
+		return
 	}
 
-	return p.elseGroup(n.ElseGroup)
-}
-
-func (p *pp) elseGroup(n *ElseGroup) bool {
-	p.groupListOpt(n.GroupListOpt)
-	return true
+	p.groupListOpt(n.ElseGroup.GroupListOpt)
 }
 
 func (p *pp) groupListOpt(n *GroupListOpt) {
@@ -1044,6 +1058,32 @@ func (p *pp) groupListOpt(n *GroupListOpt) {
 	}
 
 	p.groupList(n.GroupList)
+}
+
+func (p *pp) fixInclude(toks []xc.Token) []xc.Token {
+again:
+	if len(toks) == 0 {
+		return nil
+	}
+
+	switch toks[0].Rune {
+	case ' ':
+		toks = toks[1:]
+		goto again
+	case STRINGLITERAL, PPHEADER_NAME:
+		return toks
+	case '<':
+		for i := 1; i < len(toks); i++ {
+			if toks[i].Rune == '>' {
+				r := stringify(toks[1:i])
+				return []xc.Token{r}
+			}
+		}
+
+		return nil
+	default:
+		return nil
+	}
 }
 
 func (p *pp) controlLine(n *ControlLine) {
@@ -1074,7 +1114,7 @@ func (p *pp) controlLine(n *ControlLine) {
 		toks := decodeTokens(n.PPTokenList, nil, false)
 		var exp []xc.Token
 		p.expand(&tokenBuf{toks}, false, func(toks []xc.Token) { exp = append(exp, toks...) })
-		toks = exp
+		toks = p.fixInclude(exp)
 		if len(toks) == 0 {
 			p.report.ErrTok(n.Token, "invalid #include argument")
 			break
@@ -1105,6 +1145,9 @@ func (p *pp) controlLine(n *ControlLine) {
 			if _, err := os.Stat(pth); err != nil {
 				if !os.IsNotExist(err) {
 					p.report.ErrTok(toks[0], err.Error())
+				}
+				if debugIncludes {
+					fmt.Fprintf(os.Stderr, "include file %q not found\n", pth)
 				}
 				continue
 			}
@@ -1147,7 +1190,7 @@ func (p *pp) controlLine(n *ControlLine) {
 		return
 	case
 		9,  // PPUNDEF IDENTIFIER '\n'
-		13: // PPUNDEF IDENTIFIER PPTokenList '\n'
+		12: // PPUNDEF IDENTIFIER PPTokenList '\n'
 		nm := n.Token2.Val
 		if protectedMacros[nm] && p.protectMacros {
 			p.report.ErrTok(n.Token2, "cannot undefine protected macro")
@@ -1155,11 +1198,13 @@ func (p *pp) controlLine(n *ControlLine) {
 		}
 
 		delete(p.macros.m, nm)
-	case 14: // PPINCLUDE_NEXT PPTokenList '\n'
+	case 10: // PPDEFINE IDENTIFIER_LPAREN IdentifierList "..." ')' ReplacementList
+		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList, true)
+	case 13: // PPINCLUDE_NEXT PPTokenList '\n'
 		toks := decodeTokens(n.PPTokenList, nil, false)
 		var exp []xc.Token
 		p.expand(&tokenBuf{toks}, false, func(toks []xc.Token) { exp = append(exp, toks...) })
-		toks = exp
+		toks = p.fixInclude(exp)
 		if len(toks) == 0 {
 			p.report.ErrTok(n.Token, "invalid #include_next argument")
 			break
@@ -1203,6 +1248,9 @@ func (p *pp) controlLine(n *ControlLine) {
 			if _, err := os.Stat(pth); err != nil {
 				if !os.IsNotExist(err) {
 					p.report.ErrTok(toks[0], err.Error())
+				}
+				if debugIncludes {
+					fmt.Fprintf(os.Stderr, "include file %q not found\n", pth)
 				}
 				continue
 			}

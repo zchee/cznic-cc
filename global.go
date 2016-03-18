@@ -19,12 +19,13 @@ const (
 )
 
 var (
-	debugMacros  bool
-	dict         = xc.Dict
-	fset         = xc.FileSet
-	isGenerating bool // go generate hook.
-	isTesting    bool // Test hook.
-	printHooks   = strutil.PrettyPrintHooks{}
+	debugIncludes bool
+	debugMacros   bool
+	dict          = xc.Dict
+	fset          = xc.FileSet
+	isGenerating  bool // go generate hook.
+	isTesting     bool // Test hook.
+	printHooks    = strutil.PrettyPrintHooks{}
 )
 
 func init() {
