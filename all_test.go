@@ -119,8 +119,12 @@ void __GO__(char *s, ...);
 	#define __STDC_VERSION__ 199901L
 #endif
 
-double __builtin_nanf(char *);
 double __builtin_inff();
+double __builtin_nanf(char *);
+int __builtin_popcount (unsigned int x);
+int __builtin_popcountl (unsigned long);
+int __builtin_popcountll (unsigned long long);
+
 `, xc.Dict.S(idTDate), fakeTime)
 
 	sysIncludes = []string{}
@@ -1496,7 +1500,6 @@ func TestDevEmacs(t *testing.T) {
 #define HAVE_CONFIG_H
 #define _GCC_MAX_ALIGN_T
 #define _Noreturn
-
 `,
 		[]string{
 			"-std=gnu99",
@@ -1514,12 +1517,13 @@ func TestDevEmacs(t *testing.T) {
 			"c-strncasecmp.c",
 			"careadlinkat.c",
 			"close-stream.c",
+			"count-one-bits.c",
 			"dtotimespec.c",
 			"fcntl.c",
 			"file-has-acl.c",
 			"filemode.c",
 			"getopt.c",
-			//"getopt1.c",
+			"getopt1.c",
 			"gettime.c",
 			"openat-die.c",
 			"pipe2.c",
@@ -1533,7 +1537,6 @@ func TestDevEmacs(t *testing.T) {
 			"u64.c",
 			"unistd.c",
 			"utimens.c",
-			//"count-one-bits.c",
 			//"count-trailing-zeros.c",
 			//"dtoastr.c",
 			//"md5.c",
