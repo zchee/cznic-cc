@@ -813,103 +813,99 @@ func TestDevSqlite(t *testing.T) {
 	)
 }
 
-//func TestDevVim(t *testing.T) {
-//	predefined, includePaths, sysIncludePaths, err := HostConfig()
-//	if err != nil {
-//		t.Logf("skipping: %v", err)
-//		return
-//	}
-//
-//	opts := []Opt{
-//		IncludePaths([]string{
-//			".",
-//			"proto",
-//		}),
-//		IncludePaths(includePaths),
-//		SysIncludePaths(sysIncludePaths),
-//		EnableAnonymousStructFields(),
-//		EnableAsm(),
-//		EnableIncludeNext(),
-//		EnableTypeOf(),
-//	}
-//	if *oFailFast {
-//		opts = append(opts, CrashOnError())
-//	}
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define HAVE_CONFIG_H
-//#define _FORTIFY_SOURCE 1
-//#define __typeof typeof
-//`,
-//		[]string{
-//			"-I.",
-//			"-Iproto",
-//			"-DHAVE_CONFIG_H",
-//			"-U_FORTIFY_SOURCE",
-//			"-D_FORTIFY_SOURCE=1",
-//		},
-//		[]string{
-//			"auto/pathdef.c",
-//			"blowfish.c",
-//			"buffer.c",
-//			"channel.c",
-//			"charset.c",
-//			"crypt.c",
-//			"crypt_zip.c",
-//			"diff.c",
-//			"digraph.c",
-//			"edit.c",
-//			"eval.c",
-//			"ex_cmds.c",
-//			"ex_cmds2.c",
-//			"ex_docmd.c",
-//			"ex_eval.c",
-//			"ex_getln.c",
-//			"fileio.c",
-//			"fold.c",
-//			"getchar.c",
-//			"hardcopy.c",
-//			"hashtab.c",
-//			"if_cscope.c",
-//			"if_xcmdsrv.c",
-//			"json.c",
-//			"main.c",
-//			"mark.c",
-//			"mbyte.c",
-//			"memfile.c",
-//			"memline.c",
-//			"menu.c",
-//			"message.c",
-//			"misc1.c",
-//			"misc2.c",
-//			"move.c",
-//			"netbeans.c",
-//			"normal.c",
-//			"ops.c",
-//			"option.c",
-//			"os_unix.c",
-//			"popupmnu.c",
-//			"quickfix.c",
-//			"regexp.c",
-//			"screen.c",
-//			"search.c",
-//			"sha256.c",
-//			"spell.c",
-//			"syntax.c",
-//			"tag.c",
-//			"term.c",
-//			"ui.c",
-//			"undo.c",
-//			"version.c",
-//			"window.c",
-//		},
-//		"testdata/dev/vim/vim/src",
-//		opts...,
-//	)
-//}
-//
+func TestDevVim(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	opts := []Opt{
+		IncludePaths([]string{
+			".",
+			"proto",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+	}
+	if *oFailFast {
+		opts = append(opts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined+`
+#define HAVE_CONFIG_H
+#define _FORTIFY_SOURCE 1
+`,
+		[]string{
+			"-I.",
+			"-Iproto",
+			"-DHAVE_CONFIG_H",
+			"-U_FORTIFY_SOURCE",
+			"-D_FORTIFY_SOURCE=1",
+		},
+		[]string{
+			"auto/pathdef.c",
+			"blowfish.c",
+			"buffer.c",
+			"channel.c",
+			"charset.c",
+			"crypt.c",
+			"crypt_zip.c",
+			"diff.c",
+			"digraph.c",
+			"edit.c",
+			"eval.c",
+			"ex_cmds.c",
+			"ex_cmds2.c",
+			"ex_docmd.c",
+			"ex_eval.c",
+			"ex_getln.c",
+			"fileio.c",
+			"fold.c",
+			"getchar.c",
+			"hardcopy.c",
+			"hashtab.c",
+			"if_cscope.c",
+			"if_xcmdsrv.c",
+			"json.c",
+			"main.c",
+			"mark.c",
+			"mbyte.c",
+			"memfile.c",
+			"memline.c",
+			"menu.c",
+			"message.c",
+			"misc1.c",
+			"misc2.c",
+			"move.c",
+			"netbeans.c",
+			"normal.c",
+			"ops.c",
+			"option.c",
+			"os_unix.c",
+			"popupmnu.c",
+			"quickfix.c",
+			"regexp.c",
+			"screen.c",
+			"search.c",
+			"sha256.c",
+			"spell.c",
+			"syntax.c",
+			"tag.c",
+			"term.c",
+			"ui.c",
+			"undo.c",
+			"version.c",
+			"window.c",
+		},
+		"testdata/dev/vim/vim/src",
+		opts...,
+	)
+}
+
 //func TestDevBash(t *testing.T) {
 //	predefined, includePaths, sysIncludePaths, err := HostConfig()
 //	if err != nil {

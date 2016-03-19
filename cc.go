@@ -54,7 +54,15 @@ const (
 #define __PRETTY_FUNCTION__ __func__
 #define __restrict
 #define __restrict__
+#define __signed signed
+#define __signed__ signed
+#define __typeof typeof
+#define __typeof__ typeof
+#define __volatile volatile
+#define __volatile__ volatile
 
+double __builtin_inff();
+double __builtin_nanf(char *);
 unsigned __builtin_bswap32 (unsigned x);
 unsigned long long __builtin_bswap64 (unsigned long long x);
 unsigned short __builtin_bswap16 (unsigned short x);
