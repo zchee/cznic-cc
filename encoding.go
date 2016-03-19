@@ -362,6 +362,7 @@ var (
 	id1                = dict.SID("1")
 	idAlignof          = dict.SID("_Alignof")
 	idAsm              = dict.SID("asm")
+	idAsmAlt           = dict.SID("__asm__")
 	idChar             = dict.SID("char")
 	idConst            = dict.SID("const")
 	idDate             = dict.SID("__DATE__")
@@ -377,6 +378,7 @@ var (
 	idSTDCHosted       = dict.SID("__STDC_HOSTED__")
 	idSTDCMBMightNeqWc = dict.SID("__STDC_MB_MIGHT_NEQ_WC__")
 	idSTDCVersion      = dict.SID("__STDC_VERSION__")
+	idSignedAlt        = dict.SID("__signed__")
 	idStatic           = dict.SID("static")
 	idStaticAssert     = dict.SID("_Static_assert")
 	idTDate            = dict.SID(tuTime.Format("Jan _2 2006")) // The date of translation of the preprocessing translation unit.
@@ -384,6 +386,7 @@ var (
 	idTime             = dict.SID("__TIME__")
 	idTypeof           = dict.SID("typeof")
 	idVAARGS           = dict.SID("__VA_ARGS__")
+	idVolatileAlt      = dict.SID("__volatile__")
 	tuTime             = time.Now()
 
 	tokHasVal = map[rune]bool{
@@ -492,9 +495,28 @@ func toC(t xc.Token, tw *tweaks) xc.Token {
 		return t
 	}
 
-	if tw.enableAsm && t.Val == idAsm {
-		t.Rune = ASM
-		return t
+	if tw.enableAsm {
+		if t.Val == idAsm {
+			t.Rune = ASM
+			return t
+		}
+
+		if tw.enableAlternateKeywords && t.Val == idAsmAlt {
+			t.Rune = ASM
+			return t
+		}
+	}
+
+	if tw.enableAlternateKeywords {
+		if t.Val == idVolatileAlt {
+			t.Rune = VOLATILE
+			return t
+		}
+
+		if t.Val == idSignedAlt {
+			t.Rune = SIGNED
+			return t
+		}
 	}
 
 	return t

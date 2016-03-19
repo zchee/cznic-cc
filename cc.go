@@ -40,8 +40,6 @@ const (
 	fakeTime = "__TESTING_TIME__"
 
 	gccPredefine = `
-#define __asm asm
-#define __asm__ asm
 #define __attribute__(x)
 #define __builtin_offsetof(type, member) ((size_t)(&((type *)0)->member))
 #define __builtin_va_arg(ap, type) ( *( type* )ap )
@@ -49,23 +47,14 @@ const (
 #define __builtin_va_list void*
 #define __builtin_va_start(x, y)
 #define __extension__
-#define __inline inline
-#define __inline__ inline
 #define __PRETTY_FUNCTION__ __func__
-#define __restrict
-#define __restrict__
-#define __signed signed
-#define __signed__ signed
-#define __typeof typeof
-#define __typeof__ typeof
-#define __volatile volatile
-#define __volatile__ volatile
 
 double __builtin_inff();
 double __builtin_nanf(char *);
 unsigned __builtin_bswap32 (unsigned x);
 unsigned long long __builtin_bswap64 (unsigned long long x);
 unsigned short __builtin_bswap16 (unsigned short x);
+void* memcpy(void *restrict dest, const void *restrict src, long long count);
 `
 )
 
@@ -127,6 +116,7 @@ type tweaks struct {
 	devTest                        bool //
 	disablePredefinedLineMacro     bool // __LINE__ will not expand.
 	enableAlignof                  bool //
+	enableAlternateKeywords        bool // __asm__ etc.
 	enableAnonymousStructFields    bool //
 	enableAsm                      bool //
 	enableDefineOmitCommaBeforeDDD bool // #define foo(a, b...)
@@ -142,6 +132,22 @@ type tweaks struct {
 	preprocessOnly                 bool //
 }
 
+func (t *tweaks) doGccEmu() *tweaks {
+	t.enableAlignof = true
+	t.enableAlternateKeywords = true
+	t.enableAnonymousStructFields = true
+	t.enableAsm = true
+	t.enableDefineOmitCommaBeforeDDD = true
+	t.enableDlrInIdentifiers = true
+	t.enableEmptyDefine = true
+	t.enableIncludeNext = true
+	t.enableStaticAssert = true
+	t.enableTypeof = true
+	t.enableUndefExtraTokens = true
+	t.enableWarnings = false
+	return t
+}
+
 func exampleAST(rule int, src string) interface{} {
 	report := xc.NewReport()
 	report.IgnoreErrors = true
@@ -150,7 +156,7 @@ func exampleAST(rule int, src string) interface{} {
 		len(src)+1, // Plus final injected NL
 		bytes.NewBufferString(src),
 		report,
-		&tweaks{gccEmu: true},
+		(&tweaks{gccEmu: true}).doGccEmu(),
 	)
 	lx.model = &Model{ // 64 bit
 		Items: map[Kind]ModelItem{
@@ -268,6 +274,15 @@ func EnableDefineOmitCommaBeforeDDD() Opt {
 	return func(l *lexer) { l.tweaks.enableDefineOmitCommaBeforeDDD = true }
 }
 
+// EnableAlternateKeywords makes the parser accept, for example, non standard
+//
+//	__asm__
+//
+// as an equvalent of keyowrd asm (which first hast be permitted by EnableAsm).
+func EnableAlternateKeywords() Opt {
+	return func(l *lexer) { l.tweaks.enableAlternateKeywords = true }
+}
+
 // EnableDlrInIdentifiers makes the parser accept non standard
 //
 //	int foo$bar
@@ -362,7 +377,7 @@ func nopOpt() Opt               { return func(*lexer) {} }
 func preprocessOnly() Opt       { return func(lx *lexer) { lx.tweaks.preprocessOnly = true } }
 
 func devTest() Opt {
-	return func(lx *lexer) { lx.tweaks.devTest = true; lx.tweaks.gccEmu = true }
+	return func(lx *lexer) { lx.tweaks.devTest = true }
 }
 
 func disablePredefinedLineMacro() Opt {
@@ -400,18 +415,7 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 	}
 
 	if t := lx0.tweaks; t.gccEmu {
-		t.enableAlignof = true
-		t.enableAnonymousStructFields = true
-		t.enableAsm = true
-		t.enableDefineOmitCommaBeforeDDD = true
-		t.enableDlrInIdentifiers = true
-		t.enableEmptyDefine = true
-		t.enableIncludeNext = true
-		t.enableStaticAssert = true
-		t.enableTypeof = true
-		t.enableUndefExtraTokens = true
-		t.enableWarnings = false
-
+		t.doGccEmu()
 		predefine += gccPredefine
 	}
 

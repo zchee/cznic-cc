@@ -103,79 +103,266 @@ func ExampleArgumentExpressionListOpt_case1() {
 func ExampleAssemblerInstructions() {
 	fmt.Println(exampleAST(253, "\U00100002 asm ( \"a\" )"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerInstructions{
+	// · Token: example253.c:1:12: STRINGLITERAL "\"a\"",
+	// }
 }
 
 func ExampleAssemblerInstructions_case1() {
 	fmt.Println(exampleAST(254, "\U00100002 asm ( \"a\" \"b\" )"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerInstructions{
+	// · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · Case: 1,
+	// · · Token: example254.c:1:16: STRINGLITERAL "\"b\"",
+	// · },
+	// · Token: example254.c:1:12: STRINGLITERAL "\"a\"",
+	// }
 }
 
 func ExampleAssemblerOperand() {
 	fmt.Println(exampleAST(258, "\U00100002 auto a asm ( \"b\" : \"c\" ( 'd' ) )"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerOperand{
+	// · Expression: &cc.Expression{
+	// · · Case: 1,
+	// · · Token: example258.c:1:31: CHARCONST "'d'",
+	// · },
+	// · Token: example258.c:1:25: STRINGLITERAL "\"c\"",
+	// · Token2: example258.c:1:29: '(',
+	// · Token3: example258.c:1:35: ')',
+	// }
 }
 
 func ExampleAssemblerOperands() {
 	fmt.Println(exampleAST(259, "\U00100002 auto a asm ( \"b\" : \"c\" ( 'd' ) )"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerOperands{
+	// · AssemblerOperand: &cc.AssemblerOperand{
+	// · · Expression: &cc.Expression{
+	// · · · Case: 1,
+	// · · · Token: example259.c:1:31: CHARCONST "'d'",
+	// · · },
+	// · · Token: example259.c:1:25: STRINGLITERAL "\"c\"",
+	// · · Token2: example259.c:1:29: '(',
+	// · · Token3: example259.c:1:35: ')',
+	// · },
+	// }
 }
 
 func ExampleAssemblerOperands_case1() {
 	fmt.Println(exampleAST(260, "\U00100002 auto a asm ( \"b\" : \"c\" ( 'd' ) , \"e\" ( 'f' ) )"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerOperands{
+	// · AssemblerOperand: &cc.AssemblerOperand{
+	// · · Expression: &cc.Expression{
+	// · · · Case: 1,
+	// · · · Token: example260.c:1:31: CHARCONST "'d'",
+	// · · },
+	// · · Token: example260.c:1:25: STRINGLITERAL "\"c\"",
+	// · · Token2: example260.c:1:29: '(',
+	// · · Token3: example260.c:1:35: ')',
+	// · },
+	// · AssemblerOperands: &cc.AssemblerOperands{
+	// · · AssemblerOperand: &cc.AssemblerOperand{
+	// · · · Expression: &cc.Expression{
+	// · · · · Case: 1,
+	// · · · · Token: example260.c:1:45: CHARCONST "'f'",
+	// · · · },
+	// · · · Token: example260.c:1:39: STRINGLITERAL "\"e\"",
+	// · · · Token2: example260.c:1:43: '(',
+	// · · · Token3: example260.c:1:49: ')',
+	// · · },
+	// · · Case: 1,
+	// · · Token: example260.c:1:37: ',',
+	// · },
+	// }
 }
 
 func ExampleAssemblerStatement() {
 	fmt.Println(exampleAST(265, "\U00100002 auto a asm ( \"b\" ) !"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerStatement{
+	// · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
+	// · · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · · Token: example265.c:1:19: STRINGLITERAL "\"b\"",
+	// · · },
+	// · · Token: example265.c:1:13: ASM "asm",
+	// · · Token2: example265.c:1:17: '(',
+	// · · Token3: example265.c:1:23: ')',
+	// · },
+	// }
 }
 
 func ExampleAssemblerStatement_case1() {
 	fmt.Println(exampleAST(266, "\U00100002 auto a asm ( \"b\" : \"c\" ( 'd' ) ) !"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerStatement{
+	// · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · Token: example266.c:1:19: STRINGLITERAL "\"b\"",
+	// · },
+	// · AssemblerOperands: &cc.AssemblerOperands{
+	// · · AssemblerOperand: &cc.AssemblerOperand{
+	// · · · Expression: &cc.Expression{
+	// · · · · Case: 1,
+	// · · · · Token: example266.c:1:31: CHARCONST "'d'",
+	// · · · },
+	// · · · Token: example266.c:1:25: STRINGLITERAL "\"c\"",
+	// · · · Token2: example266.c:1:29: '(',
+	// · · · Token3: example266.c:1:35: ')',
+	// · · },
+	// · },
+	// · Case: 1,
+	// · Token: example266.c:1:13: ASM "asm",
+	// · Token2: example266.c:1:17: '(',
+	// · Token3: example266.c:1:23: ':',
+	// · Token4: example266.c:1:37: ')',
+	// }
 }
 
 func ExampleAssemblerStatement_case2() {
 	fmt.Println(exampleAST(267, "\U00100002 auto a asm ( \"b\" : \"c\" ( 'd' ) : \"e\" ( 'f' ) ) !"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerStatement{
+	// · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · Token: example267.c:1:19: STRINGLITERAL "\"b\"",
+	// · },
+	// · AssemblerOperands: &cc.AssemblerOperands{
+	// · · AssemblerOperand: &cc.AssemblerOperand{
+	// · · · Expression: &cc.Expression{
+	// · · · · Case: 1,
+	// · · · · Token: example267.c:1:31: CHARCONST "'d'",
+	// · · · },
+	// · · · Token: example267.c:1:25: STRINGLITERAL "\"c\"",
+	// · · · Token2: example267.c:1:29: '(',
+	// · · · Token3: example267.c:1:35: ')',
+	// · · },
+	// · },
+	// · AssemblerOperands2: &cc.AssemblerOperands{
+	// · · AssemblerOperand: &cc.AssemblerOperand{
+	// · · · Expression: &cc.Expression{
+	// · · · · Case: 1,
+	// · · · · Token: example267.c:1:45: CHARCONST "'f'",
+	// · · · },
+	// · · · Token: example267.c:1:39: STRINGLITERAL "\"e\"",
+	// · · · Token2: example267.c:1:43: '(',
+	// · · · Token3: example267.c:1:49: ')',
+	// · · },
+	// · },
+	// · Case: 2,
+	// · Token: example267.c:1:13: ASM "asm",
+	// · Token2: example267.c:1:17: '(',
+	// · Token3: example267.c:1:23: ':',
+	// · Token4: example267.c:1:37: ':',
+	// · Token5: example267.c:1:51: ')',
+	// }
 }
 
 func ExampleAssemblerStatement_case3() {
 	fmt.Println(exampleAST(268, "\U00100002 auto a asm ( \"b\" : \"c\" ( 'd' ) : \"e\" ( 'f' ) : \"g\" ) !"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerStatement{
+	// · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · Token: example268.c:1:19: STRINGLITERAL "\"b\"",
+	// · },
+	// · AssemblerOperands: &cc.AssemblerOperands{
+	// · · AssemblerOperand: &cc.AssemblerOperand{
+	// · · · Expression: &cc.Expression{
+	// · · · · Case: 1,
+	// · · · · Token: example268.c:1:31: CHARCONST "'d'",
+	// · · · },
+	// · · · Token: example268.c:1:25: STRINGLITERAL "\"c\"",
+	// · · · Token2: example268.c:1:29: '(',
+	// · · · Token3: example268.c:1:35: ')',
+	// · · },
+	// · },
+	// · AssemblerOperands2: &cc.AssemblerOperands{
+	// · · AssemblerOperand: &cc.AssemblerOperand{
+	// · · · Expression: &cc.Expression{
+	// · · · · Case: 1,
+	// · · · · Token: example268.c:1:45: CHARCONST "'f'",
+	// · · · },
+	// · · · Token: example268.c:1:39: STRINGLITERAL "\"e\"",
+	// · · · Token2: example268.c:1:43: '(',
+	// · · · Token3: example268.c:1:49: ')',
+	// · · },
+	// · },
+	// · Case: 3,
+	// · Clobbers: &cc.Clobbers{
+	// · · Token: example268.c:1:53: STRINGLITERAL "\"g\"",
+	// · },
+	// · Token: example268.c:1:13: ASM "asm",
+	// · Token2: example268.c:1:17: '(',
+	// · Token3: example268.c:1:23: ':',
+	// · Token4: example268.c:1:37: ':',
+	// · Token5: example268.c:1:51: ':',
+	// · Token6: example268.c:1:57: ')',
+	// }
 }
 
 func ExampleAssemblerStatement_case4() {
 	fmt.Println(exampleAST(269, "\U00100002 auto a asm goto ( \"b\" : : \"c\" ( 'd' ) : \"e\" : f ) !"))
 	// Output:
-	// <nil>
+	// &cc.AssemblerStatement{
+	// · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · Token: example269.c:1:24: STRINGLITERAL "\"b\"",
+	// · },
+	// · AssemblerOperands: &cc.AssemblerOperands{
+	// · · AssemblerOperand: &cc.AssemblerOperand{
+	// · · · Expression: &cc.Expression{
+	// · · · · Case: 1,
+	// · · · · Token: example269.c:1:38: CHARCONST "'d'",
+	// · · · },
+	// · · · Token: example269.c:1:32: STRINGLITERAL "\"c\"",
+	// · · · Token2: example269.c:1:36: '(',
+	// · · · Token3: example269.c:1:42: ')',
+	// · · },
+	// · },
+	// · Case: 4,
+	// · Clobbers: &cc.Clobbers{
+	// · · Token: example269.c:1:46: STRINGLITERAL "\"e\"",
+	// · },
+	// · IdentifierList: &cc.IdentifierList{
+	// · · Token: example269.c:1:52: IDENTIFIER "f",
+	// · },
+	// · Token: example269.c:1:13: ASM "asm",
+	// · Token2: example269.c:1:17: GOTO "goto",
+	// · Token3: example269.c:1:22: '(',
+	// · Token4: example269.c:1:28: ':',
+	// · Token5: example269.c:1:30: ':',
+	// · Token6: example269.c:1:44: ':',
+	// · Token7: example269.c:1:50: ':',
+	// · Token8: example269.c:1:54: ')',
+	// }
 }
 
 func ExampleAssemblerSymbolicNameOpt() {
 	fmt.Println(exampleAST(261, "\U00100002 auto a asm goto ( \"b\" : : \"c\"") == (*AssemblerSymbolicNameOpt)(nil))
 	// Output:
-	// false
+	// true
 }
 
 func ExampleAssemblerSymbolicNameOpt_case1() {
 	fmt.Println(exampleAST(262, "\U00100002 auto a asm ( \"b\" : [ c ] \"d\""))
 	// Output:
-	// <nil>
+	// &cc.AssemblerSymbolicNameOpt{
+	// · Token: example262.c:1:25: '[',
+	// · Token2: example262.c:1:27: IDENTIFIER "c",
+	// · Token3: example262.c:1:29: ']',
+	// }
 }
 
 func ExampleBasicAssemblerStatement() {
 	fmt.Println(exampleAST(255, "\U00100002 asm ( \"a\" ) !"))
 	// Output:
-	// <nil>
+	// &cc.BasicAssemblerStatement{
+	// · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · Token: example255.c:1:12: STRINGLITERAL "\"a\"",
+	// · },
+	// · Token: example255.c:1:6: ASM "asm",
+	// · Token2: example255.c:1:10: '(',
+	// · Token3: example255.c:1:16: ')',
+	// }
 }
 
 func ExampleBlockItem() {
@@ -279,13 +466,22 @@ func ExampleBlockItemListOpt_case1() {
 func ExampleClobbers() {
 	fmt.Println(exampleAST(263, "\U00100002 auto a asm goto ( \"b\" : : \"c\" ( 'd' ) : \"e\" )"))
 	// Output:
-	// <nil>
+	// &cc.Clobbers{
+	// · Token: example263.c:1:46: STRINGLITERAL "\"e\"",
+	// }
 }
 
 func ExampleClobbers_case1() {
 	fmt.Println(exampleAST(264, "\U00100002 auto a asm goto ( \"b\" : : \"c\" ( 'd' ) : \"e\" , \"f\" )"))
 	// Output:
-	// <nil>
+	// &cc.Clobbers{
+	// · Clobbers: &cc.Clobbers{
+	// · · Case: 1,
+	// · · Token: example264.c:1:50: ',',
+	// · · Token2: example264.c:1:52: STRINGLITERAL "\"f\"",
+	// · },
+	// · Token: example264.c:1:46: STRINGLITERAL "\"e\"",
+	// }
 }
 
 func ExampleCommaOpt() {
@@ -507,7 +703,16 @@ func ExampleControlLine_case12() {
 func ExampleControlLine_case13() {
 	fmt.Println(exampleAST(306, "\U00100000 \n#include_next other_a "))
 	// Output:
-	// <nil>
+	// &cc.ControlLine{
+	// · Case: 13,
+	// · PPTokenList: []xc.Token{ // len 3
+	// · · 0: example306.c:2:14: ' ',
+	// · · 1: example306.c:2:15: IDENTIFIER "other_a",
+	// · · 2: example306.c:2:22: ' ',
+	// · },
+	// · Token: example306.c:2:2: PPINCLUDE_NEXT,
+	// · Token2: example306.c:2:23: '\n',
+	// }
 }
 
 func ExampleDeclaration() {
@@ -2145,7 +2350,21 @@ func ExampleExpression_case55() {
 func ExampleExpression_case56() {
 	fmt.Println(exampleAST(68, "\U00100001 _Alignof ( _Bool )"))
 	// Output:
-	// <nil>
+	// &cc.Expression{
+	// · Case: 56,
+	// · Token: example68.c:1:6: ALIGNOF "_Alignof",
+	// · Token2: example68.c:1:15: '(',
+	// · Token3: example68.c:1:23: ')',
+	// · TypeName: &cc.TypeName{
+	// · · Type: bool,
+	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
+	// · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · Case: 9,
+	// · · · · Token: example68.c:1:17: BOOL "_Bool",
+	// · · · },
+	// · · },
+	// · },
+	// }
 }
 
 func ExampleExpressionList() {
@@ -2276,13 +2495,44 @@ func ExampleExternalDeclaration_case1() {
 func ExampleExternalDeclaration_case2() {
 	fmt.Println(exampleAST(240, "\U00100002 asm ( \"a\" ) ;"))
 	// Output:
-	// <nil>
+	// &cc.ExternalDeclaration{
+	// · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
+	// · · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · · Token: example240.c:1:12: STRINGLITERAL "\"a\"",
+	// · · },
+	// · · Token: example240.c:1:6: ASM "asm",
+	// · · Token2: example240.c:1:10: '(',
+	// · · Token3: example240.c:1:16: ')',
+	// · },
+	// · Case: 2,
+	// · Token: example240.c:1:18: ';',
+	// }
 }
 
 func ExampleExternalDeclaration_case3() {
 	fmt.Println(exampleAST(241, "\U00100002 _Static_assert ( 'a' , \"b\" ) ;"))
 	// Output:
-	// <nil>
+	// &cc.ExternalDeclaration{
+	// · Case: 3,
+	// · StaticAssert: &cc.StaticAssert{
+	// · · ConstantExpression: &cc.ConstantExpression{
+	// · · · Type: int,
+	// · · · Value: 97,
+	// · · · Expression: &cc.Expression{
+	// · · · · Type: int,
+	// · · · · Value: 97,
+	// · · · · Case: 1,
+	// · · · · Token: example241.c:1:23: CHARCONST "'a'",
+	// · · · },
+	// · · },
+	// · · Token: example241.c:1:6: STATIC_ASSERT "_Static_assert",
+	// · · Token2: example241.c:1:21: '(',
+	// · · Token3: example241.c:1:27: ',',
+	// · · Token4: example241.c:1:29: STRINGLITERAL "\"b\"",
+	// · · Token5: example241.c:1:33: ')',
+	// · · Token6: example241.c:1:35: ';',
+	// · },
+	// }
 }
 
 func ExampleFunctionBody() {
@@ -2299,7 +2549,20 @@ func ExampleFunctionBody() {
 func ExampleFunctionBody_case1() {
 	fmt.Println(exampleAST(247, "\U00100002 auto a asm ( \"b\" ) ;"))
 	// Output:
-	// <nil>
+	// &cc.FunctionBody{
+	// · AssemblerStatement: &cc.AssemblerStatement{
+	// · · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
+	// · · · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · · · Token: example247.c:1:19: STRINGLITERAL "\"b\"",
+	// · · · },
+	// · · · Token: example247.c:1:13: ASM "asm",
+	// · · · Token2: example247.c:1:17: '(',
+	// · · · Token3: example247.c:1:23: ')',
+	// · · },
+	// · },
+	// · Case: 1,
+	// · Token: example247.c:1:25: ';',
+	// }
 }
 
 func ExampleFunctionDefinition() {
@@ -3300,13 +3563,42 @@ func ExampleStatement_case5() {
 func ExampleStatement_case6() {
 	fmt.Println(exampleAST(212, "\U00100002 auto a { asm ( \"b\" ) !"))
 	// Output:
-	// <nil>
+	// &cc.Statement{
+	// · AssemblerStatement: &cc.AssemblerStatement{
+	// · · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
+	// · · · AssemblerInstructions: &cc.AssemblerInstructions{
+	// · · · · Token: example212.c:1:21: STRINGLITERAL "\"b\"",
+	// · · · },
+	// · · · Token: example212.c:1:15: ASM "asm",
+	// · · · Token2: example212.c:1:19: '(',
+	// · · · Token3: example212.c:1:25: ')',
+	// · · },
+	// · },
+	// · Case: 6,
+	// }
 }
 
 func ExampleStaticAssert() {
 	fmt.Println(exampleAST(270, "\U00100002 _Static_assert ( 'a' , \"b\" ) ;"))
 	// Output:
-	// <nil>
+	// &cc.StaticAssert{
+	// · ConstantExpression: &cc.ConstantExpression{
+	// · · Type: int,
+	// · · Value: 97,
+	// · · Expression: &cc.Expression{
+	// · · · Type: int,
+	// · · · Value: 97,
+	// · · · Case: 1,
+	// · · · Token: example270.c:1:23: CHARCONST "'a'",
+	// · · },
+	// · },
+	// · Token: example270.c:1:6: STATIC_ASSERT "_Static_assert",
+	// · Token2: example270.c:1:21: '(',
+	// · Token3: example270.c:1:27: ',',
+	// · Token4: example270.c:1:29: STRINGLITERAL "\"b\"",
+	// · Token5: example270.c:1:33: ')',
+	// · Token6: example270.c:1:35: ';',
+	// }
 }
 
 func ExampleStorageClassSpecifier() {
@@ -3856,23 +4148,52 @@ func ExampleTypeSpecifier_case13() {
 func ExampleTypeSpecifier_case14() {
 	fmt.Println(exampleAST(110, "\U00100002 typeof ( 'a' ) ("))
 	// Output:
-	// <nil>
+	// &cc.TypeSpecifier{
+	// · Type: int,
+	// · Case: 14,
+	// · Expression: &cc.Expression{
+	// · · Type: int,
+	// · · Value: 97,
+	// · · Case: 1,
+	// · · Token: example110.c:1:15: CHARCONST "'a'",
+	// · },
+	// · Token: example110.c:1:6: TYPEOF "typeof",
+	// · Token2: example110.c:1:13: '(',
+	// · Token3: example110.c:1:19: ')',
+	// }
 }
 
 func ExampleTypeSpecifier_case15() {
 	fmt.Println(exampleAST(111, "\U00100002 typeof ( _Bool ) ("))
 	// Output:
-	// <nil>
+	// &cc.TypeSpecifier{
+	// · Type: bool,
+	// · Case: 15,
+	// · Token: example111.c:1:6: TYPEOF "typeof",
+	// · Token2: example111.c:1:13: '(',
+	// · Token3: example111.c:1:21: ')',
+	// · TypeName: &cc.TypeName{
+	// · · Type: bool,
+	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
+	// · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · Case: 9,
+	// · · · · Token: example111.c:1:15: BOOL "_Bool",
+	// · · · },
+	// · · },
+	// · },
+	// }
 }
 
 func ExampleVolatileOpt() {
 	fmt.Println(exampleAST(256, "\U00100002 asm (") == (*VolatileOpt)(nil))
 	// Output:
-	// false
+	// true
 }
 
 func ExampleVolatileOpt_case1() {
 	fmt.Println(exampleAST(257, "\U00100002 asm volatile ("))
 	// Output:
-	// <nil>
+	// &cc.VolatileOpt{
+	// · Token: example257.c:1:10: VOLATILE "volatile",
+	// }
 }

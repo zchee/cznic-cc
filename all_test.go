@@ -555,7 +555,7 @@ puts("The first, second, and third items.");
 	}
 }
 
-func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, opts ...Opt) {
+func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, ppOpts, parseOpts []Opt) {
 	fp := filepath.Join(wd, src)
 	if re := *oRe; re != "" {
 		ok, err := regexp.MatchString(re, fp)
@@ -596,7 +596,7 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 		[]string{src},
 		newTestModel(),
 		append(
-			opts,
+			ppOpts,
 			getTweaks(&tw),
 			preprocessOnly(),
 			Cpp(func(toks []xc.Token) {
@@ -655,18 +655,15 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 		predefine,
 		[]string{f.Name()},
 		newTestModel(),
-		append(
-			opts,
-			preprocessOnly(),
-			Cpp(func(toks []xc.Token) {
-				for _, tok := range toks {
-					if tok.Rune != ' ' {
-						exp = append(exp, tok)
-					}
+		preprocessOnly(),
+		Cpp(func(toks []xc.Token) {
+			for _, tok := range toks {
+				if tok.Rune != ' ' {
+					exp = append(exp, tok)
 				}
-			}),
-			disableWarnings(),
-		)...,
+			}
+		}),
+		disableWarnings(),
 	); err != nil {
 		t.Error(err)
 		return
@@ -712,13 +709,38 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 		}
 	}
 
+	logf2, err := os.Create("log2-" + filepath.Base(src))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	defer logf2.Close()
+
+	logw2 := bufio.NewWriter(logf2)
+
+	defer logw2.Flush()
+
 	_, err = Parse(
 		predefine,
 		[]string{src},
 		newTestModel(),
 		append(
-			opts,
+			parseOpts,
 			disableWarnings(),
+			Cpp(func(toks []xc.Token) {
+				if len(toks) != 0 {
+					p := toks[0].Position()
+					if p.Filename != lpos.Filename {
+						fmt.Fprintf(logw2, "# %d %q\n", p.Line, p.Filename)
+					}
+					lpos = p
+				}
+				for _, v := range toks {
+					logw2.WriteString(TokSrc(toC(v, &tw)))
+				}
+				logw2.WriteByte('\n')
+			}),
 		)...,
 	)
 	if err != nil {
@@ -727,7 +749,7 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 	}
 }
 
-func testDev(t *testing.T, predefine string, cppOpts, src []string, wd string, opts ...Opt) {
+func testDev(t *testing.T, predefine string, cppOpts, src []string, wd string, ppOpts, parseOpts []Opt) {
 	if !dirExists(t, wd) {
 		t.Logf("skipping: %v", wd)
 		return
@@ -756,7 +778,7 @@ func testDev(t *testing.T, predefine string, cppOpts, src []string, wd string, o
 			continue
 		}
 
-		testDev1(t, predefine, cppOpts, wd, src, opts...)
+		testDev1(t, predefine, cppOpts, wd, src, ppOpts, parseOpts)
 	}
 }
 
@@ -779,7 +801,7 @@ func dirExists(t *testing.T, dir string) bool {
 }
 
 func TestPreprocessor(t *testing.T) {
-	testDev1(t, "", nil, "", "testdata/arith-1.h")
+	testDev1(t, "", nil, "", "testdata/arith-1.h", nil, nil)
 }
 
 func TestDevSqlite(t *testing.T) {
@@ -789,18 +811,31 @@ func TestDevSqlite(t *testing.T) {
 		return
 	}
 
-	opts := []Opt{
+	ppOpts := []Opt{
 		IncludePaths(includePaths),
 		SysIncludePaths(sysIncludePaths),
 		devTest(),
+		EnableIncludeNext(),
 	}
 	if *oFailFast {
-		opts = append(opts, CrashOnError())
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
 	}
 
 	testDev(
 		t,
-		predefined,
+		predefined+`
+#define __inline inline
+#define __restrict restrict
+`,
 		nil,
 		[]string{
 			"shell.c",
@@ -809,7 +844,8 @@ func TestDevSqlite(t *testing.T) {
 			"sqlite3ext.h",
 		},
 		"testdata/dev/sqlite3",
-		opts...,
+		ppOpts,
+		parseOpts,
 	)
 }
 
@@ -820,7 +856,21 @@ func TestDevVim(t *testing.T) {
 		return
 	}
 
-	opts := []Opt{
+	ppOpts := []Opt{
+		IncludePaths([]string{
+			".",
+			"proto",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableIncludeNext(),
+		EnableDefineOmitCommaBeforeDDD(),
+		devTest(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
 		IncludePaths([]string{
 			".",
 			"proto",
@@ -828,16 +878,20 @@ func TestDevVim(t *testing.T) {
 		IncludePaths(includePaths),
 		SysIncludePaths(sysIncludePaths),
 		devTest(),
+		gccEmu(),
 	}
 	if *oFailFast {
-		opts = append(opts, CrashOnError())
+		parseOpts = append(parseOpts, CrashOnError())
 	}
 
 	testDev(
 		t,
 		predefined+`
-#define HAVE_CONFIG_H
+#define __inline inline
+#define __restrict restrict
+#define __typeof typeof
 #define _FORTIFY_SOURCE 1
+#define HAVE_CONFIG_H
 `,
 		[]string{
 			"-I.",
@@ -902,7 +956,8 @@ func TestDevVim(t *testing.T) {
 			"window.c",
 		},
 		"testdata/dev/vim/vim/src",
-		opts...,
+		ppOpts,
+		parseOpts,
 	)
 }
 
@@ -913,7 +968,7 @@ func TestDevVim(t *testing.T) {
 //		return
 //	}
 //
-//	opts := []Opt{
+//	ppOpts := []Opt{
 //		IncludePaths([]string{
 //			".",
 //			"include",
@@ -921,18 +976,30 @@ func TestDevVim(t *testing.T) {
 //		}),
 //		IncludePaths(includePaths),
 //		SysIncludePaths(sysIncludePaths),
-//		EnableAnonymousStructFields(),
-//		EnableAsm(),
 //		EnableIncludeNext(),
-//		EnableTypeOf(),
+//		devTest(),
 //	}
 //	if *oFailFast {
-//		opts = append(opts, CrashOnError())
+//		ppOpts = append(ppOpts, CrashOnError())
+//	}
+//	parseOpts := []Opt{
+//		IncludePaths([]string{
+//			".",
+//			"include",
+//			"lib",
+//		}),
+//		IncludePaths(includePaths),
+//		SysIncludePaths(sysIncludePaths),
+//		devTest(),
+//		gccEmu(),
+//	}
+//	if *oFailFast {
+//		parseOpts = append(parseOpts, CrashOnError())
 //	}
 //
 //	testDev(
 //		t,
-//		predefined+testDevAdditionalPredefines+`
+//		predefined+`
 //#define PROGRAM "bash"
 //#define CONF_HOSTTYPE "x86_64"
 //#define CONF_OSTYPE "linux-gnu"
@@ -942,11 +1009,6 @@ func TestDevVim(t *testing.T) {
 //#define PACKAGE "bash"
 //#define SHELL
 //#define HAVE_CONFIG_H
-//
-//#define __builtin_memcpy(dest, src, n)
-//#define __typeof typeof
-//
-//void* __builtin_alloca(int);
 //`,
 //		[]string{
 //			`-DPROGRAM="bash"`,
@@ -1012,249 +1074,250 @@ func TestDevVim(t *testing.T) {
 //			//"execute_cmd.c", // Composite type K&R fn def style vs prototype decl lefts an undefined param.
 //		},
 //		"testdata/dev/bash-4.3/",
-//		opts...,
+//		ppOpts,
+//		parseOpts,
 //	)
 //
-//	opts = []Opt{
-//		IncludePaths([]string{
-//			".",
-//			"..",
-//			"../include",
-//			"../lib",
-//		}),
-//		IncludePaths(includePaths),
-//		SysIncludePaths(sysIncludePaths),
-//		EnableAnonymousStructFields(),
-//		EnableAsm(),
-//		EnableIncludeNext(),
-//	}
-//	if *oFailFast {
-//		opts = append(opts, CrashOnError())
-//	}
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define HAVE_CONFIG_H
-//#define SHELL
-//`,
-//		[]string{
-//			"-DSHELL",
-//			"-DHAVE_CONFIG_H",
-//			"-I.",
-//			"-I..",
-//			"-I../include",
-//			"-I../lib",
-//		},
-//		[]string{
-//			"builtins.c",
-//			"common.c",
-//			"evalfile.c",
-//			"evalstring.c",
-//			"mkbuiltins.c",
-//			"psize.c",
-//		},
-//		"testdata/dev/bash-4.3/builtins",
-//		opts...,
-//	)
-//
-//	opts = []Opt{
-//		IncludePaths([]string{
-//			".",
-//			"../..",
-//			"../../include",
-//			"../../lib",
-//		}),
-//		IncludePaths(includePaths),
-//		SysIncludePaths(sysIncludePaths),
-//		EnableAnonymousStructFields(),
-//		EnableAsm(),
-//		EnableIncludeNext(),
-//	}
-//	if *oFailFast {
-//		opts = append(opts, CrashOnError())
-//	}
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define HAVE_CONFIG_H
-//#define SHELL
-//
-//void* __builtin_alloca(int);
-//`,
-//		[]string{
-//			"-DSHELL",
-//			"-DHAVE_CONFIG_H",
-//			"-I.",
-//			"-I../..",
-//			"-I../../include",
-//			"-I../../lib",
-//		},
-//		[]string{
-//			"glob.c",
-//			"gmisc.c",
-//			"smatch.c",
-//			"strmatch.c",
-//			"xmbsrtowcs.c",
-//		},
-//		"testdata/dev/bash-4.3/lib/glob",
-//		opts...,
-//	)
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define HAVE_CONFIG_H
-//#define SHELL
-//`,
-//		[]string{
-//			"-DSHELL",
-//			"-DHAVE_CONFIG_H",
-//			"-I.",
-//			"-I../..",
-//			"-I../../include",
-//			"-I../../lib",
-//		},
-//		[]string{
-//			"casemod.c",
-//			"clktck.c",
-//			"clock.c",
-//			"eaccess.c",
-//			"fmtullong.c",
-//			"fmtulong.c",
-//			"fmtumax.c",
-//			"fnxform.c",
-//			"fpurge.c",
-//			"getenv.c",
-//			"input_avail.c",
-//			"itos.c",
-//			"mailstat.c",
-//			"makepath.c",
-//			"mbscasecmp.c",
-//			"mbschr.c",
-//			"mbscmp.c",
-//			"netconn.c",
-//			"netopen.c",
-//			"oslib.c",
-//			"pathcanon.c",
-//			"pathphys.c",
-//			"setlinebuf.c",
-//			"shmatch.c",
-//			"shmbchar.c",
-//			"shquote.c",
-//			"shtty.c",
-//			"snprintf.c",
-//			"spell.c",
-//			"stringlist.c",
-//			"stringvec.c",
-//			"strnlen.c",
-//			"strtrans.c",
-//			"timeval.c",
-//			"tmpfile.c",
-//			"uconvert.c",
-//			"ufuncs.c",
-//			"unicode.c",
-//			"wcsdup.c",
-//			"wcsnwidth.c",
-//			"winsize.c",
-//			"zcatfd.c",
-//			"zgetline.c",
-//			"zmapfd.c",
-//			"zread.c",
-//			"zwrite.c",
-//		},
-//		"testdata/dev/bash-4.3/lib/sh",
-//		opts...,
-//	)
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define HAVE_CONFIG_H
-//#define SHELL
-//`,
-//		[]string{
-//			"-DSHELL",
-//			"-DHAVE_CONFIG_H",
-//			"-I.",
-//			"-I../..",
-//			"-I../../include",
-//			"-I../../lib",
-//		},
-//		[]string{
-//			"bind.c",
-//			"callback.c",
-//			"colors.c",
-//			"compat.c",
-//			"complete.c",
-//			"display.c",
-//			"funmap.c",
-//			"histexpand.c",
-//			"histfile.c",
-//			"history.c",
-//			"histsearch.c",
-//			"input.c",
-//			"isearch.c",
-//			"keymaps.c",
-//			"kill.c",
-//			"macro.c",
-//			"mbutil.c",
-//			"misc.c",
-//			"nls.c",
-//			"parens.c",
-//			"parse-colors.c",
-//			"readline.c",
-//			"rltty.c",
-//			"savestring.c",
-//			"search.c",
-//			"shell.c",
-//			"signals.c",
-//			"terminal.c",
-//			"text.c",
-//			"tilde.c",
-//			"undo.c",
-//			"util.c",
-//			"vi_mode.c",
-//			"xfree.c",
-//			"xmalloc.c",
-//		},
-//		"testdata/dev/bash-4.3/lib/readline",
-//		opts...,
-//	)
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define HAVE_CONFIG_H
-//#define SHELL
-//#define RCHECK
-//#define botch programming_error
-//
-//#define __builtin_memcpy(dest, src, n)
-//`,
-//		[]string{
-//			"-DSHELL",
-//			"-DHAVE_CONFIG_H",
-//			"-DRCHECK",
-//			"-Dbotch=programming_error",
-//			"-I.",
-//			"-I../..",
-//			"-I../../include",
-//			"-I../../lib",
-//		},
-//		[]string{
-//			"malloc.c",
-//			"trace.c",
-//			"stats.c",
-//			"table.c",
-//			"watch.c",
-//		},
-//		"testdata/dev/bash-4.3/lib/malloc",
-//		opts...,
-//	)
+//	//	opts = []Opt{
+//	//		IncludePaths([]string{
+//	//			".",
+//	//			"..",
+//	//			"../include",
+//	//			"../lib",
+//	//		}),
+//	//		IncludePaths(includePaths),
+//	//		SysIncludePaths(sysIncludePaths),
+//	//		EnableAnonymousStructFields(),
+//	//		EnableAsm(),
+//	//		EnableIncludeNext(),
+//	//	}
+//	//	if *oFailFast {
+//	//		opts = append(opts, CrashOnError())
+//	//	}
+//	//
+//	//	testDev(
+//	//		t,
+//	//		predefined+testDevAdditionalPredefines+`
+//	//#define HAVE_CONFIG_H
+//	//#define SHELL
+//	//`,
+//	//		[]string{
+//	//			"-DSHELL",
+//	//			"-DHAVE_CONFIG_H",
+//	//			"-I.",
+//	//			"-I..",
+//	//			"-I../include",
+//	//			"-I../lib",
+//	//		},
+//	//		[]string{
+//	//			"builtins.c",
+//	//			"common.c",
+//	//			"evalfile.c",
+//	//			"evalstring.c",
+//	//			"mkbuiltins.c",
+//	//			"psize.c",
+//	//		},
+//	//		"testdata/dev/bash-4.3/builtins",
+//	//		opts...,
+//	//	)
+//	//
+//	//	opts = []Opt{
+//	//		IncludePaths([]string{
+//	//			".",
+//	//			"../..",
+//	//			"../../include",
+//	//			"../../lib",
+//	//		}),
+//	//		IncludePaths(includePaths),
+//	//		SysIncludePaths(sysIncludePaths),
+//	//		EnableAnonymousStructFields(),
+//	//		EnableAsm(),
+//	//		EnableIncludeNext(),
+//	//	}
+//	//	if *oFailFast {
+//	//		opts = append(opts, CrashOnError())
+//	//	}
+//	//
+//	//	testDev(
+//	//		t,
+//	//		predefined+testDevAdditionalPredefines+`
+//	//#define HAVE_CONFIG_H
+//	//#define SHELL
+//	//
+//	//void* __builtin_alloca(int);
+//	//`,
+//	//		[]string{
+//	//			"-DSHELL",
+//	//			"-DHAVE_CONFIG_H",
+//	//			"-I.",
+//	//			"-I../..",
+//	//			"-I../../include",
+//	//			"-I../../lib",
+//	//		},
+//	//		[]string{
+//	//			"glob.c",
+//	//			"gmisc.c",
+//	//			"smatch.c",
+//	//			"strmatch.c",
+//	//			"xmbsrtowcs.c",
+//	//		},
+//	//		"testdata/dev/bash-4.3/lib/glob",
+//	//		opts...,
+//	//	)
+//	//
+//	//	testDev(
+//	//		t,
+//	//		predefined+testDevAdditionalPredefines+`
+//	//#define HAVE_CONFIG_H
+//	//#define SHELL
+//	//`,
+//	//		[]string{
+//	//			"-DSHELL",
+//	//			"-DHAVE_CONFIG_H",
+//	//			"-I.",
+//	//			"-I../..",
+//	//			"-I../../include",
+//	//			"-I../../lib",
+//	//		},
+//	//		[]string{
+//	//			"casemod.c",
+//	//			"clktck.c",
+//	//			"clock.c",
+//	//			"eaccess.c",
+//	//			"fmtullong.c",
+//	//			"fmtulong.c",
+//	//			"fmtumax.c",
+//	//			"fnxform.c",
+//	//			"fpurge.c",
+//	//			"getenv.c",
+//	//			"input_avail.c",
+//	//			"itos.c",
+//	//			"mailstat.c",
+//	//			"makepath.c",
+//	//			"mbscasecmp.c",
+//	//			"mbschr.c",
+//	//			"mbscmp.c",
+//	//			"netconn.c",
+//	//			"netopen.c",
+//	//			"oslib.c",
+//	//			"pathcanon.c",
+//	//			"pathphys.c",
+//	//			"setlinebuf.c",
+//	//			"shmatch.c",
+//	//			"shmbchar.c",
+//	//			"shquote.c",
+//	//			"shtty.c",
+//	//			"snprintf.c",
+//	//			"spell.c",
+//	//			"stringlist.c",
+//	//			"stringvec.c",
+//	//			"strnlen.c",
+//	//			"strtrans.c",
+//	//			"timeval.c",
+//	//			"tmpfile.c",
+//	//			"uconvert.c",
+//	//			"ufuncs.c",
+//	//			"unicode.c",
+//	//			"wcsdup.c",
+//	//			"wcsnwidth.c",
+//	//			"winsize.c",
+//	//			"zcatfd.c",
+//	//			"zgetline.c",
+//	//			"zmapfd.c",
+//	//			"zread.c",
+//	//			"zwrite.c",
+//	//		},
+//	//		"testdata/dev/bash-4.3/lib/sh",
+//	//		opts...,
+//	//	)
+//	//
+//	//	testDev(
+//	//		t,
+//	//		predefined+testDevAdditionalPredefines+`
+//	//#define HAVE_CONFIG_H
+//	//#define SHELL
+//	//`,
+//	//		[]string{
+//	//			"-DSHELL",
+//	//			"-DHAVE_CONFIG_H",
+//	//			"-I.",
+//	//			"-I../..",
+//	//			"-I../../include",
+//	//			"-I../../lib",
+//	//		},
+//	//		[]string{
+//	//			"bind.c",
+//	//			"callback.c",
+//	//			"colors.c",
+//	//			"compat.c",
+//	//			"complete.c",
+//	//			"display.c",
+//	//			"funmap.c",
+//	//			"histexpand.c",
+//	//			"histfile.c",
+//	//			"history.c",
+//	//			"histsearch.c",
+//	//			"input.c",
+//	//			"isearch.c",
+//	//			"keymaps.c",
+//	//			"kill.c",
+//	//			"macro.c",
+//	//			"mbutil.c",
+//	//			"misc.c",
+//	//			"nls.c",
+//	//			"parens.c",
+//	//			"parse-colors.c",
+//	//			"readline.c",
+//	//			"rltty.c",
+//	//			"savestring.c",
+//	//			"search.c",
+//	//			"shell.c",
+//	//			"signals.c",
+//	//			"terminal.c",
+//	//			"text.c",
+//	//			"tilde.c",
+//	//			"undo.c",
+//	//			"util.c",
+//	//			"vi_mode.c",
+//	//			"xfree.c",
+//	//			"xmalloc.c",
+//	//		},
+//	//		"testdata/dev/bash-4.3/lib/readline",
+//	//		opts...,
+//	//	)
+//	//
+//	//	testDev(
+//	//		t,
+//	//		predefined+testDevAdditionalPredefines+`
+//	//#define HAVE_CONFIG_H
+//	//#define SHELL
+//	//#define RCHECK
+//	//#define botch programming_error
+//	//
+//	//#define __builtin_memcpy(dest, src, n)
+//	//`,
+//	//		[]string{
+//	//			"-DSHELL",
+//	//			"-DHAVE_CONFIG_H",
+//	//			"-DRCHECK",
+//	//			"-Dbotch=programming_error",
+//	//			"-I.",
+//	//			"-I../..",
+//	//			"-I../../include",
+//	//			"-I../../lib",
+//	//		},
+//	//		[]string{
+//	//			"malloc.c",
+//	//			"trace.c",
+//	//			"stats.c",
+//	//			"table.c",
+//	//			"watch.c",
+//	//		},
+//	//		"testdata/dev/bash-4.3/lib/malloc",
+//	//		opts...,
+//	//	)
 //}
-//
+
 //func TestDevMake(t *testing.T) {
 //	predefined, includePaths, sysIncludePaths, err := HostConfig()
 //	if err != nil {
@@ -2047,4 +2110,12 @@ func TestAnonStructField(t *testing.T) {
 		"testdata/anon.c:4:7: only unnamed structs and unions are allowed",
 		EnableAnonymousStructFields(),
 	)
+}
+
+func tokStr(toks []xc.Token) string {
+	var b []byte
+	for _, v := range toks {
+		b = append(b, xc.Dict.S(tokVal(v))...)
+	}
+	return string(b)
 }
