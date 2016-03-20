@@ -171,7 +171,9 @@ func (t *tokenPipe) peek() xc.Token { return t.in[0] }
 func (t *tokenPipe) read() xc.Token { r := t.peek(); t.in = t.in[1:]; return r }
 
 // Implements tokenReader.
-func (t *tokenPipe) unget(toks []xc.Token) { t.in = append(toks[:len(toks):len(toks)], t.in...) }
+func (t *tokenPipe) unget(toks []xc.Token) {
+	t.in = append(toks[:len(toks):len(toks)], t.in...)
+}
 
 func (t *tokenPipe) flush(final bool) {
 	t.out = trimSpace(t.out, false)
@@ -549,8 +551,8 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 	for i, v := range repl {
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
-	u := p.expandLineNo(p.pragmas(p.sanitize(repl)))
-	r.unget(u)
+	u := p.expandLineNo(p.pragmas(repl))
+	r.unget(p.sanitize(u))
 }
 
 func trimSpace(toks []xc.Token, removeTrailingComma bool) []xc.Token {
@@ -826,8 +828,8 @@ next:
 	p.expandingMacros[nm]++
 	defer func() { p.expandingMacros[nm]-- }()
 
-	u := p.pragmas(p.sanitize(p.expandLineNo(r0)))
-	r.unget(u)
+	u := p.pragmas(p.expandLineNo(r0))
+	r.unget(p.sanitize(u))
 }
 
 func stringify(toks []xc.Token) xc.Token {

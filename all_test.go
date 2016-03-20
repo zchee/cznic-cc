@@ -2119,3 +2119,11 @@ func tokStr(toks []xc.Token) string {
 	}
 	return string(b)
 }
+
+func tokStr2(toks [][]xc.Token) string {
+	var a []string
+	for _, v := range toks {
+		a = append(a, tokStr(v))
+	}
+	return strings.Join(a, ", ")
+}
