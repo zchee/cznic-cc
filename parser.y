@@ -135,6 +135,7 @@ import (
 	MULASSIGN                    "*="
 	NEQ                          "!="
 	NOELSE
+	NORETURN                     "_Noreturn"
 	ORASSIGN                     "|="
 	OROR                         "||"
 	PPDEFINE                     "#define"
@@ -1930,6 +1931,15 @@ FunctionSpecifier:
 		}
 		$$ = lhs
 		lhs.attr = saInline
+	}
+|	"_Noreturn"
+	{
+		lhs := &FunctionSpecifier{
+			Case:   1,
+			Token:  $1,
+		}
+		$$ = lhs
+		lhs.attr = saNoreturn
 	}
 
 Declarator:

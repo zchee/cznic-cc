@@ -73,6 +73,7 @@ const (
 	saConst
 	saRestrict
 	saVolatile
+	saNoreturn
 )
 
 func attrString(attr int) string {
@@ -107,6 +108,9 @@ func attrString(attr int) string {
 	}
 	if attr&saVolatile != 0 {
 		a = append(a, "volatile")
+	}
+	if attr&saNoreturn != 0 {
+		a = append(a, "_Noreturn")
 	}
 	return strings.Join(a, " ")
 }
@@ -370,9 +374,11 @@ var (
 	idEmptyString      = dict.SID(`""`)
 	idFile             = dict.SID("__FILE__")
 	idID               = dict.SID("ID")
+	idInlineAlt        = dict.SID("__inline__")
 	idL                = dict.SID("L")
 	idLine             = dict.SID("__LINE__")
 	idMagicFunc        = dict.SID("__func__")
+	idNoreturn         = dict.SID("_Noreturn")
 	idPragma           = dict.SID("_Pragma")
 	idRestrictAlt      = dict.SID("__restrict__")
 	idSTDC             = dict.SID("__STDC__")
@@ -386,6 +392,7 @@ var (
 	idTTime            = dict.SID(tuTime.Format("15:04:05"))    // The time of translation of the preprocessing translation unit.
 	idTime             = dict.SID("__TIME__")
 	idTypeof           = dict.SID("typeof")
+	idTypeofAlt        = dict.SID("__typeof__")
 	idVAARGS           = dict.SID("__VA_ARGS__")
 	idVolatileAlt      = dict.SID("__volatile__")
 	tuTime             = time.Now()
@@ -491,9 +498,25 @@ func toC(t xc.Token, tw *tweaks) xc.Token {
 		return t
 	}
 
-	if tw.enableTypeof && t.Val == idTypeof {
-		t.Rune = TYPEOF
-		return t
+	if tw.enableNoreturn {
+		if t.Val == idNoreturn {
+			t.Rune = NORETURN
+			return t
+		}
+
+	}
+
+	if tw.enableTypeof {
+		if t.Val == idTypeof {
+			t.Rune = TYPEOF
+			return t
+		}
+
+		if t.Val == idTypeofAlt {
+			t.Rune = TYPEOF
+			return t
+		}
+
 	}
 
 	if tw.enableAsm {
@@ -509,6 +532,11 @@ func toC(t xc.Token, tw *tweaks) xc.Token {
 	}
 
 	if tw.enableAlternateKeywords {
+		if t.Val == idInlineAlt {
+			t.Rune = INLINE
+			return t
+		}
+
 		if t.Val == idVolatileAlt {
 			t.Rune = VOLATILE
 			return t

@@ -1700,12 +1700,14 @@ func (n *FunctionDefinition) Pos() token.Pos {
 	return n.DeclarationSpecifiers.Pos()
 }
 
-// FunctionSpecifier represents data reduced by production:
+// FunctionSpecifier represents data reduced by productions:
 //
 //	FunctionSpecifier:
 //	        "inline"
+//	|       "_Noreturn"  // Case 1
 type FunctionSpecifier struct {
 	attr  int // tsInline, tsTypedefName, ...
+	Case  int
 	Token xc.Token
 }
 

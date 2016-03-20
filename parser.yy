@@ -131,6 +131,7 @@ import (
 	MODASSIGN			"%="
 	MULASSIGN			"*="
 	NEQ				"!="
+	NORETURN			"_Noreturn"
 	ORASSIGN			"|="
 	OROR				"||"
 	REGISTER			"register"
@@ -1093,6 +1094,10 @@ FunctionSpecifier:
 	"inline"
 	{
 		lhs.attr = saInline
+	}
+|	"_Noreturn"
+	{
+		lhs.attr = saNoreturn
 	}
 
 // [0](6.7.5)

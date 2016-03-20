@@ -40,7 +40,6 @@ const (
 	fakeTime = "__TESTING_TIME__"
 
 	gccPredefine = `
-#define __attribute__(x)
 #define __builtin_offsetof(type, member) ((size_t)(&((type *)0)->member))
 #define __builtin_va_arg(ap, type) ( *( type* )ap )
 #define __builtin_va_end(x)
@@ -51,6 +50,12 @@ const (
 
 double __builtin_inff();
 double __builtin_nanf(char *);
+int __builtin_ctz (unsigned int x);
+int __builtin_ctzl (unsigned long);
+int __builtin_ctzll (unsigned long long);
+int __builtin_popcount (unsigned int x);
+int __builtin_popcountl (unsigned long);
+int __builtin_popcountll (unsigned long long);
 long long strlen (const char*);
 unsigned __builtin_bswap32 (unsigned x);
 unsigned long long __builtin_bswap64 (unsigned long long x);
@@ -127,6 +132,7 @@ type tweaks struct {
 	enableDlrInIdentifiers         bool // foo$bar
 	enableEmptyDefine              bool // #define
 	enableIncludeNext              bool //
+	enableNoreturn                 bool //
 	enableStaticAssert             bool // _Static_assert
 	enableTrigraphs                bool // ??=define foo(bar)
 	enableTypeof                   bool //
@@ -145,6 +151,7 @@ func (t *tweaks) doGccEmu() *tweaks {
 	t.enableDlrInIdentifiers = true
 	t.enableEmptyDefine = true
 	t.enableIncludeNext = true
+	t.enableNoreturn = true
 	t.enableStaticAssert = true
 	t.enableTypeof = true
 	t.enableUndefExtraTokens = true
@@ -361,6 +368,9 @@ func Trigraphs() Opt { return func(lx *lexer) { lx.tweaks.enableTrigraphs = true
 
 // EnableAsm enables recognizing the reserved word asm.
 func EnableAsm() Opt { return func(lx *lexer) { lx.tweaks.enableAsm = true } }
+
+// EnableNoreturn enables recognizing the reserved word _Noreturn.
+func EnableNoreturn() Opt { return func(lx *lexer) { lx.tweaks.enableNoreturn = true } }
 
 // EnableTypeOf enables recognizing the reserved word typeof.
 func EnableTypeOf() Opt { return func(lx *lexer) { lx.tweaks.enableTypeof = true } }

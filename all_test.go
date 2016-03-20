@@ -835,6 +835,7 @@ func TestDevSqlite(t *testing.T) {
 		predefined,
 		predefined,
 		predefined+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict restrict
 `,
@@ -895,6 +896,7 @@ func TestDevVim(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict restrict
 #define __typeof typeof
@@ -1019,6 +1021,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1131,6 +1134,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __restrict __restrict__
 #define __inline inline
 `,
@@ -1195,6 +1199,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1223,6 +1228,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1292,6 +1298,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1356,6 +1363,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1425,6 +1433,7 @@ func TestDevMake(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1516,6 +1525,7 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1541,6 +1551,7 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1570,6 +1581,7 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1594,282 +1606,300 @@ func TestDevBc(t *testing.T) {
 	)
 }
 
-//func TestDevEmacs(t *testing.T) {
-//	predefined, includePaths, sysIncludePaths, err := HostConfig()
-//	if err != nil {
-//		t.Logf("skipping: %v", err)
-//		return
-//	}
-//
-//	opts := []Opt{
-//		IncludePaths([]string{
-//			".",
-//			"../lib",
-//			"../src",
-//		}),
-//		IncludePaths(includePaths),
-//		SysIncludePaths(sysIncludePaths),
-//		EnableAlignOf(),
-//		EnableAnonymousStructFields(),
-//		EnableAsm(),
-//		EnableIncludeNext(),
-//		EnableTypeOf(),
-//	}
-//	if *oFailFast {
-//		opts = append(opts, CrashOnError())
-//	}
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define HAVE_CONFIG_H
-//#define _GCC_MAX_ALIGN_T
-//#define _Noreturn
-//#define __getopt_argv_const
-//#define __inline__ inline
-//#define __typeof__ typeof
-//`,
-//		[]string{
-//			"-std=gnu99",
-//			"-DHAVE_CONFIG_H",
-//			"-I.",
-//			"-I../lib",
-//			"-I../src",
-//		},
-//		[]string{
-//			"acl-errno-valid.c",
-//			"allocator.c",
-//			"binary-io.c",
-//			"c-ctype.c",
-//			"c-strcasecmp.c",
-//			"c-strncasecmp.c",
-//			"careadlinkat.c",
-//			"close-stream.c",
-//			"count-one-bits.c",
-//			"count-trailing-zeros.c",
-//			"dtoastr.c",
-//			"dtotimespec.c",
-//			"fcntl.c",
-//			"file-has-acl.c",
-//			"filemode.c",
-//			"getopt.c",
-//			"getopt1.c",
-//			"gettime.c",
-//			"md5.c",
-//			"openat-die.c",
-//			"pipe2.c",
-//			"pthread_sigmask.c",
-//			"qcopy-acl.c",
-//			"qset-acl.c",
-//			"save-cwd.c",
-//			"sha1.c",
-//			"sha256.c",
-//			"sha512.c",
-//			"sig2str.c",
-//			"stat-time.c",
-//			"strftime.c",
-//			"timespec-add.c",
-//			"timespec-sub.c",
-//			"timespec.c",
-//			"u64.c",
-//			"unistd.c",
-//			"utimens.c",
-//		},
-//		"testdata/dev/emacs-24.5/lib",
-//		opts...,
-//	)
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define CTAGS
-//#define EMACS_NAME "GNU Emacs"
-//#define HAVE_CONFIG_H
-//#define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
-//#define VERSION "24.5"
-//#define _GCC_MAX_ALIGN_T
-//#define _Noreturn
-//#define __inline__ inline
-//#define __typeof__ typeof
-//#define __typeof typeof
-//
-//void* __builtin_alloca(int);
-//`,
-//		[]string{
-//			"-std=gnu99",
-//			"-I.",
-//			"-I../lib",
-//			"-I../src",
-//			"-DEMACS_NAME=\"GNU Emacs\"",
-//			"-DCTAGS",
-//			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
-//			"-DVERSION=\"24.5\"",
-//		},
-//		[]string{
-//			"./../src/regex.c",
-//			"./ebrowse.c",
-//			"./emacsclient.c",
-//			"./etags.c",
-//			"./hexl.c",
-//			"./make-docfile.c",
-//			"./movemail.c",
-//			"./pop.c",
-//			"./profile.c",
-//			"./test-distrib.c",
-//			"./update-game-score.c",
-//		},
-//		"testdata/dev/emacs-24.5/lib-src/",
-//		opts...,
-//	)
-//
-//	opts = []Opt{
-//		IncludePaths([]string{
-//			".",
-//			"../lib",
-//			"/usr/include/gtk-3.0",
-//			"/usr/include/pango-1.0",
-//			"/usr/include/gio-unix-2.0/",
-//			"/usr/include/atk-1.0",
-//			"/usr/include/cairo",
-//			"/usr/include/gdk-pixbuf-2.0",
-//			"/usr/include/freetype2",
-//			"/usr/include/glib-2.0",
-//			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
-//			"/usr/include/pixman-1",
-//			"/usr/include/libpng12",
-//		}),
-//		IncludePaths(includePaths),
-//		SysIncludePaths(sysIncludePaths),
-//		EnableAlignOf(),
-//		EnableAnonymousStructFields(),
-//		EnableAsm(),
-//		EnableDefineOmitCommaBeforeDDD(),
-//		EnableIncludeNext(),
-//		EnableStaticAssert(),
-//		EnableTypeOf(),
-//	}
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define _GCC_MAX_ALIGN_T
-//#define _Noreturn
-//#define __inline__ inline
-//#define __typeof typeof
-//#define __typeof__ typeof
-//#define emacs
-//#define _Alignas(x)
-//
-//void* __builtin_alloca(int);
-//void __builtin_unreachable (void);
-//`,
-//		[]string{
-//			"-std=gnu99",
-//			"-Demacs",
-//			"-I.",
-//			"-I../lib",
-//			"-I/usr/include/gtk-3.0",
-//			"-I/usr/include/pango-1.0",
-//			"-I/usr/include/gio-unix-2.0/",
-//			"-I/usr/include/atk-1.0",
-//			"-I/usr/include/cairo",
-//			"-I/usr/include/gdk-pixbuf-2.0",
-//			"-I/usr/include/freetype2",
-//			"-I/usr/include/glib-2.0",
-//			"-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
-//			"-I/usr/include/pixman-1",
-//			"-I/usr/include/libpng12",
-//		},
-//		[]string{
-//			"atimer.c",
-//			"bidi.c",
-//			"callint.c",
-//			"callproc.c",
-//			"casetab.c",
-//			"category.c",
-//			"cm.c",
-//			"composite.c",
-//			"decompress.c",
-//			"doc.c",
-//			"fileio.c",
-//			"filelock.c",
-//			"floatfns.c",
-//			"fontset.c",
-//			"frame.c",
-//			"fringe.c",
-//			"gfilenotify.c",
-//			"gnutls.c",
-//			"gtkutil.c",
-//			"indent.c",
-//			"intervals.c",
-//			"keyboard.c",
-//			"lastfile.c",
-//			"macros.c",
-//			"marker.c",
-//			"menu.c",
-//			"minibuf.c",
-//			"profiler.c",
-//			"region-cache.c",
-//			"scroll.c",
-//			"sound.c",
-//			"sysdep.c",
-//			"terminfo.c",
-//			"undo.c",
-//			"vm-limit.c",
-//			"window.c",
-//			"xfaces.c",
-//			"xfns.c",
-//			"xgselect.c",
-//			"xmenu.c",
-//			"xml.c",
-//			"xrdb.c",
-//			"xselect.c",
-//			"xsmfns.c",
-//			//"alloc.c",
-//			//"buffer.c",
-//			//"bytecode.c",
-//			//"casefiddle.c",
-//			//"ccl.c",
-//			//"character.c",
-//			//"charset.c",
-//			//"chartab.c",
-//			//"cmds.c",
-//			//"coding.c",
-//			//"data.c",
-//			//"dired.c",
-//			//"dispnew.c",
-//			//"doprnt.c",
-//			//"editfns.c",
-//			//"emacs.c",
-//			//"emacsgtkfixed.c",
-//			//"eval.c",
-//			//"fns.c",
-//			//"font.c",
-//			//"ftfont.c",
-//			//"ftxfont.c",
-//			//"image.c",
-//			//"insdel.c",
-//			//"keymap.c",
-//			//"lread.c",
-//			//"print.c",
-//			//"process.c",
-//			//"regex.c",
-//			//"search.c",
-//			//"syntax.c",
-//			//"term.c",
-//			//"terminal.c",
-//			//"textprop.c",
-//			//"unexelf.c",
-//			//"xdisp.c",
-//			//"xfont.c",
-//			//"xftfont.c",
-//			//"xsettings.c",
-//			//"xterm.c",
-//		},
-//		"testdata/dev/emacs-24.5/src/",
-//		opts...,
-//	)
-//}
+func TestDevEmacs(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	ppOpts := []Opt{
+		IncludePaths([]string{
+			".",
+			"../lib",
+			"../src",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableIncludeNext(),
+		devTest(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
+		IncludePaths([]string{
+			".",
+			"../lib",
+			"../src",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	p := predefined + `
+#define HAVE_CONFIG_H
+#define _GCC_MAX_ALIGN_T
+`
+	testDev(
+		t,
+		p+`
+#define _Noreturn __attribute__ ((__noreturn__))
+`,
+		p,
+		p+`
+#define __attribute__(x)
+#define __getopt_argv_const const
+#define __inline inline
+#define __restrict __restrict__
+`,
+		[]string{
+			"-std=gnu99",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I../lib",
+			"-I../src",
+		},
+		[]string{
+			"acl-errno-valid.c",
+			"allocator.c",
+			"binary-io.c",
+			"c-ctype.c",
+			"c-strcasecmp.c",
+			"c-strncasecmp.c",
+			"careadlinkat.c",
+			"close-stream.c",
+			"count-one-bits.c",
+			"count-trailing-zeros.c",
+			"dtoastr.c",
+			"dtotimespec.c",
+			"fcntl.c",
+			"file-has-acl.c",
+			"filemode.c",
+			"getopt.c",
+			"getopt1.c",
+			"gettime.c",
+			"md5.c",
+			"openat-die.c",
+			"pipe2.c",
+			"pthread_sigmask.c",
+			"qcopy-acl.c",
+			"qset-acl.c",
+			"save-cwd.c",
+			"sha1.c",
+			"sha256.c",
+			"sha512.c",
+			"sig2str.c",
+			"stat-time.c",
+			"strftime.c",
+			"timespec-add.c",
+			"timespec-sub.c",
+			"timespec.c",
+			"u64.c",
+			"unistd.c",
+			"utimens.c",
+		},
+		"testdata/dev/emacs-24.5/lib",
+		ppOpts,
+		parseOpts,
+	)
+
+	// 	testDev(
+	// 		t,
+	// 		predefined+testDevAdditionalPredefines+`
+	// #define CTAGS
+	// #define EMACS_NAME "GNU Emacs"
+	// #define HAVE_CONFIG_H
+	// #define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
+	// #define VERSION "24.5"
+	// #define _GCC_MAX_ALIGN_T
+	// #define _Noreturn
+	// #define __inline__ inline
+	// #define __typeof__ typeof
+	// #define __typeof typeof
+	//
+	// void* __builtin_alloca(int);
+	// `,
+	// 		[]string{
+	// 			"-std=gnu99",
+	// 			"-I.",
+	// 			"-I../lib",
+	// 			"-I../src",
+	// 			"-DEMACS_NAME=\"GNU Emacs\"",
+	// 			"-DCTAGS",
+	// 			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
+	// 			"-DVERSION=\"24.5\"",
+	// 		},
+	// 		[]string{
+	// 			"./../src/regex.c",
+	// 			"./ebrowse.c",
+	// 			"./emacsclient.c",
+	// 			"./etags.c",
+	// 			"./hexl.c",
+	// 			"./make-docfile.c",
+	// 			"./movemail.c",
+	// 			"./pop.c",
+	// 			"./profile.c",
+	// 			"./test-distrib.c",
+	// 			"./update-game-score.c",
+	// 		},
+	// 		"testdata/dev/emacs-24.5/lib-src/",
+	// 		opts...,
+	// 	)
+	//
+	// 	opts = []Opt{
+	// 		IncludePaths([]string{
+	// 			".",
+	// 			"../lib",
+	// 			"/usr/include/gtk-3.0",
+	// 			"/usr/include/pango-1.0",
+	// 			"/usr/include/gio-unix-2.0/",
+	// 			"/usr/include/atk-1.0",
+	// 			"/usr/include/cairo",
+	// 			"/usr/include/gdk-pixbuf-2.0",
+	// 			"/usr/include/freetype2",
+	// 			"/usr/include/glib-2.0",
+	// 			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+	// 			"/usr/include/pixman-1",
+	// 			"/usr/include/libpng12",
+	// 		}),
+	// 		IncludePaths(includePaths),
+	// 		SysIncludePaths(sysIncludePaths),
+	// 		EnableAlignOf(),
+	// 		EnableAnonymousStructFields(),
+	// 		EnableAsm(),
+	// 		EnableDefineOmitCommaBeforeDDD(),
+	// 		EnableIncludeNext(),
+	// 		EnableStaticAssert(),
+	// 		EnableTypeOf(),
+	// 	}
+	//
+	// 	testDev(
+	// 		t,
+	// 		predefined+testDevAdditionalPredefines+`
+	// #define _GCC_MAX_ALIGN_T
+	// #define _Noreturn
+	// #define __inline__ inline
+	// #define __typeof typeof
+	// #define __typeof__ typeof
+	// #define emacs
+	// #define _Alignas(x)
+	//
+	// void* __builtin_alloca(int);
+	// void __builtin_unreachable (void);
+	// `,
+	// 		[]string{
+	// 			"-std=gnu99",
+	// 			"-Demacs",
+	// 			"-I.",
+	// 			"-I../lib",
+	// 			"-I/usr/include/gtk-3.0",
+	// 			"-I/usr/include/pango-1.0",
+	// 			"-I/usr/include/gio-unix-2.0/",
+	// 			"-I/usr/include/atk-1.0",
+	// 			"-I/usr/include/cairo",
+	// 			"-I/usr/include/gdk-pixbuf-2.0",
+	// 			"-I/usr/include/freetype2",
+	// 			"-I/usr/include/glib-2.0",
+	// 			"-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+	// 			"-I/usr/include/pixman-1",
+	// 			"-I/usr/include/libpng12",
+	// 		},
+	// 		[]string{
+	// 			"atimer.c",
+	// 			"bidi.c",
+	// 			"callint.c",
+	// 			"callproc.c",
+	// 			"casetab.c",
+	// 			"category.c",
+	// 			"cm.c",
+	// 			"composite.c",
+	// 			"decompress.c",
+	// 			"doc.c",
+	// 			"fileio.c",
+	// 			"filelock.c",
+	// 			"floatfns.c",
+	// 			"fontset.c",
+	// 			"frame.c",
+	// 			"fringe.c",
+	// 			"gfilenotify.c",
+	// 			"gnutls.c",
+	// 			"gtkutil.c",
+	// 			"indent.c",
+	// 			"intervals.c",
+	// 			"keyboard.c",
+	// 			"lastfile.c",
+	// 			"macros.c",
+	// 			"marker.c",
+	// 			"menu.c",
+	// 			"minibuf.c",
+	// 			"profiler.c",
+	// 			"region-cache.c",
+	// 			"scroll.c",
+	// 			"sound.c",
+	// 			"sysdep.c",
+	// 			"terminfo.c",
+	// 			"undo.c",
+	// 			"vm-limit.c",
+	// 			"window.c",
+	// 			"xfaces.c",
+	// 			"xfns.c",
+	// 			"xgselect.c",
+	// 			"xmenu.c",
+	// 			"xml.c",
+	// 			"xrdb.c",
+	// 			"xselect.c",
+	// 			"xsmfns.c",
+	// 			//"alloc.c",
+	// 			//"buffer.c",
+	// 			//"bytecode.c",
+	// 			//"casefiddle.c",
+	// 			//"ccl.c",
+	// 			//"character.c",
+	// 			//"charset.c",
+	// 			//"chartab.c",
+	// 			//"cmds.c",
+	// 			//"coding.c",
+	// 			//"data.c",
+	// 			//"dired.c",
+	// 			//"dispnew.c",
+	// 			//"doprnt.c",
+	// 			//"editfns.c",
+	// 			//"emacs.c",
+	// 			//"emacsgtkfixed.c",
+	// 			//"eval.c",
+	// 			//"fns.c",
+	// 			//"font.c",
+	// 			//"ftfont.c",
+	// 			//"ftxfont.c",
+	// 			//"image.c",
+	// 			//"insdel.c",
+	// 			//"keymap.c",
+	// 			//"lread.c",
+	// 			//"print.c",
+	// 			//"process.c",
+	// 			//"regex.c",
+	// 			//"search.c",
+	// 			//"syntax.c",
+	// 			//"term.c",
+	// 			//"terminal.c",
+	// 			//"textprop.c",
+	// 			//"unexelf.c",
+	// 			//"xdisp.c",
+	// 			//"xfont.c",
+	// 			//"xftfont.c",
+	// 			//"xsettings.c",
+	// 			//"xterm.c",
+	// 		},
+	// 		"testdata/dev/emacs-24.5/src/",
+	// 		opts...,
+	// 	)
+}
 
 func TestPPParse1(t *testing.T) {
 	path := *o1
