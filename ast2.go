@@ -339,7 +339,7 @@ loop0:
 		stars:           stars,
 	}
 	n.Type = t
-	//dbg("@@@@ %v", position(n.Pos()))
+	//dbg("@@@@ %v: %s", position(n.Pos()), t.dds[0].Token.S())
 	//dbg("setFull %v: %v, %v %v", t, t.Kind(), t.resultStars, t.stars)
 	//dbg("", t.str())
 	//dbg("", t)

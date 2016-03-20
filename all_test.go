@@ -555,7 +555,7 @@ puts("The first, second, and third items.");
 	}
 }
 
-func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, ppOpts, parseOpts []Opt) {
+func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cppOpts []string, wd, src string, ppOpts, parseOpts []Opt) {
 	fp := filepath.Join(wd, src)
 	if re := *oRe; re != "" {
 		ok, err := regexp.MatchString(re, fp)
@@ -592,7 +592,7 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 
 	var tw tweaks
 	_, err = Parse(
-		predefine,
+		ppPredefine,
 		[]string{src},
 		newTestModel(),
 		append(
@@ -652,7 +652,7 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 	}
 
 	if _, err := Parse(
-		predefine,
+		cppPredefine,
 		[]string{f.Name()},
 		newTestModel(),
 		preprocessOnly(),
@@ -722,7 +722,7 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 	defer logw2.Flush()
 
 	_, err = Parse(
-		predefine,
+		parsePredefine,
 		[]string{src},
 		newTestModel(),
 		append(
@@ -749,7 +749,7 @@ func testDev1(t *testing.T, predefine string, cppOpts []string, wd, src string, 
 	}
 }
 
-func testDev(t *testing.T, predefine string, cppOpts, src []string, wd string, ppOpts, parseOpts []Opt) {
+func testDev(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cppOpts, src []string, wd string, ppOpts, parseOpts []Opt) {
 	if !dirExists(t, wd) {
 		t.Logf("skipping: %v", wd)
 		return
@@ -778,7 +778,7 @@ func testDev(t *testing.T, predefine string, cppOpts, src []string, wd string, p
 			continue
 		}
 
-		testDev1(t, predefine, cppOpts, wd, src, ppOpts, parseOpts)
+		testDev1(t, ppPredefine, cppPredefine, parsePredefine, cppOpts, wd, src, ppOpts, parseOpts)
 	}
 }
 
@@ -801,7 +801,7 @@ func dirExists(t *testing.T, dir string) bool {
 }
 
 func TestPreprocessor(t *testing.T) {
-	testDev1(t, "", nil, "", "testdata/arith-1.h", nil, nil)
+	testDev1(t, "", "", "", nil, "", "testdata/arith-1.h", nil, nil)
 }
 
 func TestDevSqlite(t *testing.T) {
@@ -832,6 +832,8 @@ func TestDevSqlite(t *testing.T) {
 
 	testDev(
 		t,
+		predefined,
+		predefined,
 		predefined+`
 #define __inline inline
 #define __restrict restrict
@@ -884,14 +886,18 @@ func TestDevVim(t *testing.T) {
 		parseOpts = append(parseOpts, CrashOnError())
 	}
 
+	p := predefined + `
+#define _FORTIFY_SOURCE 1
+#define HAVE_CONFIG_H
+`
 	testDev(
 		t,
-		predefined+`
+		p,
+		p,
+		p+`
 #define __inline inline
 #define __restrict restrict
 #define __typeof typeof
-#define _FORTIFY_SOURCE 1
-#define HAVE_CONFIG_H
 `,
 		[]string{
 			"-I.",
@@ -1009,6 +1015,7 @@ func TestDevVim(t *testing.T) {
 //#define PACKAGE "bash"
 //#define SHELL
 //#define HAVE_CONFIG_H
+//#define __restrict restrict
 //`,
 //		[]string{
 //			`-DPROGRAM="bash"`,

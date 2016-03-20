@@ -5,8 +5,10 @@
 package cc
 
 import (
+	"fmt"
 	"go/token"
 	"io"
+	"strings"
 
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/xc"
@@ -385,6 +387,10 @@ func (l *lexer) Lex(lval *yySymType) int {
 // Error Implements yyLexer.
 func (l *lexer) Error(msg string) {
 	t := l.last
+	parts := strings.Split(msg, ", expected ")
+	if len(parts) == 2 && strings.HasPrefix(parts[0], "unexpected ") && tokHasVal[t.Rune] {
+		msg = fmt.Sprintf("%s %s, expected %s", parts[0], t.S(), parts[1])
+	}
 	l.report.Err(errPos(t.Pos()), "%s", msg)
 }
 
