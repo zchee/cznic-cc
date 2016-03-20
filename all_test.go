@@ -1091,49 +1091,70 @@ func TestDevBash(t *testing.T) {
 		parseOpts,
 	)
 
-	//	opts = []Opt{
-	//		IncludePaths([]string{
-	//			".",
-	//			"..",
-	//			"../include",
-	//			"../lib",
-	//		}),
-	//		IncludePaths(includePaths),
-	//		SysIncludePaths(sysIncludePaths),
-	//		EnableAnonymousStructFields(),
-	//		EnableAsm(),
-	//		EnableIncludeNext(),
-	//	}
-	//	if *oFailFast {
-	//		opts = append(opts, CrashOnError())
-	//	}
-	//
-	//	testDev(
-	//		t,
-	//		predefined+testDevAdditionalPredefines+`
-	//#define HAVE_CONFIG_H
-	//#define SHELL
-	//`,
-	//		[]string{
-	//			"-DSHELL",
-	//			"-DHAVE_CONFIG_H",
-	//			"-I.",
-	//			"-I..",
-	//			"-I../include",
-	//			"-I../lib",
-	//		},
-	//		[]string{
-	//			"builtins.c",
-	//			"common.c",
-	//			"evalfile.c",
-	//			"evalstring.c",
-	//			"mkbuiltins.c",
-	//			"psize.c",
-	//		},
-	//		"testdata/dev/bash-4.3/builtins",
-	//		opts...,
-	//	)
-	//
+	ppOpts = []Opt{
+		IncludePaths([]string{
+			".",
+			"..",
+			"../include",
+			"../lib",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableIncludeNext(),
+		devTest(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts = []Opt{
+		IncludePaths([]string{
+			".",
+			"..",
+			"../include",
+			"../lib",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	p = predefined + `
+	#define HAVE_CONFIG_H
+	#define SHELL
+	`
+	testDev(
+		t,
+		p,
+		p,
+		p+`
+#define __restrict __restrict__
+#define __inline inline
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I..",
+			"-I../include",
+			"-I../lib",
+		},
+		[]string{
+			"builtins.c",
+			"common.c",
+			"evalfile.c",
+			"evalstring.c",
+			"mkbuiltins.c",
+			"psize.c",
+		},
+		"testdata/dev/bash-4.3/builtins",
+		ppOpts,
+		parseOpts,
+	)
+
 	//	opts = []Opt{
 	//		IncludePaths([]string{
 	//			".",
