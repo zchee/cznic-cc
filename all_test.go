@@ -1696,45 +1696,52 @@ func TestDevEmacs(t *testing.T) {
 		parseOpts,
 	)
 
-	//	p = predefined + `
-	// #define CTAGS
-	// #define EMACS_NAME "GNU Emacs"
-	// #define HAVE_CONFIG_H
-	// #define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
-	// #define VERSION "24.5"
-	// `
-	//	testDev(
-	//		t,
-	//		p,
-	//		p,
-	//		p,
-	//		[]string{
-	//			"-std=gnu99",
-	//			"-I.",
-	//			"-I../lib",
-	//			"-I../src",
-	//			"-DEMACS_NAME=\"GNU Emacs\"",
-	//			"-DCTAGS",
-	//			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
-	//			"-DVERSION=\"24.5\"",
-	//		},
-	//		[]string{
-	//			"./../src/regex.c",
-	//			"./ebrowse.c",
-	//			"./emacsclient.c",
-	//			"./etags.c",
-	//			"./hexl.c",
-	//			"./make-docfile.c",
-	//			"./movemail.c",
-	//			"./pop.c",
-	//			"./profile.c",
-	//			"./test-distrib.c",
-	//			"./update-game-score.c",
-	//		},
-	//		"testdata/dev/emacs-24.5/lib-src/",
-	//		ppOpts,
-	//		parseOpts,
-	//	)
+	p = predefined + `
+	 #define CTAGS
+	 #define EMACS_NAME "GNU Emacs"
+	 #define HAVE_CONFIG_H
+	 #define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
+	 #define VERSION "24.5"
+	 `
+	testDev(
+		t,
+		p+`
+#define _GCC_MAX_ALIGN_T
+#define _Noreturn __attribute__ ((__noreturn__))
+`,
+		p,
+		p+`
+#define __inline inline
+#define __restrict __restrict__
+#define __typeof typeof
+`,
+		[]string{
+			"-std=gnu99",
+			"-I.",
+			"-I../lib",
+			"-I../src",
+			"-DEMACS_NAME=\"GNU Emacs\"",
+			"-DCTAGS",
+			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
+			"-DVERSION=\"24.5\"",
+		},
+		[]string{
+			"./../src/regex.c",
+			"./ebrowse.c",
+			"./emacsclient.c",
+			"./etags.c",
+			"./hexl.c",
+			"./make-docfile.c",
+			"./movemail.c",
+			"./pop.c",
+			"./profile.c",
+			"./test-distrib.c",
+			"./update-game-score.c",
+		},
+		"testdata/dev/emacs-24.5/lib-src/",
+		ppOpts,
+		parseOpts,
+	)
 
 	//	opts = []Opt{
 	//		IncludePaths([]string{
