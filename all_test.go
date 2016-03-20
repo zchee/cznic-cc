@@ -1345,36 +1345,41 @@ func TestDevBash(t *testing.T) {
 		parseOpts,
 	)
 
-	//	testDev(
-	//		t,
-	//		predefined+testDevAdditionalPredefines+`
-	//#define HAVE_CONFIG_H
-	//#define SHELL
-	//#define RCHECK
-	//#define botch programming_error
-	//
-	//#define __builtin_memcpy(dest, src, n)
-	//`,
-	//		[]string{
-	//			"-DSHELL",
-	//			"-DHAVE_CONFIG_H",
-	//			"-DRCHECK",
-	//			"-Dbotch=programming_error",
-	//			"-I.",
-	//			"-I../..",
-	//			"-I../../include",
-	//			"-I../../lib",
-	//		},
-	//		[]string{
-	//			"malloc.c",
-	//			"trace.c",
-	//			"stats.c",
-	//			"table.c",
-	//			"watch.c",
-	//		},
-	//		"testdata/dev/bash-4.3/lib/malloc",
-	//		opts...,
-	//	)
+	p = predefined + `
+#define HAVE_CONFIG_H
+#define SHELL
+#define RCHECK
+#define botch programming_error
+`
+	testDev(
+		t,
+		p,
+		p,
+		p+`
+#define __inline inline
+#define __restrict __restrict__
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-DRCHECK",
+			"-Dbotch=programming_error",
+			"-I.",
+			"-I../..",
+			"-I../../include",
+			"-I../../lib",
+		},
+		[]string{
+			"malloc.c",
+			"trace.c",
+			"stats.c",
+			"table.c",
+			"watch.c",
+		},
+		"testdata/dev/bash-4.3/lib/malloc",
+		ppOpts,
+		parseOpts,
+	)
 }
 
 //func TestDevMake(t *testing.T) {
