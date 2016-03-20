@@ -1123,9 +1123,9 @@ func TestDevBash(t *testing.T) {
 	}
 
 	p = predefined + `
-	#define HAVE_CONFIG_H
-	#define SHELL
-	`
+#define HAVE_CONFIG_H
+#define SHELL
+`
 	testDev(
 		t,
 		p,
@@ -1155,50 +1155,69 @@ func TestDevBash(t *testing.T) {
 		parseOpts,
 	)
 
-	//	opts = []Opt{
-	//		IncludePaths([]string{
-	//			".",
-	//			"../..",
-	//			"../../include",
-	//			"../../lib",
-	//		}),
-	//		IncludePaths(includePaths),
-	//		SysIncludePaths(sysIncludePaths),
-	//		EnableAnonymousStructFields(),
-	//		EnableAsm(),
-	//		EnableIncludeNext(),
-	//	}
-	//	if *oFailFast {
-	//		opts = append(opts, CrashOnError())
-	//	}
-	//
-	//	testDev(
-	//		t,
-	//		predefined+testDevAdditionalPredefines+`
-	//#define HAVE_CONFIG_H
-	//#define SHELL
-	//
-	//void* __builtin_alloca(int);
-	//`,
-	//		[]string{
-	//			"-DSHELL",
-	//			"-DHAVE_CONFIG_H",
-	//			"-I.",
-	//			"-I../..",
-	//			"-I../../include",
-	//			"-I../../lib",
-	//		},
-	//		[]string{
-	//			"glob.c",
-	//			"gmisc.c",
-	//			"smatch.c",
-	//			"strmatch.c",
-	//			"xmbsrtowcs.c",
-	//		},
-	//		"testdata/dev/bash-4.3/lib/glob",
-	//		opts...,
-	//	)
-	//
+	ppOpts = []Opt{
+		IncludePaths([]string{
+			".",
+			"../..",
+			"../../include",
+			"../../lib",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableIncludeNext(),
+		devTest(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts = []Opt{
+		IncludePaths([]string{
+			".",
+			"../..",
+			"../../include",
+			"../../lib",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	p = predefined + `
+#define HAVE_CONFIG_H
+#define SHELL
+`
+	testDev(
+		t,
+		p,
+		p,
+		p+`
+#define __inline inline
+#define __restrict __restrict__
+`,
+		[]string{
+			"-DSHELL",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+			"-I../..",
+			"-I../../include",
+			"-I../../lib",
+		},
+		[]string{
+			"glob.c",
+			"gmisc.c",
+			"smatch.c",
+			"strmatch.c",
+			"xmbsrtowcs.c",
+		},
+		"testdata/dev/bash-4.3/lib/glob",
+		ppOpts,
+		parseOpts,
+	)
+
 	//	testDev(
 	//		t,
 	//		predefined+testDevAdditionalPredefines+`
