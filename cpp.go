@@ -24,6 +24,7 @@ var (
 
 const (
 	maxIncludeLevel = 100
+	sentinel        = -1
 )
 
 var (
@@ -436,6 +437,8 @@ func (p *pp) expand(r tokenReader, handleDefined bool, w func([]xc.Token)) {
 	for !r.eof(false) {
 		tok := r.read()
 		switch tok.Rune {
+		case sentinel:
+			p.expandingMacros[tok.Val]--
 		case IDENTIFIER:
 			if tok.Val == idFile {
 				tok.Rune = STRINGLITERAL
@@ -542,17 +545,16 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 		return
 	}
 
-	p.expandingMacros[nm]++
-	defer func() { p.expandingMacros[nm]-- }()
-
 	repl := trimSpace(normalizeToks(decodeTokens(m.repl, nil, true)), false)
 	repl = pasteToks(repl)
 	pos := tok.Pos()
 	for i, v := range repl {
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
-	u := p.expandLineNo(p.pragmas(repl))
-	r.unget(p.sanitize(u))
+	tok.Rune = sentinel
+	p.expandingMacros[nm]++
+	y := append(p.sanitize(p.expandLineNo(p.pragmas(repl))), tok)
+	r.unget(y)
 }
 
 func trimSpace(toks []xc.Token, removeTrailingComma bool) []xc.Token {
@@ -738,8 +740,10 @@ func normalizeToks(toks []xc.Token) []xc.Token {
 
 func (p *pp) expandFnMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bool, w func([]xc.Token)) {
 	nm := tok.Val
+	var sentinels []xc.Token
 again:
 	if r.eof(true) {
+		r.unget(sentinels)
 		w([]xc.Token{tok})
 		return
 	}
@@ -748,7 +752,12 @@ again:
 	case c == ' ':
 		r.read()
 		goto again
+	case c == sentinel:
+		s := r.read()
+		sentinels = append([]xc.Token{s}, sentinels...)
+		goto again
 	case c != '(': // != name()
+		r.unget(sentinels)
 		w([]xc.Token{tok})
 		return
 	}
@@ -823,13 +832,11 @@ next:
 		}
 	}
 
-	r0 = pasteToks(r0)
-
+	tok.Rune = sentinel
+	sentinels = append([]xc.Token{tok}, sentinels...)
 	p.expandingMacros[nm]++
-	defer func() { p.expandingMacros[nm]-- }()
-
-	u := p.pragmas(p.expandLineNo(r0))
-	r.unget(p.sanitize(u))
+	y := append(p.sanitize(p.pragmas(p.expandLineNo(pasteToks(r0)))), sentinels...)
+	r.unget(y)
 }
 
 func stringify(toks []xc.Token) xc.Token {

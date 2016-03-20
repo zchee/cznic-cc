@@ -2115,6 +2115,12 @@ func TestAnonStructField(t *testing.T) {
 func tokStr(toks []xc.Token) string {
 	var b []byte
 	for _, v := range toks {
+		switch v.Rune {
+		case sentinel:
+			b = append(b, []byte("@:")...)
+		case IDENTIFIER_NONREPL:
+			b = append(b, []byte("-:")...)
+		}
 		b = append(b, xc.Dict.S(tokVal(v))...)
 	}
 	return string(b)
