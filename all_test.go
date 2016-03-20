@@ -1382,85 +1382,96 @@ func TestDevBash(t *testing.T) {
 	)
 }
 
-//func TestDevMake(t *testing.T) {
-//	predefined, includePaths, sysIncludePaths, err := HostConfig()
-//	if err != nil {
-//		t.Logf("skipping: %v", err)
-//		return
-//	}
-//
-//	opts := []Opt{
-//		IncludePaths([]string{
-//			".",
-//		}),
-//		IncludePaths(includePaths),
-//		SysIncludePaths(sysIncludePaths),
-//		EnableAnonymousStructFields(),
-//		EnableAsm(),
-//		EnableIncludeNext(),
-//		EnableTypeOf(),
-//	}
-//	if *oFailFast {
-//		opts = append(opts, CrashOnError())
-//	}
-//
-//	testDev(
-//		t,
-//		predefined+testDevAdditionalPredefines+`
-//#define LOCALEDIR "/usr/local/share/locale"
-//#define LIBDIR "/usr/local/lib"
-//#define INCLUDEDIR "/usr/local/include"
-//#define HAVE_CONFIG_H
-//
-//#define __typeof typeof
-//
-//#undef __const
-//#define __const const
-//
-//void* __builtin_alloca(int);
-//`,
-//		[]string{
-//			"-DLOCALEDIR=\"/usr/local/share/locale\"",
-//			"-DLIBDIR=\"/usr/local/lib\"",
-//			"-DINCLUDEDIR=\"/usr/local/include\"",
-//			"-DHAVE_CONFIG_H",
-//			"-I.",
-//		},
-//		[]string{
-//			"ar.c",
-//			"arscan.c",
-//			"commands.c",
-//			"default.c",
-//			"dir.c",
-//			"expand.c",
-//			"file.c",
-//			"function.c",
-//			"getopt.c",
-//			"getopt1.c",
-//			"guile.c",
-//			"hash.c",
-//			"implicit.c",
-//			"job.c",
-//			"load.c",
-//			"loadapi.c",
-//			"main.c",
-//			"misc.c",
-//			"output.c",
-//			"read.c",
-//			"remake.c",
-//			"remote-stub.c",
-//			"rule.c",
-//			"signame.c",
-//			"strcache.c",
-//			"variable.c",
-//			"version.c",
-//			"vpath.c",
-//		},
-//		"testdata/dev/make-4.1/",
-//		opts...,
-//	)
-//}
-//
+func TestDevMake(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	ppOpts := []Opt{
+		IncludePaths([]string{
+			".",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableIncludeNext(),
+		devTest(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
+		IncludePaths([]string{
+			".",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	p := predefined + `
+#define LOCALEDIR "/usr/local/share/locale"
+#define LIBDIR "/usr/local/lib"
+#define INCLUDEDIR "/usr/local/include"
+#define HAVE_CONFIG_H
+`
+	testDev(
+		t,
+		p,
+		p,
+		p+`
+#define __inline inline
+#define __restrict __restrict__
+#define __typeof typeof
+`,
+		[]string{
+			"-DLOCALEDIR=\"/usr/local/share/locale\"",
+			"-DLIBDIR=\"/usr/local/lib\"",
+			"-DINCLUDEDIR=\"/usr/local/include\"",
+			"-DHAVE_CONFIG_H",
+			"-I.",
+		},
+		[]string{
+			"ar.c",
+			"arscan.c",
+			"commands.c",
+			"default.c",
+			"dir.c",
+			"expand.c",
+			"file.c",
+			"function.c",
+			"getopt.c",
+			"getopt1.c",
+			"guile.c",
+			"hash.c",
+			"implicit.c",
+			"job.c",
+			"load.c",
+			"loadapi.c",
+			"main.c",
+			"misc.c",
+			"output.c",
+			"read.c",
+			"remake.c",
+			"remote-stub.c",
+			"rule.c",
+			"signame.c",
+			"strcache.c",
+			"variable.c",
+			"version.c",
+			"vpath.c",
+		},
+		"testdata/dev/make-4.1/",
+		ppOpts,
+		parseOpts,
+	)
+}
+
 //func TestDevBc(t *testing.T) {
 //	predefined, includePaths, sysIncludePaths, err := HostConfig()
 //	if err != nil {
