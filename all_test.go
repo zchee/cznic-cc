@@ -1709,76 +1709,73 @@ func TestDevEmacs(t *testing.T) {
 		parseOpts,
 	)
 
-	// 	testDev(
-	// 		t,
-	// 		predefined+testDevAdditionalPredefines+`
+	//	p = predefined + `
 	// #define CTAGS
 	// #define EMACS_NAME "GNU Emacs"
 	// #define HAVE_CONFIG_H
 	// #define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
 	// #define VERSION "24.5"
-	// #define _GCC_MAX_ALIGN_T
-	// #define _Noreturn
-	// #define __inline__ inline
-	// #define __typeof__ typeof
-	// #define __typeof typeof
-	//
-	// void* __builtin_alloca(int);
-	// `,
-	// 		[]string{
-	// 			"-std=gnu99",
-	// 			"-I.",
-	// 			"-I../lib",
-	// 			"-I../src",
-	// 			"-DEMACS_NAME=\"GNU Emacs\"",
-	// 			"-DCTAGS",
-	// 			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
-	// 			"-DVERSION=\"24.5\"",
-	// 		},
-	// 		[]string{
-	// 			"./../src/regex.c",
-	// 			"./ebrowse.c",
-	// 			"./emacsclient.c",
-	// 			"./etags.c",
-	// 			"./hexl.c",
-	// 			"./make-docfile.c",
-	// 			"./movemail.c",
-	// 			"./pop.c",
-	// 			"./profile.c",
-	// 			"./test-distrib.c",
-	// 			"./update-game-score.c",
-	// 		},
-	// 		"testdata/dev/emacs-24.5/lib-src/",
-	// 		opts...,
-	// 	)
-	//
-	// 	opts = []Opt{
-	// 		IncludePaths([]string{
-	// 			".",
-	// 			"../lib",
-	// 			"/usr/include/gtk-3.0",
-	// 			"/usr/include/pango-1.0",
-	// 			"/usr/include/gio-unix-2.0/",
-	// 			"/usr/include/atk-1.0",
-	// 			"/usr/include/cairo",
-	// 			"/usr/include/gdk-pixbuf-2.0",
-	// 			"/usr/include/freetype2",
-	// 			"/usr/include/glib-2.0",
-	// 			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
-	// 			"/usr/include/pixman-1",
-	// 			"/usr/include/libpng12",
-	// 		}),
-	// 		IncludePaths(includePaths),
-	// 		SysIncludePaths(sysIncludePaths),
-	// 		EnableAlignOf(),
-	// 		EnableAnonymousStructFields(),
-	// 		EnableAsm(),
-	// 		EnableDefineOmitCommaBeforeDDD(),
-	// 		EnableIncludeNext(),
-	// 		EnableStaticAssert(),
-	// 		EnableTypeOf(),
-	// 	}
-	//
+	// `
+	//	testDev(
+	//		t,
+	//		p,
+	//		p,
+	//		p,
+	//		[]string{
+	//			"-std=gnu99",
+	//			"-I.",
+	//			"-I../lib",
+	//			"-I../src",
+	//			"-DEMACS_NAME=\"GNU Emacs\"",
+	//			"-DCTAGS",
+	//			"-DHAVE_SHARED_GAME_DIR=\"/usr/local/var/games/emacs\"",
+	//			"-DVERSION=\"24.5\"",
+	//		},
+	//		[]string{
+	//			"./../src/regex.c",
+	//			"./ebrowse.c",
+	//			"./emacsclient.c",
+	//			"./etags.c",
+	//			"./hexl.c",
+	//			"./make-docfile.c",
+	//			"./movemail.c",
+	//			"./pop.c",
+	//			"./profile.c",
+	//			"./test-distrib.c",
+	//			"./update-game-score.c",
+	//		},
+	//		"testdata/dev/emacs-24.5/lib-src/",
+	//		ppOpts,
+	//		parseOpts,
+	//	)
+
+	//	opts = []Opt{
+	//		IncludePaths([]string{
+	//			".",
+	//			"../lib",
+	//			"/usr/include/gtk-3.0",
+	//			"/usr/include/pango-1.0",
+	//			"/usr/include/gio-unix-2.0/",
+	//			"/usr/include/atk-1.0",
+	//			"/usr/include/cairo",
+	//			"/usr/include/gdk-pixbuf-2.0",
+	//			"/usr/include/freetype2",
+	//			"/usr/include/glib-2.0",
+	//			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+	//			"/usr/include/pixman-1",
+	//			"/usr/include/libpng12",
+	//		}),
+	//		IncludePaths(includePaths),
+	//		SysIncludePaths(sysIncludePaths),
+	//		EnableAlignOf(),
+	//		EnableAnonymousStructFields(),
+	//		EnableAsm(),
+	//		EnableDefineOmitCommaBeforeDDD(),
+	//		EnableIncludeNext(),
+	//		EnableStaticAssert(),
+	//		EnableTypeOf(),
+	//	}
+
 	// 	testDev(
 	// 		t,
 	// 		predefined+testDevAdditionalPredefines+`
