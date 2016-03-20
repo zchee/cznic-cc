@@ -835,7 +835,6 @@ func TestDevSqlite(t *testing.T) {
 		predefined,
 		predefined,
 		predefined+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict restrict
 `,
@@ -896,7 +895,6 @@ func TestDevVim(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict restrict
 #define __typeof typeof
@@ -1021,7 +1019,6 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1134,7 +1131,6 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __restrict __restrict__
 #define __inline inline
 `,
@@ -1199,7 +1195,6 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1228,7 +1223,6 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1298,7 +1292,6 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1363,7 +1356,6 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1433,7 +1425,6 @@ func TestDevMake(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1525,7 +1516,6 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1551,7 +1541,6 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1581,7 +1570,6 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
-#define __attribute__(x)
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1653,7 +1641,6 @@ func TestDevEmacs(t *testing.T) {
 `,
 		p,
 		p+`
-#define __attribute__(x)
 #define __getopt_argv_const const
 #define __inline inline
 #define __restrict __restrict__

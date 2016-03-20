@@ -40,6 +40,7 @@ const (
 	fakeTime = "__TESTING_TIME__"
 
 	gccPredefine = `
+#define __attribute__(x)
 #define __builtin_offsetof(type, member) ((size_t)(&((type *)0)->member))
 #define __builtin_va_arg(ap, type) ( *( type* )ap )
 #define __builtin_va_end(x)
