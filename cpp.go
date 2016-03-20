@@ -550,9 +550,7 @@ func (p *pp) expandMacro(tok xc.Token, r tokenReader, m *Macro, handleDefined bo
 		repl[i].Char = lex.NewChar(pos, v.Rune)
 	}
 	u := p.expandLineNo(p.pragmas(p.sanitize(repl)))
-	var y []xc.Token
-	p.expand(&tokenBuf{u}, handleDefined, func(toks []xc.Token) { y = append(y, toks...) })
-	r.unget(y)
+	r.unget(u)
 }
 
 func trimSpace(toks []xc.Token, removeTrailingComma bool) []xc.Token {
@@ -829,9 +827,7 @@ next:
 	defer func() { p.expandingMacros[nm]-- }()
 
 	u := p.pragmas(p.sanitize(p.expandLineNo(r0)))
-	var y []xc.Token
-	p.expand(&tokenBuf{u}, handleDefined, func(toks []xc.Token) { y = append(y, toks...) })
-	r.unget(y)
+	r.unget(u)
 }
 
 func stringify(toks []xc.Token) xc.Token {
@@ -902,7 +898,7 @@ func (p *pp) parseMacroArgs(r tokenReader) (args [][]xc.Token) {
 			continue
 		}
 
-		if r.peek().Rune == ')' {
+		if r.eof(true) || r.peek().Rune == ')' {
 			break
 		}
 	}
