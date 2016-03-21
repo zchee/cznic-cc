@@ -630,15 +630,18 @@ func (n *ControlLine) Pos() token.Pos {
 	return n.Token.Pos()
 }
 
-// Declaration represents data reduced by production:
+// Declaration represents data reduced by productions:
 //
 //	Declaration:
 //	        DeclarationSpecifiers InitDeclaratorListOpt ';'
+//	|       StaticAssertDeclaration                          // Case 1
 type Declaration struct {
-	declarator            *Declarator // Synthetic declarator when InitDeclaratorListOpt is nil.
-	DeclarationSpecifiers *DeclarationSpecifiers
-	InitDeclaratorListOpt *InitDeclaratorListOpt
-	Token                 xc.Token
+	declarator              *Declarator // Synthetic declarator when InitDeclaratorListOpt is nil.
+	Case                    int
+	DeclarationSpecifiers   *DeclarationSpecifiers
+	InitDeclaratorListOpt   *InitDeclaratorListOpt
+	StaticAssertDeclaration *StaticAssertDeclaration
+	Token                   xc.Token
 }
 
 func (n *Declaration) fragment() interface{} { return n }
@@ -650,7 +653,14 @@ func (n *Declaration) String() string {
 
 // Pos reports the position of the first component of n or zero if it's empty.
 func (n *Declaration) Pos() token.Pos {
-	return n.DeclarationSpecifiers.Pos()
+	switch n.Case {
+	case 0:
+		return n.DeclarationSpecifiers.Pos()
+	case 1:
+		return n.StaticAssertDeclaration.Pos()
+	default:
+		panic("internal error")
+	}
 }
 
 // DeclarationList represents data reduced by productions:
@@ -1612,13 +1622,11 @@ func (n *ExpressionStatement) Pos() token.Pos {
 //	        FunctionDefinition
 //	|       Declaration                  // Case 1
 //	|       BasicAssemblerStatement ';'  // Case 2
-//	|       StaticAssert                 // Case 3
 type ExternalDeclaration struct {
 	BasicAssemblerStatement *BasicAssemblerStatement
 	Case                    int
 	Declaration             *Declaration
 	FunctionDefinition      *FunctionDefinition
-	StaticAssert            *StaticAssert
 	Token                   xc.Token
 }
 
@@ -1638,8 +1646,6 @@ func (n *ExternalDeclaration) Pos() token.Pos {
 		return n.Declaration.Pos()
 	case 0:
 		return n.FunctionDefinition.Pos()
-	case 3:
-		return n.StaticAssert.Pos()
 	default:
 		panic("internal error")
 	}
@@ -2546,11 +2552,11 @@ func (n *Statement) Pos() token.Pos {
 	}
 }
 
-// StaticAssert represents data reduced by production:
+// StaticAssertDeclaration represents data reduced by production:
 //
-//	StaticAssert:
+//	StaticAssertDeclaration:
 //	        "_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'
-type StaticAssert struct {
+type StaticAssertDeclaration struct {
 	ConstantExpression *ConstantExpression
 	Token              xc.Token
 	Token2             xc.Token
@@ -2560,15 +2566,15 @@ type StaticAssert struct {
 	Token6             xc.Token
 }
 
-func (n *StaticAssert) fragment() interface{} { return n }
+func (n *StaticAssertDeclaration) fragment() interface{} { return n }
 
 // String implements fmt.Stringer.
-func (n *StaticAssert) String() string {
+func (n *StaticAssertDeclaration) String() string {
 	return PrettyString(n)
 }
 
 // Pos reports the position of the first component of n or zero if it's empty.
-func (n *StaticAssert) Pos() token.Pos {
+func (n *StaticAssertDeclaration) Pos() token.Pos {
 	return n.Token.Pos()
 }
 
@@ -2603,11 +2609,13 @@ func (n *StorageClassSpecifier) Pos() token.Pos {
 //	StructDeclaration:
 //	        SpecifierQualifierList StructDeclaratorList ';'
 //	|       SpecifierQualifierList ';'                       // Case 1
+//	|       StaticAssertDeclaration                          // Case 2
 type StructDeclaration struct {
-	Case                   int
-	SpecifierQualifierList *SpecifierQualifierList
-	StructDeclaratorList   *StructDeclaratorList
-	Token                  xc.Token
+	Case                    int
+	SpecifierQualifierList  *SpecifierQualifierList
+	StaticAssertDeclaration *StaticAssertDeclaration
+	StructDeclaratorList    *StructDeclaratorList
+	Token                   xc.Token
 }
 
 func (n *StructDeclaration) fragment() interface{} { return n }
@@ -2619,7 +2627,14 @@ func (n *StructDeclaration) String() string {
 
 // Pos reports the position of the first component of n or zero if it's empty.
 func (n *StructDeclaration) Pos() token.Pos {
-	return n.SpecifierQualifierList.Pos()
+	switch n.Case {
+	case 0, 1:
+		return n.SpecifierQualifierList.Pos()
+	case 2:
+		return n.StaticAssertDeclaration.Pos()
+	default:
+		panic("internal error")
+	}
 }
 
 // StructDeclarationList represents data reduced by productions:

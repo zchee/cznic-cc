@@ -267,7 +267,7 @@ import (
 	SpecifierQualifierListOpt    "optional specifier qualifier list"
 	Start
 	Statement                    "statement"
-	StaticAssert                 "static assert"
+	StaticAssertDeclaration      "static assert declaration"
 	StorageClassSpecifier        "storage class specifier"
 	StructDeclaration            "struct declaration"
 	StructDeclarationList        "struct declaration list"
@@ -1032,6 +1032,13 @@ Declaration:
 		d.setFull(lx)
 		lhs.declarator = d
 	}
+|	StaticAssertDeclaration
+	{
+		$$ = &Declaration{
+			Case:                     1,
+			StaticAssertDeclaration:  $1.(*StaticAssertDeclaration),
+		}
+	}
 
 DeclarationSpecifiers:
 	StorageClassSpecifier DeclarationSpecifiersOpt
@@ -1661,6 +1668,13 @@ StructDeclaration:
 			}
 
 			break
+		}
+	}
+|	StaticAssertDeclaration
+	{
+		$$ = &StructDeclaration{
+			Case:                     2,
+			StaticAssertDeclaration:  $1.(*StaticAssertDeclaration),
 		}
 	}
 
@@ -3050,13 +3064,6 @@ ExternalDeclaration:
 			Token:                    $2,
 		}
 	}
-|	StaticAssert
-	{
-		$$ = &ExternalDeclaration{
-			Case:          3,
-			StaticAssert:  $1.(*StaticAssert),
-		}
-	}
 
 FunctionDefinition:
 	DeclarationSpecifiers Declarator DeclarationListOpt
@@ -3364,11 +3371,11 @@ AssemblerStatement:
 		}
 	}
 
-StaticAssert:
+StaticAssertDeclaration:
 	"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'
 	{
 		lx := yylex.(*lexer)
-		lhs := &StaticAssert{
+		lhs := &StaticAssertDeclaration{
 			Token:               $1,
 			Token2:              $2,
 			ConstantExpression:  $3.(*ConstantExpression),

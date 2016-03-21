@@ -1077,7 +1077,7 @@ func (m *Model) binOpType(a, b Type) Type {
 		}
 	case Long:
 		switch bk {
-		case Long, Bool:
+		case Long, Bool, Enum:
 			return m.LongType
 		case ULong:
 			return m.ULongType

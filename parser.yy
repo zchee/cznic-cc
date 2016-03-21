@@ -244,7 +244,7 @@ import (
 	SpecifierQualifierList		"specifier qualifier list"
 	SpecifierQualifierListOpt	"optional specifier qualifier list"
 	Statement			"statement"
-	StaticAssert			"static assert"
+	StaticAssertDeclaration		"static assert declaration"
 	StorageClassSpecifier		"storage class specifier"
 	StructDeclaration		"struct declaration"
 	StructDeclarationList		"struct declaration list"
@@ -508,6 +508,7 @@ Declaration:
 		d.setFull(lx)
 		lhs.declarator = d
 	}
+|	StaticAssertDeclaration
 
 // [0](6.7)
 //yy:field	attr		int	// tsInline, tsTypedefName, ...
@@ -927,6 +928,7 @@ StructDeclaration:
 			break
 		}
 	}
+|	StaticAssertDeclaration
 
 // [0](6.7.2.1)
 //yy:field	attr		int	// tsInline, tsTypedefName, ...
@@ -1644,7 +1646,6 @@ ExternalDeclaration:
 	FunctionDefinition
 |	Declaration
 |	BasicAssemblerStatement ';'
-|	StaticAssert
 
 // [0](6.9.1)
 FunctionDefinition:
@@ -1778,7 +1779,7 @@ AssemblerStatement:
 |	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ':' Clobbers ')'
 |	"asm" VolatileOpt "goto" '(' AssemblerInstructions ':' ':' AssemblerOperands ':' Clobbers ':' IdentifierList ')'
 
-StaticAssert:
+StaticAssertDeclaration:
 	"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'
 	{
 		ce := lhs.ConstantExpression
