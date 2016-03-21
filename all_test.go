@@ -1697,12 +1697,12 @@ func TestDevEmacs(t *testing.T) {
 	)
 
 	p = predefined + `
-	 #define CTAGS
-	 #define EMACS_NAME "GNU Emacs"
-	 #define HAVE_CONFIG_H
-	 #define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
-	 #define VERSION "24.5"
-	 `
+ #define CTAGS
+ #define EMACS_NAME "GNU Emacs"
+ #define HAVE_CONFIG_H
+ #define HAVE_SHARED_GAME_DIR "/usr/local/var/games/emacs"
+ #define VERSION "24.5"
+ `
 	testDev(
 		t,
 		p+`
@@ -1743,46 +1743,72 @@ func TestDevEmacs(t *testing.T) {
 		parseOpts,
 	)
 
-	//	opts = []Opt{
-	//		IncludePaths([]string{
-	//			".",
-	//			"../lib",
-	//			"/usr/include/gtk-3.0",
-	//			"/usr/include/pango-1.0",
-	//			"/usr/include/gio-unix-2.0/",
-	//			"/usr/include/atk-1.0",
-	//			"/usr/include/cairo",
-	//			"/usr/include/gdk-pixbuf-2.0",
-	//			"/usr/include/freetype2",
-	//			"/usr/include/glib-2.0",
-	//			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
-	//			"/usr/include/pixman-1",
-	//			"/usr/include/libpng12",
-	//		}),
-	//		IncludePaths(includePaths),
-	//		SysIncludePaths(sysIncludePaths),
-	//		EnableAlignOf(),
-	//		EnableAnonymousStructFields(),
-	//		EnableAsm(),
-	//		EnableDefineOmitCommaBeforeDDD(),
-	//		EnableIncludeNext(),
-	//		EnableStaticAssert(),
-	//		EnableTypeOf(),
-	//	}
+	ppOpts = []Opt{
+		IncludePaths([]string{
+			".",
+			"../lib",
+			"/usr/include/gtk-3.0",
+			"/usr/include/pango-1.0",
+			"/usr/include/gio-unix-2.0/",
+			"/usr/include/atk-1.0",
+			"/usr/include/cairo",
+			"/usr/include/gdk-pixbuf-2.0",
+			"/usr/include/freetype2",
+			"/usr/include/glib-2.0",
+			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+			"/usr/include/pixman-1",
+			"/usr/include/libpng12",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		EnableDefineOmitCommaBeforeDDD(),
+		EnableIncludeNext(),
+		devTest(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts = []Opt{
+		IncludePaths([]string{
+			".",
+			"../lib",
+			"/usr/include/gtk-3.0",
+			"/usr/include/pango-1.0",
+			"/usr/include/gio-unix-2.0/",
+			"/usr/include/atk-1.0",
+			"/usr/include/cairo",
+			"/usr/include/gdk-pixbuf-2.0",
+			"/usr/include/freetype2",
+			"/usr/include/glib-2.0",
+			"/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+			"/usr/include/pixman-1",
+			"/usr/include/libpng12",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
 
+	// 	p = predefined + `
+	// #define _GCC_MAX_ALIGN_T
+	// #define emacs
+	// `
+	//
 	// 	testDev(
 	// 		t,
-	// 		predefined+testDevAdditionalPredefines+`
+	// 		p+`
 	// #define _GCC_MAX_ALIGN_T
-	// #define _Noreturn
-	// #define __inline__ inline
+	// #define _Noreturn __attribute__ ((__noreturn__))
+	// `,
+	// 		p,
+	// 		p+`
+	// #define __inline inline
+	// #define __restrict __restrict__
 	// #define __typeof typeof
-	// #define __typeof__ typeof
-	// #define emacs
-	// #define _Alignas(x)
-	//
-	// void* __builtin_alloca(int);
-	// void __builtin_unreachable (void);
 	// `,
 	// 		[]string{
 	// 			"-std=gnu99",
@@ -1802,93 +1828,94 @@ func TestDevEmacs(t *testing.T) {
 	// 			"-I/usr/include/libpng12",
 	// 		},
 	// 		[]string{
+	// 			"alloc.c",
 	// 			"atimer.c",
 	// 			"bidi.c",
+	// 			"buffer.c",
+	// 			"bytecode.c",
 	// 			"callint.c",
 	// 			"callproc.c",
+	// 			"casefiddle.c",
 	// 			"casetab.c",
 	// 			"category.c",
+	// 			"ccl.c",
+	// 			"character.c",
+	// 			"charset.c",
+	// 			"chartab.c",
 	// 			"cm.c",
+	// 			"cmds.c",
+	// 			"coding.c",
 	// 			"composite.c",
+	// 			"data.c",
 	// 			"decompress.c",
+	// 			"dired.c",
+	// 			"dispnew.c",
 	// 			"doc.c",
+	// 			"doprnt.c",
+	// 			"editfns.c",
+	// 			"emacs.c",
+	// 			"emacsgtkfixed.c",
+	// 			"eval.c",
 	// 			"fileio.c",
 	// 			"filelock.c",
 	// 			"floatfns.c",
+	// 			"fns.c",
+	// 			"font.c",
 	// 			"fontset.c",
 	// 			"frame.c",
 	// 			"fringe.c",
+	// 			"ftfont.c",
 	// 			"gfilenotify.c",
 	// 			"gnutls.c",
 	// 			"gtkutil.c",
+	// 			"image.c",
 	// 			"indent.c",
+	// 			"insdel.c",
 	// 			"intervals.c",
 	// 			"keyboard.c",
+	// 			"keymap.c",
 	// 			"lastfile.c",
+	// 			"lread.c",
 	// 			"macros.c",
 	// 			"marker.c",
 	// 			"menu.c",
 	// 			"minibuf.c",
+	// 			"print.c",
+	// 			"process.c",
 	// 			"profiler.c",
+	// 			"regex.c",
 	// 			"region-cache.c",
 	// 			"scroll.c",
+	// 			"search.c",
 	// 			"sound.c",
+	// 			"syntax.c",
 	// 			"sysdep.c",
+	// 			"term.c",
+	// 			"terminal.c",
 	// 			"terminfo.c",
+	// 			"textprop.c",
 	// 			"undo.c",
+	// 			"unexelf.c",
 	// 			"vm-limit.c",
 	// 			"window.c",
+	// 			"xdisp.c",
 	// 			"xfaces.c",
 	// 			"xfns.c",
+	// 			"xfont.c",
+	// 			"xftfont.c",
 	// 			"xgselect.c",
 	// 			"xmenu.c",
 	// 			"xml.c",
 	// 			"xrdb.c",
 	// 			"xselect.c",
+	// 			"xsettings.c",
 	// 			"xsmfns.c",
-	// 			//"alloc.c",
-	// 			//"buffer.c",
-	// 			//"bytecode.c",
-	// 			//"casefiddle.c",
-	// 			//"ccl.c",
-	// 			//"character.c",
-	// 			//"charset.c",
-	// 			//"chartab.c",
-	// 			//"cmds.c",
-	// 			//"coding.c",
-	// 			//"data.c",
-	// 			//"dired.c",
-	// 			//"dispnew.c",
-	// 			//"doprnt.c",
-	// 			//"editfns.c",
-	// 			//"emacs.c",
-	// 			//"emacsgtkfixed.c",
-	// 			//"eval.c",
-	// 			//"fns.c",
-	// 			//"font.c",
-	// 			//"ftfont.c",
+	// 			"xterm.c",
 	// 			//"ftxfont.c",
-	// 			//"image.c",
-	// 			//"insdel.c",
-	// 			//"keymap.c",
-	// 			//"lread.c",
-	// 			//"print.c",
-	// 			//"process.c",
-	// 			//"regex.c",
-	// 			//"search.c",
-	// 			//"syntax.c",
-	// 			//"term.c",
-	// 			//"terminal.c",
-	// 			//"textprop.c",
-	// 			//"unexelf.c",
-	// 			//"xdisp.c",
-	// 			//"xfont.c",
-	// 			//"xftfont.c",
-	// 			//"xsettings.c",
-	// 			//"xterm.c",
 	// 		},
 	// 		"testdata/dev/emacs-24.5/src/",
-	// 		opts...,
+	// 		ppOpts,
+	// 		parseOpts,
 	// 	)
 }
 
@@ -1920,15 +1947,6 @@ func TestFinalInjection(t *testing.T) {
 	ast, err := ppParseString("test.c", src, xc.NewReport(), &tweaks{})
 	if err != nil {
 		t.Fatal(errString(err))
-	}
-
-	ast2, err := ppParseString("test.c", src+"\n", xc.NewReport(), &tweaks{})
-	if err != nil {
-		t.Fatal(errString(err))
-	}
-
-	if g, e := PrettyString(ast2), PrettyString(ast); g != e {
-		t.Fatalf("got\n%s\nexpected\n%s", g, e)
 	}
 
 	t.Log(PrettyString(ast))

@@ -1261,10 +1261,11 @@ func ExampleElifGroup() {
 	fmt.Println(exampleAST(289, "\U00100000 \n#if other_a  \n#elif other_b  \n#elif"))
 	// Output:
 	// &cc.ElifGroup{
-	// · PPTokenList: []xc.Token{ // len 3
+	// · PPTokenList: []xc.Token{ // len 4
 	// · · 0: example289.c:3:6: ' ',
 	// · · 1: example289.c:3:7: IDENTIFIER "other_b",
 	// · · 2: example289.c:3:14: ' ',
+	// · · 3: example289.c:3:16: ' ',
 	// · },
 	// · Token: example289.c:3:2: PPELIF,
 	// · Token2: example289.c:3:16: '\n',
@@ -1276,10 +1277,11 @@ func ExampleElifGroupList() {
 	// Output:
 	// &cc.ElifGroupList{
 	// · ElifGroup: &cc.ElifGroup{
-	// · · PPTokenList: []xc.Token{ // len 3
+	// · · PPTokenList: []xc.Token{ // len 4
 	// · · · 0: example285.c:3:6: ' ',
 	// · · · 1: example285.c:3:7: IDENTIFIER "other_b",
 	// · · · 2: example285.c:3:14: ' ',
+	// · · · 3: example285.c:3:16: ' ',
 	// · · },
 	// · · Token: example285.c:3:2: PPELIF,
 	// · · Token2: example285.c:3:16: '\n',
@@ -1292,10 +1294,11 @@ func ExampleElifGroupList_case1() {
 	// Output:
 	// &cc.ElifGroupList{
 	// · ElifGroup: &cc.ElifGroup{
-	// · · PPTokenList: []xc.Token{ // len 3
+	// · · PPTokenList: []xc.Token{ // len 4
 	// · · · 0: example286.c:3:6: ' ',
 	// · · · 1: example286.c:3:7: IDENTIFIER "other_b",
 	// · · · 2: example286.c:3:14: ' ',
+	// · · · 3: example286.c:3:16: ' ',
 	// · · },
 	// · · Token: example286.c:3:2: PPELIF,
 	// · · Token2: example286.c:3:16: '\n',
@@ -1303,10 +1306,11 @@ func ExampleElifGroupList_case1() {
 	// · ElifGroupList: &cc.ElifGroupList{
 	// · · Case: 1,
 	// · · ElifGroup: &cc.ElifGroup{
-	// · · · PPTokenList: []xc.Token{ // len 3
+	// · · · PPTokenList: []xc.Token{ // len 4
 	// · · · · 0: example286.c:4:6: ' ',
 	// · · · · 1: example286.c:4:7: IDENTIFIER "other_c",
 	// · · · · 2: example286.c:4:14: ' ',
+	// · · · · 3: example286.c:4:16: ' ',
 	// · · · },
 	// · · · Token: example286.c:4:2: PPELIF,
 	// · · · Token2: example286.c:4:16: '\n',
@@ -1327,10 +1331,11 @@ func ExampleElifGroupListOpt_case1() {
 	// &cc.ElifGroupListOpt{
 	// · ElifGroupList: &cc.ElifGroupList{
 	// · · ElifGroup: &cc.ElifGroup{
-	// · · · PPTokenList: []xc.Token{ // len 3
+	// · · · PPTokenList: []xc.Token{ // len 4
 	// · · · · 0: example288.c:3:6: ' ',
 	// · · · · 1: example288.c:3:7: IDENTIFIER "other_b",
 	// · · · · 2: example288.c:3:14: ' ',
+	// · · · · 3: example288.c:3:16: ' ',
 	// · · · },
 	// · · · Token: example288.c:3:2: PPELIF,
 	// · · · Token2: example288.c:3:16: '\n',
@@ -2630,8 +2635,9 @@ func ExampleGroupList_case1() {
 	// · · · 5: example274.c:2:6: '}',
 	// · · },
 	// · },
-	// · GroupPart: []xc.Token{ // len 1
+	// · GroupPart: []xc.Token{ // len 2
 	// · · 0: example274.c:1:5: IDENTIFIER "int",
+	// · · 1: example274.c:1:8: ' ',
 	// · },
 	// }
 }
@@ -2647,8 +2653,9 @@ func ExampleGroupListOpt_case1() {
 	// Output:
 	// &cc.GroupListOpt{
 	// · GroupList: &cc.GroupList{
-	// · · GroupPart: []xc.Token{ // len 1
+	// · · GroupPart: []xc.Token{ // len 2
 	// · · · 0: example276.c:3:1: IDENTIFIER "b",
+	// · · · 1: example276.c:3:2: ' ',
 	// · · },
 	// · },
 	// }
@@ -2709,10 +2716,11 @@ func ExampleIfGroup() {
 	fmt.Println(exampleAST(282, "\U00100000 \n#if other_a  \n#elif"))
 	// Output:
 	// &cc.IfGroup{
-	// · PPTokenList: []xc.Token{ // len 3
+	// · PPTokenList: []xc.Token{ // len 4
 	// · · 0: example282.c:2:4: ' ',
 	// · · 1: example282.c:2:5: IDENTIFIER "other_a",
 	// · · 2: example282.c:2:12: ' ',
+	// · · 3: example282.c:2:14: ' ',
 	// · },
 	// · Token: example282.c:2:2: PPIF,
 	// · Token2: example282.c:2:14: '\n',
@@ -2749,10 +2757,11 @@ func ExampleIfSection() {
 	// · · Token: example281.c:3:2: PPENDIF,
 	// · },
 	// · IfGroup: &cc.IfGroup{
-	// · · PPTokenList: []xc.Token{ // len 3
+	// · · PPTokenList: []xc.Token{ // len 4
 	// · · · 0: example281.c:2:4: ' ',
 	// · · · 1: example281.c:2:5: IDENTIFIER "other_a",
 	// · · · 2: example281.c:2:12: ' ',
+	// · · · 3: example281.c:2:14: ' ',
 	// · · },
 	// · · Token: example281.c:2:2: PPIF,
 	// · · Token2: example281.c:2:14: '\n',

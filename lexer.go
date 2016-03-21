@@ -188,6 +188,9 @@ again:
 			goto again
 		}
 	case '\n':
+		if l.state == lsTokens {
+			l.encodeToken(xc.Token{lex.NewChar(l.First.Pos(), ' '), idSpace})
+		}
 		l.state = lsBOL
 		l.sc = scINITIAL
 		l.scs = -1 // Stack empty

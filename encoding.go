@@ -386,6 +386,7 @@ var (
 	idSTDCMBMightNeqWc = dict.SID("__STDC_MB_MIGHT_NEQ_WC__")
 	idSTDCVersion      = dict.SID("__STDC_VERSION__")
 	idSignedAlt        = dict.SID("__signed__")
+	idSpace            = dict.SID(" ")
 	idStatic           = dict.SID("static")
 	idStaticAssert     = dict.SID("_Static_assert")
 	idTDate            = dict.SID(tuTime.Format("Jan _2 2006")) // The date of translation of the preprocessing translation unit.

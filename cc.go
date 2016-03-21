@@ -61,6 +61,7 @@ long long strlen (const char*);
 unsigned __builtin_bswap32 (unsigned x);
 unsigned long long __builtin_bswap64 (unsigned long long x);
 unsigned short __builtin_bswap16 (unsigned short x);
+void __builtin_unreachable (void);
 void* __builtin_alloca(int);
 void* __builtin_memcpy(void *restrict dest, const void *restrict src, long long count);
 void* memcpy(void *restrict dest, const void *restrict src, long long count);

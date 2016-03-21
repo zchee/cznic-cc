@@ -133,6 +133,7 @@ type tokenPipe struct {
 	ackMore bool
 	closed  bool
 	in      []xc.Token
+	last    xc.Token
 	out     []xc.Token
 	r       chan []xc.Token
 	w       chan []xc.Token
@@ -140,6 +141,7 @@ type tokenPipe struct {
 
 // Implements tokenReader.
 func (t *tokenPipe) eof(more bool) bool {
+again:
 	if len(t.in) != 0 {
 		return false
 	}
@@ -162,6 +164,16 @@ func (t *tokenPipe) eof(more bool) bool {
 		return true
 	}
 
+	if len(t.in) != 0 && t.last.Rune == ' ' && t.in[0].Rune == ' ' {
+		t.in = t.in[1:]
+		goto again
+	}
+
+	if n := len(t.in); n > 1 && t.in[n-1].Rune == ' ' && t.in[n-2].Rune == ' ' {
+		t.in = t.in[:n-1]
+		goto again
+	}
+
 	return false
 }
 
@@ -169,7 +181,12 @@ func (t *tokenPipe) eof(more bool) bool {
 func (t *tokenPipe) peek() xc.Token { return t.in[0] }
 
 // Implements tokenReader.
-func (t *tokenPipe) read() xc.Token { r := t.peek(); t.in = t.in[1:]; return r }
+func (t *tokenPipe) read() xc.Token {
+	r := t.peek()
+	t.in = t.in[1:]
+	t.last = r
+	return r
+}
 
 // Implements tokenReader.
 func (t *tokenPipe) unget(toks []xc.Token) {
