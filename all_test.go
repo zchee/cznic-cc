@@ -1840,18 +1840,23 @@ func TestDevEmacs(t *testing.T) {
 			"category.c",
 			"ccl.c",
 			"character.c",
+			"charset.c",
 			"chartab.c",
 			"cm.c",
 			"cmds.c",
 			"composite.c",
 			"data.c",
 			"decompress.c",
+			"dispnew.c",
 			"doc.c",
 			"doprnt.c",
 			"editfns.c",
+			"emacs.c",
+			"eval.c",
 			"fileio.c",
 			"filelock.c",
 			"floatfns.c",
+			"fns.c",
 			"font.c",
 			"fontset.c",
 			"frame.c",
@@ -1871,17 +1876,21 @@ func TestDevEmacs(t *testing.T) {
 			"marker.c",
 			"menu.c",
 			"minibuf.c",
+			"process.c",
 			"profiler.c",
 			"region-cache.c",
 			"scroll.c",
 			"search.c",
 			"sound.c",
+			"syntax.c",
 			"sysdep.c",
 			"term.c",
 			"terminfo.c",
+			"textprop.c",
 			"undo.c",
 			"vm-limit.c",
 			"window.c",
+			"xdisp.c",
 			"xfaces.c",
 			"xfns.c",
 			"xfont.c",
@@ -1893,24 +1902,15 @@ func TestDevEmacs(t *testing.T) {
 			"xsmfns.c",
 			"xterm.c",
 			// "bytecode.c",      // [lo ... hi] = expr
-			// "charset.c",       // not an integer type (have 'bool')
 			// "coding.c",        // array subscript is not an integer (have 'bool')
 			// "dired.c",         // expected 'void*' but argument is of type '<undefined>'
-			// "dispnew.c",       // not an integer type (have 'bool')
-			// "emacs.c",         // not an integer type (have 'bool')
 			// "emacsgtkfixed.c", // /usr/include/gtk-3.0/gtk/gtkversion.h:98:9: cannot redefine macro: argument names differ
-			// "eval.c",          // eval.c:1721:4: 'bool'/'static bool' mismatch in conditional expression
-			// "fns.c",           // not an integer type (have 'bool')
 			// "ftxfont.c",       // ftxfont.c:145:7: undefined: ftfont_driver
 			// "image.c",         // /usr/include/gif_lib.h:269:44: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
 			// "print.c",         // print.c:999:15: expected 'char*' but argument is of type '<undefined>'
-			// "process.c",       // not an integer type (have 'bool')
 			// "regex.c",         // regex.c:70:5: unexpected ')', expected expression or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, character constant, floating-point constant, identifier, integer constant, long character constant, long string constant, sizeof, string literal]
-			// "syntax.c",        // not an integer type (have 'bool')
 			// "terminal.c",      // terminal.c:526:44: assignment from incompatible type ('void(*)(struct terminal*)' = 'static void(**)(struct terminal*)')
-			// "textprop.c",      // not an integer type (have 'bool')
 			// "unexelf.c",       // /usr/include/x86_64-linux-gnu/bits/link.h:97:3: unexpected identifier __int128_t, expected one of ['}', _Bool, _Complex, _Static_assert, char, const, double, enum, float, int, long, restrict, short, signed, struct, typedefname, typeof, union, unsigned, void, volatile]
-			// "xdisp.c",         // xdisp.c:13989:16: not an integer type (have 'extern bool')
 			// "xftfont.c",       // lisp.h:2041:13: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
 			// "xsettings.c",     // xsettings.c:431:36: unexpected '{', expected expression list or type name or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, _Bool, _Complex, char, character constant, const, double, enum, float, floating-point constant, identifier, int, integer constant, long, long character constant, long string constant, restrict, short, signed, sizeof, string literal, struct, typedefname, typeof, union, unsigned, void, volatile]
 		},
