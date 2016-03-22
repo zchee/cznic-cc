@@ -47,7 +47,6 @@ func (t *trigraphsReader) ReadChar() (c lex.Char, size int, err error) {
 
 type lexer struct {
 	*lex.Lexer                             //
-	adjustFnArgs       bool                //
 	ch                 chan []xc.Token     //
 	commentPos0        token.Pos           //
 	constExprToks      []xc.Token          //

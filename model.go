@@ -1189,12 +1189,12 @@ func (m *Model) checkArithmeticType(lx *lexer, a ...operand) (r bool) {
 	return r
 }
 
-func (m *Model) checkIntegerType(lx *lexer, a ...operand) (r bool) {
+func (m *Model) checkIntegerOrBoolType(lx *lexer, a ...operand) (r bool) {
 	r = true
 	for _, v := range a {
 		_, t := v.eval(lx)
-		if !IsIntType(t) {
-			lx.report.Err(v.Pos(), "not an integer type (have '%s')", t)
+		if !IsIntType(t) && !(t.Kind() == Bool) {
+			lx.report.Err(v.Pos(), "not an integer or bool type (have '%s')", t)
 			r = false
 		}
 	}

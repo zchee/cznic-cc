@@ -473,12 +473,9 @@ Expression:
 		}
 
 		lhs.Expression.eval(lx)
-		s := lx.adjustFnArgs
-		lx.adjustFnArgs = true
 		for l := o.ArgumentExpressionList; l != nil; l = l.ArgumentExpressionList {
 			l.Expression.eval(lx)
 		}
-		lx.adjustFnArgs = s
 	}
 |	Expression '.' IDENTIFIER
 	{

@@ -503,6 +503,27 @@ func (n *ctype) setElements(elems int) *ctype {
 	panic("internal error") // Not an Array
 }
 
+func (n *ctype) eq(m *ctype) (r bool) {
+	const ignore = saInline | saTypedef | saExtern | saStatic | saAuto | saRegister | saConst | saRestrict | saVolatile | saNoreturn
+
+	if n == m {
+		return true
+	}
+
+	if len(n.dds) != len(m.dds) || n.resultAttr&^ignore != m.resultAttr&^ignore ||
+		n.resultStars != m.resultStars || n.stars != m.stars {
+		return false
+	}
+
+	for i, n := range n.dds {
+		if !n.isCompatible(m.dds[i]) {
+			return false
+		}
+	}
+
+	return n.resultSpecifier.str() == m.resultSpecifier.str()
+}
+
 func (n *ctype) isCompatible(m *ctype) (r bool) {
 	const ignore = saInline | saTypedef | saExtern | saStatic | saAuto | saRegister | saConst | saRestrict | saVolatile | saNoreturn
 
@@ -1709,3 +1730,5 @@ func compositeType(a, b Type) (c Type, isA bool) {
 
 	return nil, false
 }
+
+func eqTypes(a, b Type) bool { return a.(*ctype).eq(b.(*ctype)) }

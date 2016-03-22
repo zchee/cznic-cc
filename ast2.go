@@ -616,9 +616,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 		dd := b.Node.(*DirectDeclarator)
 		n.Type = dd.top().declarator.Type
-		if n.Type.Kind() == Function {
-			n.Type = n.Type.Pointer()
-		}
 		if v := dd.EnumVal; v != nil {
 			n.Value = v
 		}
@@ -644,8 +641,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 
 		_, t2 := n.ExpressionList.eval(lx)
-		if !IsIntType(t2) {
-			lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer (have '%s')", t2)
+		if !IsIntType(t2) && !(t2.Kind() == Bool) {
+			lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer or bool (have '%s')", t2)
 		}
 		n.Type = t.Element()
 	case 9: // Expression '(' ArgumentExpressionListOpt ')'
@@ -756,6 +753,11 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Type = t.Pointer()
 	case 18: // '*' Expression
 		_, t := n.Expression.eval(lx)
+		if t.Kind() == Function {
+			n.Type = t
+			break
+		}
+
 		if k := t.Kind(); k != Ptr && k != Array {
 			lx.report.ErrTok(n.Token, "invalid argument type of unary * (have '%v')", t)
 			break
@@ -899,7 +901,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 		switch {
 		case at.Kind() == Ptr:
-			if IsIntType(bt) {
+			if IsIntType(bt) || bt.Kind() == Bool {
 				n.Type = at
 				break
 			}
@@ -1469,6 +1471,11 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		if lv == nil {
 			_, at := n.ExpressionList.eval(lx)
 			_, bt := n.Expression2.eval(lx)
+			if eqTypes(at, bt) {
+				n.Type = at
+				break
+			}
+
 			if IsArithmeticType(at) && IsArithmeticType(bt) {
 				n.Type = m.binOpType(at, bt)
 				break
@@ -1476,6 +1483,20 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 			ak := at.Kind()
 			bk := bt.Kind()
+
+			if ak == Function && bk == Ptr {
+				if e := bt.Element(); e.Kind() == Function && eqTypes(at, e) {
+					n.Type = bt
+					break
+				}
+			}
+
+			if bk == Function && ak == Ptr {
+				if e := at.Element(); e.Kind() == Function && eqTypes(bt, e) {
+					n.Type = at
+					break
+				}
+			}
 
 			if (ak == Enum || ak == Bool) && IsIntType(bt) {
 				n.Type = at
@@ -1529,12 +1550,12 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				}
 			}
 
-			if (ak == Ptr || ak == Array) && IsIntType(bt) {
+			if (ak == Ptr || ak == Array || ak == Function) && IsIntType(bt) {
 				n.Type = at
 				break
 			}
 
-			if (bk == Ptr || bk == Array) && IsIntType(at) {
+			if (bk == Ptr || bk == Array || bk == Function) && IsIntType(at) {
 				n.Type = bt
 				break
 			}
@@ -1597,11 +1618,11 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Type = at
 		switch {
 		case at.Kind() == Ptr:
-			if IsIntType(bt) {
+			if IsIntType(bt) || bt.Kind() == Bool {
 				break
 			}
 
-			panic("TODO")
+			lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
 		case IsArithmeticType(at):
 			fallthrough
 		default:
@@ -1615,7 +1636,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		53, // Expression "&=" Expression
 		54, // Expression "^=" Expression
 		55: // Expression "|=" Expression
-		m.checkIntegerType(lx, n.Expression, n.Expression2)
+		m.checkIntegerOrBoolType(lx, n.Expression, n.Expression2)
 		n.Type = n.Expression.Type
 	case 56: // "_Alignof" '(' TypeName ')'
 		n.Type = lx.model.getSizeType(lx, n.Token)
@@ -1659,14 +1680,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	//	s = fmt.Sprintf("value: %T(%#v)", n.Value, n.Value)
 	//}
 	//dbg("tc %v %v %v %v %v: %v %v", position(n.Pos()), n.Case, ct.resultStars, ct.stars, ct, ct.Kind(), s)
-	if lx.adjustFnArgs {
-		if n.Type.Kind() == Function {
-			n.Type = n.Type.Pointer()
-			//ct = n.Type.(*ctype)
-			//dbg("\tadjusted")
-			//dbg("\ttc %v: %v %v %v: %v", position(n.Pos()), ct.resultStars, ct.stars, ct, ct.Kind())
-		}
-	}
 	return n.Value, n.Type
 }
 

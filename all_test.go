@@ -1848,6 +1848,7 @@ func TestDevEmacs(t *testing.T) {
 			"decompress.c",
 			"doc.c",
 			"doprnt.c",
+			"editfns.c",
 			"fileio.c",
 			"filelock.c",
 			"floatfns.c",
@@ -1865,6 +1866,7 @@ func TestDevEmacs(t *testing.T) {
 			"keyboard.c",
 			"keymap.c",
 			"lastfile.c",
+			"lread.c",
 			"macros.c",
 			"marker.c",
 			"menu.c",
@@ -1875,6 +1877,7 @@ func TestDevEmacs(t *testing.T) {
 			"search.c",
 			"sound.c",
 			"sysdep.c",
+			"term.c",
 			"terminfo.c",
 			"undo.c",
 			"vm-limit.c",
@@ -1894,19 +1897,16 @@ func TestDevEmacs(t *testing.T) {
 			// "coding.c",        // array subscript is not an integer (have 'bool')
 			// "dired.c",         // expected 'void*' but argument is of type '<undefined>'
 			// "dispnew.c",       // not an integer type (have 'bool')
-			// "editfns.c",       //
 			// "emacs.c",         // not an integer type (have 'bool')
 			// "emacsgtkfixed.c", // /usr/include/gtk-3.0/gtk/gtkversion.h:98:9: cannot redefine macro: argument names differ
 			// "eval.c",          // eval.c:1721:4: 'bool'/'static bool' mismatch in conditional expression
 			// "fns.c",           // not an integer type (have 'bool')
-			// "ftxfont.c",       //
+			// "ftxfont.c",       // ftxfont.c:145:7: undefined: ftfont_driver
 			// "image.c",         // /usr/include/gif_lib.h:269:44: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
-			// "lread.c",         //
 			// "print.c",         // print.c:999:15: expected 'char*' but argument is of type '<undefined>'
 			// "process.c",       // not an integer type (have 'bool')
 			// "regex.c",         // regex.c:70:5: unexpected ')', expected expression or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, character constant, floating-point constant, identifier, integer constant, long character constant, long string constant, sizeof, string literal]
 			// "syntax.c",        // not an integer type (have 'bool')
-			// "term.c",          //
 			// "terminal.c",      // terminal.c:526:44: assignment from incompatible type ('void(*)(struct terminal*)' = 'static void(**)(struct terminal*)')
 			// "textprop.c",      // not an integer type (have 'bool')
 			// "unexelf.c",       // /usr/include/x86_64-linux-gnu/bits/link.h:97:3: unexpected identifier __int128_t, expected one of ['}', _Bool, _Complex, _Static_assert, char, const, double, enum, float, int, long, restrict, short, signed, struct, typedefname, typeof, union, unsigned, void, volatile]
