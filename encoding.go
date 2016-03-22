@@ -410,6 +410,7 @@ var (
 		PPNUMBER:          true,
 		PPOTHER:           true,
 		STRINGLITERAL:     true,
+		TYPEDEFNAME:       true,
 	}
 
 	// Valid combinations of TypeSpecifier.Case ([0], 6.7.2, 2)

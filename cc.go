@@ -51,6 +51,7 @@ const (
 
 double __builtin_inff();
 double __builtin_nanf(char *);
+int __builtin_constant_p (exp);
 int __builtin_ctz (unsigned int x);
 int __builtin_ctzl (unsigned long);
 int __builtin_ctzll (unsigned long long);

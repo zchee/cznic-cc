@@ -1801,15 +1801,14 @@ func TestDevEmacs(t *testing.T) {
 	testDev(
 		t,
 		p+`
-#define _GCC_MAX_ALIGN_T
 #define _Noreturn __attribute__ ((__noreturn__))
 `,
 		p,
 		p+`
+#define _Alignas(x)
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
-#define _Alignas(x)
 `,
 		[]string{
 			"-std=gnu99",
@@ -1905,14 +1904,13 @@ func TestDevEmacs(t *testing.T) {
 			"xselect.c",
 			"xsmfns.c",
 			"xterm.c",
-			// "bytecode.c",      // [lo ... hi] = expr
-			// "emacsgtkfixed.c", // /usr/include/gtk-3.0/gtk/gtkversion.h:98:9: cannot redefine macro: argument names differ
-			// "ftxfont.c",       // ftxfont.c:145:7: undefined: ftfont_driver
-			// "image.c",         // /usr/include/gif_lib.h:269:44: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
-			// "regex.c",         // regex.c:70:5: unexpected ')', expected expression or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, character constant, floating-point constant, identifier, integer constant, long character constant, long string constant, sizeof, string literal]
-			// "unexelf.c",       // /usr/include/x86_64-linux-gnu/bits/link.h:97:3: unexpected identifier __int128_t, expected one of ['}', _Bool, _Complex, _Static_assert, char, const, double, enum, float, int, long, restrict, short, signed, struct, typedefname, typeof, union, unsigned, void, volatile]
-			// "xftfont.c",       // lisp.h:2041:13: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
-			// "xsettings.c",     // xsettings.c:431:36: unexpected '{', expected expression list or type name or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, _Bool, _Complex, char, character constant, const, double, enum, float, floating-point constant, identifier, int, integer constant, long, long character constant, long string constant, restrict, short, signed, sizeof, string literal, struct, typedefname, typeof, union, unsigned, void, volatile]
+			/// "bytecode.c",      // [lo ... hi] = expr
+			/// "emacsgtkfixed.c", // /usr/include/gtk-3.0/gtk/gtkversion.h:98:9: cannot redefine macro: argument names differ
+			/// "ftxfont.c",       // ftxfont.c:145:7: undefined: ftfont_driver
+			/// "unexelf.c",       // /usr/include/x86_64-linux-gnu/bits/link.h:97:3: unexpected identifier __int128_t, expected one of ['}', _Bool, _Complex, _Static_assert, char, const, double, enum, float, int, long, restrict, short, signed, struct, typedefname, typeof, union, unsigned, void, volatile]
+			/// "xftfont.c",       // lisp.h:2041:13: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
+			/// "xsettings.c",     // xsettings.c:431:36: unexpected '{', expected expression list or type name or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, _Bool, _Complex, char, character constant, const, double, enum, float, floating-point constant, identifier, int, integer constant, long, long character constant, long string constant, restrict, short, signed, sizeof, string literal, struct, typedefname, typeof, union, unsigned, void, volatile]
+			///"image.c",         // /usr/include/gif_lib.h:269:44: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
 		},
 		"testdata/dev/emacs-24.5/src/",
 		ppOpts,

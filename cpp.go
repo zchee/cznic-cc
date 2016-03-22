@@ -370,7 +370,7 @@ func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList, e
 	nm0 := tok.S()
 	nm := dict.ID(nm0[:len(nm0)-1])
 	if protectedMacros[nm] && p.protectMacros {
-		p.report.ErrTok(tok, "cannot define protected macro")
+		p.report.ErrTok(tok, "cannot define protected macro %s", xc.Dict.S(nm))
 		return
 	}
 
@@ -431,18 +431,18 @@ func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList, e
 	}
 
 	if !m.IsFnLike {
-		p.report.ErrTok(tok, "cannot redefine an object-like macro using a function-like macro")
+		p.report.ErrTok(tok, "cannot redefine an object-like macro %s using a function-like macro", xc.Dict.S(nm))
 		return
 	}
 
 	if g, e := len(args), len(m.Args); g != e {
-		p.report.ErrTok(tok, "cannot redefine macro: number of arguments differ")
+		p.report.ErrTok(tok, "cannot redefine macro %s: number of arguments differ", xc.Dict.S(nm))
 		return
 	}
 
 	for i, g := range args {
 		if e := m.Args[i]; g != e {
-			p.report.ErrTok(tok, "cannot redefine macro: argument names differ")
+			p.report.ErrTok(tok, "cannot redefine macro %s: argument names differ", xc.Dict.S(nm))
 			return
 		}
 	}
