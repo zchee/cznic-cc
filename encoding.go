@@ -171,6 +171,8 @@ const (
 	Function
 	Array
 	typeof
+
+	kindMax
 )
 
 func (k Kind) CString() string {

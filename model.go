@@ -25,6 +25,38 @@ type (
 	LongStringLitID int
 )
 
+var binOpTab = [kindMax][kindMax]Kind{ //TODO Fill the gaps.
+	/* Undefined */ {},
+	/* Void */ {},
+	/* Ptr */ {},
+	/* UintPtr */ {},
+	/* Char */ {Char: Int},
+	/* SChar */ {SChar: Int},
+	/* UChar */ {Char: UInt, SChar: UInt, UChar: UInt},
+	/* Short */ {UChar: UInt, Short: Int},
+	/* UShort */ {UChar: UInt, Short: UShort, UShort: UInt},
+	/* Int */ {Char: Int, SChar: Int, UChar: UInt, Short: Int, UShort: UInt, Int: Int},
+	/* UInt */ {Char: UInt, UChar: UInt, Short: UInt, UShort: UInt, Int: UInt, UInt: UInt},
+	/* Long */ {Char: Long, UChar: Long, Short: Long, UShort: Long, Int: Long, UInt: ULong, Long: Long},
+	/* ULong */ {UChar: ULong, Short: ULong, UShort: ULong, Int: ULong, UInt: ULong, Long: ULong, ULong: ULong},
+	/* LongLong */ {Char: LongLong, UChar: LongLong, UShort: ULongLong, Int: LongLong, UInt: ULongLong, Long: LongLong, ULong: ULongLong, LongLong: LongLong},
+	/* ULongLong */ {UChar: ULongLong, Short: ULongLong, UShort: ULongLong, Int: ULongLong, UInt: ULongLong, Long: ULongLong, ULong: ULongLong, LongLong: ULongLong, ULongLong: ULongLong},
+	/* Float */ {UShort: Float, Int: Float, UInt: Float, Float: Float},
+	/* Double */ {Char: Double, UShort: Double, Int: Double, UInt: Double, Long: Double, ULong: Double, LongLong: Double, ULongLong: Double, Float: Double, Double: Double},
+	/* LongDouble */ {LongLong: LongDouble, Float: LongDouble, Double: LongDouble, LongDouble: LongDouble},
+	/* Bool */ {UShort: UInt, Int: Int, UInt: UInt, Long: Long, ULong: ULong, Bool: Bool},
+	/* FloatComplex */ {},
+	/* DoubleComplex */ {},
+	/* LongDoubleComplex */ {},
+	/* Struct */ {},
+	/* Union */ {},
+	/* Enum */ {Char: Int, Int: Int, UInt: UInt, Long: Long, ULong: ULong, Enum: Int},
+	/* TypedefName */ {},
+	/* Function */ {},
+	/* Array */ {},
+	/* typeof */ {},
+}
+
 // ModelItem is a single item of a model.
 //
 // Note about StructAlign: To provide GCC ABI compatibility set, for example,
@@ -40,6 +72,7 @@ type ModelItem struct {
 type Model struct {
 	Items map[Kind]ModelItem
 
+	//TODO {long,}ComplexType
 	BoolType       Type
 	CharType       Type
 	DoubleType     Type
@@ -82,7 +115,47 @@ func (m *Model) initialize(lx *lexer) {
 	m.UintPtrType = m.makeType(lx, 0, tsUintptr) // Pseudo type.
 	m.VoidType = m.makeType(lx, 0, tsVoid)
 	m.strType = m.makeType(lx, 0, tsChar).Pointer()
+
 	m.initialized = true
+}
+
+func (m *Model) typ(k Kind) Type {
+	switch k {
+	case Undefined:
+		return undefined
+	case Bool:
+		return m.BoolType
+	case Char:
+		return m.CharType
+	case Double:
+		return m.DoubleType
+	case Float:
+		return m.FloatType
+	case Int:
+		return m.IntType
+	case LongDouble:
+		return m.LongDoubleType
+	case LongLong:
+		return m.LongLongType
+	case Long:
+		return m.LongType
+	case Short:
+		return m.ShortType
+	case UChar:
+		return m.UCharType
+	case UInt:
+		return m.UIntType
+	case ULongLong:
+		return m.ULongLongType
+	case ULong:
+		return m.ULongType
+	case UShort:
+		return m.UShortType
+	case UintPtr:
+		return m.UintPtrType
+	default:
+		panic(k)
+	}
 }
 
 func (m *Model) toInt(v interface{}) (interface{}, bool) {
@@ -950,218 +1023,8 @@ func (m *Model) binOpType(a, b Type) Type {
 	bk := b.Kind()
 	if ak > bk {
 		ak, bk = bk, ak
-		a, b = b, a
 	}
-	switch ak {
-	case Bool:
-		switch bk {
-		case Bool:
-			return m.BoolType
-		default:
-			panic(bk)
-		}
-	case Char:
-		switch bk {
-		case Char, Int, Enum:
-			return m.IntType
-		case Long:
-			return m.LongType
-		case UChar, UInt:
-			return m.UIntType
-		case LongLong:
-			return m.LongLongType
-		case Double:
-			return m.DoubleType
-		default:
-			panic(bk)
-		}
-	case SChar:
-		switch bk {
-		case SChar, Int:
-			return m.IntType
-		case UChar:
-			return m.UIntType
-		default:
-			panic(bk)
-		}
-	case UChar:
-		switch bk {
-		case Array:
-			return b.(*ctype).arrayDecay()
-		case UChar, Short, UShort, Int, UInt:
-			return m.UIntType
-		case Long:
-			return m.LongType
-		case ULong:
-			return m.ULongType
-		case LongLong:
-			return m.LongLongType
-		case ULongLong:
-			return m.ULongLongType
-		default:
-			panic(bk)
-		}
-	case Short:
-		switch bk {
-		case Short, Int:
-			return m.IntType
-		case UShort:
-			return m.UShortType
-		case UInt:
-			return m.UIntType
-		case Long:
-			return m.LongType
-		case ULong:
-			return m.ULongType
-		case ULongLong:
-			return m.ULongLongType
-		default:
-			panic(bk)
-		}
-	case UShort:
-		switch bk {
-		case Array:
-			return b.(*ctype).arrayDecay()
-		case UShort, Int, UInt, Bool:
-			return m.UIntType
-		case Long:
-			return m.LongType
-		case ULong:
-			return m.ULongType
-		case LongLong, ULongLong:
-			return m.ULongLongType
-		case Float:
-			return m.FloatType
-		case Double:
-			return m.DoubleType
-		default:
-			panic(bk)
-		}
-	case Int:
-		switch bk {
-		case Array:
-			return b.(*ctype).arrayDecay()
-		case Int, Enum, Bool:
-			return m.IntType
-		case UInt:
-			return m.UIntType
-		case Long:
-			return m.LongType
-		case ULong:
-			return m.ULongType
-		case LongLong:
-			return m.LongLongType
-		case ULongLong:
-			return m.ULongLongType
-		case Float:
-			return m.FloatType
-		case Double:
-			return m.DoubleType
-		default:
-			panic(bk)
-		}
-	case UInt:
-		switch bk {
-		case Int, UInt, Enum, Bool:
-			return m.UIntType
-		case Long, ULong:
-			return m.ULongType
-		case LongLong, ULongLong:
-			return m.ULongLongType
-		case Float:
-			return m.FloatType
-		case Double:
-			return m.DoubleType
-		default:
-			panic(bk)
-		}
-	case Long:
-		switch bk {
-		case Long, Bool, Enum:
-			return m.LongType
-		case ULong:
-			return m.ULongType
-		case LongLong:
-			return m.LongLongType
-		case ULongLong:
-			return m.ULongLongType
-		case Double:
-			return m.DoubleType
-		default:
-			panic(bk)
-		}
-	case LongLong:
-		switch bk {
-		case LongLong:
-			return m.LongLongType
-		case ULongLong:
-			return m.ULongLongType
-		case Double:
-			return m.DoubleType
-		case LongDouble:
-			return m.LongDoubleType
-		default:
-			panic(bk)
-		}
-	case ULong:
-		switch bk {
-		case ULong, Bool, Enum:
-			return m.ULongType
-		case LongLong, ULongLong:
-			return m.ULongLongType
-		case Double:
-			return m.DoubleType
-		default:
-			panic(bk)
-		}
-	case ULongLong:
-		switch bk {
-		case ULongLong:
-			return m.ULongLongType
-		case Double:
-			return m.DoubleType
-		default:
-			panic(bk)
-		}
-	case Float:
-		switch bk {
-		case Float:
-			return m.FloatType
-		case Double:
-			return m.DoubleType
-		case LongDouble:
-			return m.LongDoubleType
-		default:
-			panic(bk)
-		}
-	case Double:
-		switch bk {
-		case Double:
-			return m.DoubleType
-		case LongDouble:
-			return m.LongDoubleType
-		default:
-			panic(bk)
-		}
-	case LongDouble:
-		switch bk {
-		case LongDouble:
-			return m.LongDoubleType
-		default:
-			panic(bk)
-		}
-	case Enum:
-		switch bk {
-		case Enum:
-			return m.IntType
-		default:
-			panic(bk)
-		}
-	case Undefined:
-		return undefined
-	default:
-		panic(fmt.Errorf("%v %v", ak, bk))
-	}
+	return m.typ(binOpTab[bk][ak])
 }
 
 func (m *Model) makeType(lx *lexer, attr int, ts ...int) Type {
