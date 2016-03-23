@@ -367,6 +367,7 @@ var (
 	id0                = dict.SID("0")
 	id1                = dict.SID("1")
 	idAlignof          = dict.SID("_Alignof")
+	idAlignofAlt       = dict.SID("__alignof__")
 	idAsm              = dict.SID("asm")
 	idAsmAlt           = dict.SID("__asm__")
 	idChar             = dict.SID("char")
@@ -497,7 +498,7 @@ func toC(t xc.Token, tw *tweaks) xc.Token {
 		return t
 	}
 
-	if tw.enableAlignof && t.Val == idAlignof {
+	if tw.enableAlignof && (t.Val == idAlignof || t.Val == idAlignofAlt) {
 		t.Rune = ALIGNOF
 		return t
 	}
@@ -510,17 +511,9 @@ func toC(t xc.Token, tw *tweaks) xc.Token {
 
 	}
 
-	if tw.enableTypeof {
-		if t.Val == idTypeof {
-			t.Rune = TYPEOF
-			return t
-		}
-
-		if t.Val == idTypeofAlt {
-			t.Rune = TYPEOF
-			return t
-		}
-
+	if tw.enableTypeof && (t.Val == idTypeof || t.Val == idTypeofAlt) {
+		t.Rune = TYPEOF
+		return t
 	}
 
 	if tw.enableAsm {

@@ -1918,6 +1918,140 @@ func TestDevEmacs(t *testing.T) {
 	)
 }
 
+func TestDevM4(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	ppOpts := []Opt{
+		IncludePaths([]string{
+			".",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
+		IncludePaths([]string{
+			".",
+		}),
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	p := predefined
+
+	testDev(
+		t,
+		p,
+		p,
+		p+`
+#define __inline inline
+#define __restrict __restrict__
+#define __typeof typeof
+`,
+		[]string{
+			"-I.",
+		},
+		[]string{
+			"asnprintf.c",
+			"asprintf.c",
+			"basename-lgpl.c",
+			"basename.c",
+			"binary-io.c",
+			"c-ctype.c",
+			"c-strcasecmp.c",
+			"c-strncasecmp.c",
+			"clean-temp.c",
+			"cloexec.c",
+			"close-stream.c",
+			"closein.c",
+			"closeout.c",
+			"dirname-lgpl.c",
+			"dirname.c",
+			"dup-safer-flag.c",
+			"dup-safer.c",
+			"exitfail.c",
+			"fatal-signal.c",
+			"fclose.c",
+			"fcntl.c",
+			"fd-hook.c",
+			"fd-safer-flag.c",
+			"fd-safer.c",
+			"fflush.c",
+			"filenamecat-lgpl.c",
+			"filenamecat.c",
+			"fopen-safer.c",
+			"fpurge.c",
+			"freadahead.c",
+			"freading.c",
+			"fseek.c",
+			"fseeko.c",
+			"gl_avltree_oset.c",
+			"gl_linkedhash_list.c",
+			"gl_list.c",
+			"gl_oset.c",
+			"gl_xlist.c",
+			"gl_xoset.c",
+			"glthread/lock.c",
+			"glthread/threadlib.c",
+			"glthread/tls.c",
+			"localcharset.c",
+			"malloca.c",
+			"math.c",
+			"memchr2.c",
+			"mkstemp-safer.c",
+			"pipe-safer.c",
+			"pipe2-safer.c",
+			"pipe2.c",
+			"printf-args.c",
+			"printf-frexp.c",
+			"printf-parse.c",
+			"progname.c",
+			"quotearg.c",
+			"sig-handler.c",
+			"stripslash.c",
+			"tempname.c",
+			"tmpdir.c",
+			"unistd.c",
+			"vasprintf.c",
+			"verror.c",
+			"version-etc-fsf.c",
+			"version-etc.c",
+			"wait-process.c",
+			"wctype-h.c",
+			"xalloc-die.c",
+			"xasprintf.c",
+			"xmalloc.c",
+			"xmalloca.c",
+			"xprintf.c",
+			"xsize.c",
+			"xstrndup.c",
+			"xvasprintf.c",
+			/// "c-stack.c", c-stack.c:119:3: unexpected '{', expected expression list or type name or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, _Bool, _Complex, char, character constant, const, double, enum, float, floating-point constant, identifier, int, integer constant, long, long character constant, long string constant, restrict, short, signed, sizeof, string literal, struct, typedefname, typeof, union, unsigned, void, volatile]
+			/// "execute.c", spawn.h:457:9: cannot redefine macro using a replacement list of different length
+			/// "isnanl.c", float+.h:145:32: array size must be positive: -1
+			/// "printf-frexpl.c", printf-frexp.c:72:3: unexpected '{', expected expression list or type name or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, _Bool, _Complex, char, character constant, const, double, enum, float, floating-point constant, identifier, int, integer constant, long, long character constant, long string constant, restrict, short, signed, sizeof, string literal, struct, typedefname, typeof, union, unsigned, void, volatile]
+			/// "spawn-pipe.c", spawn.h:457:9: cannot redefine macro using a replacement list of different length
+			/// "vasnprintf.c", vasnprintf.c:3624:25: unexpected '{', expected expression list or type name or one of ['!', '&', '(', '*', '+', '-', '~', ++, --, _Alignof, _Bool, _Complex, char, character constant, const, double, enum, float, floating-point constant, identifier, int, integer constant, long, long character constant, long string constant, restrict, short, signed, sizeof, string literal, struct, typedefname, typeof, union, unsigned, void, volatile]
+		},
+		"testdata/dev/m4-1.4.17/lib/",
+		ppOpts,
+		parseOpts,
+	)
+}
+
 func TestPPParse1(t *testing.T) {
 	path := *o1
 	if path == "" {
