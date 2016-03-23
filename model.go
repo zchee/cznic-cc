@@ -25,32 +25,32 @@ type (
 	LongStringLitID int
 )
 
-var binOpTab = [kindMax][kindMax]Kind{ //TODO Fill the gaps.
+var binOpTab = [kindMax][kindMax]Kind{
 	/* Undefined */ {},
 	/* Void */ {},
 	/* Ptr */ {},
-	/* UintPtr */ {},
-	/* Char */ {Char: Int},
-	/* SChar */ {SChar: Int},
-	/* UChar */ {Char: UInt, SChar: UInt, UChar: UInt},
-	/* Short */ {UChar: UInt, Short: Int},
-	/* UShort */ {UChar: UInt, Short: UShort, UShort: UInt},
-	/* Int */ {Char: Int, SChar: Int, UChar: UInt, Short: Int, UShort: UInt, Int: Int},
-	/* UInt */ {Char: UInt, UChar: UInt, Short: UInt, UShort: UInt, Int: UInt, UInt: UInt},
-	/* Long */ {Char: Long, UChar: Long, Short: Long, UShort: Long, Int: Long, UInt: ULong, Long: Long},
-	/* ULong */ {UChar: ULong, Short: ULong, UShort: ULong, Int: ULong, UInt: ULong, Long: ULong, ULong: ULong},
-	/* LongLong */ {Char: LongLong, UChar: LongLong, UShort: ULongLong, Int: LongLong, UInt: ULongLong, Long: LongLong, ULong: ULongLong, LongLong: LongLong},
-	/* ULongLong */ {UChar: ULongLong, Short: ULongLong, UShort: ULongLong, Int: ULongLong, UInt: ULongLong, Long: ULongLong, ULong: ULongLong, LongLong: ULongLong, ULongLong: ULongLong},
-	/* Float */ {UShort: Float, Int: Float, UInt: Float, Float: Float},
-	/* Double */ {Char: Double, UShort: Double, Int: Double, UInt: Double, Long: Double, ULong: Double, LongLong: Double, ULongLong: Double, Float: Double, Double: Double},
-	/* LongDouble */ {LongLong: LongDouble, Float: LongDouble, Double: LongDouble, LongDouble: LongDouble},
-	/* Bool */ {UShort: UInt, Int: Int, UInt: UInt, Long: Long, ULong: ULong, Bool: Bool},
-	/* FloatComplex */ {},
-	/* DoubleComplex */ {},
-	/* LongDoubleComplex */ {},
+	/* UintPtr */ {UintPtr: UintPtr},
+	/* Char */ {UintPtr: UintPtr, Int},
+	/* SChar */ {UintPtr: UintPtr, Int, Int},
+	/* UChar */ {UintPtr: UintPtr, UInt, UInt, UInt},
+	/* Short */ {UintPtr: UintPtr, Int, Int, UInt, Int},
+	/* UShort */ {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt},
+	/* Int */ {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int},
+	/* UInt */ {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt, UInt, UInt},
+	/* Long */ {UintPtr: UintPtr, Long, Long, Long, Long, Long, Long, Long, Long},
+	/* ULong */ {UintPtr: UintPtr, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong},
+	/* LongLong */ {UintPtr: UintPtr, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong},
+	/* ULongLong */ {UintPtr: UintPtr, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong},
+	/* Float */ {UintPtr: Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float},
+	/* Double */ {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
+	/* LongDouble */ {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
+	/* Bool */ {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
+	/* FloatComplex */ {}, //TODO
+	/* DoubleComplex */ {}, //TODO
+	/* LongDoubleComplex */ {}, //TODO
 	/* Struct */ {},
 	/* Union */ {},
-	/* Enum */ {Char: Int, Int: Int, UInt: UInt, Long: Long, ULong: ULong, Enum: Int},
+	/* Enum */ {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
 	/* TypedefName */ {},
 	/* Function */ {},
 	/* Array */ {},
@@ -72,7 +72,7 @@ type ModelItem struct {
 type Model struct {
 	Items map[Kind]ModelItem
 
-	//TODO {long,}ComplexType
+	//TODO {float,double,longDouble}ComplexType
 	BoolType       Type
 	CharType       Type
 	DoubleType     Type
@@ -498,6 +498,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 	case LongLong:
 		switch x := v.(type) {
 		case int32:
+			switch w {
+			case 8:
+				return int64(x)
+			default:
+				panic(w)
+			}
+		case uint32:
 			switch w {
 			case 8:
 				return int64(x)

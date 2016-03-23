@@ -188,7 +188,7 @@ again:
 		}
 	case '\n':
 		if l.state == lsTokens {
-			l.encodeToken(xc.Token{lex.NewChar(l.First.Pos(), ' '), idSpace})
+			l.encodeToken(xc.Token{Char: lex.NewChar(l.First.Pos(), ' '), Val: idSpace})
 		}
 		l.state = lsBOL
 		l.sc = scINITIAL
