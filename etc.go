@@ -453,6 +453,8 @@ func isNonZero(v interface{}) bool {
 		return x != 0
 	case uint64:
 		return x != 0
+	case float32:
+		return x != 0
 	case float64:
 		return x != 0
 	case StringLitID, LongStringLitID:

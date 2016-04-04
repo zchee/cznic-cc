@@ -393,7 +393,7 @@ func (l *lexer) Error(msg string) {
 	if len(parts) == 2 && strings.HasPrefix(parts[0], "unexpected ") && tokHasVal[t.Rune] {
 		msg = fmt.Sprintf("%s %s, expected %s", parts[0], t.S(), parts[1])
 	}
-	l.report.Err(errPos(t.Pos()), "%s", msg)
+	l.report.ErrTok(t, "%s", msg)
 }
 
 // Reduced implements yyLexerEx
