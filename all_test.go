@@ -835,6 +835,7 @@ func TestDevSqlite(t *testing.T) {
 		predefined,
 		predefined,
 		predefined+`
+#define __const const
 #define __inline inline
 #define __restrict restrict
 `,
@@ -895,6 +896,7 @@ func TestDevVim(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict restrict
 #define __typeof typeof
@@ -1019,6 +1021,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1131,6 +1134,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __restrict __restrict__
 #define __inline inline
 `,
@@ -1195,6 +1199,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1223,6 +1228,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1292,6 +1298,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1356,6 +1363,7 @@ func TestDevBash(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1425,6 +1433,7 @@ func TestDevMake(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1516,6 +1525,7 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1541,6 +1551,7 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1570,6 +1581,7 @@ func TestDevBc(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 `,
@@ -1641,6 +1653,7 @@ func TestDevEmacs(t *testing.T) {
 `,
 		p,
 		p+`
+#define __const const
 #define __getopt_argv_const const
 #define __inline inline
 #define __restrict __restrict__
@@ -1711,6 +1724,7 @@ func TestDevEmacs(t *testing.T) {
 `,
 		p,
 		p+`
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1806,6 +1820,7 @@ func TestDevEmacs(t *testing.T) {
 		p,
 		p+`
 #define _Alignas(x)
+#define __const const
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
@@ -1913,6 +1928,50 @@ func TestDevEmacs(t *testing.T) {
 			///"image.c",         // /usr/include/gif_lib.h:269:44: unexpected typedefname, expected optional type qualifier list or pointer or one of ['(', ')', '*', ',', '[', const, identifier, restrict, volatile]
 		},
 		"testdata/dev/emacs-24.5/src/",
+		ppOpts,
+		parseOpts,
+	)
+}
+
+func TestDevStbVorbis(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	ppOpts := []Opt{
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined,
+		predefined,
+		predefined+`
+#define __const const
+#define __restrict restrict
+`,
+		nil,
+		[]string{
+			"stb_vorbis.c",
+		},
+		"testdata/dev/stb",
 		ppOpts,
 		parseOpts,
 	)

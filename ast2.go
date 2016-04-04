@@ -836,6 +836,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			n.Value = x * b.(int64)
 		case uint64:
 			n.Value = x * b.(uint64)
+		case float32:
+			n.Value = x * b.(float32)
 		case float64:
 			n.Value = x * b.(float64)
 		default:
@@ -860,6 +862,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			n.Value = x / b.(int64)
 		case uint64:
 			n.Value = x / b.(uint64)
+		case float32:
+			n.Value = x / b.(float32)
 		case float64:
 			n.Value = x / b.(float64)
 		default:

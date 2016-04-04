@@ -610,6 +610,15 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case Float:
 		switch x := v.(type) {
+		case int32:
+			switch w {
+			case 4:
+				return float32(x)
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
 		case float32:
 			switch w {
 			case 4:
