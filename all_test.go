@@ -2097,6 +2097,7 @@ func TestDevStbVorbis(t *testing.T) {
 		predefined,
 		predefined,
 		predefined+`
+#define __inline inline
 #define __const const
 #define __restrict restrict
 `,
