@@ -388,6 +388,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 
 // Error Implements yyLexer.
 func (l *lexer) Error(msg string) {
+	msg = strings.Replace(msg, "$end", "EOF", -1)
 	t := l.last
 	parts := strings.Split(msg, ", expected ")
 	if len(parts) == 2 && strings.HasPrefix(parts[0], "unexpected ") && tokHasVal[t.Rune] {
