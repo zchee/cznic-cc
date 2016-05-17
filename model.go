@@ -165,7 +165,7 @@ func (m *Model) toInt(v interface{}) (interface{}, bool) {
 	case uint32:
 		switch sz := m.Items[Int].Size; sz {
 		case 4:
-			return m.MustConvert(x, m.IntType), x <= math.MaxInt32
+			return m.MustConvert(x, m.IntType), x <= math.MaxUint32
 		case 8:
 			return m.MustConvert(x, m.IntType), true
 		default:
@@ -174,7 +174,7 @@ func (m *Model) toInt(v interface{}) (interface{}, bool) {
 	case int64:
 		switch sz := m.Items[Int].Size; sz {
 		case 4:
-			return m.MustConvert(x, m.IntType), x <= math.MaxInt32
+			return m.MustConvert(x, m.IntType), x <= math.MaxUint32
 		case 8:
 			return m.MustConvert(x, m.IntType), true
 		default:
@@ -183,9 +183,9 @@ func (m *Model) toInt(v interface{}) (interface{}, bool) {
 	case uint64:
 		switch sz := m.Items[Int].Size; sz {
 		case 4:
-			return m.MustConvert(x, m.IntType), x <= math.MaxInt32
+			return m.MustConvert(x, m.IntType), x <= math.MaxUint32
 		case 8:
-			return m.MustConvert(x, m.IntType), x <= math.MaxInt64
+			return m.MustConvert(x, m.IntType), x <= math.MaxUint64
 		default:
 			panic(sz)
 		}
