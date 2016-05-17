@@ -1971,6 +1971,7 @@ func TestDevM4(t *testing.T) {
 		p,
 		p,
 		p+`
+#define __const
 #define __inline inline
 #define __restrict __restrict__
 #define __typeof typeof
