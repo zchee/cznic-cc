@@ -72,8 +72,14 @@ void* memset(void*, int, long long);
 `
 )
 
-// HostConfig returns the system C compiler configuration, or an error, if any.
-// The configuration is obtained by running the 'cpp' command. For the
+// HostConfig executes HostCppConfig with the cpp argument set to "cpp". For
+// more info please see the documentation of HostCppConfig.
+func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) {
+	return HostCppConfig("cpp", opts...)
+}
+
+// HostCppConfig returns the system C preprocessor configuration, or an error,
+// if any.  The configuration is obtained by running the cpp command. For the
 // predefined macros list the '-dM' options is added. For the include paths
 // lists, the option '-v' is added and the output is parsed to extract the
 // "..." include and <...> include paths. To add any other options to cpp, list
@@ -82,15 +88,15 @@ void* memset(void*, int, long long);
 // The function relies on a POSIX compatible C preprocessor installed.
 // Execution of HostConfig is not free, so caching the results is recommended
 // whenever possible.
-func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) {
+func HostCppConfig(cpp string, opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) {
 	args := append(append([]string{"-dM"}, opts...), "/dev/null")
-	pre, err := exec.Command("cpp", args...).Output()
+	pre, err := exec.Command(cpp, args...).Output()
 	if err != nil {
 		return "", nil, nil, err
 	}
 
 	args = append(append([]string{"-v"}, opts...), "/dev/null")
-	out, err := exec.Command("cpp", args...).CombinedOutput()
+	out, err := exec.Command(cpp, args...).CombinedOutput()
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -123,7 +129,7 @@ func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePath
 			i++
 		}
 	}
-	return "", nil, nil, fmt.Errorf("failed parsing cpp -v output")
+	return "", nil, nil, fmt.Errorf("failed parsing %s -v output", cpp)
 }
 
 type tweaks struct {
