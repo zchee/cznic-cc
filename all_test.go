@@ -2465,3 +2465,9 @@ func tokStr2(toks [][]xc.Token) string {
 	}
 	return strings.Join(a, ", ")
 }
+
+func TestIssue50(t *testing.T) {
+	if _, err := Parse("", []string{"testdata/issue50.h"}, newTestModel()); err == nil {
+		t.Fatal("unexpected success")
+	}
+}

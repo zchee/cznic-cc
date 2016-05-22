@@ -252,7 +252,10 @@ func ppParse(fn string, report *xc.Report, tweaks *tweaks) (*PreprocessingFile, 
 		}
 
 		lx.Unget(lex.NewChar(token.Pos(lx.File.Base()), PREPROCESSING_FILE))
-		yyParse(lx)
+		if yyParse(lx) != 0 {
+			return report.Errors(true)
+		}
+
 		return lx.preprocessingFile
 	})
 	switch r := o.Value(); x := r.(type) {
