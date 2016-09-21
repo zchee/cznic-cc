@@ -26,35 +26,35 @@ type (
 )
 
 var binOpTab = [kindMax][kindMax]Kind{
-	/* Undefined */ {},
-	/* Void */ {},
-	/* Ptr */ {},
-	/* UintPtr */ {UintPtr: UintPtr},
-	/* Char */ {UintPtr: UintPtr, Int},
-	/* SChar */ {UintPtr: UintPtr, Int, Int},
-	/* UChar */ {UintPtr: UintPtr, UInt, UInt, UInt},
-	/* Short */ {UintPtr: UintPtr, Int, Int, UInt, Int},
-	/* UShort */ {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt},
-	/* Int */ {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int},
-	/* UInt */ {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt, UInt, UInt},
-	/* Long */ {UintPtr: UintPtr, Long, Long, Long, Long, Long, Long, Long, Long},
-	/* ULong */ {UintPtr: UintPtr, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong},
-	/* LongLong */ {UintPtr: UintPtr, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong},
-	/* ULongLong */ {UintPtr: UintPtr, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong},
-	/* Float */ {UintPtr: Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float},
-	/* Double */ {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
-	/* LongDouble */ {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
-	/* Bool */ {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
-	/* FloatComplex */ {}, //TODO
-	/* DoubleComplex */ {}, //TODO
-	/* LongDoubleComplex */ {}, //TODO
-	/* Struct */ {},
-	/* Union */ {},
-	/* Enum */ {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
-	/* TypedefName */ {},
-	/* Function */ {},
-	/* Array */ {},
-	/* typeof */ {},
+	Undefined:         {},
+	Void:              {},
+	Ptr:               {},
+	UintPtr:           {UintPtr: UintPtr},
+	Char:              {UintPtr: UintPtr, Int},
+	SChar:             {UintPtr: UintPtr, Int, Int},
+	UChar:             {UintPtr: UintPtr, UInt, UInt, UInt},
+	Short:             {UintPtr: UintPtr, Int, Int, UInt, Int},
+	UShort:            {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt},
+	Int:               {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int},
+	UInt:              {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt, UInt, UInt},
+	Long:              {UintPtr: UintPtr, Long, Long, Long, Long, Long, Long, Long, Long},
+	ULong:             {UintPtr: UintPtr, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong},
+	LongLong:          {UintPtr: UintPtr, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong},
+	ULongLong:         {UintPtr: UintPtr, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong},
+	Float:             {UintPtr: Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float},
+	Double:            {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
+	LongDouble:        {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
+	Bool:              {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
+	FloatComplex:      {}, //TODO
+	DoubleComplex:     {}, //TODO
+	LongDoubleComplex: {}, //TODO
+	Struct:            {},
+	Union:             {},
+	Enum:              {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
+	TypedefName:       {},
+	Function:          {},
+	Array:             {},
+	typeof:            {},
 }
 
 // ModelItem is a single item of a model.
