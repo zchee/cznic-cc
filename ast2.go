@@ -1118,6 +1118,20 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 
 		switch x := av.(type) {
+		case uint8:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
 		case int32:
 			switch y := bv.(type) {
 			case int32:
