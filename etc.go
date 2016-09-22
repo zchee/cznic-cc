@@ -1356,7 +1356,7 @@ func (n *ctype) Tag() int {
 
 			return 0
 		case 1: // "enum" IDENTIFIER
-			return es.Token.Val
+			return es.Token2.Val
 		default:
 			panic(es.Case)
 		}
