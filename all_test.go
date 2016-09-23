@@ -804,6 +804,47 @@ func TestPreprocessor(t *testing.T) {
 	testDev1(t, "", "", "", nil, "", "testdata/arith-1.h", nil, nil)
 }
 
+func TestDevSDL(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	ppOpts := []Opt{
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined,
+		predefined,
+		predefined,
+		nil,
+		[]string{
+			"SDL.h",
+		},
+		"testdata/dev/SDL-1.2.15/include/",
+		ppOpts,
+		parseOpts,
+	)
+}
+
 func TestDevSqlite(t *testing.T) {
 	predefined, includePaths, sysIncludePaths, err := HostConfig()
 	if err != nil {
