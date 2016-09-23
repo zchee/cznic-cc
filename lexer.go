@@ -140,7 +140,12 @@ func newSimpleLexer(cpp func([]xc.Token), report *xc.Report, tweaks *tweaks) *le
 
 func (l *lexer) push(sc int) {
 	if l.scs >= 0 { // Stack overflow.
-		panic("internal error")
+		if l.sc != scDIRECTIVE || sc != scCOMMENT {
+			panic("internal error")
+		}
+
+		// /*-style comment in a line starting with #
+		l.pop()
 	}
 
 	l.scs = l.sc

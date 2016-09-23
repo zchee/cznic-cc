@@ -834,7 +834,9 @@ func TestDevSDL(t *testing.T) {
 		t,
 		predefined,
 		predefined,
-		predefined,
+		predefined+`
+#define __inline inline
+`,
 		nil,
 		[]string{
 			"SDL.h",
