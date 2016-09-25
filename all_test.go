@@ -2522,33 +2522,31 @@ func TestIssue57(t *testing.T) {
 		t.Fatal(errString(err))
 	}
 
-	f := tu.Declarations.Identifiers[dict.SID("f")].Node.(*DirectDeclarator).TopDeclarator()
-	if g, e := f.Type.String(), "int(char)"; g != e {
+	bool_func := tu.Declarations.Identifiers[dict.SID("bool_func")].Node.(*DirectDeclarator).TopDeclarator()
+	typ := bool_func.Type
+	if g, e := typ.String(), "int(*)()"; g != e {
 		t.Fatalf("%q %q", g, e)
 	}
-
-	p, isVariadic := f.Type.Parameters()
-	if g, e := isVariadic, false; g != e {
-		t.Fatal(g, e)
-	}
-
-	if g, e := len(p), 1; g != e {
-		t.Fatal(g, e)
-	}
-
-	if g, e := p[0].Type.String(), "char"; g != e {
-		t.Fatal(g, e)
-	}
-
-	if g, e := p[0].Declarator.RawSpecifier().TypedefName(), dict.SID("bar"); g != e {
-		t.Fatal(g, e)
-	}
-
-	if g, e := f.Type.Result().String(), "int"; g != e {
+	typ = typ.Element() // deref function pointer
+	if g, e := typ.Result().String(), "int"; g != e {
 		t.Fatalf("%q %q", g, e)
 	}
-
-	if g, e := f.Type.Result().Declarator().RawSpecifier().TypedefName(), dict.SID("foo"); g != e {
+	// bool_t -> ok!
+	if g, e := typ.Result().Declarator().RawSpecifier().TypedefName(), dict.SID("bool_t"); g != e {
 		t.Fatal(g, e)
+	}
+
+	func1 := tu.Declarations.Identifiers[dict.SID("func1")].Node.(*DirectDeclarator).TopDeclarator()
+	typ = func1.Type
+	if g, e := typ.String(), "int(*)()"; g != e {
+		t.Fatalf("%q %q", g, e)
+	}
+	typ = typ.Element() // deref function pointer
+	if g, e := typ.Result().String(), "int"; g != e {
+		t.Fatalf("%q %q", g, e)
+	}
+	// try to get bool_t the way we got it above
+	if g, e := typ.Result().Declarator().RawSpecifier().TypedefName(), dict.SID("bool_t"); g != e {
+		t.Fatal(string(xc.Dict.S(g)), string(xc.Dict.S(e))) // bool_func, how to get bool_t?
 	}
 }
