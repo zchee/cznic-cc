@@ -2514,3 +2514,41 @@ func TestIssue50(t *testing.T) {
 		t.Fatal("unexpected success")
 	}
 }
+
+// https://github.com/cznic/cc/issues/57
+func TestIssue57(t *testing.T) {
+	tu, err := Parse("", []string{"testdata/issue57.c"}, newTestModel())
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	f := tu.Declarations.Identifiers[dict.SID("f")].Node.(*DirectDeclarator).TopDeclarator()
+	if g, e := f.Type.String(), "int(char)"; g != e {
+		t.Fatalf("%q %q", g, e)
+	}
+
+	p, isVariadic := f.Type.Parameters()
+	if g, e := isVariadic, false; g != e {
+		t.Fatal(g, e)
+	}
+
+	if g, e := len(p), 1; g != e {
+		t.Fatal(g, e)
+	}
+
+	if g, e := p[0].Type.String(), "char"; g != e {
+		t.Fatal(g, e)
+	}
+
+	if g, e := p[0].Declarator.RawSpecifier().TypedefName(), dict.SID("bar"); g != e {
+		t.Fatal(g, e)
+	}
+
+	if g, e := f.Type.Result().String(), "int"; g != e {
+		t.Fatalf("%q %q", g, e)
+	}
+
+	if g, e := f.Type.Result().Declarator().RawSpecifier().TypedefName(), dict.SID("foo"); g != e {
+		t.Fatal(g, e)
+	}
+}
