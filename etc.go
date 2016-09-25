@@ -93,9 +93,9 @@ type Type interface {
 	// this type. The returned declarator is possibly artificial.
 	Declarator() *Declarator
 
-	// RawDefDeclarator returns the typedef declarator associated with a
-	// type if this type is a typedef name. Otherwise the normal declarator
-	// is returned.
+	// RawDeclarator returns the typedef declarator associated with a type
+	// if this type is a typedef name. Otherwise the normal declarator is
+	// returned.
 	RawDeclarator() *Declarator
 
 	// Element returns the type this Ptr type points to or the element type
