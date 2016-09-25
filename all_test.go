@@ -2253,9 +2253,12 @@ func testParse(t *testing.T, paths []string, ignoreError string, opts ...Opt) *T
 func ddsStr(dds []*DirectDeclarator) string {
 	buf := bytes.NewBufferString("|")
 	for i, dd := range dds {
+		if i == 0 {
+			fmt.Fprintf(buf, "(@%p)", &dds[0])
+		}
 		switch dd.Case {
 		case 0: // IDENTIFIER
-			buf.WriteString("IDENTIFIER")
+			fmt.Fprintf(buf, "IDENTIFIER(%s: %s)", dd.Token.Position(), dd.Token.S())
 		case 1: // '(' Declarator ')'
 			buf.WriteString("(")
 			buf.WriteString(strings.Repeat("*", dd.Declarator.stars()))
@@ -2280,6 +2283,10 @@ func ddsStr(dds []*DirectDeclarator) string {
 
 func (n *ctype) str() string {
 	return fmt.Sprintf("R%v S%v %v", n.resultStars, n.stars, ddsStr(n.dds))
+}
+
+func (n *ctype) str0() string {
+	return fmt.Sprintf("R%v S%v %v", n.resultStars, n.stars, ddsStr(n.dds0))
 }
 
 func TestIssue3(t *testing.T) {
@@ -2532,7 +2539,7 @@ func TestIssue57(t *testing.T) {
 		t.Fatalf("%q %q", g, e)
 	}
 	// bool_t -> ok!
-	if g, e := typ.Result().Declarator().RawSpecifier().TypedefName(), dict.SID("bool_t"); g != e {
+	if g, e := typ.Result().RawDeclarator().RawSpecifier().TypedefName(), dict.SID("bool_t"); g != e {
 		t.Fatal(g, e)
 	}
 
@@ -2542,11 +2549,14 @@ func TestIssue57(t *testing.T) {
 		t.Fatalf("%q %q", g, e)
 	}
 	typ = typ.Element() // deref function pointer
+	if g, e := typ.String(), "int()"; g != e {
+		t.Fatalf("%q %q", g, e)
+	}
 	if g, e := typ.Result().String(), "int"; g != e {
 		t.Fatalf("%q %q", g, e)
 	}
 	// try to get bool_t the way we got it above
-	if g, e := typ.Result().Declarator().RawSpecifier().TypedefName(), dict.SID("bool_t"); g != e {
+	if g, e := typ.Result().RawDeclarator().RawSpecifier().TypedefName(), dict.SID("bool_t"); g != e {
 		t.Fatal(string(xc.Dict.S(g)), string(xc.Dict.S(e))) // bool_func, how to get bool_t?
 	}
 }

@@ -93,6 +93,11 @@ type Type interface {
 	// this type. The returned declarator is possibly artificial.
 	Declarator() *Declarator
 
+	// RawDefDeclarator returns the typedef declarator associated with a
+	// type if this type is a typedef name. Otherwise the normal declarator
+	// is returned.
+	RawDeclarator() *Declarator
+
 	// Element returns the type this Ptr type points to or the element type
 	// of an Array type.
 	Element() Type
@@ -770,6 +775,15 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 	return false
 }
 
+// RawDeclarator implements Type.
+func (n *ctype) RawDeclarator() *Declarator {
+	if len(n.dds0) == 0 {
+		return n.dds[0].TopDeclarator()
+	}
+
+	return n.dds0[0].TopDeclarator()
+}
+
 // Declarator implements Type.
 func (n *ctype) Declarator() *Declarator {
 	return n.dds[0].TopDeclarator()
@@ -796,6 +810,26 @@ func (n *ctype) Element() Type {
 		if n.stars == 1 {
 			m := *n
 			m.dds = append([]*DirectDeclarator{n.dds[0]}, n.dds[2:]...)
+			m.dds0 = n.dds0
+			switch len(m.dds0) {
+			case 0:
+				// nop
+			case 1:
+				nm := m.Declarator().RawSpecifier().TypedefName()
+				typedef := m.Declarator().DirectDeclarator.idScope.Lookup(NSIdentifiers, nm)
+				if typedef.Node == nil {
+					break // undefined
+				}
+
+				m.dds0 = typedef.Node.(*DirectDeclarator).TopDeclarator().Type.(*ctype).dds0
+				if len(m.dds0) < 3 {
+					break
+				}
+
+				fallthrough
+			default:
+				m.dds0 = append([]*DirectDeclarator{m.dds0[0]}, m.dds0[2:]...)
+			}
 			m.stars--
 			return &m
 		}
