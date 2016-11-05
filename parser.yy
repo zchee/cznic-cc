@@ -1775,6 +1775,7 @@ AssemblerStatement:
 |	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ')'
 |	"asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ':' Clobbers ')'
 |	"asm" VolatileOpt "goto" '(' AssemblerInstructions ':' ':' AssemblerOperands ':' Clobbers ':' IdentifierList ')'
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' ')' // https://github.com/cznic/cc/issues/59
 
 StaticAssertDeclaration:
 	"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'

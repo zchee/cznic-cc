@@ -3367,6 +3367,18 @@ AssemblerStatement:
 			Token8:                 $13,
 		}
 	}
+|	"asm" VolatileOpt '(' AssemblerInstructions ':' ')'
+	{
+		$$ = &AssemblerStatement{
+			Case:                   5,
+			Token:                  $1,
+			VolatileOpt:            $2.(*VolatileOpt),
+			Token2:                 $3,
+			AssemblerInstructions:  $4.(*AssemblerInstructions).reverse(),
+			Token3:                 $5,
+			Token4:                 $6,
+		}
+	}
 
 StaticAssertDeclaration:
 	"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')' ';'
