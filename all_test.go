@@ -2155,6 +2155,47 @@ func TestDevStbVorbis(t *testing.T) {
 	)
 }
 
+func TestDevGMP(t *testing.T) {
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Logf("skipping: %v", err)
+		return
+	}
+
+	ppOpts := []Opt{
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		EnableIncludeNext(),
+	}
+	if *oFailFast {
+		ppOpts = append(ppOpts, CrashOnError())
+	}
+	parseOpts := []Opt{
+		IncludePaths(includePaths),
+		SysIncludePaths(sysIncludePaths),
+		devTest(),
+		gccEmu(),
+	}
+	if *oFailFast {
+		parseOpts = append(parseOpts, CrashOnError())
+	}
+
+	testDev(
+		t,
+		predefined,
+		predefined,
+		predefined,
+		nil,
+		[]string{
+			"gmp.h",
+		},
+		"testdata/dev/gmp-6.1.0/",
+		ppOpts,
+		parseOpts,
+	)
+}
+
 func TestPPParse1(t *testing.T) {
 	path := *o1
 	if path == "" {

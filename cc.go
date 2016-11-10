@@ -58,6 +58,7 @@ int __builtin_ctzll (unsigned long long);
 int __builtin_popcount (unsigned int x);
 int __builtin_popcountl (unsigned long);
 int __builtin_popcountll (unsigned long long);
+long __builtin_expect(long, long);
 long long strlen (const char*);
 unsigned __builtin_bswap32 (unsigned x);
 unsigned long long __builtin_bswap64 (unsigned long long x);
