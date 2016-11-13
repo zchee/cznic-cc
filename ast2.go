@@ -151,7 +151,7 @@ func (n *Declarator) isCompatible(m *Declarator) (r bool) {
 }
 
 func (n *Declarator) setFull(lx *lexer) Type {
-	//dbg("==== setFull %v", position(n.Pos()))
+	//dbg("==== setFull(%p) %v", lx, position(n.Pos()))
 	d := n
 	var dds0, dds []*DirectDeclarator
 	for dd := d.DirectDeclarator; dd != nil; dd = dd.directDeclarator() {
@@ -344,14 +344,13 @@ loop0:
 	//dbg("", t.str())
 	//dbg("", t)
 
-	dd := dds[0]
-	id := dd.Token.Val
-	if id == 0 {
+	if lx.scope == nil {
 		return t
 	}
 
 	// Determine linkage
 
+	dd := dds[0]
 	scs := resultAttr & (saTypedef | saExtern | saStatic | saAuto | saRegister)
 	sk := lx.scope.kind
 	var prev *Declarator
@@ -409,7 +408,9 @@ loop0:
 		n.Linkage = External
 	}
 
-	if isGenerating {
+	id := dd.Token.Val
+	if isGenerating || id == 0 {
+		//dbg("setFull done (A)(%p): %s: %s\n%v", lx.scope, position(n.Pos()), n, resultSpecifier)
 		return t
 	}
 
@@ -470,6 +471,7 @@ loop0:
 		panic("internal error")
 	}
 
+	//dbg("setFull done: %s: %s", position(n.Pos()), n)
 	return t
 }
 

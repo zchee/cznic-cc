@@ -2560,3 +2560,27 @@ func TestIssue57(t *testing.T) {
 		t.Fatal(string(xc.Dict.S(g)), string(xc.Dict.S(e))) // bool_func, how to get bool_t?
 	}
 }
+
+// https://github.com/cznic/cc/issues/62
+func TestIssue62(t *testing.T) {
+	tu, err := Parse("", []string{"testdata/issue62.c"}, newTestModel())
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	for ; tu != nil; tu = tu.TranslationUnit {
+		d := tu.ExternalDeclaration.Declaration.Declarator()
+		var e Linkage
+		tag := string(xc.Dict.S(d.Type.Tag()))
+		t.Logf("%s: %s", position(d.Pos()), tag)
+		switch {
+		case strings.HasPrefix(tag, "global"):
+			e = External
+		case strings.HasPrefix(tag, "local"):
+			e = Internal
+		}
+		if g := d.Linkage; g != e {
+			t.Fatalf("%v %v", g, e)
+		}
+	}
+}
