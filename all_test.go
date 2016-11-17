@@ -2625,3 +2625,12 @@ func TestIssue62(t *testing.T) {
 		}
 	}
 }
+
+// https://github.com/cznic/cc/issues/64
+func TestIssue64(t *testing.T) {
+	if _, err := Parse("", []string{"testdata/issue64.c"}, newTestModel()); err == nil {
+		t.Fatal("expected error")
+	} else {
+		t.Log(errString(err))
+	}
+}

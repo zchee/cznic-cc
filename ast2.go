@@ -1882,7 +1882,7 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 				i++
 			}
 		case Struct, Union:
-			mb, _ := dt.Members()
+			mb, incomplete := dt.Members()
 			if mb == nil {
 				panic("internal error")
 			}
@@ -1897,6 +1897,11 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 					i++
 					continue //TODO
 					panic("TODO")
+				}
+
+				if incomplete {
+					lx.report.Err(n.Pos(), "variable/field has initializer but incomplete type")
+					return
 				}
 
 				l.Initializer.typeCheck(nil, mb, i, lim, lx)

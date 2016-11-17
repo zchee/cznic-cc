@@ -1228,6 +1228,7 @@ InitDeclarator:
 			limit := -1
 			var checkType Type
 			var mb []Member
+			var incomplete bool
 			d := lhs.Declarator
 			k := d.Type.Kind()
 			switch k {
@@ -1238,7 +1239,7 @@ InitDeclarator:
 				checkType = d.Type.Element()
 				d.Type = d.Type.(*ctype).setElements(i.InitializerList.Len())
 			case Struct, Union:
-				mb, _ = d.Type.Members()
+				mb, incomplete = d.Type.Members()
 				if mb == nil {
 					panic("internal error")
 				}
@@ -1257,6 +1258,11 @@ InitDeclarator:
 				values++
 				if l.DesignationOpt != nil {
 					panic("TODO")
+				}
+
+				if incomplete {
+					lx.report.Err(i.Pos(), "variable/field has initializer but incomplete type")
+					break
 				}
 
 				l.Initializer.typeCheck(checkType, mb, values-1, limit, lx)
