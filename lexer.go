@@ -60,12 +60,10 @@ type lexer struct {
 	exampleRule        int                 //
 	externs            map[int]*Declarator //
 	file               *token.File         //
-	finalNLInjected    bool                //
 	fnDeclarator       *Declarator         //
 	includePaths       []string            //
 	injectFunc         []xc.Token          // [0], 6.4.2.2.
 	iota               int64               //
-	isPreprocessing    bool                //
 	last               xc.Token            //
 	model              *Model              //
 	preprocessingFile  *PreprocessingFile  //
@@ -77,12 +75,14 @@ type lexer struct {
 	sysIncludePaths    []string            //
 	t                  *trigraphsReader    //
 	textLine           []xc.Token          //
-	toC                bool                // Whether to translate preprocessor identifiers to reserved C words.
 	tokLast            xc.Token            //
 	tokPrev            xc.Token            //
 	toks               []xc.Token          // Parsing preprocessor constant expression.
 	translationUnit    *TranslationUnit    //
 	tweaks             *tweaks             //
+	finalNLInjected    bool                //
+	isPreprocessing    bool                //
+	toC                bool                // Whether to translate preprocessor identifiers to reserved C words.
 }
 
 func newLexer(nm string, sz int, r io.RuneReader, report *xc.Report, tweaks *tweaks, opts ...lex.Option) (*lexer, error) {

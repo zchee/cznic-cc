@@ -2634,3 +2634,48 @@ func TestIssue64(t *testing.T) {
 		t.Log(errString(err))
 	}
 }
+
+// https://github.com/cznic/cc/issues/65
+func TestIssue65(t *testing.T) {
+	tu, err := Parse("", []string{"testdata/issue65.c"}, newTestModel())
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	foo, ok := tu.Declarations.Identifiers[xc.Dict.SID("foo")]
+	if !ok {
+		t.Fatal("undefined: foo")
+	}
+
+	ft := foo.Node.(*DirectDeclarator).TopDeclarator().Type
+	m, _ := ft.Members()
+	tab := map[string]int{
+		"i": -1,
+		"j": 0,
+		"k": 1,
+		"l": 3,
+		"m": -1,
+	}
+	for _, v := range m {
+		ofs, ok := tab[string(xc.Dict.S(v.Name))]
+		if !ok {
+			t.Fatal(PrettyString(v))
+		}
+
+		if ofs < 0 {
+			if v.Bits != 0 {
+				t.Fatal(PrettyString(v))
+			}
+			continue
+		}
+
+		if v.Bits == 0 {
+			t.Fatal(PrettyString(v))
+		}
+
+		if g, e := v.BitOffsetOf, ofs; g != e {
+			t.Log(PrettyString(v))
+			t.Fatal(g, e)
+		}
+	}
+}

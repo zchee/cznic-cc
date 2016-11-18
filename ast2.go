@@ -737,7 +737,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Value, n.Type = n.Expression.eval(lx)
 	case 14: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
 		n.Type = n.TypeName.Type
-		break //TODO-
 		for l := n.InitializerList; l != nil; l = l.InitializerList {
 			if l.DesignationOpt != nil {
 				panic("TODO")
@@ -2102,13 +2101,13 @@ func (n *StructDeclarator) post(lx *lexer) {
 		if sc.bitOffset+w > maxBits {
 			finishBitField(lx)
 		}
-		sc.bitOffset += w
 		if o := n.DeclaratorOpt; o != nil {
-			o.Declarator.offsetOf = sc.offset
-			o.Declarator.bitOffset = sc.bitOffset
-			o.Declarator.bitFieldGroup = sc.bitFieldGroup
+			d := o.Declarator
+			d.offsetOf = sc.offset
+			d.bitOffset = sc.bitOffset
+			d.bitFieldGroup = sc.bitFieldGroup
 			sc.prevStructDeclarator = o.Declarator
-			t = o.Declarator.Type
+			t = d.Type
 			switch t.Kind() {
 			case Char, SChar, UChar, Int, UInt, Long, ULong, Short, UShort, Enum, Bool:
 				// ok
@@ -2117,6 +2116,7 @@ func (n *StructDeclarator) post(lx *lexer) {
 				t = lx.model.IntType
 			}
 		}
+		sc.bitOffset += w
 	default:
 		panic(n.Case)
 	}

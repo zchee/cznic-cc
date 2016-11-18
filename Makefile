@@ -12,6 +12,7 @@ all: editor
 	golint || true
 	make todo
 	unused . || true
+	maligned
 
 clean:
 	rm -f log-*.c log-*.h *~ cpu.test mem.test /tmp/cc-test-*

@@ -1553,7 +1553,6 @@ func finishBitField(lx *lexer) {
 		sc.offset = align(sc.offset, al)
 		if pd := sc.prevStructDeclarator; pd != nil {
 			pd.padding = sc.offset - off
-			pd.bitOffset = sc.bitOffset
 			pd.offsetOf = sc.offset
 		}
 		sc.offset += bytes
