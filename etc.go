@@ -1478,6 +1478,12 @@ func specifierString(sp Specifier) string {
 						switch sd := l.StructDeclarator; sd.Case {
 						case 0: // Declarator
 							buf.WriteString(sd.Declarator.Type.String())
+						case 1: // DeclaratorOpt ':' ConstantExpression
+							if o := sd.DeclaratorOpt; o != nil {
+								buf.WriteString(o.Declarator.Type.String())
+							}
+							buf.WriteByte(':')
+							fmt.Fprintf(&buf, "%v", sd.ConstantExpression.Value)
 						default:
 							fmt.Fprintf(&buf, "specifierString_TODO%v", sd.Case)
 						}
