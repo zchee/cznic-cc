@@ -2679,3 +2679,25 @@ func TestIssue65(t *testing.T) {
 		}
 	}
 }
+
+// https://github.com/cznic/cc/issues/66
+func TestIssue66(t *testing.T) {
+	tu, err := Parse("", []string{"testdata/issue66.c"}, newTestModel())
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	e := tu.ExternalDeclaration.Declaration.InitDeclaratorListOpt.InitDeclaratorList.InitDeclarator.Initializer.Expression
+	if e.Value == nil {
+		t.Fatal("expected constant expression")
+	}
+
+	switch g := e.Value.(type) {
+	case uintptr:
+		if e := uintptr(13); g != e {
+			t.Fatal(g, e)
+		}
+	default:
+		t.Fatalf("%T(%#v)", g, g)
+	}
+}

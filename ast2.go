@@ -643,10 +643,35 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 
 		_, t2 := n.ExpressionList.eval(lx)
-		if !IsIntType(t2) && !(t2.Kind() == Bool) {
-			lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer or bool (have '%s')", t2)
-		}
 		n.Type = t.Element()
+		if !IsIntType(t2) && t2.Kind() != Bool {
+			lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer or bool (have '%s')", t2)
+			break
+		}
+
+		if p, x := n.Expression.Value, n.ExpressionList.Value; p != nil && x != nil {
+			sz := uintptr(n.Type.SizeOf())
+			switch pv := p.(type) {
+			case uintptr:
+				switch xv := x.(type) {
+				case int32:
+					pv += sz * uintptr(xv)
+				case uint32:
+					pv += sz * uintptr(xv)
+				case int64:
+					pv += sz * uintptr(xv)
+				case uint64:
+					pv += sz * uintptr(xv)
+				case uintptr:
+					pv += sz * xv
+				default:
+					panic("TODO")
+				}
+				n.Value = pv
+			default:
+				panic("internal error")
+			}
+		}
 	case 9: // Expression '(' ArgumentExpressionListOpt ')'
 		_, t := n.Expression.eval(lx)
 		if t.Kind() == Ptr {
