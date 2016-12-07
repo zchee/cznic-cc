@@ -3083,6 +3083,7 @@ func (n *StructOrUnionSpecifier) Pos() token.Pos {
 //	        ExternalDeclaration
 //	|       TranslationUnit ExternalDeclaration  // Case 1
 type TranslationUnit struct {
+	Comments            map[token.Pos]int // Position -> comment ID. Enable using the KeepComments option.
 	Declarations        *Bindings
 	Macros              map[int]*Macro // Ident ID -> preprocessor macro defined by ident.
 	Model               *Model         // Model used to parse the TranslationUnit.

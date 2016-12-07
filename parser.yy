@@ -1636,9 +1636,10 @@ JumpStatement:
 |	"return" ExpressionListOpt ';'
 
 // [0](6.9)
+//yy:field	Comments	map[token.Pos]int	// Position -> comment ID. Enable using the KeepComments option.
 //yy:field	Declarations	*Bindings
-//yy:field	Macros		map[int]*Macro	// Ident ID -> preprocessor macro defined by ident.
-//yy:field	Model		*Model		// Model used to parse the TranslationUnit.
+//yy:field	Macros		map[int]*Macro		// Ident ID -> preprocessor macro defined by ident.
+//yy:field	Model		*Model			// Model used to parse the TranslationUnit.
 //yy:list
 TranslationUnit:
 	ExternalDeclaration

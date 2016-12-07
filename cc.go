@@ -134,24 +134,25 @@ func HostCppConfig(cpp string, opts ...string) (predefined string, includePaths,
 }
 
 type tweaks struct {
-	devTest                        bool //
-	disablePredefinedLineMacro     bool // __LINE__ will not expand.
-	enableAlignof                  bool //
-	enableAlternateKeywords        bool // __asm__ etc.
-	enableAnonymousStructFields    bool //
-	enableAsm                      bool //
-	enableDefineOmitCommaBeforeDDD bool // #define foo(a, b...)
-	enableDlrInIdentifiers         bool // foo$bar
-	enableEmptyDefine              bool // #define
-	enableIncludeNext              bool //
-	enableNoreturn                 bool //
-	enableStaticAssert             bool // _Static_assert
-	enableTrigraphs                bool // ??=define foo(bar)
-	enableTypeof                   bool //
-	enableUndefExtraTokens         bool // #undef foo(bar)
-	enableWarnings                 bool // #warning
-	gccEmu                         bool //
-	preprocessOnly                 bool //
+	comments                       map[token.Pos]int //
+	devTest                        bool              //
+	disablePredefinedLineMacro     bool              // __LINE__ will not expand.
+	enableAlignof                  bool              //
+	enableAlternateKeywords        bool              // __asm__ etc.
+	enableAnonymousStructFields    bool              //
+	enableAsm                      bool              //
+	enableDefineOmitCommaBeforeDDD bool              // #define foo(a, b...)
+	enableDlrInIdentifiers         bool              // foo$bar
+	enableEmptyDefine              bool              // #define
+	enableIncludeNext              bool              //
+	enableNoreturn                 bool              //
+	enableStaticAssert             bool              // _Static_assert
+	enableTrigraphs                bool              // ??=define foo(bar)
+	enableTypeof                   bool              //
+	enableUndefExtraTokens         bool              // #undef foo(bar)
+	enableWarnings                 bool              // #warning
+	gccEmu                         bool              //
+	preprocessOnly                 bool              //
 }
 
 func (t *tweaks) doGccEmu() *tweaks {
@@ -272,6 +273,11 @@ func ppParse(fn string, report *xc.Report, tweaks *tweaks) (*PreprocessingFile, 
 // Opt is a configuration/setup function that can be passed to the Parser
 // function.
 type Opt func(*lexer)
+
+// KeepComments makes the parser keep comments.
+func KeepComments() Opt {
+	return func(l *lexer) { l.tweaks.comments = map[token.Pos]int{} }
+}
 
 // EnableAnonymousStructFields makes the parser accept non standard
 //
@@ -511,6 +517,7 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 	if tu := lx.translationUnit; tu != nil {
 		tu.Macros = macros.macros()
 		tu.Model = m
+		tu.Comments = lx0.tweaks.comments
 	}
 	return lx.translationUnit, report.Errors(true)
 }

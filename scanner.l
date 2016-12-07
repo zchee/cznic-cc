@@ -88,14 +88,17 @@ unsigned-suffix                 [uU]
 %%
                                 c = l.Rule0()
 
-[ \t\f\v]+			|
-"//".*				return ' '
+[ \t\f\v]+			return ' '
+
+"//".*				l.comment(false)
+				return ' '
 
 "/*"				l.commentPos0 = l.First.Pos()
                                 l.push(scCOMMENT)
 
 <COMMENT>{comment-close}        l.pop()
 				l.First = lex.NewChar(l.commentPos0, l.First.Rune)
+				l.comment(true)
 				return ' '
 
 <COMMENT>{eof}                  l.report.Err(l.commentPos0, commentNotClosed)

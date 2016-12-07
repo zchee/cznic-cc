@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -2699,5 +2700,29 @@ func TestIssue66(t *testing.T) {
 		}
 	default:
 		t.Fatalf("%T(%#v)", g, g)
+	}
+}
+
+// https://github.com/cznic/cc/issues/67
+func TestIssue67(t *testing.T) {
+	tu, err := Parse("", []string{"testdata/issue67.c"}, newTestModel(), KeepComments())
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	var a []string
+	for k, v := range tu.Comments {
+		a = append(a, fmt.Sprintf("%s: %q", xc.FileSet.Position(k), xc.Dict.S(v)))
+	}
+	sort.Strings(a)
+	if g, e := strings.Join(a, "\n"), `testdata/issue67.c:14:1: "/* abc11 */\n/* def12\n */"
+testdata/issue67.c:19:1: "/* abc16\n */\n/* def18 */"
+testdata/issue67.c:23:1: "/* abc21 */\n// def22"
+testdata/issue67.c:27:1: "// def25\n/* abc26 */"
+testdata/issue67.c:2:1: "// bar1"
+testdata/issue67.c:32:1: "// def31"
+testdata/issue67.c:5:1: "/*\nbaz3\n*/"
+testdata/issue67.c:9:1: "// abc7\n// def8"`; g != e {
+		t.Fatalf("got\n%s\nexp\n%s", g, e)
 	}
 }

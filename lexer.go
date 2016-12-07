@@ -5,6 +5,7 @@
 package cc
 
 import (
+	"bytes"
 	"fmt"
 	"go/token"
 	"io"
@@ -60,10 +61,12 @@ type lexer struct {
 	exampleRule        int                 //
 	externs            map[int]*Declarator //
 	file               *token.File         //
+	finalNLInjected    bool                //
 	fnDeclarator       *Declarator         //
 	includePaths       []string            //
 	injectFunc         []xc.Token          // [0], 6.4.2.2.
 	iota               int64               //
+	isPreprocessing    bool                //
 	last               xc.Token            //
 	model              *Model              //
 	preprocessingFile  *PreprocessingFile  //
@@ -75,14 +78,18 @@ type lexer struct {
 	sysIncludePaths    []string            //
 	t                  *trigraphsReader    //
 	textLine           []xc.Token          //
+	toC                bool                // Whether to translate preprocessor identifiers to reserved C words.
 	tokLast            xc.Token            //
 	tokPrev            xc.Token            //
 	toks               []xc.Token          // Parsing preprocessor constant expression.
 	translationUnit    *TranslationUnit    //
 	tweaks             *tweaks             //
-	finalNLInjected    bool                //
-	isPreprocessing    bool                //
-	toC                bool                // Whether to translate preprocessor identifiers to reserved C words.
+
+	fsm struct {
+		comment int
+		pos     token.Pos
+		state   int
+	}
 }
 
 func newLexer(nm string, sz int, r io.RuneReader, report *xc.Report, tweaks *tweaks, opts ...lex.Option) (*lexer, error) {
@@ -183,6 +190,41 @@ func (l *lexer) popScopePos(pos token.Pos) (old, new *Bindings) {
 	return old, new
 }
 
+const (
+	fsmZero = iota
+	fsmHasComment
+)
+
+var genCommentLeader = []byte("/*")
+
+func (l *lexer) comment(general bool) {
+	if l.tweaks.comments != nil {
+		b := l.TokenBytes(nil)
+		pos := l.First.Pos()
+		if general {
+			pos = l.commentPos0
+			b = append(genCommentLeader, b...)
+		}
+		if l.Lookahead().Rune == '\n' {
+			b = append(b, '\n')
+		}
+
+		switch fsm := &l.fsm; fsm.state {
+		case fsmHasComment:
+			if pos == fsm.pos+token.Pos(len(dict.S(l.fsm.comment))) {
+				fsm.comment = dict.ID(append(dict.S(fsm.comment), b...))
+				break
+			}
+
+			fallthrough
+		case fsmZero:
+			fsm.state = fsmHasComment
+			fsm.comment = dict.ID(b)
+			fsm.pos = pos
+		}
+	}
+}
+
 func (l *lexer) scanChar() (c lex.Char) {
 again:
 	r := rune(l.scan())
@@ -203,6 +245,19 @@ again:
 		l.isPreprocessing = true
 	case CONSTANT_EXPRESSION, TRANSLATION_UNIT: //TODO- CONSTANT_EXPRESSION, then must add some manual yy:examples.
 		l.toC = true
+	}
+
+	fp := l.First.Pos()
+	if l.fsm.state == fsmHasComment {
+		switch {
+		case r == '\n' && fp == l.fsm.pos+token.Pos(len(dict.S(l.fsm.comment)))-1:
+			// keep going
+		case r != '\n' && fp == l.fsm.pos+token.Pos(len(dict.S(l.fsm.comment))):
+			l.tweaks.comments[fp] = dict.ID(bytes.TrimSpace(dict.S(l.fsm.comment)))
+			l.fsm.state = fsmZero
+		default:
+			l.fsm.state = fsmZero
+		}
 	}
 
 	return lex.NewChar(l.First.Pos(), r)

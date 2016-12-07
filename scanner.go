@@ -3235,8 +3235,12 @@ yystate241:
 	}
 
 yyrule1: // [ \t\f\v]+
+	{
+		return ' '
+	}
 yyrule2: // "//".*
 	{
+		l.comment(false)
 		return ' '
 	}
 yyrule3: // "/*"
@@ -3249,6 +3253,7 @@ yyrule4: // {comment-close}
 	{
 		l.pop()
 		l.First = lex.NewChar(l.commentPos0, l.First.Rune)
+		l.comment(true)
 		return ' '
 	}
 yyrule5: // {eof}
