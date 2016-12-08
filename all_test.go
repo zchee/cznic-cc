@@ -2737,3 +2737,10 @@ func TestIssue68(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// https://github.com/cznic/cc/issues/69
+func TestIssue69(t *testing.T) {
+	if _, err := Parse("", []string{"testdata/issue69.h"}, newTestModel()); err != nil {
+		t.Fatal(err)
+	}
+}

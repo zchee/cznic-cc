@@ -1002,8 +1002,13 @@ func (p *pp) groupList(n *GroupList) {
 			}
 
 			toks := decodeTokens(gp, nil, true)
-			p.in <- toks
-			<-p.ack
+			for _, v := range toks {
+				if v.Rune != ' ' {
+					p.in <- toks
+					<-p.ack
+					break
+				}
+			}
 		case xc.Token:
 			if p.tweaks.enableWarnings {
 				fmt.Printf("[INFO] %s at %s\n", gp.S(), xc.FileSet.Position(gp.Pos()).String())
