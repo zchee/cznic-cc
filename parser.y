@@ -3067,6 +3067,18 @@ ExternalDeclaration:
 			Token:                    $2,
 		}
 	}
+|	';'
+	{
+		lx := yylex.(*lexer)
+		lhs := &ExternalDeclaration{
+			Case:   3,
+			Token:  $1,
+		}
+		$$ = lhs
+		if !lx.tweaks.enableEmptyDeclarations {
+			lx.report.Err(lhs.Pos(), "C++11 empty declarations are illegal in C99.")
+		}
+	}
 
 FunctionDefinition:
 	DeclarationSpecifiers Declarator DeclarationListOpt

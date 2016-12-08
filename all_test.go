@@ -2726,3 +2726,14 @@ testdata/issue67.c:9:1: "// abc7\n// def8"`; g != e {
 		t.Fatalf("got\n%s\nexp\n%s", g, e)
 	}
 }
+
+// https://github.com/cznic/cc/issues/68
+func TestIssue68(t *testing.T) {
+	if _, err := Parse("", []string{"testdata/issue68.h"}, newTestModel()); err == nil {
+		t.Fatal("expected error")
+	}
+
+	if _, err := Parse("", []string{"testdata/issue68.h"}, newTestModel(), EnableEmptyDeclarations()); err != nil {
+		t.Fatal(err)
+	}
+}

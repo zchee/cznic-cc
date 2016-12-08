@@ -141,6 +141,7 @@ type tweaks struct {
 	enableAlternateKeywords        bool              // __asm__ etc.
 	enableAnonymousStructFields    bool              //
 	enableAsm                      bool              //
+	enableEmptyDeclarations        bool              // ; // C++11
 	enableDefineOmitCommaBeforeDDD bool              // #define foo(a, b...)
 	enableDlrInIdentifiers         bool              // foo$bar
 	enableEmptyDefine              bool              // #define
@@ -290,6 +291,13 @@ func KeepComments() Opt {
 //	};
 func EnableAnonymousStructFields() Opt {
 	return func(l *lexer) { l.tweaks.enableAnonymousStructFields = true }
+}
+
+// EnableEmptyDeclarations makes the parser accept non standard
+//
+//	; // C++11 empty declaration
+func EnableEmptyDeclarations() Opt {
+	return func(l *lexer) { l.tweaks.enableEmptyDeclarations = true }
 }
 
 // EnableIncludeNext makes the parser accept non standard

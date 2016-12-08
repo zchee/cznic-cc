@@ -1650,6 +1650,12 @@ ExternalDeclaration:
 	FunctionDefinition
 |	Declaration
 |	BasicAssemblerStatement ';'
+|	';'
+	{
+		if !lx.tweaks.enableEmptyDeclarations {
+			lx.report.Err(lhs.Pos(), "C++11 empty declarations are illegal in C99.")
+		}
+	}
 
 // [0](6.9.1)
 FunctionDefinition:

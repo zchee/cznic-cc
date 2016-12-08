@@ -1755,6 +1755,7 @@ func (n *ExpressionStatement) Pos() token.Pos {
 //	        FunctionDefinition
 //	|       Declaration                  // Case 1
 //	|       BasicAssemblerStatement ';'  // Case 2
+//	|       ';'                          // Case 3
 type ExternalDeclaration struct {
 	BasicAssemblerStatement *BasicAssemblerStatement
 	Case                    int
@@ -1783,6 +1784,8 @@ func (n *ExternalDeclaration) Pos() token.Pos {
 		return n.Declaration.Pos()
 	case 0:
 		return n.FunctionDefinition.Pos()
+	case 3:
+		return n.Token.Pos()
 	default:
 		panic("internal error")
 	}
