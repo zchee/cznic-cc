@@ -207,6 +207,7 @@ func exampleAST(rule int, src string) interface{} {
 			DoubleComplex:     {16, 16, 16, nil},
 			LongDoubleComplex: {16, 16, 16, nil},
 		},
+		tweaks: &tweaks{},
 	}
 
 	lx.model.initialize(lx)
