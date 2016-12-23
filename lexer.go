@@ -180,7 +180,7 @@ func (l *lexer) popScope(tok xc.Token) (old, new *Bindings) {
 
 func (l *lexer) popScopePos(pos token.Pos) (old, new *Bindings) {
 	old = l.scope
-	new = l.scope.parent
+	new = l.scope.Parent
 	if new == nil {
 		l.report.Err(pos, "cannot pop scope")
 		return nil, old

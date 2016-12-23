@@ -231,7 +231,7 @@ type Bindings struct {
 	Identifiers map[int]Binding // NSIdentifiers name space bindings.
 	Tags        map[int]Binding // NSTags name space bindings.
 	kind        Scope           // ScopeFile, ...
-	parent      *Bindings       //
+	Parent      *Bindings       // Parent scope or nil for ScopeFile.
 
 	// Scoped helpers.
 
@@ -252,7 +252,7 @@ type Bindings struct {
 func newBindings(parent *Bindings, kind Scope) *Bindings {
 	return &Bindings{
 		kind:   kind,
-		parent: parent,
+		Parent: parent,
 	}
 }
 
@@ -290,8 +290,8 @@ func (b *Bindings) boot(ns Namespace) map[int]Binding {
 }
 
 func (b *Bindings) root() *Bindings {
-	for b.parent != nil {
-		b = b.parent
+	for b.Parent != nil {
+		b = b.Parent
 	}
 	return b
 }
@@ -315,7 +315,7 @@ func (b *Bindings) Lookup2(ns Namespace, id int) (Binding, *Bindings) {
 			return x, b
 		}
 
-		b = b.parent
+		b = b.Parent
 	}
 
 	return Binding{}, nil
