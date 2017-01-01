@@ -1468,6 +1468,7 @@ func ExampleEnumerator_case1() {
 	fmt.Println(exampleAST(140, "\U00100002 enum { a = 'b' ,"))
 	// Output:
 	// &cc.Enumerator{
+	// · Value: 98,
 	// · Case: 1,
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · Type: int,
@@ -1510,6 +1511,7 @@ func ExampleEnumeratorList_case1() {
 	// · EnumeratorList: &cc.EnumeratorList{
 	// · · Case: 1,
 	// · · Enumerator: &cc.Enumerator{
+	// · · · Value: 1,
 	// · · · EnumerationConstant: &cc.EnumerationConstant{
 	// · · · · Token: example138.c:1:17: IDENTIFIER "b",
 	// · · · },

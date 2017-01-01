@@ -1044,13 +1044,13 @@ EnumeratorList:
 |	EnumeratorList ',' Enumerator
 
 // [0](6.7.2.2)
-//yy:field	enumVal		interface{}
+//yy:field	Value		interface{}	// Enumerator's value.
 Enumerator:
 	EnumerationConstant
 	{
 		m := lx.model
 		v := m.MustConvert(lx.iota, m.IntType)
-		lhs.enumVal = v
+		lhs.Value = v
 		lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, v)
 	}
 |	EnumerationConstant '=' ConstantExpression
@@ -1073,7 +1073,7 @@ Enumerator:
 			}
 		}
 
-		lhs.enumVal = v
+		lhs.Value = v
 		lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, v)
 	}
 

@@ -1149,13 +1149,13 @@ func (n *ctype) EnumeratorList() (r []EnumConstant) {
 			if e.ConstantExpression != nil {
 				r = append(r, EnumConstant{
 					DefTok: e.EnumerationConstant.Token,
-					Value:  e.enumVal,
+					Value:  e.Value,
 					Tokens: e.ConstantExpression.toks})
 				continue
 			}
 			r = append(r, EnumConstant{
 				DefTok: e.EnumerationConstant.Token,
-				Value:  e.enumVal,
+				Value:  e.Value,
 			})
 		}
 		return r

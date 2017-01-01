@@ -1439,7 +1439,7 @@ func (n *EnumerationConstant) Pos() token.Pos {
 //	        EnumerationConstant
 //	|       EnumerationConstant '=' ConstantExpression  // Case 1
 type Enumerator struct {
-	enumVal             interface{}
+	Value               interface{} // Enumerator's value.
 	Case                int
 	ConstantExpression  *ConstantExpression
 	EnumerationConstant *EnumerationConstant

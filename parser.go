@@ -4083,7 +4083,7 @@ yynewstate:
 			yyVAL.node = lhs
 			m := lx.model
 			v := m.MustConvert(lx.iota, m.IntType)
-			lhs.enumVal = v
+			lhs.Value = v
 			lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, v)
 		}
 	case 140:
@@ -4114,7 +4114,7 @@ yynewstate:
 				}
 			}
 
-			lhs.enumVal = v
+			lhs.Value = v
 			lx.scope.defineEnumConst(lx, lhs.EnumerationConstant.Token, v)
 		}
 	case 141:
