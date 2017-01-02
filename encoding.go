@@ -736,14 +736,15 @@ func decodeEscapeSequence(runes []rune) (rune, int) {
 	}
 
 	v, n := 0, 1
+loop:
 	for _, r := range runes[1:] {
 		switch {
 		case r >= '0' && r <= '7':
-			v = v<<3 | int(r) - '0'
+			v = v<<3 | (int(r) - '0')
 			n++
 		default:
-			break
+			break loop
 		}
 	}
-	return rune(n & 0xff), n
+	return rune(v & 0xff), n
 }
