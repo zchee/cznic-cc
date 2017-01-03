@@ -380,6 +380,20 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case int16:
+			switch w {
+			case 4:
+				return int32(x)
+			default:
+				panic(w)
+			}
+		case uint16:
+			switch w {
+			case 4:
+				return int32(x)
+			default:
+				panic(w)
+			}
 		case int32:
 			switch w {
 			case 4:
@@ -476,6 +490,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		switch x := v.(type) {
 		case int32:
 			switch w {
+			case 4:
+				return x
 			case 8:
 				return int64(x)
 			default:
@@ -483,6 +499,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			}
 		case uint32:
 			switch w {
+			case 4:
+				return int32(x)
 			case 8:
 				return int64(x)
 			default:
@@ -490,6 +508,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			}
 		case int64:
 			switch w {
+			case 4:
+				return int32(x)
 			case 8:
 				return x
 			default:
@@ -544,6 +564,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		switch x := v.(type) {
 		case int:
 			switch w {
+			case 4:
+				return uint32(x)
 			case 8:
 				return uint64(x)
 			default:
@@ -551,6 +573,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			}
 		case int32:
 			switch w {
+			case 4:
+				return uint32(x)
 			case 8:
 				return uint64(x)
 			default:
@@ -558,6 +582,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			}
 		case int64:
 			switch w {
+			case 4:
+				return uint32(x)
 			case 8:
 				return uint64(x)
 			default:
@@ -565,6 +591,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			}
 		case uint32:
 			switch w {
+			case 4:
+				return x
 			case 8:
 				return uint64(x)
 			default:
@@ -572,6 +600,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			}
 		case uint64:
 			switch w {
+			case 4:
+				return uint32(x)
 			case 8:
 				return x
 			default:
@@ -579,6 +609,8 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			}
 		case uintptr:
 			switch w {
+			case 4:
+				return uint32(x)
 			case 8:
 				return uint64(x)
 			default:
