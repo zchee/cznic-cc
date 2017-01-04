@@ -141,18 +141,19 @@ type tweaks struct {
 	enableAlternateKeywords        bool              // __asm__ etc.
 	enableAnonymousStructFields    bool              //
 	enableAsm                      bool              //
-	enableEmptyDeclarations        bool              // ; // C++11
 	enableDefineOmitCommaBeforeDDD bool              // #define foo(a, b...)
 	enableDlrInIdentifiers         bool              // foo$bar
+	enableEmptyDeclarations        bool              // ; // C++11
 	enableEmptyDefine              bool              // #define
 	enableIncludeNext              bool              //
-	enableWideBitFieldTypes        bool              // long long v : 2;
 	enableNoreturn                 bool              //
+	enableOmitFuncRetType          bool              // f() becomes the same as int f().
 	enableStaticAssert             bool              // _Static_assert
 	enableTrigraphs                bool              // ??=define foo(bar)
 	enableTypeof                   bool              //
 	enableUndefExtraTokens         bool              // #undef foo(bar)
 	enableWarnings                 bool              // #warning
+	enableWideBitFieldTypes        bool              // long long v : 2;
 	enableWideEnumValues           bool              // enum { v = X } for X wider than 32bits
 	gccEmu                         bool              //
 	preprocessOnly                 bool              //
@@ -294,6 +295,13 @@ func KeepComments() Opt {
 //	};
 func EnableAnonymousStructFields() Opt {
 	return func(l *lexer) { l.tweaks.enableAnonymousStructFields = true }
+}
+
+// EnableOmitFuncRetType makes the parser accept non standard
+//
+//	f() // Same as int f().
+func EnableOmitFuncRetType() Opt {
+	return func(l *lexer) { l.tweaks.enableOmitFuncRetType = true }
 }
 
 // EnableEmptyDeclarations makes the parser accept non standard

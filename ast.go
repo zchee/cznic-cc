@@ -1827,11 +1827,13 @@ func (n *FunctionBody) Pos() token.Pos {
 	}
 }
 
-// FunctionDefinition represents data reduced by production:
+// FunctionDefinition represents data reduced by productions:
 //
 //	FunctionDefinition:
 //	        DeclarationSpecifiers Declarator DeclarationListOpt FunctionBody
+//	|       Declarator DeclarationListOpt FunctionBody                        // Case 1
 type FunctionDefinition struct {
+	Case                  int
 	DeclarationListOpt    *DeclarationListOpt
 	DeclarationSpecifiers *DeclarationSpecifiers
 	Declarator            *Declarator
@@ -1851,7 +1853,14 @@ func (n *FunctionDefinition) Pos() token.Pos {
 		return 0
 	}
 
-	return n.DeclarationSpecifiers.Pos()
+	switch n.Case {
+	case 0:
+		return n.DeclarationSpecifiers.Pos()
+	case 1:
+		return n.Declarator.Pos()
+	default:
+		panic("internal error")
+	}
 }
 
 // FunctionSpecifier represents data reduced by productions:

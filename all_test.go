@@ -2773,3 +2773,37 @@ func TestIssue77(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// https://github.com/cznic/cc/issues/78
+func TestIssue78(t *testing.T) {
+	if _, err := Parse(
+		"", []string{"testdata/issue78.c"}, newTestModel(),
+	); err == nil {
+		t.Fatal("expected error")
+	}
+
+	tu, err := Parse(
+		"", []string{"testdata/issue78.c"}, newTestModel(), EnableOmitFuncRetType(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b := tu.Declarations.Lookup(NSIdentifiers, xc.Dict.SID("f"))
+	if b.Node == nil {
+		t.Fatal("lookup fail")
+	}
+
+	typ := b.Node.(*DirectDeclarator).TopDeclarator().Type
+	if typ == nil {
+		t.Fatal("missing type")
+	}
+
+	if typ = typ.Result(); typ == nil {
+		t.Fatal("missing result type")
+	}
+
+	if g, e := typ.String(), "int"; g != e {
+		t.Fatalf("%q %q", g, e)
+	}
+}
