@@ -874,6 +874,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 26: // Expression '*' Expression
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		n.BinOpType = n.Type
 
 		switch x := a.(type) {
 		case nil:
@@ -896,6 +897,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 27: // Expression '/' Expression
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		n.BinOpType = n.Type
 		if b != nil && isZero(b) {
 			lx.report.Err(n.Expression2.Pos(), "division by zero")
 			break
@@ -922,6 +924,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 28: // Expression '%' Expression
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		n.BinOpType = n.Type
 		if b != nil && isZero(b) {
 			lx.report.Err(n.Expression2.Pos(), "division by zero")
 			break
@@ -966,6 +969,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		default:
 			var a, b interface{}
 			a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+			n.BinOpType = n.Type
 			switch x := a.(type) {
 			case nil:
 				// nop
@@ -1012,6 +1016,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		n.BinOpType = n.Type
 		switch x := a.(type) {
 		case nil:
 			// nop
@@ -1755,6 +1760,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 39: // Expression '&' Expression
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		n.BinOpType = n.Type
 		switch x := a.(type) {
 		case nil:
 			// nop
@@ -1772,6 +1778,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 40: // Expression '^' Expression
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		n.BinOpType = n.Type
 		switch x := a.(type) {
 		case nil:
 			// nop
@@ -1785,6 +1792,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 41: // Expression '|' Expression
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
+		n.BinOpType = n.Type
 		switch x := a.(type) {
 		case nil:
 			// nop
@@ -1958,7 +1966,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Type = at
 	case 46: // Expression "*=" Expression
 		_, n.Type = n.Expression.eval(lx)
-		if _, _, t := m.binOp(lx, n.Expression, n.Expression2); t.Kind() == Undefined {
+		if _, _, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2); n.BinOpType.Kind() == Undefined {
 			lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
 		}
 	case
@@ -1971,7 +1979,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			break
 		}
 
-		if _, _, t := m.binOp(lx, n.Expression, n.Expression2); t.Kind() == Undefined {
+		if _, _, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2); n.BinOpType.Kind() == Undefined {
 			lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
 		}
 	case
@@ -1990,18 +1998,24 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		case IsArithmeticType(at):
 			fallthrough
 		default:
-			if _, _, n.Type = m.binOp(lx, n.Expression, n.Expression2); n.Type.Kind() == Undefined {
+			if _, _, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2); n.BinOpType.Kind() == Undefined {
 				lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
 			}
 		}
 	case
 		51, // Expression "<<=" Expression
-		52, // Expression ">>=" Expression
+		52: // Expression ">>=" Expression
+		m.checkIntegerOrBoolType(lx, n.Expression, n.Expression2)
+		n.Type = n.Expression.Type
+	case
 		53, // Expression "&=" Expression
 		54, // Expression "^=" Expression
 		55: // Expression "|=" Expression
 		m.checkIntegerOrBoolType(lx, n.Expression, n.Expression2)
-		n.Type = n.Expression.Type
+		if _, _, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2); n.BinOpType.Kind() == Undefined {
+			lx.report.ErrTok(n.Token, "incompatible types") //TODO have ...
+		}
+		n.Type = n.BinOpType
 	case 56: // "_Alignof" '(' TypeName ')'
 		n.Type = lx.model.getSizeType(lx, n.Token)
 		t := n.TypeName.Type

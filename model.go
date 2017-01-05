@@ -32,9 +32,9 @@ var binOpTab = [kindMax][kindMax]Kind{
 	UintPtr:           {UintPtr: UintPtr},
 	Char:              {UintPtr: UintPtr, Int},
 	SChar:             {UintPtr: UintPtr, Int, Int},
-	UChar:             {UintPtr: UintPtr, UInt, UInt, UInt},
-	Short:             {UintPtr: UintPtr, Int, Int, UInt, Int},
-	UShort:            {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt},
+	UChar:             {UintPtr: UintPtr, Int, Int, Int},
+	Short:             {UintPtr: UintPtr, Int, Int, Int, Int},
+	UShort:            {UintPtr: UintPtr, Int, Int, Int, Int, Int},
 	Int:               {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int},
 	UInt:              {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt, UInt, UInt},
 	Long:              {UintPtr: UintPtr, Long, Long, Long, Long, Long, Long, Long, Long},
@@ -44,13 +44,13 @@ var binOpTab = [kindMax][kindMax]Kind{
 	Float:             {UintPtr: Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float},
 	Double:            {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
 	LongDouble:        {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
-	Bool:              {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
+	Bool:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
 	FloatComplex:      {}, //TODO
 	DoubleComplex:     {}, //TODO
 	LongDoubleComplex: {}, //TODO
 	Struct:            {},
 	Union:             {},
-	Enum:              {UintPtr: UintPtr, Int, Int, UInt, Int, UInt, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
+	Enum:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
 	TypedefName:       {},
 	Function:          {},
 	Array:             {},
@@ -96,6 +96,9 @@ type Model struct {
 
 	initialized bool
 	tweaks      *tweaks
+	intConvRank [kindMax]int
+	signed      [kindMax]bool
+	promoteTo   [kindMax]Kind
 }
 
 func (m *Model) initialize(lx *lexer) {
@@ -116,6 +119,86 @@ func (m *Model) initialize(lx *lexer) {
 	m.UintPtrType = m.makeType(lx, 0, tsUintptr) // Pseudo type.
 	m.VoidType = m.makeType(lx, 0, tsVoid)
 	m.strType = m.makeType(lx, 0, tsChar).Pointer()
+
+	// [0], 6.3.1.1.
+	m.intConvRank = [kindMax]int{
+		Bool:      1,
+		Char:      2,
+		SChar:     2,
+		UChar:     2,
+		Short:     3,
+		UShort:    3,
+		Int:       4,
+		UInt:      4,
+		Long:      5,
+		ULong:     5,
+		LongLong:  6,
+		ULongLong: 6,
+		UintPtr:   7,
+	}
+	m.signed = [kindMax]bool{
+		Char:     true,
+		SChar:    true,
+		Short:    true,
+		Int:      true,
+		Long:     true,
+		LongLong: true,
+	}
+	m.promoteTo = [kindMax]Kind{}
+	switch {
+	case m.tweaks.enableWideEnumValues:
+		m.intConvRank[Enum] = m.intConvRank[LongLong]
+	default:
+		m.intConvRank[Enum] = m.intConvRank[Int]
+	}
+	for k := Kind(0); k < kindMax; k++ {
+		r := m.intConvRank[k]
+		if r == 0 || r > m.intConvRank[Int] {
+			continue
+		}
+
+		// k is an integer type whose conversion rank is less than or
+		// equal to the rank of int and unsigned int.
+		switch {
+		case m.Items[k].Size < m.Items[Int].Size || m.signed[k]:
+			// If an int can represent all values of the original
+			// type, the value is converted to an int;
+			m.promoteTo[k] = Int
+		default:
+			// otherwise, it is converted to an unsigned int.
+			m.promoteTo[k] = UInt
+		}
+	}
+
+	for y := Kind(0); y < kindMax; y++ {
+		ry := m.intConvRank[y]
+		if ry == 0 || ry > m.intConvRank[Int] {
+			continue
+		}
+
+		py := m.promoteTo[y]
+		for x := Kind(0); x <= y; x++ {
+			rx := m.intConvRank[x]
+			if rx == 0 || rx > m.intConvRank[Int] {
+				continue
+			}
+
+			px := m.promoteTo[x]
+
+			// ss s
+			// su u
+			// us u
+			// uu u
+			p := py
+			if !m.signed[px] {
+				p = px
+			}
+
+			if g, e := binOpTab[y][x], p; g != e {
+				panic(fmt.Errorf("internal error: binOpTab[%s][%s] is %v, expected %v", y, x, g, e))
+			}
+		}
+	}
 
 	m.initialized = true
 }
