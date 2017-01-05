@@ -669,20 +669,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				}
 				n.Value = pv
 			case StringLitID:
-				s := xc.Dict.S(int(pv))
-				var ix int
-				switch xv := x.(type) {
-				case int32:
-					ix = int(xv)
-				default:
-					panic("TODO")
-				}
-				if ix < 0 || ix >= len(s) {
-					lx.report.Err(n.ExpressionList.Pos(), "array subscript out of range")
-					break
-				}
-
-				n.Value = int32(s[ix])
+				// ok, but not a constant expression.
 			default:
 				panic("internal error")
 			}
