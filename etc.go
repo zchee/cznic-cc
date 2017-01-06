@@ -908,7 +908,14 @@ func (n *ctype) Member(nm int) (*Member, error) {
 		return nil, fmt.Errorf("request for member %s in something not a structure or union (have '%s')", xc.Dict.S(nm), n)
 	}
 
-	return n.resultSpecifier.member(nm)
+	a, _ := n.Members()
+	for i := range a {
+		if a[i].Name == nm {
+			return &a[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("%s has no member named %s", Type(n), xc.Dict.S(nm))
 }
 
 // Returns nil if type kind != Enum
@@ -1773,3 +1780,21 @@ func compositeType(a, b Type) (c Type, isA bool) {
 }
 
 func eqTypes(a, b Type) bool { return a.(*ctype).eq(b.(*ctype)) }
+
+func memberType(mb *Member, m *Model) Type {
+	t := mb.Type
+	if mb.Bits == 0 {
+		return t
+	}
+
+	switch k := t.Kind(); k {
+	case Bool, Int, UInt:
+		if mb.Bits < 8*m.Items[Int].Size || m.Signed[k] {
+			return m.IntType
+		}
+
+		return m.UIntType
+	default:
+		return t
+	}
+}

@@ -97,7 +97,7 @@ type Model struct {
 	initialized bool
 	tweaks      *tweaks
 	intConvRank [kindMax]int
-	signed      [kindMax]bool
+	Signed      [kindMax]bool // Signed[Kind] reports whether Kind is a signed integer type.
 	promoteTo   [kindMax]Kind
 }
 
@@ -136,7 +136,7 @@ func (m *Model) initialize(lx *lexer) {
 		ULongLong: 6,
 		UintPtr:   7,
 	}
-	m.signed = [kindMax]bool{
+	m.Signed = [kindMax]bool{
 		Char:     true,
 		SChar:    true,
 		Short:    true,
@@ -160,7 +160,7 @@ func (m *Model) initialize(lx *lexer) {
 		// k is an integer type whose conversion rank is less than or
 		// equal to the rank of int and unsigned int.
 		switch {
-		case m.Items[k].Size < m.Items[Int].Size || m.signed[k]:
+		case m.Items[k].Size < m.Items[Int].Size || m.Signed[k]:
 			// If an int can represent all values of the original
 			// type, the value is converted to an int;
 			m.promoteTo[k] = Int
@@ -190,7 +190,7 @@ func (m *Model) initialize(lx *lexer) {
 			// us u
 			// uu u
 			p := py
-			if !m.signed[px] {
+			if !m.Signed[px] {
 				p = px
 			}
 
