@@ -2814,7 +2814,7 @@ func TestIssue80(t *testing.T) {
 		"", []string{"testdata/issue80.c"}, newTestModel(),
 	)
 	if err != nil {
-		t.Fatal("expected error")
+		t.Fatal(errString(err))
 	}
 
 	b := tu.Declarations.Lookup(NSIdentifiers, xc.Dict.SID("s"))
@@ -2836,6 +2836,28 @@ func TestIssue80(t *testing.T) {
 	}
 
 	if g, e := typ.SizeOf(), 7; g != e {
+		t.Fatalf("Sizeof: %v %v", g, e)
+	}
+
+	b = tu.Declarations.Lookup(NSIdentifiers, xc.Dict.SID("t"))
+	if b.Node == nil {
+		t.Fatal("lookup fail")
+	}
+
+	typ = b.Node.(*DirectDeclarator).TopDeclarator().Type
+	if typ == nil {
+		t.Fatal("missing type")
+	}
+
+	if g, e := typ.Kind(), Ptr; g != e {
+		t.Errorf("Kind: %v %v", g, e)
+	}
+
+	if g, e := typ.Elements(), -1; g != e {
+		t.Errorf("Elements: %v %v", g, e)
+	}
+
+	if g, e := typ.SizeOf(), 8; g != e {
 		t.Fatalf("Sizeof: %v %v", g, e)
 	}
 }

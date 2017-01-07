@@ -507,7 +507,7 @@ func (n *ctype) setElements(elems int) *ctype {
 			panic(dd.Case)
 		}
 	}
-	panic("internal error") // Not an Array
+	return n
 }
 
 func (n *ctype) eq(m *ctype) (r bool) {
