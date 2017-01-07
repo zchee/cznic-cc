@@ -2034,7 +2034,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			lx.report.Err(n.TypeName.Pos(), "invalid argument of _Alignof")
 			al = 1
 		}
-		n.Value = lx.model.MustConvert(al, n.Type)
+		n.Value = lx.model.MustConvert(int32(al), n.Type)
 	default:
 		//dbg("", PrettyString(n))
 		panic(n.Case)
