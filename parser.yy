@@ -627,10 +627,25 @@ InitDeclarator:
 	{
 		switch i := lhs.Initializer; i.Case {
 		case 0: // Expression
-			s := i.Expression.Type
-			d := lhs.Declarator.Type
-			if !s.CanAssignTo(s) {
-				lx.report.Err(i.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", d, s)
+			e := i.Expression
+			et := e.Type
+			d := lhs.Declarator
+			dt := d.Type
+			if !et.CanAssignTo(dt) {
+				lx.report.Err(i.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, et)
+				break
+			}
+
+			switch x := e.Value.(type) {
+			case StringLitID:
+				if dt.Kind() != Ptr {
+					break
+				}
+
+				switch dt.Element().Kind() {
+				case Char, SChar, UChar:
+					d.Type = d.Type.(*ctype).setElements(len(xc.Dict.S(int(x)))+1)
+				}
 			}
 		case 1: // '{' InitializerList CommaOpt '}'
 			limit := -1

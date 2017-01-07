@@ -2807,3 +2807,35 @@ func TestIssue78(t *testing.T) {
 		t.Fatalf("%q %q", g, e)
 	}
 }
+
+// https://github.com/cznic/cc/issues/80
+func TestIssue80(t *testing.T) {
+	tu, err := Parse(
+		"", []string{"testdata/issue80.c"}, newTestModel(),
+	)
+	if err != nil {
+		t.Fatal("expected error")
+	}
+
+	b := tu.Declarations.Lookup(NSIdentifiers, xc.Dict.SID("s"))
+	if b.Node == nil {
+		t.Fatal("lookup fail")
+	}
+
+	typ := b.Node.(*DirectDeclarator).TopDeclarator().Type
+	if typ == nil {
+		t.Fatal("missing type")
+	}
+
+	if g, e := typ.Kind(), Array; g != e {
+		t.Errorf("Kind: %v %v", g, e)
+	}
+
+	if g, e := typ.Elements(), 7; g != e {
+		t.Errorf("Elements: %v %v", g, e)
+	}
+
+	if g, e := typ.SizeOf(), 7; g != e {
+		t.Fatalf("Sizeof: %v %v", g, e)
+	}
+}
