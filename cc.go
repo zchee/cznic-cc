@@ -179,13 +179,16 @@ func (t *tweaks) doGccEmu() *tweaks {
 func exampleAST(rule int, src string) interface{} {
 	report := xc.NewReport()
 	report.IgnoreErrors = true
+	r := bytes.NewBufferString(src)
+	r0, _, _ := r.ReadRune()
 	lx, err := newLexer(
 		fmt.Sprintf("example%v.c", rule),
 		len(src)+1, // Plus final injected NL
-		bytes.NewBufferString(src),
+		r,
 		report,
 		(&tweaks{gccEmu: true}).doGccEmu(),
 	)
+	lx.Unget(lex.NewChar(token.Pos(lx.File.Base()), r0))
 	lx.model = &Model{ // 64 bit
 		Items: map[Kind]ModelItem{
 			Ptr:               {8, 8, 8, nil},

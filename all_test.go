@@ -2883,3 +2883,29 @@ func TestIssue80(t *testing.T) {
 		t.Fatalf("Sizeof: %v %v", g, e)
 	}
 }
+
+// https://github.com/cznic/cc/issues/81
+func TestIssue81(t *testing.T) {
+	tu, err := Parse(
+		"", []string{"testdata/issue81.c"}, newTestModel(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_ = tu
+	for l := tu; l != nil; l = l.TranslationUnit {
+		d := l.ExternalDeclaration.Declaration
+		for l := d.InitDeclaratorListOpt.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
+			x := l.InitDeclarator.Initializer.Expression
+			s := xc.Dict.S(int(x.Value.(StringLitID)))
+			if g, e := len(s), 3; g != e {
+				t.Fatalf("%v |% x| \n%v %v", position(x.Pos()), s, g, e)
+			}
+
+			if g, e := s, []byte{0, 255, 0}; !bytes.Equal(g, e) {
+				t.Fatalf("%v |% x| |% x|", position(x.Pos()), s, g, e)
+			}
+		}
+	}
+}

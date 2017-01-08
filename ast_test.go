@@ -15,7 +15,7 @@ func ExampleAbstractDeclarator() {
 	// Output:
 	// &cc.AbstractDeclarator{
 	// · Pointer: &cc.Pointer{
-	// · · Token: example182.c:1:14: '*',
+	// · · Token: example182.c:1:10: '*',
 	// · },
 	// }
 }
@@ -27,8 +27,8 @@ func ExampleAbstractDeclarator_case1() {
 	// · Case: 1,
 	// · DirectAbstractDeclarator: &cc.DirectAbstractDeclarator{
 	// · · Case: 6,
-	// · · Token: example183.c:1:14: '(',
-	// · · Token2: example183.c:1:16: ')',
+	// · · Token: example183.c:1:10: '(',
+	// · · Token2: example183.c:1:12: ')',
 	// · },
 	// }
 }
@@ -45,7 +45,7 @@ func ExampleAbstractDeclaratorOpt_case1() {
 	// &cc.AbstractDeclaratorOpt{
 	// · AbstractDeclarator: &cc.AbstractDeclarator{
 	// · · Pointer: &cc.Pointer{
-	// · · · Token: example185.c:1:14: '*',
+	// · · · Token: example185.c:1:10: '*',
 	// · · },
 	// · },
 	// }
@@ -57,7 +57,7 @@ func ExampleArgumentExpressionList() {
 	// &cc.ArgumentExpressionList{
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example8.c:1:12: CHARCONST "'b'",
+	// · · Token: example8.c:1:8: CHARCONST "'b'",
 	// · },
 	// }
 }
@@ -70,13 +70,13 @@ func ExampleArgumentExpressionList_case1() {
 	// · · Case: 1,
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example9.c:1:18: CHARCONST "'c'",
+	// · · · Token: example9.c:1:14: CHARCONST "'c'",
 	// · · },
-	// · · Token: example9.c:1:16: ',',
+	// · · Token: example9.c:1:12: ',',
 	// · },
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example9.c:1:12: CHARCONST "'b'",
+	// · · Token: example9.c:1:8: CHARCONST "'b'",
 	// · },
 	// }
 }
@@ -94,7 +94,7 @@ func ExampleArgumentExpressionListOpt_case1() {
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example11.c:1:12: CHARCONST "'b'",
+	// · · · Token: example11.c:1:8: CHARCONST "'b'",
 	// · · },
 	// · },
 	// }
@@ -104,7 +104,7 @@ func ExampleAssemblerInstructions() {
 	fmt.Println(exampleAST(259, "\U00100002 asm ( \"a\" )"))
 	// Output:
 	// &cc.AssemblerInstructions{
-	// · Token: example259.c:1:12: STRINGLITERAL "\"a\"",
+	// · Token: example259.c:1:8: STRINGLITERAL "\"a\"",
 	// }
 }
 
@@ -114,9 +114,9 @@ func ExampleAssemblerInstructions_case1() {
 	// &cc.AssemblerInstructions{
 	// · AssemblerInstructions: &cc.AssemblerInstructions{
 	// · · Case: 1,
-	// · · Token: example260.c:1:16: STRINGLITERAL "\"b\"",
+	// · · Token: example260.c:1:12: STRINGLITERAL "\"b\"",
 	// · },
-	// · Token: example260.c:1:12: STRINGLITERAL "\"a\"",
+	// · Token: example260.c:1:8: STRINGLITERAL "\"a\"",
 	// }
 }
 
@@ -126,11 +126,11 @@ func ExampleAssemblerOperand() {
 	// &cc.AssemblerOperand{
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example264.c:1:26: CHARCONST "'d'",
+	// · · Token: example264.c:1:22: CHARCONST "'d'",
 	// · },
-	// · Token: example264.c:1:20: STRINGLITERAL "\"c\"",
-	// · Token2: example264.c:1:24: '(',
-	// · Token3: example264.c:1:30: ')',
+	// · Token: example264.c:1:16: STRINGLITERAL "\"c\"",
+	// · Token2: example264.c:1:20: '(',
+	// · Token3: example264.c:1:26: ')',
 	// }
 }
 
@@ -141,11 +141,11 @@ func ExampleAssemblerOperands() {
 	// · AssemblerOperand: &cc.AssemblerOperand{
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example265.c:1:26: CHARCONST "'d'",
+	// · · · Token: example265.c:1:22: CHARCONST "'d'",
 	// · · },
-	// · · Token: example265.c:1:20: STRINGLITERAL "\"c\"",
-	// · · Token2: example265.c:1:24: '(',
-	// · · Token3: example265.c:1:30: ')',
+	// · · Token: example265.c:1:16: STRINGLITERAL "\"c\"",
+	// · · Token2: example265.c:1:20: '(',
+	// · · Token3: example265.c:1:26: ')',
 	// · },
 	// }
 }
@@ -157,24 +157,24 @@ func ExampleAssemblerOperands_case1() {
 	// · AssemblerOperand: &cc.AssemblerOperand{
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example266.c:1:26: CHARCONST "'d'",
+	// · · · Token: example266.c:1:22: CHARCONST "'d'",
 	// · · },
-	// · · Token: example266.c:1:20: STRINGLITERAL "\"c\"",
-	// · · Token2: example266.c:1:24: '(',
-	// · · Token3: example266.c:1:30: ')',
+	// · · Token: example266.c:1:16: STRINGLITERAL "\"c\"",
+	// · · Token2: example266.c:1:20: '(',
+	// · · Token3: example266.c:1:26: ')',
 	// · },
 	// · AssemblerOperands: &cc.AssemblerOperands{
 	// · · AssemblerOperand: &cc.AssemblerOperand{
 	// · · · Expression: &cc.Expression{
 	// · · · · Case: 1,
-	// · · · · Token: example266.c:1:40: CHARCONST "'f'",
+	// · · · · Token: example266.c:1:36: CHARCONST "'f'",
 	// · · · },
-	// · · · Token: example266.c:1:34: STRINGLITERAL "\"e\"",
-	// · · · Token2: example266.c:1:38: '(',
-	// · · · Token3: example266.c:1:44: ')',
+	// · · · Token: example266.c:1:30: STRINGLITERAL "\"e\"",
+	// · · · Token2: example266.c:1:34: '(',
+	// · · · Token3: example266.c:1:40: ')',
 	// · · },
 	// · · Case: 1,
-	// · · Token: example266.c:1:32: ',',
+	// · · Token: example266.c:1:28: ',',
 	// · },
 	// }
 }
@@ -185,11 +185,11 @@ func ExampleAssemblerStatement() {
 	// &cc.AssemblerStatement{
 	// · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
 	// · · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · · Token: example271.c:1:14: STRINGLITERAL "\"b\"",
+	// · · · Token: example271.c:1:10: STRINGLITERAL "\"b\"",
 	// · · },
-	// · · Token: example271.c:1:8: ASM "asm",
-	// · · Token2: example271.c:1:12: '(',
-	// · · Token3: example271.c:1:18: ')',
+	// · · Token: example271.c:1:4: ASM "asm",
+	// · · Token2: example271.c:1:8: '(',
+	// · · Token3: example271.c:1:14: ')',
 	// · },
 	// }
 }
@@ -199,24 +199,24 @@ func ExampleAssemblerStatement_case1() {
 	// Output:
 	// &cc.AssemblerStatement{
 	// · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · Token: example272.c:1:14: STRINGLITERAL "\"b\"",
+	// · · Token: example272.c:1:10: STRINGLITERAL "\"b\"",
 	// · },
 	// · AssemblerOperands: &cc.AssemblerOperands{
 	// · · AssemblerOperand: &cc.AssemblerOperand{
 	// · · · Expression: &cc.Expression{
 	// · · · · Case: 1,
-	// · · · · Token: example272.c:1:26: CHARCONST "'d'",
+	// · · · · Token: example272.c:1:22: CHARCONST "'d'",
 	// · · · },
-	// · · · Token: example272.c:1:20: STRINGLITERAL "\"c\"",
-	// · · · Token2: example272.c:1:24: '(',
-	// · · · Token3: example272.c:1:30: ')',
+	// · · · Token: example272.c:1:16: STRINGLITERAL "\"c\"",
+	// · · · Token2: example272.c:1:20: '(',
+	// · · · Token3: example272.c:1:26: ')',
 	// · · },
 	// · },
 	// · Case: 1,
-	// · Token: example272.c:1:8: ASM "asm",
-	// · Token2: example272.c:1:12: '(',
-	// · Token3: example272.c:1:18: ':',
-	// · Token4: example272.c:1:32: ')',
+	// · Token: example272.c:1:4: ASM "asm",
+	// · Token2: example272.c:1:8: '(',
+	// · Token3: example272.c:1:14: ':',
+	// · Token4: example272.c:1:28: ')',
 	// }
 }
 
@@ -225,36 +225,36 @@ func ExampleAssemblerStatement_case2() {
 	// Output:
 	// &cc.AssemblerStatement{
 	// · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · Token: example273.c:1:14: STRINGLITERAL "\"b\"",
+	// · · Token: example273.c:1:10: STRINGLITERAL "\"b\"",
 	// · },
 	// · AssemblerOperands: &cc.AssemblerOperands{
 	// · · AssemblerOperand: &cc.AssemblerOperand{
 	// · · · Expression: &cc.Expression{
 	// · · · · Case: 1,
-	// · · · · Token: example273.c:1:26: CHARCONST "'d'",
+	// · · · · Token: example273.c:1:22: CHARCONST "'d'",
 	// · · · },
-	// · · · Token: example273.c:1:20: STRINGLITERAL "\"c\"",
-	// · · · Token2: example273.c:1:24: '(',
-	// · · · Token3: example273.c:1:30: ')',
+	// · · · Token: example273.c:1:16: STRINGLITERAL "\"c\"",
+	// · · · Token2: example273.c:1:20: '(',
+	// · · · Token3: example273.c:1:26: ')',
 	// · · },
 	// · },
 	// · AssemblerOperands2: &cc.AssemblerOperands{
 	// · · AssemblerOperand: &cc.AssemblerOperand{
 	// · · · Expression: &cc.Expression{
 	// · · · · Case: 1,
-	// · · · · Token: example273.c:1:40: CHARCONST "'f'",
+	// · · · · Token: example273.c:1:36: CHARCONST "'f'",
 	// · · · },
-	// · · · Token: example273.c:1:34: STRINGLITERAL "\"e\"",
-	// · · · Token2: example273.c:1:38: '(',
-	// · · · Token3: example273.c:1:44: ')',
+	// · · · Token: example273.c:1:30: STRINGLITERAL "\"e\"",
+	// · · · Token2: example273.c:1:34: '(',
+	// · · · Token3: example273.c:1:40: ')',
 	// · · },
 	// · },
 	// · Case: 2,
-	// · Token: example273.c:1:8: ASM "asm",
-	// · Token2: example273.c:1:12: '(',
-	// · Token3: example273.c:1:18: ':',
-	// · Token4: example273.c:1:32: ':',
-	// · Token5: example273.c:1:46: ')',
+	// · Token: example273.c:1:4: ASM "asm",
+	// · Token2: example273.c:1:8: '(',
+	// · Token3: example273.c:1:14: ':',
+	// · Token4: example273.c:1:28: ':',
+	// · Token5: example273.c:1:42: ')',
 	// }
 }
 
@@ -263,40 +263,40 @@ func ExampleAssemblerStatement_case3() {
 	// Output:
 	// &cc.AssemblerStatement{
 	// · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · Token: example274.c:1:14: STRINGLITERAL "\"b\"",
+	// · · Token: example274.c:1:10: STRINGLITERAL "\"b\"",
 	// · },
 	// · AssemblerOperands: &cc.AssemblerOperands{
 	// · · AssemblerOperand: &cc.AssemblerOperand{
 	// · · · Expression: &cc.Expression{
 	// · · · · Case: 1,
-	// · · · · Token: example274.c:1:26: CHARCONST "'d'",
+	// · · · · Token: example274.c:1:22: CHARCONST "'d'",
 	// · · · },
-	// · · · Token: example274.c:1:20: STRINGLITERAL "\"c\"",
-	// · · · Token2: example274.c:1:24: '(',
-	// · · · Token3: example274.c:1:30: ')',
+	// · · · Token: example274.c:1:16: STRINGLITERAL "\"c\"",
+	// · · · Token2: example274.c:1:20: '(',
+	// · · · Token3: example274.c:1:26: ')',
 	// · · },
 	// · },
 	// · AssemblerOperands2: &cc.AssemblerOperands{
 	// · · AssemblerOperand: &cc.AssemblerOperand{
 	// · · · Expression: &cc.Expression{
 	// · · · · Case: 1,
-	// · · · · Token: example274.c:1:40: CHARCONST "'f'",
+	// · · · · Token: example274.c:1:36: CHARCONST "'f'",
 	// · · · },
-	// · · · Token: example274.c:1:34: STRINGLITERAL "\"e\"",
-	// · · · Token2: example274.c:1:38: '(',
-	// · · · Token3: example274.c:1:44: ')',
+	// · · · Token: example274.c:1:30: STRINGLITERAL "\"e\"",
+	// · · · Token2: example274.c:1:34: '(',
+	// · · · Token3: example274.c:1:40: ')',
 	// · · },
 	// · },
 	// · Case: 3,
 	// · Clobbers: &cc.Clobbers{
-	// · · Token: example274.c:1:48: STRINGLITERAL "\"g\"",
+	// · · Token: example274.c:1:44: STRINGLITERAL "\"g\"",
 	// · },
-	// · Token: example274.c:1:8: ASM "asm",
-	// · Token2: example274.c:1:12: '(',
-	// · Token3: example274.c:1:18: ':',
-	// · Token4: example274.c:1:32: ':',
-	// · Token5: example274.c:1:46: ':',
-	// · Token6: example274.c:1:52: ')',
+	// · Token: example274.c:1:4: ASM "asm",
+	// · Token2: example274.c:1:8: '(',
+	// · Token3: example274.c:1:14: ':',
+	// · Token4: example274.c:1:28: ':',
+	// · Token5: example274.c:1:42: ':',
+	// · Token6: example274.c:1:48: ')',
 	// }
 }
 
@@ -305,34 +305,34 @@ func ExampleAssemblerStatement_case4() {
 	// Output:
 	// &cc.AssemblerStatement{
 	// · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · Token: example275.c:1:19: STRINGLITERAL "\"b\"",
+	// · · Token: example275.c:1:15: STRINGLITERAL "\"b\"",
 	// · },
 	// · AssemblerOperands: &cc.AssemblerOperands{
 	// · · AssemblerOperand: &cc.AssemblerOperand{
 	// · · · Expression: &cc.Expression{
 	// · · · · Case: 1,
-	// · · · · Token: example275.c:1:33: CHARCONST "'d'",
+	// · · · · Token: example275.c:1:29: CHARCONST "'d'",
 	// · · · },
-	// · · · Token: example275.c:1:27: STRINGLITERAL "\"c\"",
-	// · · · Token2: example275.c:1:31: '(',
-	// · · · Token3: example275.c:1:37: ')',
+	// · · · Token: example275.c:1:23: STRINGLITERAL "\"c\"",
+	// · · · Token2: example275.c:1:27: '(',
+	// · · · Token3: example275.c:1:33: ')',
 	// · · },
 	// · },
 	// · Case: 4,
 	// · Clobbers: &cc.Clobbers{
-	// · · Token: example275.c:1:41: STRINGLITERAL "\"e\"",
+	// · · Token: example275.c:1:37: STRINGLITERAL "\"e\"",
 	// · },
 	// · IdentifierList: &cc.IdentifierList{
-	// · · Token: example275.c:1:47: IDENTIFIER "f",
+	// · · Token: example275.c:1:43: IDENTIFIER "f",
 	// · },
-	// · Token: example275.c:1:8: ASM "asm",
-	// · Token2: example275.c:1:12: GOTO "goto",
-	// · Token3: example275.c:1:17: '(',
-	// · Token4: example275.c:1:23: ':',
-	// · Token5: example275.c:1:25: ':',
-	// · Token6: example275.c:1:39: ':',
-	// · Token7: example275.c:1:45: ':',
-	// · Token8: example275.c:1:49: ')',
+	// · Token: example275.c:1:4: ASM "asm",
+	// · Token2: example275.c:1:8: GOTO "goto",
+	// · Token3: example275.c:1:13: '(',
+	// · Token4: example275.c:1:19: ':',
+	// · Token5: example275.c:1:21: ':',
+	// · Token6: example275.c:1:35: ':',
+	// · Token7: example275.c:1:41: ':',
+	// · Token8: example275.c:1:45: ')',
 	// }
 }
 
@@ -341,13 +341,13 @@ func ExampleAssemblerStatement_case5() {
 	// Output:
 	// &cc.AssemblerStatement{
 	// · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · Token: example276.c:1:14: STRINGLITERAL "\"b\"",
+	// · · Token: example276.c:1:10: STRINGLITERAL "\"b\"",
 	// · },
 	// · Case: 5,
-	// · Token: example276.c:1:8: ASM "asm",
-	// · Token2: example276.c:1:12: '(',
-	// · Token3: example276.c:1:18: ':',
-	// · Token4: example276.c:1:20: ')',
+	// · Token: example276.c:1:4: ASM "asm",
+	// · Token2: example276.c:1:8: '(',
+	// · Token3: example276.c:1:14: ':',
+	// · Token4: example276.c:1:16: ')',
 	// }
 }
 
@@ -361,9 +361,9 @@ func ExampleAssemblerSymbolicNameOpt_case1() {
 	fmt.Println(exampleAST(268, "\U00100002 a asm ( \"b\" : [ c ] \"d\""))
 	// Output:
 	// &cc.AssemblerSymbolicNameOpt{
-	// · Token: example268.c:1:20: '[',
-	// · Token2: example268.c:1:22: IDENTIFIER "c",
-	// · Token3: example268.c:1:24: ']',
+	// · Token: example268.c:1:16: '[',
+	// · Token2: example268.c:1:18: IDENTIFIER "c",
+	// · Token3: example268.c:1:20: ']',
 	// }
 }
 
@@ -372,11 +372,11 @@ func ExampleBasicAssemblerStatement() {
 	// Output:
 	// &cc.BasicAssemblerStatement{
 	// · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · Token: example261.c:1:12: STRINGLITERAL "\"a\"",
+	// · · Token: example261.c:1:8: STRINGLITERAL "\"a\"",
 	// · },
-	// · Token: example261.c:1:6: ASM "asm",
-	// · Token2: example261.c:1:10: '(',
-	// · Token3: example261.c:1:16: ')',
+	// · Token: example261.c:1:2: ASM "asm",
+	// · Token2: example261.c:1:6: '(',
+	// · Token3: example261.c:1:12: ')',
 	// }
 }
 
@@ -388,10 +388,10 @@ func ExampleBlockItem() {
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: 3,
-	// · · · · Token: example225.c:1:10: AUTO "auto",
+	// · · · · Token: example225.c:1:6: AUTO "auto",
 	// · · · },
 	// · · },
-	// · · Token: example225.c:1:15: ';',
+	// · · Token: example225.c:1:11: ';',
 	// · },
 	// }
 }
@@ -404,7 +404,7 @@ func ExampleBlockItem_case1() {
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example226.c:1:10: ';',
+	// · · · Token: example226.c:1:6: ';',
 	// · · },
 	// · },
 	// }
@@ -419,7 +419,7 @@ func ExampleBlockItemList() {
 	// · · Statement: &cc.Statement{
 	// · · · Case: 2,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Token: example221.c:1:10: ';',
+	// · · · · Token: example221.c:1:6: ';',
 	// · · · },
 	// · · },
 	// · },
@@ -435,7 +435,7 @@ func ExampleBlockItemList_case1() {
 	// · · Statement: &cc.Statement{
 	// · · · Case: 2,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Token: example222.c:1:10: ';',
+	// · · · · Token: example222.c:1:6: ';',
 	// · · · },
 	// · · },
 	// · },
@@ -445,7 +445,7 @@ func ExampleBlockItemList_case1() {
 	// · · · Statement: &cc.Statement{
 	// · · · · Case: 2,
 	// · · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · · Token: example222.c:1:12: ';',
+	// · · · · · Token: example222.c:1:8: ';',
 	// · · · · },
 	// · · · },
 	// · · },
@@ -470,7 +470,7 @@ func ExampleBlockItemListOpt_case1() {
 	// · · · Statement: &cc.Statement{
 	// · · · · Case: 2,
 	// · · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · · Token: example224.c:1:10: ';',
+	// · · · · · Token: example224.c:1:6: ';',
 	// · · · · },
 	// · · · },
 	// · · },
@@ -482,7 +482,7 @@ func ExampleClobbers() {
 	fmt.Println(exampleAST(269, "\U00100002 a asm goto ( \"b\" : : \"c\" ( 'd' ) : \"e\" )"))
 	// Output:
 	// &cc.Clobbers{
-	// · Token: example269.c:1:41: STRINGLITERAL "\"e\"",
+	// · Token: example269.c:1:37: STRINGLITERAL "\"e\"",
 	// }
 }
 
@@ -492,10 +492,10 @@ func ExampleClobbers_case1() {
 	// &cc.Clobbers{
 	// · Clobbers: &cc.Clobbers{
 	// · · Case: 1,
-	// · · Token: example270.c:1:45: ',',
-	// · · Token2: example270.c:1:47: STRINGLITERAL "\"f\"",
+	// · · Token: example270.c:1:41: ',',
+	// · · Token2: example270.c:1:43: STRINGLITERAL "\"f\"",
 	// · },
-	// · Token: example270.c:1:41: STRINGLITERAL "\"e\"",
+	// · Token: example270.c:1:37: STRINGLITERAL "\"e\"",
 	// }
 }
 
@@ -509,7 +509,7 @@ func ExampleCommaOpt_case1() {
 	fmt.Println(exampleAST(133, "\U00100001 ( _Bool ) { 'a' , }"))
 	// Output:
 	// &cc.CommaOpt{
-	// · Token: example133.c:1:22: ',',
+	// · Token: example133.c:1:18: ',',
 	// }
 }
 
@@ -517,8 +517,8 @@ func ExampleCompoundStatement() {
 	fmt.Println(exampleAST(220, "\U00100002 a { }"))
 	// Output:
 	// &cc.CompoundStatement{
-	// · Token: example220.c:1:8: '{',
-	// · Token2: example220.c:1:10: '}',
+	// · Token: example220.c:1:4: '{',
+	// · Token2: example220.c:1:6: '}',
 	// }
 }
 
@@ -532,7 +532,7 @@ func ExampleConstantExpression() {
 	// · · Type: int,
 	// · · Value: 97,
 	// · · Case: 1,
-	// · · Token: example76.c:1:6: CHARCONST "'a'",
+	// · · Token: example76.c:1:2: CHARCONST "'a'",
 	// · },
 	// }
 }
@@ -737,10 +737,10 @@ func ExampleDeclaration() {
 	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · Case: 3,
-	// · · · Token: example77.c:1:6: AUTO "auto",
+	// · · · Token: example77.c:1:2: AUTO "auto",
 	// · · },
 	// · },
-	// · Token: example77.c:1:11: ';',
+	// · Token: example77.c:1:7: ';',
 	// }
 }
 
@@ -757,15 +757,15 @@ func ExampleDeclaration_case1() {
 	// · · · · Type: int,
 	// · · · · Value: 97,
 	// · · · · Case: 1,
-	// · · · · Token: example78.c:1:23: CHARCONST "'a'",
+	// · · · · Token: example78.c:1:19: CHARCONST "'a'",
 	// · · · },
 	// · · },
-	// · · Token: example78.c:1:6: STATIC_ASSERT "_Static_assert",
-	// · · Token2: example78.c:1:21: '(',
-	// · · Token3: example78.c:1:27: ',',
-	// · · Token4: example78.c:1:29: STRINGLITERAL "\"b\"",
-	// · · Token5: example78.c:1:33: ')',
-	// · · Token6: example78.c:1:35: ';',
+	// · · Token: example78.c:1:2: STATIC_ASSERT "_Static_assert",
+	// · · Token2: example78.c:1:17: '(',
+	// · · Token3: example78.c:1:23: ',',
+	// · · Token4: example78.c:1:25: STRINGLITERAL "\"b\"",
+	// · · Token5: example78.c:1:29: ')',
+	// · · Token6: example78.c:1:31: ';',
 	// · },
 	// }
 }
@@ -778,10 +778,10 @@ func ExampleDeclarationList() {
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: 3,
-	// · · · · Token: example254.c:1:8: AUTO "auto",
+	// · · · · Token: example254.c:1:4: AUTO "auto",
 	// · · · },
 	// · · },
-	// · · Token: example254.c:1:13: ';',
+	// · · Token: example254.c:1:9: ';',
 	// · },
 	// }
 }
@@ -794,10 +794,10 @@ func ExampleDeclarationList_case1() {
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: 3,
-	// · · · · Token: example255.c:1:8: AUTO "auto",
+	// · · · · Token: example255.c:1:4: AUTO "auto",
 	// · · · },
 	// · · },
-	// · · Token: example255.c:1:13: ';',
+	// · · Token: example255.c:1:9: ';',
 	// · },
 	// · DeclarationList: &cc.DeclarationList{
 	// · · Case: 1,
@@ -805,10 +805,10 @@ func ExampleDeclarationList_case1() {
 	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example255.c:1:15: AUTO "auto",
+	// · · · · · Token: example255.c:1:11: AUTO "auto",
 	// · · · · },
 	// · · · },
-	// · · · Token: example255.c:1:20: ';',
+	// · · · Token: example255.c:1:16: ';',
 	// · · },
 	// · },
 	// }
@@ -829,10 +829,10 @@ func ExampleDeclarationListOpt_case1() {
 	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example258.c:1:8: AUTO "auto",
+	// · · · · · Token: example258.c:1:4: AUTO "auto",
 	// · · · · },
 	// · · · },
-	// · · · Token: example258.c:1:13: ';',
+	// · · · Token: example258.c:1:9: ';',
 	// · · },
 	// · },
 	// }
@@ -844,7 +844,7 @@ func ExampleDeclarationSpecifiers() {
 	// &cc.DeclarationSpecifiers{
 	// · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · Case: 3,
-	// · · Token: example79.c:1:6: AUTO "auto",
+	// · · Token: example79.c:1:2: AUTO "auto",
 	// · },
 	// }
 }
@@ -856,7 +856,7 @@ func ExampleDeclarationSpecifiers_case1() {
 	// · Case: 1,
 	// · TypeSpecifier: &cc.TypeSpecifier{
 	// · · Case: 9,
-	// · · Token: example80.c:1:6: BOOL "_Bool",
+	// · · Token: example80.c:1:2: BOOL "_Bool",
 	// · },
 	// }
 }
@@ -867,7 +867,7 @@ func ExampleDeclarationSpecifiers_case2() {
 	// &cc.DeclarationSpecifiers{
 	// · Case: 2,
 	// · TypeQualifier: &cc.TypeQualifier{
-	// · · Token: example81.c:1:6: CONST "const",
+	// · · Token: example81.c:1:2: CONST "const",
 	// · },
 	// }
 }
@@ -878,7 +878,7 @@ func ExampleDeclarationSpecifiers_case3() {
 	// &cc.DeclarationSpecifiers{
 	// · Case: 3,
 	// · FunctionSpecifier: &cc.FunctionSpecifier{
-	// · · Token: example82.c:1:6: INLINE "inline",
+	// · · Token: example82.c:1:2: INLINE "inline",
 	// · },
 	// }
 }
@@ -896,7 +896,7 @@ func ExampleDeclarationSpecifiersOpt_case1() {
 	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · Case: 3,
-	// · · · Token: example84.c:1:12: AUTO "auto",
+	// · · · Token: example84.c:1:8: AUTO "auto",
 	// · · },
 	// · },
 	// }
@@ -908,7 +908,7 @@ func ExampleDeclarator() {
 	// &cc.Declarator{
 	// · Linkage: None,
 	// · DirectDeclarator: &cc.DirectDeclarator{
-	// · · Token: example146.c:1:6: IDENTIFIER "a",
+	// · · Token: example146.c:1:2: IDENTIFIER "a",
 	// · },
 	// }
 }
@@ -926,7 +926,7 @@ func ExampleDeclaratorOpt_case1() {
 	// · Declarator: &cc.Declarator{
 	// · · Linkage: None,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example148.c:1:21: IDENTIFIER "a",
+	// · · · Token: example148.c:1:17: IDENTIFIER "a",
 	// · · },
 	// · },
 	// }
@@ -939,11 +939,11 @@ func ExampleDesignation() {
 	// · DesignatorList: &cc.DesignatorList{
 	// · · Designator: &cc.Designator{
 	// · · · Case: 1,
-	// · · · Token: example202.c:1:18: '.',
-	// · · · Token2: example202.c:1:20: IDENTIFIER "a",
+	// · · · Token: example202.c:1:14: '.',
+	// · · · Token2: example202.c:1:16: IDENTIFIER "a",
 	// · · },
 	// · },
-	// · Token: example202.c:1:22: '=',
+	// · Token: example202.c:1:18: '=',
 	// }
 }
 
@@ -961,11 +961,11 @@ func ExampleDesignationOpt_case1() {
 	// · · DesignatorList: &cc.DesignatorList{
 	// · · · Designator: &cc.Designator{
 	// · · · · Case: 1,
-	// · · · · Token: example204.c:1:18: '.',
-	// · · · · Token2: example204.c:1:20: IDENTIFIER "a",
+	// · · · · Token: example204.c:1:14: '.',
+	// · · · · Token2: example204.c:1:16: IDENTIFIER "a",
 	// · · · },
 	// · · },
-	// · · Token: example204.c:1:22: '=',
+	// · · Token: example204.c:1:18: '=',
 	// · },
 	// }
 }
@@ -981,11 +981,11 @@ func ExampleDesignator() {
 	// · · · Type: int,
 	// · · · Value: 97,
 	// · · · Case: 1,
-	// · · · Token: example207.c:1:20: CHARCONST "'a'",
+	// · · · Token: example207.c:1:16: CHARCONST "'a'",
 	// · · },
 	// · },
-	// · Token: example207.c:1:18: '[',
-	// · Token2: example207.c:1:24: ']',
+	// · Token: example207.c:1:14: '[',
+	// · Token2: example207.c:1:20: ']',
 	// }
 }
 
@@ -994,8 +994,8 @@ func ExampleDesignator_case1() {
 	// Output:
 	// &cc.Designator{
 	// · Case: 1,
-	// · Token: example208.c:1:18: '.',
-	// · Token2: example208.c:1:20: IDENTIFIER "a",
+	// · Token: example208.c:1:14: '.',
+	// · Token2: example208.c:1:16: IDENTIFIER "a",
 	// }
 }
 
@@ -1005,8 +1005,8 @@ func ExampleDesignatorList() {
 	// &cc.DesignatorList{
 	// · Designator: &cc.Designator{
 	// · · Case: 1,
-	// · · Token: example205.c:1:18: '.',
-	// · · Token2: example205.c:1:20: IDENTIFIER "a",
+	// · · Token: example205.c:1:14: '.',
+	// · · Token2: example205.c:1:16: IDENTIFIER "a",
 	// · },
 	// }
 }
@@ -1017,15 +1017,15 @@ func ExampleDesignatorList_case1() {
 	// &cc.DesignatorList{
 	// · Designator: &cc.Designator{
 	// · · Case: 1,
-	// · · Token: example206.c:1:18: '.',
-	// · · Token2: example206.c:1:20: IDENTIFIER "a",
+	// · · Token: example206.c:1:14: '.',
+	// · · Token2: example206.c:1:16: IDENTIFIER "a",
 	// · },
 	// · DesignatorList: &cc.DesignatorList{
 	// · · Case: 1,
 	// · · Designator: &cc.Designator{
 	// · · · Case: 1,
-	// · · · Token: example206.c:1:22: '.',
-	// · · · Token2: example206.c:1:24: IDENTIFIER "b",
+	// · · · Token: example206.c:1:18: '.',
+	// · · · Token2: example206.c:1:20: IDENTIFIER "b",
 	// · · },
 	// · },
 	// }
@@ -1037,11 +1037,11 @@ func ExampleDirectAbstractDeclarator() {
 	// &cc.DirectAbstractDeclarator{
 	// · AbstractDeclarator: &cc.AbstractDeclarator{
 	// · · Pointer: &cc.Pointer{
-	// · · · Token: example186.c:1:16: '*',
+	// · · · Token: example186.c:1:12: '*',
 	// · · },
 	// · },
-	// · Token: example186.c:1:14: '(',
-	// · Token2: example186.c:1:18: ')',
+	// · Token: example186.c:1:10: '(',
+	// · Token2: example186.c:1:14: ')',
 	// }
 }
 
@@ -1050,8 +1050,8 @@ func ExampleDirectAbstractDeclarator_case1() {
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · Case: 1,
-	// · Token: example187.c:1:14: '[',
-	// · Token2: example187.c:1:16: ']',
+	// · Token: example187.c:1:10: '[',
+	// · Token2: example187.c:1:12: ']',
 	// }
 }
 
@@ -1060,11 +1060,11 @@ func ExampleDirectAbstractDeclarator_case2() {
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · Case: 2,
-	// · Token: example188.c:1:14: '[',
-	// · Token2: example188.c:1:22: ']',
+	// · Token: example188.c:1:10: '[',
+	// · Token2: example188.c:1:18: ']',
 	// · TypeQualifierList: &cc.TypeQualifierList{
 	// · · TypeQualifier: &cc.TypeQualifier{
-	// · · · Token: example188.c:1:16: CONST "const",
+	// · · · Token: example188.c:1:12: CONST "const",
 	// · · },
 	// · },
 	// }
@@ -1079,11 +1079,11 @@ func ExampleDirectAbstractDeclarator_case3() {
 	// · · Type: int,
 	// · · Value: 97,
 	// · · Case: 1,
-	// · · Token: example189.c:1:23: CHARCONST "'a'",
+	// · · Token: example189.c:1:19: CHARCONST "'a'",
 	// · },
-	// · Token: example189.c:1:14: '[',
-	// · Token2: example189.c:1:16: STATIC "static",
-	// · Token3: example189.c:1:27: ']',
+	// · Token: example189.c:1:10: '[',
+	// · Token2: example189.c:1:12: STATIC "static",
+	// · Token3: example189.c:1:23: ']',
 	// }
 }
 
@@ -1096,14 +1096,14 @@ func ExampleDirectAbstractDeclarator_case4() {
 	// · · Type: int,
 	// · · Value: 97,
 	// · · Case: 1,
-	// · · Token: example190.c:1:29: CHARCONST "'a'",
+	// · · Token: example190.c:1:25: CHARCONST "'a'",
 	// · },
-	// · Token: example190.c:1:14: '[',
-	// · Token2: example190.c:1:22: STATIC "static",
-	// · Token3: example190.c:1:33: ']',
+	// · Token: example190.c:1:10: '[',
+	// · Token2: example190.c:1:18: STATIC "static",
+	// · Token3: example190.c:1:29: ']',
 	// · TypeQualifierList: &cc.TypeQualifierList{
 	// · · TypeQualifier: &cc.TypeQualifier{
-	// · · · Token: example190.c:1:16: CONST "const",
+	// · · · Token: example190.c:1:12: CONST "const",
 	// · · },
 	// · },
 	// }
@@ -1114,9 +1114,9 @@ func ExampleDirectAbstractDeclarator_case5() {
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · Case: 5,
-	// · Token: example191.c:1:14: '[',
-	// · Token2: example191.c:1:16: '*',
-	// · Token3: example191.c:1:18: ']',
+	// · Token: example191.c:1:10: '[',
+	// · Token2: example191.c:1:12: '*',
+	// · Token3: example191.c:1:14: ']',
 	// }
 }
 
@@ -1125,8 +1125,8 @@ func ExampleDirectAbstractDeclarator_case6() {
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · Case: 6,
-	// · Token: example193.c:1:14: '(',
-	// · Token2: example193.c:1:16: ')',
+	// · Token: example193.c:1:10: '(',
+	// · Token2: example193.c:1:12: ')',
 	// }
 }
 
@@ -1137,11 +1137,11 @@ func ExampleDirectAbstractDeclarator_case7() {
 	// · Case: 7,
 	// · DirectAbstractDeclarator: &cc.DirectAbstractDeclarator{
 	// · · Case: 6,
-	// · · Token: example195.c:1:14: '(',
-	// · · Token2: example195.c:1:16: ')',
+	// · · Token: example195.c:1:10: '(',
+	// · · Token2: example195.c:1:12: ')',
 	// · },
-	// · Token: example195.c:1:18: '(',
-	// · Token2: example195.c:1:20: ')',
+	// · Token: example195.c:1:14: '(',
+	// · Token2: example195.c:1:16: ')',
 	// }
 }
 
@@ -1157,8 +1157,8 @@ func ExampleDirectAbstractDeclaratorOpt_case1() {
 	// &cc.DirectAbstractDeclaratorOpt{
 	// · DirectAbstractDeclarator: &cc.DirectAbstractDeclarator{
 	// · · Case: 6,
-	// · · Token: example197.c:1:14: '(',
-	// · · Token2: example197.c:1:16: ')',
+	// · · Token: example197.c:1:10: '(',
+	// · · Token2: example197.c:1:12: ')',
 	// · },
 	// }
 }
@@ -1167,7 +1167,7 @@ func ExampleDirectDeclarator() {
 	fmt.Println(exampleAST(149, "\U00100002 a ("))
 	// Output:
 	// &cc.DirectDeclarator{
-	// · Token: example149.c:1:6: IDENTIFIER "a",
+	// · Token: example149.c:1:2: IDENTIFIER "a",
 	// }
 }
 
@@ -1179,11 +1179,11 @@ func ExampleDirectDeclarator_case1() {
 	// · Declarator: &cc.Declarator{
 	// · · Linkage: None,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example150.c:1:8: IDENTIFIER "a",
+	// · · · Token: example150.c:1:4: IDENTIFIER "a",
 	// · · },
 	// · },
-	// · Token: example150.c:1:6: '(',
-	// · Token2: example150.c:1:10: ')',
+	// · Token: example150.c:1:2: '(',
+	// · Token2: example150.c:1:6: ')',
 	// }
 }
 
@@ -1193,10 +1193,10 @@ func ExampleDirectDeclarator_case2() {
 	// &cc.DirectDeclarator{
 	// · Case: 2,
 	// · DirectDeclarator: &cc.DirectDeclarator{
-	// · · Token: example151.c:1:6: IDENTIFIER "a",
+	// · · Token: example151.c:1:2: IDENTIFIER "a",
 	// · },
-	// · Token: example151.c:1:8: '[',
-	// · Token2: example151.c:1:10: ']',
+	// · Token: example151.c:1:4: '[',
+	// · Token2: example151.c:1:6: ']',
 	// }
 }
 
@@ -1206,17 +1206,17 @@ func ExampleDirectDeclarator_case3() {
 	// &cc.DirectDeclarator{
 	// · Case: 3,
 	// · DirectDeclarator: &cc.DirectDeclarator{
-	// · · Token: example152.c:1:6: IDENTIFIER "a",
+	// · · Token: example152.c:1:2: IDENTIFIER "a",
 	// · },
 	// · Expression: &cc.Expression{
 	// · · Type: int,
 	// · · Value: 98,
 	// · · Case: 1,
-	// · · Token: example152.c:1:17: CHARCONST "'b'",
+	// · · Token: example152.c:1:13: CHARCONST "'b'",
 	// · },
-	// · Token: example152.c:1:8: '[',
-	// · Token2: example152.c:1:10: STATIC "static",
-	// · Token3: example152.c:1:21: ']',
+	// · Token: example152.c:1:4: '[',
+	// · Token2: example152.c:1:6: STATIC "static",
+	// · Token3: example152.c:1:17: ']',
 	// }
 }
 
@@ -1226,20 +1226,20 @@ func ExampleDirectDeclarator_case4() {
 	// &cc.DirectDeclarator{
 	// · Case: 4,
 	// · DirectDeclarator: &cc.DirectDeclarator{
-	// · · Token: example153.c:1:6: IDENTIFIER "a",
+	// · · Token: example153.c:1:2: IDENTIFIER "a",
 	// · },
 	// · Expression: &cc.Expression{
 	// · · Type: int,
 	// · · Value: 98,
 	// · · Case: 1,
-	// · · Token: example153.c:1:23: CHARCONST "'b'",
+	// · · Token: example153.c:1:19: CHARCONST "'b'",
 	// · },
-	// · Token: example153.c:1:8: '[',
-	// · Token2: example153.c:1:16: STATIC "static",
-	// · Token3: example153.c:1:27: ']',
+	// · Token: example153.c:1:4: '[',
+	// · Token2: example153.c:1:12: STATIC "static",
+	// · Token3: example153.c:1:23: ']',
 	// · TypeQualifierList: &cc.TypeQualifierList{
 	// · · TypeQualifier: &cc.TypeQualifier{
-	// · · · Token: example153.c:1:10: CONST "const",
+	// · · · Token: example153.c:1:6: CONST "const",
 	// · · },
 	// · },
 	// }
@@ -1251,11 +1251,11 @@ func ExampleDirectDeclarator_case5() {
 	// &cc.DirectDeclarator{
 	// · Case: 5,
 	// · DirectDeclarator: &cc.DirectDeclarator{
-	// · · Token: example154.c:1:6: IDENTIFIER "a",
+	// · · Token: example154.c:1:2: IDENTIFIER "a",
 	// · },
-	// · Token: example154.c:1:8: '[',
-	// · Token2: example154.c:1:10: '*',
-	// · Token3: example154.c:1:12: ']',
+	// · Token: example154.c:1:4: '[',
+	// · Token2: example154.c:1:6: '*',
+	// · Token3: example154.c:1:8: ']',
 	// }
 }
 
@@ -1265,7 +1265,7 @@ func ExampleDirectDeclarator_case6() {
 	// &cc.DirectDeclarator{
 	// · Case: 6,
 	// · DirectDeclarator: &cc.DirectDeclarator{
-	// · · Token: example156.c:1:6: IDENTIFIER "a",
+	// · · Token: example156.c:1:2: IDENTIFIER "a",
 	// · },
 	// · ParameterTypeList: &cc.ParameterTypeList{
 	// · · ParameterList: &cc.ParameterList{
@@ -1274,14 +1274,14 @@ func ExampleDirectDeclarator_case6() {
 	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · · Case: 3,
-	// · · · · · · Token: example156.c:1:10: AUTO "auto",
+	// · · · · · · Token: example156.c:1:6: AUTO "auto",
 	// · · · · · },
 	// · · · · },
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example156.c:1:8: '(',
-	// · Token2: example156.c:1:15: ')',
+	// · Token: example156.c:1:4: '(',
+	// · Token2: example156.c:1:11: ')',
 	// }
 }
 
@@ -1291,10 +1291,10 @@ func ExampleDirectDeclarator_case7() {
 	// &cc.DirectDeclarator{
 	// · Case: 7,
 	// · DirectDeclarator: &cc.DirectDeclarator{
-	// · · Token: example157.c:1:6: IDENTIFIER "a",
+	// · · Token: example157.c:1:2: IDENTIFIER "a",
 	// · },
-	// · Token: example157.c:1:8: '(',
-	// · Token2: example157.c:1:10: ')',
+	// · Token: example157.c:1:4: '(',
+	// · Token2: example157.c:1:6: ')',
 	// }
 }
 
@@ -1426,13 +1426,13 @@ func ExampleEnumSpecifier() {
 	// · EnumeratorList: &cc.EnumeratorList{
 	// · · Enumerator: &cc.Enumerator{
 	// · · · EnumerationConstant: &cc.EnumerationConstant{
-	// · · · · Token: example135.c:1:13: IDENTIFIER "a",
+	// · · · · Token: example135.c:1:9: IDENTIFIER "a",
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example135.c:1:6: ENUM "enum",
-	// · Token2: example135.c:1:11: '{',
-	// · Token3: example135.c:1:15: '}',
+	// · Token: example135.c:1:2: ENUM "enum",
+	// · Token2: example135.c:1:7: '{',
+	// · Token3: example135.c:1:11: '}',
 	// }
 }
 
@@ -1441,8 +1441,8 @@ func ExampleEnumSpecifier_case1() {
 	// Output:
 	// &cc.EnumSpecifier{
 	// · Case: 1,
-	// · Token: example136.c:1:6: ENUM "enum",
-	// · Token2: example136.c:1:11: IDENTIFIER "a",
+	// · Token: example136.c:1:2: ENUM "enum",
+	// · Token2: example136.c:1:7: IDENTIFIER "a",
 	// }
 }
 
@@ -1450,7 +1450,7 @@ func ExampleEnumerationConstant() {
 	fmt.Println(exampleAST(7, "\U00100002 enum { a ,"))
 	// Output:
 	// &cc.EnumerationConstant{
-	// · Token: example7.c:1:13: IDENTIFIER "a",
+	// · Token: example7.c:1:9: IDENTIFIER "a",
 	// }
 }
 
@@ -1459,7 +1459,7 @@ func ExampleEnumerator() {
 	// Output:
 	// &cc.Enumerator{
 	// · EnumerationConstant: &cc.EnumerationConstant{
-	// · · Token: example139.c:1:13: IDENTIFIER "a",
+	// · · Token: example139.c:1:9: IDENTIFIER "a",
 	// · },
 	// }
 }
@@ -1477,13 +1477,13 @@ func ExampleEnumerator_case1() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example140.c:1:17: CHARCONST "'b'",
+	// · · · Token: example140.c:1:13: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · EnumerationConstant: &cc.EnumerationConstant{
-	// · · Token: example140.c:1:13: IDENTIFIER "a",
+	// · · Token: example140.c:1:9: IDENTIFIER "a",
 	// · },
-	// · Token: example140.c:1:15: '=',
+	// · Token: example140.c:1:11: '=',
 	// }
 }
 
@@ -1493,7 +1493,7 @@ func ExampleEnumeratorList() {
 	// &cc.EnumeratorList{
 	// · Enumerator: &cc.Enumerator{
 	// · · EnumerationConstant: &cc.EnumerationConstant{
-	// · · · Token: example137.c:1:13: IDENTIFIER "a",
+	// · · · Token: example137.c:1:9: IDENTIFIER "a",
 	// · · },
 	// · },
 	// }
@@ -1505,7 +1505,7 @@ func ExampleEnumeratorList_case1() {
 	// &cc.EnumeratorList{
 	// · Enumerator: &cc.Enumerator{
 	// · · EnumerationConstant: &cc.EnumerationConstant{
-	// · · · Token: example138.c:1:13: IDENTIFIER "a",
+	// · · · Token: example138.c:1:9: IDENTIFIER "a",
 	// · · },
 	// · },
 	// · EnumeratorList: &cc.EnumeratorList{
@@ -1513,10 +1513,10 @@ func ExampleEnumeratorList_case1() {
 	// · · Enumerator: &cc.Enumerator{
 	// · · · Value: 1,
 	// · · · EnumerationConstant: &cc.EnumerationConstant{
-	// · · · · Token: example138.c:1:17: IDENTIFIER "b",
+	// · · · · Token: example138.c:1:13: IDENTIFIER "b",
 	// · · · },
 	// · · },
-	// · · Token: example138.c:1:15: ',',
+	// · · Token: example138.c:1:11: ',',
 	// · },
 	// }
 }
@@ -1525,7 +1525,7 @@ func ExampleExpression() {
 	fmt.Println(exampleAST(12, "\U00100001 a"))
 	// Output:
 	// &cc.Expression{
-	// · Token: example12.c:1:6: IDENTIFIER "a",
+	// · Token: example12.c:1:2: IDENTIFIER "a",
 	// }
 }
 
@@ -1534,7 +1534,7 @@ func ExampleExpression_case01() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 1,
-	// · Token: example13.c:1:6: CHARCONST "'a'",
+	// · Token: example13.c:1:2: CHARCONST "'a'",
 	// }
 }
 
@@ -1543,7 +1543,7 @@ func ExampleExpression_case02() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 2,
-	// · Token: example14.c:1:6: FLOATCONST "1.97",
+	// · Token: example14.c:1:2: FLOATCONST "1.97",
 	// }
 }
 
@@ -1552,7 +1552,7 @@ func ExampleExpression_case03() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 3,
-	// · Token: example15.c:1:6: INTCONST "97",
+	// · Token: example15.c:1:2: INTCONST "97",
 	// }
 }
 
@@ -1561,7 +1561,7 @@ func ExampleExpression_case04() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 4,
-	// · Token: example16.c:1:6: LONGCHARCONST "L'a'",
+	// · Token: example16.c:1:2: LONGCHARCONST "L'a'",
 	// }
 }
 
@@ -1570,7 +1570,7 @@ func ExampleExpression_case05() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 5,
-	// · Token: example17.c:1:6: LONGSTRINGLITERAL "L\"a\"",
+	// · Token: example17.c:1:2: LONGSTRINGLITERAL "L\"a\"",
 	// }
 }
 
@@ -1579,7 +1579,7 @@ func ExampleExpression_case06() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 6,
-	// · Token: example18.c:1:6: STRINGLITERAL "\"a\"",
+	// · Token: example18.c:1:2: STRINGLITERAL "\"a\"",
 	// }
 }
 
@@ -1591,11 +1591,11 @@ func ExampleExpression_case07() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example19.c:1:8: CHARCONST "'a'",
+	// · · · Token: example19.c:1:4: CHARCONST "'a'",
 	// · · },
 	// · },
-	// · Token: example19.c:1:6: '(',
-	// · Token2: example19.c:1:12: ')',
+	// · Token: example19.c:1:2: '(',
+	// · Token2: example19.c:1:8: ')',
 	// }
 }
 
@@ -1606,16 +1606,16 @@ func ExampleExpression_case08() {
 	// · Case: 8,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example20.c:1:6: CHARCONST "'a'",
+	// · · Token: example20.c:1:2: CHARCONST "'a'",
 	// · },
 	// · ExpressionList: &cc.ExpressionList{
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example20.c:1:12: CHARCONST "'b'",
+	// · · · Token: example20.c:1:8: CHARCONST "'b'",
 	// · · },
 	// · },
-	// · Token: example20.c:1:10: '[',
-	// · Token2: example20.c:1:16: ']',
+	// · Token: example20.c:1:6: '[',
+	// · Token2: example20.c:1:12: ']',
 	// }
 }
 
@@ -1626,10 +1626,10 @@ func ExampleExpression_case09() {
 	// · Case: 9,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example21.c:1:6: CHARCONST "'a'",
+	// · · Token: example21.c:1:2: CHARCONST "'a'",
 	// · },
-	// · Token: example21.c:1:10: '(',
-	// · Token2: example21.c:1:12: ')',
+	// · Token: example21.c:1:6: '(',
+	// · Token2: example21.c:1:8: ')',
 	// }
 }
 
@@ -1640,10 +1640,10 @@ func ExampleExpression_case10() {
 	// · Case: 10,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example22.c:1:6: CHARCONST "'a'",
+	// · · Token: example22.c:1:2: CHARCONST "'a'",
 	// · },
-	// · Token: example22.c:1:10: '.',
-	// · Token2: example22.c:1:12: IDENTIFIER "b",
+	// · Token: example22.c:1:6: '.',
+	// · Token2: example22.c:1:8: IDENTIFIER "b",
 	// }
 }
 
@@ -1654,10 +1654,10 @@ func ExampleExpression_case11() {
 	// · Case: 11,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example23.c:1:6: CHARCONST "'a'",
+	// · · Token: example23.c:1:2: CHARCONST "'a'",
 	// · },
-	// · Token: example23.c:1:10: ARROW,
-	// · Token2: example23.c:1:13: IDENTIFIER "b",
+	// · Token: example23.c:1:6: ARROW,
+	// · Token2: example23.c:1:9: IDENTIFIER "b",
 	// }
 }
 
@@ -1668,9 +1668,9 @@ func ExampleExpression_case12() {
 	// · Case: 12,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example24.c:1:6: CHARCONST "'a'",
+	// · · Token: example24.c:1:2: CHARCONST "'a'",
 	// · },
-	// · Token: example24.c:1:10: INC,
+	// · Token: example24.c:1:6: INC,
 	// }
 }
 
@@ -1681,9 +1681,9 @@ func ExampleExpression_case13() {
 	// · Case: 13,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example25.c:1:6: CHARCONST "'a'",
+	// · · Token: example25.c:1:2: CHARCONST "'a'",
 	// · },
-	// · Token: example25.c:1:10: DEC,
+	// · Token: example25.c:1:6: DEC,
 	// }
 }
 
@@ -1698,20 +1698,20 @@ func ExampleExpression_case14() {
 	// · · · · Type: int,
 	// · · · · Value: 97,
 	// · · · · Case: 1,
-	// · · · · Token: example26.c:1:18: CHARCONST "'a'",
+	// · · · · Token: example26.c:1:14: CHARCONST "'a'",
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example26.c:1:6: '(',
-	// · Token2: example26.c:1:14: ')',
-	// · Token3: example26.c:1:16: '{',
-	// · Token4: example26.c:1:22: '}',
+	// · Token: example26.c:1:2: '(',
+	// · Token2: example26.c:1:10: ')',
+	// · Token3: example26.c:1:12: '{',
+	// · Token4: example26.c:1:18: '}',
 	// · TypeName: &cc.TypeName{
 	// · · Type: bool,
 	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: 9,
-	// · · · · Token: example26.c:1:8: BOOL "_Bool",
+	// · · · · Token: example26.c:1:4: BOOL "_Bool",
 	// · · · },
 	// · · },
 	// · },
@@ -1725,9 +1725,9 @@ func ExampleExpression_case15() {
 	// · Case: 15,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example27.c:1:9: CHARCONST "'a'",
+	// · · Token: example27.c:1:5: CHARCONST "'a'",
 	// · },
-	// · Token: example27.c:1:6: INC,
+	// · Token: example27.c:1:2: INC,
 	// }
 }
 
@@ -1738,9 +1738,9 @@ func ExampleExpression_case16() {
 	// · Case: 16,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example28.c:1:9: CHARCONST "'a'",
+	// · · Token: example28.c:1:5: CHARCONST "'a'",
 	// · },
-	// · Token: example28.c:1:6: DEC,
+	// · Token: example28.c:1:2: DEC,
 	// }
 }
 
@@ -1751,9 +1751,9 @@ func ExampleExpression_case17() {
 	// · Case: 17,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example29.c:1:8: CHARCONST "'a'",
+	// · · Token: example29.c:1:4: CHARCONST "'a'",
 	// · },
-	// · Token: example29.c:1:6: '&',
+	// · Token: example29.c:1:2: '&',
 	// }
 }
 
@@ -1764,9 +1764,9 @@ func ExampleExpression_case18() {
 	// · Case: 18,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example30.c:1:8: CHARCONST "'a'",
+	// · · Token: example30.c:1:4: CHARCONST "'a'",
 	// · },
-	// · Token: example30.c:1:6: '*',
+	// · Token: example30.c:1:2: '*',
 	// }
 }
 
@@ -1777,9 +1777,9 @@ func ExampleExpression_case19() {
 	// · Case: 19,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example31.c:1:8: CHARCONST "'a'",
+	// · · Token: example31.c:1:4: CHARCONST "'a'",
 	// · },
-	// · Token: example31.c:1:6: '+',
+	// · Token: example31.c:1:2: '+',
 	// }
 }
 
@@ -1790,9 +1790,9 @@ func ExampleExpression_case20() {
 	// · Case: 20,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example32.c:1:8: CHARCONST "'a'",
+	// · · Token: example32.c:1:4: CHARCONST "'a'",
 	// · },
-	// · Token: example32.c:1:6: '-',
+	// · Token: example32.c:1:2: '-',
 	// }
 }
 
@@ -1803,9 +1803,9 @@ func ExampleExpression_case21() {
 	// · Case: 21,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example33.c:1:8: CHARCONST "'a'",
+	// · · Token: example33.c:1:4: CHARCONST "'a'",
 	// · },
-	// · Token: example33.c:1:6: '~',
+	// · Token: example33.c:1:2: '~',
 	// }
 }
 
@@ -1816,9 +1816,9 @@ func ExampleExpression_case22() {
 	// · Case: 22,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example34.c:1:8: CHARCONST "'a'",
+	// · · Token: example34.c:1:4: CHARCONST "'a'",
 	// · },
-	// · Token: example34.c:1:6: '!',
+	// · Token: example34.c:1:2: '!',
 	// }
 }
 
@@ -1829,9 +1829,9 @@ func ExampleExpression_case23() {
 	// · Case: 23,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example35.c:1:13: CHARCONST "'a'",
+	// · · Token: example35.c:1:9: CHARCONST "'a'",
 	// · },
-	// · Token: example35.c:1:6: SIZEOF "sizeof",
+	// · Token: example35.c:1:2: SIZEOF "sizeof",
 	// }
 }
 
@@ -1840,15 +1840,15 @@ func ExampleExpression_case24() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 24,
-	// · Token: example36.c:1:6: SIZEOF "sizeof",
-	// · Token2: example36.c:1:13: '(',
-	// · Token3: example36.c:1:21: ')',
+	// · Token: example36.c:1:2: SIZEOF "sizeof",
+	// · Token2: example36.c:1:9: '(',
+	// · Token3: example36.c:1:17: ')',
 	// · TypeName: &cc.TypeName{
 	// · · Type: bool,
 	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: 9,
-	// · · · · Token: example36.c:1:15: BOOL "_Bool",
+	// · · · · Token: example36.c:1:11: BOOL "_Bool",
 	// · · · },
 	// · · },
 	// · },
@@ -1862,16 +1862,16 @@ func ExampleExpression_case25() {
 	// · Case: 25,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example37.c:1:16: CHARCONST "'a'",
+	// · · Token: example37.c:1:12: CHARCONST "'a'",
 	// · },
-	// · Token: example37.c:1:6: '(',
-	// · Token2: example37.c:1:14: ')',
+	// · Token: example37.c:1:2: '(',
+	// · Token2: example37.c:1:10: ')',
 	// · TypeName: &cc.TypeName{
 	// · · Type: bool,
 	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: 9,
-	// · · · · Token: example37.c:1:8: BOOL "_Bool",
+	// · · · · Token: example37.c:1:4: BOOL "_Bool",
 	// · · · },
 	// · · },
 	// · },
@@ -1885,13 +1885,13 @@ func ExampleExpression_case26() {
 	// · Case: 26,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example38.c:1:6: CHARCONST "'a'",
+	// · · Token: example38.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example38.c:1:12: CHARCONST "'b'",
+	// · · Token: example38.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example38.c:1:10: '*',
+	// · Token: example38.c:1:6: '*',
 	// }
 }
 
@@ -1902,13 +1902,13 @@ func ExampleExpression_case27() {
 	// · Case: 27,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example39.c:1:6: CHARCONST "'a'",
+	// · · Token: example39.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example39.c:1:12: CHARCONST "'b'",
+	// · · Token: example39.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example39.c:1:10: '/',
+	// · Token: example39.c:1:6: '/',
 	// }
 }
 
@@ -1919,13 +1919,13 @@ func ExampleExpression_case28() {
 	// · Case: 28,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example40.c:1:6: CHARCONST "'a'",
+	// · · Token: example40.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example40.c:1:12: CHARCONST "'b'",
+	// · · Token: example40.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example40.c:1:10: '%',
+	// · Token: example40.c:1:6: '%',
 	// }
 }
 
@@ -1936,13 +1936,13 @@ func ExampleExpression_case29() {
 	// · Case: 29,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example41.c:1:6: CHARCONST "'a'",
+	// · · Token: example41.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example41.c:1:12: CHARCONST "'b'",
+	// · · Token: example41.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example41.c:1:10: '+',
+	// · Token: example41.c:1:6: '+',
 	// }
 }
 
@@ -1953,13 +1953,13 @@ func ExampleExpression_case30() {
 	// · Case: 30,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example42.c:1:6: CHARCONST "'a'",
+	// · · Token: example42.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example42.c:1:12: CHARCONST "'b'",
+	// · · Token: example42.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example42.c:1:10: '-',
+	// · Token: example42.c:1:6: '-',
 	// }
 }
 
@@ -1970,13 +1970,13 @@ func ExampleExpression_case31() {
 	// · Case: 31,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example43.c:1:6: CHARCONST "'a'",
+	// · · Token: example43.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example43.c:1:13: CHARCONST "'b'",
+	// · · Token: example43.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example43.c:1:10: LSH,
+	// · Token: example43.c:1:6: LSH,
 	// }
 }
 
@@ -1987,13 +1987,13 @@ func ExampleExpression_case32() {
 	// · Case: 32,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example44.c:1:6: CHARCONST "'a'",
+	// · · Token: example44.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example44.c:1:13: CHARCONST "'b'",
+	// · · Token: example44.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example44.c:1:10: RSH,
+	// · Token: example44.c:1:6: RSH,
 	// }
 }
 
@@ -2004,13 +2004,13 @@ func ExampleExpression_case33() {
 	// · Case: 33,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example45.c:1:6: CHARCONST "'a'",
+	// · · Token: example45.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example45.c:1:12: CHARCONST "'b'",
+	// · · Token: example45.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example45.c:1:10: '<',
+	// · Token: example45.c:1:6: '<',
 	// }
 }
 
@@ -2021,13 +2021,13 @@ func ExampleExpression_case34() {
 	// · Case: 34,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example46.c:1:6: CHARCONST "'a'",
+	// · · Token: example46.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example46.c:1:12: CHARCONST "'b'",
+	// · · Token: example46.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example46.c:1:10: '>',
+	// · Token: example46.c:1:6: '>',
 	// }
 }
 
@@ -2038,13 +2038,13 @@ func ExampleExpression_case35() {
 	// · Case: 35,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example47.c:1:6: CHARCONST "'a'",
+	// · · Token: example47.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example47.c:1:13: CHARCONST "'b'",
+	// · · Token: example47.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example47.c:1:10: LEQ,
+	// · Token: example47.c:1:6: LEQ,
 	// }
 }
 
@@ -2055,13 +2055,13 @@ func ExampleExpression_case36() {
 	// · Case: 36,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example48.c:1:6: CHARCONST "'a'",
+	// · · Token: example48.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example48.c:1:13: CHARCONST "'b'",
+	// · · Token: example48.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example48.c:1:10: GEQ,
+	// · Token: example48.c:1:6: GEQ,
 	// }
 }
 
@@ -2072,13 +2072,13 @@ func ExampleExpression_case37() {
 	// · Case: 37,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example49.c:1:6: CHARCONST "'a'",
+	// · · Token: example49.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example49.c:1:13: CHARCONST "'b'",
+	// · · Token: example49.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example49.c:1:10: EQ,
+	// · Token: example49.c:1:6: EQ,
 	// }
 }
 
@@ -2089,13 +2089,13 @@ func ExampleExpression_case38() {
 	// · Case: 38,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example50.c:1:6: CHARCONST "'a'",
+	// · · Token: example50.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example50.c:1:13: CHARCONST "'b'",
+	// · · Token: example50.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example50.c:1:10: NEQ,
+	// · Token: example50.c:1:6: NEQ,
 	// }
 }
 
@@ -2106,13 +2106,13 @@ func ExampleExpression_case39() {
 	// · Case: 39,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example51.c:1:6: CHARCONST "'a'",
+	// · · Token: example51.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example51.c:1:12: CHARCONST "'b'",
+	// · · Token: example51.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example51.c:1:10: '&',
+	// · Token: example51.c:1:6: '&',
 	// }
 }
 
@@ -2123,13 +2123,13 @@ func ExampleExpression_case40() {
 	// · Case: 40,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example52.c:1:6: CHARCONST "'a'",
+	// · · Token: example52.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example52.c:1:12: CHARCONST "'b'",
+	// · · Token: example52.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example52.c:1:10: '^',
+	// · Token: example52.c:1:6: '^',
 	// }
 }
 
@@ -2140,13 +2140,13 @@ func ExampleExpression_case41() {
 	// · Case: 41,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example53.c:1:6: CHARCONST "'a'",
+	// · · Token: example53.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example53.c:1:12: CHARCONST "'b'",
+	// · · Token: example53.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example53.c:1:10: '|',
+	// · Token: example53.c:1:6: '|',
 	// }
 }
 
@@ -2157,13 +2157,13 @@ func ExampleExpression_case42() {
 	// · Case: 42,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example54.c:1:6: CHARCONST "'a'",
+	// · · Token: example54.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example54.c:1:13: CHARCONST "'b'",
+	// · · Token: example54.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example54.c:1:10: ANDAND,
+	// · Token: example54.c:1:6: ANDAND,
 	// }
 }
 
@@ -2174,13 +2174,13 @@ func ExampleExpression_case43() {
 	// · Case: 43,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example55.c:1:6: CHARCONST "'a'",
+	// · · Token: example55.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example55.c:1:13: CHARCONST "'b'",
+	// · · Token: example55.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example55.c:1:10: OROR,
+	// · Token: example55.c:1:6: OROR,
 	// }
 }
 
@@ -2191,20 +2191,20 @@ func ExampleExpression_case44() {
 	// · Case: 44,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example56.c:1:6: CHARCONST "'a'",
+	// · · Token: example56.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example56.c:1:18: CHARCONST "'c'",
+	// · · Token: example56.c:1:14: CHARCONST "'c'",
 	// · },
 	// · ExpressionList: &cc.ExpressionList{
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example56.c:1:12: CHARCONST "'b'",
+	// · · · Token: example56.c:1:8: CHARCONST "'b'",
 	// · · },
 	// · },
-	// · Token: example56.c:1:10: '?',
-	// · Token2: example56.c:1:16: ':',
+	// · Token: example56.c:1:6: '?',
+	// · Token2: example56.c:1:12: ':',
 	// }
 }
 
@@ -2215,13 +2215,13 @@ func ExampleExpression_case45() {
 	// · Case: 45,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example57.c:1:6: CHARCONST "'a'",
+	// · · Token: example57.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example57.c:1:12: CHARCONST "'b'",
+	// · · Token: example57.c:1:8: CHARCONST "'b'",
 	// · },
-	// · Token: example57.c:1:10: '=',
+	// · Token: example57.c:1:6: '=',
 	// }
 }
 
@@ -2232,13 +2232,13 @@ func ExampleExpression_case46() {
 	// · Case: 46,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example58.c:1:6: CHARCONST "'a'",
+	// · · Token: example58.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example58.c:1:13: CHARCONST "'b'",
+	// · · Token: example58.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example58.c:1:10: MULASSIGN,
+	// · Token: example58.c:1:6: MULASSIGN,
 	// }
 }
 
@@ -2249,13 +2249,13 @@ func ExampleExpression_case47() {
 	// · Case: 47,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example59.c:1:6: CHARCONST "'a'",
+	// · · Token: example59.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example59.c:1:13: CHARCONST "'b'",
+	// · · Token: example59.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example59.c:1:10: DIVASSIGN,
+	// · Token: example59.c:1:6: DIVASSIGN,
 	// }
 }
 
@@ -2266,13 +2266,13 @@ func ExampleExpression_case48() {
 	// · Case: 48,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example60.c:1:6: CHARCONST "'a'",
+	// · · Token: example60.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example60.c:1:13: CHARCONST "'b'",
+	// · · Token: example60.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example60.c:1:10: MODASSIGN,
+	// · Token: example60.c:1:6: MODASSIGN,
 	// }
 }
 
@@ -2283,13 +2283,13 @@ func ExampleExpression_case49() {
 	// · Case: 49,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example61.c:1:6: CHARCONST "'a'",
+	// · · Token: example61.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example61.c:1:13: CHARCONST "'b'",
+	// · · Token: example61.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example61.c:1:10: ADDASSIGN,
+	// · Token: example61.c:1:6: ADDASSIGN,
 	// }
 }
 
@@ -2300,13 +2300,13 @@ func ExampleExpression_case50() {
 	// · Case: 50,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example62.c:1:6: CHARCONST "'a'",
+	// · · Token: example62.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example62.c:1:13: CHARCONST "'b'",
+	// · · Token: example62.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example62.c:1:10: SUBASSIGN,
+	// · Token: example62.c:1:6: SUBASSIGN,
 	// }
 }
 
@@ -2317,13 +2317,13 @@ func ExampleExpression_case51() {
 	// · Case: 51,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example63.c:1:6: CHARCONST "'a'",
+	// · · Token: example63.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example63.c:1:14: CHARCONST "'b'",
+	// · · Token: example63.c:1:10: CHARCONST "'b'",
 	// · },
-	// · Token: example63.c:1:10: LSHASSIGN,
+	// · Token: example63.c:1:6: LSHASSIGN,
 	// }
 }
 
@@ -2334,13 +2334,13 @@ func ExampleExpression_case52() {
 	// · Case: 52,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example64.c:1:6: CHARCONST "'a'",
+	// · · Token: example64.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example64.c:1:14: CHARCONST "'b'",
+	// · · Token: example64.c:1:10: CHARCONST "'b'",
 	// · },
-	// · Token: example64.c:1:10: RSHASSIGN,
+	// · Token: example64.c:1:6: RSHASSIGN,
 	// }
 }
 
@@ -2351,13 +2351,13 @@ func ExampleExpression_case53() {
 	// · Case: 53,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example65.c:1:6: CHARCONST "'a'",
+	// · · Token: example65.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example65.c:1:13: CHARCONST "'b'",
+	// · · Token: example65.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example65.c:1:10: ANDASSIGN,
+	// · Token: example65.c:1:6: ANDASSIGN,
 	// }
 }
 
@@ -2368,13 +2368,13 @@ func ExampleExpression_case54() {
 	// · Case: 54,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example66.c:1:6: CHARCONST "'a'",
+	// · · Token: example66.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example66.c:1:13: CHARCONST "'b'",
+	// · · Token: example66.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example66.c:1:10: XORASSIGN,
+	// · Token: example66.c:1:6: XORASSIGN,
 	// }
 }
 
@@ -2385,13 +2385,13 @@ func ExampleExpression_case55() {
 	// · Case: 55,
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example67.c:1:6: CHARCONST "'a'",
+	// · · Token: example67.c:1:2: CHARCONST "'a'",
 	// · },
 	// · Expression2: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example67.c:1:13: CHARCONST "'b'",
+	// · · Token: example67.c:1:9: CHARCONST "'b'",
 	// · },
-	// · Token: example67.c:1:10: ORASSIGN,
+	// · Token: example67.c:1:6: ORASSIGN,
 	// }
 }
 
@@ -2400,15 +2400,15 @@ func ExampleExpression_case56() {
 	// Output:
 	// &cc.Expression{
 	// · Case: 56,
-	// · Token: example68.c:1:6: ALIGNOF "_Alignof",
-	// · Token2: example68.c:1:15: '(',
-	// · Token3: example68.c:1:23: ')',
+	// · Token: example68.c:1:2: ALIGNOF "_Alignof",
+	// · Token2: example68.c:1:11: '(',
+	// · Token3: example68.c:1:19: ')',
 	// · TypeName: &cc.TypeName{
 	// · · Type: bool,
 	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: 9,
-	// · · · · Token: example68.c:1:17: BOOL "_Bool",
+	// · · · · Token: example68.c:1:13: BOOL "_Bool",
 	// · · · },
 	// · · },
 	// · },
@@ -2421,7 +2421,7 @@ func ExampleExpressionList() {
 	// &cc.ExpressionList{
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example71.c:1:8: CHARCONST "'a'",
+	// · · Token: example71.c:1:4: CHARCONST "'a'",
 	// · },
 	// }
 }
@@ -2432,15 +2432,15 @@ func ExampleExpressionList_case1() {
 	// &cc.ExpressionList{
 	// · Expression: &cc.Expression{
 	// · · Case: 1,
-	// · · Token: example72.c:1:8: CHARCONST "'a'",
+	// · · Token: example72.c:1:4: CHARCONST "'a'",
 	// · },
 	// · ExpressionList: &cc.ExpressionList{
 	// · · Case: 1,
 	// · · Expression: &cc.Expression{
 	// · · · Case: 1,
-	// · · · Token: example72.c:1:14: CHARCONST "'b'",
+	// · · · Token: example72.c:1:10: CHARCONST "'b'",
 	// · · },
-	// · · Token: example72.c:1:12: ',',
+	// · · Token: example72.c:1:8: ',',
 	// · },
 	// }
 }
@@ -2462,7 +2462,7 @@ func ExampleExpressionListOpt_case1() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example74.c:1:10: CHARCONST "'b'",
+	// · · · Token: example74.c:1:6: CHARCONST "'b'",
 	// · · },
 	// · },
 	// }
@@ -2482,7 +2482,7 @@ func ExampleExpressionOpt_case1() {
 	// · · Type: int,
 	// · · Value: 98,
 	// · · Case: 1,
-	// · · Token: example70.c:1:10: CHARCONST "'b'",
+	// · · Token: example70.c:1:6: CHARCONST "'b'",
 	// · },
 	// }
 }
@@ -2491,7 +2491,7 @@ func ExampleExpressionStatement() {
 	fmt.Println(exampleAST(227, "\U00100002 a { ; !"))
 	// Output:
 	// &cc.ExpressionStatement{
-	// · Token: example227.c:1:10: ';',
+	// · Token: example227.c:1:6: ';',
 	// }
 }
 
@@ -2505,13 +2505,13 @@ func ExampleExternalDeclaration() {
 	// · · · Linkage: External,
 	// · · · Type: int,
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Token: example241.c:1:6: IDENTIFIER "a",
+	// · · · · Token: example241.c:1:2: IDENTIFIER "a",
 	// · · · },
 	// · · },
 	// · · FunctionBody: &cc.FunctionBody{
 	// · · · CompoundStatement: &cc.CompoundStatement{
-	// · · · · Token: example241.c:1:8: '{',
-	// · · · · Token2: example241.c:1:10: '}',
+	// · · · · Token: example241.c:1:4: '{',
+	// · · · · Token2: example241.c:1:6: '}',
 	// · · · },
 	// · · },
 	// · },
@@ -2527,10 +2527,10 @@ func ExampleExternalDeclaration_case1() {
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: 3,
-	// · · · · Token: example242.c:1:6: AUTO "auto",
+	// · · · · Token: example242.c:1:2: AUTO "auto",
 	// · · · },
 	// · · },
-	// · · Token: example242.c:1:11: ';',
+	// · · Token: example242.c:1:7: ';',
 	// · },
 	// }
 }
@@ -2541,14 +2541,14 @@ func ExampleExternalDeclaration_case2() {
 	// &cc.ExternalDeclaration{
 	// · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
 	// · · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · · Token: example243.c:1:12: STRINGLITERAL "\"a\"",
+	// · · · Token: example243.c:1:8: STRINGLITERAL "\"a\"",
 	// · · },
-	// · · Token: example243.c:1:6: ASM "asm",
-	// · · Token2: example243.c:1:10: '(',
-	// · · Token3: example243.c:1:16: ')',
+	// · · Token: example243.c:1:2: ASM "asm",
+	// · · Token2: example243.c:1:6: '(',
+	// · · Token3: example243.c:1:12: ')',
 	// · },
 	// · Case: 2,
-	// · Token: example243.c:1:18: ';',
+	// · Token: example243.c:1:14: ';',
 	// }
 }
 
@@ -2557,7 +2557,7 @@ func ExampleExternalDeclaration_case3() {
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · Case: 3,
-	// · Token: example244.c:1:6: ';',
+	// · Token: example244.c:1:2: ';',
 	// }
 }
 
@@ -2566,8 +2566,8 @@ func ExampleFunctionBody() {
 	// Output:
 	// &cc.FunctionBody{
 	// · CompoundStatement: &cc.CompoundStatement{
-	// · · Token: example251.c:1:8: '{',
-	// · · Token2: example251.c:1:10: '}',
+	// · · Token: example251.c:1:4: '{',
+	// · · Token2: example251.c:1:6: '}',
 	// · },
 	// }
 }
@@ -2579,15 +2579,15 @@ func ExampleFunctionBody_case1() {
 	// · AssemblerStatement: &cc.AssemblerStatement{
 	// · · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
 	// · · · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · · · Token: example253.c:1:14: STRINGLITERAL "\"b\"",
+	// · · · · Token: example253.c:1:10: STRINGLITERAL "\"b\"",
 	// · · · },
-	// · · · Token: example253.c:1:8: ASM "asm",
-	// · · · Token2: example253.c:1:12: '(',
-	// · · · Token3: example253.c:1:18: ')',
+	// · · · Token: example253.c:1:4: ASM "asm",
+	// · · · Token2: example253.c:1:8: '(',
+	// · · · Token3: example253.c:1:14: ')',
 	// · · },
 	// · },
 	// · Case: 1,
-	// · Token: example253.c:1:20: ';',
+	// · Token: example253.c:1:16: ';',
 	// }
 }
 
@@ -2598,20 +2598,20 @@ func ExampleFunctionDefinition() {
 	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · Case: 3,
-	// · · · Token: example246.c:1:6: AUTO "auto",
+	// · · · Token: example246.c:1:2: AUTO "auto",
 	// · · },
 	// · },
 	// · Declarator: &cc.Declarator{
 	// · · Linkage: None,
 	// · · Type: auto undefined,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example246.c:1:11: IDENTIFIER "a",
+	// · · · Token: example246.c:1:7: IDENTIFIER "a",
 	// · · },
 	// · },
 	// · FunctionBody: &cc.FunctionBody{
 	// · · CompoundStatement: &cc.CompoundStatement{
-	// · · · Token: example246.c:1:13: '{',
-	// · · · Token2: example246.c:1:15: '}',
+	// · · · Token: example246.c:1:9: '{',
+	// · · · Token2: example246.c:1:11: '}',
 	// · · },
 	// · },
 	// }
@@ -2626,13 +2626,13 @@ func ExampleFunctionDefinition_case1() {
 	// · · Linkage: External,
 	// · · Type: int,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example249.c:1:6: IDENTIFIER "a",
+	// · · · Token: example249.c:1:2: IDENTIFIER "a",
 	// · · },
 	// · },
 	// · FunctionBody: &cc.FunctionBody{
 	// · · CompoundStatement: &cc.CompoundStatement{
-	// · · · Token: example249.c:1:8: '{',
-	// · · · Token2: example249.c:1:10: '}',
+	// · · · Token: example249.c:1:4: '{',
+	// · · · Token2: example249.c:1:6: '}',
 	// · · },
 	// · },
 	// }
@@ -2642,7 +2642,7 @@ func ExampleFunctionSpecifier() {
 	fmt.Println(exampleAST(144, "\U00100002 inline ("))
 	// Output:
 	// &cc.FunctionSpecifier{
-	// · Token: example144.c:1:6: INLINE "inline",
+	// · Token: example144.c:1:2: INLINE "inline",
 	// }
 }
 
@@ -2651,7 +2651,7 @@ func ExampleFunctionSpecifier_case1() {
 	// Output:
 	// &cc.FunctionSpecifier{
 	// · Case: 1,
-	// · Token: example145.c:1:6: NORETURN "_Noreturn",
+	// · Token: example145.c:1:2: NORETURN "_Noreturn",
 	// }
 }
 
@@ -2678,8 +2678,8 @@ func ExampleGroupList_case1() {
 	// · · },
 	// · },
 	// · GroupPart: []xc.Token{ // len 2
-	// · · 0: example280.c:1:5: IDENTIFIER "int",
-	// · · 1: example280.c:1:8: ' ',
+	// · · 0: example280.c:1:1: IDENTIFIER "int",
+	// · · 1: example280.c:1:4: ' ',
 	// · },
 	// }
 }
@@ -2707,7 +2707,7 @@ func ExampleIdentifierList() {
 	fmt.Println(exampleAST(174, "\U00100002 a ( b )"))
 	// Output:
 	// &cc.IdentifierList{
-	// · Token: example174.c:1:10: IDENTIFIER "b",
+	// · Token: example174.c:1:6: IDENTIFIER "b",
 	// }
 }
 
@@ -2717,10 +2717,10 @@ func ExampleIdentifierList_case1() {
 	// &cc.IdentifierList{
 	// · IdentifierList: &cc.IdentifierList{
 	// · · Case: 1,
-	// · · Token: example175.c:1:12: ',',
-	// · · Token2: example175.c:1:14: IDENTIFIER "c",
+	// · · Token: example175.c:1:8: ',',
+	// · · Token2: example175.c:1:10: IDENTIFIER "c",
 	// · },
-	// · Token: example175.c:1:10: IDENTIFIER "b",
+	// · Token: example175.c:1:6: IDENTIFIER "b",
 	// }
 }
 
@@ -2735,7 +2735,7 @@ func ExampleIdentifierListOpt_case1() {
 	// Output:
 	// &cc.IdentifierListOpt{
 	// · IdentifierList: &cc.IdentifierList{
-	// · · Token: example177.c:1:10: IDENTIFIER "b",
+	// · · Token: example177.c:1:6: IDENTIFIER "b",
 	// · },
 	// }
 }
@@ -2750,7 +2750,7 @@ func ExampleIdentifierOpt_case1() {
 	fmt.Println(exampleAST(179, "\U00100002 enum a {"))
 	// Output:
 	// &cc.IdentifierOpt{
-	// · Token: example179.c:1:11: IDENTIFIER "a",
+	// · Token: example179.c:1:7: IDENTIFIER "a",
 	// }
 }
 
@@ -2819,7 +2819,7 @@ func ExampleInitDeclarator() {
 	// · · Linkage: None,
 	// · · Type: auto undefined,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example89.c:1:13: IDENTIFIER "b",
+	// · · · Token: example89.c:1:9: IDENTIFIER "b",
 	// · · },
 	// · },
 	// }
@@ -2834,7 +2834,7 @@ func ExampleInitDeclarator_case1() {
 	// · · Linkage: None,
 	// · · Type: auto undefined,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example91.c:1:11: IDENTIFIER "a",
+	// · · · Token: example91.c:1:7: IDENTIFIER "a",
 	// · · },
 	// · },
 	// · Initializer: &cc.Initializer{
@@ -2842,10 +2842,10 @@ func ExampleInitDeclarator_case1() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example91.c:1:15: CHARCONST "'b'",
+	// · · · Token: example91.c:1:11: CHARCONST "'b'",
 	// · · },
 	// · },
-	// · Token: example91.c:1:13: '=',
+	// · Token: example91.c:1:9: '=',
 	// }
 }
 
@@ -2858,7 +2858,7 @@ func ExampleInitDeclaratorList() {
 	// · · · Linkage: None,
 	// · · · Type: auto undefined,
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Token: example85.c:1:11: IDENTIFIER "a",
+	// · · · · Token: example85.c:1:7: IDENTIFIER "a",
 	// · · · },
 	// · · },
 	// · },
@@ -2874,7 +2874,7 @@ func ExampleInitDeclaratorList_case1() {
 	// · · · Linkage: None,
 	// · · · Type: auto undefined,
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Token: example86.c:1:11: IDENTIFIER "a",
+	// · · · · Token: example86.c:1:7: IDENTIFIER "a",
 	// · · · },
 	// · · },
 	// · },
@@ -2885,11 +2885,11 @@ func ExampleInitDeclaratorList_case1() {
 	// · · · · Linkage: None,
 	// · · · · Type: auto undefined,
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · Token: example86.c:1:15: IDENTIFIER "b",
+	// · · · · · Token: example86.c:1:11: IDENTIFIER "b",
 	// · · · · },
 	// · · · },
 	// · · },
-	// · · Token: example86.c:1:13: ',',
+	// · · Token: example86.c:1:9: ',',
 	// · },
 	// }
 }
@@ -2910,7 +2910,7 @@ func ExampleInitDeclaratorListOpt_case1() {
 	// · · · · Linkage: None,
 	// · · · · Type: auto undefined,
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · Token: example88.c:1:11: IDENTIFIER "a",
+	// · · · · · Token: example88.c:1:7: IDENTIFIER "a",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -2926,7 +2926,7 @@ func ExampleInitializer() {
 	// · · Type: int,
 	// · · Value: 98,
 	// · · Case: 1,
-	// · · Token: example198.c:1:15: CHARCONST "'b'",
+	// · · Token: example198.c:1:11: CHARCONST "'b'",
 	// · },
 	// }
 }
@@ -2942,12 +2942,12 @@ func ExampleInitializer_case1() {
 	// · · · · Type: int,
 	// · · · · Value: 98,
 	// · · · · Case: 1,
-	// · · · · Token: example199.c:1:17: CHARCONST "'b'",
+	// · · · · Token: example199.c:1:13: CHARCONST "'b'",
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example199.c:1:15: '{',
-	// · Token2: example199.c:1:21: '}',
+	// · Token: example199.c:1:11: '{',
+	// · Token2: example199.c:1:17: '}',
 	// }
 }
 
@@ -2960,7 +2960,7 @@ func ExampleInitializerList() {
 	// · · · Type: int,
 	// · · · Value: 97,
 	// · · · Case: 1,
-	// · · · Token: example200.c:1:18: CHARCONST "'a'",
+	// · · · Token: example200.c:1:14: CHARCONST "'a'",
 	// · · },
 	// · },
 	// }
@@ -2975,7 +2975,7 @@ func ExampleInitializerList_case1() {
 	// · · · Type: int,
 	// · · · Value: 97,
 	// · · · Case: 1,
-	// · · · Token: example201.c:1:18: CHARCONST "'a'",
+	// · · · Token: example201.c:1:14: CHARCONST "'a'",
 	// · · },
 	// · },
 	// · InitializerList: &cc.InitializerList{
@@ -2985,10 +2985,10 @@ func ExampleInitializerList_case1() {
 	// · · · · Type: int,
 	// · · · · Value: 98,
 	// · · · · Case: 1,
-	// · · · · Token: example201.c:1:24: CHARCONST "'b'",
+	// · · · · Token: example201.c:1:20: CHARCONST "'b'",
 	// · · · },
 	// · · },
-	// · · Token: example201.c:1:22: ',',
+	// · · Token: example201.c:1:18: ',',
 	// · },
 	// }
 }
@@ -3004,18 +3004,18 @@ func ExampleIterationStatement() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example231.c:1:18: CHARCONST "'b'",
+	// · · · Token: example231.c:1:14: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example231.c:1:24: ';',
+	// · · · Token: example231.c:1:20: ';',
 	// · · },
 	// · },
-	// · Token: example231.c:1:10: WHILE "while",
-	// · Token2: example231.c:1:16: '(',
-	// · Token3: example231.c:1:22: ')',
+	// · Token: example231.c:1:6: WHILE "while",
+	// · Token2: example231.c:1:12: '(',
+	// · Token3: example231.c:1:18: ')',
 	// }
 }
 
@@ -3031,20 +3031,20 @@ func ExampleIterationStatement_case1() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example232.c:1:23: CHARCONST "'b'",
+	// · · · Token: example232.c:1:19: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example232.c:1:13: ';',
+	// · · · Token: example232.c:1:9: ';',
 	// · · },
 	// · },
-	// · Token: example232.c:1:10: DO "do",
-	// · Token2: example232.c:1:15: WHILE "while",
-	// · Token3: example232.c:1:21: '(',
-	// · Token4: example232.c:1:27: ')',
-	// · Token5: example232.c:1:29: ';',
+	// · Token: example232.c:1:6: DO "do",
+	// · Token2: example232.c:1:11: WHILE "while",
+	// · Token3: example232.c:1:17: '(',
+	// · Token4: example232.c:1:23: ')',
+	// · Token5: example232.c:1:25: ';',
 	// }
 }
 
@@ -3056,14 +3056,14 @@ func ExampleIterationStatement_case2() {
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example233.c:1:22: ';',
+	// · · · Token: example233.c:1:18: ';',
 	// · · },
 	// · },
-	// · Token: example233.c:1:10: FOR "for",
-	// · Token2: example233.c:1:14: '(',
-	// · Token3: example233.c:1:16: ';',
-	// · Token4: example233.c:1:18: ';',
-	// · Token5: example233.c:1:20: ')',
+	// · Token: example233.c:1:6: FOR "for",
+	// · Token2: example233.c:1:10: '(',
+	// · Token3: example233.c:1:12: ';',
+	// · Token4: example233.c:1:14: ';',
+	// · Token5: example233.c:1:16: ')',
 	// }
 }
 
@@ -3076,21 +3076,21 @@ func ExampleIterationStatement_case3() {
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: 3,
-	// · · · · Token: example234.c:1:16: AUTO "auto",
+	// · · · · Token: example234.c:1:12: AUTO "auto",
 	// · · · },
 	// · · },
-	// · · Token: example234.c:1:21: ';',
+	// · · Token: example234.c:1:17: ';',
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example234.c:1:27: ';',
+	// · · · Token: example234.c:1:23: ';',
 	// · · },
 	// · },
-	// · Token: example234.c:1:10: FOR "for",
-	// · Token2: example234.c:1:14: '(',
-	// · Token3: example234.c:1:23: ';',
-	// · Token4: example234.c:1:25: ')',
+	// · Token: example234.c:1:6: FOR "for",
+	// · Token2: example234.c:1:10: '(',
+	// · Token3: example234.c:1:19: ';',
+	// · Token4: example234.c:1:21: ')',
 	// }
 }
 
@@ -3098,9 +3098,9 @@ func ExampleJumpStatement() {
 	fmt.Println(exampleAST(235, "\U00100002 a { goto b ; !"))
 	// Output:
 	// &cc.JumpStatement{
-	// · Token: example235.c:1:10: GOTO "goto",
-	// · Token2: example235.c:1:15: IDENTIFIER "b",
-	// · Token3: example235.c:1:17: ';',
+	// · Token: example235.c:1:6: GOTO "goto",
+	// · Token2: example235.c:1:11: IDENTIFIER "b",
+	// · Token3: example235.c:1:13: ';',
 	// }
 }
 
@@ -3109,8 +3109,8 @@ func ExampleJumpStatement_case1() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: 1,
-	// · Token: example236.c:1:10: CONTINUE "continue",
-	// · Token2: example236.c:1:19: ';',
+	// · Token: example236.c:1:6: CONTINUE "continue",
+	// · Token2: example236.c:1:15: ';',
 	// }
 }
 
@@ -3119,8 +3119,8 @@ func ExampleJumpStatement_case2() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: 2,
-	// · Token: example237.c:1:10: BREAK "break",
-	// · Token2: example237.c:1:16: ';',
+	// · Token: example237.c:1:6: BREAK "break",
+	// · Token2: example237.c:1:12: ';',
 	// }
 }
 
@@ -3129,8 +3129,8 @@ func ExampleJumpStatement_case3() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: 3,
-	// · Token: example238.c:1:10: RETURN "return",
-	// · Token2: example238.c:1:17: ';',
+	// · Token: example238.c:1:6: RETURN "return",
+	// · Token2: example238.c:1:13: ';',
 	// }
 }
 
@@ -3141,11 +3141,11 @@ func ExampleLabeledStatement() {
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example216.c:1:14: ';',
+	// · · · Token: example216.c:1:10: ';',
 	// · · },
 	// · },
-	// · Token: example216.c:1:10: IDENTIFIER "b",
-	// · Token2: example216.c:1:12: ':',
+	// · Token: example216.c:1:6: IDENTIFIER "b",
+	// · Token2: example216.c:1:8: ':',
 	// }
 }
 
@@ -3161,17 +3161,17 @@ func ExampleLabeledStatement_case1() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example217.c:1:15: CHARCONST "'b'",
+	// · · · Token: example217.c:1:11: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example217.c:1:21: ';',
+	// · · · Token: example217.c:1:17: ';',
 	// · · },
 	// · },
-	// · Token: example217.c:1:10: CASE "case",
-	// · Token2: example217.c:1:19: ':',
+	// · Token: example217.c:1:6: CASE "case",
+	// · Token2: example217.c:1:15: ':',
 	// }
 }
 
@@ -3183,11 +3183,11 @@ func ExampleLabeledStatement_case2() {
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example218.c:1:20: ';',
+	// · · · Token: example218.c:1:16: ';',
 	// · · },
 	// · },
-	// · Token: example218.c:1:10: DEFAULT "default",
-	// · Token2: example218.c:1:18: ':',
+	// · Token: example218.c:1:6: DEFAULT "default",
+	// · Token2: example218.c:1:14: ':',
 	// }
 }
 
@@ -3198,14 +3198,14 @@ func ExampleParameterDeclaration() {
 	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · Case: 3,
-	// · · · Token: example172.c:1:10: AUTO "auto",
+	// · · · Token: example172.c:1:6: AUTO "auto",
 	// · · },
 	// · },
 	// · Declarator: &cc.Declarator{
 	// · · Linkage: None,
 	// · · Type: auto undefined,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example172.c:1:15: IDENTIFIER "b",
+	// · · · Token: example172.c:1:11: IDENTIFIER "b",
 	// · · },
 	// · },
 	// }
@@ -3219,7 +3219,7 @@ func ExampleParameterDeclaration_case1() {
 	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · Case: 3,
-	// · · · Token: example173.c:1:10: AUTO "auto",
+	// · · · Token: example173.c:1:6: AUTO "auto",
 	// · · },
 	// · },
 	// }
@@ -3234,7 +3234,7 @@ func ExampleParameterList() {
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: 3,
-	// · · · · Token: example170.c:1:10: AUTO "auto",
+	// · · · · Token: example170.c:1:6: AUTO "auto",
 	// · · · },
 	// · · },
 	// · },
@@ -3250,7 +3250,7 @@ func ExampleParameterList_case1() {
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: 3,
-	// · · · · Token: example171.c:1:10: AUTO "auto",
+	// · · · · Token: example171.c:1:6: AUTO "auto",
 	// · · · },
 	// · · },
 	// · },
@@ -3261,11 +3261,11 @@ func ExampleParameterList_case1() {
 	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example171.c:1:17: AUTO "auto",
+	// · · · · · Token: example171.c:1:13: AUTO "auto",
 	// · · · · },
 	// · · · },
 	// · · },
-	// · · Token: example171.c:1:15: ',',
+	// · · Token: example171.c:1:11: ',',
 	// · },
 	// }
 }
@@ -3280,7 +3280,7 @@ func ExampleParameterTypeList() {
 	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example166.c:1:10: AUTO "auto",
+	// · · · · · Token: example166.c:1:6: AUTO "auto",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -3299,13 +3299,13 @@ func ExampleParameterTypeList_case1() {
 	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example167.c:1:10: AUTO "auto",
+	// · · · · · Token: example167.c:1:6: AUTO "auto",
 	// · · · · },
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example167.c:1:15: ',',
-	// · Token2: example167.c:1:17: DDD,
+	// · Token: example167.c:1:11: ',',
+	// · Token2: example167.c:1:13: DDD,
 	// }
 }
 
@@ -3326,7 +3326,7 @@ func ExampleParameterTypeListOpt_case1() {
 	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · · · Case: 3,
-	// · · · · · · Token: example169.c:1:16: AUTO "auto",
+	// · · · · · · Token: example169.c:1:12: AUTO "auto",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -3339,7 +3339,7 @@ func ExamplePointer() {
 	fmt.Println(exampleAST(158, "\U00100002 * ("))
 	// Output:
 	// &cc.Pointer{
-	// · Token: example158.c:1:6: '*',
+	// · Token: example158.c:1:2: '*',
 	// }
 }
 
@@ -3349,9 +3349,9 @@ func ExamplePointer_case1() {
 	// &cc.Pointer{
 	// · Case: 1,
 	// · Pointer: &cc.Pointer{
-	// · · Token: example159.c:1:8: '*',
+	// · · Token: example159.c:1:4: '*',
 	// · },
-	// · Token: example159.c:1:6: '*',
+	// · Token: example159.c:1:2: '*',
 	// }
 }
 
@@ -3366,7 +3366,7 @@ func ExamplePointerOpt_case1() {
 	// Output:
 	// &cc.PointerOpt{
 	// · Pointer: &cc.Pointer{
-	// · · Token: example161.c:1:14: '*',
+	// · · Token: example161.c:1:10: '*',
 	// · },
 	// }
 }
@@ -3391,18 +3391,18 @@ func ExampleSelectionStatement() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example228.c:1:15: CHARCONST "'b'",
+	// · · · Token: example228.c:1:11: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example228.c:1:21: ';',
+	// · · · Token: example228.c:1:17: ';',
 	// · · },
 	// · },
-	// · Token: example228.c:1:10: IF "if",
-	// · Token2: example228.c:1:13: '(',
-	// · Token3: example228.c:1:19: ')',
+	// · Token: example228.c:1:6: IF "if",
+	// · Token2: example228.c:1:9: '(',
+	// · Token3: example228.c:1:15: ')',
 	// }
 }
 
@@ -3418,25 +3418,25 @@ func ExampleSelectionStatement_case1() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example229.c:1:15: CHARCONST "'b'",
+	// · · · Token: example229.c:1:11: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example229.c:1:21: ';',
+	// · · · Token: example229.c:1:17: ';',
 	// · · },
 	// · },
 	// · Statement2: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example229.c:1:28: ';',
+	// · · · Token: example229.c:1:24: ';',
 	// · · },
 	// · },
-	// · Token: example229.c:1:10: IF "if",
-	// · Token2: example229.c:1:13: '(',
-	// · Token3: example229.c:1:19: ')',
-	// · Token4: example229.c:1:23: ELSE "else",
+	// · Token: example229.c:1:6: IF "if",
+	// · Token2: example229.c:1:9: '(',
+	// · Token3: example229.c:1:15: ')',
+	// · Token4: example229.c:1:19: ELSE "else",
 	// }
 }
 
@@ -3452,18 +3452,18 @@ func ExampleSelectionStatement_case2() {
 	// · · · Type: int,
 	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example230.c:1:19: CHARCONST "'b'",
+	// · · · Token: example230.c:1:15: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: 2,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Token: example230.c:1:25: ';',
+	// · · · Token: example230.c:1:21: ';',
 	// · · },
 	// · },
-	// · Token: example230.c:1:10: SWITCH "switch",
-	// · Token2: example230.c:1:17: '(',
-	// · Token3: example230.c:1:23: ')',
+	// · Token: example230.c:1:6: SWITCH "switch",
+	// · Token2: example230.c:1:13: '(',
+	// · Token3: example230.c:1:19: ')',
 	// }
 }
 
@@ -3473,7 +3473,7 @@ func ExampleSpecifierQualifierList() {
 	// &cc.SpecifierQualifierList{
 	// · TypeSpecifier: &cc.TypeSpecifier{
 	// · · Case: 9,
-	// · · Token: example124.c:1:8: BOOL "_Bool",
+	// · · Token: example124.c:1:4: BOOL "_Bool",
 	// · },
 	// }
 }
@@ -3484,7 +3484,7 @@ func ExampleSpecifierQualifierList_case1() {
 	// &cc.SpecifierQualifierList{
 	// · Case: 1,
 	// · TypeQualifier: &cc.TypeQualifier{
-	// · · Token: example125.c:1:8: CONST "const",
+	// · · Token: example125.c:1:4: CONST "const",
 	// · },
 	// }
 }
@@ -3502,7 +3502,7 @@ func ExampleSpecifierQualifierListOpt_case1() {
 	// · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: 9,
-	// · · · Token: example127.c:1:14: BOOL "_Bool",
+	// · · · Token: example127.c:1:10: BOOL "_Bool",
 	// · · },
 	// · },
 	// }
@@ -3517,11 +3517,11 @@ func ExampleStatement() {
 	// · · Statement: &cc.Statement{
 	// · · · Case: 2,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Token: example209.c:1:20: ';',
+	// · · · · Token: example209.c:1:16: ';',
 	// · · · },
 	// · · },
-	// · · Token: example209.c:1:10: DEFAULT "default",
-	// · · Token2: example209.c:1:18: ':',
+	// · · Token: example209.c:1:6: DEFAULT "default",
+	// · · Token2: example209.c:1:14: ':',
 	// · },
 	// }
 }
@@ -3532,8 +3532,8 @@ func ExampleStatement_case1() {
 	// &cc.Statement{
 	// · Case: 1,
 	// · CompoundStatement: &cc.CompoundStatement{
-	// · · Token: example210.c:1:10: '{',
-	// · · Token2: example210.c:1:12: '}',
+	// · · Token: example210.c:1:6: '{',
+	// · · Token2: example210.c:1:8: '}',
 	// · },
 	// }
 }
@@ -3544,7 +3544,7 @@ func ExampleStatement_case2() {
 	// &cc.Statement{
 	// · Case: 2,
 	// · ExpressionStatement: &cc.ExpressionStatement{
-	// · · Token: example211.c:1:10: ';',
+	// · · Token: example211.c:1:6: ';',
 	// · },
 	// }
 }
@@ -3562,18 +3562,18 @@ func ExampleStatement_case3() {
 	// · · · · Type: int,
 	// · · · · Value: 98,
 	// · · · · Case: 1,
-	// · · · · Token: example212.c:1:15: CHARCONST "'b'",
+	// · · · · Token: example212.c:1:11: CHARCONST "'b'",
 	// · · · },
 	// · · },
 	// · · Statement: &cc.Statement{
 	// · · · Case: 2,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Token: example212.c:1:21: ';',
+	// · · · · Token: example212.c:1:17: ';',
 	// · · · },
 	// · · },
-	// · · Token: example212.c:1:10: IF "if",
-	// · · Token2: example212.c:1:13: '(',
-	// · · Token3: example212.c:1:19: ')',
+	// · · Token: example212.c:1:6: IF "if",
+	// · · Token2: example212.c:1:9: '(',
+	// · · Token3: example212.c:1:15: ')',
 	// · },
 	// }
 }
@@ -3591,18 +3591,18 @@ func ExampleStatement_case4() {
 	// · · · · Type: int,
 	// · · · · Value: 98,
 	// · · · · Case: 1,
-	// · · · · Token: example213.c:1:18: CHARCONST "'b'",
+	// · · · · Token: example213.c:1:14: CHARCONST "'b'",
 	// · · · },
 	// · · },
 	// · · Statement: &cc.Statement{
 	// · · · Case: 2,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Token: example213.c:1:24: ';',
+	// · · · · Token: example213.c:1:20: ';',
 	// · · · },
 	// · · },
-	// · · Token: example213.c:1:10: WHILE "while",
-	// · · Token2: example213.c:1:16: '(',
-	// · · Token3: example213.c:1:22: ')',
+	// · · Token: example213.c:1:6: WHILE "while",
+	// · · Token2: example213.c:1:12: '(',
+	// · · Token3: example213.c:1:18: ')',
 	// · },
 	// }
 }
@@ -3614,8 +3614,8 @@ func ExampleStatement_case5() {
 	// · Case: 5,
 	// · JumpStatement: &cc.JumpStatement{
 	// · · Case: 2,
-	// · · Token: example214.c:1:10: BREAK "break",
-	// · · Token2: example214.c:1:16: ';',
+	// · · Token: example214.c:1:6: BREAK "break",
+	// · · Token2: example214.c:1:12: ';',
 	// · },
 	// }
 }
@@ -3627,11 +3627,11 @@ func ExampleStatement_case6() {
 	// · AssemblerStatement: &cc.AssemblerStatement{
 	// · · BasicAssemblerStatement: &cc.BasicAssemblerStatement{
 	// · · · AssemblerInstructions: &cc.AssemblerInstructions{
-	// · · · · Token: example215.c:1:16: STRINGLITERAL "\"b\"",
+	// · · · · Token: example215.c:1:12: STRINGLITERAL "\"b\"",
 	// · · · },
-	// · · · Token: example215.c:1:10: ASM "asm",
-	// · · · Token2: example215.c:1:14: '(',
-	// · · · Token3: example215.c:1:20: ')',
+	// · · · Token: example215.c:1:6: ASM "asm",
+	// · · · Token2: example215.c:1:10: '(',
+	// · · · Token3: example215.c:1:16: ')',
 	// · · },
 	// · },
 	// · Case: 6,
@@ -3649,15 +3649,15 @@ func ExampleStaticAssertDeclaration() {
 	// · · · Type: int,
 	// · · · Value: 97,
 	// · · · Case: 1,
-	// · · · Token: example277.c:1:23: CHARCONST "'a'",
+	// · · · Token: example277.c:1:19: CHARCONST "'a'",
 	// · · },
 	// · },
-	// · Token: example277.c:1:6: STATIC_ASSERT "_Static_assert",
-	// · Token2: example277.c:1:21: '(',
-	// · Token3: example277.c:1:27: ',',
-	// · Token4: example277.c:1:29: STRINGLITERAL "\"b\"",
-	// · Token5: example277.c:1:33: ')',
-	// · Token6: example277.c:1:35: ';',
+	// · Token: example277.c:1:2: STATIC_ASSERT "_Static_assert",
+	// · Token2: example277.c:1:17: '(',
+	// · Token3: example277.c:1:23: ',',
+	// · Token4: example277.c:1:25: STRINGLITERAL "\"b\"",
+	// · Token5: example277.c:1:29: ')',
+	// · Token6: example277.c:1:31: ';',
 	// }
 }
 
@@ -3665,7 +3665,7 @@ func ExampleStorageClassSpecifier() {
 	fmt.Println(exampleAST(92, "\U00100002 typedef ("))
 	// Output:
 	// &cc.StorageClassSpecifier{
-	// · Token: example92.c:1:6: TYPEDEF "typedef",
+	// · Token: example92.c:1:2: TYPEDEF "typedef",
 	// }
 }
 
@@ -3674,7 +3674,7 @@ func ExampleStorageClassSpecifier_case1() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: 1,
-	// · Token: example93.c:1:6: EXTERN "extern",
+	// · Token: example93.c:1:2: EXTERN "extern",
 	// }
 }
 
@@ -3683,7 +3683,7 @@ func ExampleStorageClassSpecifier_case2() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: 2,
-	// · Token: example94.c:1:6: STATIC "static",
+	// · Token: example94.c:1:2: STATIC "static",
 	// }
 }
 
@@ -3692,7 +3692,7 @@ func ExampleStorageClassSpecifier_case3() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: 3,
-	// · Token: example95.c:1:6: AUTO "auto",
+	// · Token: example95.c:1:2: AUTO "auto",
 	// }
 }
 
@@ -3701,7 +3701,7 @@ func ExampleStorageClassSpecifier_case4() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: 4,
-	// · Token: example96.c:1:6: REGISTER "register",
+	// · Token: example96.c:1:2: REGISTER "register",
 	// }
 }
 
@@ -3712,7 +3712,7 @@ func ExampleStructDeclaration() {
 	// · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: 9,
-	// · · · Token: example121.c:1:15: BOOL "_Bool",
+	// · · · Token: example121.c:1:11: BOOL "_Bool",
 	// · · },
 	// · },
 	// · StructDeclaratorList: &cc.StructDeclaratorList{
@@ -3721,12 +3721,12 @@ func ExampleStructDeclaration() {
 	// · · · · Linkage: None,
 	// · · · · Type: bool,
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · Token: example121.c:1:21: IDENTIFIER "a",
+	// · · · · · Token: example121.c:1:17: IDENTIFIER "a",
 	// · · · · },
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example121.c:1:23: ';',
+	// · Token: example121.c:1:19: ';',
 	// }
 }
 
@@ -3738,10 +3738,10 @@ func ExampleStructDeclaration_case1() {
 	// · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: 9,
-	// · · · Token: example122.c:1:15: BOOL "_Bool",
+	// · · · Token: example122.c:1:11: BOOL "_Bool",
 	// · · },
 	// · },
-	// · Token: example122.c:1:21: ';',
+	// · Token: example122.c:1:17: ';',
 	// }
 }
 
@@ -3758,15 +3758,15 @@ func ExampleStructDeclaration_case2() {
 	// · · · · Type: int,
 	// · · · · Value: 97,
 	// · · · · Case: 1,
-	// · · · · Token: example123.c:1:32: CHARCONST "'a'",
+	// · · · · Token: example123.c:1:28: CHARCONST "'a'",
 	// · · · },
 	// · · },
-	// · · Token: example123.c:1:15: STATIC_ASSERT "_Static_assert",
-	// · · Token2: example123.c:1:30: '(',
-	// · · Token3: example123.c:1:36: ',',
-	// · · Token4: example123.c:1:38: STRINGLITERAL "\"b\"",
-	// · · Token5: example123.c:1:42: ')',
-	// · · Token6: example123.c:1:44: ';',
+	// · · Token: example123.c:1:11: STATIC_ASSERT "_Static_assert",
+	// · · Token2: example123.c:1:26: '(',
+	// · · Token3: example123.c:1:32: ',',
+	// · · Token4: example123.c:1:34: STRINGLITERAL "\"b\"",
+	// · · Token5: example123.c:1:38: ')',
+	// · · Token6: example123.c:1:40: ';',
 	// · },
 	// }
 }
@@ -3780,10 +3780,10 @@ func ExampleStructDeclarationList() {
 	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: 9,
-	// · · · · Token: example119.c:1:15: BOOL "_Bool",
+	// · · · · Token: example119.c:1:11: BOOL "_Bool",
 	// · · · },
 	// · · },
-	// · · Token: example119.c:1:21: ';',
+	// · · Token: example119.c:1:17: ';',
 	// · },
 	// }
 }
@@ -3797,10 +3797,10 @@ func ExampleStructDeclarationList_case1() {
 	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: 9,
-	// · · · · Token: example120.c:1:15: BOOL "_Bool",
+	// · · · · Token: example120.c:1:11: BOOL "_Bool",
 	// · · · },
 	// · · },
-	// · · Token: example120.c:1:21: ';',
+	// · · Token: example120.c:1:17: ';',
 	// · },
 	// · StructDeclarationList: &cc.StructDeclarationList{
 	// · · Case: 1,
@@ -3809,10 +3809,10 @@ func ExampleStructDeclarationList_case1() {
 	// · · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: 9,
-	// · · · · · Token: example120.c:1:23: BOOL "_Bool",
+	// · · · · · Token: example120.c:1:19: BOOL "_Bool",
 	// · · · · },
 	// · · · },
-	// · · · Token: example120.c:1:29: ';',
+	// · · · Token: example120.c:1:25: ';',
 	// · · },
 	// · },
 	// }
@@ -3826,7 +3826,7 @@ func ExampleStructDeclarator() {
 	// · · Linkage: None,
 	// · · Type: bool,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Token: example130.c:1:21: IDENTIFIER "a",
+	// · · · Token: example130.c:1:17: IDENTIFIER "a",
 	// · · },
 	// · },
 	// }
@@ -3844,10 +3844,10 @@ func ExampleStructDeclarator_case1() {
 	// · · · Type: int,
 	// · · · Value: 97,
 	// · · · Case: 1,
-	// · · · Token: example131.c:1:23: CHARCONST "'a'",
+	// · · · Token: example131.c:1:19: CHARCONST "'a'",
 	// · · },
 	// · },
-	// · Token: example131.c:1:21: ':',
+	// · Token: example131.c:1:17: ':',
 	// }
 }
 
@@ -3860,7 +3860,7 @@ func ExampleStructDeclaratorList() {
 	// · · · Linkage: None,
 	// · · · Type: bool,
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Token: example128.c:1:21: IDENTIFIER "a",
+	// · · · · Token: example128.c:1:17: IDENTIFIER "a",
 	// · · · },
 	// · · },
 	// · },
@@ -3876,7 +3876,7 @@ func ExampleStructDeclaratorList_case1() {
 	// · · · Linkage: None,
 	// · · · Type: bool,
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Token: example129.c:1:21: IDENTIFIER "a",
+	// · · · · Token: example129.c:1:17: IDENTIFIER "a",
 	// · · · },
 	// · · },
 	// · },
@@ -3887,11 +3887,11 @@ func ExampleStructDeclaratorList_case1() {
 	// · · · · Linkage: None,
 	// · · · · Type: bool,
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · Token: example129.c:1:25: IDENTIFIER "b",
+	// · · · · · Token: example129.c:1:21: IDENTIFIER "b",
 	// · · · · },
 	// · · · },
 	// · · },
-	// · · Token: example129.c:1:23: ',',
+	// · · Token: example129.c:1:19: ',',
 	// · },
 	// }
 }
@@ -3900,7 +3900,7 @@ func ExampleStructOrUnion() {
 	fmt.Println(exampleAST(117, "\U00100002 struct {"))
 	// Output:
 	// &cc.StructOrUnion{
-	// · Token: example117.c:1:6: STRUCT "struct",
+	// · Token: example117.c:1:2: STRUCT "struct",
 	// }
 }
 
@@ -3909,7 +3909,7 @@ func ExampleStructOrUnion_case1() {
 	// Output:
 	// &cc.StructOrUnion{
 	// · Case: 1,
-	// · Token: example118.c:1:6: UNION "union",
+	// · Token: example118.c:1:2: UNION "union",
 	// }
 }
 
@@ -3922,7 +3922,7 @@ func ExampleStructOrUnionSpecifier() {
 	// · · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example115.c:1:15: INT "int",
+	// · · · · · Token: example115.c:1:11: INT "int",
 	// · · · · },
 	// · · · },
 	// · · · StructDeclaratorList: &cc.StructDeclaratorList{
@@ -3931,19 +3931,19 @@ func ExampleStructOrUnionSpecifier() {
 	// · · · · · · Linkage: None,
 	// · · · · · · Type: int,
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · · Token: example115.c:1:19: IDENTIFIER "i",
+	// · · · · · · · Token: example115.c:1:15: IDENTIFIER "i",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
 	// · · · },
-	// · · · Token: example115.c:1:20: ';',
+	// · · · Token: example115.c:1:16: ';',
 	// · · },
 	// · },
 	// · StructOrUnion: &cc.StructOrUnion{
-	// · · Token: example115.c:1:6: STRUCT "struct",
+	// · · Token: example115.c:1:2: STRUCT "struct",
 	// · },
-	// · Token: example115.c:1:13: '{',
-	// · Token2: example115.c:1:22: '}',
+	// · Token: example115.c:1:9: '{',
+	// · Token2: example115.c:1:18: '}',
 	// }
 }
 
@@ -3953,9 +3953,9 @@ func ExampleStructOrUnionSpecifier_case1() {
 	// &cc.StructOrUnionSpecifier{
 	// · Case: 1,
 	// · StructOrUnion: &cc.StructOrUnion{
-	// · · Token: example116.c:1:6: STRUCT "struct",
+	// · · Token: example116.c:1:2: STRUCT "struct",
 	// · },
-	// · Token: example116.c:1:13: IDENTIFIER "a",
+	// · Token: example116.c:1:9: IDENTIFIER "a",
 	// }
 }
 
@@ -3965,7 +3965,7 @@ func ExampleTranslationUnit() {
 	// &cc.TranslationUnit{
 	// · ExternalDeclaration: &cc.ExternalDeclaration{
 	// · · Case: 3,
-	// · · Token: example239.c:1:6: ';',
+	// · · Token: example239.c:1:2: ';',
 	// · },
 	// }
 }
@@ -3976,13 +3976,13 @@ func ExampleTranslationUnit_case1() {
 	// &cc.TranslationUnit{
 	// · ExternalDeclaration: &cc.ExternalDeclaration{
 	// · · Case: 3,
-	// · · Token: example240.c:1:6: ';',
+	// · · Token: example240.c:1:2: ';',
 	// · },
 	// · TranslationUnit: &cc.TranslationUnit{
 	// · · Case: 1,
 	// · · ExternalDeclaration: &cc.ExternalDeclaration{
 	// · · · Case: 3,
-	// · · · Token: example240.c:1:8: ';',
+	// · · · Token: example240.c:1:4: ';',
 	// · · },
 	// · },
 	// }
@@ -3996,7 +3996,7 @@ func ExampleTypeName() {
 	// · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: 9,
-	// · · · Token: example181.c:1:8: BOOL "_Bool",
+	// · · · Token: example181.c:1:4: BOOL "_Bool",
 	// · · },
 	// · },
 	// }
@@ -4006,7 +4006,7 @@ func ExampleTypeQualifier() {
 	fmt.Println(exampleAST(141, "\U00100002 const !"))
 	// Output:
 	// &cc.TypeQualifier{
-	// · Token: example141.c:1:6: CONST "const",
+	// · Token: example141.c:1:2: CONST "const",
 	// }
 }
 
@@ -4015,7 +4015,7 @@ func ExampleTypeQualifier_case1() {
 	// Output:
 	// &cc.TypeQualifier{
 	// · Case: 1,
-	// · Token: example142.c:1:6: RESTRICT "restrict",
+	// · Token: example142.c:1:2: RESTRICT "restrict",
 	// }
 }
 
@@ -4024,7 +4024,7 @@ func ExampleTypeQualifier_case2() {
 	// Output:
 	// &cc.TypeQualifier{
 	// · Case: 2,
-	// · Token: example143.c:1:6: VOLATILE "volatile",
+	// · Token: example143.c:1:2: VOLATILE "volatile",
 	// }
 }
 
@@ -4033,7 +4033,7 @@ func ExampleTypeQualifierList() {
 	// Output:
 	// &cc.TypeQualifierList{
 	// · TypeQualifier: &cc.TypeQualifier{
-	// · · Token: example162.c:1:8: CONST "const",
+	// · · Token: example162.c:1:4: CONST "const",
 	// · },
 	// }
 }
@@ -4043,12 +4043,12 @@ func ExampleTypeQualifierList_case1() {
 	// Output:
 	// &cc.TypeQualifierList{
 	// · TypeQualifier: &cc.TypeQualifier{
-	// · · Token: example163.c:1:8: CONST "const",
+	// · · Token: example163.c:1:4: CONST "const",
 	// · },
 	// · TypeQualifierList: &cc.TypeQualifierList{
 	// · · Case: 1,
 	// · · TypeQualifier: &cc.TypeQualifier{
-	// · · · Token: example163.c:1:14: CONST "const",
+	// · · · Token: example163.c:1:10: CONST "const",
 	// · · },
 	// · },
 	// }
@@ -4066,7 +4066,7 @@ func ExampleTypeQualifierListOpt_case1() {
 	// &cc.TypeQualifierListOpt{
 	// · TypeQualifierList: &cc.TypeQualifierList{
 	// · · TypeQualifier: &cc.TypeQualifier{
-	// · · · Token: example165.c:1:8: CONST "const",
+	// · · · Token: example165.c:1:4: CONST "const",
 	// · · },
 	// · },
 	// }
@@ -4076,7 +4076,7 @@ func ExampleTypeSpecifier() {
 	fmt.Println(exampleAST(97, "\U00100002 void ("))
 	// Output:
 	// &cc.TypeSpecifier{
-	// · Token: example97.c:1:6: VOID "void",
+	// · Token: example97.c:1:2: VOID "void",
 	// }
 }
 
@@ -4085,7 +4085,7 @@ func ExampleTypeSpecifier_case01() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 1,
-	// · Token: example98.c:1:6: CHAR "char",
+	// · Token: example98.c:1:2: CHAR "char",
 	// }
 }
 
@@ -4094,7 +4094,7 @@ func ExampleTypeSpecifier_case02() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 2,
-	// · Token: example99.c:1:6: SHORT "short",
+	// · Token: example99.c:1:2: SHORT "short",
 	// }
 }
 
@@ -4103,7 +4103,7 @@ func ExampleTypeSpecifier_case03() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 3,
-	// · Token: example100.c:1:6: INT "int",
+	// · Token: example100.c:1:2: INT "int",
 	// }
 }
 
@@ -4112,7 +4112,7 @@ func ExampleTypeSpecifier_case04() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 4,
-	// · Token: example101.c:1:6: LONG "long",
+	// · Token: example101.c:1:2: LONG "long",
 	// }
 }
 
@@ -4121,7 +4121,7 @@ func ExampleTypeSpecifier_case05() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 5,
-	// · Token: example102.c:1:6: FLOAT "float",
+	// · Token: example102.c:1:2: FLOAT "float",
 	// }
 }
 
@@ -4130,7 +4130,7 @@ func ExampleTypeSpecifier_case06() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 6,
-	// · Token: example103.c:1:6: DOUBLE "double",
+	// · Token: example103.c:1:2: DOUBLE "double",
 	// }
 }
 
@@ -4139,7 +4139,7 @@ func ExampleTypeSpecifier_case07() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 7,
-	// · Token: example104.c:1:6: SIGNED "signed",
+	// · Token: example104.c:1:2: SIGNED "signed",
 	// }
 }
 
@@ -4148,7 +4148,7 @@ func ExampleTypeSpecifier_case08() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 8,
-	// · Token: example105.c:1:6: UNSIGNED "unsigned",
+	// · Token: example105.c:1:2: UNSIGNED "unsigned",
 	// }
 }
 
@@ -4157,7 +4157,7 @@ func ExampleTypeSpecifier_case09() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 9,
-	// · Token: example106.c:1:6: BOOL "_Bool",
+	// · Token: example106.c:1:2: BOOL "_Bool",
 	// }
 }
 
@@ -4166,7 +4166,7 @@ func ExampleTypeSpecifier_case10() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 10,
-	// · Token: example107.c:1:6: COMPLEX "_Complex",
+	// · Token: example107.c:1:2: COMPLEX "_Complex",
 	// }
 }
 
@@ -4178,9 +4178,9 @@ func ExampleTypeSpecifier_case11() {
 	// · StructOrUnionSpecifier: &cc.StructOrUnionSpecifier{
 	// · · Case: 1,
 	// · · StructOrUnion: &cc.StructOrUnion{
-	// · · · Token: example108.c:1:6: STRUCT "struct",
+	// · · · Token: example108.c:1:2: STRUCT "struct",
 	// · · },
-	// · · Token: example108.c:1:13: IDENTIFIER "a",
+	// · · Token: example108.c:1:9: IDENTIFIER "a",
 	// · },
 	// }
 }
@@ -4192,8 +4192,8 @@ func ExampleTypeSpecifier_case12() {
 	// · Case: 12,
 	// · EnumSpecifier: &cc.EnumSpecifier{
 	// · · Case: 1,
-	// · · Token: example109.c:1:6: ENUM "enum",
-	// · · Token2: example109.c:1:11: IDENTIFIER "a",
+	// · · Token: example109.c:1:2: ENUM "enum",
+	// · · Token2: example109.c:1:7: IDENTIFIER "a",
 	// · },
 	// }
 }
@@ -4203,7 +4203,7 @@ func ExampleTypeSpecifier_case13() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: 13,
-	// · Token: example110.c:1:21: TYPEDEFNAME "i",
+	// · Token: example110.c:1:17: TYPEDEFNAME "i",
 	// }
 }
 
@@ -4217,11 +4217,11 @@ func ExampleTypeSpecifier_case14() {
 	// · · Type: int,
 	// · · Value: 97,
 	// · · Case: 1,
-	// · · Token: example111.c:1:15: CHARCONST "'a'",
+	// · · Token: example111.c:1:11: CHARCONST "'a'",
 	// · },
-	// · Token: example111.c:1:6: TYPEOF "typeof",
-	// · Token2: example111.c:1:13: '(',
-	// · Token3: example111.c:1:19: ')',
+	// · Token: example111.c:1:2: TYPEOF "typeof",
+	// · Token2: example111.c:1:9: '(',
+	// · Token3: example111.c:1:15: ')',
 	// }
 }
 
@@ -4231,15 +4231,15 @@ func ExampleTypeSpecifier_case15() {
 	// &cc.TypeSpecifier{
 	// · Type: bool,
 	// · Case: 15,
-	// · Token: example112.c:1:6: TYPEOF "typeof",
-	// · Token2: example112.c:1:13: '(',
-	// · Token3: example112.c:1:21: ')',
+	// · Token: example112.c:1:2: TYPEOF "typeof",
+	// · Token2: example112.c:1:9: '(',
+	// · Token3: example112.c:1:17: ')',
 	// · TypeName: &cc.TypeName{
 	// · · Type: bool,
 	// · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: 9,
-	// · · · · Token: example112.c:1:15: BOOL "_Bool",
+	// · · · · Token: example112.c:1:11: BOOL "_Bool",
 	// · · · },
 	// · · },
 	// · },
@@ -4256,6 +4256,6 @@ func ExampleVolatileOpt_case1() {
 	fmt.Println(exampleAST(263, "\U00100002 asm volatile ("))
 	// Output:
 	// &cc.VolatileOpt{
-	// · Token: example263.c:1:10: VOLATILE "volatile",
+	// · Token: example263.c:1:6: VOLATILE "volatile",
 	// }
 }

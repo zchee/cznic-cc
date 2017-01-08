@@ -726,7 +726,7 @@ func decodeEscapeSequence(runes []rune) (rune, int) {
 				break
 			}
 		}
-		return rune(v & 0xff), n
+		return -rune(v & 0xff), n
 	case 'u', 'U':
 		return decodeUCN(runes)
 	}
@@ -746,5 +746,5 @@ loop:
 			break loop
 		}
 	}
-	return rune(v & 0xff), n
+	return -rune(v & 0xff), n
 }

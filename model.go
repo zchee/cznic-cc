@@ -923,6 +923,9 @@ func (m *Model) charConst(t xc.Token) (interface{}, Type) {
 		switch runes[0] {
 		case '\\':
 			r, _ = decodeEscapeSequence(runes)
+			if r < 0 {
+				r = -r
+			}
 		default:
 			r = runes[0]
 		}
@@ -1033,7 +1036,12 @@ func (m *Model) strConst(lx *lexer, t xc.Token) (interface{}, Type) {
 			switch r := runes[i]; {
 			case r == '\\':
 				r, n := decodeEscapeSequence(runes[i:])
-				buf.WriteRune(r)
+				switch {
+				case r < 0:
+					buf.WriteByte(byte(-r))
+				default:
+					buf.WriteRune(r)
+				}
 				i += n
 			default:
 				buf.WriteByte(byte(r))

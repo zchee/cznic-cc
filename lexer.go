@@ -46,6 +46,19 @@ func (t *trigraphsReader) ReadChar() (c lex.Char, size int, err error) {
 	return c, int(pos - pos0), nil
 }
 
+type byteReader struct {
+	io.Reader
+	b [1]byte
+}
+
+func (b *byteReader) ReadRune() (r rune, size int, err error) {
+	if _, err = b.Read(b.b[:]); err != nil {
+		return -1, 0, err
+	}
+
+	return rune(b.b[0]), 1, nil
+}
+
 type lexer struct {
 	*lex.Lexer                             //
 	ch                 chan []xc.Token     //
@@ -97,7 +110,7 @@ func newLexer(nm string, sz int, r io.RuneReader, report *xc.Report, tweaks *twe
 	t := &trigraphsReader{}
 	lx, err := lex.New(
 		file,
-		r,
+		&byteReader{Reader: r.(io.Reader)},
 		lex.ErrorFunc(func(pos token.Pos, msg string) {
 			report.Err(pos, msg)
 		}),
