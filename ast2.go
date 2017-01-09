@@ -855,7 +855,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		v, _ := n.Expression.eval(lx)
 		n.Type = n.TypeName.declarator.Type
 		n.Value = v
-		if v != nil && n.Type.Kind() != Struct && n.Type.Kind() != Union {
+		if v != nil && n.Type.Kind() != Struct && n.Type.Kind() != Union && !isStrLitID(v) {
 			n.Value = m.MustConvert(v, n.Type)
 		}
 	case 26: // Expression '*' Expression

@@ -1496,16 +1496,12 @@ TypeSpecifier:
 	}
 
 StructOrUnionSpecifier:
-	StructOrUnion IdentifierOpt
+	StructOrUnion IdentifierOpt '{'
 	{
 		lx := yylex.(*lexer)
 		if o := $2.(*IdentifierOpt); o != nil {
 			lx.scope.declareStructTag(o.Token, lx.report)
 		}
-	}
-	'{'
-	{
-		lx := yylex.(*lexer)
 		lx.pushScope(ScopeMembers)
 		lx.scope.isUnion = $1.(*StructOrUnion).Case == 1 // "union"
 		lx.scope.prevStructDeclarator = nil
@@ -1516,9 +1512,9 @@ StructOrUnionSpecifier:
 		lhs := &StructOrUnionSpecifier{
 			StructOrUnion:          $1.(*StructOrUnion),
 			IdentifierOpt:          $2.(*IdentifierOpt),
-			Token:                  $4,
-			StructDeclarationList:  $6.(*StructDeclarationList).reverse(),
-			Token2:                 $7,
+			Token:                  $3,
+			StructDeclarationList:  $5.(*StructDeclarationList).reverse(),
+			Token2:                 $6,
 		}
 		$$ = lhs
 		sc := lx.scope
@@ -1578,6 +1574,29 @@ StructOrUnionSpecifier:
 		$$ = lhs
 		lx.scope.declareStructTag(lhs.Token, lx.report)
 		lhs.scope = lx.scope
+	}
+|	StructOrUnion IdentifierOpt '{' '}'
+	{
+		lx := yylex.(*lexer)
+		lhs := &StructOrUnionSpecifier{
+			Case:           2,
+			StructOrUnion:  $1.(*StructOrUnion),
+			IdentifierOpt:  $2.(*IdentifierOpt),
+			Token:          $3,
+			Token2:         $4,
+		}
+		$$ = lhs
+		if o := $2.(*IdentifierOpt); o != nil {
+			lx.scope.declareStructTag(o.Token, lx.report)
+		}
+		lx.pushScope(ScopeMembers)
+		lx.scope.isUnion = $1.(*StructOrUnion).Case == 1 // "union"
+		lx.scope.prevStructDeclarator = nil
+		lhs.alignOf = 1
+		lhs.sizeOf = 0
+		if o := lhs.IdentifierOpt; o != nil {
+			lx.scope.defineStructTag(o.Token, lhs, lx.report)
+		}
 	}
 
 StructOrUnion:

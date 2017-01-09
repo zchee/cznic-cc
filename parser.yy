@@ -807,13 +807,11 @@ TypeSpecifier:
 //yy:field	sizeOf		int
 StructOrUnionSpecifier:
 	StructOrUnion IdentifierOpt
+	'{'
 	{
 		if o := $2.(*IdentifierOpt); o != nil {
 			lx.scope.declareStructTag(o.Token, lx.report)
 		}
-	}
-	'{'
-	{
 		lx.pushScope(ScopeMembers)
 		lx.scope.isUnion = $1.(*StructOrUnion).Case == 1 // "union"
 		lx.scope.prevStructDeclarator = nil
@@ -870,6 +868,20 @@ StructOrUnionSpecifier:
 	{
 		lx.scope.declareStructTag(lhs.Token, lx.report)
 		lhs.scope = lx.scope
+	}
+|	StructOrUnion IdentifierOpt '{' '}'
+	{
+		if o := $2.(*IdentifierOpt); o != nil {
+			lx.scope.declareStructTag(o.Token, lx.report)
+		}
+		lx.pushScope(ScopeMembers)
+		lx.scope.isUnion = $1.(*StructOrUnion).Case == 1 // "union"
+		lx.scope.prevStructDeclarator = nil
+		lhs.alignOf = 1
+		lhs.sizeOf = 0
+		if o := lhs.IdentifierOpt; o != nil {
+			lx.scope.defineStructTag(o.Token, lhs, lx.report)
+		}
 	}
 
 // [0](6.7.2.1)

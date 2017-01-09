@@ -3060,6 +3060,7 @@ func (n *StructOrUnion) Pos() token.Pos {
 //	StructOrUnionSpecifier:
 //	        StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
 //	|       StructOrUnion IDENTIFIER                                   // Case 1
+//	|       StructOrUnion IdentifierOpt '{' '}'                        // Case 2
 type StructOrUnionSpecifier struct {
 	alignOf               int
 	declarator            *Declarator // Synthetic declarator when tagged struct/union defined inline.

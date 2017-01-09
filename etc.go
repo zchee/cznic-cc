@@ -1798,3 +1798,12 @@ func memberType(mb *Member, m *Model) Type {
 		return t
 	}
 }
+
+func isStrLitID(v interface{}) bool {
+	switch v.(type) {
+	case StringLitID, LongStringLitID:
+		return true
+	}
+
+	return false
+}

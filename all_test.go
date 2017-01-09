@@ -2937,13 +2937,23 @@ func testDir(t *testing.T, dir string) {
 				predefined,
 				[]string{v},
 				newTestModel(),
+				ErrLimit(-1),
 				SysIncludePaths(sysIncludePaths),
 				gccEmu(),
 			)
 		}()
 
 		if err != nil {
-			t.Errorf("%v\n%v/%v\n%s", v, i+1, len(m), errString(err))
+			s := errString(err)
+			if !strings.Contains(s, "PANIC") && !strings.Contains(s, "TODO") {
+				if co, err := exec.Command("gcc", "-o", os.DevNull, "-std=c99", "--pedantic", v).CombinedOutput(); err != nil {
+					// Auto blacklist if gcc fails to compile as well.
+					t.Logf("%s\n==== gcc fails too\n%s\n%v", s, co, err)
+					continue
+				}
+
+			}
+			t.Errorf("%v\n%v/%v\nFAIL\n%s", v, i+1, len(m), errString(err))
 			return
 		}
 	}

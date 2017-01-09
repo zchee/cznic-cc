@@ -506,10 +506,10 @@ func ExampleCommaOpt() {
 }
 
 func ExampleCommaOpt_case1() {
-	fmt.Println(exampleAST(133, "\U00100001 ( _Bool ) { 'a' , }"))
+	fmt.Println(exampleAST(133, "\U00100002 auto a = { 'b' , }"))
 	// Output:
 	// &cc.CommaOpt{
-	// · Token: example133.c:1:18: ',',
+	// · Token: example133.c:1:17: ',',
 	// }
 }
 
@@ -2967,15 +2967,15 @@ func ExampleInitializerList() {
 }
 
 func ExampleInitializerList_case1() {
-	fmt.Println(exampleAST(201, "\U00100001 ( _Bool ) { 'a' , 'b' ,"))
+	fmt.Println(exampleAST(201, "\U00100002 auto a = { 'b' , 'c' ,"))
 	// Output:
 	// &cc.InitializerList{
 	// · Initializer: &cc.Initializer{
 	// · · Expression: &cc.Expression{
 	// · · · Type: int,
-	// · · · Value: 97,
+	// · · · Value: 98,
 	// · · · Case: 1,
-	// · · · Token: example201.c:1:14: CHARCONST "'a'",
+	// · · · Token: example201.c:1:13: CHARCONST "'b'",
 	// · · },
 	// · },
 	// · InitializerList: &cc.InitializerList{
@@ -2983,12 +2983,12 @@ func ExampleInitializerList_case1() {
 	// · · Initializer: &cc.Initializer{
 	// · · · Expression: &cc.Expression{
 	// · · · · Type: int,
-	// · · · · Value: 98,
+	// · · · · Value: 99,
 	// · · · · Case: 1,
-	// · · · · Token: example201.c:1:20: CHARCONST "'b'",
+	// · · · · Token: example201.c:1:19: CHARCONST "'c'",
 	// · · · },
 	// · · },
-	// · · Token: example201.c:1:18: ',',
+	// · · Token: example201.c:1:17: ',',
 	// · },
 	// }
 }
@@ -3914,7 +3914,7 @@ func ExampleStructOrUnion_case1() {
 }
 
 func ExampleStructOrUnionSpecifier() {
-	fmt.Println(exampleAST(115, "\U00100002 struct { int i; } ("))
+	fmt.Println(exampleAST(114, "\U00100002 struct { int i; } ("))
 	// Output:
 	// &cc.StructOrUnionSpecifier{
 	// · StructDeclarationList: &cc.StructDeclarationList{
@@ -3922,7 +3922,7 @@ func ExampleStructOrUnionSpecifier() {
 	// · · · SpecifierQualifierList: &cc.SpecifierQualifierList{
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: 3,
-	// · · · · · Token: example115.c:1:11: INT "int",
+	// · · · · · Token: example114.c:1:11: INT "int",
 	// · · · · },
 	// · · · },
 	// · · · StructDeclaratorList: &cc.StructDeclaratorList{
@@ -3931,31 +3931,44 @@ func ExampleStructOrUnionSpecifier() {
 	// · · · · · · Linkage: None,
 	// · · · · · · Type: int,
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · · Token: example115.c:1:15: IDENTIFIER "i",
+	// · · · · · · · Token: example114.c:1:15: IDENTIFIER "i",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
 	// · · · },
-	// · · · Token: example115.c:1:16: ';',
+	// · · · Token: example114.c:1:16: ';',
 	// · · },
 	// · },
 	// · StructOrUnion: &cc.StructOrUnion{
-	// · · Token: example115.c:1:2: STRUCT "struct",
+	// · · Token: example114.c:1:2: STRUCT "struct",
 	// · },
-	// · Token: example115.c:1:9: '{',
-	// · Token2: example115.c:1:18: '}',
+	// · Token: example114.c:1:9: '{',
+	// · Token2: example114.c:1:18: '}',
 	// }
 }
 
 func ExampleStructOrUnionSpecifier_case1() {
-	fmt.Println(exampleAST(116, "\U00100002 struct a ("))
+	fmt.Println(exampleAST(115, "\U00100002 struct a ("))
 	// Output:
 	// &cc.StructOrUnionSpecifier{
 	// · Case: 1,
 	// · StructOrUnion: &cc.StructOrUnion{
+	// · · Token: example115.c:1:2: STRUCT "struct",
+	// · },
+	// · Token: example115.c:1:9: IDENTIFIER "a",
+	// }
+}
+
+func ExampleStructOrUnionSpecifier_case2() {
+	fmt.Println(exampleAST(116, "\U00100002 struct { } ("))
+	// Output:
+	// &cc.StructOrUnionSpecifier{
+	// · Case: 2,
+	// · StructOrUnion: &cc.StructOrUnion{
 	// · · Token: example116.c:1:2: STRUCT "struct",
 	// · },
-	// · Token: example116.c:1:9: IDENTIFIER "a",
+	// · Token: example116.c:1:9: '{',
+	// · Token2: example116.c:1:11: '}',
 	// }
 }
 

@@ -149,6 +149,7 @@ type tweaks struct {
 	enableDlrInIdentifiers         bool              // foo$bar
 	enableEmptyDeclarations        bool              // ; // C++11
 	enableEmptyDefine              bool              // #define
+	enableEmptyStructs             bool              // struct foo {};
 	enableIncludeNext              bool              //
 	enableNoreturn                 bool              //
 	enableOmitFuncRetType          bool              // f() becomes the same as int f().
@@ -164,7 +165,6 @@ type tweaks struct {
 }
 
 func (t *tweaks) doGccEmu() *tweaks {
-	t.enableOmitFuncRetType = true
 	t.enableAlignof = true
 	t.enableAlternateKeywords = true
 	t.enableAnonymousStructFields = true
@@ -172,8 +172,10 @@ func (t *tweaks) doGccEmu() *tweaks {
 	t.enableDefineOmitCommaBeforeDDD = true
 	t.enableDlrInIdentifiers = true
 	t.enableEmptyDefine = true
+	t.enableEmptyStructs = true
 	t.enableIncludeNext = true
 	t.enableNoreturn = true
+	t.enableOmitFuncRetType = true
 	t.enableStaticAssert = true
 	t.enableTypeof = true
 	t.enableUndefExtraTokens = true
@@ -354,6 +356,13 @@ func EnableDlrInIdentifiers() Opt {
 //	#define
 func EnableEmptyDefine() Opt {
 	return func(l *lexer) { l.tweaks.enableEmptyDefine = true }
+}
+
+// EnableEmptyStructs makes the parser accept non standard
+//
+//	struct foo {};
+func EnableEmptyStructs() Opt {
+	return func(l *lexer) { l.tweaks.enableEmptyStructs = true }
 }
 
 // EnableUndefExtraTokens makes the parser accept non standard
