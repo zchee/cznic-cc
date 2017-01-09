@@ -725,7 +725,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Type = t.Result()
 		params, isVariadic := t.Parameters()
 		if params == nil {
-			dbg("", position(n.Pos())) //TODO-
 			panic("internal error")
 		}
 
@@ -827,7 +826,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				limit = 1
 			}
 		default:
-			dbg("%s: %v:%v", position(n.Pos()), t, k)
 			panic("TODO")
 		}
 
