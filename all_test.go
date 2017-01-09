@@ -2911,45 +2911,54 @@ func TestIssue81(t *testing.T) {
 	}
 }
 
-func testDir(t *testing.T, dir string) {
+func testDir(t *testing.T, dir, predefine string, opts ...Opt) {
 	dir = filepath.FromSlash(dir)
 	m, err := filepath.Glob(filepath.Join(dir, "*.c"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	predefined, _, sysIncludePaths, err := HostConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Logf("==== predefined\n%s", predefined)
-	t.Logf("==== include paths %v", includePaths)
-	t.Logf("==== sysInclude paths %v", sysIncludePaths)
 	for _, v := range m {
 		t.Log(v)
 		if _, err := Parse(
-			predefined+`
-#define __inline
-`,
+			predefined+predefine,
 			[]string{v},
 			newTestModel(),
-			EnableIncludeNext(),
-			IncludePaths(includePaths),
-			SysIncludePaths(sysIncludePaths),
-			devTest(),
-			gccEmu(),
+			append(
+				opts,
+				SysIncludePaths(sysIncludePaths),
+				gccEmu(),
+			)...,
 		); err != nil {
 			t.Fatalf("%s", errString(err))
 		}
 	}
 }
 
-func TestTCC(t *testing.T) {
+func TestTCCTests(t *testing.T) {
 	if !*oDev {
 		t.Log("enable with -dev")
 		return
 	}
 
-	testDir(t, "testdata/tcc-0.9.26/tests/tests2/")
+	testDir(t, "testdata/tcc-0.9.26/tests/tests2/", "")
+}
+
+func TestGCCTests(t *testing.T) {
+	if !*oDev {
+		t.Log("enable with -dev")
+		return
+	}
+
+	testDir(
+		t,
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compat/",
+		"",
+		EnableOmitFuncRetType(),
+	)
 }

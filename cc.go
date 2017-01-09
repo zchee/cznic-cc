@@ -48,6 +48,7 @@ const (
 #define __builtin_va_list void*
 #define __builtin_va_start(x, y)
 #define __extension__
+#define __inline inline
 #define __restrict
 
 double __builtin_inff();
@@ -67,6 +68,8 @@ unsigned short __builtin_bswap16 (unsigned short x);
 void __builtin_unreachable (void);
 void __builtin_unwind_init();
 void __builtin_va_copy(void* dest, void* src);
+void abort(void);
+void exit(int);
 void* __builtin_alloca(int);
 void* __builtin_memcpy(void *restrict dest, const void *restrict src, long long count);
 void* memcpy(void *restrict dest, const void *restrict src, long long count);
