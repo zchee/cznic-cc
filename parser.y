@@ -1586,10 +1586,12 @@ StructOrUnionSpecifier:
 			Token2:         $4,
 		}
 		$$ = lhs
+		if !lx.tweaks.enableEmptyStructs {
+			lx.report.Err(lhs.Token.Pos(), "empty structs/unions not allowed")
+		}
 		if o := $2.(*IdentifierOpt); o != nil {
 			lx.scope.declareStructTag(o.Token, lx.report)
 		}
-		lx.pushScope(ScopeMembers)
 		lx.scope.isUnion = $1.(*StructOrUnion).Case == 1 // "union"
 		lx.scope.prevStructDeclarator = nil
 		lhs.alignOf = 1

@@ -3830,10 +3830,12 @@ yynewstate:
 				Token2:        yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
+			if !lx.tweaks.enableEmptyStructs {
+				lx.report.Err(lhs.Token.Pos(), "empty structs/unions not allowed")
+			}
 			if o := yyS[yypt-2].node.(*IdentifierOpt); o != nil {
 				lx.scope.declareStructTag(o.Token, lx.report)
 			}
-			lx.pushScope(ScopeMembers)
 			lx.scope.isUnion = yyS[yypt-3].node.(*StructOrUnion).Case == 1 // "union"
 			lx.scope.prevStructDeclarator = nil
 			lhs.alignOf = 1

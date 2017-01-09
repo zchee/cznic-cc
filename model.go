@@ -895,6 +895,17 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
+	case Bool:
+		switch x := v.(type) {
+		case int32:
+			if x != 0 {
+				return int32(1)
+			}
+
+			return int32(0)
+		default:
+			panic(fmt.Errorf("internal error %T", x))
+		}
 	default:
 		panic(fmt.Errorf("internal error %s, %s", typ, typ.Kind()))
 	}

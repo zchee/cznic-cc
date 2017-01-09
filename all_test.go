@@ -2912,6 +2912,11 @@ func TestIssue81(t *testing.T) {
 }
 
 func testDir(t *testing.T, dir string) {
+	var re *regexp.Regexp
+	if s := *oRe; s != "" {
+		re = regexp.MustCompile(s)
+	}
+
 	dir = filepath.FromSlash(dir)
 	t.Log(dir)
 	m, err := filepath.Glob(filepath.Join(dir, "*.c"))
@@ -2924,7 +2929,13 @@ func testDir(t *testing.T, dir string) {
 		t.Fatal(err)
 	}
 
+	var ok int
+outer:
 	for i, v := range m {
+		if re != nil && !re.MatchString(v) {
+			continue
+		}
+
 		var err error
 		func() {
 			defer func() {
@@ -2944,17 +2955,30 @@ func testDir(t *testing.T, dir string) {
 		}()
 
 		if err != nil {
+			sv := filepath.ToSlash(v)
+			for _, v := range []string{
+				"gcc.c-torture/compile/20011217-2.c", // (type){field: expr}, see https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
+			} {
+				if strings.HasSuffix(sv, v) {
+					continue outer
+				}
+			}
+
 			s := errString(err)
 			if !strings.Contains(s, "PANIC") && !strings.Contains(s, "TODO") {
-				if co, err := exec.Command("gcc", "-o", os.DevNull, "-std=c99", "--pedantic", v).CombinedOutput(); err != nil {
+				if out, err := exec.Command("gcc", "-o", os.DevNull, "-c", "-std=c99", "--pedantic", v).CombinedOutput(); len(out) != 0 || err != nil {
 					// Auto blacklist if gcc fails to compile as well.
-					t.Logf("%s\n==== gcc fails too\n%s\n%v", s, co, err)
+					t.Logf("%s\n==== gcc fails too\n%s\n%v", s, out, err)
 					continue
 				}
 
 			}
-			t.Errorf("%v\n%v/%v\nFAIL\n%s", v, i+1, len(m), errString(err))
+			t.Errorf("%v\n%v/%v, %v ok\nFAIL\n%s", v, i+1, len(m), ok, errString(err))
 			return
+		}
+		ok++
+		if re != nil {
+			t.Logf("%v: %v ok", v, ok)
 		}
 	}
 }

@@ -27,6 +27,7 @@ var (
 
 var (
 	noTypedefNameAfter = map[rune]bool{
+		'*':         true,
 		'.':         true,
 		ARROW:       true,
 		BOOL:        true,
@@ -948,6 +949,8 @@ func (n *ctype) structOrUnionSpecifier() *StructOrUnionSpecifier {
 		default:
 			panic("internal error")
 		}
+	case 2: // StructOrUnion IdentifierOpt '{' '}'                        // Case 2
+		return sus
 	default:
 		panic(sus.Case)
 	}
@@ -975,6 +978,13 @@ func (n *ctype) Members() (r []Member, isIncomplete bool) {
 					switch x := sd.ConstantExpression.Value.(type) {
 					case int32:
 						bits = int(x)
+					case uint64:
+						if x <= uint64(n.model.Items[Int].Size*8) {
+							bits = int(x)
+							break
+						}
+
+						panic("internal error")
 					default:
 						panic("internal error")
 					}

@@ -353,7 +353,16 @@ loop0:
 	dd := dds[0]
 	scs := resultAttr & (saTypedef | saExtern | saStatic | saAuto | saRegister)
 	sk := lx.scope.kind
-	var prev *Declarator
+	var prev, prevVisible *Declarator
+	var prevVisibleBinding *Binding
+	id := dd.Token.Val
+	if p := lx.scope.Parent; p != nil {
+		b := p.Lookup(NSIdentifiers, id)
+		if dd, ok := b.Node.(*DirectDeclarator); ok {
+			prevVisible = dd.TopDeclarator()
+			prevVisibleBinding = &b
+		}
+	}
 	if b := dd.prev; b != nil {
 		prev = b.Node.(*DirectDeclarator).TopDeclarator()
 	}
@@ -384,9 +393,17 @@ loop0:
 		// declaration specifies internal or external linkage, the
 		// linkage of the identifier at the later declaration is the
 		// same as the linkage specified at the prior declaration.
-		resultAttr&saExtern != 0 && prev != nil && (prev.Linkage == Internal || prev.Linkage == External):
 
-		n.Linkage = prev.Linkage
+		resultAttr&saExtern != 0 &&
+			(prev != nil && (prev.Linkage == Internal || prev.Linkage == External) ||
+				prevVisible != nil && (prevVisible.Linkage == Internal || prevVisible.Linkage == External)):
+		switch {
+		case prev != nil && (prev.Linkage == Internal || prev.Linkage == External):
+			n.Linkage = prev.Linkage
+		default:
+			n.Linkage = prevVisible.Linkage
+			dd.visible = prevVisibleBinding
+		}
 	case
 		// [0]6.2.2, 4: If no prior declaration is visible, or if the
 		// prior declaration specifies no linkage, then the identifier
@@ -408,7 +425,6 @@ loop0:
 		n.Linkage = External
 	}
 
-	id := dd.Token.Val
 	if isGenerating || id == 0 {
 		//dbg("setFull done (A)(%p): %s: %s\n%v", lx.scope, position(n.Pos()), n, resultSpecifier)
 		return t
@@ -617,7 +633,29 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 
 		dd := b.Node.(*DirectDeclarator)
-		n.Type = dd.top().declarator.Type
+		t := dd.top().declarator.Type
+		if (t.Kind() == Ptr || t.Kind() == Array) && n.Type.Elements() == -1 {
+			found := false
+			dd := dd
+		more:
+			for dd.prev != nil {
+				dd := dd.prev.Node.(*DirectDeclarator)
+				if t2 := dd.TopDeclarator().Type; t2.Elements() >= 0 {
+					t = t2
+					found = true
+					break
+				}
+			}
+			if !found && dd.visible != nil {
+				dd = dd.visible.Node.(*DirectDeclarator)
+				if t2 := dd.TopDeclarator().Type; t2.Elements() >= 0 {
+					t = t2
+				} else {
+					goto more
+				}
+			}
+		}
+		n.Type = t
 		if v := dd.EnumVal; v != nil {
 			n.Value = v
 		}
@@ -763,13 +801,47 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 13: // Expression "--"
 		n.Value, n.Type = n.Expression.eval(lx)
 	case 14: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
-		n.Type = n.TypeName.Type
+		limit := -1
+		var checkType Type
+		var mb []Member
+		var incomplete bool
+		t := n.TypeName.Type
+		n.Type = t
+		k := t.Kind()
+		switch k {
+		case Array:
+			checkType = t.Element()
+			limit = t.Elements()
+		case Ptr:
+			checkType = t.Element()
+			n.Type = t.(*ctype).setElements(n.InitializerList.Len())
+		case Struct, Union:
+			mb, incomplete = t.Members()
+			if mb == nil {
+				panic("internal error")
+			}
+
+			limit = len(mb)
+			if k == Union {
+				limit = 1
+			}
+		default:
+			panic("TODO")
+		}
+
+		values := 0
 		for l := n.InitializerList; l != nil; l = l.InitializerList {
+			values++
 			if l.DesignationOpt != nil {
 				panic("TODO")
 			}
 
-			l.Initializer.typeCheck(n.Type, nil, 0, -1, lx)
+			if incomplete {
+				lx.report.Err(n.Pos(), "variable/field has initializer but incomplete type")
+				break
+			}
+
+			l.Initializer.typeCheck(checkType, mb, values-1, limit, lx)
 		}
 	case 15: // "++" Expression
 		n.Value, n.Type = n.Expression.eval(lx)
@@ -2143,7 +2215,7 @@ func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
 // ---------------------------------------------------------------- Initializer
 
 func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
-	if limit >= 0 && i > limit {
+	if limit >= 0 && i >= limit {
 		lx.report.Err(n.Pos(), "excess elements in array/struct initializer")
 		return
 	}
@@ -2165,6 +2237,7 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 					}
 				}
 			default:
+				panic(2206)
 				lx.report.Err(n.Expression.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, st)
 			}
 		}
@@ -2395,6 +2468,20 @@ func (n *StructDeclarator) post(lx *lexer) {
 			if m := t.SizeOf() * 8; x > int64(m) {
 				lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds its type")
 				w = m
+			}
+		case uint64:
+			w = int(x)
+			m := t.SizeOf() * 8
+			if x > uint64(m) {
+				lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds its type")
+				w = m
+				break
+			}
+
+			if x > uint64(lx.model.Items[Int].Size*8) {
+				lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds int bits")
+				w = m
+				break
 			}
 		default:
 			panic("internal error")

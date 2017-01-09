@@ -47,6 +47,7 @@ const (
 #define __builtin_va_end(x)
 #define __builtin_va_list void*
 #define __builtin_va_start(x, y)
+#define __const
 #define __extension__
 #define __inline inline
 #define __restrict
@@ -60,6 +61,7 @@ int __builtin_ctzll (unsigned long long);
 int __builtin_popcount (unsigned int x);
 int __builtin_popcountl (unsigned long);
 int __builtin_popcountll (unsigned long long);
+int __builtin_setjmp(void*);
 long __builtin_expect(long, long);
 long long strlen (const char*);
 unsigned __builtin_bswap32 (unsigned x);
@@ -68,10 +70,9 @@ unsigned short __builtin_bswap16 (unsigned short x);
 void __builtin_unreachable (void);
 void __builtin_unwind_init();
 void __builtin_va_copy(void* dest, void* src);
-void abort(void);
-void exit(int);
 void* __builtin_alloca(int);
 void* __builtin_memcpy(void *restrict dest, const void *restrict src, long long count);
+void* __builtin_memset(void*, int, long long);
 void* memcpy(void *restrict dest, const void *restrict src, long long count);
 void* memset(void*, int, long long);
 `

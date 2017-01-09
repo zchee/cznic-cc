@@ -1155,14 +1155,15 @@ func (n *DirectAbstractDeclaratorOpt) Pos() token.Pos {
 //	|       DirectDeclarator '(' ParameterTypeList ')'                         // Case 6
 //	|       DirectDeclarator '(' IdentifierListOpt ')'                         // Case 7
 type DirectDeclarator struct {
+	EnumVal              interface{} // Non nil if DD declares an enumeration constant.
 	declarator           *Declarator
 	elements             int
-	EnumVal              interface{} // Non nil if DD declares an enumeration constant.
-	idScope              *Bindings   // Of case 0: IDENTIFIER.
+	idScope              *Bindings // Of case 0: IDENTIFIER.
 	paramsScope          *Bindings
 	parent               *DirectDeclarator
 	prev                 *Binding // Existing declaration in same scope, if any.
 	specifier            Specifier
+	visible              *Binding // Existing declaration of same ident visible in same scope, if any and this DD has storage class extrn.
 	Case                 int
 	Declarator           *Declarator
 	DirectDeclarator     *DirectDeclarator
