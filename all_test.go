@@ -2924,9 +2924,15 @@ func testDir(t *testing.T, dir string) {
 		t.Fatal(err)
 	}
 
+	sort.Strings(m)
 	predefined, _, sysIncludePaths, err := HostConfig()
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	blacklist := []string{
+		"/gcc.c-torture/compile/20040726-2.c",
+		"/gcc.c-torture/compile/20050113-1.c",
 	}
 
 	var ok int
@@ -2934,6 +2940,12 @@ outer:
 	for i, v := range m {
 		if re != nil && !re.MatchString(v) {
 			continue
+		}
+
+		for _, w := range blacklist {
+			if strings.HasSuffix(filepath.ToSlash(v), w) {
+				continue outer
+			}
 		}
 
 		var err error

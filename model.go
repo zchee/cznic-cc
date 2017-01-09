@@ -45,9 +45,9 @@ var binOpTab = [kindMax][kindMax]Kind{
 	Double:            {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
 	LongDouble:        {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
 	Bool:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
-	FloatComplex:      {}, //TODO
-	DoubleComplex:     {}, //TODO
-	LongDoubleComplex: {}, //TODO
+	FloatComplex:      {UintPtr: FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex},
+	DoubleComplex:     {UintPtr: DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex},
+	LongDoubleComplex: {UintPtr: LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex},
 	Struct:            {},
 	Union:             {},
 	Enum:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
@@ -72,27 +72,29 @@ type ModelItem struct {
 type Model struct {
 	Items map[Kind]ModelItem
 
-	//TODO {float,double,longDouble}ComplexType
-	BoolType       Type
-	CharType       Type
-	DoubleType     Type
-	FloatType      Type
-	IntType        Type
-	LongDoubleType Type
-	LongLongType   Type
-	LongType       Type
-	ShortType      Type
-	UCharType      Type
-	UIntType       Type
-	ULongLongType  Type
-	ULongType      Type
-	UShortType     Type
-	UintPtrType    Type
-	VoidType       Type
-	longStrType    Type
-	ptrDiffType    Type
-	sizeType       Type
-	strType        Type
+	//TODO {double,longDouble}ComplexType
+	BoolType          Type
+	CharType          Type
+	DoubleComplexType Type
+	DoubleType        Type
+	FloatComplexType  Type
+	FloatType         Type
+	IntType           Type
+	LongDoubleType    Type
+	LongLongType      Type
+	LongType          Type
+	ShortType         Type
+	UCharType         Type
+	UIntType          Type
+	ULongLongType     Type
+	ULongType         Type
+	UShortType        Type
+	UintPtrType       Type
+	VoidType          Type
+	longStrType       Type
+	ptrDiffType       Type
+	sizeType          Type
+	strType           Type
 
 	initialized bool
 	tweaks      *tweaks
@@ -104,7 +106,9 @@ type Model struct {
 func (m *Model) initialize(lx *lexer) {
 	m.BoolType = m.makeType(lx, 0, tsBool)
 	m.CharType = m.makeType(lx, 0, tsChar)
+	m.DoubleComplexType = m.makeType(lx, 0, tsComplex, tsDouble)
 	m.DoubleType = m.makeType(lx, 0, tsDouble)
+	m.FloatComplexType = m.makeType(lx, 0, tsComplex, tsFloat)
 	m.FloatType = m.makeType(lx, 0, tsFloat)
 	m.IntType = m.makeType(lx, 0, tsInt)
 	m.LongDoubleType = m.makeType(lx, 0, tsLong, tsDouble)
@@ -237,6 +241,10 @@ func (m *Model) typ(k Kind) Type {
 		return m.UShortType
 	case UintPtr:
 		return m.UintPtrType
+	case FloatComplex:
+		return m.FloatComplexType
+	case DoubleComplex:
+		return m.DoubleComplexType
 	default:
 		panic(k)
 	}

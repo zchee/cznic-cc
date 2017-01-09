@@ -40,20 +40,40 @@ const (
 	fakeTime = "__TESTING_TIME__"
 
 	gccPredefine = `
+
 #define __PRETTY_FUNCTION__ __func__
 #define __attribute__(x)
+#define __builtin___memset_chk(x, y, z, ...) __BUILTIN___MEMSET_CHK()
+#define __builtin_alloca(x) __BUILTIN_ALLOCA()
+#define __builtin_constant_p(exp) __BUILTIN_CONSTANT_P()
+#define __builtin_isgreater(x, y) __ISGREATER()
+#define __builtin_isunordered(x, y) __BUILTIN_ISUNORDERED()
+#define __builtin_mempcpy(x, y, z) __BUILTIN_MEMPCPY()
 #define __builtin_offsetof(type, member) ((size_t)(&((type *)0)->member))
 #define __builtin_va_arg(ap, type) ( *( type* )ap )
 #define __builtin_va_end(x)
 #define __builtin_va_list void*
 #define __builtin_va_start(x, y)
+#define __complex _Complex
 #define __const
 #define __extension__
 #define __inline inline
+#define __real(x) __REAL();
+#define __real__
 #define __restrict
+#define __sync_fetch_and_add(x, y, ...) __SYNC_FETCH_AND_ADD()
+#define __sync_val_compare_and_swap(x, y, z, ...) __SYNC_VAL_COMPARE_AND_SWAP()
+#define __builtin_malloc(x) __MALLOC()
+#define __builtin_memmove(x, y, z) __MEMMOVE()
 
+char *__builtin_stpcpy(char *, char *);
+char *__builtin_strcpy(char*, char*);
+double __REAL();
 double __builtin_inff();
 double __builtin_nanf(char *);
+int __BUILTIN_CONSTANT_P();
+int __BUILTIN_ISUNORDERED();
+int __ISGREATER();
 int __builtin_constant_p (exp);
 int __builtin_ctz (unsigned int x);
 int __builtin_ctzl (unsigned long);
@@ -62,19 +82,33 @@ int __builtin_popcount (unsigned int x);
 int __builtin_popcountl (unsigned long);
 int __builtin_popcountll (unsigned long long);
 int __builtin_setjmp(void*);
+int __builtin_strlen(char *);
 long __builtin_expect(long, long);
 long long strlen (const char*);
 unsigned __builtin_bswap32 (unsigned x);
 unsigned long long __builtin_bswap64 (unsigned long long x);
 unsigned short __builtin_bswap16 (unsigned short x);
+void *__BUILTIN_ALLOCA();
+void *__BUILTIN_MEMPCPY();
+void *__BUILTIN___MEMSET_CHK();
+void *__MALLOC();
+void *__MEMMOVE();
+void *__builtin_alloca(int);
+void *__builtin_extract_return_addr(void *);
+void *__builtin_memcpy(void *restrict dest, const void *restrict src, long long count);
+void *__builtin_memset(void*, int, long long);
+void *__builtin_return_address (unsigned int);
+void *__builtin_stack_save();
+void *memcpy(void *restrict dest, const void *restrict src, long long count);
+void *memset(void*, int, long long);
+void __SYNC_FETCH_AND_ADD();
+void __SYNC_VAL_COMPARE_AND_SWAP();
+void __builtin_prefetch (const void *, ...);
+void __builtin_stack_restore(void*);
+void __builtin_trap (void);
 void __builtin_unreachable (void);
 void __builtin_unwind_init();
 void __builtin_va_copy(void* dest, void* src);
-void* __builtin_alloca(int);
-void* __builtin_memcpy(void *restrict dest, const void *restrict src, long long count);
-void* __builtin_memset(void*, int, long long);
-void* memcpy(void *restrict dest, const void *restrict src, long long count);
-void* memset(void*, int, long long);
 `
 )
 

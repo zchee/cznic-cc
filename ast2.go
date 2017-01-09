@@ -725,6 +725,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Type = t.Result()
 		params, isVariadic := t.Parameters()
 		if params == nil {
+			dbg("", position(n.Pos())) //TODO-
 			panic("internal error")
 		}
 
@@ -826,6 +827,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				limit = 1
 			}
 		default:
+			dbg("%s: %v:%v", position(n.Pos()), t, k)
 			panic("TODO")
 		}
 
@@ -2237,7 +2239,6 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 					}
 				}
 			default:
-				panic(2206)
 				lx.report.Err(n.Expression.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, st)
 			}
 		}
