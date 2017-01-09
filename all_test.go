@@ -2911,8 +2911,9 @@ func TestIssue81(t *testing.T) {
 	}
 }
 
-func testDir(t *testing.T, dir, predefine string, opts ...Opt) {
+func testDir(t *testing.T, dir string) {
 	dir = filepath.FromSlash(dir)
+	t.Log(dir)
 	m, err := filepath.Glob(filepath.Join(dir, "*.c"))
 	if err != nil {
 		t.Fatal(err)
@@ -2923,19 +2924,27 @@ func testDir(t *testing.T, dir, predefine string, opts ...Opt) {
 		t.Fatal(err)
 	}
 
-	for _, v := range m {
-		t.Log(v)
-		if _, err := Parse(
-			predefined+predefine,
-			[]string{v},
-			newTestModel(),
-			append(
-				opts,
+	for i, v := range m {
+		var err error
+		func() {
+			defer func() {
+				if e := recover(); e != nil {
+					err = fmt.Errorf("PANIC\n%s\n%v", debug.Stack(), e)
+				}
+			}()
+
+			_, err = Parse(
+				predefined,
+				[]string{v},
+				newTestModel(),
 				SysIncludePaths(sysIncludePaths),
 				gccEmu(),
-			)...,
-		); err != nil {
-			t.Fatalf("%s", errString(err))
+			)
+		}()
+
+		if err != nil {
+			t.Errorf("%v\n%v/%v\n%s", v, i+1, len(m), errString(err))
+			return
 		}
 	}
 }
@@ -2946,7 +2955,7 @@ func TestTCCTests(t *testing.T) {
 		return
 	}
 
-	testDir(t, "testdata/tcc-0.9.26/tests/tests2/", "")
+	testDir(t, "testdata/tcc-0.9.26/tests/tests2/")
 }
 
 func TestGCCTests(t *testing.T) {
@@ -2955,10 +2964,7 @@ func TestGCCTests(t *testing.T) {
 		return
 	}
 
-	testDir(
-		t,
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compat/",
-		"",
-		EnableOmitFuncRetType(),
-	)
+	testDir(t, "testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compat/")
+	testDir(t, "testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/")
+	testDir(t, "testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/")
 }

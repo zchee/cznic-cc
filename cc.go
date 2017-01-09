@@ -164,6 +164,7 @@ type tweaks struct {
 }
 
 func (t *tweaks) doGccEmu() *tweaks {
+	t.enableOmitFuncRetType = true
 	t.enableAlignof = true
 	t.enableAlternateKeywords = true
 	t.enableAnonymousStructFields = true

@@ -35,7 +35,7 @@ editor: parser.go scanner.go trigraphs.go
 	gofmt -l -s -w *.go
 	rm -f log-*.c log-*.h
 	go test -i
-	go test -dev 2>&1 | tee log
+	go test 2>&1 | tee log
 
 internalError:
 	egrep -ho '"internal error.*"' *.go | sort | cat -n
