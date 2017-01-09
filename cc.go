@@ -40,6 +40,7 @@ const (
 	fakeTime = "__TESTING_TIME__"
 
 	gccPredefine = `
+#define __PRETTY_FUNCTION__ __func__
 #define __attribute__(x)
 #define __builtin_offsetof(type, member) ((size_t)(&((type *)0)->member))
 #define __builtin_va_arg(ap, type) ( *( type* )ap )
@@ -47,7 +48,7 @@ const (
 #define __builtin_va_list void*
 #define __builtin_va_start(x, y)
 #define __extension__
-#define __PRETTY_FUNCTION__ __func__
+#define __restrict
 
 double __builtin_inff();
 double __builtin_nanf(char *);

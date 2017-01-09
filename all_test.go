@@ -72,6 +72,7 @@ var _ = use(printStack, caller, dbg, TODO, (*ctype).str, yyDefault, yyErrCode, y
 
 var (
 	o1        = flag.String("1", "", "single file argument of TestPPParse1.")
+	oDev      = flag.Bool("dev", false, "enable WIP tests")
 	oFailFast = flag.Bool("ff", false, "crash on first reported error (in some tests.)")
 	oRe       = flag.String("re", "", "regexp filter.")
 	oTmp      = flag.Bool("tmp", false, "keep certain temp files.")
@@ -2908,4 +2909,47 @@ func TestIssue81(t *testing.T) {
 			}
 		}
 	}
+}
+
+func testDir(t *testing.T, dir string) {
+	dir = filepath.FromSlash(dir)
+	m, err := filepath.Glob(filepath.Join(dir, "*.c"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	predefined, includePaths, sysIncludePaths, err := HostConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("==== predefined\n%s", predefined)
+	t.Logf("==== include paths %v", includePaths)
+	t.Logf("==== sysInclude paths %v", sysIncludePaths)
+	for _, v := range m {
+		t.Log(v)
+		if _, err := Parse(
+			predefined+`
+#define __inline
+`,
+			[]string{v},
+			newTestModel(),
+			EnableIncludeNext(),
+			IncludePaths(includePaths),
+			SysIncludePaths(sysIncludePaths),
+			devTest(),
+			gccEmu(),
+		); err != nil {
+			t.Fatalf("%s", errString(err))
+		}
+	}
+}
+
+func TestTCC(t *testing.T) {
+	if !*oDev {
+		t.Log("enable with -dev")
+		return
+	}
+
+	testDir(t, "testdata/tcc-0.9.26/tests/tests2/")
 }
