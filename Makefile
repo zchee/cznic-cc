@@ -13,6 +13,7 @@ all: editor
 	make todo
 	unused . || true
 	maligned
+	unconvert -apply
 
 clean:
 	rm -f log-*.c log-*.h *~ cpu.test mem.test /tmp/cc-test-*

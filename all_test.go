@@ -2904,7 +2904,7 @@ func TestIssue81(t *testing.T) {
 			}
 
 			if g, e := s, []byte{0, 255, 0}; !bytes.Equal(g, e) {
-				t.Fatalf("%v |% x| |% x|", position(x.Pos()), s, g, e)
+				t.Fatalf("%v |% x| |% x|", position(x.Pos()), g, e)
 			}
 		}
 	}

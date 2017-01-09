@@ -227,7 +227,7 @@ func exampleAST(rule int, src string) interface{} {
 
 func ppParseString(fn, src string, report *xc.Report, tweaks *tweaks) (*PreprocessingFile, error) {
 	sz := len(src)
-	lx, err := newLexer(fn, int(sz)+1, bytes.NewBufferString(src), report, tweaks)
+	lx, err := newLexer(fn, sz+1, bytes.NewBufferString(src), report, tweaks)
 	if err != nil {
 		return nil, err
 	}

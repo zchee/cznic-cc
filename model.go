@@ -756,7 +756,7 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		case float32:
 			switch w {
 			case 4:
-				return float32(x)
+				return x
 			case 8:
 				return float64(x)
 			default:
@@ -767,7 +767,7 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			case 4:
 				return float32(x)
 			case 8:
-				return float64(x)
+				return x
 			default:
 				panic(w)
 			}
@@ -843,7 +843,7 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		case uint8:
 			switch w {
 			case 1:
-				return byte(x)
+				return x
 			default:
 				panic(w)
 			}
@@ -919,7 +919,7 @@ func (m *Model) charConst(t xc.Token) (interface{}, Type) {
 			return rune(s[0]), m.IntType
 		}
 
-		runes := []rune(string(s))
+		runes := []rune(s)
 		switch runes[0] {
 		case '\\':
 			r, _ = decodeEscapeSequence(runes)

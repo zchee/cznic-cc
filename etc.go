@@ -377,7 +377,7 @@ func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v interface{}) {
 	case int32:
 		lx.iota = int64(x) + 1
 	case int64:
-		lx.iota = int64(x) + 1
+		lx.iota = x + 1
 	default:
 		panic(fmt.Errorf("%T", x))
 	}
