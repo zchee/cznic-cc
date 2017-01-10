@@ -2927,6 +2927,7 @@ func testDir(t *testing.T, dir string) {
 		"/gcc.c-torture/compile/20040726-2.c",
 		"/gcc.c-torture/compile/20050113-1.c",
 		"/gcc.c-torture/compile/icfmatch.c", // typedef char __attribute__ ((vector_size (4))) v4qi;
+		"/gcc.c-torture/compile/pr17529.c",  // non std assembler statment
 	}
 
 	var ok int

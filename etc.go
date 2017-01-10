@@ -1230,7 +1230,7 @@ func (n *ctype) SizeOf() int {
 		case 1: // StructOrUnion IDENTIFIER
 			return -1 // Incomplete type
 		case 2: // StructOrUnion IdentifierOpt '{' '}'                        // Case 2
-			return 0;
+			return 0
 		default:
 			panic(sus.Case)
 		}
@@ -1372,7 +1372,7 @@ func (n *ctype) StructAlignOf() int {
 		case 1: // StructOrUnion IDENTIFIER
 			return -1 // Incomplete type
 		case 2: // StructOrUnion IdentifierOpt '{' '}'                        // Case 2
-			return 1;
+			return 1
 		default:
 			panic(sus.Case)
 		}

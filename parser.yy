@@ -1467,8 +1467,12 @@ DirectAbstractDeclarator:
 	}
 |	DirectAbstractDeclaratorOpt '[' ExpressionOpt ']'
 	{
+		nElements := -1
 		if o := lhs.ExpressionOpt; o != nil {
-			o.Expression.eval(lx)
+			var err error
+			if nElements, err = elements(o.Expression.eval(lx)); err != nil {
+				lx.report.Err(o.Expression.Pos(), "%s", err)
+			}
 		}
 		var dd *DirectDeclarator
 		switch o := lhs.DirectAbstractDeclaratorOpt; {
@@ -1483,6 +1487,7 @@ DirectAbstractDeclarator:
 			Case: 2, // DirectDeclarator '[' TypeQualifierListOpt ExpressionOpt ']'
 			DirectDeclarator: dd,
 			ExpressionOpt: lhs.ExpressionOpt,
+			elements: nElements,
 		}
 		dd.parent = lhs.directDeclarator
 	}
