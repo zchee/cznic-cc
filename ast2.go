@@ -725,7 +725,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Type = t.Result()
 		params, isVariadic := t.Parameters()
 		if params == nil {
-			panic("internal error")
+			break // [0], 6.5.2.2/8
 		}
 
 		var args []*Expression
@@ -826,7 +826,11 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				limit = 1
 			}
 		default:
-			panic("TODO")
+			limit = 1
+			checkType = t
+			mb = []Member{
+				{Type: t},
+			}
 		}
 
 		values := 0
@@ -917,11 +921,11 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 
 		n.Value = m.cBool(isZero(v))
 	case 23: // "sizeof" Expression
-		n.Type = m.getSizeType(lx, n.Token)
+		n.Type = m.getSizeType(lx)
 		_, t := n.Expression.eval(lx)
 		n.Value = m.MustConvert(int32(t.SizeOf()), n.Type)
 	case 24: // "sizeof" '(' TypeName ')'
-		n.Type = m.getSizeType(lx, n.Token)
+		n.Type = m.getSizeType(lx)
 		n.Value = m.MustConvert(int32(n.TypeName.declarator.Type.SizeOf()), n.Type)
 	case 25: // '(' TypeName ')' Expression
 		v, _ := n.Expression.eval(lx)
@@ -1064,7 +1068,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				break
 			}
 
-			n.Type = m.getPtrDiffType(lx, n.Token)
+			n.Type = m.getPtrDiffType(lx)
 			break
 		}
 
@@ -2076,7 +2080,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 		n.Type = n.BinOpType
 	case 56: // "_Alignof" '(' TypeName ')'
-		n.Type = lx.model.getSizeType(lx, n.Token)
+		n.Type = lx.model.getSizeType(lx)
 		t := n.TypeName.Type
 		el := true
 	again:
@@ -2227,6 +2231,9 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 	switch n.Case {
 	case 0: // Expression
 		st := n.Expression.Type
+		for dt.Kind() == Array {
+			dt = dt.Element()
+		}
 		if !st.CanAssignTo(dt) {
 			switch n.Expression.Case {
 			case 6: // STRINGLITERAL

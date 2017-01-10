@@ -513,6 +513,20 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case float32:
+			switch w {
+			case 4:
+				return int32(x)
+			default:
+				panic(w)
+			}
+		case float64:
+			switch w {
+			case 4:
+				return int32(x)
+			default:
+				panic(w)
+			}
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
@@ -791,6 +805,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case uint32:
+			switch w {
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
 		case int64:
 			switch w {
 			case 8:
@@ -954,7 +975,7 @@ func (m *Model) charConst(t xc.Token) (interface{}, Type) {
 	return r, typ
 }
 
-func (m *Model) getSizeType(lx *lexer, tok xc.Token) Type {
+func (m *Model) getSizeType(lx *lexer) Type {
 	if t := m.sizeType; t != nil {
 		return t
 	}
@@ -985,7 +1006,7 @@ func (m *Model) getSizeType(lx *lexer, tok xc.Token) Type {
 	return m.sizeType
 }
 
-func (m *Model) getPtrDiffType(lx *lexer, tok xc.Token) Type {
+func (m *Model) getPtrDiffType(lx *lexer) Type {
 	if t := m.ptrDiffType; t != nil {
 		return t
 	}

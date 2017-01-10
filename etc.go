@@ -1225,10 +1225,12 @@ func (n *ctype) SizeOf() int {
 		return n.model.Items[Int].Size
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
-		case 1: // StructOrUnion IDENTIFIER
-			return -1 // Incomplete type
 		case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
 			return sus.sizeOf
+		case 1: // StructOrUnion IDENTIFIER
+			return -1 // Incomplete type
+		case 2: // StructOrUnion IdentifierOpt '{' '}'                        // Case 2
+			return 0;
 		default:
 			panic(sus.Case)
 		}
@@ -1365,10 +1367,12 @@ func (n *ctype) StructAlignOf() int {
 		return n.model.Items[Int].StructAlign
 	case Struct, Union:
 		switch sus := n.structOrUnionSpecifier(); sus.Case {
-		case 1: // StructOrUnion IDENTIFIER
-			return -1 // Incomplete type
 		case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
 			return sus.alignOf
+		case 1: // StructOrUnion IDENTIFIER
+			return -1 // Incomplete type
+		case 2: // StructOrUnion IdentifierOpt '{' '}'                        // Case 2
+			return 1;
 		default:
 			panic(sus.Case)
 		}
@@ -1816,4 +1820,20 @@ func isStrLitID(v interface{}) bool {
 	}
 
 	return false
+}
+
+func nElem(t Type) int {
+	p := -1
+	for {
+		n := t.Elements()
+		if n < 0 {
+			return p
+		}
+
+		if p < 0 {
+			p = 1
+		}
+		p *= n
+		t = t.Element()
+	}
 }

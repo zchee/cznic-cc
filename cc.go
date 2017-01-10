@@ -47,7 +47,10 @@ const (
 #define __builtin_alloca(x) __BUILTIN_ALLOCA()
 #define __builtin_constant_p(exp) __BUILTIN_CONSTANT_P()
 #define __builtin_isgreater(x, y) __ISGREATER()
+#define __builtin_isless(x, y) __ISLESS()
 #define __builtin_isunordered(x, y) __BUILTIN_ISUNORDERED()
+#define __builtin_malloc(x) __MALLOC()
+#define __builtin_memmove(x, y, z) __MEMMOVE()
 #define __builtin_mempcpy(x, y, z) __BUILTIN_MEMPCPY()
 #define __builtin_offsetof(type, member) ((size_t)(&((type *)0)->member))
 #define __builtin_va_arg(ap, type) ( *( type* )ap )
@@ -55,17 +58,19 @@ const (
 #define __builtin_va_list void*
 #define __builtin_va_start(x, y)
 #define __complex _Complex
+#define __complex__ _Complex
 #define __const
 #define __extension__
+#define __imag__
 #define __inline inline
 #define __real(x) __REAL();
 #define __real__
 #define __restrict
 #define __sync_fetch_and_add(x, y, ...) __SYNC_FETCH_AND_ADD()
 #define __sync_val_compare_and_swap(x, y, z, ...) __SYNC_VAL_COMPARE_AND_SWAP()
-#define __builtin_malloc(x) __MALLOC()
-#define __builtin_memmove(x, y, z) __MEMMOVE()
+#define __typeof typeof
 
+%[1]v __builtin_strlen(char *);
 char *__builtin_stpcpy(char *, char *);
 char *__builtin_strcpy(char*, char*);
 double __REAL();
@@ -74,6 +79,7 @@ double __builtin_nanf(char *);
 int __BUILTIN_CONSTANT_P();
 int __BUILTIN_ISUNORDERED();
 int __ISGREATER();
+int __ISLESS();
 int __builtin_constant_p (exp);
 int __builtin_ctz (unsigned int x);
 int __builtin_ctzl (unsigned long);
@@ -82,7 +88,6 @@ int __builtin_popcount (unsigned int x);
 int __builtin_popcountl (unsigned long);
 int __builtin_popcountll (unsigned long long);
 int __builtin_setjmp(void*);
-int __builtin_strlen(char *);
 long __builtin_expect(long, long);
 long long strlen (const char*);
 unsigned __builtin_bswap32 (unsigned x);
@@ -103,6 +108,7 @@ void *memcpy(void *restrict dest, const void *restrict src, long long count);
 void *memset(void*, int, long long);
 void __SYNC_FETCH_AND_ADD();
 void __SYNC_VAL_COMPARE_AND_SWAP();
+void __builtin_bcopy(const void*, void*, %[1]v);
 void __builtin_prefetch (const void *, ...);
 void __builtin_stack_restore(void*);
 void __builtin_trap (void);
@@ -538,7 +544,6 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 
 	if t := lx0.tweaks; t.gccEmu {
 		t.doGccEmu()
-		predefine += gccPredefine
 	}
 
 	m.initialize(lx0)
@@ -547,6 +552,9 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 		return nil, report.Errors(true)
 	}
 
+	if lx0.tweaks.gccEmu {
+		predefine += fmt.Sprintf(gccPredefine, m.getSizeType(lx0))
+	}
 	tweaks := lx0.tweaks
 	predefined, err := ppParseString("<predefine>", predefine, report, tweaks)
 	if err != nil {

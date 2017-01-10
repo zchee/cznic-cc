@@ -679,6 +679,10 @@ func pasteToks(toks []xc.Token) []xc.Token {
 				i--
 				t := toks[i]
 				r = t.Rune
+				if r == IDENTIFIER_NONREPL {
+					// testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/981001-3.c
+					r = IDENTIFIER
+				}
 				v = t.Val
 				b = append(b, xc.Dict.S(tokVal(t))...)
 				toks = append(toks[:i], toks[i+1:]...) // Remove left arg.

@@ -149,8 +149,12 @@ func newTestModel() *Model {
 func printError(w io.Writer, pref string, err error) {
 	switch x := err.(type) {
 	case scanner.ErrorList:
-		for _, v := range x {
+		for i, v := range x {
 			fmt.Fprintf(w, "%s%v\n", pref, v)
+			if i == 50 {
+				fmt.Fprintln(w, "too many errors")
+				break
+			}
 		}
 	default:
 		fmt.Fprintf(w, "%s%v\n", pref, err)
@@ -557,30 +561,22 @@ puts("The first, second, and third items.");
 	}
 }
 
-func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cppOpts []string, wd, src string, ppOpts, parseOpts []Opt) {
+func testDev1(ppPredefine, cppPredefine, parsePredefine string, cppOpts []string, wd, src string, ppOpts, parseOpts []Opt) error {
 	fp := filepath.Join(wd, src)
 	if re := *oRe; re != "" {
 		ok, err := regexp.MatchString(re, fp)
 		if err != nil {
-			t.Error(err)
-			return
+			return err
 		}
 
 		if !ok {
-			return
+			return nil
 		}
 	}
 
-	xc.Files = xc.NewFileCentral()
-
-	if *oTrace {
-		fmt.Println(fp)
-	}
-	t.Log(fp)
 	logf, err := os.Create("log-" + filepath.Base(src))
 	if err != nil {
-		t.Error(err)
-		return
+		return err
 	}
 
 	defer logf.Close()
@@ -588,6 +584,11 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 	logw := bufio.NewWriter(logf)
 
 	defer logw.Flush()
+
+	if *oTrace {
+		fmt.Println(fp)
+		fmt.Println(logf.Name())
+	}
 
 	var got, exp []xc.Token
 	var lpos token.Position
@@ -622,20 +623,17 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 		)...,
 	)
 	if err != nil {
-		t.Error(errString(err))
-		return
+		return err
 	}
 
 	out, err := exec.Command("cpp", append(cppOpts, src)...).CombinedOutput()
 	if err != nil {
-		t.Errorf("%v: %v", src, err)
-		return
+		return fmt.Errorf("%v: %v", src, err)
 	}
 
 	f, err := ioutil.TempFile("", "cc-test-")
 	if err != nil {
-		t.Error(err)
-		return
+		return err
 	}
 
 	if *oTrace {
@@ -649,8 +647,7 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 	}()
 
 	if _, err := f.Write(out); err != nil {
-		t.Error(err)
-		return
+		return err
 	}
 
 	if _, err := Parse(
@@ -667,18 +664,11 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 		}),
 		disableWarnings(),
 	); err != nil {
-		t.Error(err)
-		return
+		return err
 	}
 
 	if g, e := len(got), len(exp); g != e {
-		t.Errorf("%v: got %d tokens, expected %d tokens (∆ %d)", src, g, e, g-e)
-		switch {
-		case g < e:
-			exp = exp[:g]
-		default:
-			got = got[:e]
-		}
+		return fmt.Errorf("%v: got %d tokens, expected %d tokens (∆ %d)", src, g, e, g-e)
 	}
 
 	for i, g := range got {
@@ -693,8 +683,7 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 			if g.Rune == IDENTIFIER && e.Rune == INTCONST && g.Val == idLine {
 				n, err := strconv.ParseUint(string(e.S()), 10, mathutil.IntBits-1)
 				if err != nil {
-					t.Error(err)
-					return
+					return err
 				}
 
 				d := g.Position().Line - int(n)
@@ -706,15 +695,13 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 				}
 			}
 
-			t.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))
-			return
+			return fmt.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))
 		}
 	}
 
 	logf2, err := os.Create("log2-" + filepath.Base(src))
 	if err != nil {
-		t.Error(err)
-		return
+		return err
 	}
 
 	defer logf2.Close()
@@ -722,6 +709,10 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 	logw2 := bufio.NewWriter(logf2)
 
 	defer logw2.Flush()
+
+	if *oTrace {
+		fmt.Println(logf2.Name())
+	}
 
 	_, err = Parse(
 		parsePredefine,
@@ -745,10 +736,7 @@ func testDev1(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cp
 			}),
 		)...,
 	)
-	if err != nil {
-		t.Error(errString(err))
-		return
-	}
+	return err
 }
 
 func testDev(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cppOpts, src []string, wd string, ppOpts, parseOpts []Opt) {
@@ -780,7 +768,9 @@ func testDev(t *testing.T, ppPredefine, cppPredefine, parsePredefine string, cpp
 			continue
 		}
 
-		testDev1(t, ppPredefine, cppPredefine, parsePredefine, cppOpts, wd, src, ppOpts, parseOpts)
+		if err := testDev1(ppPredefine, cppPredefine, parsePredefine, cppOpts, wd, src, ppOpts, parseOpts); err != nil {
+			t.Error(errString(err))
+		}
 	}
 }
 
@@ -803,7 +793,9 @@ func dirExists(t *testing.T, dir string) bool {
 }
 
 func TestPreprocessor(t *testing.T) {
-	testDev1(t, "", "", "", nil, "", "testdata/arith-1.h", nil, nil)
+	if err := testDev1("", "", "", nil, "", "testdata/arith-1.h", nil, nil); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestDevSDL(t *testing.T) {
@@ -2931,8 +2923,10 @@ func testDir(t *testing.T, dir string) {
 	}
 
 	blacklist := []string{
+		"/gcc.c-torture/compile/20011217-2.c", // (type){field: expr}, see https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
 		"/gcc.c-torture/compile/20040726-2.c",
 		"/gcc.c-torture/compile/20050113-1.c",
+		"/gcc.c-torture/compile/icfmatch.c", // typedef char __attribute__ ((vector_size (4))) v4qi;
 	}
 
 	var ok int
@@ -2956,30 +2950,33 @@ outer:
 				}
 			}()
 
-			_, err = Parse(
+			err = testDev1(
 				predefined,
-				[]string{v},
-				newTestModel(),
-				ErrLimit(-1),
-				SysIncludePaths(sysIncludePaths),
-				gccEmu(),
+				predefined,
+				predefined,
+				[]string{},
+				"",
+				v,
+				[]Opt{
+					ErrLimit(-1),
+					SysIncludePaths(sysIncludePaths),
+				},
+				[]Opt{
+					ErrLimit(-1),
+					SysIncludePaths(sysIncludePaths),
+					gccEmu(),
+				},
 			)
 		}()
 
 		if err != nil {
-			sv := filepath.ToSlash(v)
-			for _, v := range []string{
-				"gcc.c-torture/compile/20011217-2.c", // (type){field: expr}, see https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
-			} {
-				if strings.HasSuffix(sv, v) {
-					continue outer
-				}
-			}
-
 			s := errString(err)
 			if !strings.Contains(s, "PANIC") && !strings.Contains(s, "TODO") {
-				if out, err := exec.Command("gcc", "-o", os.DevNull, "-c", "-std=c99", "--pedantic", v).CombinedOutput(); len(out) != 0 || err != nil {
+				if out, err := exec.Command("gcc", "-o", os.DevNull, "-c", "-std=c99", "--pedantic", "-fmax-errors=10", v).CombinedOutput(); len(out) != 0 || err != nil {
 					// Auto blacklist if gcc fails to compile as well.
+					if n := 4000; len(out) > n {
+						out = out[:n]
+					}
 					t.Logf("%s\n==== gcc fails too\n%s\n%v", s, out, err)
 					continue
 				}
@@ -2988,6 +2985,7 @@ outer:
 			t.Errorf("%v\n%v/%v, %v ok\nFAIL\n%s", v, i+1, len(m), ok, errString(err))
 			return
 		}
+
 		ok++
 		if re != nil {
 			t.Logf("%v: %v ok", v, ok)
