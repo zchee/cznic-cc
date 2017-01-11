@@ -42,6 +42,8 @@ const (
 	gccPredefine = `
 
 #define __PRETTY_FUNCTION__ __func__
+#define __asm asm
+#define __attribute(x)
 #define __attribute__(x)
 #define __builtin___memset_chk(x, y, z, ...) __BUILTIN___MEMSET_CHK()
 #define __builtin_alloca(x) __BUILTIN_ALLOCA()
@@ -70,9 +72,13 @@ const (
 #define __sync_val_compare_and_swap(x, y, z, ...) __SYNC_VAL_COMPARE_AND_SWAP()
 #define __typeof typeof
 
-%[1]v __builtin_strlen(char *);
-char *__builtin_stpcpy(char *, char *);
+%[1]v __builtin_object_size (void*, int);
+%[1]v __builtin_strlen(char*);
+%[1]v __builtin_strspn(char*, char*);
+char *__builtin_stpcpy(char*, char*);
+char *__builtin_strchr(char*, int);
 char *__builtin_strcpy(char*, char*);
+char *__builtin_strdup(char*);
 double __REAL();
 double __builtin_inff();
 double __builtin_nanf(char *);
@@ -80,14 +86,22 @@ int __BUILTIN_CONSTANT_P();
 int __BUILTIN_ISUNORDERED();
 int __ISGREATER();
 int __ISLESS();
+int __builtin___snprintf_chk (char*, %[1]v, int, %[1]v, char*, ...);
+int __builtin___sprintf_chk (char*, int, %[1]v, char*, ...);
+int __builtin___vsnprintf_chk (char*, %[1]v, int, %[1]v, char*, void*);
+int __builtin___vsprintf_chk (char*, int, %[1]v, char*, void*);
+int __builtin_abs(int);
 int __builtin_constant_p (exp);
 int __builtin_ctz (unsigned int x);
 int __builtin_ctzl (unsigned long);
 int __builtin_ctzll (unsigned long long);
+int __builtin_ffs(int);
 int __builtin_popcount (unsigned int x);
 int __builtin_popcountl (unsigned long);
 int __builtin_popcountll (unsigned long long);
 int __builtin_setjmp(void*);
+int __builtin_strcmp(char*, char*);
+int __builtin_strncmp(char*, char*, %[1]v);
 long __builtin_expect(long, long);
 long long strlen (const char*);
 unsigned __builtin_bswap32 (unsigned x);
@@ -99,6 +113,7 @@ void *__BUILTIN___MEMSET_CHK();
 void *__MALLOC();
 void *__MEMMOVE();
 void *__builtin_alloca(int);
+void *__builtin_apply (void (*)(), void*, %[1]v);
 void *__builtin_extract_return_addr(void *);
 void *__builtin_memcpy(void *restrict dest, const void *restrict src, long long count);
 void *__builtin_memset(void*, int, long long);
@@ -114,6 +129,7 @@ void __builtin_stack_restore(void*);
 void __builtin_trap (void);
 void __builtin_unreachable (void);
 void __builtin_unwind_init();
+void __builtin_va_arg_pack ();
 void __builtin_va_copy(void* dest, void* src);
 `
 )

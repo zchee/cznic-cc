@@ -1057,14 +1057,12 @@ func (n *ctype) Pointer() Type {
 		return &m
 	}
 
-	if n.Kind() == Array {
-		m := *n
-		m.stars++
-		return &m
-	}
-
 	switch dd := n.dds[1]; dd.Case {
 	case
+		2, // DirectDeclarator '[' TypeQualifierListOpt ExpressionOpt ']'        // Case 2
+		3, // DirectDeclarator '[' "static" TypeQualifierListOpt Expression ']'  // Case 3
+		4, // DirectDeclarator '[' TypeQualifierList "static" Expression ']'     // Case 4
+		5, // DirectDeclarator '[' TypeQualifierListOpt '*' ']'                  // Case 5
 		6, // DirectDeclarator '(' ParameterTypeList ')'
 		7: // DirectDeclarator '(' IdentifierListOpt ')'
 		dd := &DirectDeclarator{
@@ -1514,6 +1512,12 @@ func specifierString(sp Specifier) string {
 			case 1: // StructOrUnion IDENTIFIER
 				buf.WriteString(" ")
 				buf.Write(sus.Token.S())
+			case 2: // StructOrUnion IdentifierOpt '{' '}'                        // Case 2
+				if o := sus.IdentifierOpt; o != nil {
+					buf.WriteString(" ")
+					buf.Write(o.Token.S())
+				}
+				buf.WriteString("{}")
 			default:
 				panic(sus.Case)
 			}

@@ -561,6 +561,10 @@ puts("The first, second, and third items.");
 	}
 }
 
+type cppCmpError struct {
+	error
+}
+
 func testDev1(ppPredefine, cppPredefine, parsePredefine string, cppOpts []string, wd, src string, ppOpts, parseOpts []Opt) error {
 	fp := filepath.Join(wd, src)
 	if re := *oRe; re != "" {
@@ -668,7 +672,7 @@ func testDev1(ppPredefine, cppPredefine, parsePredefine string, cppOpts []string
 	}
 
 	if g, e := len(got), len(exp); g != e {
-		return fmt.Errorf("%v: got %d tokens, expected %d tokens (∆ %d)", src, g, e, g-e)
+		return cppCmpError{fmt.Errorf("%v: got %d tokens, expected %d tokens (∆ %d)", src, g, e, g-e)}
 	}
 
 	for i, g := range got {
@@ -695,7 +699,7 @@ func testDev1(ppPredefine, cppPredefine, parsePredefine string, cppOpts []string
 				}
 			}
 
-			return fmt.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))
+			return cppCmpError{fmt.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))}
 		}
 	}
 
@@ -2904,6 +2908,7 @@ func TestIssue81(t *testing.T) {
 }
 
 func testDir(t *testing.T, dir string) {
+
 	var re *regexp.Regexp
 	if s := *oRe; s != "" {
 		re = regexp.MustCompile(s)
@@ -2926,11 +2931,21 @@ func testDir(t *testing.T, dir string) {
 		"/gcc.c-torture/compile/20011217-2.c", // (type){field: expr}, see https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
 		"/gcc.c-torture/compile/20040726-2.c",
 		"/gcc.c-torture/compile/20050113-1.c",
-		"/gcc.c-torture/compile/icfmatch.c", // typedef char __attribute__ ((vector_size (4))) v4qi;
-		"/gcc.c-torture/compile/pr17529.c",  // non std assembler statment
+		"/gcc.c-torture/compile/icfmatch.c",              // typedef char __attribute__ ((vector_size (4))) v4qi;
+		"/gcc.c-torture/compile/pr17529.c",               // non std assembler statment
+		"/gcc/testsuite/gcc.c-torture/compile/pr33614.c", // typedef float V2SF __attribute__ ((vector_size (8)));
+		"/gcc/testsuite/gcc.c-torture/compile/pr37056.c", // ? ({void *__s = (u.buf + off); __s;})
 	}
 
-	var ok int
+	const attempt2prototypes = `
+void exit();
+void abort();
+`
+
+	var pass, gccFail int
+	defer func() {
+		t.Logf("pass %v, gccFail %v, total test cases %v", pass, gccFail, len(m))
+	}()
 outer:
 	for i, v := range m {
 		if re != nil && !re.MatchString(v) {
@@ -2944,6 +2959,8 @@ outer:
 		}
 
 		var err error
+		attempt := 1
+	retry:
 		func() {
 			defer func() {
 				if e := recover(); e != nil {
@@ -2951,10 +2968,14 @@ outer:
 				}
 			}()
 
+			s := predefined
+			if attempt == 2 {
+				s += attempt2prototypes
+			}
 			err = testDev1(
-				predefined,
-				predefined,
-				predefined,
+				s,
+				s,
+				s,
 				[]string{},
 				"",
 				v,
@@ -2971,25 +2992,37 @@ outer:
 		}()
 
 		if err != nil {
-			s := errString(err)
-			if !strings.Contains(s, "PANIC") && !strings.Contains(s, "TODO") {
-				if out, err := exec.Command("gcc", "-o", os.DevNull, "-c", "-std=c99", "--pedantic", "-fmax-errors=10", v).CombinedOutput(); len(out) != 0 || err != nil {
-					// Auto blacklist if gcc fails to compile as well.
-					if n := 4000; len(out) > n {
-						out = out[:n]
-					}
-					t.Logf("%s\n==== gcc fails too\n%s\n%v", s, out, err)
-					continue
+			switch err.(type) {
+			case cppCmpError:
+				// fail w/o retry.
+			default:
+				if attempt == 1 { // retry with {abort,exit} prototype.
+					attempt++
+					goto retry
 				}
 
+				s := errString(err)
+				if !strings.Contains(s, "PANIC") && !strings.Contains(s, "TODO") && !strings.Contains(s, "undefined: __builtin_") {
+					if out, err := exec.Command("gcc", "-o", os.DevNull, "-c", "-std=c99", "--pedantic", "-fmax-errors=10", v).CombinedOutput(); len(out) != 0 || err != nil {
+						// Auto blacklist if gcc fails to compile as well.
+						if n := 4000; len(out) > n {
+							out = out[:n]
+						}
+						t.Logf("%s\n==== gcc reports\n%s\n%v", s, out, err)
+						gccFail++
+						continue
+					}
+
+				}
 			}
-			t.Errorf("%v\n%v/%v, %v ok\nFAIL\n%s", v, i+1, len(m), ok, errString(err))
+
+			t.Errorf("%v\n%v/%v, %v ok\nFAIL\n%s", v, i+1, len(m), pass, errString(err))
 			return
 		}
 
-		ok++
+		pass++
 		if re != nil {
-			t.Logf("%v: %v ok", v, ok)
+			t.Logf("%v: %v ok", v, pass)
 		}
 	}
 }

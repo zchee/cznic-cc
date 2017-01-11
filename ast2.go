@@ -961,7 +961,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
 		n.BinOpType = n.Type
-		if b != nil && isZero(b) {
+		if b != nil && isZero(b) && IsIntType(n.Type) {
 			lx.report.Err(n.Expression2.Pos(), "division by zero")
 			break
 		}
@@ -988,7 +988,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		var a, b interface{}
 		a, b, n.Type = m.binOp(lx, n.Expression, n.Expression2)
 		n.BinOpType = n.Type
-		if b != nil && isZero(b) {
+		if b != nil && isZero(b) && IsIntType(n.Type) {
 			lx.report.Err(n.Expression2.Pos(), "division by zero")
 			break
 		}
@@ -2037,7 +2037,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		48: // Expression "%=" Expression
 		m.checkArithmeticType(lx, n.Expression, n.Expression2)
 		n.Type = n.Expression.Type
-		if v := n.Expression2.Value; v != nil && isZero(v) {
+		if v := n.Expression2.Value; v != nil && isZero(v)  && IsIntType(n.Type) {
 			lx.report.Err(n.Expression2.Pos(), "division by zero")
 			break
 		}
@@ -2287,7 +2287,23 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 				l.Initializer.typeCheck(nil, mb, i, lim, lx)
 				i++
 			}
+		case Ptr:
+			i := 0
+			for l := n.InitializerList; l != nil; l = l.InitializerList {
+				if i > 0 {
+					lx.report.Err(n.Pos(), "excess elements in initializer")
+					break
+				}
+
+				if l.DesignationOpt != nil {
+					panic("TODO")
+				}
+
+				l.Initializer.typeCheck(dt, nil, 0, 1, lx)
+				i++
+			}
 		default:
+			//dbg("%s: %s:%s", position(n.Pos()), dt, dk)
 			panic(dk.String())
 		}
 	default:
