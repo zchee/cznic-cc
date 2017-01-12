@@ -2931,10 +2931,18 @@ func testDir(t *testing.T, dir string) {
 		"/gcc.c-torture/compile/20011217-2.c", // (type){field: expr}, see https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
 		"/gcc.c-torture/compile/20040726-2.c",
 		"/gcc.c-torture/compile/20050113-1.c",
-		"/gcc.c-torture/compile/icfmatch.c",              // typedef char __attribute__ ((vector_size (4))) v4qi;
-		"/gcc.c-torture/compile/pr17529.c",               // non std assembler statment
-		"/gcc/testsuite/gcc.c-torture/compile/pr33614.c", // typedef float V2SF __attribute__ ((vector_size (8)));
-		"/gcc/testsuite/gcc.c-torture/compile/pr37056.c", // ? ({void *__s = (u.buf + off); __s;})
+		"/gcc.c-torture/compile/icfmatch.c",                // typedef char __attribute__ ((vector_size (4))) v4qi;
+		"/gcc.c-torture/compile/pr17529.c",                 // non std assembler statment
+		"/gcc/testsuite/gcc.c-torture/compile/pr33614.c",   // typedef float V2SF __attribute__ ((vector_size (8)));
+		"/gcc/testsuite/gcc.c-torture/compile/pr37056.c",   // ? ({void *__s = (u.buf + off); __s;})
+		"/gcc/testsuite/gcc.c-torture/compile/pr42196-1.c", // __complex__ int c;
+		"/gcc/testsuite/gcc.c-torture/compile/pr42196-2.c", // __complex__ int ci;
+		"/gcc/testsuite/gcc.c-torture/compile/pr42196-3.c", // __complex__ int ci;
+		"/gcc/testsuite/gcc.c-torture/compile/pr44707.c",   // non std assembler statment
+		"/gcc/testsuite/gcc.c-torture/compile/pr52750.c",   // typedef signed char V __attribute__((vector_size (32)));
+		"/gcc/testsuite/gcc.c-torture/compile/pr53410-2.c", // typedef int V __attribute__((vector_size (4 * sizeof (int))));
+		"/gcc/testsuite/gcc.c-torture/compile/pr53748.c",   // typedef unsigned int V __attribute__ ((__vector_size__ (sizeof (int) * 4)));
+
 	}
 
 	const attempt2prototypes = `

@@ -848,6 +848,9 @@ func (n *ctype) Element() Type {
 		default:
 			if dd := m.dds[1]; dd.Case == 1 { // '(' Declarator ')'
 				m.stars = dd.Declarator.stars()
+				if dd.Declarator.stars() == 0 {
+					m.dds = append([]*DirectDeclarator{m.dds[0]}, m.dds[2:]...)
+				}
 			}
 		}
 		return &m
@@ -1595,7 +1598,8 @@ func finishBitField(lx *lexer) {
 
 // IsArithmeticType reports wheter t.Kind() is one of UintPtr, Char, SChar,
 // UChar, Short, UShort, Int, UInt, Long, ULong, LongLong, ULongLong, Float,
-// Double, LongDouble, FloatComplex, DoubleComplex or LongDoubleComplex.
+// Double, LongDouble, FloatComplex, DoubleComplex, LongDoubleComplex, Bool or
+// Enum.
 func IsArithmeticType(t Type) bool {
 	switch t.Kind() {
 	case
@@ -1616,7 +1620,9 @@ func IsArithmeticType(t Type) bool {
 		LongDouble,
 		FloatComplex,
 		DoubleComplex,
-		LongDoubleComplex:
+		LongDoubleComplex,
+		Bool,
+		Enum:
 		return true
 	default:
 		return false
@@ -1624,7 +1630,7 @@ func IsArithmeticType(t Type) bool {
 }
 
 // IsIntType reports t.Kind() is one of Char, SChar, UChar, Short, UShort, Int,
-// UInt, Long, ULong, LongLong, ULongLong or Enum.
+// UInt, Long, ULong, LongLong, ULongLong, Bool or Enum.
 func IsIntType(t Type) bool {
 	switch t.Kind() {
 	case
@@ -1639,6 +1645,10 @@ func IsIntType(t Type) bool {
 		ULong,
 		LongLong,
 		ULongLong,
+		// [0], 6.2.5/6: The type _Bool and the unsigned integer types
+		// that correspond to the standard signed integer types are the
+		// standard unsigned integer types.
+		Bool,
 		Enum:
 		return true
 	default:

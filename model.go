@@ -8,8 +8,10 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"math/big"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/cznic/mathutil"
 	"github.com/cznic/xc"
@@ -72,29 +74,29 @@ type ModelItem struct {
 type Model struct {
 	Items map[Kind]ModelItem
 
-	//TODO {double,longDouble}ComplexType
-	BoolType          Type
-	CharType          Type
-	DoubleComplexType Type
-	DoubleType        Type
-	FloatComplexType  Type
-	FloatType         Type
-	IntType           Type
-	LongDoubleType    Type
-	LongLongType      Type
-	LongType          Type
-	ShortType         Type
-	UCharType         Type
-	UIntType          Type
-	ULongLongType     Type
-	ULongType         Type
-	UShortType        Type
-	UintPtrType       Type
-	VoidType          Type
-	longStrType       Type
-	ptrDiffType       Type
-	sizeType          Type
-	strType           Type
+	BoolType              Type
+	CharType              Type
+	DoubleComplexType     Type
+	DoubleType            Type
+	FloatComplexType      Type
+	FloatType             Type
+	IntType               Type
+	LongDoubleComplexType Type
+	LongDoubleType        Type
+	LongLongType          Type
+	LongType              Type
+	ShortType             Type
+	UCharType             Type
+	UIntType              Type
+	ULongLongType         Type
+	ULongType             Type
+	UShortType            Type
+	UintPtrType           Type
+	VoidType              Type
+	longStrType           Type
+	ptrDiffType           Type
+	sizeType              Type
+	strType               Type
 
 	initialized bool
 	tweaks      *tweaks
@@ -111,6 +113,7 @@ func (m *Model) initialize(lx *lexer) {
 	m.FloatComplexType = m.makeType(lx, 0, tsComplex, tsFloat)
 	m.FloatType = m.makeType(lx, 0, tsFloat)
 	m.IntType = m.makeType(lx, 0, tsInt)
+	m.LongDoubleComplexType = m.makeType(lx, 0, tsComplex, tsDouble, tsLong)
 	m.LongDoubleType = m.makeType(lx, 0, tsLong, tsDouble)
 	m.LongLongType = m.makeType(lx, 0, tsLong, tsLong)
 	m.LongType = m.makeType(lx, 0, tsLong)
@@ -245,6 +248,8 @@ func (m *Model) typ(k Kind) Type {
 		return m.FloatComplexType
 	case DoubleComplex:
 		return m.DoubleComplexType
+	case LongDoubleComplex:
+		return m.LongDoubleComplexType
 	default:
 		panic(k)
 	}
@@ -629,6 +634,15 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case uintptr:
+			switch w {
+			case 4:
+				return int32(x)
+			case 8:
+				return int64(x)
+			default:
+				panic(w)
+			}
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
@@ -775,6 +789,15 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case int64:
+			switch w {
+			case 4:
+				return float32(x)
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
 		case float32:
 			switch w {
 			case 4:
@@ -820,6 +843,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 				panic(w)
 			}
 		case uint64:
+			switch w {
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
+		case float32:
 			switch w {
 			case 8:
 				return float64(x)
@@ -914,6 +944,27 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case LongDouble:
 		switch x := v.(type) {
+		case int32:
+			switch w {
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
+		case int64:
+			switch w {
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
+		case float32:
+			switch w {
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
 		case float64:
 			switch w {
 			case 8:
@@ -1128,9 +1179,21 @@ func (m *Model) floatConst(lx *lexer, t xc.Token) (interface{}, Type) {
 	case 'l', 'L', 'f', 'F':
 		s = s[:len(s)-1]
 	}
-	f, err := strconv.ParseFloat(string(s), 64)
+	ss := string(s)
+	var f float64
+	var err error
+	switch {
+	case strings.Contains(ss, "p"):
+		var bf *big.Float
+		bf, _, err = big.ParseFloat(ss, 0, 53, big.ToNearestEven)
+		if err != nil {
+			f, _ = bf.Float64()
+		}
+	default:
+		f, err = strconv.ParseFloat(ss, 64)
+	}
 	if err != nil {
-		lx.report.Err(t.Pos(), "invalid floating point constant")
+		lx.report.Err(t.Pos(), "invalid floating point constant %s", ss)
 		f = 0
 	}
 	switch s0[len(s0)-1] {
