@@ -1137,18 +1137,31 @@ func (n *ctype) Result() Type {
 
 // Elements implements Type.
 func (n *ctype) Elements() int {
+	done := false
+loop:
 	for _, dd := range n.dds {
+	more:
 		switch dd.Case {
 		case 0: // IDENTIFIER
+		case 1: // '(' Declarator ')'
+			dd = dd.Declarator.DirectDeclarator
+			done = true
+			goto more
 		case
 			2, // DirectDeclarator '[' TypeQualifierListOpt ExpressionOpt ']'
 			3, // DirectDeclarator '[' "static" TypeQualifierListOpt Expression ']'
 			4, // DirectDeclarator '[' TypeQualifierList "static" Expression ']'
 			5: // DirectDeclarator '[' TypeQualifierListOpt '*' ']'
 			return dd.elements
+		case 6: // DirectDeclarator '(' ParameterTypeList ')'                         // Case 6
+			break loop
 		default:
-			//dbg("", position(n.dds[0].Pos()))
+			//dbg("", position(n.dds[0].Pos()), n)
+			//dbg("", n.str())
 			panic(dd.Case)
+		}
+		if done {
+			break
 		}
 	}
 	return -1

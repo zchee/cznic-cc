@@ -137,7 +137,7 @@ func newTestModel() *Model {
 			ULongLong:         {8, 8, 8, nil},
 			Float:             {4, 4, 4, nil},
 			Double:            {8, 8, 8, nil},
-			LongDouble:        {8, 8, 8, nil},
+			LongDouble:        {16, 16, 16, nil},
 			Bool:              {1, 1, 1, nil},
 			FloatComplex:      {8, 8, 8, nil},
 			DoubleComplex:     {16, 16, 16, nil},
@@ -2942,7 +2942,21 @@ func testDir(t *testing.T, dir string) {
 		"/gcc/testsuite/gcc.c-torture/compile/pr52750.c",   // typedef signed char V __attribute__((vector_size (32)));
 		"/gcc/testsuite/gcc.c-torture/compile/pr53410-2.c", // typedef int V __attribute__((vector_size (4 * sizeof (int))));
 		"/gcc/testsuite/gcc.c-torture/compile/pr53748.c",   // typedef unsigned int V __attribute__ ((__vector_size__ (sizeof (int) * 4)));
-
+		"/gcc/testsuite/gcc.c-torture/compile/pr54559.c",   // return x + y * (T) (__extension__ 1.0iF);
+		"/gcc/testsuite/gcc.c-torture/compile/pr54713-1.c", // typedef int V __attribute__((vector_size (N * sizeof (int))));
+		"/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c", // #include "pr54713-1.c"
+		"/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c", // #include "pr54713-1.c"
+		"/gcc/testsuite/gcc.c-torture/compile/pr60502.c",   // typedef signed char v16i8 __attribute__ ((vector_size (16)));
+		"/gcc/testsuite/gcc.c-torture/compile/pr67143.c",   // __sync_add_and_fetch(&a, 536870912);
+		"/gcc/testsuite/gcc.c-torture/compile/simd-1.c",    // typedef int v2si __attribute__ ((vector_size (8)));
+		"/gcc/testsuite/gcc.c-torture/compile/simd-2.c",    // typedef float floatvect2 __attribute__((vector_size (8)));
+		"/gcc/testsuite/gcc.c-torture/compile/simd-3.c",    // typedef double floatvect2 __attribute__((vector_size (16)));
+		"/gcc/testsuite/gcc.c-torture/compile/simd-4.c",    // typedef float floatvect2 __attribute__((vector_size (16)));
+		"/gcc/testsuite/gcc.c-torture/compile/simd-5.c",    // #define vector64 __attribute__((vector_size(8)))
+		"/gcc/testsuite/gcc.c-torture/compile/simd-6.c",    // typedef int __attribute__((vector_size (8))) vec;
+		"/gcc/testsuite/gcc.c-torture/compile/vector-3.c",  // #define vector __attribute__((vector_size(16) ))
+		"/gcc/testsuite/gcc.c-torture/compile/vector-5.c",  // typedef int v2si __attribute__((__vector_size__(8)));
+		"/gcc/testsuite/gcc.c-torture/compile/vector-6.c",  // typedef int v2si __attribute__((__vector_size__(8)));
 	}
 
 	const attempt2prototypes = `

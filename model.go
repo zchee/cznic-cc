@@ -321,7 +321,7 @@ func (m *Model) sanityCheck() error {
 		ULongLong:         {8, 8, 8, 8},
 		Float:             {4, 4, 4, 4},
 		Double:            {8, 8, 8, 8},
-		LongDouble:        {8, 8, 8, 8},
+		LongDouble:        {8, 16, 8, 16},
 		Bool:              {1, 1, 1, 1},
 		FloatComplex:      {8, 8, 8, 8},
 		DoubleComplex:     {16, 16, 16, 16},
@@ -469,6 +469,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case Int:
 		switch x := v.(type) {
+		case int8:
+			switch w {
+			case 4:
+				return int32(x)
+			default:
+				panic(w)
+			}
 		case byte:
 			switch w {
 			case 4:
@@ -598,6 +605,15 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case Long:
 		switch x := v.(type) {
+		case int16:
+			switch w {
+			case 4:
+				return int32(x)
+			case 8:
+				return int64(x)
+			default:
+				panic(w)
+			}
 		case int32:
 			switch w {
 			case 4:
@@ -894,6 +910,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case uint32:
+			switch w {
+			case 1:
+				return int8(x)
+			default:
+				panic(w)
+			}
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
@@ -907,6 +930,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 				panic(w)
 			}
 		case int32:
+			switch w {
+			case 1:
+				return byte(x)
+			default:
+				panic(w)
+			}
+		case uint32:
 			switch w {
 			case 1:
 				return byte(x)
@@ -946,28 +976,28 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		switch x := v.(type) {
 		case int32:
 			switch w {
-			case 8:
+			case 8, 16:
 				return float64(x)
 			default:
 				panic(w)
 			}
 		case int64:
 			switch w {
-			case 8:
+			case 8, 16:
 				return float64(x)
 			default:
 				panic(w)
 			}
 		case float32:
 			switch w {
-			case 8:
+			case 8, 16:
 				return float64(x)
 			default:
 				panic(w)
 			}
 		case float64:
 			switch w {
-			case 8:
+			case 8, 16:
 				return x
 			default:
 				panic(w)
@@ -1114,8 +1144,7 @@ func (m *Model) getLongStrType(lx *lexer, tok xc.Token) Type {
 
 	b := lx.scope.Lookup(NSIdentifiers, xc.Dict.SID("wchar_t"))
 	if b.Node == nil {
-		lx.report.ErrTok(tok, "undefined: wchar_t")
-		m.longStrType = undefined
+		m.longStrType = m.IntType.Pointer()
 		return m.longStrType
 	}
 

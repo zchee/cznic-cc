@@ -625,13 +625,13 @@ InitDeclarator:
 	}
 	'=' Initializer
 	{
+	outer2:
 		switch i := lhs.Initializer; i.Case {
 		case 0: // Expression
 			e := i.Expression
 			et := e.Type
 			d := lhs.Declarator
 			dt := d.Type
-			var done bool
 			switch x := e.Value.(type) {
 			case StringLitID:
 				if dt.Kind() != Ptr && dt.Kind() != Array {
@@ -643,7 +643,7 @@ InitDeclarator:
 					if dt.Kind() != Array {
 						d.Type = d.Type.(*ctype).setElements(len(xc.Dict.S(int(x)))+1)
 					}
-					done = true
+					break outer2
 				}
 			case LongStringLitID:
 				if dt.Kind() != Ptr && dt.Kind() != Array {
@@ -654,11 +654,11 @@ InitDeclarator:
 					if dt.Kind() != Array {
 						d.Type = d.Type.(*ctype).setElements(len(xc.Dict.S(int(x)))+1)
 					}
-					done = true
+					break outer2
 				}
 			}
 
-			if !done && !et.CanAssignTo(dt) {
+			if !et.CanAssignTo(dt) {
 				lx.report.Err(i.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, et)
 			}
 		case 1: // '{' InitializerList CommaOpt '}'

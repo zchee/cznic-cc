@@ -706,7 +706,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 					panic("TODO")
 				}
 				n.Value = pv
-			case StringLitID:
+			case StringLitID, LongStringLitID:
 				// ok, but not a constant expression.
 			default:
 				panic("internal error")
@@ -814,7 +814,9 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			limit = t.Elements()
 		case Ptr:
 			checkType = t.Element()
-			n.Type = t.(*ctype).setElements(n.InitializerList.Len())
+			if checkType.Kind() != Array {
+				n.Type = t.(*ctype).setElements(n.InitializerList.Len())
+			}
 		case Struct, Union:
 			mb, incomplete = t.Members()
 			if mb == nil {
@@ -1161,6 +1163,29 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 
 		switch x := av.(type) {
+		case int8:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				case y < 0:
+					n.Value = x >> uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
 		case uint8:
 			switch y := bv.(type) {
 			case int32:
@@ -1568,9 +1593,87 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 
 		switch x := av.(type) {
+		case int8:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
 		case uint8:
 			switch y := bv.(type) {
 			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
+		case int16:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			default:
+				panic(fmt.Errorf("internal error: %T", y))
+			}
+		case uint16:
+			switch y := bv.(type) {
+			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
@@ -1593,12 +1696,30 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case int64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
 			default:
 				panic(fmt.Errorf("internal error: %T", y))
 			}
 		case uint32:
 			switch y := bv.(type) {
 			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
@@ -1621,12 +1742,30 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case int64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
 			default:
 				panic(fmt.Errorf("internal error: %T", y))
 			}
 		case uint64:
 			switch y := bv.(type) {
 			case int32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				case y < 0:
+					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
@@ -2298,7 +2437,18 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 					}
 				}
 			default:
-				lx.report.Err(n.Expression.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, st)
+				switch dt.Kind() {
+				case Struct, Union:
+					if ms, incomplete := dt.Members(); !incomplete && len(ms) == 1 {
+						if st.CanAssignTo(ms[0].Type) {
+							break
+						}
+					}
+
+					fallthrough
+				default:
+					lx.report.Err(n.Expression.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, st)
+				}
 			}
 		}
 	case 1: // '{' InitializerList CommaOpt '}'
