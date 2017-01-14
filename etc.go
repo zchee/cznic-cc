@@ -981,6 +981,13 @@ func (n *ctype) Members() (r []Member, isIncomplete bool) {
 					switch x := sd.ConstantExpression.Value.(type) {
 					case int32:
 						bits = int(x)
+					case int64:
+						if x <= int64(n.model.Items[Int].Size*8) {
+							bits = int(x)
+							break
+						}
+
+						panic("internal error")
 					case uint64:
 						if x <= uint64(n.model.Items[Int].Size*8) {
 							bits = int(x)
@@ -989,6 +996,7 @@ func (n *ctype) Members() (r []Member, isIncomplete bool) {
 
 						panic("internal error")
 					default:
+						dbg("%T", x)
 						panic("internal error")
 					}
 				default:

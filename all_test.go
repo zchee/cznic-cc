@@ -671,11 +671,11 @@ func testDev1(ppPredefine, cppPredefine, parsePredefine string, cppOpts []string
 		return err
 	}
 
-	if g, e := len(got), len(exp); g != e {
-		return cppCmpError{fmt.Errorf("%v: got %d tokens, expected %d tokens (∆ %d)", src, g, e, g-e)}
-	}
-
 	for i, g := range got {
+		if i >= len(exp) {
+			break
+		}
+
 		g = toC(g, &tw)
 		e := toC(exp[i], &tw)
 		if g.Rune != e.Rune || g.Val != e.Val {
@@ -701,6 +701,10 @@ func testDev1(ppPredefine, cppPredefine, parsePredefine string, cppOpts []string
 
 			return cppCmpError{fmt.Errorf("%d\ngot %s\nexp %s", i, PrettyString(g), PrettyString(e))}
 		}
+	}
+
+	if g, e := len(got), len(exp); g != e {
+		return cppCmpError{fmt.Errorf("%v: got %d tokens, expected %d tokens (∆ %d)", src, g, e, g-e)}
 	}
 
 	logf2, err := os.Create("log2-" + filepath.Base(src))
@@ -2907,6 +2911,8 @@ func TestIssue81(t *testing.T) {
 	}
 }
 
+var vectorAttr = regexp.MustCompile(`__attribute__ *\(\((__)?vector_size(__)? *\(`)
+
 func testDir(t *testing.T, dir string) {
 
 	var re *regexp.Regexp
@@ -2931,32 +2937,30 @@ func testDir(t *testing.T, dir string) {
 		"/gcc.c-torture/compile/20011217-2.c", // (type){field: expr}, see https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
 		"/gcc.c-torture/compile/20040726-2.c",
 		"/gcc.c-torture/compile/20050113-1.c",
-		"/gcc.c-torture/compile/icfmatch.c",                // typedef char __attribute__ ((vector_size (4))) v4qi;
 		"/gcc.c-torture/compile/pr17529.c",                 // non std assembler statment
-		"/gcc/testsuite/gcc.c-torture/compile/pr33614.c",   // typedef float V2SF __attribute__ ((vector_size (8)));
 		"/gcc/testsuite/gcc.c-torture/compile/pr37056.c",   // ? ({void *__s = (u.buf + off); __s;})
 		"/gcc/testsuite/gcc.c-torture/compile/pr42196-1.c", // __complex__ int c;
 		"/gcc/testsuite/gcc.c-torture/compile/pr42196-2.c", // __complex__ int ci;
 		"/gcc/testsuite/gcc.c-torture/compile/pr42196-3.c", // __complex__ int ci;
 		"/gcc/testsuite/gcc.c-torture/compile/pr44707.c",   // non std assembler statment
-		"/gcc/testsuite/gcc.c-torture/compile/pr52750.c",   // typedef signed char V __attribute__((vector_size (32)));
-		"/gcc/testsuite/gcc.c-torture/compile/pr53410-2.c", // typedef int V __attribute__((vector_size (4 * sizeof (int))));
-		"/gcc/testsuite/gcc.c-torture/compile/pr53748.c",   // typedef unsigned int V __attribute__ ((__vector_size__ (sizeof (int) * 4)));
 		"/gcc/testsuite/gcc.c-torture/compile/pr54559.c",   // return x + y * (T) (__extension__ 1.0iF);
-		"/gcc/testsuite/gcc.c-torture/compile/pr54713-1.c", // typedef int V __attribute__((vector_size (N * sizeof (int))));
 		"/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c", // #include "pr54713-1.c"
 		"/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c", // #include "pr54713-1.c"
-		"/gcc/testsuite/gcc.c-torture/compile/pr60502.c",   // typedef signed char v16i8 __attribute__ ((vector_size (16)));
 		"/gcc/testsuite/gcc.c-torture/compile/pr67143.c",   // __sync_add_and_fetch(&a, 536870912);
-		"/gcc/testsuite/gcc.c-torture/compile/simd-1.c",    // typedef int v2si __attribute__ ((vector_size (8)));
-		"/gcc/testsuite/gcc.c-torture/compile/simd-2.c",    // typedef float floatvect2 __attribute__((vector_size (8)));
-		"/gcc/testsuite/gcc.c-torture/compile/simd-3.c",    // typedef double floatvect2 __attribute__((vector_size (16)));
-		"/gcc/testsuite/gcc.c-torture/compile/simd-4.c",    // typedef float floatvect2 __attribute__((vector_size (16)));
-		"/gcc/testsuite/gcc.c-torture/compile/simd-5.c",    // #define vector64 __attribute__((vector_size(8)))
-		"/gcc/testsuite/gcc.c-torture/compile/simd-6.c",    // typedef int __attribute__((vector_size (8))) vec;
-		"/gcc/testsuite/gcc.c-torture/compile/vector-3.c",  // #define vector __attribute__((vector_size(16) ))
-		"/gcc/testsuite/gcc.c-torture/compile/vector-5.c",  // typedef int v2si __attribute__((__vector_size__(8)));
-		"/gcc/testsuite/gcc.c-torture/compile/vector-6.c",  // typedef int v2si __attribute__((__vector_size__(8)));
+
+		"/gcc/testsuite/gcc.c-torture/execute/20040709-1.c",        // if (__builtin_classify_type (s##S.l) == 8) //TODO
+		"/gcc/testsuite/gcc.c-torture/execute/20040709-2.c",        // if (__builtin_classify_type (s##S.l) == 8) //TODO
+		"/gcc/testsuite/gcc.c-torture/execute/20041124-1.c",        // struct s { _Complex unsigned short x; };
+		"/gcc/testsuite/gcc.c-torture/execute/20041201-1.c",        // typedef struct { _Complex char a; _Complex char b; } Scc2;
+		"/gcc/testsuite/gcc.c-torture/execute/20050613-1.c",        //TODO
+		"/gcc/testsuite/gcc.c-torture/execute/20071029-1.c",        //TODO
+		"/gcc/testsuite/gcc.c-torture/execute/20071211-1.c",        // __asm__ volatile ("" : : : "memory");
+		"/gcc/testsuite/gcc.c-torture/execute/const-addr-expr-1.c", //TODO
+		"/gcc/testsuite/gcc.c-torture/execute/fprintf-1.c",         //TODO
+		"/gcc/testsuite/gcc.c-torture/execute/fprintf-chk-1.c",     //TODO
+		"/gcc/testsuite/gcc.c-torture/execute/pr19449.c",           // int z = __builtin_choose_expr (!__builtin_constant_p (y), 3, 4);
+		"/gcc/testsuite/gcc.c-torture/execute/pr38151.c",           // _Complex int b;
+		"/gcc/testsuite/gcc.c-torture/execute/pr39228.c",           //TODO
 	}
 
 	const attempt2prototypes = `
@@ -2980,7 +2984,15 @@ outer:
 			}
 		}
 
-		var err error
+		b, err := ioutil.ReadFile(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if vectorAttr.Match(b) {
+			continue
+		}
+
 		attempt := 1
 	retry:
 		func() {
@@ -3004,16 +3016,22 @@ outer:
 				[]Opt{
 					ErrLimit(-1),
 					SysIncludePaths(sysIncludePaths),
+					EnableIncludeNext(),
+					EnableDefineOmitCommaBeforeDDD(),
 				},
 				[]Opt{
 					ErrLimit(-1),
 					SysIncludePaths(sysIncludePaths),
+					EnableIncludeNext(),
+					EnableWideBitFieldTypes(),
+					EnableEmptyDeclarations(),
 					gccEmu(),
 				},
 			)
 		}()
 
 		if err != nil {
+			//dbg("%T(%v)", err, err)
 			switch err.(type) {
 			case cppCmpError:
 				// fail w/o retry.
@@ -3038,7 +3056,7 @@ outer:
 				}
 			}
 
-			t.Errorf("%v\n%v/%v, %v ok\nFAIL\n%s", v, i+1, len(m), pass, errString(err))
+			t.Errorf("%v\n%v/%v, %v ok\nFAIL\n%s (%T)", v, i+1, len(m), pass, errString(err), err)
 			return
 		}
 

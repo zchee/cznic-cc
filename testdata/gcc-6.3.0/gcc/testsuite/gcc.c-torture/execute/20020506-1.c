@@ -22,10 +22,10 @@ void test8 (unsigned long long l, int set);
 #define LONG_LONG_MAX __LONG_LONG_MAX__
 #endif
 #ifndef LONG_LONG_MIN
-#define LONG_LONG_MIN (-LONG_LONG_MAX-1)
+#define LONG_LONG_MIN (-LONG_LONG_MAX-1LL)
 #endif
 #ifndef ULONG_LONG_MAX
-#define ULONG_LONG_MAX (LONG_LONG_MAX * 2ULL + 1)
+#define ULONG_LONG_MAX (LONG_LONG_MAX * 2ULL + 1ULL)
 #endif
 
 

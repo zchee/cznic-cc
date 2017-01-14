@@ -697,6 +697,15 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case ULong:
 		switch x := v.(type) {
+		case uint8:
+			switch w {
+			case 4:
+				return uint32(x)
+			case 8:
+				return uint64(x)
+			default:
+				panic(w)
+			}
 		case int:
 			switch w {
 			case 4:
@@ -805,7 +814,25 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case uint32:
+			switch w {
+			case 4:
+				return float32(x)
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
 		case int64:
+			switch w {
+			case 4:
+				return float32(x)
+			case 8:
+				return float64(x)
+			default:
+				panic(w)
+			}
+		case uint64:
 			switch w {
 			case 4:
 				return float32(x)
@@ -981,7 +1008,21 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case uint32:
+			switch w {
+			case 8, 16:
+				return float64(x)
+			default:
+				panic(w)
+			}
 		case int64:
+			switch w {
+			case 8, 16:
+				return float64(x)
+			default:
+				panic(w)
+			}
+		case uint64:
 			switch w {
 			case 8, 16:
 				return float64(x)
@@ -1028,6 +1069,25 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		case complex64:
 			switch w {
 			case 8:
+				return x
+			default:
+				panic(w)
+			}
+		default:
+			panic(fmt.Errorf("internal error %T", x))
+		}
+	case DoubleComplex:
+		switch x := v.(type) {
+		case float64:
+			switch w {
+			case 16:
+				return complex(x, 0)
+			default:
+				panic(w)
+			}
+		case complex128:
+			switch w {
+			case 16:
 				return x
 			default:
 				panic(w)

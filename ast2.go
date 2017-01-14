@@ -2477,9 +2477,63 @@ func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
 			}
 			i := 0
 			for l := n.InitializerList; l != nil; l = l.InitializerList {
-				if l.DesignationOpt != nil {
+				if o := l.DesignationOpt; o != nil {
 					i++
-					panic("TODO")
+					var a []*Designator
+					for l := o.Designation.DesignatorList; l != nil; l = l.DesignatorList {
+						a = append(a, l.Designator)
+					}
+					if len(a) != 1 {
+						panic("TODO")
+					}
+
+				outer:
+					switch des := a[0]; des.Case {
+					case 0: // '[' ConstantExpression ']'
+						e := des.ConstantExpression
+						if !IsIntType(e.Type) {
+							lx.report.Err(e.Pos(), "index expression is not an integer type (have '%s')", e.Type)
+							break outer
+						}
+
+						var ix uint64
+						valid := true
+						switch x := e.Value.(type) {
+						case int32:
+							valid = x >= 0
+							ix = uint64(x)
+						case uint32:
+							ix = uint64(x)
+						case int64:
+							valid = x >= 0
+							ix = uint64(x)
+						case uint64:
+							ix = x
+						default:
+							panic("TODO")
+						}
+						if !valid {
+							lx.report.Err(e.Pos(), "index must be non-negative (have '%v')", e.Value)
+						}
+
+						if limit >= 0 && ix >= uint64(limit) {
+							lx.report.Err(e.Pos(), "index value out of bounds (have '%v', limit '%v')", e.Value, limit-1)
+						}
+						l.Initializer.typeCheck(dt, mb, int(ix), limit, lx)
+					case 1: // '.' IDENTIFIER              // Case 1
+						id := des.Token2.Val
+						for i, v := range mb {
+							if v.Name == id {
+								l.Initializer.typeCheck(dt, mb, i, limit, lx)
+								break outer
+							}
+						}
+
+						lx.report.Err(des.Token2.Pos(), "type '%s' has no member '%s'", dt, dict.S(id))
+					default:
+						panic("internal error")
+					}
+					continue
 				}
 
 				if incomplete {

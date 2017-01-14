@@ -1232,6 +1232,9 @@ func (p *pp) controlLine(n *ControlLine) {
 			return
 		}
 
+		if debugMacros {
+			fmt.Fprintf(os.Stderr, "#undef %s\n", xc.Dict.S(nm))
+		}
 		delete(p.macros.m, nm)
 	case 10: // PPDEFINE IDENTIFIER_LPAREN IdentifierList "..." ')' ReplacementList
 		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList, true)
