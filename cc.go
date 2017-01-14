@@ -55,6 +55,7 @@ const (
 #define __builtin_malloc(x) __BUILTIN_MALLOC()
 #define __builtin_memmove(x, y, z) __BUILTIN_MEMMOVE()
 #define __builtin_mempcpy(x, y, z) __BUILTIN_MEMPCPY()
+#define __builtin_mul_overflow(a, b, c) __BUILTIN_MUL_OVERFLOW()
 #define __builtin_offsetof(type, member) ((%[1]v)(&((type *)0)->member))
 #define __builtin_signbit(x) __BUILTIN_SIGNBIT()
 #define __builtin_va_arg(ap, type) ( *( type* )ap )
@@ -77,6 +78,7 @@ const (
 %[1]v __builtin_object_size (void*, int);
 %[1]v __builtin_strlen(char*);
 %[1]v __builtin_strspn(char*, char*);
+_Bool __BUILTIN_MUL_OVERFLOW();
 char* __builtin___stpcpy_chk(char*, char*, %[1]v);
 char* __builtin_stpcpy(char*, char*);
 char* __builtin_strchr(char*, int);
@@ -159,6 +161,7 @@ void* __BUILTIN___MEMCPY_CHK();
 void* __BUILTIN___MEMSET_CHK();
 void* __builtin_alloca(int);
 void* __builtin_apply (void (*)(), void*, %[1]v);
+void* __builtin_apply_args();
 void* __builtin_extract_return_addr(void *);
 void* __builtin_frame_address(unsigned int);
 void* __builtin_memcpy(void*, void*, long long);

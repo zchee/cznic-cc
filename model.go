@@ -551,6 +551,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case int16:
+			switch w {
+			case 4:
+				return uint32(x)
+			default:
+				panic(w)
+			}
 		case uint16:
 			switch w {
 			case 4:
@@ -1078,6 +1085,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case DoubleComplex:
 		switch x := v.(type) {
+		case int32:
+			switch w {
+			case 16:
+				return complex(float64(x), 0)
+			default:
+				panic(w)
+			}
 		case float64:
 			switch w {
 			case 16:
