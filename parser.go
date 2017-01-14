@@ -3549,7 +3549,6 @@ yynewstate:
 							a = append(a, l.Designator)
 						}
 						if len(a) != 1 {
-							dbg("", position(o.Designation.Pos()))
 							panic("TODO")
 						}
 

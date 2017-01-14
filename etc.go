@@ -996,7 +996,6 @@ func (n *ctype) Members() (r []Member, isIncomplete bool) {
 
 						panic("internal error")
 					default:
-						dbg("%T", x)
 						panic("internal error")
 					}
 				default:
