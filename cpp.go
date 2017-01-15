@@ -44,14 +44,15 @@ var (
 
 // Macro represents a C preprocessor macro.
 type Macro struct {
-	Args     []int       // Numeric IDs of argument identifiers.
-	DefTok   xc.Token    // Macro name definition token.
-	IsFnLike bool        // Whether the macro is function like.
-	Type     Type        // Non nil if macro expands to a constant expression.
-	Value    interface{} // Non nil if macro expands to a constant expression.
-	ellipsis bool        //
-	nonRepl  []bool      // Non replaceable, due to # or ##, arguments of a fn-like macro.
-	repl     PPTokenList //
+	Args      []int       // Numeric IDs of argument identifiers.
+	DefTok    xc.Token    // Macro name definition token.
+	IsFnLike  bool        // Whether the macro is function like.
+	Type      Type        // Non nil if macro expands to a constant expression.
+	Value     interface{} // Non nil if macro expands to a constant expression.
+	ellipsis  bool        // Macro definition uses the idList, ... notation.
+	ellipsis2 bool        // Macro definition uses the idList... notation.
+	nonRepl   []bool      // Non replaceable, due to # or ##, arguments of a fn-like macro.
+	repl      PPTokenList //
 }
 
 // ReplacementToks returns the tokens that replace m.
@@ -366,7 +367,7 @@ func (p *pp) defineMacro(tok xc.Token, repl PPTokenList) {
 	p.checkCompatibleReplacementTokenList(tok, m.repl, repl)
 }
 
-func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList, ellipsis bool) {
+func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList, ellipsis, ellipsis2 bool) {
 	nm0 := tok.S()
 	nm := dict.ID(nm0[:len(nm0)-1])
 	if protectedMacros[nm] && p.protectMacros {
@@ -419,7 +420,7 @@ func (p *pp) defineFnMacro(tok xc.Token, il *IdentifierList, repl PPTokenList, e
 				}
 			}
 		}
-		m := &Macro{Args: args, DefTok: defTok, IsFnLike: true, repl: repl, ellipsis: ellipsis}
+		m := &Macro{Args: args, DefTok: defTok, IsFnLike: true, repl: repl, ellipsis: ellipsis, ellipsis2: ellipsis2}
 		for nm := range mp {
 			if i := m.findArg(nm); i >= 0 && i < len(nonRepl) {
 				nonRepl[i] = true
@@ -802,6 +803,16 @@ again:
 				args[e] = append(args[e], args[i]...)
 			}
 			args = args[:e+1]
+		case m.ellipsis2:
+			if g < e {
+				p.report.ErrTok(tok, "not enough macro arguments, expected at least %v", e)
+				return
+			}
+
+			for i := e; i < len(args); i++ {
+				args[e-1] = append(args[e-1], args[i]...)
+			}
+			args = args[:e]
 		default:
 			p.report.ErrTok(tok, "macro argument count mismatch: got %v, expected %v", g, e)
 			return
@@ -1126,15 +1137,15 @@ func (p *pp) controlLine(n *ControlLine) {
 	case 0: // PPDEFINE IDENTIFIER ReplacementList
 		p.defineMacro(n.Token2, n.ReplacementList)
 	case 1: // PPDEFINE IDENTIFIER_LPAREN "..." ')' ReplacementList
-		p.defineFnMacro(n.Token2, nil, n.ReplacementList, true)
+		p.defineFnMacro(n.Token2, nil, n.ReplacementList, true, false)
 	case 2: // PPDEFINE IDENTIFIER_LPAREN IdentifierList ',' "..." ')' ReplacementList
-		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList, true)
+		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList, true, false)
 	case 3: // PPDEFINE IDENTIFIER_LPAREN IdentifierListOpt ')' ReplacementList
 		var l *IdentifierList
 		if o := n.IdentifierListOpt; o != nil {
 			l = o.IdentifierList
 		}
-		p.defineFnMacro(n.Token2, l, n.ReplacementList, false)
+		p.defineFnMacro(n.Token2, l, n.ReplacementList, false, false)
 	case 5: // PPHASH_NL
 		// nop
 	case 4: // PPERROR PPTokenListOpt
@@ -1237,7 +1248,7 @@ func (p *pp) controlLine(n *ControlLine) {
 		}
 		delete(p.macros.m, nm)
 	case 10: // PPDEFINE IDENTIFIER_LPAREN IdentifierList "..." ')' ReplacementList
-		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList, true)
+		p.defineFnMacro(n.Token2, n.IdentifierList, n.ReplacementList, false, true)
 	case 13: // PPINCLUDE_NEXT PPTokenList '\n'
 		toks := decodeTokens(n.PPTokenList, nil, false)
 		var exp []xc.Token

@@ -486,7 +486,7 @@ func TestLexer2(t *testing.T) {
 	)
 }
 
-func testPreprocessorExample(t *testing.T, fname string) string {
+func testPreprocessor(t *testing.T, fname string) string {
 	var buf bytes.Buffer
 	_, err := Parse(
 		"",
@@ -500,6 +500,7 @@ func testPreprocessorExample(t *testing.T, fname string) string {
 			}
 			buf.WriteByte('\n')
 		}),
+		EnableDefineOmitCommaBeforeDDD(),
 	)
 	if err != nil {
 		t.Fatal(errString(err))
@@ -508,13 +509,13 @@ func testPreprocessorExample(t *testing.T, fname string) string {
 }
 
 func TestStdExample6_10_3_3_4(t *testing.T) {
-	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.3-4.h"), `char p[] = "x ## y";`; g != e {
+	if g, e := testPreprocessor(t, "testdata/example-6.10.3.3-4.h"), `char p[] = "x ## y";`; g != e {
 		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
 	}
 }
 
 func TestStdExample6_10_3_5_3(t *testing.T) {
-	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-3.h"),
+	if g, e := testPreprocessor(t, "testdata/example-6.10.3.5-3.h"),
 		`f(2 * (y+1)) + f(2 * (f(2 * (z[0])))) % f(2 * (0)) + t(1);
 f(2 * (2+(3,4)-0,1)) | f(2 * (~ 5)) &
 f(2 * (0,1))^m(0,1);
@@ -525,7 +526,7 @@ char c[2][6] = { "hello", "" };`; g != e {
 }
 
 func TestStdExample6_10_3_5_4(t *testing.T) {
-	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-4.h"),
+	if g, e := testPreprocessor(t, "testdata/example-6.10.3.5-4.h"),
 		`printf("x1= %d, x2= %s", x1, x2);
 fputs(
 "strncmp(\"abc\\0d\", \"abc\", '\\4') == 0: @\n", s);
@@ -537,7 +538,7 @@ vers2.h included from testdata/example-6.10.3.5-4.h
 }
 
 func TestStdExample6_10_3_5_5(t *testing.T) {
-	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-5.h"),
+	if g, e := testPreprocessor(t, "testdata/example-6.10.3.5-5.h"),
 		`int j[] = { 123, 45, 67, 89,
 10, 11, 12,  };`; g != e {
 		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
@@ -545,14 +546,14 @@ func TestStdExample6_10_3_5_5(t *testing.T) {
 }
 
 func TestStdExample6_10_3_5_6(t *testing.T) {
-	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-6.h"),
+	if g, e := testPreprocessor(t, "testdata/example-6.10.3.5-6.h"),
 		`ok`; g != e {
 		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
 	}
 }
 
 func TestStdExample6_10_3_5_7(t *testing.T) {
-	if g, e := testPreprocessorExample(t, "testdata/example-6.10.3.5-7.h"),
+	if g, e := testPreprocessor(t, "testdata/example-6.10.3.5-7.h"),
 		`fprintf(stderr, "Flag");
 fprintf(stderr, "X = %d\n", x);
 puts("The first, second, and third items.");
@@ -2910,6 +2911,15 @@ func TestIssue81(t *testing.T) {
 	}
 }
 
+// https://github.com/cznic/cc/issues/82
+func TestIssue82(t *testing.T) {
+	if g, e := testPreprocessor(t, "testdata/issue82.c"),
+		`d(2)
+d(2, 3)`; g != e {
+		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
+	}
+}
+
 var vectorAttr = regexp.MustCompile(`__attribute__ *\(\((__)?vector_size(__)? *\(`)
 
 func testDir(t *testing.T, dir string) {
@@ -2940,8 +2950,8 @@ func testDir(t *testing.T, dir string) {
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr42196-2.c",  // __complex__ int ci;
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr42196-3.c",  // __complex__ int ci;
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54559.c",    // return x + y * (T) (__extension__ 1.0iF);
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c",  // #include: typedef int V __attribute__((vector_size (N * sizeof (int))));
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c",  // #include: typedef int V __attribute__((vector_size (N * sizeof (int))));
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr67143.c",    // __sync_add_and_fetch(&a, 536870912);
 
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20040709-1.c",    // if (__builtin_classify_type (s##S.l) == 8) //TODO
@@ -2949,16 +2959,12 @@ func testDir(t *testing.T, dir string) {
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20041124-1.c",    // struct s { _Complex unsigned short x; };
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20041201-1.c",    // typedef struct { _Complex char a; _Complex char b; } Scc2;
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20071211-1.c",    // __asm__ volatile ("" : : : "memory");
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/fprintf-1.c",     //TODO
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/fprintf-chk-1.c", //TODO
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr19449.c",       // int z = __builtin_choose_expr (!__builtin_constant_p (y), 3, 4);
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr38151.c",       // _Complex int b;
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr39228.c",       // if (testl (1.18973149535723176502e+4932L) < 1)
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr56982.c",       // __asm__ volatile ("" : : : "memory");
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr71626-2.c",     // #include: typedef __INTPTR_TYPE__ V __attribute__((__vector_size__(sizeof (__INTPTR_TYPE__))));
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/printf-1.c",      //TODO
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/printf-chk-1.c",  //TODO
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pushpop_macro.c", //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pushpop_macro.c", // #pragma push_macro("_")
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/widechar-1.c",    //TODO
 	}
 
