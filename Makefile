@@ -16,7 +16,7 @@ all: editor
 	unconvert -apply
 
 clean:
-	rm -f log-*.c log-*.h *~ cpu.test mem.test /tmp/cc-test-*
+	rm -f log-*.c log-*.h *~ cpu.test mem.test /tmp/cc-test-* log*.c
 	go clean
 
 cover:

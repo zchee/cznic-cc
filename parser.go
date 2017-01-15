@@ -3467,145 +3467,147 @@ yynewstate:
 				Initializer: yyS[yypt-0].node.(*Initializer),
 			}
 			yyVAL.node = lhs
-		outer2:
-			switch i := lhs.Initializer; i.Case {
-			case 0: // Expression
-				e := i.Expression
-				et := e.Type
-				d := lhs.Declarator
-				dt := d.Type
-				switch x := e.Value.(type) {
-				case StringLitID:
-					if dt.Kind() != Ptr && dt.Kind() != Array {
-						break
-					}
+			d := lhs.Declarator
+			lhs.Initializer.typeCheck(&d.Type, d.Type, lhs.Declarator.specifier.IsStatic(), lx)
+			//TODO- outer2:
+			//TODO- 	switch i := lhs.Initializer; i.Case {
+			//TODO- 	case 0: // Expression
+			//TODO- 		e := i.Expression
+			//TODO- 		et := e.Type
+			//TODO- 		d := lhs.Declarator
+			//TODO- 		dt := d.Type
+			//TODO- 		switch x := e.Value.(type) {
+			//TODO- 		case StringLitID:
+			//TODO- 			if dt.Kind() != Ptr && dt.Kind() != Array {
+			//TODO- 				break
+			//TODO- 			}
 
-					switch dt.Element().Kind() {
-					case Char, SChar, UChar:
-						if dt.Kind() != Array {
-							d.Type = d.Type.(*ctype).setElements(len(xc.Dict.S(int(x))) + 1)
-						}
-						break outer2
-					}
-				case LongStringLitID:
-					if dt.Kind() != Ptr && dt.Kind() != Array {
-						break
-					}
+			//TODO- 			switch dt.Element().Kind() {
+			//TODO- 			case Char, SChar, UChar:
+			//TODO- 				if dt.Kind() != Array {
+			//TODO- 					d.Type = d.Type.(*ctype).setElements(len(xc.Dict.S(int(x)))+1)
+			//TODO- 				}
+			//TODO- 				break outer2
+			//TODO- 			}
+			//TODO- 		case LongStringLitID:
+			//TODO- 			if dt.Kind() != Ptr && dt.Kind() != Array {
+			//TODO- 				break
+			//TODO- 			}
 
-					if IsIntType(dt.Element()) {
-						if dt.Kind() != Array {
-							d.Type = d.Type.(*ctype).setElements(len(xc.Dict.S(int(x))) + 1)
-						}
-						break outer2
-					}
-				}
+			//TODO- 			if IsIntType(dt.Element()) {
+			//TODO- 				if dt.Kind() != Array {
+			//TODO- 					d.Type = d.Type.(*ctype).setElements(len(xc.Dict.S(int(x)))+1)
+			//TODO- 				}
+			//TODO- 				break outer2
+			//TODO- 			}
+			//TODO- 		}
 
-				if !et.CanAssignTo(dt) {
-					lx.report.Err(i.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, et)
-				}
-			case 1: // '{' InitializerList CommaOpt '}'
-				limit := -1
-				var checkType Type
-				var mb []Member
-				var incomplete bool
-				d := lhs.Declarator
-				k := d.Type.Kind()
-				switch k {
-				case Array:
-					checkType = d.Type.Element()
-					limit = nElem(d.Type)
-				case Ptr:
-					checkType = d.Type.Element()
-					d.Type = d.Type.(*ctype).setElements(i.InitializerList.Len())
-				case Struct, Union:
-					mb, incomplete = d.Type.Members()
-					if mb == nil {
-						panic("internal error")
-					}
+			//TODO- 		if !et.CanAssignTo(dt) {
+			//TODO- 			lx.report.Err(i.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, et)
+			//TODO- 		}
+			//TODO- 	case 1: // '{' InitializerList CommaOpt '}'
+			//TODO- 		limit := -1
+			//TODO- 		var checkType Type
+			//TODO- 		var mb []Member
+			//TODO- 		var incomplete bool
+			//TODO- 		d := lhs.Declarator
+			//TODO- 		k := d.Type.Kind()
+			//TODO- 		switch k {
+			//TODO- 		case Array:
+			//TODO- 			checkType = d.Type.Element()
+			//TODO- 			limit = nElem(d.Type)
+			//TODO- 		case Ptr:
+			//TODO- 			checkType = d.Type.Element()
+			//TODO- 			d.Type = d.Type.(*ctype).setElements(i.InitializerList.Len())
+			//TODO- 		case Struct, Union:
+			//TODO- 			mb, incomplete = d.Type.Members()
+			//TODO- 			if mb == nil {
+			//TODO- 				panic("internal error")
+			//TODO- 			}
 
-					limit = len(mb)
-					if k == Union {
-						limit = 1
-					}
-				default:
-					limit = 1
-					checkType = d.Type
-					mb = []Member{
-						{Declarator: d, Type: d.Type},
-					}
-				}
+			//TODO- 			limit = len(mb)
+			//TODO- 			if k == Union {
+			//TODO- 				limit = 1
+			//TODO- 			}
+			//TODO- 		default:
+			//TODO- 			limit = 1
+			//TODO- 			checkType = d.Type
+			//TODO- 			mb = []Member{
+			//TODO- 				{Declarator: d, Type: d.Type},
+			//TODO- 			}
+			//TODO- 		}
 
-				values := 0
-				for l := i.InitializerList; l != nil; l = l.InitializerList {
-					values++
-					if incomplete {
-						lx.report.Err(i.Pos(), "variable/field has initializer but incomplete type")
-						break
-					}
+			//TODO- 		values := 0
+			//TODO- 		for l := i.InitializerList; l != nil; l = l.InitializerList {
+			//TODO- 			values++
+			//TODO- 			if incomplete {
+			//TODO- 				lx.report.Err(i.Pos(), "variable/field has initializer but incomplete type")
+			//TODO- 				break
+			//TODO- 			}
 
-					if o := l.DesignationOpt; o != nil {
-						var a []*Designator
-						for l := o.Designation.DesignatorList; l != nil; l = l.DesignatorList {
-							a = append(a, l.Designator)
-						}
-						if len(a) != 1 {
-							panic("TODO")
-						}
+			//TODO- 			if o := l.DesignationOpt; o != nil {
+			//TODO- 				var a []*Designator
+			//TODO- 				for l := o.Designation.DesignatorList; l != nil; l = l.DesignatorList {
+			//TODO- 					a = append(a, l.Designator)
+			//TODO- 				}
+			//TODO- 				if len(a) != 1 {
+			//TODO- 					panic("TODO")
+			//TODO- 				}
 
-					outer:
-						switch des := a[0]; des.Case {
-						case 0: // '[' ConstantExpression ']'
-							e := des.ConstantExpression
-							if !IsIntType(e.Type) {
-								lx.report.Err(e.Pos(), "index expression is not an integer type (have '%s')", e.Type)
-								break outer
-							}
+			//TODO- 			outer:
+			//TODO- 				switch des := a[0]; des.Case {
+			//TODO- 				case 0: // '[' ConstantExpression ']'
+			//TODO- 					e := des.ConstantExpression
+			//TODO- 					if !IsIntType(e.Type) {
+			//TODO- 						lx.report.Err(e.Pos(), "index expression is not an integer type (have '%s')", e.Type)
+			//TODO- 						break outer
+			//TODO- 					}
 
-							var ix uint64
-							valid := true
-							switch x := e.Value.(type) {
-							case int32:
-								valid = x >= 0
-								ix = uint64(x)
-							case uint32:
-								ix = uint64(x)
-							case int64:
-								valid = x >= 0
-								ix = uint64(x)
-							case uint64:
-								ix = x
-							default:
-								panic("TODO")
-							}
-							if !valid {
-								lx.report.Err(e.Pos(), "index must be non-negative (have '%v')", e.Value)
-							}
+			//TODO- 					var ix uint64
+			//TODO- 					valid := true
+			//TODO- 					switch x := e.Value.(type) {
+			//TODO- 					case int32:
+			//TODO- 						valid = x >= 0
+			//TODO- 						ix = uint64(x)
+			//TODO- 					case uint32:
+			//TODO- 						ix = uint64(x)
+			//TODO- 					case int64:
+			//TODO- 						valid = x >= 0
+			//TODO- 						ix = uint64(x)
+			//TODO- 					case uint64:
+			//TODO- 						ix = x
+			//TODO- 					default:
+			//TODO- 						panic("TODO")
+			//TODO- 					}
+			//TODO- 					if !valid {
+			//TODO- 						lx.report.Err(e.Pos(), "index must be non-negative (have '%v')", e.Value)
+			//TODO- 					}
 
-							if limit >= 0 && ix >= uint64(limit) {
-								lx.report.Err(e.Pos(), "index value out of bounds (have '%v', limit '%v')", e.Value, limit-1)
-							}
-							l.Initializer.typeCheck(checkType, mb, int(ix), limit, lx)
-						case 1: // '.' IDENTIFIER              // Case 1
-							id := des.Token2.Val
-							for i, v := range mb {
-								if v.Name == id {
-									l.Initializer.typeCheck(checkType, mb, i, limit, lx)
-									break outer
-								}
-							}
+			//TODO- 					if limit >= 0 && ix >= uint64(limit) {
+			//TODO- 						lx.report.Err(e.Pos(), "index value out of bounds (have '%v', limit '%v')", e.Value, limit-1)
+			//TODO- 					}
+			//TODO- 					l.Initializer.typeCheck(checkType, mb, int(ix), limit, lx)
+			//TODO- 				case 1: // '.' IDENTIFIER              // Case 1
+			//TODO- 					id := des.Token2.Val
+			//TODO- 					for i, v := range mb {
+			//TODO- 						if v.Name == id {
+			//TODO- 							l.Initializer.typeCheck(checkType, mb, i, limit, lx)
+			//TODO- 							break outer
+			//TODO- 						}
+			//TODO- 					}
 
-							lx.report.Err(des.Token2.Pos(), "type '%s' has no member '%s'", d.Type, dict.S(id))
-						default:
-							panic("internal error")
-						}
-						continue
-					}
+			//TODO- 					lx.report.Err(des.Token2.Pos(), "type '%s' has no member '%s'", d.Type, dict.S(id))
+			//TODO- 				default:
+			//TODO- 					panic("internal error")
+			//TODO- 				}
+			//TODO- 				continue
+			//TODO- 			}
 
-					l.Initializer.typeCheck(checkType, mb, values-1, limit, lx)
-				}
-			default:
-				panic(i.Case)
-			}
+			//TODO- 			l.Initializer.typeCheck(checkType, mb, values-1, limit, lx)
+			//TODO- 		}
+			//TODO- 	default:
+			//TODO- 		panic(i.Case)
+			//TODO- 	}
 		}
 	case 92:
 		{

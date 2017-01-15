@@ -2528,7 +2528,6 @@ func TestFuncFuncParams(t *testing.T) {
 }
 
 func TestAnonStructField(t *testing.T) {
-	//testParse(t, []string{"testdata/anon.c"})
 	testParse(
 		t,
 		[]string{"testdata/anon.c"},
@@ -2934,18 +2933,19 @@ func testDir(t *testing.T, dir string) {
 	}
 
 	blacklist := []string{
-		"/gcc.c-torture/compile/20011217-2.c",              // (((((union { double __d; int __i[2]; }) {__d: __x}).__i[1]
-		"/gcc.c-torture/compile/20040726-2.c",              //TODO
-		"/gcc.c-torture/compile/pr17529.c",                 // TODO
-		"/gcc/testsuite/gcc.c-torture/compile/pr37056.c",   // ? ({void *__s = (u.buf + off); __s;}) : ...
-		"/gcc/testsuite/gcc.c-torture/compile/pr42196-1.c", // __complex__ int c;
-		"/gcc/testsuite/gcc.c-torture/compile/pr42196-2.c", // __complex__ int ci;
-		"/gcc/testsuite/gcc.c-torture/compile/pr42196-3.c", // __complex__ int ci;
-		"/gcc/testsuite/gcc.c-torture/compile/pr44707.c",   // TODO
-		"/gcc/testsuite/gcc.c-torture/compile/pr54559.c",   // return x + y * (T) (__extension__ 1.0iF);
-		"/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c", // typedef int V __attribute__((vector_size (N * sizeof (int))));
-		"/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c", // typedef int V __attribute__((vector_size (N * sizeof (int))));
-		"/gcc/testsuite/gcc.c-torture/compile/pr67143.c",   // __sync_add_and_fetch(&a, 536870912);
+		"/gcc/testsuite/gcc.c-torture/compile/20011217-2.c", // (((((union { double __d; int __i[2]; }) {__d: __x}).__i[1]
+		"/gcc/testsuite/gcc.c-torture/compile/20020320-1.c", // static T *p = x;
+		"/gcc/testsuite/gcc.c-torture/compile/20040726-2.c", //TODO
+		"/gcc/testsuite/gcc.c-torture/compile/pr17529.c",    // TODO
+		"/gcc/testsuite/gcc.c-torture/compile/pr37056.c",    // ? ({void *__s = (u.buf + off); __s;}) : ...
+		"/gcc/testsuite/gcc.c-torture/compile/pr42196-1.c",  // __complex__ int c;
+		"/gcc/testsuite/gcc.c-torture/compile/pr42196-2.c",  // __complex__ int ci;
+		"/gcc/testsuite/gcc.c-torture/compile/pr42196-3.c",  // __complex__ int ci;
+		"/gcc/testsuite/gcc.c-torture/compile/pr44707.c",    // TODO
+		"/gcc/testsuite/gcc.c-torture/compile/pr54559.c",    // return x + y * (T) (__extension__ 1.0iF);
+		"/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
+		"/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
+		"/gcc/testsuite/gcc.c-torture/compile/pr67143.c",    // __sync_add_and_fetch(&a, 536870912);
 
 		"/gcc/testsuite/gcc.c-torture/execute/20040709-1.c",        // if (__builtin_classify_type (s##S.l) == 8) //TODO
 		"/gcc/testsuite/gcc.c-torture/execute/20040709-2.c",        // if (__builtin_classify_type (s##S.l) == 8) //TODO
@@ -2975,7 +2975,7 @@ void abort();
 
 	var pass, gccFail int
 	defer func() {
-		t.Logf("pass %v, gccFail %v, total test cases %v", pass, gccFail, len(m))
+		t.Logf("pass %v, gccFail %v (sum %v), total test cases %v", pass, gccFail, pass+gccFail, len(m))
 	}()
 outer:
 	for i, v := range m {
@@ -3061,7 +3061,7 @@ outer:
 				}
 			}
 
-			t.Errorf("%v\n%v/%v, %v ok\nFAIL\n%s (%T)", v, i+1, len(m), pass, errString(err), err)
+			t.Errorf("%v\n%v/%v, %v ok(+%v=%v)\nFAIL\n%s (%T)", v, i+1, len(m), pass, gccFail, pass+gccFail, errString(err), err)
 			return
 		}
 

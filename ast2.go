@@ -615,6 +615,60 @@ func (n *DirectDeclarator) directDeclarator() *DirectDeclarator {
 	}
 }
 
+func (n *DirectDeclarator) isArray() bool {
+	switch n.Case {
+	case
+		0, // IDENTIFIER
+		1, // '(' Declarator ')'                                                 // Case 1
+		6, // DirectDeclarator '(' ParameterTypeList ')'                         // Case 6
+		7: // DirectDeclarator '(' IdentifierListOpt ')'                         // Case 7
+		return false
+	case
+		2, // DirectDeclarator '[' TypeQualifierListOpt ExpressionOpt ']'        // Case 2
+		3, // DirectDeclarator '[' "static" TypeQualifierListOpt Expression ']'  // Case 3
+		4, // DirectDeclarator '[' TypeQualifierList "static" Expression ']'     // Case 4
+		5: // DirectDeclarator '[' TypeQualifierListOpt '*' ']'                  // Case 5
+		return true
+	default:
+		panic(n.Case)
+	}
+}
+
+func (n *DirectDeclarator) isVLA() *Expression {
+	switch dd := n.DirectDeclarator; dd.Case {
+	case 0: // IDENTIFIER
+		return nil
+	case 1: // '(' Declarator ')'                                                 // Case 1
+		//dbg("", n.TopDeclarator().Type, n.TopDeclarator().Type.Element(), n.TopDeclarator().Type.Element().Elements())
+		d := n.TopDeclarator()
+		if d.Type.Kind() == Ptr && d.Type.Element().Elements() >= 0 {
+			return nil
+		}
+
+		panic("TODO")
+	case 2: // DirectDeclarator '[' TypeQualifierListOpt ExpressionOpt ']'        // Case 2
+		o := n.ExpressionOpt
+		if o == nil || o.Expression.Value != nil {
+			return nil
+		}
+
+		return o.Expression
+	case 3: // DirectDeclarator '[' "static" TypeQualifierListOpt Expression ']'  // Case 3
+		panic("TODO")
+	case 4: // DirectDeclarator '[' TypeQualifierList "static" Expression ']'     // Case 4
+		panic("TODO")
+	case 5: // DirectDeclarator '[' TypeQualifierListOpt '*' ']'                  // Case 5
+		panic("TODO")
+	case 6: // DirectDeclarator '(' ParameterTypeList ')'                         // Case 6
+		return nil
+	case 7: // DirectDeclarator '(' IdentifierListOpt ')'                         // Case 7
+		panic("TODO")
+	default:
+		panic("internal error")
+	}
+	panic("unreachable")
+}
+
 // ----------------------------------------------------------------- Expression
 
 func (n *Expression) eval(lx *lexer) (interface{}, Type) {
@@ -801,108 +855,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 13: // Expression "--"
 		n.Value, n.Type = n.Expression.eval(lx)
 	case 14: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
-		limit := -1
-		var checkType Type
-		var mb []Member
-		var incomplete bool
-		t := n.TypeName.Type
-		n.Type = t
-		k := t.Kind()
-		switch k {
-		case Array:
-			checkType = t.Element()
-			limit = t.Elements()
-		case Ptr:
-			checkType = t.Element()
-			if checkType.Kind() != Array {
-				n.Type = t.(*ctype).setElements(n.InitializerList.Len())
-			}
-		case Struct, Union:
-			mb, incomplete = t.Members()
-			if mb == nil {
-				panic("internal error")
-			}
-
-			limit = len(mb)
-			if k == Union {
-				limit = 1
-			}
-		default:
-			limit = 1
-			checkType = t
-			mb = []Member{
-				{Type: t},
-			}
-		}
-
-		values := 0
-		for l := n.InitializerList; l != nil; l = l.InitializerList {
-			values++
-			if o := l.DesignationOpt; o != nil {
-				var a []*Designator
-				for l := o.Designation.DesignatorList; l != nil; l = l.DesignatorList {
-					a = append(a, l.Designator)
-				}
-				if len(a) != 1 {
-					panic("TODO")
-				}
-
-			outer:
-				switch des := a[0]; des.Case {
-				case 0: // '[' ConstantExpression ']'
-					e := des.ConstantExpression
-					if !IsIntType(e.Type) {
-						lx.report.Err(e.Pos(), "index expression is not an integer type (have '%s')", e.Type)
-						break outer
-					}
-
-					var ix uint64
-					valid := true
-					switch x := e.Value.(type) {
-					case int32:
-						valid = x >= 0
-						ix = uint64(x)
-					case uint32:
-						ix = uint64(x)
-					case int64:
-						valid = x >= 0
-						ix = uint64(x)
-					case uint64:
-						ix = x
-					default:
-						panic("TODO")
-					}
-					if !valid {
-						lx.report.Err(e.Pos(), "index must be non-negative (have '%v')", e.Value)
-					}
-
-					if limit >= 0 && ix >= uint64(limit) {
-						lx.report.Err(e.Pos(), "index value out of bounds (have '%v', limit '%v')", e.Value, limit-1)
-					}
-					l.Initializer.typeCheck(checkType, mb, int(ix), limit, lx)
-				case 1: // '.' IDENTIFIER              // Case 1
-					id := des.Token2.Val
-					for i, v := range mb {
-						if v.Name == id {
-							l.Initializer.typeCheck(checkType, mb, i, limit, lx)
-							break outer
-						}
-					}
-
-					lx.report.Err(des.Token2.Pos(), "type '%s' has no member '%s'", t, dict.S(id))
-				default:
-					panic("internal error")
-				}
-				continue
-			}
-
-			if incomplete {
-				lx.report.Err(n.Pos(), "variable/field has initializer but incomplete type")
-				break
-			}
-
-			l.Initializer.typeCheck(checkType, mb, values-1, limit, lx)
-		}
+		n.Type = n.TypeName.Type
+		n.InitializerList.typeCheck(&n.Type, n.Type, false, lx)
 	case 15: // "++" Expression
 		n.Value, n.Type = n.Expression.eval(lx)
 	case 16: // "--" Expression
@@ -2411,160 +2365,94 @@ func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
 
 // ---------------------------------------------------------------- Initializer
 
-func (n *Initializer) typeCheck(dt Type, mb []Member, i, limit int, lx *lexer) {
-	if limit >= 0 && i >= limit {
-		lx.report.Err(n.Pos(), "excess elements in array/struct initializer")
+func (n *Initializer) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
+	static = static && !lx.tweaks.enableNonConstStaticInitExpressions
+	if dt == nil {
 		return
 	}
 
-	if dt == nil {
-		dt = mb[i].Type
+	k := dt.Kind()
+	d := dt.Declarator()
+	dd := d.DirectDeclarator
+	if dd.isArray() && dd.isVLA() != nil {
+		lx.report.Err(n.Pos(), "variable length array cannot have initializers")
+		return
 	}
 
 	switch n.Case {
 	case 0: // Expression
-		st := n.Expression.Type
-		for dt.Kind() == Array {
-			dt = dt.Element()
-		}
-		if !st.CanAssignTo(dt) {
-			switch n.Expression.Case {
-			case 6: // STRINGLITERAL
-				if dt.Kind() == Array {
-					switch dt.Element().Kind() {
-					case Char, SChar, UChar:
-						return // ok
+		x := n.Expression
+		xt := n.Expression.Type
+		switch v := x.Value.(type) {
+		case StringLitID:
+			switch k {
+			case Array, Ptr:
+				switch dt.Element().Kind() {
+				case Char, SChar, UChar:
+					if pt != nil && dd.isArray() && dt.Elements() < 0 {
+						*pt = dt.(*ctype).setElements(len(xc.Dict.S(int(v))) + 1)
+					}
+				default:
+					if !xt.CanAssignTo(dt) {
+						lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
 					}
 				}
 			default:
-				switch dt.Kind() {
-				case Struct, Union:
-					if ms, incomplete := dt.Members(); !incomplete && len(ms) == 1 {
-						if st.CanAssignTo(ms[0].Type) {
-							break
-						}
+				if !xt.CanAssignTo(dt) {
+					lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
+				}
+			}
+			return
+		case LongStringLitID:
+			switch k {
+			case Array, Ptr:
+				switch dt.Element().Kind() {
+				case Short, UShort, Int, UInt, Long, ULong:
+					if pt != nil && dd.isArray() && dt.Elements() < 0 {
+						*pt = dt.(*ctype).setElements(len(xc.Dict.S(int(v))) + 1)
 					}
-
-					fallthrough
 				default:
-					lx.report.Err(n.Expression.Pos(), "incompatible types when initializing type '%s' using type ‘%s'", dt, st)
+					if !xt.CanAssignTo(dt) {
+						lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
+					}
+				}
+			default:
+				if !xt.CanAssignTo(dt) {
+					lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
 				}
 			}
+			return
+		case nil:
+			if static {
+				lx.report.Err(x.Pos(), "expressions in an initializer for an object that has static storage duration shall be constant expressions or string literals.")
+				return
+			}
+
 		}
-	case 1: // '{' InitializerList CommaOpt '}'
-		switch dk := dt.Kind(); dk {
-		case Array:
-			lim := dt.Elements()
-			dt := dt.Element()
-			i := 0
-			for l := n.InitializerList; l != nil; l = l.InitializerList {
-				if l.DesignationOpt != nil {
-					panic("TODO")
-				}
 
-				l.Initializer.typeCheck(dt, nil, i, lim, lx)
-				i++
-			}
-		case Struct, Union:
-			mb, incomplete := dt.Members()
-			if mb == nil {
-				panic("internal error")
-			}
-
-			lim := len(mb)
-			if dk == Union {
-				lim = 1
-			}
-			i := 0
-			for l := n.InitializerList; l != nil; l = l.InitializerList {
-				if o := l.DesignationOpt; o != nil {
-					i++
-					var a []*Designator
-					for l := o.Designation.DesignatorList; l != nil; l = l.DesignatorList {
-						a = append(a, l.Designator)
-					}
-					if len(a) != 1 {
-						panic("TODO")
-					}
-
-				outer:
-					switch des := a[0]; des.Case {
-					case 0: // '[' ConstantExpression ']'
-						e := des.ConstantExpression
-						if !IsIntType(e.Type) {
-							lx.report.Err(e.Pos(), "index expression is not an integer type (have '%s')", e.Type)
-							break outer
-						}
-
-						var ix uint64
-						valid := true
-						switch x := e.Value.(type) {
-						case int32:
-							valid = x >= 0
-							ix = uint64(x)
-						case uint32:
-							ix = uint64(x)
-						case int64:
-							valid = x >= 0
-							ix = uint64(x)
-						case uint64:
-							ix = x
-						default:
-							panic("TODO")
-						}
-						if !valid {
-							lx.report.Err(e.Pos(), "index must be non-negative (have '%v')", e.Value)
-						}
-
-						if limit >= 0 && ix >= uint64(limit) {
-							lx.report.Err(e.Pos(), "index value out of bounds (have '%v', limit '%v')", e.Value, limit-1)
-						}
-						l.Initializer.typeCheck(dt, mb, int(ix), limit, lx)
-					case 1: // '.' IDENTIFIER              // Case 1
-						id := des.Token2.Val
-						for i, v := range mb {
-							if v.Name == id {
-								l.Initializer.typeCheck(dt, mb, i, limit, lx)
-								break outer
-							}
-						}
-
-						lx.report.Err(des.Token2.Pos(), "type '%s' has no member '%s'", dt, dict.S(id))
-					default:
-						panic("internal error")
-					}
-					continue
-				}
-
-				if incomplete {
-					lx.report.Err(n.Pos(), "variable/field has initializer but incomplete type")
+		if !xt.CanAssignTo(dt) {
+			//dbg("", dt, xt)
+			if dt.Kind() == Struct || dt.Kind() == Union {
+				if ma, _ := dt.Members(); len(ma) == 1 {
+					//dbg("")
+					n.typeCheck(nil, ma[0].Type, static, lx)
+					//dbg("")
 					return
 				}
-
-				l.Initializer.typeCheck(nil, mb, i, lim, lx)
-				i++
 			}
-		case Ptr:
-			i := 0
-			for l := n.InitializerList; l != nil; l = l.InitializerList {
-				if i > 0 {
-					lx.report.Err(n.Pos(), "excess elements in initializer")
-					break
-				}
 
-				if l.DesignationOpt != nil {
-					panic("TODO")
-				}
-
-				l.Initializer.typeCheck(dt, nil, 0, 1, lx)
-				i++
+			if dt.Kind() == Array {
+				n.typeCheck(nil, dt.Element(), static, lx)
+				return
 			}
-		default:
-			//dbg("%s: %s:%s", position(n.Pos()), dt, dk)
-			panic(dk.String())
+
+			lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
+			return
 		}
+	case 1: // '{' InitializerList CommaOpt '}'  // Case 1
+		n.InitializerList.typeCheck(pt, dt, static, lx)
 	default:
-		panic(n.Case)
+		panic("internal error")
 	}
 }
 
@@ -2576,6 +2464,170 @@ func (n *InitializerList) Len() (r int) {
 		r++
 	}
 	return r
+}
+
+func (n *InitializerList) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
+	if dt == nil {
+		return
+	}
+
+	d := dt.Declarator()
+	dd := d.DirectDeclarator
+	switch dt.Kind() {
+	case Struct, Union:
+		ma, incomplete := dt.Members()
+		if incomplete {
+			lx.report.Err(n.Pos(), "cannot initialize incomplete type")
+			return
+		}
+
+		if len(ma) == 1 {
+			//dbg("%s: %v -> %v", position(n.Pos()), dt, ma[0].Type)
+			n.InitializerList.typeCheck(nil, ma[0].Type, static, lx)
+			return
+		}
+
+		i := 0
+		var stack []int
+		for l := n; l != nil; l = l.InitializerList {
+			var m Member
+			switch o := l.DesignationOpt; {
+			case o != nil:
+				ma := ma
+				j := 0
+				for l := o.Designation.DesignatorList; l != nil; l = l.DesignatorList {
+					switch d := l.Designator; d.Case {
+					case 0: // '[' ConstantExpression ']'
+						panic("TODO")
+					case 1: // '.' IDENTIFIER              // Case 1
+						if j != 0 {
+							ma, _ = m.Type.Members()
+						}
+						found := false
+						for k, v := range ma {
+							if d.Token2.Val == v.Name {
+								found = true
+								m = v
+								if j == 0 {
+									i = k
+								}
+								break
+							}
+						}
+						if !found {
+							panic("TODO")
+						}
+
+						j++
+					default:
+						panic("internal error")
+					}
+				}
+			default:
+				if i >= len(ma) {
+					//dbg("", i, len(ma))
+					panic("TODO")
+				}
+
+				switch l := len(stack); {
+				case l != 0:
+					stack[l-1]--
+					if stack[l-1] != 0 {
+						i--
+						break
+					}
+
+					stack = stack[:l-1]
+					i++
+					fallthrough
+				default:
+					m = ma[i]
+					if mt := m.Type; mt.Kind() == Array && mt.Elements() >= 0 {
+						stack = append(stack, mt.Elements())
+						i--
+					}
+				}
+			}
+			l.Initializer.typeCheck(nil, m.Type, static, lx)
+			i++
+		}
+	case Array, Ptr:
+		elems := dt.Elements()
+		elem := dt.Element()
+		elem0 := elem
+		for elem0.Kind() == Array {
+			n := elem0.Elements()
+			if n >= 0 {
+				if elems < 0 {
+					elems = 1
+				}
+				elems *= n
+			}
+			elem0 = elem0.Element()
+		}
+		i := 0
+		for l := n; l != nil; l = l.InitializerList {
+			if o := l.DesignationOpt; o != nil {
+				elem := elem
+				j := 0
+				m := lx.model
+				for l := o.Designation.DesignatorList; l != nil; l = l.DesignatorList {
+					switch d := l.Designator; d.Case {
+					case 0: // '[' ConstantExpression ']'
+						if !IsIntType(d.ConstantExpression.Type) {
+							panic("TODO")
+						}
+
+						switch {
+						case j == 0:
+							i = int(m.MustConvert(d.ConstantExpression.Value, m.IntType).(int32))
+						default:
+							elem = elem.Element()
+						}
+						j++
+					case 1: // '.' IDENTIFIER              // Case 1
+						panic("TODO")
+					default:
+						panic("internal error")
+					}
+				}
+			}
+
+			if elems >= 0 && i >= elems {
+				panic("TODO")
+			}
+
+			switch in := l.Initializer; in.Case {
+			case 0: // Expression
+				in.typeCheck(nil, elem0, static, lx)
+				i++
+			case 1: // '{' InitializerList CommaOpt '}'  // Case 1
+				if !elem.Declarator().DirectDeclarator.isArray() {
+					panic("TODO")
+				}
+
+				in.InitializerList.typeCheck(nil, elem, static, lx)
+				i++
+			default:
+				panic("internal error")
+			}
+		}
+		if pt != nil && dd.isArray() && elems < 0 {
+			//dbg("", position(n.Pos()), elem, elems)
+			*pt = dt.(*ctype).setElements(i)
+		}
+	default:
+		i := 0
+		for l := n; l != nil; l = l.InitializerList {
+			if i != 0 {
+				//dbg("%s: %v", position(n.Pos()), dt)
+				panic("TODO")
+			}
+
+			l.Initializer.typeCheck(nil, dt, static, lx)
+			i++
+		}
+	}
 }
 
 // ---------------------------------------------------------- ParameterTypeList

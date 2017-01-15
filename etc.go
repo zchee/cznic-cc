@@ -504,7 +504,7 @@ func (n *ctype) setElements(elems int) *ctype {
 			m.dds[i] = dd
 			return &m
 		default:
-			//dbg("", position(dd.Pos()))
+			//dbg("", position(dd.Pos()), n.str(), elems)
 			panic(dd.Case)
 		}
 	}
@@ -787,6 +787,10 @@ func (n *ctype) RawDeclarator() *Declarator {
 
 // Declarator implements Type.
 func (n *ctype) Declarator() *Declarator {
+	if len(n.dds) == 0 {
+		panic("internal error")
+	}
+
 	return n.dds[0].TopDeclarator()
 }
 
@@ -1027,6 +1031,8 @@ func (n *ctype) Members() (r []Member, isIncomplete bool) {
 		return r, false
 	case 1: // StructOrUnion IDENTIFIER
 		return []Member{}, true
+	case 2: // StructOrUnion IdentifierOpt '{' '}'                        // Case 2
+		return []Member{}, false
 	default:
 		panic(sus.Case)
 	}

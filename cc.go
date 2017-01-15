@@ -234,30 +234,31 @@ func HostCppConfig(cpp string, opts ...string) (predefined string, includePaths,
 }
 
 type tweaks struct {
-	comments                       map[token.Pos]int //
-	devTest                        bool              //
-	disablePredefinedLineMacro     bool              // __LINE__ will not expand.
-	enableAlignof                  bool              //
-	enableAlternateKeywords        bool              // __asm__ etc.
-	enableAnonymousStructFields    bool              //
-	enableAsm                      bool              //
-	enableDefineOmitCommaBeforeDDD bool              // #define foo(a, b...)
-	enableDlrInIdentifiers         bool              // foo$bar
-	enableEmptyDeclarations        bool              // ; // C++11
-	enableEmptyDefine              bool              // #define
-	enableEmptyStructs             bool              // struct foo {};
-	enableIncludeNext              bool              //
-	enableNoreturn                 bool              //
-	enableOmitFuncRetType          bool              // f() becomes the same as int f().
-	enableStaticAssert             bool              // _Static_assert
-	enableTrigraphs                bool              // ??=define foo(bar)
-	enableTypeof                   bool              //
-	enableUndefExtraTokens         bool              // #undef foo(bar)
-	enableWarnings                 bool              // #warning
-	enableWideBitFieldTypes        bool              // long long v : 2;
-	enableWideEnumValues           bool              // enum { v = X } for X wider than 32bits
-	gccEmu                         bool              //
-	preprocessOnly                 bool              //
+	comments                            map[token.Pos]int //
+	devTest                             bool              //
+	disablePredefinedLineMacro          bool              // __LINE__ will not expand.
+	enableAlignof                       bool              //
+	enableAlternateKeywords             bool              // __asm__ etc.
+	enableAnonymousStructFields         bool              //
+	enableAsm                           bool              //
+	enableDefineOmitCommaBeforeDDD      bool              // #define foo(a, b...)
+	enableDlrInIdentifiers              bool              // foo$bar
+	enableEmptyDeclarations             bool              // ; // C++11
+	enableEmptyDefine                   bool              // #define
+	enableEmptyStructs                  bool              // struct foo {};
+	enableIncludeNext                   bool              //
+	enableNonConstStaticInitExpressions bool              // static int *p = &i;
+	enableNoreturn                      bool              //
+	enableOmitFuncRetType               bool              // f() becomes the same as int f().
+	enableStaticAssert                  bool              // _Static_assert
+	enableTrigraphs                     bool              // ??=define foo(bar)
+	enableTypeof                        bool              //
+	enableUndefExtraTokens              bool              // #undef foo(bar)
+	enableWarnings                      bool              // #warning
+	enableWideBitFieldTypes             bool              // long long v : 2;
+	enableWideEnumValues                bool              // enum { v = X } for X wider than 32bits
+	gccEmu                              bool              //
+	preprocessOnly                      bool              //
 }
 
 func (t *tweaks) doGccEmu() *tweaks {
@@ -270,6 +271,7 @@ func (t *tweaks) doGccEmu() *tweaks {
 	t.enableEmptyDefine = true
 	t.enableEmptyStructs = true
 	t.enableIncludeNext = true
+	t.enableNonConstStaticInitExpressions = true
 	t.enableNoreturn = true
 	t.enableOmitFuncRetType = true
 	t.enableStaticAssert = true
@@ -388,6 +390,16 @@ type Opt func(*lexer)
 // KeepComments makes the parser keep comments.
 func KeepComments() Opt {
 	return func(l *lexer) { l.tweaks.comments = map[token.Pos]int{} }
+}
+
+// EnableNonConstStaticInitExpressions makes the parser accept non standard
+//
+//	static int i = f();
+//
+// [0], 6.7.8/4: All the expressions in an initializer for an object that has
+// static storage duration shall be constant expressions or string literals.
+func EnableNonConstStaticInitExpressions() Opt {
+	return func(l *lexer) { l.tweaks.enableNonConstStaticInitExpressions = true }
 }
 
 // EnableAnonymousStructFields makes the parser accept non standard
