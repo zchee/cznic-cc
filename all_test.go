@@ -2965,7 +2965,7 @@ func testDir(t *testing.T, dir string) {
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr56982.c",       // __asm__ volatile ("" : : : "memory");
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr71626-2.c",     // #include: typedef __INTPTR_TYPE__ V __attribute__((__vector_size__(sizeof (__INTPTR_TYPE__))));
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pushpop_macro.c", // #pragma push_macro("_")
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/widechar-1.c",    //TODO
+		//"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/widechar-1.c",    //TODO
 	}
 
 	const attempt2prototypes = `

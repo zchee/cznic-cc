@@ -746,5 +746,5 @@ loop:
 			break loop
 		}
 	}
-	return -rune(v & 0xff), n
+	return -rune(v), n
 }
