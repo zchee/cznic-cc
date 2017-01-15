@@ -298,6 +298,7 @@ func (n *AssemblerOperands) Pos() token.Pos {
 //	|       "asm" VolatileOpt '(' AssemblerInstructions ':' AssemblerOperands ':' AssemblerOperands ':' Clobbers ')'          // Case 3
 //	|       "asm" VolatileOpt "goto" '(' AssemblerInstructions ':' ':' AssemblerOperands ':' Clobbers ':' IdentifierList ')'  // Case 4
 //	|       "asm" VolatileOpt '(' AssemblerInstructions ':' ')'                                                               // Case 5
+//	|       "asm" VolatileOpt '(' AssemblerInstructions ':' ':' AssemblerOperands ')'                                         // Case 6
 type AssemblerStatement struct {
 	AssemblerInstructions   *AssemblerInstructions
 	AssemblerOperands       *AssemblerOperands
@@ -333,7 +334,7 @@ func (n *AssemblerStatement) Pos() token.Pos {
 	switch n.Case {
 	case 0:
 		return n.BasicAssemblerStatement.Pos()
-	case 1, 2, 3, 4, 5:
+	case 1, 2, 3, 4, 5, 6:
 		return n.Token.Pos()
 	default:
 		panic("internal error")

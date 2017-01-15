@@ -829,7 +829,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Type = memberType(mb, lx.model)
 	case 11: // Expression "->" IDENTIFIER
 		v, t := n.Expression.eval(lx)
-		if t.Kind() != Ptr {
+		if t.Kind() != Ptr && t.Kind() != Array {
 			lx.report.ErrTok(n.Token2, "invalid type argument of -> (have '%v')", t)
 			break
 		}

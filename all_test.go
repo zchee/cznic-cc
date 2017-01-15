@@ -2933,39 +2933,33 @@ func testDir(t *testing.T, dir string) {
 	}
 
 	blacklist := []string{
-		"/gcc/testsuite/gcc.c-torture/compile/20011217-2.c", // (((((union { double __d; int __i[2]; }) {__d: __x}).__i[1]
-		"/gcc/testsuite/gcc.c-torture/compile/20020320-1.c", // static T *p = x;
-		"/gcc/testsuite/gcc.c-torture/compile/20040726-2.c", //TODO
-		"/gcc/testsuite/gcc.c-torture/compile/pr17529.c",    // TODO
-		"/gcc/testsuite/gcc.c-torture/compile/pr37056.c",    // ? ({void *__s = (u.buf + off); __s;}) : ...
-		"/gcc/testsuite/gcc.c-torture/compile/pr42196-1.c",  // __complex__ int c;
-		"/gcc/testsuite/gcc.c-torture/compile/pr42196-2.c",  // __complex__ int ci;
-		"/gcc/testsuite/gcc.c-torture/compile/pr42196-3.c",  // __complex__ int ci;
-		"/gcc/testsuite/gcc.c-torture/compile/pr44707.c",    // TODO
-		"/gcc/testsuite/gcc.c-torture/compile/pr54559.c",    // return x + y * (T) (__extension__ 1.0iF);
-		"/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
-		"/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
-		"/gcc/testsuite/gcc.c-torture/compile/pr67143.c",    // __sync_add_and_fetch(&a, 536870912);
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/20011217-2.c", // (((((union { double __d; int __i[2]; }) {__d: __x}).__i[1]
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/20020320-1.c", // static T *p = x;
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr37056.c",    // ? ({void *__s = (u.buf + off); __s;}) : ...
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr42196-1.c",  // __complex__ int c;
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr42196-2.c",  // __complex__ int ci;
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr42196-3.c",  // __complex__ int ci;
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54559.c",    // return x + y * (T) (__extension__ 1.0iF);
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54713-2.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c",  // typedef int V __attribute__((vector_size (N * sizeof (int))));
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr67143.c",    // __sync_add_and_fetch(&a, 536870912);
 
-		"/gcc/testsuite/gcc.c-torture/execute/20040709-1.c",        // if (__builtin_classify_type (s##S.l) == 8) //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/20040709-2.c",        // if (__builtin_classify_type (s##S.l) == 8) //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/20041124-1.c",        // struct s { _Complex unsigned short x; };
-		"/gcc/testsuite/gcc.c-torture/execute/20041201-1.c",        // typedef struct { _Complex char a; _Complex char b; } Scc2;
-		"/gcc/testsuite/gcc.c-torture/execute/20050613-1.c",        //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/20071029-1.c",        //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/20071211-1.c",        // __asm__ volatile ("" : : : "memory");
-		"/gcc/testsuite/gcc.c-torture/execute/const-addr-expr-1.c", //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/fprintf-1.c",         //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/fprintf-chk-1.c",     //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/pr19449.c",           // int z = __builtin_choose_expr (!__builtin_constant_p (y), 3, 4);
-		"/gcc/testsuite/gcc.c-torture/execute/pr38151.c",           // _Complex int b;
-		"/gcc/testsuite/gcc.c-torture/execute/pr39228.c",           //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/pr56982.c",           // __asm__ volatile ("" : : : "memory");
-		"/gcc/testsuite/gcc.c-torture/execute/pr71626-2.c",         // #include: typedef __INTPTR_TYPE__ V __attribute__((__vector_size__(sizeof (__INTPTR_TYPE__))));
-		"/gcc/testsuite/gcc.c-torture/execute/printf-1.c",          //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/printf-chk-1.c",      //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/pushpop_macro.c",     //TODO
-		"/gcc/testsuite/gcc.c-torture/execute/widechar-1.c",        //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20040709-1.c",    // if (__builtin_classify_type (s##S.l) == 8) //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20040709-2.c",    // if (__builtin_classify_type (s##S.l) == 8) //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20041124-1.c",    // struct s { _Complex unsigned short x; };
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20041201-1.c",    // typedef struct { _Complex char a; _Complex char b; } Scc2;
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20071211-1.c",    // __asm__ volatile ("" : : : "memory");
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/fprintf-1.c",     //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/fprintf-chk-1.c", //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr19449.c",       // int z = __builtin_choose_expr (!__builtin_constant_p (y), 3, 4);
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr38151.c",       // _Complex int b;
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr39228.c",       // if (testl (1.18973149535723176502e+4932L) < 1)
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr56982.c",       // __asm__ volatile ("" : : : "memory");
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr71626-2.c",     // #include: typedef __INTPTR_TYPE__ V __attribute__((__vector_size__(sizeof (__INTPTR_TYPE__))));
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/printf-1.c",      //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/printf-chk-1.c",  //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pushpop_macro.c", //TODO
+		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/widechar-1.c",    //TODO
 	}
 
 	const attempt2prototypes = `
