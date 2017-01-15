@@ -47,6 +47,7 @@ const (
 #define __builtin___memcpy_chk(x, y, z, t) __BUILTIN___MEMCPY_CHK()
 #define __builtin___memset_chk(x, y, z, ...) __BUILTIN___MEMSET_CHK()
 #define __builtin_alloca(x) __BUILTIN_ALLOCA()
+#define __builtin_classify_type(x) __BUILTIN_CLASSIFY_TYPE()
 #define __builtin_constant_p(exp) __BUILTIN_CONSTANT_P()
 #define __builtin_isgreater(x, y) __BUILTIN_ISGREATER()
 #define __builtin_isless(x, y) __BUILTIN_ISLESS()
@@ -97,6 +98,7 @@ float _Complex __builtin_conjf(float _Complex);
 float __builtin_ceilf(float);
 float __builtin_copysignf(float, float);
 float __builtin_modff(float, float*);
+int __BUILTIN_CLASSIFY_TYPE();
 int __BUILTIN_CONSTANT_P();
 int __BUILTIN_ISGREATER();
 int __BUILTIN_ISLESS();

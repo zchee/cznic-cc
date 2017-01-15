@@ -2954,8 +2954,6 @@ func testDir(t *testing.T, dir string) {
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr54713-3.c",  // #include: typedef int V __attribute__((vector_size (N * sizeof (int))));
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/pr67143.c",    // __sync_add_and_fetch(&a, 536870912);
 
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20040709-1.c",    // if (__builtin_classify_type (s##S.l) == 8) //TODO
-		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20040709-2.c",    // if (__builtin_classify_type (s##S.l) == 8) //TODO
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20041124-1.c",    // struct s { _Complex unsigned short x; };
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20041201-1.c",    // typedef struct { _Complex char a; _Complex char b; } Scc2;
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/20071211-1.c",    // __asm__ volatile ("" : : : "memory");
@@ -2965,7 +2963,6 @@ func testDir(t *testing.T, dir string) {
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr56982.c",       // __asm__ volatile ("" : : : "memory");
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pr71626-2.c",     // #include: typedef __INTPTR_TYPE__ V __attribute__((__vector_size__(sizeof (__INTPTR_TYPE__))));
 		"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/pushpop_macro.c", // #pragma push_macro("_")
-		//"testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/widechar-1.c",    //TODO
 	}
 
 	const attempt2prototypes = `
