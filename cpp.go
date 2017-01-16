@@ -849,7 +849,10 @@ next:
 					continue next
 				}
 
-				arg := args[ia]
+				var arg []xc.Token
+				if ia < len(args) {
+					arg = args[ia]
+				}
 				if len(arg) == 0 {
 					arg = []xc.Token{{}}
 				}

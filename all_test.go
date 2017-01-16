@@ -2920,6 +2920,16 @@ d(2, 3)`; g != e {
 	}
 }
 
+// https://github.com/cznic/cc/issues/84
+func TestIssue84(t *testing.T) {
+	if g, e := testPreprocessor(t, "testdata/issue84.c"),
+		`c(1, 2, 3);
+c(1, 2);
+c(1, );`; g != e {
+		t.Fatalf("\ngot\n%s\nexp\n%s", g, e)
+	}
+}
+
 var vectorAttr = regexp.MustCompile(`__attribute__ *\(\((__)?vector_size(__)? *\(`)
 
 func testDir(t *testing.T, dir string) {
