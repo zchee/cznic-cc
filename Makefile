@@ -28,7 +28,7 @@ cpu:
 	go tool pprof --lines cpu.test cpu.out
 
 edit:
-	gvim -p Makefile trigraphs.l scanner.l parser.yy parser.y y.output *.go
+	gvim -p Makefile trigraphs.l scanner.l parser.yy all_test.go ast2.go cc.go cpp.go encoding.go etc.go lexer.go model.go
 
 editor: parser.go scanner.go trigraphs.go
 	rm -f log-*.c log-*.h
@@ -36,6 +36,7 @@ editor: parser.go scanner.go trigraphs.go
 	rm -f log-*.c log-*.h
 	go test -i
 	go test 2>&1 | tee log
+	go install
 
 internalError:
 	egrep -ho '"internal error.*"' *.go | sort | cat -n

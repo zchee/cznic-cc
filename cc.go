@@ -33,6 +33,7 @@ import (
 
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/mathutil"
+	"github.com/cznic/strutil"
 	"github.com/cznic/xc"
 )
 
@@ -174,6 +175,9 @@ void* memcpy(void*, void*, long long);
 void* memset(void*, int, long long);
 `
 )
+
+// ImportPath returns the import path of this package or an error, if any.
+func ImportPath() (string, error) { return strutil.ImportPath() }
 
 // HostConfig executes HostCppConfig with the cpp argument set to "cpp". For
 // more info please see the documentation of HostCppConfig.
