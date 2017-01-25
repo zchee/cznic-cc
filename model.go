@@ -65,8 +65,8 @@ var binOpTab = [kindMax][kindMax]Kind{
 // Align of Double to 8 and StructAlign of Double to 4.
 type ModelItem struct {
 	Size        int         // Size of the entity in bytes.
-	Align       int         // Alignment of the entity when it's not a struct field. Cannot be smaller than Size.
-	StructAlign int         // Alignment of the entity when it's a struct field. Can be smaller than Size.
+	Align       int         // Alignment of the entity when it's not a struct field.
+	StructAlign int         // Alignment of the entity when it's a struct field.
 	More        interface{} // Optional user data.
 }
 
@@ -324,8 +324,8 @@ func (m *Model) sanityCheck() error {
 		LongDouble:        {8, 16, 8, 16},
 		Bool:              {1, 1, 1, 1},
 		FloatComplex:      {8, 8, 8, 8},
-		DoubleComplex:     {16, 16, 16, 16},
-		LongDoubleComplex: {16, 16, 16, 16},
+		DoubleComplex:     {16, 16, 8, 16},
+		LongDoubleComplex: {16, 32, 8, 16},
 	}
 	a := []int{}
 	required := map[Kind]bool{}
@@ -367,7 +367,7 @@ func (m *Model) sanityCheck() error {
 					return fmt.Errorf("align %d too big: %s", v.Align, k)
 				}
 
-				if v.Align < v.Size {
+				if v.Align < v.Size && v.Align < t.minAlign {
 					return fmt.Errorf("align is smaller than size: %s", k)
 				}
 
