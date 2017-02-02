@@ -2059,7 +2059,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			}
 
 			if IsArithmeticType(at) && IsArithmeticType(bt) {
-				n.Type = m.binOpType(at, bt)
+				n.Type = m.BinOpType(at, bt)
 				break
 			}
 

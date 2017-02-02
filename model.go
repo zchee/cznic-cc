@@ -1386,7 +1386,7 @@ func (m *Model) cBool(v bool) interface{} {
 func (m *Model) binOp(lx *lexer, a, b operand) (interface{}, interface{}, Type) {
 	av, at := a.eval(lx)
 	bv, bt := b.eval(lx)
-	t := m.binOpType(at, bt)
+	t := m.BinOpType(at, bt)
 	if av == nil || bv == nil || t.Kind() == Undefined {
 		return nil, nil, t
 	}
@@ -1394,7 +1394,10 @@ func (m *Model) binOp(lx *lexer, a, b operand) (interface{}, interface{}, Type) 
 	return m.MustConvert(av, t), m.MustConvert(bv, t), t
 }
 
-func (m *Model) binOpType(a, b Type) Type {
+// BinOpType returns the evaluation type of a binop b, ie. the type operands
+// are promoted to before performing the operation. Operands must be arithmetic
+// types.
+func (m *Model) BinOpType(a, b Type) Type {
 	ak := a.Kind()
 	bk := b.Kind()
 	if ak > bk {
