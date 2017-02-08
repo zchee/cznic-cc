@@ -3098,3 +3098,41 @@ func TestGCCTests(t *testing.T) {
 	testDir(t, "testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/compile/")
 	testDir(t, "testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/")
 }
+
+// https://github.com/cznic/cc/issues/85
+func TestIssue85(t *testing.T) {
+	tu, err := Parse(
+		"", []string{"testdata/issue85.c"}, newTestModel(), EnableOmitFuncRetType(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b := tu.Declarations.Lookup(NSIdentifiers, xc.Dict.SID("i"))
+	if b.Node == nil {
+		t.Fatal("lookup fail")
+	}
+
+	d := b.Node.(*DirectDeclarator).TopDeclarator()
+	if g, e := d.Linkage, External; g != e {
+		t.Fatal(g, e)
+	}
+
+	if g, e := d.Type.Specifier().IsExtern(), false; g != e {
+		t.Fatal(g, e)
+	}
+
+	b = tu.Declarations.Lookup(NSIdentifiers, xc.Dict.SID("j"))
+	if b.Node == nil {
+		t.Fatal("lookup fail")
+	}
+
+	d = b.Node.(*DirectDeclarator).TopDeclarator()
+	if g, e := d.Linkage, External; g != e {
+		t.Fatal(g, e)
+	}
+
+	if g, e := d.Type.Specifier().IsExtern(), true; g != e {
+		t.Fatal(g, e)
+	}
+}

@@ -35,8 +35,8 @@ func (n *Declaration) Declarator() *Declarator { return n.declarator }
 
 // ------------------------------------------------------ DeclarationSpecifiers
 
-// isInline implements specifier.
-func (n *DeclarationSpecifiers) isInline() bool {
+// IsInline implements specifier.
+func (n *DeclarationSpecifiers) IsInline() bool {
 	return n.attr&saInline != 0
 }
 
@@ -45,8 +45,8 @@ func (n *DeclarationSpecifiers) IsTypedef() bool {
 	return n.attr&saTypedef != 0
 }
 
-// isExtern implements specifier.
-func (n *DeclarationSpecifiers) isExtern() bool {
+// IsExtern implements specifier.
+func (n *DeclarationSpecifiers) IsExtern() bool {
 	return n.attr&saExtern != 0
 }
 
@@ -55,13 +55,13 @@ func (n *DeclarationSpecifiers) IsStatic() bool {
 	return n.attr&saStatic != 0
 }
 
-// isAuto implements specifier.
-func (n *DeclarationSpecifiers) isAuto() bool {
+// IsAuto implements specifier.
+func (n *DeclarationSpecifiers) IsAuto() bool {
 	return n.attr&saAuto != 0
 }
 
-// isRegister implements specifier.
-func (n *DeclarationSpecifiers) isRegister() bool {
+// IsRegister implements specifier.
+func (n *DeclarationSpecifiers) IsRegister() bool {
 	return n.attr&saRegister != 0
 }
 
@@ -70,13 +70,13 @@ func (n *DeclarationSpecifiers) IsConst() bool {
 	return n.attr&saConst != 0
 }
 
-// isRestrict implements specifier.
-func (n *DeclarationSpecifiers) isRestrict() bool {
+// IsRestrict implements specifier.
+func (n *DeclarationSpecifiers) IsRestrict() bool {
 	return n.attr&saRestrict != 0
 }
 
-// isVolatile implements specifier.
-func (n *DeclarationSpecifiers) isVolatile() bool {
+// IsVolatile implements specifier.
+func (n *DeclarationSpecifiers) IsVolatile() bool {
 	return n.attr&saVolatile != 0
 }
 
@@ -2669,8 +2669,8 @@ func (n *PointerOpt) stars() int {
 
 // ----------------------------------------------------- SpecifierQualifierList
 
-// isInline implements specifier.
-func (n *SpecifierQualifierList) isInline() bool {
+// IsInline implements specifier.
+func (n *SpecifierQualifierList) IsInline() bool {
 	return n.attr&saInline != 0
 }
 
@@ -2679,8 +2679,8 @@ func (n *SpecifierQualifierList) IsTypedef() bool {
 	return n.attr&saTypedef != 0
 }
 
-// isExtern implements specifier.
-func (n *SpecifierQualifierList) isExtern() bool {
+// IsExtern implements specifier.
+func (n *SpecifierQualifierList) IsExtern() bool {
 	return n.attr&saExtern != 0
 }
 
@@ -2689,13 +2689,13 @@ func (n *SpecifierQualifierList) IsStatic() bool {
 	return n.attr&saStatic != 0
 }
 
-// isAuto implements specifier.
-func (n *SpecifierQualifierList) isAuto() bool {
+// IsAuto implements specifier.
+func (n *SpecifierQualifierList) IsAuto() bool {
 	return n.attr&saAuto != 0
 }
 
-// isRegister implements specifier.
-func (n *SpecifierQualifierList) isRegister() bool {
+// IsRegister implements specifier.
+func (n *SpecifierQualifierList) IsRegister() bool {
 	return n.attr&saRegister != 0
 }
 
@@ -2704,13 +2704,13 @@ func (n *SpecifierQualifierList) IsConst() bool {
 	return n.attr&saConst != 0
 }
 
-// isRestrict implements specifier.
-func (n *SpecifierQualifierList) isRestrict() bool {
+// IsRestrict implements specifier.
+func (n *SpecifierQualifierList) IsRestrict() bool {
 	return n.attr&saRestrict != 0
 }
 
-// isVolatile implements specifier.
-func (n *SpecifierQualifierList) isVolatile() bool {
+// IsVolatile implements specifier.
+func (n *SpecifierQualifierList) IsVolatile() bool {
 	return n.attr&saVolatile != 0
 }
 

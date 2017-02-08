@@ -62,18 +62,18 @@ type EnumConstant struct {
 // Specifier describes a combination of {Function,StorageClass,Type}Specifiers
 // and TypeQualifiers.
 type Specifier interface {
+	IsAuto() bool                       // StorageClassSpecifier "auto" present.
+	IsConst() bool                      // TypeQualifier "const" present.
+	IsExtern() bool                     // StorageClassSpecifier "extern" present.
+	IsInline() bool                     // FunctionSpecifier "inline" present.
+	IsRegister() bool                   // StorageClassSpecifier "register" present.
+	IsRestrict() bool                   // TypeQualifier "restrict" present.
 	IsStatic() bool                     // StorageClassSpecifier "static" present.
 	IsTypedef() bool                    // StorageClassSpecifier "typedef" present.
+	IsVolatile() bool                   // TypeQualifier "volatile" present.
 	TypedefName() int                   // TypedefName returns the typedef name ID used, if any, zero otherwise.
 	attrs() int                         // Encoded attributes.
 	firstTypeSpecifier() *TypeSpecifier //
-	isAuto() bool                       // StorageClassSpecifier "auto" present.
-	IsConst() bool                      // TypeQualifier "const" present.
-	isExtern() bool                     // StorageClassSpecifier "extern" present.
-	isInline() bool                     // FunctionSpecifier "inline" present.
-	isRegister() bool                   // StorageClassSpecifier "register" present.
-	isRestrict() bool                   // TypeQualifier "restrict" present.
-	isVolatile() bool                   // TypeQualifier "volatile" present.
 	kind() Kind                         //
 	member(int) (*Member, error)        //
 	str() string                        //
@@ -1452,18 +1452,18 @@ type spec struct {
 	ts   int
 }
 
+func (s *spec) IsAuto() bool                       { return s.attr&saAuto != 0 }
+func (s *spec) IsConst() bool                      { return s.attr&saConst != 0 }
+func (s *spec) IsExtern() bool                     { return s.attr&saExtern != 0 }
+func (s *spec) IsInline() bool                     { return s.attr&saInline != 0 }
+func (s *spec) IsRegister() bool                   { return s.attr&saRegister != 0 }
+func (s *spec) IsRestrict() bool                   { return s.attr&saRestrict != 0 }
 func (s *spec) IsStatic() bool                     { return s.attr&saStatic != 0 }
 func (s *spec) IsTypedef() bool                    { return s.attr&saTypedef != 0 }
+func (s *spec) IsVolatile() bool                   { return s.attr&saVolatile != 0 }
 func (s *spec) TypedefName() int                   { return 0 }
 func (s *spec) attrs() int                         { return s.attr }
 func (s *spec) firstTypeSpecifier() *TypeSpecifier { panic("TODO") }
-func (s *spec) isAuto() bool                       { return s.attr&saAuto != 0 }
-func (s *spec) IsConst() bool                      { return s.attr&saConst != 0 }
-func (s *spec) isExtern() bool                     { return s.attr&saExtern != 0 }
-func (s *spec) isInline() bool                     { return s.attr&saInline != 0 }
-func (s *spec) isRegister() bool                   { return s.attr&saRegister != 0 }
-func (s *spec) isRestrict() bool                   { return s.attr&saRestrict != 0 }
-func (s *spec) isVolatile() bool                   { return s.attr&saVolatile != 0 }
 func (s *spec) kind() Kind                         { return tsValid[s.ts] }
 func (s *spec) member(int) (*Member, error)        { panic("TODO") }
 func (s *spec) str() string                        { return specifierString(s) }
