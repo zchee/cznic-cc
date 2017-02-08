@@ -1219,6 +1219,10 @@ InitDeclarator:
 		$$ = lhs
 		d := lhs.Declarator
 		lhs.Initializer.typeCheck(&d.Type, d.Type, lhs.Declarator.specifier.IsStatic(), lx)
+		if d.Type.Specifier().IsExtern() {
+			id, _ := d.Identifier()
+			lx.report.Err(d.Pos(), "'%s' initialized and declared 'extern'", dict.S(id))
+		}
 	}
 
 StorageClassSpecifier:

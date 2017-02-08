@@ -3136,3 +3136,19 @@ func TestIssue85(t *testing.T) {
 		t.Fatal(g, e)
 	}
 }
+
+// https://github.com/cznic/cc/issues/86
+func TestIssue86(t *testing.T) {
+	_, err := Parse(
+		"", []string{"testdata/issue86.c"}, newTestModel(), EnableOmitFuncRetType(),
+	)
+	if err == nil {
+		t.Fatal("missed error")
+	}
+
+	if g, e := err.Error(), "testdata/issue86.c:2:12: 'j' initialized and declared 'extern'"; g != e {
+		t.Fatalf("%q %q", g, e)
+	}
+
+	t.Log(err)
+}
