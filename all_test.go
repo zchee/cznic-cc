@@ -3152,3 +3152,25 @@ func TestIssue86(t *testing.T) {
 
 	t.Log(err)
 }
+
+func TestArray(t *testing.T) {
+	ast, err := Parse(
+		"", []string{"testdata/array.c"}, newTestModel(), EnableOmitFuncRetType(),
+	)
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	expr := ast.TranslationUnit.ExternalDeclaration.FunctionDefinition.FunctionBody.
+		CompoundStatement.BlockItemListOpt.BlockItemList.BlockItemList.BlockItem.
+		Statement.ExpressionStatement.ExpressionListOpt.ExpressionList.Expression
+
+	if g, e := expr.Type.Kind(), Ptr; g != e {
+		t.Fatal(g, e)
+	}
+
+	dd := expr.IdentResolutionScope().Lookup(NSIdentifiers, dict.SID("a")).Node.(*DirectDeclarator)
+	if g, e := dd.TopDeclarator().Type.Kind(), Array; g != e {
+		t.Fatal(g, e)
+	}
+}
