@@ -252,6 +252,7 @@ type tweaks struct {
 	enableEmptyDeclarations             bool              // ; // C++11
 	enableEmptyDefine                   bool              // #define
 	enableEmptyStructs                  bool              // struct foo {};
+	enableImplicitFuncDef               bool              // int f() { return g(); } int g() { return 42; }
 	enableIncludeNext                   bool              //
 	enableNonConstStaticInitExpressions bool              // static int *p = &i;
 	enableNoreturn                      bool              //
@@ -470,6 +471,15 @@ func EnableDlrInIdentifiers() Opt {
 //	#define
 func EnableEmptyDefine() Opt {
 	return func(l *lexer) { l.tweaks.enableEmptyDefine = true }
+}
+
+// EnableImplicitFuncDef makes the parser accept non standard
+//
+//	int f() {
+//		return g(); // g is undefined, but assumed to be returning int.
+//	}
+func EnableImplicitFuncDef() Opt {
+	return func(l *lexer) { l.tweaks.enableImplicitFuncDef = true }
 }
 
 // EnableEmptyStructs makes the parser accept non standard

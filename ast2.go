@@ -767,6 +767,14 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			}
 		}
 	case 9: // Expression '(' ArgumentExpressionListOpt ')'
+		if n.Expression.Case == 0 { // IDENTIFIER
+			b := n.Expression.scope.Lookup(NSIdentifiers, n.Expression.Token.Val)
+			if b.Node == nil && lx.tweaks.enableImplicitFuncDef {
+				n.Type = lx.model.IntType
+				break
+			}
+		}
+
 		_, t := n.Expression.eval(lx)
 		if t.Kind() == Ptr {
 			t = t.Element()
