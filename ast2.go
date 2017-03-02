@@ -479,6 +479,12 @@ loop0:
 		// [0]6.2.2, 2: Each declaration of an identifier with no
 		// linkage denotes a unique entity.
 		if prev != nil {
+			if lx.tweaks.allowCompatibleTypedefRedefinitions &&
+				n.RawSpecifier().IsTypedef() && prev.RawSpecifier().IsTypedef() &&
+				n.Type.String() == prev.Type.String() {
+				break
+			}
+
 			lx.report.Err(n.Pos(),
 				"redeclaration of %s '%s' with no linkage, previous declaration at %v '%s'",
 				xc.Dict.S(id), n.Type, position(prev.Pos()), prev.Type)

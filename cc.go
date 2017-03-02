@@ -240,6 +240,7 @@ func HostCppConfig(cpp string, opts ...string) (predefined string, includePaths,
 }
 
 type tweaks struct {
+	allowCompatibleTypedefRedefinitions bool              // typedef int foo; typedef int foo;
 	comments                            map[token.Pos]int //
 	devTest                             bool              //
 	disablePredefinedLineMacro          bool              // __LINE__ will not expand.
@@ -269,6 +270,7 @@ type tweaks struct {
 }
 
 func (t *tweaks) doGccEmu() *tweaks {
+	t.allowCompatibleTypedefRedefinitions = true
 	t.enableAlignof = true
 	t.enableAlternateKeywords = true
 	t.enableAnonymousStructFields = true
@@ -397,6 +399,17 @@ type Opt func(*lexer)
 // KeepComments makes the parser keep comments.
 func KeepComments() Opt {
 	return func(l *lexer) { l.tweaks.comments = map[token.Pos]int{} }
+}
+
+// AllowCompatibleTypedefRedefinitions makes the parser accept compatible
+// typedef redefinitions.
+//
+//	typedef int foo;
+//	typedef int foo; // ok with this option.
+//	typedef long int foo; // never ok.
+//
+func AllowCompatibleTypedefRedefinitions() Opt {
+	return func(l *lexer) { l.tweaks.allowCompatibleTypedefRedefinitions = true }
 }
 
 // EnableNonConstStaticInitExpressions makes the parser accept non standard

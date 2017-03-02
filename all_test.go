@@ -3174,3 +3174,18 @@ func TestArray(t *testing.T) {
 		t.Fatal(g, e)
 	}
 }
+
+// https://github.com/cznic/cc/issues/87
+func TestIssue87(t *testing.T) {
+	if _, err := Parse(
+		"", []string{"testdata/issue87.c"}, newTestModel(),
+	); err == nil {
+		t.Fatal("missed error")
+	}
+
+	if _, err := Parse(
+		"", []string{"testdata/issue87.c"}, newTestModel(), AllowCompatibleTypedefRedefinitions(),
+	); err != nil {
+		t.Fatal(err)
+	}
+}
