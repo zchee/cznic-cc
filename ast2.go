@@ -1936,6 +1936,8 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				lx.report.ErrTok(n.Token, "incompatible types ('%s' == '%s')", a0, b0)
 			}
 			break
+		case at.Kind() == Function && bt.Kind() == Function:
+			// nop
 		case IsArithmeticType(at):
 			fallthrough
 		default:

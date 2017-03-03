@@ -3189,3 +3189,21 @@ func TestIssue87(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// https://github.com/cznic/cc/issues/88
+func TestIssue88(t *testing.T) {
+	ast, err := Parse(
+		"", []string{"testdata/issue88.c"}, newTestModel(),
+	)
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	exp := ast.TranslationUnit.ExternalDeclaration.FunctionDefinition.FunctionBody.
+		CompoundStatement.BlockItemListOpt.BlockItemList.BlockItemList.BlockItem.
+		Statement.ExpressionStatement.ExpressionListOpt.ExpressionList.Expression
+
+	if g := exp.BinOpType; g != nil {
+		t.Fatalf("unexpected non-nil BinOpType %s", g)
+	}
+}
