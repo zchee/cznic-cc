@@ -1142,12 +1142,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
 				case y < 0:
 					n.Value = x >> uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x << uint(y)
 				default:
 					n.Value = x
 				}
@@ -1169,8 +1183,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1187,8 +1199,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1210,8 +1220,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1228,8 +1236,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1246,8 +1252,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1269,8 +1273,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1287,8 +1289,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1305,8 +1305,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1328,8 +1326,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1346,8 +1342,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1364,8 +1358,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1387,8 +1379,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1405,8 +1395,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1423,8 +1411,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1446,8 +1432,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1464,8 +1448,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1482,8 +1464,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1505,8 +1485,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1523,8 +1501,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1541,8 +1517,6 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				switch {
 				case y > 0:
 					n.Value = x << uint(y)
-				case y < 0:
-					n.Value = x >> uint(-y)
 				default:
 					n.Value = x
 				}
@@ -1572,12 +1546,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
@@ -1595,12 +1583,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
@@ -1618,12 +1620,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
@@ -1641,12 +1657,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
@@ -1664,12 +1694,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
@@ -1687,12 +1731,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
@@ -1710,12 +1768,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
@@ -1733,12 +1805,26 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				default:
 					n.Value = x
 				}
+			case uint32:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
+				default:
+					n.Value = x
+				}
 			case int64:
 				switch {
 				case y > 0:
 					n.Value = x >> uint(y)
 				case y < 0:
 					n.Value = x << uint(-y)
+				default:
+					n.Value = x
+				}
+			case uint64:
+				switch {
+				case y > 0:
+					n.Value = x >> uint(y)
 				default:
 					n.Value = x
 				}
