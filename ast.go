@@ -2276,6 +2276,7 @@ func (n *Initializer) Pos() token.Pos {
 //	InitializerList:
 //	        DesignationOpt Initializer
 //	|       InitializerList ',' DesignationOpt Initializer  // Case 1
+//	|       /* empty */                                     // Case 2
 type InitializerList struct {
 	Case            int
 	DesignationOpt  *DesignationOpt
@@ -2315,6 +2316,8 @@ func (n *InitializerList) Pos() token.Pos {
 	}
 
 	switch n.Case {
+	case 2:
+		return 0
 	case 0:
 		if p := n.DesignationOpt.Pos(); p != 0 {
 			return p
@@ -2322,7 +2325,11 @@ func (n *InitializerList) Pos() token.Pos {
 
 		return n.Initializer.Pos()
 	case 1:
-		return n.InitializerList.Pos()
+		if p := n.InitializerList.Pos(); p != 0 {
+			return p
+		}
+
+		return n.Token.Pos()
 	default:
 		panic("internal error")
 	}

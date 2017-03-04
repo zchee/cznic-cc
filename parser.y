@@ -2664,6 +2664,10 @@ InitializerList:
 			Initializer:      $4.(*Initializer),
 		}
 	}
+|	/* empty */
+	{
+		$$ = (*InitializerList)(nil)
+		}
 
 Designation:
 	DesignatorList '='

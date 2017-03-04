@@ -1509,6 +1509,7 @@ Initializer:
 InitializerList:
 	DesignationOpt Initializer
 |	InitializerList ',' DesignationOpt Initializer
+|	/* empty */ {}
 
 // [0](6.7.8)
 Designation:
