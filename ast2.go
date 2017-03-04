@@ -946,8 +946,12 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Value = m.cBool(isZero(v))
 	case 23: // "sizeof" Expression
 		n.Type = m.getSizeType(lx)
-		_, t := n.Expression.eval(lx)
-		n.Value = m.MustConvert(int32(t.SizeOf()), n.Type)
+		switch v, t := n.Expression.eval(lx); x := v.(type) {
+		case StringLitID:
+			n.Value = m.MustConvert(int32(len(dict.S(int(x)))+1), n.Type)
+		default:
+			n.Value = m.MustConvert(int32(t.SizeOf()), n.Type)
+		}
 	case 24: // "sizeof" '(' TypeName ')'
 		n.Type = m.getSizeType(lx)
 		n.Value = m.MustConvert(int32(n.TypeName.declarator.Type.SizeOf()), n.Type)
