@@ -3207,3 +3207,25 @@ func TestIssue88(t *testing.T) {
 		t.Fatalf("unexpected non-nil BinOpType %s", g)
 	}
 }
+
+// https://github.com/cznic/cc/issues/89
+func TestIssue89(t *testing.T) {
+	ast, err := Parse(
+		"", []string{"testdata/issue89.c"}, newTestModel(), EnableImplicitFuncDef(),
+	)
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	exp := ast.TranslationUnit.ExternalDeclaration.FunctionDefinition.FunctionBody.
+		CompoundStatement.BlockItemListOpt.BlockItemList.BlockItemList.BlockItemList.BlockItem.
+		Statement.ExpressionStatement.ExpressionListOpt.ExpressionList.Expression.
+		ArgumentExpressionListOpt.ArgumentExpressionList.Expression
+
+	if g := exp.Type; g == nil {
+		t.Errorf("'a.f': missing expression type")
+	}
+	if g := exp.Expression.Type; g == nil {
+		t.Errorf("'a': missing expression type")
+	}
+}

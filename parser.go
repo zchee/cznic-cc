@@ -2752,6 +2752,9 @@ yynewstate:
 			if lhs.Expression.Case == 0 { // IDENTIFIER
 				b := lhs.Expression.scope.Lookup(NSIdentifiers, lhs.Expression.Token.Val)
 				if b.Node == nil && lx.tweaks.enableImplicitFuncDef {
+					for l := o.ArgumentExpressionList; l != nil; l = l.ArgumentExpressionList {
+						l.Expression.eval(lx)
+					}
 					break
 				}
 			}
