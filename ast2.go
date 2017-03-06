@@ -840,7 +840,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			break
 		}
 
-		n.Type = memberType(mb, lx.model)
+		n.Type = mb.Type
 	case 11: // Expression "->" IDENTIFIER
 		v, t := n.Expression.eval(lx)
 		if t.Kind() != Ptr && t.Kind() != Array {
@@ -855,7 +855,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			break
 		}
 
-		n.Type = memberType(mb, lx.model)
+		n.Type = mb.Type
 		switch x := v.(type) {
 		case nil:
 			// nop

@@ -1835,24 +1835,6 @@ func compositeType(a, b Type) (c Type, isA bool) {
 
 func eqTypes(a, b Type) bool { return a.(*ctype).eq(b.(*ctype)) }
 
-func memberType(mb *Member, m *Model) Type {
-	t := mb.Type
-	if mb.Bits == 0 {
-		return t
-	}
-
-	switch k := t.Kind(); k {
-	case Bool, Int, UInt:
-		if mb.Bits < 8*m.Items[Int].Size || m.Signed[k] {
-			return m.IntType
-		}
-
-		return m.UIntType
-	default:
-		return t
-	}
-}
-
 func isStrLitID(v interface{}) bool {
 	switch v.(type) {
 	case StringLitID, LongStringLitID:

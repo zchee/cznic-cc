@@ -3229,3 +3229,27 @@ func TestIssue89(t *testing.T) {
 		t.Errorf("'a': missing expression type")
 	}
 }
+
+// https://github.com/cznic/cc/issues/90
+func TestIssue90(t *testing.T) {
+	ast, err := Parse(
+		"", []string{"testdata/issue90.c"}, newTestModel(), EnableImplicitFuncDef(),
+	)
+	if err != nil {
+		t.Fatal(errString(err))
+	}
+
+	expr := ast.TranslationUnit.ExternalDeclaration.FunctionDefinition.FunctionBody.
+		CompoundStatement.BlockItemListOpt.BlockItemList.BlockItemList.BlockItem.
+		Statement.ExpressionStatement.ExpressionListOpt.ExpressionList.Expression
+
+	if g, e := expr.Type.Kind(), UInt; g != e {
+		t.Errorf("expr: %v %v", g, e)
+	}
+	if g, e := expr.Expression.Type.Kind(), UInt; g != e {
+		t.Errorf("expr.Expression: %v %v", g, e)
+	}
+	if g, e := expr.Expression2.Type.Kind(), UInt; g != e {
+		t.Errorf("expr.Expression2: %v %v", g, e)
+	}
+}
