@@ -950,11 +950,11 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		case StringLitID:
 			n.Value = m.MustConvert(int32(len(dict.S(int(x)))+1), n.Type)
 		default:
-			n.Value = m.MustConvert(int32(t.SizeOf()), n.Type)
+			n.Value = m.MustConvert(uint64(t.SizeOf()), n.Type)
 		}
 	case 24: // "sizeof" '(' TypeName ')'
 		n.Type = m.getSizeType(lx)
-		n.Value = m.MustConvert(int32(n.TypeName.declarator.Type.SizeOf()), n.Type)
+		n.Value = m.MustConvert(uint64(n.TypeName.declarator.Type.SizeOf()), n.Type)
 	case 25: // '(' TypeName ')' Expression
 		v, _ := n.Expression.eval(lx)
 		n.Type = n.TypeName.declarator.Type
