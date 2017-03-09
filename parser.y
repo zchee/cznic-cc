@@ -908,6 +908,15 @@ Expression:
 			Token3:    $4,
 		}
 	}
+|	'(' CompoundStatement ')'
+	{
+		$$ = &Expression{
+			Case:               57,
+			Token:              $1,
+			CompoundStatement:  $2.(*CompoundStatement),
+			Token2:             $3,
+		}
+	}
 
 ExpressionOpt:
 	/* empty */

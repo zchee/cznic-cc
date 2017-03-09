@@ -20,6 +20,7 @@
 //  [0]: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 //  [1]: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1406.pdf
 //  [2]: https://github.com/rsc/c2go/blob/fc8cbfad5a47373828c81c7a56cccab8b221d310/cc/cc.y
+//  [3]: https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html
 package cc
 
 import (
@@ -258,6 +259,7 @@ type tweaks struct {
 	enableNonConstStaticInitExpressions bool              // static int *p = &i;
 	enableNoreturn                      bool              //
 	enableOmitFuncRetType               bool              // f() becomes the same as int f().
+	enableParenCompoundStmt             bool              // ({...}), see [3]
 	enableStaticAssert                  bool              // _Static_assert
 	enableTrigraphs                     bool              // ??=define foo(bar)
 	enableTypeof                        bool              //
@@ -410,6 +412,15 @@ func KeepComments() Opt {
 //
 func AllowCompatibleTypedefRedefinitions() Opt {
 	return func(l *lexer) { l.tweaks.allowCompatibleTypedefRedefinitions = true }
+}
+
+// EnableParenthesizedCompoundStatemen makes the parser accept non standard
+//
+//	({ ... })
+//
+// as an expression. See [3].
+func EnableParenthesizedCompoundStatemen() Opt {
+	return func(l *lexer) { l.tweaks.enableParenCompoundStmt = true }
 }
 
 // EnableNonConstStaticInitExpressions makes the parser accept non standard

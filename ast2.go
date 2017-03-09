@@ -2364,9 +2364,46 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			al = 1
 		}
 		n.Value = lx.model.MustConvert(int32(al), n.Type)
+	case 57: // '(' CompoundStatement ')'                          // Case 57
+		if !lx.tweaks.enableParenCompoundStmt {
+			lx.report.Err(n.Pos(), "non-standard parenthesized compound statement as expression not enabled")
+			break
+		}
+
+		n.Type = lx.model.VoidType
+		o := n.CompoundStatement.BlockItemListOpt
+		if o == nil {
+			break
+		}
+
+		var last *BlockItem
+		for l := o.BlockItemList; l != nil; l = l.BlockItemList {
+			if l.BlockItemList == nil {
+				last = l.BlockItem
+			}
+		}
+
+		if last == nil {
+			break
+		}
+
+		switch last.Case {
+		case 0: // Declaration
+			// nop
+		case 1: // Statement    // Case 1
+			if es := last.Statement.ExpressionStatement; es != nil {
+				o := es.ExpressionListOpt
+				if o != nil {
+					el := o.ExpressionList
+					n.Type, n.Value = el.Type, el.Value
+				}
+			}
+		default:
+			panic("internal error")
+		}
 	default:
 		//dbg("", PrettyString(n))
-		panic(n.Case)
+		panic(fmt.Errorf("%s: internal error: Expression.Case: %v", position(n.Pos()), n.Case))
 	}
 	//ct := n.Type.(*ctype)
 	//s := ""

@@ -415,6 +415,7 @@ Expression:
 |	Expression "^=" Expression
 |	Expression "|=" Expression
 |	"_Alignof" '(' TypeName ')'
+|	'(' CompoundStatement ')'
 
 
 ExpressionOpt:
