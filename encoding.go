@@ -38,27 +38,27 @@ const (
 )
 
 const (
-	tsVoid            = iota // "void"
-	tsChar                   // "char"
-	tsShort                  // "short"
-	tsInt                    // "int"
-	tsLong                   // "long"
-	tsFloat                  // "float"
-	tsDouble                 // "double"
-	tsSigned                 // "signed"
-	tsUnsigned               // "unsigned"
-	tsBool                   // "_Bool"
-	tsComplex                // "_Complex"
-	tsStructSpecifier        // StructOrUnionSpecifier: struct
-	tsUnionSpecifier         // StructOrUnionSpecifier: union
-	tsEnumSpecifier          // EnumSpecifier
-	tsTypedefName            // TYPEDEFNAME
-	tsTypeof                 // "typeof"
-	tsUintptr                // Pseudo type
+	tsVoid            = iota //  0: "void"
+	tsChar                   //  1: "char"
+	tsShort                  //  2: "short"
+	tsInt                    //  3: "int"
+	tsLong                   //  4: "long"
+	tsFloat                  //  5: "float"
+	tsDouble                 //  6: "double"
+	tsSigned                 //  7: "signed"
+	tsUnsigned               //  8: "unsigned"
+	tsBool                   //  9: "_Bool"
+	tsComplex                // 10: "_Complex"
+	tsStructSpecifier        // 11: StructOrUnionSpecifier: struct
+	tsUnionSpecifier         // 12: StructOrUnionSpecifier: union
+	tsEnumSpecifier          // 13: EnumSpecifier
+	tsTypedefName            // 14: TYPEDEFNAME
+	tsTypeof                 // 15: "typeof"
+	tsUintptr                // 16: Pseudo type
 )
 
 const (
-	tsBits = 4 // Values [0, 13]
+	tsBits = 5 // Values [0, 16]
 	tsMask = 1<<tsBits - 1
 )
 

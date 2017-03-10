@@ -3374,7 +3374,11 @@ yynewstate:
 			}
 
 			lhs.attr = b.attr
-			ts := tsEncode(append(tsDecode(a.typeSpecifier), tsDecode(b.typeSpecifier)...)...)
+			tsb := tsDecode(b.typeSpecifier)
+			if len(tsb) == 1 && tsb[0] == tsTypedefName && lx.tweaks.allowCompatibleTypedefRedefinitions {
+				tsb[0] = 0
+			}
+			ts := tsEncode(append(tsDecode(a.typeSpecifier), tsb...)...)
 			if _, ok := tsValid[ts]; !ok {
 				ts = tsEncode(tsInt)
 				lx.report.Err(a.Pos(), "invalid type specifier")

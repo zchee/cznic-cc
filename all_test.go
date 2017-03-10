@@ -3253,3 +3253,18 @@ func TestIssue90(t *testing.T) {
 		t.Errorf("expr.Expression2: %v %v", g, e)
 	}
 }
+
+// https://github.com/cznic/cc/issues/92
+func TestIssue92(t *testing.T) {
+	if _, err := Parse(
+		"", []string{"testdata/issue92.c"}, newTestModel(),
+	); err == nil {
+		t.Fatal("missed error")
+	}
+
+	if _, err := Parse(
+		"", []string{"testdata/issue92.c"}, newTestModel(), AllowCompatibleTypedefRedefinitions(),
+	); err != nil {
+		t.Fatal(err)
+	}
+}
