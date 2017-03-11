@@ -2665,6 +2665,20 @@ Initializer:
 			Token2:           $4,
 		}
 	}
+|	IDENTIFIER ':' Initializer
+	{
+		lx := yylex.(*lexer)
+		lhs := &Initializer{
+			Case:         2,
+			Token:        $1,
+			Token2:       $2,
+			Initializer:  $3.(*Initializer),
+		}
+		$$ = lhs
+		if !lx.tweaks.enableLegacyDesignators {
+			lx.report.Err(lhs.Pos(), "legacy designators not enabled")
+		}
+	}
 
 InitializerList:
 	DesignationOpt Initializer

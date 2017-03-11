@@ -2618,6 +2618,20 @@ func (n *Initializer) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
 		}
 	case 1: // '{' InitializerList CommaOpt '}'  // Case 1
 		n.InitializerList.typeCheck(pt, dt, static, lx)
+	case 2: // IDENTIFIER ':' Initializer        // Case 2
+		p := *pt
+		if p.Kind() != Struct && dt.Kind() != Union {
+			lx.report.Err(n.Pos(), "invalid designator for type %v", dt)
+			break
+		}
+
+		m, err := p.Member(n.Token.Val)
+		if err != nil {
+			lx.report.Err(n.Pos(), "type %v has no member %s: %v", p, dict.S(n.Token.Val), err)
+			break
+		}
+
+		n.InitializerList.typeCheck(&p, m.Type, static, lx)
 	default:
 		panic("internal error")
 	}
@@ -2715,7 +2729,8 @@ func (n *InitializerList) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
 					}
 				}
 			}
-			l.Initializer.typeCheck(nil, m.Type, static, lx)
+			p := dt
+			l.Initializer.typeCheck(&p, m.Type, static, lx)
 			i++
 		}
 	case Array, Ptr:

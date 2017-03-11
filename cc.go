@@ -257,6 +257,7 @@ type tweaks struct {
 	enableEmptyStructs                  bool              // struct foo {};
 	enableImplicitFuncDef               bool              // int f() { return g(); } int g() { return 42; }
 	enableIncludeNext                   bool              //
+	enableLegacyDesignators             bool              // { a: 42 }
 	enableNonConstStaticInitExpressions bool              // static int *p = &i;
 	enableNoreturn                      bool              //
 	enableOmitFuncRetType               bool              // f() becomes the same as int f().
@@ -411,6 +412,15 @@ func KeepComments() Opt {
 // See https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 func EnableBuiltinConstantP() Opt {
 	return func(l *lexer) { l.tweaks.enableBuiltinConstantP = true }
+}
+
+// EnableLegacyDesignators makes the parser accept legacy designators
+//
+//	{ a: 42 } // Obsolete since GCC 2.5, standard is { .a=42 }
+//
+// See https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
+func EnableLegacyDesignators() Opt {
+	return func(l *lexer) { l.tweaks.enableLegacyDesignators = true }
 }
 
 // AllowCompatibleTypedefRedefinitions makes the parser accept compatible

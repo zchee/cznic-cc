@@ -2241,10 +2241,12 @@ func (n *InitDeclaratorListOpt) Pos() token.Pos {
 //	Initializer:
 //	        Expression
 //	|       '{' InitializerList CommaOpt '}'  // Case 1
+//	|       IDENTIFIER ':' Initializer        // Case 2
 type Initializer struct {
 	Case            int
 	CommaOpt        *CommaOpt
 	Expression      *Expression
+	Initializer     *Initializer
 	InitializerList *InitializerList
 	Token           xc.Token
 	Token2          xc.Token
@@ -2266,7 +2268,7 @@ func (n *Initializer) Pos() token.Pos {
 	switch n.Case {
 	case 0:
 		return n.Expression.Pos()
-	case 1:
+	case 1, 2:
 		return n.Token.Pos()
 	default:
 		panic("internal error")

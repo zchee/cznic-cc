@@ -1516,6 +1516,12 @@ Initializer:
 		lhs.Expression.eval(lx)
 	}
 |	'{' InitializerList CommaOpt '}'
+|	IDENTIFIER ':' Initializer
+	{
+		if !lx.tweaks.enableLegacyDesignators {
+			lx.report.Err(lhs.Pos(), "legacy designators not enabled")
+		}
+	}
 
 // [0](6.7.8)
 InitializerList:
