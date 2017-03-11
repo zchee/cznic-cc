@@ -370,6 +370,7 @@ var (
 	idAlignofAlt       = dict.SID("__alignof__")
 	idAsm              = dict.SID("asm")
 	idAsmAlt           = dict.SID("__asm__")
+	idBuiltinConstantP = dict.SID("__builtin_constant_p")
 	idChar             = dict.SID("char")
 	idConst            = dict.SID("const")
 	idDate             = dict.SID("__DATE__")

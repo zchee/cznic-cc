@@ -249,6 +249,7 @@ type tweaks struct {
 	enableAlternateKeywords             bool              // __asm__ etc.
 	enableAnonymousStructFields         bool              //
 	enableAsm                           bool              //
+	enableBuiltinConstantP              bool              // __builtin_constant_p(expr)
 	enableDefineOmitCommaBeforeDDD      bool              // #define foo(a, b...)
 	enableDlrInIdentifiers              bool              // foo$bar
 	enableEmptyDeclarations             bool              // ; // C++11
@@ -401,6 +402,15 @@ type Opt func(*lexer)
 // KeepComments makes the parser keep comments.
 func KeepComments() Opt {
 	return func(l *lexer) { l.tweaks.comments = map[token.Pos]int{} }
+}
+
+// EnableBuiltinConstantP makes the parser handle specially
+//
+//	__builtin_constant_p(expr)
+//
+// See https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+func EnableBuiltinConstantP() Opt {
+	return func(l *lexer) { l.tweaks.enableBuiltinConstantP = true }
 }
 
 // AllowCompatibleTypedefRedefinitions makes the parser accept compatible

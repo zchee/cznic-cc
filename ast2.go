@@ -774,6 +774,30 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		}
 	case 9: // Expression '(' ArgumentExpressionListOpt ')'
 		if n.Expression.Case == 0 { // IDENTIFIER
+			if lx.tweaks.enableBuiltinConstantP && n.Expression.Token.Val == idBuiltinConstantP {
+				o := n.ArgumentExpressionListOpt
+				if o == nil {
+					lx.report.Err(n.Expression.Pos(), "missing argument of __builtin_constant_p")
+					break
+				}
+
+				args := o.ArgumentExpressionList
+				if args.ArgumentExpressionList != nil {
+					lx.report.Err(n.Expression.Pos(), "too many arguments of __builtin_constant_p")
+					break
+				}
+
+				n.Case = 3 // INTCONST
+				n.Type = lx.model.IntType
+				switch {
+				case args.Expression.Value != nil:
+					n.Value = int32(1)
+				default:
+					n.Value = int32(0)
+				}
+				break
+			}
+
 			b := n.Expression.scope.Lookup(NSIdentifiers, n.Expression.Token.Val)
 			if b.Node == nil && lx.tweaks.enableImplicitFuncDef {
 				n.Type = lx.model.IntType
