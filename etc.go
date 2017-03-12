@@ -204,7 +204,7 @@ func position(pos token.Pos) token.Position { return fset.Position(pos) }
 
 // Binding records the declaration Node of a declared name.
 //
-// In the NSIdentifiers namespace the dynamic type of Node for deckared names
+// In the NSIdentifiers namespace the dynamic type of Node for declared names
 // is always *DirectDeclarator.  The *Declarator associated with the direct
 // declarator is available via (*DirectDeclarator).TopDeclarator().
 //
@@ -364,7 +364,7 @@ func (b *Bindings) defineEnumTag(tok xc.Token, n Node, report *xc.Report) {
 	m[tok.Val] = Binding{n, true}
 }
 
-func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v interface{}) {
+func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v interface{}) *Declarator {
 	b = b.root()
 	d := lx.model.makeDeclarator(0, tsInt)
 	dd := d.DirectDeclarator
@@ -382,6 +382,7 @@ func (b *Bindings) defineEnumConst(lx *lexer, tok xc.Token, v interface{}) {
 	default:
 		panic(fmt.Errorf("%T", x))
 	}
+	return d
 }
 
 func (b *Bindings) declareStructTag(tok xc.Token, report *xc.Report) {

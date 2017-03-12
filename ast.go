@@ -1386,6 +1386,7 @@ func (n *EndifLine) Pos() token.Pos {
 //	        "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
 //	|       "enum" IDENTIFIER                                     // Case 1
 type EnumSpecifier struct {
+	unsigned       bool
 	Case           int
 	CommaOpt       *CommaOpt
 	EnumeratorList *EnumeratorList

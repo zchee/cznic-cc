@@ -266,6 +266,7 @@ type tweaks struct {
 	enableTrigraphs                     bool              // ??=define foo(bar)
 	enableTypeof                        bool              //
 	enableUndefExtraTokens              bool              // #undef foo(bar)
+	enableUnsignedEnums                 bool              // If no enum member is negative, enum type will be unsigned.
 	enableWarnings                      bool              // #warning
 	enableWideBitFieldTypes             bool              // long long v : 2;
 	enableWideEnumValues                bool              // enum { v = X } for X wider than 32bits
@@ -412,6 +413,12 @@ func KeepComments() Opt {
 // See https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 func EnableBuiltinConstantP() Opt {
 	return func(l *lexer) { l.tweaks.enableBuiltinConstantP = true }
+}
+
+// EnableUnsignedEnums makes the parser handle choose unsigned int as the type
+// of an enumeration with no negative members.
+func EnableUnsignedEnums() Opt {
+	return func(l *lexer) { l.tweaks.enableUnsignedEnums = true }
 }
 
 // EnableLegacyDesignators makes the parser accept legacy designators

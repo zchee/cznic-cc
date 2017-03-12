@@ -1838,6 +1838,28 @@ EnumSpecifier:
 		if o := lhs.IdentifierOpt; o != nil {
 			lx.scope.defineEnumTag(o.Token, lhs, lx.report)
 		}
+		if !lx.tweaks.enableUnsignedEnums {
+			break
+		}
+
+		lhs.unsigned = true
+	loop:
+		for l := lhs.EnumeratorList; l != nil; l = l.EnumeratorList {
+			switch e := l.Enumerator; x := e.Value.(type) {
+			case int32:
+				if x < 0 {
+					lhs.unsigned = false
+					break loop
+				}
+			case int64:
+				if x < 0 {
+					lhs.unsigned = false
+					break loop
+				}
+			default:
+				panic(fmt.Errorf("%s: TODO Enumerator.Value type %T", position(e.Pos()), x))
+			}
+		}
 	}
 |	"enum" IDENTIFIER
 	{
