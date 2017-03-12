@@ -672,7 +672,6 @@ func (n *DirectDeclarator) isVLA() *Expression {
 	default:
 		panic("internal error")
 	}
-	panic("unreachable")
 }
 
 // ----------------------------------------------------------------- Expression

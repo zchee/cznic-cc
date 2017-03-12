@@ -963,16 +963,14 @@ func (n *ctype) structOrUnionSpecifier() *StructOrUnionSpecifier {
 	}
 }
 
-// Members implements Type.
-func (n *ctype) Members() (r []Member, isIncomplete bool) {
-	if k := n.Kind(); k != Struct && k != Union {
-		return nil, false
-	}
+func (n *ctype) members(p *[]Member, l *StructDeclarationList) {
+	r := *p
+	defer func() { *p = r }()
 
-	switch sus := n.structOrUnionSpecifier(); sus.Case {
-	case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
-		for l := sus.StructDeclarationList; l != nil; l = l.StructDeclarationList {
-			for l := l.StructDeclaration.StructDeclaratorList; l != nil; l = l.StructDeclaratorList {
+	for ; l != nil; l = l.StructDeclarationList {
+		switch sdn := l.StructDeclaration; sdn.Case {
+		case 0: // SpecifierQualifierList StructDeclaratorList ';'
+			for l := sdn.StructDeclaratorList; l != nil; l = l.StructDeclaratorList {
 				var d *Declarator
 				var bits int
 				switch sd := l.StructDeclarator; sd.Case {
@@ -1027,7 +1025,28 @@ func (n *ctype) Members() (r []Member, isIncomplete bool) {
 					Type:         t,
 				})
 			}
+		case 1: // SpecifierQualifierList ';'                       // Case 1
+			l := sdn.SpecifierQualifierList.TypeSpecifier.StructOrUnionSpecifier.StructDeclarationList
+			var r2 []Member
+			n.members(&r2, l)
+			r = append(r, r2...)
+		case 2: // StaticAssertDeclaration                          // Case 2
+			//nop
+		default:
+			panic("internal error")
 		}
+	}
+}
+
+// Members implements Type.
+func (n *ctype) Members() (r []Member, isIncomplete bool) {
+	if k := n.Kind(); k != Struct && k != Union {
+		return nil, false
+	}
+
+	switch sus := n.structOrUnionSpecifier(); sus.Case {
+	case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
+		n.members(&r, sus.StructDeclarationList)
 		return r, false
 	case 1: // StructOrUnion IDENTIFIER
 		return []Member{}, true
