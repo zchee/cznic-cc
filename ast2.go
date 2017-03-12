@@ -150,6 +150,35 @@ func (n *Declarator) isCompatible(m *Declarator) (r bool) {
 	return n == m || n.Type.(*ctype).isCompatible(m.Type.(*ctype))
 }
 
+func (n *Declarator) unsigednEnum(lx *lexer, s Specifier) bool {
+	switch x := s.(type) {
+	case *DeclarationSpecifiers:
+		o := x.DeclarationSpecifiersOpt
+		if o == nil {
+			return false
+		}
+
+		switch ds := o.DeclarationSpecifiers; ds.Case {
+		case 1: // TypeSpecifier DeclarationSpecifiersOpt          // Case 1
+			switch ts := ds.TypeSpecifier; ts.Case {
+			case 12: // EnumSpecifier                // Case 12
+				return ts.EnumSpecifier.isUnsigned(lx)
+			}
+		}
+	case *SpecifierQualifierList:
+		ts := x.TypeSpecifier
+		if ts == nil {
+			return false
+		}
+
+		switch ts.Case {
+		case 12: // EnumSpecifier                // Case 12
+			return ts.EnumSpecifier.isUnsigned(lx)
+		}
+	}
+	return false
+}
+
 func (n *Declarator) setFull(lx *lexer) Type {
 	d := n
 	var dds0, dds []*DirectDeclarator
@@ -337,36 +366,9 @@ loop0:
 		resultStars:     resultStars,
 		stars:           stars,
 	}
-	if x, ok := resultSpecifier.(*DeclarationSpecifiers); ok && lx.tweaks.enableUnsignedEnums {
-		o := x.DeclarationSpecifiersOpt
-		if o != nil {
-			switch ds := o.DeclarationSpecifiers; ds.Case {
-			case 1: // TypeSpecifier DeclarationSpecifiersOpt          // Case 1
-				switch ts := ds.TypeSpecifier; ts.Case {
-				case 12: // EnumSpecifier                // Case 12
-					switch es := ts.EnumSpecifier; es.Case {
-					case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
-						if es.unsigned {
-							t.resultSpecifier = &spec{resultAttr, tsEncode(tsUnsigned)}
-						}
-					case 1: // "enum" IDENTIFIER                                     // Case 1
-						switch b := lx.scope.Lookup(NSTags, es.Token2.Val); x := b.Node.(type) {
-						case *EnumSpecifier:
-							switch es := x; es.Case {
-							case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
-								if es.unsigned {
-									t.resultSpecifier = &spec{resultAttr, tsEncode(tsUnsigned)}
-								}
-							default:
-								panic(fmt.Errorf("%s: TODO %v", position(es.Pos()), es.Case))
-							}
-						}
-					default:
-						panic(fmt.Errorf("%s: TODO %v", position(es.Pos()), es.Case))
-					}
-				}
-			}
-		}
+	//fmt.Printf("%s: 343\n%s", position(d.Pos()), PrettyString(resultSpecifier))
+	if lx.tweaks.enableUnsignedEnums && n.unsigednEnum(lx, resultSpecifier) {
+		t.resultSpecifier = &spec{resultAttr, tsEncode(tsUnsigned)}
 	}
 	n.Type = t
 	//dbg("@@@@ %v: %s", position(n.Pos()), t.dds[0].Token.S())
@@ -702,6 +704,24 @@ func (n *DirectDeclarator) isVLA() *Expression {
 	default:
 		panic("internal error")
 	}
+}
+
+// -------------------------------------------------------------  EnumSpecifier
+
+func (n *EnumSpecifier) isUnsigned(lx *lexer) bool {
+	switch n.Case {
+	case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
+		return n.unsigned
+	case 1: // "enum" IDENTIFIER                                     // Case 1
+		switch b := lx.scope.Lookup(NSTags, n.Token2.Val); x := b.Node.(type) {
+		case *EnumSpecifier:
+			switch n := x; n.Case {
+			case 0: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
+				return n.unsigned
+			}
+		}
+	}
+	return false
 }
 
 // ----------------------------------------------------------------- Expression
