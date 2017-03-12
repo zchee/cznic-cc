@@ -260,6 +260,10 @@ import (
 	TypeSpecifier			"type specifier"
 	VolatileOpt			"optional volatile"
 
+
+%precedence	NOSEMI
+%precedence	';'
+
 %precedence	NOELSE
 %precedence	ELSE
 
@@ -334,7 +338,7 @@ ArgumentExpressionListOpt:
 //yy:field	Value		interface{}	// Non nil for certain constant expressions.
 //yy:field	scope		*Bindings	// Case 0: IDENTIFIER resolution scope.
 Expression:
-	IDENTIFIER
+	IDENTIFIER %prec NOSEMI
 	{
 		lhs.scope = lx.scope
 	}
@@ -420,6 +424,12 @@ Expression:
 |	Expression "|=" Expression
 |	"_Alignof" '(' TypeName ')'
 |	'(' CompoundStatement ')'
+|	"&&" IDENTIFIER
+	{
+		if !lx.tweaks.enableComputedGotos {
+			lx.report.Err(lhs.Pos(), "computed gotos not enabled")
+		}
+	}
 
 
 ExpressionOpt:
@@ -1656,6 +1666,17 @@ JumpStatement:
 |	"continue" ';'
 |	"break" ';'
 |	"return" ExpressionListOpt ';'
+|	"goto" Expression ';'
+	{
+		lhs.Expression.eval(lx)
+		if t := lhs.Expression.Type; t == nil || t.Kind() != Void {
+			lx.report.Err(lhs.Pos(), "invalid computed goto argument type, have '%s'", t)
+		}
+
+		if !lx.tweaks.enableComputedGotos {
+			lx.report.Err(lhs.Pos(), "computed gotos not enabled")
+		}
+	}
 
 // [0](6.9)
 //yy:field	Comments	map[token.Pos]int	// Position -> comment ID. Enable using the KeepComments option.

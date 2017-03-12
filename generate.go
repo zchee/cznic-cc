@@ -34,6 +34,7 @@ func yy() (nm string, err error) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		os.Remove(nm)
 		log.Printf("%s", out)
+
 		return "", err
 	}
 

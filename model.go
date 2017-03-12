@@ -25,6 +25,10 @@ type (
 	// LongStringLitID is the type of an Expression.Value representing the
 	// numeric ID of a long string literal.
 	LongStringLitID int
+
+	// StringLitID is the type of an Expression.Value representing the numeric
+	// ID of a label name used in &&label.
+	ComputedGotoID int
 )
 
 var (

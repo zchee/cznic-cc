@@ -250,6 +250,7 @@ type tweaks struct {
 	enableAnonymousStructFields         bool              //
 	enableAsm                           bool              //
 	enableBuiltinConstantP              bool              // __builtin_constant_p(expr)
+	enableComputedGotos                 bool              // var = &&label; goto *var;
 	enableDefineOmitCommaBeforeDDD      bool              // #define foo(a, b...)
 	enableDlrInIdentifiers              bool              // foo$bar
 	enableEmptyDeclarations             bool              // ; // C++11
@@ -413,6 +414,16 @@ func KeepComments() Opt {
 // See https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 func EnableBuiltinConstantP() Opt {
 	return func(l *lexer) { l.tweaks.enableBuiltinConstantP = true }
+}
+
+// EnableComputedGotos makes the parser accept non standard
+//
+//	variable = &&label;
+//	goto *variable;
+//
+// See https://gcc.gnu.org/onlinedocs/gcc-3.3/gcc/Labels-as-Values.html
+func EnableComputedGotos() Opt {
+	return func(l *lexer) { l.tweaks.enableComputedGotos = true }
 }
 
 // EnableUnsignedEnums makes the parser handle choose unsigned int as the type

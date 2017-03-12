@@ -2474,6 +2474,9 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		default:
 			panic("internal error")
 		}
+	case 58: // "&&" IDENTIFIER                                    // Case 58
+		n.Type = lx.model.VoidType.Pointer()
+		n.Value = ComputedGotoID(n.Token2.Val)
 	default:
 		//dbg("", PrettyString(n))
 		panic(fmt.Errorf("%s: internal error: Expression.Case: %v", position(n.Pos()), n.Case))

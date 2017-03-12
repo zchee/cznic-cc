@@ -136,6 +136,7 @@ import (
 	NEQ                          "!="
 	NOELSE
 	NORETURN                     "_Noreturn"
+	NOSEMI
 	ORASSIGN                     "|="
 	OROR                         "||"
 	PPDEFINE                     "#define"
@@ -289,6 +290,8 @@ import (
 	ReplacementList              "replacement list"
 	TextLine                     "text line"
 
+%precedence	NOSEMI
+%precedence	';'
 %precedence	NOELSE
 %precedence	ELSE
 %right	'=' ADDASSIGN ANDASSIGN DIVASSIGN LSHASSIGN MODASSIGN MULASSIGN ORASSIGN RSHASSIGN SUBASSIGN XORASSIGN
@@ -386,7 +389,7 @@ ArgumentExpressionListOpt:
 	}
 
 Expression:
-	IDENTIFIER
+	IDENTIFIER %prec NOSEMI
 	{
 		lx := yylex.(*lexer)
 		lhs := &Expression{
@@ -919,6 +922,19 @@ Expression:
 			Token:              $1,
 			CompoundStatement:  $2.(*CompoundStatement),
 			Token2:             $3,
+		}
+	}
+|	"&&" IDENTIFIER
+	{
+		lx := yylex.(*lexer)
+		lhs := &Expression{
+			Case:    58,
+			Token:   $1,
+			Token2:  $2,
+		}
+		$$ = lhs
+		if !lx.tweaks.enableComputedGotos {
+			lx.report.Err(lhs.Pos(), "computed gotos not enabled")
 		}
 	}
 
@@ -3072,6 +3088,25 @@ JumpStatement:
 			Token:              $1,
 			ExpressionListOpt:  $2.(*ExpressionListOpt),
 			Token2:             $3,
+		}
+	}
+|	"goto" Expression ';'
+	{
+		lx := yylex.(*lexer)
+		lhs := &JumpStatement{
+			Case:        4,
+			Token:       $1,
+			Expression:  $2.(*Expression),
+			Token2:      $3,
+		}
+		$$ = lhs
+		lhs.Expression.eval(lx)
+		if t := lhs.Expression.Type; t == nil || t.Kind() != Void {
+			lx.report.Err(lhs.Pos(), "invalid computed goto argument type, have '%s'", t)
+		}
+
+		if !lx.tweaks.enableComputedGotos {
+			lx.report.Err(lhs.Pos(), "computed gotos not enabled")
 		}
 	}
 
