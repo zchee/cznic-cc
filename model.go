@@ -27,37 +27,42 @@ type (
 	LongStringLitID int
 )
 
-var binOpTab = [kindMax][kindMax]Kind{
-	Undefined:         {},
-	Void:              {},
-	Ptr:               {},
-	UintPtr:           {UintPtr: UintPtr},
-	Char:              {UintPtr: UintPtr, Int},
-	SChar:             {UintPtr: UintPtr, Int, Int},
-	UChar:             {UintPtr: UintPtr, Int, Int, Int},
-	Short:             {UintPtr: UintPtr, Int, Int, Int, Int},
-	UShort:            {UintPtr: UintPtr, Int, Int, Int, Int, Int},
-	Int:               {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int},
-	UInt:              {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt, UInt, UInt},
-	Long:              {UintPtr: UintPtr, Long, Long, Long, Long, Long, Long, Long, Long},
-	ULong:             {UintPtr: UintPtr, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong},
-	LongLong:          {UintPtr: UintPtr, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong},
-	ULongLong:         {UintPtr: UintPtr, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong},
-	Float:             {UintPtr: Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float},
-	Double:            {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
-	LongDouble:        {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
-	Bool:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
-	FloatComplex:      {UintPtr: FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex},
-	DoubleComplex:     {UintPtr: DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex},
-	LongDoubleComplex: {UintPtr: LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex},
-	Struct:            {},
-	Union:             {},
-	Enum:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
-	TypedefName:       {},
-	Function:          {},
-	Array:             {},
-	typeof:            {},
-}
+var (
+	maxConvF32I32 = math.Nextafter32(math.MaxInt32, 0) // https://github.com/golang/go/issues/19405
+	maxConvF32U32 = math.Nextafter32(math.MaxUint32, 0)
+
+	binOpTab = [kindMax][kindMax]Kind{
+		Undefined:         {},
+		Void:              {},
+		Ptr:               {},
+		UintPtr:           {UintPtr: UintPtr},
+		Char:              {UintPtr: UintPtr, Int},
+		SChar:             {UintPtr: UintPtr, Int, Int},
+		UChar:             {UintPtr: UintPtr, Int, Int, Int},
+		Short:             {UintPtr: UintPtr, Int, Int, Int, Int},
+		UShort:            {UintPtr: UintPtr, Int, Int, Int, Int, Int},
+		Int:               {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int},
+		UInt:              {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt, UInt, UInt},
+		Long:              {UintPtr: UintPtr, Long, Long, Long, Long, Long, Long, Long, Long},
+		ULong:             {UintPtr: UintPtr, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong},
+		LongLong:          {UintPtr: UintPtr, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong},
+		ULongLong:         {UintPtr: UintPtr, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong},
+		Float:             {UintPtr: Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float},
+		Double:            {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
+		LongDouble:        {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
+		Bool:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
+		FloatComplex:      {UintPtr: FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex},
+		DoubleComplex:     {UintPtr: DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex},
+		LongDoubleComplex: {UintPtr: LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex},
+		Struct:            {},
+		Union:             {},
+		Enum:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
+		TypedefName:       {},
+		Function:          {},
+		Array:             {},
+		typeof:            {},
+	}
+)
 
 // ModelItem is a single item of a model.
 //
@@ -528,7 +533,12 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		case float32:
 			switch w {
 			case 4:
-				return int32(x)
+				switch {
+				case x > maxConvF32I32:
+					return int32(math.MaxInt32)
+				default:
+					return int32(x)
+				}
 			default:
 				panic(w)
 			}
@@ -597,6 +607,18 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			switch w {
 			case 4:
 				return uint32(x)
+			default:
+				panic(w)
+			}
+		case float32:
+			switch w {
+			case 4:
+				switch {
+				case x > maxConvF32U32:
+					return uint32(math.MaxUint32)
+				default:
+					return uint32(x)
+				}
 			default:
 				panic(w)
 			}
