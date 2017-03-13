@@ -136,6 +136,60 @@ const (
 	External
 )
 
+// Values from GCC's typeclass.h
+const (
+	noTypeClass = iota - 1
+	voidTypeClass
+	integerTypeClass
+	charTypeClass
+	enumeralTypeClass
+	booleanTypeClass
+	pointerTypeClass
+	referenceTypeClass
+	offsetTypeClass
+	realTypeClass
+	complexTypeClass
+	functionTypeClass
+	methodTypeClass
+	recordTypeClass
+	unionTypeClass
+	arrayTypeClass
+	stringTypeClass
+	langTypeClass
+)
+
+var classifyType = map[Kind]int{
+	Undefined:         noTypeClass,
+	Void:              voidTypeClass,
+	Ptr:               pointerTypeClass,
+	UintPtr:           noTypeClass,
+	Char:              charTypeClass,
+	SChar:             charTypeClass,
+	UChar:             charTypeClass,
+	Short:             integerTypeClass,
+	UShort:            integerTypeClass,
+	Int:               integerTypeClass,
+	UInt:              integerTypeClass,
+	Long:              integerTypeClass,
+	ULong:             integerTypeClass,
+	LongLong:          integerTypeClass,
+	ULongLong:         integerTypeClass,
+	Float:             realTypeClass,
+	Double:            realTypeClass,
+	LongDouble:        realTypeClass,
+	Bool:              booleanTypeClass,
+	FloatComplex:      complexTypeClass,
+	DoubleComplex:     complexTypeClass,
+	LongDoubleComplex: complexTypeClass,
+	Struct:            recordTypeClass,
+	Union:             unionTypeClass,
+	Enum:              enumeralTypeClass,
+	TypedefName:       noTypeClass,
+	Function:          functionTypeClass,
+	Array:             arrayTypeClass,
+	typeof:            noTypeClass,
+}
+
 // Kind is a type category. Kind formally implements Type the only method
 // returning a non nil value is Kind.
 type Kind int
@@ -364,43 +418,44 @@ var (
 		XORASSIGN:     dict.SID("^="),
 	}
 
-	id0                = dict.SID("0")
-	id1                = dict.SID("1")
-	idAlignof          = dict.SID("_Alignof")
-	idAlignofAlt       = dict.SID("__alignof__")
-	idAsm              = dict.SID("asm")
-	idAsmAlt           = dict.SID("__asm__")
-	idBuiltinConstantP = dict.SID("__builtin_constant_p")
-	idChar             = dict.SID("char")
-	idConst            = dict.SID("const")
-	idDate             = dict.SID("__DATE__")
-	idDefined          = dict.SID("defined")
-	idEmptyString      = dict.SID(`""`)
-	idFile             = dict.SID("__FILE__")
-	idID               = dict.SID("ID")
-	idInlineAlt        = dict.SID("__inline__")
-	idL                = dict.SID("L")
-	idLine             = dict.SID("__LINE__")
-	idMagicFunc        = dict.SID("__func__")
-	idNoreturn         = dict.SID("_Noreturn")
-	idPragma           = dict.SID("_Pragma")
-	idRestrictAlt      = dict.SID("__restrict__")
-	idSTDC             = dict.SID("__STDC__")
-	idSTDCHosted       = dict.SID("__STDC_HOSTED__")
-	idSTDCMBMightNeqWc = dict.SID("__STDC_MB_MIGHT_NEQ_WC__")
-	idSTDCVersion      = dict.SID("__STDC_VERSION__")
-	idSignedAlt        = dict.SID("__signed__")
-	idSpace            = dict.SID(" ")
-	idStatic           = dict.SID("static")
-	idStaticAssert     = dict.SID("_Static_assert")
-	idTDate            = dict.SID(tuTime.Format("Jan _2 2006")) // The date of translation of the preprocessing translation unit.
-	idTTime            = dict.SID(tuTime.Format("15:04:05"))    // The time of translation of the preprocessing translation unit.
-	idTime             = dict.SID("__TIME__")
-	idTypeof           = dict.SID("typeof")
-	idTypeofAlt        = dict.SID("__typeof__")
-	idVAARGS           = dict.SID("__VA_ARGS__")
-	idVolatileAlt      = dict.SID("__volatile__")
-	tuTime             = time.Now()
+	id0                  = dict.SID("0")
+	id1                  = dict.SID("1")
+	idAlignof            = dict.SID("_Alignof")
+	idAlignofAlt         = dict.SID("__alignof__")
+	idAsm                = dict.SID("asm")
+	idAsmAlt             = dict.SID("__asm__")
+	idBuiltinClasifyType = dict.SID("__builtin_classify_type")
+	idBuiltinConstantP   = dict.SID("__builtin_constant_p")
+	idChar               = dict.SID("char")
+	idConst              = dict.SID("const")
+	idDate               = dict.SID("__DATE__")
+	idDefined            = dict.SID("defined")
+	idEmptyString        = dict.SID(`""`)
+	idFile               = dict.SID("__FILE__")
+	idID                 = dict.SID("ID")
+	idInlineAlt          = dict.SID("__inline__")
+	idL                  = dict.SID("L")
+	idLine               = dict.SID("__LINE__")
+	idMagicFunc          = dict.SID("__func__")
+	idNoreturn           = dict.SID("_Noreturn")
+	idPragma             = dict.SID("_Pragma")
+	idRestrictAlt        = dict.SID("__restrict__")
+	idSTDC               = dict.SID("__STDC__")
+	idSTDCHosted         = dict.SID("__STDC_HOSTED__")
+	idSTDCMBMightNeqWc   = dict.SID("__STDC_MB_MIGHT_NEQ_WC__")
+	idSTDCVersion        = dict.SID("__STDC_VERSION__")
+	idSignedAlt          = dict.SID("__signed__")
+	idSpace              = dict.SID(" ")
+	idStatic             = dict.SID("static")
+	idStaticAssert       = dict.SID("_Static_assert")
+	idTDate              = dict.SID(tuTime.Format("Jan _2 2006")) // The date of translation of the preprocessing translation unit.
+	idTTime              = dict.SID(tuTime.Format("15:04:05"))    // The time of translation of the preprocessing translation unit.
+	idTime               = dict.SID("__TIME__")
+	idTypeof             = dict.SID("typeof")
+	idTypeofAlt          = dict.SID("__typeof__")
+	idVAARGS             = dict.SID("__VA_ARGS__")
+	idVolatileAlt        = dict.SID("__volatile__")
+	tuTime               = time.Now()
 
 	tokHasVal = map[rune]bool{
 		CHARCONST:         true,

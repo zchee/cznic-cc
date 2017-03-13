@@ -249,6 +249,7 @@ type tweaks struct {
 	enableAlternateKeywords             bool              // __asm__ etc.
 	enableAnonymousStructFields         bool              //
 	enableAsm                           bool              //
+	enableBuiltinClassifyType           bool              // __builtin_classify_type(expr)
 	enableBuiltinConstantP              bool              // __builtin_constant_p(expr)
 	enableComputedGotos                 bool              // var = &&label; goto *var;
 	enableDefineOmitCommaBeforeDDD      bool              // #define foo(a, b...)
@@ -405,6 +406,15 @@ type Opt func(*lexer)
 // KeepComments makes the parser keep comments.
 func KeepComments() Opt {
 	return func(l *lexer) { l.tweaks.comments = map[token.Pos]int{} }
+}
+
+// EnableBuiltinClassifyType makes the parser handle specially
+//
+//	__builtin_constant_p(expr)
+//
+// See https://gcc.gnu.org/onlinedocs/gccint/Varargs.html
+func EnableBuiltinClassifyType() Opt {
+	return func(l *lexer) { l.tweaks.enableBuiltinClassifyType = true }
 }
 
 // EnableBuiltinConstantP makes the parser handle specially

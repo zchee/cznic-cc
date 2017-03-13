@@ -847,6 +847,29 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 				break
 			}
 
+			if lx.tweaks.enableBuiltinClassifyType && n.Expression.Token.Val == idBuiltinClasifyType {
+				o := n.ArgumentExpressionListOpt
+				if o == nil {
+					lx.report.Err(n.Expression.Pos(), "missing argument of __builtin_classify_type")
+					break
+				}
+
+				args := o.ArgumentExpressionList
+				if args.ArgumentExpressionList != nil {
+					lx.report.Err(n.Expression.Pos(), "too many arguments of __builtin_classify_type")
+					break
+				}
+
+				n.Case = 3 // INTCONST
+				n.Type = lx.model.IntType
+				v := noTypeClass
+				if _, t := args.Expression.eval(lx); t != nil {
+					v = classifyType[t.Kind()]
+				}
+				n.Value = int32(v)
+				break
+			}
+
 			b := n.Expression.scope.Lookup(NSIdentifiers, n.Expression.Token.Val)
 			if b.Node == nil && lx.tweaks.enableImplicitFuncDef {
 				n.Type = lx.model.IntType
