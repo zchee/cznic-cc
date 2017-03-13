@@ -476,6 +476,7 @@ var (
 	tsValid = map[int]Kind{
 		tsEncode(tsBool):                            Bool,              // _Bool
 		tsEncode(tsChar):                            Char,              // char
+		tsEncode(tsComplex):                         DoubleComplex,     // _Complex
 		tsEncode(tsDouble):                          Double,            // double
 		tsEncode(tsDouble, tsComplex):               DoubleComplex,     // double _Complex
 		tsEncode(tsEnumSpecifier):                   Enum,              // enum specifier
