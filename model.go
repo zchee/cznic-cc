@@ -1302,36 +1302,66 @@ func (m *Model) strConst(lx *lexer, t xc.Token) (interface{}, Type) {
 }
 
 func (m *Model) floatConst(lx *lexer, t xc.Token) (interface{}, Type) {
-	s0 := t.S()
-	s := s0
-	switch s[len(s)-1] {
-	case 'l', 'L', 'f', 'F':
-		s = s[:len(s)-1]
+	const (
+		f = 1 << iota
+		j
+		l
+	)
+	k := 0
+	s := t.S()
+	i := len(s) - 1
+more:
+	switch c := s[i]; c {
+	case 'i', 'j':
+		k |= j
+		i--
+		goto more
+	case 'l', 'L':
+		k |= l
+		i--
+		goto more
+	case 'f', 'F':
+		k |= f
+		i--
+		goto more
 	}
-	ss := string(s)
-	var f float64
+	if k&j != 0 && !lx.tweaks.enableImaginarySuffix {
+		lx.report.Err(t.Pos(), "imaginary suffixes not enabled")
+		k &^= j
+	}
+	ss := string(s[:i+1])
+	var v float64
 	var err error
 	switch {
 	case strings.Contains(ss, "p"):
 		var bf *big.Float
 		bf, _, err = big.ParseFloat(ss, 0, 53, big.ToNearestEven)
 		if err != nil {
-			f, _ = bf.Float64()
+			v, _ = bf.Float64()
 		}
 	default:
-		f, err = strconv.ParseFloat(ss, 64)
+		v, err = strconv.ParseFloat(ss, 64)
 	}
 	if err != nil {
 		lx.report.Err(t.Pos(), "invalid floating point constant %s", ss)
-		f = 0
+		v = 0
 	}
-	switch s0[len(s0)-1] {
-	case 'l', 'L':
-		return m.value2(f, m.LongDoubleType)
-	case 'f', 'F':
-		return m.value2(f, m.FloatType)
+	switch k {
+	case 0:
+		return m.value2(v, m.DoubleType)
+	case l:
+		return m.value2(v, m.LongDoubleType)
+	case j:
+		return m.value2(v, m.DoubleComplexType)
+	case j | l:
+		return m.value2(v, m.LongDoubleComplexType)
+	case f:
+		return m.value2(v, m.FloatType)
+	case f | j:
+		return m.value2(v, m.FloatComplexType)
 	default:
-		return m.value2(f, m.DoubleType)
+		lx.report.Err(t.Pos(), "invalid literal %s", t.S())
+		return 0.0, m.DoubleType
 	}
 }
 

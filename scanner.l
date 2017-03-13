@@ -48,7 +48,7 @@ eof                             \x80
 escape-sequence                 {simple-sequence}|{octal-escape-sequence}|{hexadecimal-escape-sequence}|{universal-character-name}
 exponent-part                   [eE]{sign}?{digit-sequence}
 floating-constant               {decimal-floating-constant}|{hexadecimal-floating-constant}
-floating-suffix                 [flFL]
+floating-suffix                 i?[flFL]|[flFL]i?
 fractional-constant             {digit-sequence}?\.{digit-sequence}|{digit-sequence}\.
 h-char                          [^>\n\x80]
 h-char-sequence                 {h-char}+

@@ -257,6 +257,7 @@ type tweaks struct {
 	enableEmptyDeclarations             bool              // ; // C++11
 	enableEmptyDefine                   bool              // #define
 	enableEmptyStructs                  bool              // struct foo {};
+	enableImaginarySuffix               bool              // 4.2i
 	enableImplicitFuncDef               bool              // int f() { return g(); } int g() { return 42; }
 	enableIncludeNext                   bool              //
 	enableLegacyDesignators             bool              // { a: 42 }
@@ -469,6 +470,15 @@ func AllowCompatibleTypedefRedefinitions() Opt {
 // as an expression. See [3].
 func EnableParenthesizedCompoundStatemen() Opt {
 	return func(l *lexer) { l.tweaks.enableParenCompoundStmt = true }
+}
+
+// EnableImaginarySuffix makes the parser accept non standard
+//
+//	4.2i, 5.6j etc
+//
+// See https://gcc.gnu.org/onlinedocs/gcc/Complex.html
+func EnableImaginarySuffix() Opt {
+	return func(l *lexer) { l.tweaks.enableImaginarySuffix = true }
 }
 
 // EnableNonConstStaticInitExpressions makes the parser accept non standard
