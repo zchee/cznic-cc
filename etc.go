@@ -162,6 +162,9 @@ type Type interface {
 	// Tag returns the ID of a tag of a Struct, Union or Enum type, if any.
 	// Otherwise the returned value is zero.
 	Tag() int
+
+	sizeOf(*lexer) int
+	structAlignOf(*lexer) int
 }
 
 // Member describes a member of a struct or union.
@@ -1284,8 +1287,17 @@ func (n *ctype) SizeOf() int {
 	case Function:
 		return n.model.Items[Ptr].Size
 	default:
-		panic(n.Kind().String())
+		return -1
 	}
+}
+
+func (n *ctype) sizeOf(lx *lexer) int {
+	r := n.SizeOf()
+	if r < 0 {
+		lx.report.Err(n.Declarator().Pos(), "cannot determine size of %v", n)
+		r = 1
+	}
+	return r
 }
 
 // Specifier implements Type.
@@ -1424,8 +1436,17 @@ func (n *ctype) StructAlignOf() int {
 			panic(sus.Case)
 		}
 	default:
-		panic(k.String())
+		return -1
 	}
+}
+
+func (n *ctype) structAlignOf(lx *lexer) int {
+	r := n.StructAlignOf()
+	if r < 0 {
+		lx.report.Err(n.Declarator().Pos(), "cannot determine struct align of %v", n)
+		r = 1
+	}
+	return r
 }
 
 // Tag implements Type.

@@ -3024,8 +3024,8 @@ func (n *StructDeclarator) post(lx *lexer) {
 		}
 
 		t := n.Declarator.Type
-		sz := t.SizeOf()
-		al := t.StructAlignOf()
+		sz := t.sizeOf(lx)
+		al := t.structAlignOf(lx)
 		switch {
 		case sc.isUnion:
 			// Track union size.
@@ -3053,13 +3053,13 @@ func (n *StructDeclarator) post(lx *lexer) {
 			w = int(x)
 		case int64:
 			w = int(x)
-			if m := t.SizeOf() * 8; x > int64(m) {
+			if m := t.sizeOf(lx) * 8; x > int64(m) {
 				lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds its type")
 				w = m
 			}
 		case uint64:
 			w = int(x)
-			m := t.SizeOf() * 8
+			m := t.sizeOf(lx) * 8
 			if x > uint64(m) {
 				lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds its type")
 				w = m
@@ -3074,11 +3074,11 @@ func (n *StructDeclarator) post(lx *lexer) {
 		default:
 			panic("internal error")
 		}
-		if m := t.SizeOf() * 8; w > m {
+		if m := t.sizeOf(lx) * 8; w > m {
 			lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds its type")
 			w = m
 		}
-		maxBits := lx.model.LongType.SizeOf() * 8
+		maxBits := lx.model.LongType.sizeOf(lx) * 8
 		if sc.bitOffset+w > maxBits {
 			finishBitField(lx)
 		}
