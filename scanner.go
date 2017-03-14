@@ -912,11 +912,11 @@ yystate70:
 
 yystate71:
 	c = l.Next()
-	yyrule = 59
+	yyrule = 58
 	l.Mark()
 	switch {
 	default:
-		goto yyrule59
+		goto yyrule58
 	case c == '.' || c >= '0' && c <= '9' || c >= 'A' && c <= 'D' || c >= 'G' && c <= 'K' || c >= 'M' && c <= 'O' || c >= 'Q' && c <= 'Z' || c == '_' || c >= 'a' && c <= 'd' || c >= 'g' && c <= 'k' || c >= 'm' && c <= 'o' || c >= 'q' && c <= 'z' || c == '\u0084':
 		goto yystate55
 	case c == 'E' || c == 'P' || c == 'e' || c == 'p':
