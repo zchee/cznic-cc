@@ -3165,6 +3165,8 @@ func (n *StructOrUnionSpecifier) isCompatible(m *StructOrUnionSpecifier) (r bool
 	switch n.Case {
 	case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
 		switch m.Case {
+		case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
+			panic(fmt.Errorf("%s: TODO", position(n.Pos())))
 		case 1: // StructOrUnion IDENTIFIER
 			if o := n.IdentifierOpt; o != nil {
 				return o.Token.Val == m.Token.Val

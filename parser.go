@@ -5281,8 +5281,16 @@ yynewstate:
 				Token2:     yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
-			lhs.Expression.eval(lx)
-			if t := lhs.Expression.Type; t == nil || t.Kind() != Void {
+			_, t := lhs.Expression.eval(lx)
+			if t == nil {
+				break
+			}
+
+			for t != nil && t.Kind() == Ptr {
+				t = t.Element()
+			}
+
+			if t == nil || t.Kind() != Void {
 				lx.report.Err(lhs.Pos(), "invalid computed goto argument type, have '%s'", t)
 			}
 
