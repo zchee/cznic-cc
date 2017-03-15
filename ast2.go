@@ -2575,6 +2575,9 @@ func (*FunctionDefinition) post(lx *lexer, d *Declarator, dlo *DeclarationListOp
 				lx.pushScope(ScopeParams)
 				for l := ilo.IdentifierList; l != nil; l = l.IdentifierList {
 					tok := l.Token
+					if l.Case == 1 {
+						tok = l.Token2
+					}
 					d := lx.model.makeDeclarator(0, tsInt)
 					d.Type = lx.model.IntType
 					lx.scope.declareIdentifier(tok, d.DirectDeclarator, lx.report)
