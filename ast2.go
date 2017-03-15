@@ -2593,7 +2593,7 @@ func (*FunctionDefinition) post(lx *lexer, d *Declarator, dlo *DeclarationListOp
 
 			// ilo != nil && dlo != nil
 			lx.scope.mergeScope = dlo.paramsScope
-			ilo.post(lx.report, dlo.DeclarationList)
+			ilo.post(lx, dlo)
 		}
 	}
 	d.setFull(lx)
@@ -2605,12 +2605,12 @@ func (*FunctionDefinition) post(lx *lexer, d *Declarator, dlo *DeclarationListOp
 
 // ---------------------------------------------------------- IdentifierListOpt
 
-func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
+func (n *IdentifierListOpt) post(lx *lexer, dlo *DeclarationListOpt) {
 	type r struct {
 		pos token.Pos
 		i   int
 	}
-	var a []int
+	var a []xc.Token
 	ilm := map[int]r{}
 	i := 0
 	for il := n.IdentifierList; il != nil; il, i = il.IdentifierList, i+1 {
@@ -2620,43 +2620,49 @@ func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
 		}
 		nm := t.Val
 		if r, ok := ilm[nm]; ok {
-			report.ErrTok(t, "duplicate parameter name declaration, previous at %s", r.pos)
+			lx.report.ErrTok(t, "duplicate parameter name declaration, previous at %s", r.pos)
 			continue
 		}
 
 		v := r{t.Pos(), i}
 		ilm[nm] = v
-		a = append(a, nm)
+		a = append(a, t)
 	}
 	params := make([]Parameter, len(ilm))
-	for ; dl != nil; dl = dl.DeclarationList {
-		decl := dl.Declaration
-		o := decl.InitDeclaratorListOpt
-		if o == nil {
-			report.Err(decl.Pos(), "invalid parameter declaration")
-			continue
-		}
-
-		for l := o.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
-			id := l.InitDeclarator
-			if id.Case == 1 { // Declarator '=' Initializer
-				report.Err(id.Pos(), "invalid parameter declarator")
-			}
-
-			d := id.Declarator
-			nm, _ := d.Identifier()
-			r, ok := ilm[nm]
-			if !ok {
-				report.Err(d.Pos(), "parameter name not declared")
+	if dlo != nil {
+		for dl := dlo.DeclarationList; dl != nil; dl = dl.DeclarationList {
+			decl := dl.Declaration
+			o := decl.InitDeclaratorListOpt
+			if o == nil {
+				lx.report.Err(decl.Pos(), "invalid parameter declaration")
 				continue
 			}
 
-			params[r.i] = Parameter{d, nm, d.Type}
+			for l := o.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
+				id := l.InitDeclarator
+				if id.Case == 1 { // Declarator '=' Initializer
+					lx.report.Err(id.Pos(), "invalid parameter declarator")
+				}
+
+				d := id.Declarator
+				nm, _ := d.Identifier()
+				r, ok := ilm[nm]
+				if !ok {
+					lx.report.Err(d.Pos(), "parameter name not declared")
+					continue
+				}
+
+				params[r.i] = Parameter{d, nm, d.Type}
+			}
 		}
 	}
 	for i, v := range params {
 		if v.Declarator == nil {
-			params[i] = Parameter{nil, a[i], undefined}
+			tok := a[i]
+			d := lx.model.makeDeclarator(0, tsInt)
+			d.Type = lx.model.IntType
+			dlo.paramsScope.declareIdentifier(tok, d.DirectDeclarator, lx.report)
+			params[i] = Parameter{d, tok.Val, d.Type}
 		}
 	}
 	n.params = params
