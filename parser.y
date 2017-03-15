@@ -3173,6 +3173,13 @@ FunctionDefinition:
 	DeclarationSpecifiers Declarator DeclarationListOpt
 	{
 		lx := yylex.(*lexer)
+		if ds := $1.(*DeclarationSpecifiers); ds.typeSpecifier == 0 {
+			ds.typeSpecifier = tsEncode(tsInt)
+			$2.(*Declarator).Type = lx.model.IntType
+			if !lx.tweaks.enableOmitFuncRetType {
+				lx.report.Err($2.Pos(), "missing function return type")
+			}
+		}
 		var fd *FunctionDefinition
 		fd.post(lx, $2.(*Declarator), $3.(*DeclarationListOpt))
 	}

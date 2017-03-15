@@ -5348,6 +5348,13 @@ yynewstate:
 	case 250:
 		{
 			lx := yylex.(*lexer)
+			if ds := yyS[yypt-2].node.(*DeclarationSpecifiers); ds.typeSpecifier == 0 {
+				ds.typeSpecifier = tsEncode(tsInt)
+				yyS[yypt-1].node.(*Declarator).Type = lx.model.IntType
+				if !lx.tweaks.enableOmitFuncRetType {
+					lx.report.Err(yyS[yypt-1].node.Pos(), "missing function return type")
+				}
+			}
 			var fd *FunctionDefinition
 			fd.post(lx, yyS[yypt-1].node.(*Declarator), yyS[yypt-0].node.(*DeclarationListOpt))
 		}

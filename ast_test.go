@@ -2644,7 +2644,7 @@ func ExampleFunctionDefinition() {
 	// · },
 	// · Declarator: &cc.Declarator{
 	// · · Linkage: None,
-	// · · Type: auto undefined,
+	// · · Type: auto int,
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Token: example251.c:1:7: IDENTIFIER "a",
 	// · · },
