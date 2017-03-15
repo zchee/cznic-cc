@@ -750,12 +750,16 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 			t = t.Element()
 			u = u.Element()
 		}
-		if t.Kind() == Array && t.Element().Kind() == u.Kind() {
+		if t.Kind() == Array && unsigned(t.Element().Kind()) == unsigned(u.Kind()) {
 			return true
 		}
 
 		if t.Kind() == Ptr || u.Kind() == Ptr {
 			return false
+		}
+
+		if IsIntType(t) && IsIntType(u) && unsigned(t.Kind()) == unsigned(u.Kind()) {
+			return true
 		}
 
 		if t.Kind() == Function && u.Kind() == Function {
@@ -1902,5 +1906,22 @@ func nElem(t Type) int {
 		}
 		p *= n
 		t = t.Element()
+	}
+}
+
+func unsigned(k Kind) Kind {
+	switch k {
+	case Char, SChar:
+		return UChar
+	case Short:
+		return UShort
+	case Int:
+		return UInt
+	case Long:
+		return ULong
+	case LongLong:
+		return ULongLong
+	default:
+		return k
 	}
 }
