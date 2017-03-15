@@ -750,6 +750,10 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 			t = t.Element()
 			u = u.Element()
 		}
+		if t.Kind() == Array && t.Element().Kind() == u.Kind() {
+			return true
+		}
+
 		if t.Kind() == Ptr || u.Kind() == Ptr {
 			return false
 		}
