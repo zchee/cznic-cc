@@ -263,6 +263,7 @@ type tweaks struct {
 	enableLegacyDesignators             bool              // { a: 42 }
 	enableNonConstStaticInitExpressions bool              // static int *p = &i;
 	enableNoreturn                      bool              //
+	enableOmitFuncArgTypes              bool              // f(a) becomes the same as int f(int a).
 	enableOmitFuncRetType               bool              // f() becomes the same as int f().
 	enableParenCompoundStmt             bool              // ({...}), see [3]
 	enableStaticAssert                  bool              // _Static_assert
@@ -509,6 +510,13 @@ func EnableAnonymousStructFields() Opt {
 //	f() // Same as int f().
 func EnableOmitFuncRetType() Opt {
 	return func(l *lexer) { l.tweaks.enableOmitFuncRetType = true }
+}
+
+// EnableOmitFuncArgTypes makes the parser accept non standard
+//
+//	f(a) // Same as int f(int a).
+func EnableOmitFuncArgTypes() Opt {
+	return func(l *lexer) { l.tweaks.enableOmitFuncArgTypes = true }
 }
 
 // EnableEmptyDeclarations makes the parser accept non standard

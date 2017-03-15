@@ -2550,6 +2550,59 @@ func (n *ExpressionList) Len() (r int) {
 	return r
 }
 
+// --------------------------------------------------------- FunctionDefinition
+
+func (*FunctionDefinition) post(lx *lexer, d *Declarator, dlo *DeclarationListOpt) {
+	lx.scope.mergeScope = nil
+	done := false
+	for dd := d.DirectDeclarator.bottom(); !done && dd != nil; dd = dd.parent {
+		switch dd.Case {
+		case 6: // DirectDeclarator '(' ParameterTypeList ')'
+			done = true
+			lx.scope.mergeScope = dd.paramsScope
+			if dlo != nil {
+				lx.report.Err(dlo.Pos(), "declaration list not allowed in a function definition with parameter type list")
+			}
+		case 7: // DirectDeclarator '(' IdentifierListOpt ')'
+			done = true
+			ilo := dd.IdentifierListOpt
+			if ilo != nil && dlo == nil {
+				if !lx.tweaks.enableOmitFuncArgTypes {
+					lx.report.Err(ilo.Pos(), "missing parameter declaration list")
+					break
+				}
+
+				lx.pushScope(ScopeParams)
+				for l := ilo.IdentifierList; l != nil; l = l.IdentifierList {
+					tok := l.Token
+					d := lx.model.makeDeclarator(0, tsInt)
+					d.Type = lx.model.IntType
+					lx.scope.declareIdentifier(tok, d.DirectDeclarator, lx.report)
+					ilo.params = append(ilo.params, Parameter{d, tok.Val, d.Type})
+				}
+				lx.scope.mergeScope, _ = lx.popScope(dd.Token2)
+				break
+			}
+
+			if ilo == nil {
+				if dlo != nil {
+					lx.report.Err(dlo.Pos(), "unexpected parameter declaration list")
+				}
+				break
+			}
+
+			// ilo != nil && dlo != nil
+			lx.scope.mergeScope = dlo.paramsScope
+			ilo.post(lx.report, dlo.DeclarationList)
+		}
+	}
+	d.setFull(lx)
+	if !done {
+		lx.report.Err(d.Pos(), "declarator is not a function (have '%s': %v)", d.Type, d.Type.Kind())
+	}
+	lx.fnDeclarator = d
+}
+
 // ---------------------------------------------------------- IdentifierListOpt
 
 func (n *IdentifierListOpt) post(report *xc.Report, dl *DeclarationList) {
