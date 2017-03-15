@@ -1299,7 +1299,6 @@ ParameterDeclaration:
 	}
 
 // [0](6.7.5)
-//yy:field	paramsScope	*Bindings
 IdentifierList:
 	IDENTIFIER
 |	IdentifierList ',' IDENTIFIER

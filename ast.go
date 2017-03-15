@@ -1978,7 +1978,6 @@ func (n *GroupListOpt) Pos() token.Pos {
 //	        IDENTIFIER
 //	|       IdentifierList ',' IDENTIFIER  // Case 1
 type IdentifierList struct {
-	paramsScope    *Bindings
 	Case           int
 	IdentifierList *IdentifierList
 	Token          xc.Token
