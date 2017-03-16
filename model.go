@@ -1336,7 +1336,11 @@ more:
 	case strings.Contains(ss, "p"):
 		var bf *big.Float
 		bf, _, err = big.ParseFloat(ss, 0, 53, big.ToNearestEven)
-		if err != nil {
+		switch {
+		case err != nil:
+			lx.report.Err(t.Pos(), "invalid floating point constant %s", ss)
+			v = 0
+		default:
 			v, _ = bf.Float64()
 		}
 	default:
