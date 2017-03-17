@@ -774,13 +774,14 @@ func decodeEscapeSequence(runes []rune) (rune, int) {
 		return 11, 2
 	case 'x':
 		v, n := 0, 2
+	loop2:
 		for _, r := range runes[2:] {
 			switch {
 			case r >= '0' && r <= '9', r >= 'a' && r <= 'f', r >= 'A' && r <= 'F':
 				v = v<<4 | decodeHex(r)
 				n++
 			default:
-				break
+				break loop2
 			}
 		}
 		return -rune(v & 0xff), n
