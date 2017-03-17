@@ -259,6 +259,7 @@ type tweaks struct {
 	enableEmptyStructs                  bool              // struct foo {};
 	enableImaginarySuffix               bool              // 4.2i
 	enableImplicitFuncDef               bool              // int f() { return g(); } int g() { return 42; }
+	enableImplicitIntType               bool              // eg. 'static i;' is the same as 'static int i;'.
 	enableIncludeNext                   bool              //
 	enableLegacyDesignators             bool              // { a: 42 }
 	enableNonConstStaticInitExpressions bool              // static int *p = &i;
@@ -426,6 +427,19 @@ func EnableBuiltinClassifyType() Opt {
 // See https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 func EnableBuiltinConstantP() Opt {
 	return func(l *lexer) { l.tweaks.enableBuiltinConstantP = true }
+}
+
+// EnableImplicitIntType makes the parser accept non standard omitting type
+// specifier. For example
+//
+//	static i;
+//
+// becomes the same as
+//
+//	static int i;
+//
+func EnableImplicitIntType() Opt {
+	return func(l *lexer) { l.tweaks.enableImplicitIntType = true }
 }
 
 // EnableComputedGotos makes the parser accept non standard

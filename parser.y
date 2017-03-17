@@ -1016,6 +1016,10 @@ Declaration:
 			Token:                  $3,
 		}
 		$$ = lhs
+		ts0 := lhs.DeclarationSpecifiers.typeSpecifiers()
+		if ts0 == 0 && lx.tweaks.enableImplicitIntType {
+			lhs.DeclarationSpecifiers.typeSpecifier = tsEncode(tsInt)
+		}
 		ts := tsDecode(lhs.DeclarationSpecifiers.typeSpecifiers())
 		ok := false
 		for _, v := range ts {

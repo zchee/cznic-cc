@@ -3308,6 +3308,10 @@ yynewstate:
 				Token: yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
+			ts0 := lhs.DeclarationSpecifiers.typeSpecifiers()
+			if ts0 == 0 && lx.tweaks.enableImplicitIntType {
+				lhs.DeclarationSpecifiers.typeSpecifier = tsEncode(tsInt)
+			}
 			ts := tsDecode(lhs.DeclarationSpecifiers.typeSpecifiers())
 			ok := false
 			for _, v := range ts {
