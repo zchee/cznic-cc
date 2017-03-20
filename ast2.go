@@ -733,6 +733,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	}
 
 	n.Type = undefined
+outer:
 	switch n.Case {
 	case 0: // IDENTIFIER
 		b := n.scope.Lookup(NSIdentifiers, n.Token.Val)
@@ -784,42 +785,51 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 		n.Value, n.Type = n.ExpressionList.eval(lx)
 	case 8: // Expression '[' ExpressionList ']'
 		_, t := n.Expression.eval(lx)
-		if k := t.Kind(); k != Ptr && k != Array {
-			lx.report.ErrTok(n.Token, "subscripted value is not a pointer (have '%s')", t)
-			break
-		}
-
 		_, t2 := n.ExpressionList.eval(lx)
-		n.Type = t.Element()
-		if !IsIntType(t2) && t2.Kind() != Bool {
-			lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer or bool (have '%s')", t2)
+		switch t.Kind() {
+		case Ptr, Array:
+			n.Type = t.Element()
+			if !IsIntType(t2) && t2.Kind() != Bool {
+				lx.report.Err(n.ExpressionList.Pos(), "array subscript is not an integer or bool (have '%s')", t2)
+				break
+			}
+
+			if p, x := n.Expression.Value, n.ExpressionList.Value; p != nil && x != nil {
+				sz := uintptr(n.Type.SizeOf())
+				switch pv := p.(type) {
+				case uintptr:
+					switch xv := x.(type) {
+					case int32:
+						pv += sz * uintptr(xv)
+					case uint32:
+						pv += sz * uintptr(xv)
+					case int64:
+						pv += sz * uintptr(xv)
+					case uint64:
+						pv += sz * uintptr(xv)
+					case uintptr:
+						pv += sz * xv
+					default:
+						panic("TODO")
+					}
+					n.Value = pv
+				case StringLitID, LongStringLitID:
+					// ok, but not a constant expression.
+				default:
+					panic("internal error")
+				}
+			}
+			break outer
+		}
+
+		if !IsIntType(t) && t.Kind() != Bool || t2.Kind() != Ptr && t2.Kind() != Array {
+			lx.report.ErrTok(n.Token, "invalid index expression types (%s[%t])", t, n.ExpressionList.Type)
 			break
 		}
 
-		if p, x := n.Expression.Value, n.ExpressionList.Value; p != nil && x != nil {
-			sz := uintptr(n.Type.SizeOf())
-			switch pv := p.(type) {
-			case uintptr:
-				switch xv := x.(type) {
-				case int32:
-					pv += sz * uintptr(xv)
-				case uint32:
-					pv += sz * uintptr(xv)
-				case int64:
-					pv += sz * uintptr(xv)
-				case uint64:
-					pv += sz * uintptr(xv)
-				case uintptr:
-					pv += sz * xv
-				default:
-					panic("TODO")
-				}
-				n.Value = pv
-			case StringLitID, LongStringLitID:
-				// ok, but not a constant expression.
-			default:
-				panic("internal error")
-			}
+		n.Type = t2.Element()
+		if p, x := n.ExpressionList.Value, n.Expression.Value; p != nil && x != nil {
+			panic(fmt.Errorf("%s: TODO", position(n.Pos())))
 		}
 	case 9: // Expression '(' ArgumentExpressionListOpt ')'
 		if n.Expression.Case == 0 { // IDENTIFIER
