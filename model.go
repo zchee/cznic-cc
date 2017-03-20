@@ -1466,6 +1466,14 @@ func (m *Model) BinOpType(a, b Type) Type {
 	return m.typ(binOpTab[bk][ak])
 }
 
+func (m *Model) promote(t Type) Type {
+	if !IsIntType(t) {
+		return t
+	}
+
+	return m.BinOpType(t, t)
+}
+
 func (m *Model) makeType(lx *lexer, attr int, ts ...int) Type {
 	d := m.makeDeclarator(attr, ts...)
 	return d.setFull(lx)

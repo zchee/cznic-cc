@@ -1229,7 +1229,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 31: // Expression "<<" Expression
 		av, at := n.Expression.eval(lx)
 		bv, _ := n.Expression2.eval(lx)
-		n.Type = at
+		n.Type = lx.model.promote(at)
 		if av == nil || bv == nil {
 			break
 		}
@@ -1633,7 +1633,7 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	case 32: // Expression ">>" Expression
 		av, at := n.Expression.eval(lx)
 		bv, _ := n.Expression2.eval(lx)
-		n.Type = at
+		n.Type = lx.model.promote(at)
 		if av == nil || bv == nil {
 			break
 		}
