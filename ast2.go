@@ -2717,7 +2717,7 @@ func (n *Initializer) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
 				switch dt.Element().Kind() {
 				case Short, UShort, Int, UInt, Long, ULong:
 					if pt != nil && dd.isArray() && dt.Elements() < 0 {
-						*pt = dt.(*ctype).setElements(len(xc.Dict.S(int(v))) + 1)
+						*pt = dt.(*ctype).setElements(len([]rune(string(xc.Dict.S(int(v))))) + 1)
 					}
 				default:
 					if !xt.CanAssignTo(dt) {
