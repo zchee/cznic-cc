@@ -1078,6 +1078,10 @@ func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 			n.Value = x * b.(float32)
 		case float64:
 			n.Value = x * b.(float64)
+		case complex64:
+			n.Value = x * b.(complex64)
+		case complex128:
+			n.Value = x * b.(complex128)
 		default:
 			panic(fmt.Errorf("internal error: %T", x))
 		}

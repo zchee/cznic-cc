@@ -1106,6 +1106,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case complex128:
+			switch w {
+			case 8:
+				return complex64(x)
+			default:
+				panic(w)
+			}
 		default:
 			panic(fmt.Errorf("internal error %T", x))
 		}
@@ -1356,13 +1363,13 @@ more:
 	case l:
 		return m.value2(v, m.LongDoubleType)
 	case j:
-		return m.value2(v, m.DoubleComplexType)
+		return m.value2(complex(0, v), m.DoubleComplexType)
 	case j | l:
-		return m.value2(v, m.LongDoubleComplexType)
+		return m.value2(complex(0, v), m.LongDoubleComplexType)
 	case f:
 		return m.value2(v, m.FloatType)
 	case f | j:
-		return m.value2(v, m.FloatComplexType)
+		return m.value2(complex(0, v), m.FloatComplexType)
 	default:
 		lx.report.Err(t.Pos(), "invalid literal %s", t.S())
 		return 0.0, m.DoubleType
