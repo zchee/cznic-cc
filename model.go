@@ -57,7 +57,7 @@ var (
 		Bool:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
 		FloatComplex:      {UintPtr: FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex},
 		DoubleComplex:     {UintPtr: DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex},
-		LongDoubleComplex: {UintPtr: LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex},
+		LongDoubleComplex: {UintPtr: LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex},
 		Struct:            {},
 		Union:             {},
 		Enum:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
@@ -1092,6 +1092,13 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 		}
 	case FloatComplex:
 		switch x := v.(type) {
+		case float32:
+			switch w {
+			case 8:
+				return complex(x, 0)
+			default:
+				panic(w)
+			}
 		case float64:
 			switch w {
 			case 8:
@@ -1125,6 +1132,25 @@ func (m *Model) MustConvert(v interface{}, typ Type) interface{} {
 			default:
 				panic(w)
 			}
+		case float64:
+			switch w {
+			case 16:
+				return complex(x, 0)
+			default:
+				panic(w)
+			}
+		case complex128:
+			switch w {
+			case 16:
+				return x
+			default:
+				panic(w)
+			}
+		default:
+			panic(fmt.Errorf("internal error %T", x))
+		}
+	case LongDoubleComplex:
+		switch x := v.(type) {
 		case float64:
 			switch w {
 			case 16:
