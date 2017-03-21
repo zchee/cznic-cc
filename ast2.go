@@ -770,13 +770,13 @@ outer:
 			n.Value = v
 		}
 	case 1: // CHARCONST
-		n.Value, n.Type = m.charConst(n.Token)
+		n.Value, n.Type = m.charConst(lx, n.Token)
 	case 2: // FLOATCONST
 		n.Value, n.Type = m.floatConst(lx, n.Token)
 	case 3: // INTCONST
 		n.Value, n.Type = m.intConst(lx, n.Token)
 	case 4: // LONGCHARCONST
-		n.Value, n.Type = m.charConst(n.Token)
+		n.Value, n.Type = m.charConst(lx, n.Token)
 	case 5: // LONGSTRINGLITERAL
 		n.Value, n.Type = m.strConst(lx, n.Token)
 	case 6: // STRINGLITERAL

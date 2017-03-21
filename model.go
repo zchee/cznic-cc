@@ -1177,16 +1177,12 @@ func (m *Model) value2(v interface{}, typ Type) (interface{}, Type) {
 	return m.MustConvert(v, typ), typ
 }
 
-func (m *Model) charConst(t xc.Token) (interface{}, Type) {
-	s := string(t.S())
-	typ := m.IntType
-	var r rune
+func (m *Model) charConst(lx *lexer, t xc.Token) (interface{}, Type) {
 	switch t.Rune {
-	case LONGCHARCONST:
-		typ = m.LongType
-		s = s[1:] // Remove leading 'L'.
-		fallthrough
 	case CHARCONST:
+		s := string(t.S())
+		typ := m.IntType
+		var r rune
 		s = s[1 : len(s)-1] // Remove outer 's.
 		if len(s) == 1 {
 			return rune(s[0]), m.IntType
@@ -1202,10 +1198,40 @@ func (m *Model) charConst(t xc.Token) (interface{}, Type) {
 		default:
 			r = runes[0]
 		}
+		return r, typ
+	case LONGCHARCONST:
+		s := t.S()
+		typ := m.LongType
+		var buf bytes.Buffer
+		s = s[2 : len(s)-1]
+		runes := []rune(string(s))
+		for i := 0; i < len(runes); {
+			switch r := runes[i]; {
+			case r == '\\':
+				r, n := decodeEscapeSequence(runes[i:])
+				switch {
+				case r < 0:
+					buf.WriteByte(byte(-r))
+				default:
+					buf.WriteRune(r)
+				}
+				i += n
+			default:
+				buf.WriteByte(byte(r))
+				i++
+			}
+		}
+		s = buf.Bytes()
+		runes = []rune(string(s))
+		if len(runes) != 1 {
+			lx.report.Err(t.Pos(), "invalid character literal %s", t.S())
+			return 0, typ
+		}
+
+		return runes[0], typ
 	default:
 		panic("internal error")
 	}
-	return r, typ
 }
 
 func (m *Model) getSizeType(lx *lexer) Type {
