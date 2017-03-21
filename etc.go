@@ -411,7 +411,9 @@ func (b *Bindings) defineStructTag(tok xc.Token, n Node, report *xc.Report) {
 		}
 
 		if _, ok := ex.Node.(xc.Token); !ok {
-			report.ErrTok(tok, "struct tag redefined, previous definition: %s", position(ex.Node.Pos()))
+			if !n.(*StructOrUnionSpecifier).isCompatible(ex.Node.(*StructOrUnionSpecifier)) {
+				report.ErrTok(tok, "incompatible struct tag redefinition, previous definition at %s", position(ex.Node.Pos()))
+			}
 			return
 		}
 	}

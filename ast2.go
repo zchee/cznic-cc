@@ -3246,7 +3246,62 @@ func (n *StructOrUnionSpecifier) isCompatible(m *StructOrUnionSpecifier) (r bool
 	case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
 		switch m.Case {
 		case 0: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
-			panic(fmt.Errorf("%s: TODO", position(n.Pos())))
+			b := m.StructDeclarationList
+			for a := n.StructDeclarationList; a != nil; a = a.StructDeclarationList {
+				if b == nil {
+					return false
+				}
+
+				sda := a.StructDeclaration
+				sdb := b.StructDeclaration
+				if sda.Case != sdb.Case {
+					return false
+				}
+
+				switch sda.Case {
+				case 0: // SpecifierQualifierList StructDeclaratorList ';'
+					sdlb := sdb.StructDeclaratorList
+					for sdla := sda.StructDeclaratorList; sdla != nil; sdla = sdla.StructDeclaratorList {
+						if sdlb == nil {
+							return false
+						}
+
+						sda := sdla.StructDeclarator
+						sdb := sdlb.StructDeclarator
+						if sda.Case != sdb.Case {
+							return false
+						}
+
+						switch sda.Case {
+						case 0: // StructDeclarator
+							da := sda.Declarator
+							db := sdb.Declarator
+							if da.DirectDeclarator.Token.Val != db.DirectDeclarator.Token.Val ||
+								da.Type.SizeOf() != db.Type.SizeOf() {
+								return false
+							}
+						case 1: // StructDeclaratorList ',' StructDeclarator  // Case 1
+							panic(fmt.Errorf("%s: TODO", position(n.Pos())))
+						default:
+							panic(fmt.Errorf("%s: internal error", position(n.Pos())))
+						}
+						sdlb = sdlb.StructDeclaratorList
+					}
+					if sdlb != nil {
+						return false
+					}
+				case 1: // SpecifierQualifierList ';'                       // Case 1
+					panic(fmt.Errorf("%s: TODO", position(n.Pos())))
+				case 2: // StaticAssertDeclaration                          // Case 2
+					panic(fmt.Errorf("%s: TODO", position(n.Pos())))
+				default:
+					panic(fmt.Errorf("%s: internal error", position(n.Pos())))
+				}
+
+				b = b.StructDeclarationList
+			}
+
+			return b == nil
 		case 1: // StructOrUnion IDENTIFIER
 			if o := n.IdentifierOpt; o != nil {
 				return o.Token.Val == m.Token.Val
