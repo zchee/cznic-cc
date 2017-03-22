@@ -34,38 +34,6 @@ type (
 var (
 	maxConvF32I32 = math.Nextafter32(math.MaxInt32, 0) // https://github.com/golang/go/issues/19405
 	maxConvF32U32 = math.Nextafter32(math.MaxUint32, 0)
-
-	binOpTab = [kindMax][kindMax]Kind{
-		Undefined:         {},
-		Void:              {},
-		Ptr:               {},
-		UintPtr:           {UintPtr: UintPtr},
-		Char:              {UintPtr: UintPtr, Int},
-		SChar:             {UintPtr: UintPtr, Int, Int},
-		UChar:             {UintPtr: UintPtr, Int, Int, Int},
-		Short:             {UintPtr: UintPtr, Int, Int, Int, Int},
-		UShort:            {UintPtr: UintPtr, Int, Int, Int, Int, Int},
-		Int:               {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int},
-		UInt:              {UintPtr: UintPtr, UInt, UInt, UInt, UInt, UInt, UInt, UInt},
-		Long:              {UintPtr: UintPtr, Long, Long, Long, Long, Long, Long, Long, Long},
-		ULong:             {UintPtr: UintPtr, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong, ULong},
-		LongLong:          {UintPtr: UintPtr, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong, LongLong},
-		ULongLong:         {UintPtr: UintPtr, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong, ULongLong},
-		Float:             {UintPtr: Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float},
-		Double:            {UintPtr: Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double},
-		LongDouble:        {UintPtr: LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble, LongDouble},
-		Bool:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int},
-		FloatComplex:      {UintPtr: FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex, FloatComplex},
-		DoubleComplex:     {UintPtr: DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex, DoubleComplex},
-		LongDoubleComplex: {UintPtr: LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex, LongDoubleComplex},
-		Struct:            {},
-		Union:             {},
-		Enum:              {UintPtr: UintPtr, Int, Int, Int, Int, Int, Int, UInt, Long, ULong, LongLong, ULongLong, Float, Double, LongDouble, Int, Enum: Int},
-		TypedefName:       {},
-		Function:          {},
-		Array:             {},
-		typeof:            {},
-	}
 )
 
 // ModelItem is a single item of a model.
@@ -161,6 +129,9 @@ func (m *Model) initialize(lx *lexer) {
 		LongLong: true,
 	}
 	m.promoteTo = [kindMax]Kind{}
+	for i := range m.promoteTo {
+		m.promoteTo[i] = Kind(i)
+	}
 	switch {
 	case m.tweaks.enableWideEnumValues:
 		m.intConvRank[Enum] = m.intConvRank[LongLong]
@@ -183,36 +154,6 @@ func (m *Model) initialize(lx *lexer) {
 		default:
 			// otherwise, it is converted to an unsigned int.
 			m.promoteTo[k] = UInt
-		}
-	}
-
-	for y := Kind(0); y < kindMax; y++ {
-		ry := m.intConvRank[y]
-		if ry == 0 || ry > m.intConvRank[Int] {
-			continue
-		}
-
-		py := m.promoteTo[y]
-		for x := Kind(0); x <= y; x++ {
-			rx := m.intConvRank[x]
-			if rx == 0 || rx > m.intConvRank[Int] {
-				continue
-			}
-
-			px := m.promoteTo[x]
-
-			// ss s
-			// su u
-			// us u
-			// uu u
-			p := py
-			if !m.Signed[px] {
-				p = px
-			}
-
-			if g, e := binOpTab[y][x], p; g != e {
-				panic(fmt.Errorf("internal error: binOpTab[%s][%s] is %v, expected %v", y, x, g, e))
-			}
 		}
 	}
 
@@ -1514,15 +1455,102 @@ func (m *Model) binOp(lx *lexer, a, b operand) (interface{}, interface{}, Type) 
 }
 
 // BinOpType returns the evaluation type of a binop b, ie. the type operands
-// are promoted to before performing the operation. Operands must be arithmetic
-// types.
+// are converted to before performing the operation. Operands must be
+// arithmetic types.
+//
+// See [0], 6.3.1.8 - Usual arithmetic conversions.
 func (m *Model) BinOpType(a, b Type) Type {
 	ak := a.Kind()
 	bk := b.Kind()
-	if ak > bk {
-		ak, bk = bk, ak
+
+	if ak == LongDoubleComplex || bk == LongDoubleComplex {
+		return m.LongDoubleComplexType
 	}
-	return m.typ(binOpTab[bk][ak])
+
+	if ak == DoubleComplex || bk == DoubleComplex {
+		return m.DoubleComplexType
+	}
+
+	if ak == FloatComplex || bk == FloatComplex {
+		return m.FloatComplexType
+	}
+
+	// First, if the corresponding real type of either operand is long
+	// double, the other operand is converted, without change of type
+	// domain, to a type whose corresponding real type is long double.
+	if ak == LongDouble || bk == LongDouble {
+		return m.LongDoubleType
+	}
+
+	// Otherwise, if the corresponding real type of either operand is
+	// double, the other operand is converted, without change of type
+	// domain, to a type whose corresponding real type is double.
+	if ak == Double || bk == Double {
+		return m.DoubleType
+	}
+
+	// Otherwise, if the corresponding real type of either operand is float, the other
+	// operand is converted, without change of type domain, to a type whose
+	// corresponding real type is float.
+	if ak == Float || bk == Float {
+		return m.FloatType
+	}
+
+	// Otherwise, the integer promotions are performed on both operands.
+	ak = m.promoteTo[ak]
+	bk = m.promoteTo[bk]
+
+	// Then the following rules are applied to the promoted operands:
+	ar := m.intConvRank[ak]
+	br := m.intConvRank[bk]
+
+	// If both operands have the same type, then no further conversion is
+	// needed.
+	if ak == bk {
+		return m.typ(ak)
+	}
+
+	// Otherwise, if both operands have signed integer types or both have
+	// unsigned integer types, the operand with the type of lesser integer
+	// conversion rank is converted to the type of the operand with greater
+	// rank.
+	if m.Signed[ak] == m.Signed[bk] {
+		switch {
+		case ar < br:
+			return m.typ(bk)
+		default:
+			return m.typ(ak)
+		}
+	}
+
+	// Make a the unsigned type and b the signed type.
+	if m.Signed[ak] {
+		a, b = b, a
+		ak, bk = bk, ak
+		ar, br = br, ar
+	}
+
+	// Otherwise, if the operand that has unsigned integer type has rank
+	// greater or equal to the rank of the type of the other operand, then
+	// the operand with signed integer type is converted to the type of the
+	// operand with unsigned integer type.
+	if ar >= br {
+		return m.typ(ak)
+	}
+
+	// Otherwise, if the type of the operand with signed integer type can
+	// represent all of the values of the type of the operand with unsigned
+	// integer type, then the operand with unsigned integer type is
+	// converted to the type of the operand with signed integer type.
+	as := m.Items[ak].Size
+	bs := m.Items[bk].Size
+	if bs > as {
+		return m.typ(bk)
+	}
+
+	// Otherwise, both operands are converted to the unsigned integer type
+	// corresponding to the type of the operand with signed integer type.
+	return m.typ(unsigned(bk))
 }
 
 func (m *Model) promote(t Type) Type {

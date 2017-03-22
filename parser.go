@@ -4197,7 +4197,7 @@ yynewstate:
 			switch {
 			case !IsIntType(e.Type):
 				lx.report.Err(e.Pos(), "not an integer constant expression (have '%s')", e.Type)
-				v = m.MustConvert(0, m.IntType)
+				v = m.MustConvert(int32(0), m.IntType)
 			default:
 				var ok bool
 				if v, ok = m.enumValueToInt(e.Value); !ok {
