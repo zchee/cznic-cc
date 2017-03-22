@@ -1446,7 +1446,10 @@ func (m *Model) cBool(v bool) interface{} {
 func (m *Model) binOp(lx *lexer, a, b operand) (interface{}, interface{}, Type) {
 	av, at := a.eval(lx)
 	bv, bt := b.eval(lx)
-	t := m.BinOpType(at, bt)
+	t := at
+	if IsArithmeticType(at) && IsArithmeticType(bt) {
+		t = m.BinOpType(at, bt)
+	}
 	if av == nil || bv == nil || t.Kind() == Undefined {
 		return nil, nil, t
 	}
