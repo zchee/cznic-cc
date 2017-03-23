@@ -1017,7 +1017,7 @@ func (n *ctype) members(p *[]Member, l *StructDeclarationList) {
 				default:
 					panic(sd.Case)
 				}
-				var id, off, pad, bitoff int
+				var id, off, pad, bitoff, group int
 				t := n.model.IntType
 				var bt Type
 				if d != nil {
@@ -1027,16 +1027,18 @@ func (n *ctype) members(p *[]Member, l *StructDeclarationList) {
 					pad = d.padding
 					bitoff = d.bitOffset
 					bt = d.bitFieldType
+					group = d.bitFieldGroup
 				}
 				r = append(r, Member{
-					BitFieldType: bt,
-					BitOffsetOf:  bitoff,
-					Bits:         bits,
-					Declarator:   d,
-					Name:         id,
-					OffsetOf:     off,
-					Padding:      pad,
-					Type:         t,
+					BitFieldGroup: group,
+					BitFieldType:  bt,
+					BitOffsetOf:   bitoff,
+					Bits:          bits,
+					Declarator:    d,
+					Name:          id,
+					OffsetOf:      off,
+					Padding:       pad,
+					Type:          t,
 				})
 			}
 		case 1: // SpecifierQualifierList ';'                       // Case 1
