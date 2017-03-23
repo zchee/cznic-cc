@@ -3104,7 +3104,7 @@ func (n *StructDeclarator) post(lx *lexer) {
 	switch n.Case {
 	case 0: // Declarator
 		if sc.bitOffset != 0 {
-			finishBitField(lx)
+			finishBitField(n, lx)
 		}
 
 		t := n.Declarator.Type
@@ -3162,9 +3162,12 @@ func (n *StructDeclarator) post(lx *lexer) {
 			lx.report.Err(n.ConstantExpression.Pos(), "width of bit field exceeds its type")
 			w = m
 		}
+		maxLLBits := lx.model.LongLongType.sizeOf(lx) * 8
 		maxBits := lx.model.LongType.sizeOf(lx) * 8
-		if sc.bitOffset+w > maxBits {
-			finishBitField(lx)
+		if sum := sc.bitOffset + w; sum > maxBits {
+			if sum > maxLLBits || w <= maxBits {
+				finishBitField(n, lx)
+			}
 		}
 		if o := n.DeclaratorOpt; o != nil {
 			d := o.Declarator

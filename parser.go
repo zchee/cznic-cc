@@ -3778,7 +3778,7 @@ yynewstate:
 			sc := lx.scope
 			lhs.scope = sc
 			if sc.bitOffset != 0 {
-				finishBitField(lx)
+				finishBitField(lhs, lx)
 			}
 
 			i := 0

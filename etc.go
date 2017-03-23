@@ -1620,16 +1620,16 @@ func align(off, algn int) int {
 	return off
 }
 
-func finishBitField(lx *lexer) {
+func finishBitField(n Node, lx *lexer) {
 	sc := lx.scope
-	maxBits := lx.model.LongType.SizeOf() * 8
+	maxLLBits := lx.model.LongLongType.SizeOf() * 8
 	bits := sc.bitOffset
-	if bits > maxBits || bits == 0 {
-		panic("internal error") //TODO split group.
+	if bits > maxLLBits || bits == 0 {
+		panic(fmt.Errorf("%s: internal error %v", position(n.Pos()), bits)) //TODO split group.
 	}
 
 	var bytes, al int
-	for _, k := range []Kind{Char, Short, Int, Long} {
+	for _, k := range []Kind{Char, Short, Int, Long, LongLong} {
 		bytes = lx.model.Items[k].Size
 		al = lx.model.Items[k].StructAlign
 		if bytes*8 >= bits {
@@ -1643,6 +1643,8 @@ func finishBitField(lx *lexer) {
 				t = lx.model.IntType
 			case Long:
 				t = lx.model.LongType
+			case LongLong:
+				t = lx.model.LongLongType
 			default:
 				panic("internal error")
 			}
