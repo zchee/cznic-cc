@@ -999,13 +999,22 @@ outer:
 
 		n.Type = t.Element()
 	case 19: // '+' Expression
-		n.Value, n.Type = n.Expression.eval(lx)
+		v, t := n.Expression.eval(lx)
+		n.Type = lx.model.promote(t)
+		if v == nil {
+			break
+		}
+
+		n.Value = lx.model.MustConvert(v, n.Type)
 	case 20: // '-' Expression
 		v, t := n.Expression.eval(lx)
-		n.Type = t
+		n.Type = lx.model.promote(t)
+		if v == nil {
+			break
+		}
+
+		v = lx.model.MustConvert(v, n.Type)
 		switch x := v.(type) {
-		case nil:
-			// nop
 		case int16:
 			n.Value = -x
 		case uint16:
@@ -1027,10 +1036,13 @@ outer:
 		}
 	case 21: // '~' Expression
 		v, t := n.Expression.eval(lx)
-		n.Type = t
+		n.Type = lx.model.promote(t)
+		if v == nil {
+			break
+		}
+
+		v = lx.model.MustConvert(v, n.Type)
 		switch x := v.(type) {
-		case nil:
-			// nop
 		case int32:
 			n.Value = ^x
 		case uint32:
@@ -1246,12 +1258,14 @@ outer:
 		}
 	case 31: // Expression "<<" Expression
 		av, at := n.Expression.eval(lx)
-		bv, _ := n.Expression2.eval(lx)
+		bv, bt := n.Expression2.eval(lx)
 		n.Type = lx.model.promote(at)
 		if av == nil || bv == nil {
 			break
 		}
 
+		av = lx.model.MustConvert(av, n.Type)
+		bv = lx.model.MustConvert(bv, lx.model.promote(bt))
 		switch x := av.(type) {
 		case int8:
 			switch y := bv.(type) {
@@ -1650,12 +1664,14 @@ outer:
 		}
 	case 32: // Expression ">>" Expression
 		av, at := n.Expression.eval(lx)
-		bv, _ := n.Expression2.eval(lx)
+		bv, bt := n.Expression2.eval(lx)
 		n.Type = lx.model.promote(at)
 		if av == nil || bv == nil {
 			break
 		}
 
+		av = lx.model.MustConvert(av, n.Type)
+		bv = lx.model.MustConvert(bv, lx.model.promote(bt))
 		switch x := av.(type) {
 		case int8:
 			switch y := bv.(type) {
