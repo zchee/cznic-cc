@@ -87,6 +87,14 @@ type Type interface {
 	// have no alignment and the value returned will be < 0.
 	AlignOf() int
 
+	// Bits returns the bit width of the type's value. For non integral
+	// types the returned value will < 0.
+	Bits() int
+
+	// SetBits returns a type instance with the value Bits() will return
+	// equal to n. SetBits panics for n < 0.
+	SetBits(n int) Type
+
 	// CanAssignTo returns whether this type can be assigned to dst.
 	CanAssignTo(dst Type) bool
 
@@ -484,6 +492,7 @@ func fromSlashes(a []string) []string {
 }
 
 type ctype struct {
+	bits            int
 	dds             []*DirectDeclarator // Expanded.
 	dds0            []*DirectDeclarator // Unexpanded, only for typedefs
 	model           *Model
@@ -491,6 +500,33 @@ type ctype struct {
 	resultSpecifier Specifier
 	resultStars     int
 	stars           int
+}
+
+func (n *ctype) SetBits(b int) Type {
+	if b < 0 {
+		panic("internal error")
+	}
+
+	if b == n.bits {
+		return n
+	}
+
+	o := *n
+	o.bits = b
+	return &o
+}
+
+func (n *ctype) Bits() int {
+	if n.bits > 0 {
+		return n.bits
+	}
+
+	if !IsIntType(n) {
+		return -1
+	}
+
+	n.bits = n.model.Items[n.Kind()].Size * 8
+	return n.bits
 }
 
 func (n *ctype) arrayDecay() *ctype {
