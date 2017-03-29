@@ -726,6 +726,123 @@ func (n *EnumSpecifier) isUnsigned(lx *lexer) bool {
 
 // ----------------------------------------------------------------- Expression
 
+func (n *Expression) cond(lx *lexer, op operand) {
+	m := lx.model
+	lv, _ := n.Expression.eval(lx)
+	if lv == nil {
+		_, at := op.eval(lx)
+		_, bt := n.Expression2.eval(lx)
+		if eqTypes(at, bt) {
+			n.Type = at
+			return
+		}
+
+		if IsArithmeticType(at) && IsArithmeticType(bt) {
+			n.Type = m.BinOpType(at, bt)
+			return
+		}
+
+		ak := at.Kind()
+		bk := bt.Kind()
+
+		if ak == Function && bk == Ptr {
+			if e := bt.Element(); e.Kind() == Function && eqTypes(at, e) {
+				n.Type = bt
+				return
+			}
+		}
+
+		if bk == Function && ak == Ptr {
+			if e := at.Element(); e.Kind() == Function && eqTypes(bt, e) {
+				n.Type = at
+				return
+			}
+		}
+
+		if (ak == Enum || ak == Bool) && IsIntType(bt) {
+			n.Type = at
+			return
+		}
+
+		if (bk == Enum || bk == Bool) && IsIntType(at) {
+			n.Type = bt
+			return
+		}
+
+		if ak == Struct && bk == Struct ||
+			ak == Union && bk == Union {
+			if at.CanAssignTo(bt) {
+				n.Type = at
+				return
+			}
+		}
+
+		if ak == Void && bk == Void {
+			n.Type = at
+			return
+		}
+
+		if ak == Array && bk == Array {
+			if at.(*ctype).isCompatible(bt.(*ctype)) {
+				n.Type = at
+				return
+			}
+
+			at = at.(*ctype).arrayDecay()
+			ak = at.Kind()
+			bt = bt.(*ctype).arrayDecay()
+			bk = bt.Kind()
+		}
+
+		if ak == Array && bk == Ptr && at.CanAssignTo(bt) {
+			n.Type = bt
+			return
+		}
+
+		if ak == Ptr && bk == Array && bt.CanAssignTo(at) {
+			n.Type = at
+			return
+		}
+
+		if ak == Ptr && bk == Ptr {
+			if at.CanAssignTo(bt) {
+				n.Type = at
+				return
+			}
+		}
+
+		if (ak == Ptr || ak == Array || ak == Function) && IsIntType(bt) {
+			n.Type = at
+			return
+		}
+
+		if (bk == Ptr || bk == Array || bk == Function) && IsIntType(at) {
+			n.Type = bt
+			return
+		}
+
+		if ak == Ptr && at.Element().Kind() == Void && bk == Ptr {
+			n.Type = bt
+			return
+		}
+
+		if bk == Ptr && bt.Element().Kind() == Void && ak == Ptr {
+			n.Type = at
+			return
+		}
+
+		lx.report.ErrTok(n.Token2, "'%s'/'%s' mismatch in conditional expression", at, bt)
+		return
+	}
+
+	if isNonZero(lv) {
+		n.Value, n.Type = op.eval(lx)
+		return
+	}
+
+	n.Value, n.Type = n.Expression2.eval(lx)
+}
+
 func (n *Expression) eval(lx *lexer) (interface{}, Type) {
 	m := lx.model
 	if n.Type != nil {
@@ -2289,119 +2406,8 @@ outer:
 			break
 		}
 	case 44: // Expression '?' ExpressionList ':' Expression
-		lv, _ := n.Expression.eval(lx)
-		if lv == nil {
-			_, at := n.ExpressionList.eval(lx)
-			_, bt := n.Expression2.eval(lx)
-			if eqTypes(at, bt) {
-				n.Type = at
-				break
-			}
-
-			if IsArithmeticType(at) && IsArithmeticType(bt) {
-				n.Type = m.BinOpType(at, bt)
-				break
-			}
-
-			ak := at.Kind()
-			bk := bt.Kind()
-
-			if ak == Function && bk == Ptr {
-				if e := bt.Element(); e.Kind() == Function && eqTypes(at, e) {
-					n.Type = bt
-					break
-				}
-			}
-
-			if bk == Function && ak == Ptr {
-				if e := at.Element(); e.Kind() == Function && eqTypes(bt, e) {
-					n.Type = at
-					break
-				}
-			}
-
-			if (ak == Enum || ak == Bool) && IsIntType(bt) {
-				n.Type = at
-				break
-			}
-
-			if (bk == Enum || bk == Bool) && IsIntType(at) {
-				n.Type = bt
-				break
-			}
-
-			if ak == Struct && bk == Struct ||
-				ak == Union && bk == Union {
-				if at.CanAssignTo(bt) {
-					n.Type = at
-					break
-				}
-			}
-
-			if ak == Void && bk == Void {
-				n.Type = at
-				break
-			}
-
-			if ak == Array && bk == Array {
-				if at.(*ctype).isCompatible(bt.(*ctype)) {
-					n.Type = at
-					break
-				}
-
-				at = at.(*ctype).arrayDecay()
-				ak = at.Kind()
-				bt = bt.(*ctype).arrayDecay()
-				bk = bt.Kind()
-			}
-
-			if ak == Array && bk == Ptr && at.CanAssignTo(bt) {
-				n.Type = bt
-				break
-			}
-
-			if ak == Ptr && bk == Array && bt.CanAssignTo(at) {
-				n.Type = at
-				break
-			}
-
-			if ak == Ptr && bk == Ptr {
-				if at.CanAssignTo(bt) {
-					n.Type = at
-					break
-				}
-			}
-
-			if (ak == Ptr || ak == Array || ak == Function) && IsIntType(bt) {
-				n.Type = at
-				break
-			}
-
-			if (bk == Ptr || bk == Array || bk == Function) && IsIntType(at) {
-				n.Type = bt
-				break
-			}
-
-			if ak == Ptr && at.Element().Kind() == Void && bk == Ptr {
-				n.Type = bt
-				break
-			}
-
-			if bk == Ptr && bt.Element().Kind() == Void && ak == Ptr {
-				n.Type = at
-				break
-			}
-
-			lx.report.ErrTok(n.Token2, "'%s'/'%s' mismatch in conditional expression", at, bt)
-			break
-		}
-
-		if isNonZero(lv) {
-			n.Value, n.Type = n.ExpressionList.eval(lx)
-			break
-		}
-
-		n.Value, n.Type = n.Expression2.eval(lx)
+		n.cond(lx, n.ExpressionList)
+		break
 	case 45: // Expression '=' Expression
 		_, at := n.Expression.eval(lx)
 		_, bt := n.Expression2.eval(lx)
@@ -2538,6 +2544,8 @@ outer:
 	case 58: // "&&" IDENTIFIER                                    // Case 58
 		n.Type = lx.model.VoidType.Pointer()
 		n.Value = ComputedGotoID(n.Token2.Val)
+	case 59: // Expression '?' ':' Expression                      // Case 59
+		n.cond(lx, n.Expression)
 	default:
 		//dbg("", PrettyString(n))
 		panic(fmt.Errorf("%s: internal error: Expression.Case: %v", position(n.Pos()), n.Case))

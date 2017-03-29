@@ -264,6 +264,7 @@ type tweaks struct {
 	enableLegacyDesignators             bool              // { a: 42 }
 	enableNonConstStaticInitExpressions bool              // static int *p = &i;
 	enableNoreturn                      bool              //
+	enableOmitConditionalOperand        bool              // x ? : y == x ? x : y
 	enableOmitFuncArgTypes              bool              // f(a) becomes the same as int f(int a).
 	enableOmitFuncRetType               bool              // f() becomes the same as int f().
 	enableParenCompoundStmt             bool              // ({...}), see [3]
@@ -440,6 +441,15 @@ func EnableBuiltinConstantP() Opt {
 //
 func EnableImplicitIntType() Opt {
 	return func(l *lexer) { l.tweaks.enableImplicitIntType = true }
+}
+
+// EnableOmitConditionalOperand makes the parser accept non standard
+//
+//	x ? : y
+//
+// See https://gcc.gnu.org/onlinedocs/gcc-4.7.0/gcc/Conditionals.html#Conditionals
+func EnableOmitConditionalOperand() Opt {
+	return func(l *lexer) { l.tweaks.enableOmitConditionalOperand = true }
 }
 
 // EnableComputedGotos makes the parser accept non standard

@@ -430,6 +430,12 @@ Expression:
 			lx.report.Err(lhs.Pos(), "computed gotos not enabled")
 		}
 	}
+|	Expression '?' ':' Expression
+	{
+		if !lx.tweaks.enableOmitConditionalOperand {
+			lx.report.Err(lhs.Pos(), "omitting conditional operand not enabled")
+		}
+	}
 
 
 ExpressionOpt:

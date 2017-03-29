@@ -937,6 +937,21 @@ Expression:
 			lx.report.Err(lhs.Pos(), "computed gotos not enabled")
 		}
 	}
+|	Expression '?' ':' Expression
+	{
+		lx := yylex.(*lexer)
+		lhs := &Expression{
+			Case:         59,
+			Expression:   $1.(*Expression),
+			Token:        $2,
+			Token2:       $3,
+			Expression2:  $4.(*Expression),
+		}
+		$$ = lhs
+		if !lx.tweaks.enableOmitConditionalOperand {
+			lx.report.Err(lhs.Pos(), "omitting conditional operand not enabled")
+		}
+	}
 
 ExpressionOpt:
 	/* empty */
