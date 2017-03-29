@@ -73,11 +73,17 @@ func (m *Macro) findArg(nm int) int {
 }
 
 type macros struct {
-	m  map[int]*Macro
-	pp *pp
+	m     map[int]*Macro
+	pp    *pp
+	stack map[int][]*Macro
 }
 
-func newMacros() *macros { return &macros{m: map[int]*Macro{}} }
+func newMacros() *macros {
+	return &macros{
+		m:     map[int]*Macro{},
+		stack: map[int][]*Macro{},
+	}
+}
 
 func (m *macros) macros() map[int]*Macro {
 	p := m.pp
@@ -1135,6 +1141,53 @@ again:
 	}
 }
 
+func (p *pp) pragma1(a []xc.Token) (t xc.Token, _ bool) {
+	if len(a) != 3 || a[0].Rune != '(' || a[1].Rune != STRINGLITERAL || a[2].Rune != ')' {
+		return t, false
+	}
+
+	return a[1], true
+}
+
+func (p *pp) pragma(a []xc.Token) {
+	if len(a) == 0 {
+		return
+	}
+
+	switch t := a[0]; t.Val {
+	case idPushMacro:
+		t, ok := p.pragma1(a[1:])
+		if !ok {
+			break
+		}
+
+		s := dict.S(t.Val)
+		nm := dict.ID(s[1 : len(s)-1])
+		m := p.macros.m[nm]
+		if m == nil {
+			break
+		}
+
+		p.macros.stack[nm] = append(p.macros.stack[nm], m)
+	case idPopMacro:
+		t, ok := p.pragma1(a[1:])
+		if !ok {
+			break
+		}
+
+		s := dict.S(t.Val)
+		nm := dict.ID(s[1 : len(s)-1])
+		stack := p.macros.stack[nm]
+		if len(stack) == 0 {
+			break
+		}
+
+		m := stack[0]
+		p.macros.stack[nm] = stack[1:]
+		p.macros.m[nm] = m
+	}
+}
+
 func (p *pp) controlLine(n *ControlLine) {
 	switch n.Case {
 	case 0: // PPDEFINE IDENTIFIER ReplacementList
@@ -1235,8 +1288,7 @@ func (p *pp) controlLine(n *ControlLine) {
 		tf := xc.FileSet.File(nl.Pos())
 		tf.AddLineInfo(tf.Offset(nl.Pos()+1), fn, int(ln))
 	case 8: // PPPRAGMA PPTokenListOpt
-		// simply ignore pragmas (#pragma once already works)
-		return
+		p.pragma(decodeTokens(n.PPTokenListOpt, nil, false))
 	case
 		9,  // PPUNDEF IDENTIFIER '\n'
 		12: // PPUNDEF IDENTIFIER PPTokenList '\n'
