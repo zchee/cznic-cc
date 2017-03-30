@@ -2398,6 +2398,7 @@ TypeName:
 			lhs.declarator = d
 		}
 		lhs.Type = lhs.declarator.setFull(lx)
+		lhs.scope = lx.scope
 		lx.popScope(xc.Token{})
 	}
 

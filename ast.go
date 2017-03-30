@@ -3170,6 +3170,7 @@ func (n *TranslationUnit) Pos() token.Pos {
 type TypeName struct {
 	Type                   Type
 	declarator             *Declarator
+	scope                  *Bindings
 	AbstractDeclaratorOpt  *AbstractDeclaratorOpt
 	SpecifierQualifierList *SpecifierQualifierList
 }

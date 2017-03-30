@@ -1966,3 +1966,34 @@ func unsigned(k Kind) Kind {
 		return k
 	}
 }
+
+func isEnum(tn ...*TypeName) bool {
+	for _, tn := range tn {
+		t := tn.Type
+		if t.Kind() == Enum {
+			return true
+		}
+
+		ts := tn.SpecifierQualifierList.TypeSpecifier
+		if ts == nil {
+			continue
+		}
+
+		switch ts.Case {
+		case 15: // "typeof" '(' TypeName ')'    // Case 15
+			nm := ts.TypeName.SpecifierQualifierList.TypedefName()
+			if nm == 0 {
+				break
+			}
+
+			n := ts.TypeName.scope.Lookup(NSIdentifiers, nm)
+			switch x := n.Node.(type) {
+			case *DirectDeclarator:
+				if x.specifier.kind() == Enum {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}

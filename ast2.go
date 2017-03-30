@@ -997,6 +997,52 @@ outer:
 				break
 			}
 
+			if n.Expression.Token.Val == idBuiltinTypesCompatible {
+				// using #define __builtin_types_compatible_p(type1, type2) __builtin_types_compatible__((type1){}, (type2){})
+				o := n.ArgumentExpressionListOpt
+				if o == nil {
+					lx.report.Err(n.Expression.Pos(), "missing arguments of __builtin_types_compatible_p")
+					break
+				}
+
+				args := o.ArgumentExpressionList
+				arg1 := args.Expression
+				if arg1.Case != 14 { // '(' TypeName ')' '{' InitializerList CommaOpt '}'
+					lx.report.Err(arg1.Pos(), "invalid argument of __builtin_types_compatible__")
+					break
+				}
+
+				args = args.ArgumentExpressionList
+				if args == nil {
+					lx.report.Err(n.Expression.Pos(), "missing argument of __builtin_types_compatible_p")
+					break
+				}
+
+				arg2 := args.Expression
+				if arg2.Case != 14 { // '(' TypeName ')' '{' InitializerList CommaOpt '}'
+					lx.report.Err(arg1.Pos(), "invalid argument of __builtin_types_compatible__")
+					break
+				}
+
+				if args.ArgumentExpressionList != nil {
+					lx.report.Err(n.Expression.Pos(), "too many arguments of __builtin_types_compatible_p")
+					break
+				}
+
+				t := arg1.Type
+				u := arg2.Type
+				var v int32
+				if !isEnum(arg1.TypeName, arg2.TypeName) && t.(*ctype).isCompatible(u.(*ctype)) {
+					v = 1
+					if t.Kind() == Ptr && u.Kind() == Ptr && t.Specifier().IsConst() != u.Specifier().IsConst() {
+						v = 0
+					}
+				}
+				n.Type = lx.model.IntType
+				n.Value = v
+				break
+			}
+
 			b := n.Expression.scope.Lookup(NSIdentifiers, n.Expression.Token.Val)
 			if b.Node == nil && lx.tweaks.enableImplicitFuncDef {
 				n.Type = lx.model.IntType

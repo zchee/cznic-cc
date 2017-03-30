@@ -1325,6 +1325,7 @@ IdentifierOpt:
 // [0](6.7.6)
 //yy:field	Type		Type
 //yy:field	declarator	*Declarator
+//yy:field	scope		*Bindings
 TypeName:
 	{
 		lx.pushScope(ScopeBlock)
@@ -1345,6 +1346,7 @@ TypeName:
 			lhs.declarator = d
 		}
 		lhs.Type = lhs.declarator.setFull(lx)
+		lhs.scope = lx.scope
 		lx.popScope(xc.Token{})
 	}
 
