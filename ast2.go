@@ -965,8 +965,8 @@ outer:
 
 				n.Case = 3 // INTCONST
 				n.Type = lx.model.IntType
-				switch {
-				case args.Expression.Value != nil:
+				switch v, _ := args.Expression.eval(lx); {
+				case v != nil:
 					n.Value = int32(1)
 				default:
 					n.Value = int32(0)
