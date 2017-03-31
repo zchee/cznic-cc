@@ -191,8 +191,18 @@ func (n *Declarator) setFull(lx *lexer) Type {
 
 	resultAttr := 0
 	mask := 0
-	if d.specifier != nil && d.specifier.IsTypedef() {
-		dds0 = append([]*DirectDeclarator(nil), dds...)
+	if d.specifier != nil {
+		if d.specifier.IsTypedef() {
+			dds0 = append([]*DirectDeclarator(nil), dds...)
+		}
+		if d.specifier.typeSpecifiers() == 0 && lx.tweaks.enableImplicitIntType {
+			switch x := d.specifier.(type) {
+			case *DeclarationSpecifiers:
+				x.typeSpecifier = tsEncode(tsInt)
+			default:
+				panic(fmt.Errorf("%s: TODO %T", position(n.Pos()), x))
+			}
+		}
 	}
 loop0:
 	for d.specifier != nil {
