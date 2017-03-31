@@ -2820,7 +2820,14 @@ func (n *Initializer) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
 			return
 		case nil:
 			if static {
-				lx.report.Err(x.Pos(), "expressions in an initializer for an object that has static storage duration shall be constant expressions or string literals.")
+				switch x.Case {
+				case 17: // '&' Expression                                     // Case 17
+					if !xt.CanAssignTo(dt) {
+						lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
+					}
+				default:
+					lx.report.Err(x.Pos(), "expressions in an initializer for an object that has static storage duration shall be constant expressions or string literals.")
+				}
 				return
 			}
 
