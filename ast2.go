@@ -2821,6 +2821,12 @@ func (n *Initializer) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
 		case nil:
 			if static {
 				switch x.Case {
+				case 0: // IDENTIFIER
+					if xt.Kind() == Array && xt.CanAssignTo(dt) {
+						break
+					}
+
+					lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
 				case 17: // '&' Expression                                     // Case 17
 					if !xt.CanAssignTo(dt) {
 						lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
