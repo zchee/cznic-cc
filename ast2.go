@@ -2900,7 +2900,7 @@ func (n *InitializerList) Len() (r int) {
 }
 
 func (n *InitializerList) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
-	if dt == nil {
+	if n == nil || dt == nil {
 		return
 	}
 
