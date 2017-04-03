@@ -2836,6 +2836,10 @@ func (n *Initializer) typeCheck(pt *Type, dt Type, static bool, lx *lexer) {
 						break
 					}
 
+					if xt.Kind() == Function && xt.Pointer().CanAssignTo(dt) {
+						break
+					}
+
 					lx.report.Err(x.Pos(), "cannot initialize type '%v' using expression of type '%v'", dt, xt)
 				case 17: // '&' Expression                                     // Case 17
 					if !xt.CanAssignTo(dt) {
