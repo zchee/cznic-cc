@@ -876,7 +876,7 @@ outer:
 			dd := dd
 		more:
 			for dd.prev != nil {
-				dd := dd.prev.Node.(*DirectDeclarator)
+				dd = dd.prev.Node.(*DirectDeclarator)
 				if t2 := dd.TopDeclarator().Type; t2.Elements() >= 0 {
 					t = t2
 					found = true
