@@ -1078,10 +1078,14 @@ func (n *ctype) members(p *[]Member, l *StructDeclarationList) {
 				})
 			}
 		case 1: // SpecifierQualifierList ';'                       // Case 1
-			l := sdn.SpecifierQualifierList.TypeSpecifier.StructOrUnionSpecifier.StructDeclarationList
-			var r2 []Member
-			n.members(&r2, l)
-			r = append(r, r2...)
+			d := sdn.SpecifierQualifierList.TypeSpecifier.StructOrUnionSpecifier.declarator
+			t := d.Type
+			r = append(r, Member{
+				Declarator: d,
+				OffsetOf:   d.offsetOf,
+				Padding:    d.padding,
+				Type:       t,
+			})
 		case 2: // StaticAssertDeclaration                          // Case 2
 			//nop
 		default:
