@@ -90,7 +90,7 @@ unsigned-suffix                 [uU]
 
 [ \t\f\v]+			return ' '
 
-"//".*				l.comment(false)
+"//"[^\x80\n]*			l.comment(false)
 				return ' '
 
 "/*"				l.commentPos0 = l.First.Pos()

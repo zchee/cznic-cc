@@ -953,7 +953,7 @@ yystate74:
 	switch {
 	default:
 		goto yyrule2
-	case c >= '\x01' && c <= '\t' || c >= '\v' && c <= 'ÿ':
+	case c >= '\x01' && c <= '\t' || c >= '\v' && c <= '\u007f' || c >= '\u0081' && c <= 'ÿ':
 		goto yystate74
 	}
 
@@ -3276,7 +3276,7 @@ yyrule1: // [ \t\f\v]+
 	{
 		return ' '
 	}
-yyrule2: // "//".*
+yyrule2: // "//"[^\x80\n]*
 	{
 		l.comment(false)
 		return ' '
