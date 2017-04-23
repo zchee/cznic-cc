@@ -3107,6 +3107,19 @@ func (n *PointerOpt) stars() int {
 
 // ----------------------------------------------------- SpecifierQualifierList
 
+func (n *SpecifierQualifierList) isCompatible(m *SpecifierQualifierList) bool {
+	if n.typeSpecifier != m.typeSpecifier {
+		return false
+	}
+
+	switch n.TypeSpecifier.Case {
+	case 11: // StructOrUnionSpecifier       // Case 11
+		return m.TypeQualifier.Case == 11 && n.TypeSpecifier.StructOrUnionSpecifier.isCompatible(m.TypeSpecifier.StructOrUnionSpecifier)
+	default:
+		return true
+	}
+}
+
 // IsInline implements specifier.
 func (n *SpecifierQualifierList) IsInline() bool {
 	return n.attr&saInline != 0
@@ -3391,7 +3404,14 @@ func (n *StructOrUnionSpecifier) isCompatible(m *StructOrUnionSpecifier) (r bool
 						return false
 					}
 				case 1: // SpecifierQualifierList ';'                       // Case 1
-					panic(fmt.Errorf("%s: TODO", position(n.Pos())))
+					switch sdb.Case {
+					case 1: // SpecifierQualifierList ';'                       // Case 1
+						if !sda.SpecifierQualifierList.isCompatible(sdb.SpecifierQualifierList) {
+							return false
+						}
+					default:
+						return false
+					}
 				case 2: // StaticAssertDeclaration                          // Case 2
 					panic(fmt.Errorf("%s: TODO", position(n.Pos())))
 				default:
