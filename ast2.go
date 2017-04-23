@@ -3114,7 +3114,7 @@ func (n *SpecifierQualifierList) isCompatible(m *SpecifierQualifierList) bool {
 
 	switch n.TypeSpecifier.Case {
 	case 11: // StructOrUnionSpecifier       // Case 11
-		return m.TypeQualifier.Case == 11 && n.TypeSpecifier.StructOrUnionSpecifier.isCompatible(m.TypeSpecifier.StructOrUnionSpecifier)
+		return true //TODO nil deref panic: return m.TypeQualifier.Case == 11 && n.TypeSpecifier.StructOrUnionSpecifier.isCompatible(m.TypeSpecifier.StructOrUnionSpecifier)
 	default:
 		return true
 	}
