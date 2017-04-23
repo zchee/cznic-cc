@@ -539,6 +539,11 @@ loop0:
 	return t
 }
 
+// ----------------------------------------------------------- DeclaratorOpt
+func (n *DeclaratorOpt) isCompatible(m *DeclaratorOpt) bool {
+	return n == m || (n != nil && m != nil && n.Declarator.isCompatible(m.Declarator))
+}
+
 // ----------------------------------------------------------- DirectDeclarator
 
 // DeclarationScope returns the scope a name declared by n is in. If n does not
@@ -3307,6 +3312,44 @@ func (n *StructDeclarator) post(lx *lexer) {
 	}
 }
 
+func (n *StructDeclarator) isCompatible(m *StructDeclarator) bool {
+	if n.Case != m.Case {
+		return false
+	}
+
+	switch n.Case {
+	case 0: // Declarator
+		return n.Declarator.isCompatible(m.Declarator)
+	case 1: //  DeclaratorOpt ':' ConstantExpression  // Case 1
+		ty1 := n.ConstantExpression.Expression.Type.(*ctype)
+		ty2 := m.ConstantExpression.Expression.Type.(*ctype)
+		return n.DeclaratorOpt.isCompatible(m.DeclaratorOpt) && ty1.isCompatible(ty2)
+	default:
+		panic(fmt.Errorf("%s: internal error", position(n.Pos())))
+	}
+}
+
+// -------------------------------------------------------------- StructDeclaratorList
+
+func (n *StructDeclaratorList) isCompatible(m *StructDeclaratorList) bool {
+	for ; n != nil; n = n.StructDeclaratorList {
+		if m == nil {
+			return false
+		}
+
+		sda := n.StructDeclarator
+		sdb := m.StructDeclarator
+		if !sda.isCompatible(sdb) {
+			return false
+		}
+		m = m.StructDeclaratorList
+	}
+	if m != nil {
+		return false
+	}
+	return true
+}
+
 // -------------------------------------------------------------- StructOrUnion
 
 func (n *StructOrUnion) typeSpecifiers() int {
@@ -3373,34 +3416,7 @@ func (n *StructOrUnionSpecifier) isCompatible(m *StructOrUnionSpecifier) (r bool
 
 				switch sda.Case {
 				case 0: // SpecifierQualifierList StructDeclaratorList ';'
-					sdlb := sdb.StructDeclaratorList
-					for sdla := sda.StructDeclaratorList; sdla != nil; sdla = sdla.StructDeclaratorList {
-						if sdlb == nil {
-							return false
-						}
-
-						sda := sdla.StructDeclarator
-						sdb := sdlb.StructDeclarator
-						if sda.Case != sdb.Case {
-							return false
-						}
-
-						switch sda.Case {
-						case 0: // StructDeclarator
-							da := sda.Declarator
-							db := sdb.Declarator
-							if da.DirectDeclarator.Token.Val != db.DirectDeclarator.Token.Val ||
-								da.Type.SizeOf() != db.Type.SizeOf() {
-								return false
-							}
-						case 1: // StructDeclaratorList ',' StructDeclarator  // Case 1
-							panic(fmt.Errorf("%s: TODO", position(n.Pos())))
-						default:
-							panic(fmt.Errorf("%s: internal error", position(n.Pos())))
-						}
-						sdlb = sdlb.StructDeclaratorList
-					}
-					if sdlb != nil {
+					if !sda.StructDeclaratorList.isCompatible(sdb.StructDeclaratorList) {
 						return false
 					}
 				case 1: // SpecifierQualifierList ';'                       // Case 1
