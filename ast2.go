@@ -7,7 +7,9 @@ package cc
 import (
 	"fmt"
 	"go/token"
+	"strconv"
 
+	"github.com/cznic/golex/lex"
 	"github.com/cznic/mathutil"
 	"github.com/cznic/xc"
 )
@@ -1119,12 +1121,61 @@ outer:
 	case 10: // Expression '.' IDENTIFIER
 		_, t := n.Expression.eval(lx)
 		mb, err := t.Member(n.Token2.Val)
-		if err != nil {
-			lx.report.Err(n.Token2.Pos(), "%v", err)
-			break
+		if err == nil {
+			n.Type = mb.Type
+		} else {
+			// support AnonymousStructs() by doing some emulating... (todo check if enabled)
+			offset, ty, err2 := memberOffsetRecursive(t, n.Token2.Val)
+			if err2 == nil {
+				// This is kindof a simple workaround... should work good enough though
+				// and might be the easiest implementation possible
+				// transform a.b into (*(ty*)((char*)(&a))+offset))
+				ptr := &Expression{
+					Case:       17, // &Expression
+					Token:      xc.Token{lex.Char{Rune: '&'}, 0},
+					Expression: n.Expression,
+				}
+				// sneak in a char pointer so that the offset is correct
+				charTy := lx.model.CharType.Pointer()
+				charTyDeclarator := &Declarator{Type: charTy}
+				ptr = &Expression{
+					Case:       25,
+					Token:      xc.Token{lex.Char{Rune: '('}, 0},
+					TypeName:   &TypeName{Type: charTy, declarator: charTyDeclarator},
+					Token2:     xc.Token{lex.Char{Rune: ')'}, 0},
+					Expression: ptr,
+				}
+				sid := dict.SID(strconv.Itoa(offset))
+				offset := &Expression{
+					Case:  3, // INTCONST
+					Token: xc.Token{lex.Char{Rune: INTCONST}, sid},
+				}
+				fieldPtr := &Expression{
+					Case:        29, // +
+					Expression:  ptr,
+					Token:       xc.Token{lex.Char{Rune: '+'}, 0},
+					Expression2: offset,
+				}
+				ptrTy := (*ty).Pointer()
+				declarator := &Declarator{Type: ptrTy}
+				cast := &Expression{
+					Case:       25, // cast to ty *
+					Token:      xc.Token{lex.Char{Rune: '('}, 0},
+					TypeName:   &TypeName{Type: ptrTy, declarator: declarator},
+					Token2:     xc.Token{lex.Char{Rune: ')'}, 0},
+					Expression: fieldPtr,
+				}
+				*n = Expression{
+					Case:       18, // * (dereference)
+					Token:      xc.Token{lex.Char{Rune: '*'}, 0},
+					Expression: cast,
+				}
+				n.Value, n.Type = n.eval(lx)
+			} else {
+				lx.report.Err(n.Token2.Pos(), "%v (OR %v)", err, err2)
+				break
+			}
 		}
-
-		n.Type = mb.Type
 	case 11: // Expression "->" IDENTIFIER
 		v, t := n.Expression.eval(lx)
 		if t.Kind() != Ptr && t.Kind() != Array {
