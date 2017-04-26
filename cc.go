@@ -199,6 +199,10 @@ func HostConfig(opts ...string) (predefined string, includePaths, sysIncludePath
 // whenever possible.
 func HostCppConfig(cpp string, opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) {
 	args := append(append([]string{"-dM"}, opts...), os.DevNull)
+	// cross-compile e.g. win64 -> win32
+	if runtime.GOARCH == "386" {
+		args = append(args, "-m32")
+	}
 	pre, err := exec.Command(cpp, args...).Output()
 	if err != nil {
 		return "", nil, nil, err
