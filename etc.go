@@ -2027,7 +2027,7 @@ func memberOffsetRecursive(t Type, name int) (offset int, ty *Type, err error) {
 		return 0, nil, fmt.Errorf("memberOffsetRecursive: ambigous member %s", string(dict.S(name)))
 	}
 	if matches == 0 {
-		return 0, nil, fmt.Errorf("memberOffsetRecursive: non-existant member %s", string(dict.S(name)))
+		return 0, nil, fmt.Errorf("memberOffsetRecursive: non-existent member %s", string(dict.S(name)))
 	}
 	return offset, ty, err
 }
