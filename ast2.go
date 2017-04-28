@@ -7,7 +7,9 @@ package cc
 import (
 	"fmt"
 	"go/token"
+	"strconv"
 
+	"github.com/cznic/golex/lex"
 	"github.com/cznic/mathutil"
 	"github.com/cznic/xc"
 )
@@ -537,6 +539,11 @@ loop0:
 
 	//dbg("setFull done: %s: %s", position(n.Pos()), n)
 	return t
+}
+
+// ----------------------------------------------------------- DeclaratorOpt
+func (n *DeclaratorOpt) isCompatible(m *DeclaratorOpt) bool {
+	return n == m || (n != nil && m != nil && n.Declarator.isCompatible(m.Declarator))
 }
 
 // ----------------------------------------------------------- DirectDeclarator
@@ -1114,12 +1121,61 @@ outer:
 	case 10: // Expression '.' IDENTIFIER
 		_, t := n.Expression.eval(lx)
 		mb, err := t.Member(n.Token2.Val)
-		if err != nil {
-			lx.report.Err(n.Token2.Pos(), "%v", err)
-			break
+		if err == nil {
+			n.Type = mb.Type
+		} else {
+			// support AnonymousStructs() by doing some emulating... (todo check if enabled)
+			offset, ty, err2 := memberOffsetRecursive(t, n.Token2.Val)
+			if err2 == nil {
+				// This is kindof a simple workaround... should work good enough though
+				// and might be the easiest implementation possible
+				// transform a.b into (*(ty*)((char*)(&a))+offset))
+				ptr := &Expression{
+					Case:       17, // &Expression
+					Token:      xc.Token{lex.Char{Rune: '&'}, 0},
+					Expression: n.Expression,
+				}
+				// sneak in a char pointer so that the offset is correct
+				charTy := lx.model.CharType.Pointer()
+				charTyDeclarator := &Declarator{Type: charTy}
+				ptr = &Expression{
+					Case:       25,
+					Token:      xc.Token{lex.Char{Rune: '('}, 0},
+					TypeName:   &TypeName{Type: charTy, declarator: charTyDeclarator},
+					Token2:     xc.Token{lex.Char{Rune: ')'}, 0},
+					Expression: ptr,
+				}
+				sid := dict.SID(strconv.Itoa(offset))
+				offset := &Expression{
+					Case:  3, // INTCONST
+					Token: xc.Token{lex.Char{Rune: INTCONST}, sid},
+				}
+				fieldPtr := &Expression{
+					Case:        29, // +
+					Expression:  ptr,
+					Token:       xc.Token{lex.Char{Rune: '+'}, 0},
+					Expression2: offset,
+				}
+				ptrTy := (*ty).Pointer()
+				declarator := &Declarator{Type: ptrTy}
+				cast := &Expression{
+					Case:       25, // cast to ty *
+					Token:      xc.Token{lex.Char{Rune: '('}, 0},
+					TypeName:   &TypeName{Type: ptrTy, declarator: declarator},
+					Token2:     xc.Token{lex.Char{Rune: ')'}, 0},
+					Expression: fieldPtr,
+				}
+				*n = Expression{
+					Case:       18, // * (dereference)
+					Token:      xc.Token{lex.Char{Rune: '*'}, 0},
+					Expression: cast,
+				}
+				n.Value, n.Type = n.eval(lx)
+			} else {
+				lx.report.Err(n.Token2.Pos(), "%v (OR %v)", err, err2)
+				break
+			}
 		}
-
-		n.Type = mb.Type
 	case 11: // Expression "->" IDENTIFIER
 		v, t := n.Expression.eval(lx)
 		if t.Kind() != Ptr && t.Kind() != Array {
@@ -3307,6 +3363,44 @@ func (n *StructDeclarator) post(lx *lexer) {
 	}
 }
 
+func (n *StructDeclarator) isCompatible(m *StructDeclarator) bool {
+	if n.Case != m.Case {
+		return false
+	}
+
+	switch n.Case {
+	case 0: // Declarator
+		return n.Declarator.isCompatible(m.Declarator)
+	case 1: //  DeclaratorOpt ':' ConstantExpression  // Case 1
+		ty1 := n.ConstantExpression.Expression.Type.(*ctype)
+		ty2 := m.ConstantExpression.Expression.Type.(*ctype)
+		return n.DeclaratorOpt.isCompatible(m.DeclaratorOpt) && ty1.isCompatible(ty2)
+	default:
+		panic(fmt.Errorf("%s: internal error", position(n.Pos())))
+	}
+}
+
+// -------------------------------------------------------------- StructDeclaratorList
+
+func (n *StructDeclaratorList) isCompatible(m *StructDeclaratorList) bool {
+	for ; n != nil; n = n.StructDeclaratorList {
+		if m == nil {
+			return false
+		}
+
+		sda := n.StructDeclarator
+		sdb := m.StructDeclarator
+		if !sda.isCompatible(sdb) {
+			return false
+		}
+		m = m.StructDeclaratorList
+	}
+	if m != nil {
+		return false
+	}
+	return true
+}
+
 // -------------------------------------------------------------- StructOrUnion
 
 func (n *StructOrUnion) typeSpecifiers() int {
@@ -3373,34 +3467,7 @@ func (n *StructOrUnionSpecifier) isCompatible(m *StructOrUnionSpecifier) (r bool
 
 				switch sda.Case {
 				case 0: // SpecifierQualifierList StructDeclaratorList ';'
-					sdlb := sdb.StructDeclaratorList
-					for sdla := sda.StructDeclaratorList; sdla != nil; sdla = sdla.StructDeclaratorList {
-						if sdlb == nil {
-							return false
-						}
-
-						sda := sdla.StructDeclarator
-						sdb := sdlb.StructDeclarator
-						if sda.Case != sdb.Case {
-							return false
-						}
-
-						switch sda.Case {
-						case 0: // StructDeclarator
-							da := sda.Declarator
-							db := sdb.Declarator
-							if da.DirectDeclarator.Token.Val != db.DirectDeclarator.Token.Val ||
-								da.Type.SizeOf() != db.Type.SizeOf() {
-								return false
-							}
-						case 1: // StructDeclaratorList ',' StructDeclarator  // Case 1
-							panic(fmt.Errorf("%s: TODO", position(n.Pos())))
-						default:
-							panic(fmt.Errorf("%s: internal error", position(n.Pos())))
-						}
-						sdlb = sdlb.StructDeclaratorList
-					}
-					if sdlb != nil {
+					if !sda.StructDeclaratorList.isCompatible(sdb.StructDeclaratorList) {
 						return false
 					}
 				case 1: // SpecifierQualifierList ';'                       // Case 1

@@ -2001,3 +2001,33 @@ func isEnum(tn ...*TypeName) bool {
 	}
 	return false
 }
+
+func memberOffsetRecursive(t Type, name int) (offset int, ty *Type, err error) {
+	members, incomplete := t.Members()
+	if incomplete {
+		return 0, nil, fmt.Errorf("memberOffsetRecursive: incomplete")
+	}
+	matches := 0
+	for _, member := range members {
+		if member.Name == name {
+			matches++
+			offset = member.OffsetOf
+			ty = &member.Type
+		}
+		if member.Name == 0 {
+			moffset, mty, err := memberOffsetRecursive(member.Type, name)
+			if err == nil {
+				matches++
+				offset += member.OffsetOf + moffset
+				ty = mty
+			}
+		}
+	}
+	if matches > 1 {
+		return 0, nil, fmt.Errorf("memberOffsetRecursive: ambigous member %s", string(dict.S(name)))
+	}
+	if matches == 0 {
+		return 0, nil, fmt.Errorf("memberOffsetRecursive: non-existent member %s", string(dict.S(name)))
+	}
+	return offset, ty, err
+}

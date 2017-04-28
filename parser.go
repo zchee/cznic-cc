@@ -3969,6 +3969,12 @@ yynewstate:
 			}
 			d.DirectDeclarator = dd
 			d.setFull(lx)
+
+			// we have no struct declarators to parse, so we have to create the case of one implicit declarator
+			// because else the size of anonymous members is not included in the struct size!
+			dummy := &StructDeclarator{Declarator: d}
+			dummy.post(lx)
+
 			for l := lhs.SpecifierQualifierList; l != nil; {
 				ts := l.TypeSpecifier
 				if ts != nil && ts.Case == 11 && ts.StructOrUnionSpecifier.Case == 0 { // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
