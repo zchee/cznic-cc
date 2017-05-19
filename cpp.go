@@ -1239,13 +1239,13 @@ func (p *pp) controlLine(n *ControlLine) {
 			dirs = append(p.includes, p.sysIncludes...)
 		case strings.HasPrefix(arg, "\""):
 			dirs = p.includes
+			dirs = append([]string{filepath.Dir(p.ppf.path)}, dirs...)
 		default:
 			p.report.ErrTok(n.Token, "invalid #include argument")
 			break
 		}
 
 		// Include origin.
-		dirs = append(dirs, filepath.Dir(p.ppf.path))
 		arg = arg[1 : len(arg)-1]
 		for _, dir := range dirs {
 			pth := filepath.Join(dir, arg)
