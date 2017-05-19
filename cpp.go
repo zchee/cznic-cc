@@ -287,11 +287,16 @@ type pp struct {
 }
 
 func newPP(ch chan []xc.Token, includes, sysIncludes []string, macros *macros, protectMacros bool, model *Model, report *xc.Report, tweaks *tweaks) *pp {
+	var err error
+	if includes, err = dedupAbsPaths(append(includes[:len(includes):len(includes)], sysIncludes...)); err != nil {
+		report.Err(0, "%s", err)
+		return nil
+	}
 	pp := &pp{
 		ack:             make(chan struct{}),
 		expandingMacros: map[int]int{},
 		in:              make(chan []xc.Token),
-		includes:        append(includes[:len(includes):len(includes)], sysIncludes...),
+		includes:        includes,
 		lx:              newSimpleLexer(nil, report, tweaks),
 		macros:          macros,
 		model:           model,
@@ -1327,12 +1332,6 @@ func (p *pp) controlLine(n *ControlLine) {
 		for i, dir := range p.includes {
 			if dir == origin {
 				dirs = p.includes[i+1:]
-				var err error
-				if dirs, err = dedupAbsPaths(append(dirs, p.sysIncludes...)); err != nil {
-					p.report.ErrTok(toks[0], "%s", err)
-					return
-				}
-
 				found = true
 				break
 			}
