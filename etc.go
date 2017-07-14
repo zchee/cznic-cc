@@ -2031,3 +2031,19 @@ func memberOffsetRecursive(t Type, name int) (offset int, ty *Type, err error) {
 	}
 	return offset, ty, err
 }
+
+func comment(tw *tweaks, p ...Node) int {
+	for _, v := range p {
+		v := v.Pos()
+		if n := tw.comments[v]; n != 0 {
+			return n
+		}
+
+		v -= token.Pos(xc.FileSet.Position(v).Column - 1)
+		if n := tw.comments[v]; n != 0 {
+			return n
+		}
+	}
+	return 0
+
+}

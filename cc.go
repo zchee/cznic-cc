@@ -823,6 +823,38 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 		tu.Macros = macros.macros()
 		tu.Model = m
 		tu.Comments = lx0.tweaks.comments
+		if c := tu.Comments; c != nil {
+			for _, v := range tu.Declarations.Identifiers {
+				switch x := v.Node.(type) {
+				case *DirectDeclarator:
+					pos0 := x.Declarator.Pos()
+					if !pos0.IsValid() {
+						pos0 = x.Pos()
+					}
+					if !pos0.IsValid() {
+						break
+					}
+
+					if comment(lx0.tweaks, x, x.Declarator) != 0 {
+						break
+					}
+
+					for p := x.prev; p != nil; p = p.Node.(*DirectDeclarator).prev {
+						y := p.Node.(*DirectDeclarator)
+						if n := comment(lx0.tweaks, y, y.Declarator); n != 0 {
+							pos := y.DirectDeclarator.Pos()
+							if !pos.IsValid() {
+								pos = y.Pos()
+							}
+							c[pos0] = n
+							break
+						}
+					}
+				default:
+					panic(fmt.Errorf("%T", x))
+				}
+			}
+		}
 	}
 	return lx.translationUnit, report.Errors(true)
 }
