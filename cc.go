@@ -839,7 +839,7 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 						break
 					}
 
-					for p := x.prev; p != nil; p = p.Node.(*DirectDeclarator).prev {
+					for p := x.prev; p != nil; {
 						y := p.Node.(*DirectDeclarator)
 						if n := comment(lx0.tweaks, y, y.Declarator); n != 0 {
 							pos := y.DirectDeclarator.Pos()
@@ -849,6 +849,12 @@ func Parse(predefine string, paths []string, m *Model, opts ...Opt) (*Translatio
 							c[pos0] = n
 							break
 						}
+						p2 := p.Node.(*DirectDeclarator).prev
+						if p2 == p {
+							break
+						}
+
+						p = p2
 					}
 				default:
 					panic(fmt.Errorf("%T", x))
