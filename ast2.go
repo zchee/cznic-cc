@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go/token"
 	"strconv"
+	"strings"
 
 	"github.com/cznic/golex/lex"
 	"github.com/cznic/mathutil"
@@ -525,7 +526,7 @@ loop0:
 		if prev != nil {
 			if lx.tweaks.allowCompatibleTypedefRedefinitions &&
 				n.RawSpecifier().IsTypedef() && prev.RawSpecifier().IsTypedef() &&
-				n.Type.String() == prev.Type.String() {
+				strings.TrimPrefix(n.Type.String(), "typedef ") == strings.TrimPrefix(prev.Type.String(), "typedef ") {
 				break
 			}
 
@@ -1436,8 +1437,8 @@ outer:
 			}
 		}
 	case 30: // Expression '-' Expression
-		_, at := n.Expression.eval(lx)
-		_, bt := n.Expression2.eval(lx)
+		av, at := n.Expression.eval(lx)
+		bv, bt := n.Expression2.eval(lx)
 		if at.Kind() == Array {
 			at = at.Element().Pointer()
 		}
@@ -1452,6 +1453,9 @@ outer:
 			}
 
 			n.Type = m.getPtrDiffType(lx)
+			if av != nil && bv != nil {
+				n.Value = lx.model.MustConvert((av.(uintptr)-bv.(uintptr))/uintptr(n.Type.SizeOf()), n.Type)
+			}
 			break
 		}
 
