@@ -757,6 +757,10 @@ func (n *ctype) CanAssignTo(dst Type) bool {
 		n = n.arrayDecay()
 	}
 
+	if dst.Kind() == Array && n.Kind() == Ptr {
+		dst = dst.(*ctype).arrayDecay()
+	}
+
 	if IsArithmeticType(n) && IsArithmeticType(dst) {
 		return true
 	}

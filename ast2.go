@@ -2536,6 +2536,9 @@ outer:
 		}
 
 		n.Type = at
+		if at.Kind() == Array && bt.Kind() == Ptr {
+			n.Type = bt
+		}
 	case 46: // Expression "*=" Expression
 		_, n.Type = n.Expression.eval(lx)
 		if _, _, n.BinOpType = m.binOp(lx, n.Expression, n.Expression2); n.BinOpType.Kind() == Undefined {
