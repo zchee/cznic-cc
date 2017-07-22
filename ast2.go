@@ -2408,13 +2408,25 @@ outer:
 		}
 	case 38: // Expression "!=" Expression
 		n.Type = m.IntType
-		_, at := n.Expression.eval(lx)
-		_, bt := n.Expression2.eval(lx)
+		av, at := n.Expression.eval(lx)
+		bv, bt := n.Expression2.eval(lx)
 		if at.Kind() > bt.Kind() {
 			at, bt = bt, at
 		}
+	outer38:
 		switch {
 		case at.Kind() == Ptr:
+			if av != nil && bv != nil {
+				x := av.(uintptr)
+				switch y := bv.(type) {
+				case int32:
+					n.Value = m.cBool(x != uintptr(y))
+					break outer38
+				default:
+					panic(fmt.Errorf("TODO %s: %T %T", position(n.Pos()), av, bv))
+				}
+			}
+
 			if IsIntType(bt) {
 				break
 			}
