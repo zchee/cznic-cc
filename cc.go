@@ -373,18 +373,18 @@ func ppParseString(fn, src string, report *xc.Report, tweaks *tweaks) (*Preproce
 }
 
 func ppParse(fn string, report *xc.Report, tweaks *tweaks) (*PreprocessingFile, error) {
-	fi, err := os.Stat(fn)
-	if err != nil {
-		return nil, err
-	}
-
-	o := xc.Files.Once(fmt.Sprintf("%x|%s", fi.ModTime().UnixNano(), fn), func() interface{} {
+	o := xc.Files.Once(fn, func() interface{} {
 		f, err := os.Open(fn)
 		if err != nil {
 			return err
 		}
 
 		defer f.Close()
+
+		fi, err := os.Stat(fn)
+		if err != nil {
+			return nil
+		}
 
 		sz := fi.Size()
 		if sz > mathutil.MaxInt-1 {
