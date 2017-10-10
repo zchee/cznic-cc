@@ -21,6 +21,7 @@ func yy() (nm string, err error) {
 	if err != nil {
 		return "", err
 	}
+	y.Close()
 
 	nm = y.Name()
 	cmd := exec.Command(
@@ -46,8 +47,8 @@ func goyacc(y string) (err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer func() {
+		t.Close()
 		if e := os.Remove(t.Name()); e != nil && err == nil {
 			err = e
 		}
