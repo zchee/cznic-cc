@@ -2051,3 +2051,11 @@ func comment(tw *tweaks, p ...Node) int {
 	return 0
 
 }
+
+func fixParams(in []Parameter) {
+	for i, v := range in {
+		if t := v.Type; t.Kind() == Function {
+			in[i].Type = t.Pointer()
+		}
+	}
+}

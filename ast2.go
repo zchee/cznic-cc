@@ -2846,6 +2846,7 @@ func (n *IdentifierListOpt) post(lx *lexer, dlo *DeclarationListOpt) {
 		}
 	}
 	n.params = params
+	fixParams(n.params)
 }
 
 // ---------------------------------------------------------------- Initializer
@@ -3163,6 +3164,7 @@ func (n *ParameterTypeList) post() {
 	if len(n.params) == 1 && n.params[0].Type.Kind() == Void {
 		n.params = make([]Parameter, 0) // Must be non nil.
 	}
+	fixParams(n.params)
 }
 
 // -------------------------------------------------------------------- Pointer
