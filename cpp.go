@@ -1240,14 +1240,14 @@ out:
 		case strings.HasPrefix(arg, "<"):
 			switch {
 			case p.tweaks.mode99c:
-				dirs = p.sysIncludes
+				dirs = append([]string(nil), p.sysIncludes...)
 			default:
 				dirs = append(p.includes, p.sysIncludes...)
 			}
 		case strings.HasPrefix(arg, "\""):
 			switch {
 			case p.tweaks.mode99c:
-				dirs = p.includes
+				dirs = append([]string(nil), p.includes...)
 			default:
 				dirs = p.includes
 				dirs = append([]string{filepath.Dir(p.ppf.path)}, dirs...)
@@ -1259,11 +1259,15 @@ out:
 
 		// Include origin.
 		arg = arg[1 : len(arg)-1]
-		for _, dir := range dirs {
+		for i, dir := range dirs {
 			if p.tweaks.mode99c && dir == "@" {
 				dir = currentFileDir
+				dirs[i] = dir
 			}
-			pth := filepath.Join(dir, arg)
+			pth := arg
+			if !filepath.IsAbs(pth) {
+				pth = filepath.Join(dir, arg)
+			}
 			if _, err := os.Stat(pth); err != nil {
 				if !os.IsNotExist(err) {
 					p.report.ErrTok(toks[0], err.Error())
