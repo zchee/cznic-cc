@@ -287,6 +287,7 @@ type tweaks struct {
 	enableWideBitFieldTypes             bool              // long long v : 2;
 	enableWideEnumValues                bool              // enum { v = X } for X wider than 32bits
 	gccEmu                              bool              //
+	mode99c                             bool              //
 	preprocessOnly                      bool              //
 }
 
@@ -429,6 +430,11 @@ func KeepComments() Opt {
 // See https://gcc.gnu.org/onlinedocs/gccint/Varargs.html
 func EnableBuiltinClassifyType() Opt {
 	return func(l *lexer) { l.tweaks.enableBuiltinClassifyType = true }
+}
+
+// Mode99c turns on support for the 99c compiler.
+func Mode99c() Opt {
+	return func(l *lexer) { l.tweaks.mode99c = true }
 }
 
 // EnableBuiltinConstantP makes the parser handle specially
@@ -651,7 +657,7 @@ func SysIncludePaths(paths []string) Opt {
 
 // IncludePaths option configures where to search for include files (eg.
 // "name.h").  Multiple IncludePaths options may be used, the resulting search
-// path list is the produce by appending the option arguments in order of
+// path list is produced by appending the option arguments in order of
 // appearance.
 func IncludePaths(paths []string) Opt {
 	return func(l *lexer) {

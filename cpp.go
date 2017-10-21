@@ -1194,6 +1194,7 @@ func (p *pp) pragma(a []xc.Token) {
 }
 
 func (p *pp) controlLine(n *ControlLine) {
+out:
 	switch n.Case {
 	case 0: // PPDEFINE IDENTIFIER ReplacementList
 		p.defineMacro(n.Token2, n.ReplacementList)
@@ -1232,22 +1233,36 @@ func (p *pp) controlLine(n *ControlLine) {
 			break
 		}
 
+		currentFileDir := filepath.Dir(p.ppf.path)
 		arg := string(toks[0].S())
 		var dirs []string
 		switch {
 		case strings.HasPrefix(arg, "<"):
-			dirs = append(p.includes, p.sysIncludes...)
+			switch {
+			case p.tweaks.mode99c:
+				dirs = p.sysIncludes
+			default:
+				dirs = append(p.includes, p.sysIncludes...)
+			}
 		case strings.HasPrefix(arg, "\""):
-			dirs = p.includes
-			dirs = append([]string{filepath.Dir(p.ppf.path)}, dirs...)
+			switch {
+			case p.tweaks.mode99c:
+				dirs = p.includes
+			default:
+				dirs = p.includes
+				dirs = append([]string{filepath.Dir(p.ppf.path)}, dirs...)
+			}
 		default:
 			p.report.ErrTok(n.Token, "invalid #include argument")
-			break
+			break out
 		}
 
 		// Include origin.
 		arg = arg[1 : len(arg)-1]
 		for _, dir := range dirs {
+			if p.tweaks.mode99c && dir == "@" {
+				dir = currentFileDir
+			}
 			pth := filepath.Join(dir, arg)
 			if _, err := os.Stat(pth); err != nil {
 				if !os.IsNotExist(err) {
@@ -1274,7 +1289,7 @@ func (p *pp) controlLine(n *ControlLine) {
 			return
 		}
 
-		p.report.ErrTok(toks[0], "include file not found: %s", arg)
+		p.report.ErrTok(toks[0], "include file not found: %s. Search paths:\n\t%s", arg, strings.Join(clean(dirs), "\n\t"))
 	case 7: // PPLINE PPTokenList '\n'
 		toks := decodeTokens(n.PPTokenList, nil, false)
 		// lineno, fname

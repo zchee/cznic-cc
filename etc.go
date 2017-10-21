@@ -2059,3 +2059,14 @@ func fixParams(in []Parameter) {
 		}
 	}
 }
+
+func clean(paths []string) (r []string) {
+	for _, v := range paths {
+		a, err := filepath.Abs(v)
+		if err != nil {
+			a = v
+		}
+		r = append(r, a)
+	}
+	return r
+}
