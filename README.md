@@ -12,5 +12,4 @@ Changelog
 
 2018-07-01 This package is no longer maintained. Please see the v2 version at
 
-	[https://github.com/cznic/cc/v2](https://github.com/cznic/cc/v2)
-
+[https://github.com/cznic/cc/tree/master/v2](https://github.com/cznic/cc/tree/master/v2)
