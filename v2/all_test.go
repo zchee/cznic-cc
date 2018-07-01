@@ -1,8 +1,8 @@
-// Copyright 2017 The C99 Authors. All rights reserved.
+// Copyright 2017 The CC Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package c99
+package cc
 
 // [0]: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 
@@ -84,8 +84,8 @@ func init() {
 var (
 	oRE = flag.String("re", "", "")
 
-	shellc      = filepath.FromSlash("../../_sqlite/sqlite-amalgamation-3210000/shell.c")
-	sqlite3c    = filepath.FromSlash("../../_sqlite/sqlite-amalgamation-3210000/sqlite3.c")
+	shellc      = filepath.FromSlash("testdata/_sqlite/sqlite-amalgamation-3210000/shell.c")
+	sqlite3c    = filepath.FromSlash("testdata/_sqlite/sqlite-amalgamation-3210000/sqlite3.c")
 	searchPaths []string
 )
 

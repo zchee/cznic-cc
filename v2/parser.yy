@@ -1,5 +1,5 @@
 %{
-// Copyright 2017 The C99 Authors. All rights reserved.
+// Copyright 2017 The CC Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -43,7 +43,7 @@
 // otherwise, arising from, out of or in connection with the
 // software or the use or other dealings in the software.
 
-package c99
+package cc
 
 import (
 	"github.com/cznic/xc"

@@ -1,4 +1,4 @@
-# Copyright 2017 The C99 Authors. All rights reserved.
+# Copyright 2017 The CC Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
@@ -30,7 +30,7 @@ cpu: clean
 
 edit:
 	touch log
-	gvim -p Makefile *.l *.yy *_test.go log ast2.go c99.go cpp.go encoding.go enum.go etc.go lexer.go model.go operand.go type.go
+	gvim -p Makefile *.l *.yy *_test.go log ast2.go cc.go cpp.go encoding.go enum.go etc.go lexer.go model.go operand.go type.go
 
 editor: ast.go parser.go scanner.go trigraphs.go stringer.go
 	gofmt -l -s -w *.go

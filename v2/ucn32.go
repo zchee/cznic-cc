@@ -1,10 +1,10 @@
-// Copyright 2017 The C99 Authors. All rights reserved.
+// Copyright 2017 The CC Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 // +build 386 arm armbe mips mipsle sparc
 
-package c99
+package cc
 
 var ucnDigits = [...]uint32{
 	0x33: 0x3ff,

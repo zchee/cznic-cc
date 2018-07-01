@@ -13,6 +13,12 @@
 
 // Package cc is a C99 compiler front end.
 //
+// Changelog
+//
+// 2018-07-01 This package is no longer maintained. Please see the v2 version at
+//
+//	https://github.com/cznic/cc/v2
+//
 // Links
 //
 // Referenced from elsewhere:

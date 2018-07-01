@@ -1,10 +1,10 @@
-// Copyright 2017 The C99 Authors. All rights reserved.
+// Copyright 2017 The CC Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 // +build amd64 amd64p32 arm64 arm64be ppc64 ppc64le mips64 mips64le mips64p32 mips64p32le sparc64
 
-package c99
+package cc
 
 var ucnDigits = [...]uint64{
 	0x19: 0x3ff00000000, 0x1b: 0x3ff000000000000,
