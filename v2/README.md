@@ -2,8 +2,8 @@
 
 Package CC is a C99 [0] compiler front end (Work In Progress)
 
-This package is a modification of [1] supporting only SQLite.
+Installation
 
-[0] http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+    $ go get github.com/cznic/cc/v2
 
-[1] https://github.com/cznic/cc
+Documentation: [godoc.org/github.com/cznic/cc/v2](http://godoc.org/github.com/cznic/cc/v2)
