@@ -1,6 +1,6 @@
 # c99
 
-Package CC is a C99 [0] compiler front end (Work In Progress)
+Package CC is a C99 compiler front end. Work In Progress. API unstable.
 
 Installation
 

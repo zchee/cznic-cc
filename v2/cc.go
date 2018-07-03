@@ -22,7 +22,9 @@
 //		20040709-1.c
 //		20040709-2.c
 
-// Package cc is a C99 compiler front end. (Work In Progress, unstable API)
+//TODO remove all options.
+
+// Package cc is a C99 compiler front end. Work In Progress. API unstable.
 package cc
 
 import (
@@ -122,14 +124,14 @@ func findRepo(s string) (string, error) {
 // Builtin returns the Source for built-in and predefined stuff or an error, if any.
 func Builtin() (Source, error) { return NewFileSource(filepath.Join(headers, "builtin.h")) }
 
-// Crt0 returns the Source for built-in and predefined stuff or an error, if any.
-func Crt0() (Source, error) { return NewStringSource("crt0.c", CRT0Source), nil }
+// Crt0 returns the Source for program initialization code.
+func Crt0() (Source, error) { return NewStringSource("crt0.c", CRT0Source), nil } //TODO mv to ccgo
 
 // MustBuiltin is like Builtin but panics on error.
 func MustBuiltin() Source { return MustFileSource(filepath.Join(headers, "builtin.h")) }
 
 // MustCrt0 is like Crt0 but panics on error.
-func MustCrt0() Source {
+func MustCrt0() Source { //TODO mv to ccgo
 	s, err := Crt0()
 	if err != nil {
 		panic(err)
@@ -248,7 +250,7 @@ type cacheKey struct {
 }
 
 // FlushCache removes all items in the file cache used by instances of FileSource.
-func FlushCache() {
+func FlushCache() { //TODO-
 	cacheMu.Lock()
 	cache = make(map[cacheKey][]uint32, cacheSize)
 	fset = token.NewFileSet()
@@ -265,7 +267,7 @@ type TranslationUnit struct {
 }
 
 // Tweaks amend the behavior of the parser.
-type Tweaks struct {
+type Tweaks struct { //TODO- remove all options
 	TrackExpand   func(string)
 	TrackIncludes func(string)
 
@@ -521,7 +523,7 @@ type FileSource struct {
 func NewFileSource(name string) (*FileSource, error) { return NewFileSource2(name, true) }
 
 // NewFileSource2 returns a newly created *FileSource reading from name.
-func NewFileSource2(name string, cacheable bool) (*FileSource, error) {
+func NewFileSource2(name string, cacheable bool) (*FileSource, error) { //TODO-?
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err

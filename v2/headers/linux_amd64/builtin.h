@@ -31,8 +31,10 @@ int __signbitf(float x);
 void *__builtin_alloca(__SIZE_TYPE__ __size);
 void *__builtin_memcpy(void *dest, const void *src, __SIZE_TYPE__ n);
 void *__builtin_memset(void *s, int c, __SIZE_TYPE__ n);
-void *__va_end;
-void *__va_start;
+#ifdef __ccgo__
+void *__ccgo_va_end;
+void *__ccgo_va_start;
+#endif
 void __builtin_abort(void);
 void __builtin_exit(int __status);
 void __builtin_trap(void);
@@ -48,8 +50,13 @@ void __register_stdfiles(void *, void *, void *, void *);
 #define __builtin_types_compatible_p(type1, type2) __builtin_types_compatible__((type1){}, (type2){})
 #define __builtin_va_arg(ap, type) (type)ap
 #define __builtin_va_copy(dest, src) dest = src
-#define __builtin_va_end(ap) ap = __va_end
-#define __builtin_va_start(ap, arg) ap = __va_start
+#ifdef __ccgo__
+#define __builtin_va_end(ap) ap = __ccgo_va_end
+#define __builtin_va_start(ap, arg) ap = __ccgo_va_start
+#else
+#define __builtin_va_end(ap) ap = (void*)0
+#define __builtin_va_start(ap, arg) ap = (void*)-1
+#endif
 #define __complex__ _Complex
 #define __const const
 #define __extension__
