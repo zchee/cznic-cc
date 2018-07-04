@@ -75,8 +75,9 @@ var (
 	cacheMu sync.Mutex // Guards cache, fset
 	fset    = token.NewFileSet()
 
-	packageDir string
-	headers    string
+	packageDir     string
+	headers        string
+	selfImportPath string
 )
 
 func init() {
@@ -85,6 +86,7 @@ func init() {
 		panic(err)
 	}
 
+	selfImportPath = ip
 	if packageDir, err = findRepo(ip); err != nil {
 		panic(err)
 	}
@@ -120,6 +122,9 @@ func findRepo(s string) (string, error) {
 	}
 	return "", fmt.Errorf("%q: cannot find repository", s)
 }
+
+// ImportPath reports the import path of this package.
+func ImportPath() string { return selfImportPath }
 
 // Builtin returns the Source for built-in and predefined stuff or an error, if any.
 func Builtin() (Source, error) { return NewFileSource(filepath.Join(headers, "builtin.h")) }
@@ -262,8 +267,10 @@ type TranslationUnit struct {
 	ExternalDeclarationList *ExternalDeclarationList
 	FileScope               *Scope
 	FileSet                 *token.FileSet
+	IncludePaths            []string
 	Macros                  map[int]*Macro
 	Model                   Model
+	SysIncludePaths         []string
 }
 
 // Tweaks amend the behavior of the parser.
@@ -327,6 +334,8 @@ func Translate(tweaks *Tweaks, includePaths, sysIncludePaths []string, sources .
 		return nil, err
 	}
 
+	tu.IncludePaths = append([]string(nil), includePaths...)
+	tu.SysIncludePaths = append([]string(nil), sysIncludePaths...)
 	returned = true
 	return tu, nil
 }
