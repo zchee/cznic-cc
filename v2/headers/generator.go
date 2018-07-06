@@ -19,9 +19,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cznic/cc/v2"
 	"github.com/cznic/ir"
 	"github.com/cznic/sortutil"
-	"github.com/cznic/sqlite2go/internal/c99"
 	"github.com/cznic/strutil"
 	"github.com/cznic/xc"
 )
@@ -125,7 +125,7 @@ func main() {
 	}
 	want = want[:sortutil.Dedupe(sort.StringSlice(want))]
 	var got []string
-	tweaks := &c99.Tweaks{
+	tweaks := &cc.Tweaks{
 		EnableAnonymousStructFields: true,
 		EnableEmptyStructs:          true,
 		TrackIncludes: func(s string) {
@@ -137,14 +137,14 @@ func main() {
 		},
 	}
 	for _, v := range want {
-		tu, err := c99.Translate(
+		tu, err := cc.Translate(
 			tweaks,
 			append([]string{"@"}, sys...),
 			sys,
-			c99.NewStringSource("main.c", fmt.Sprintf(`
+			cc.NewStringSource("main.c", fmt.Sprintf(`
 #include "./%s/builtin.h"
 
-// Output of gcc features.c && ./a.out in github.com/cznic/sqlite2go/internal/c99/headers on linux_amd64.
+// Output of gcc features.c && ./a.out in github.com/cznic/cc/v2/headers on linux_amd64.
 #define _POSIX_SOURCE 1
 #define _POSIX_C_SOURCE 200809
 #define _DEFAULT_SOURCE 1
@@ -154,7 +154,7 @@ func main() {
 `, osArch, v)),
 		)
 		if err != nil {
-			panic(c99.ErrString(err))
+			panic(cc.ErrString(err))
 		}
 
 		if crt != "" {
@@ -165,21 +165,21 @@ func main() {
 	for _, v := range got {
 		b, err := ioutil.ReadFile(v)
 		if err != nil {
-			panic(c99.ErrString(err))
+			panic(cc.ErrString(err))
 		}
 
 		f := filepath.Join(osArch, v)
 		mkdir(filepath.Dir(f))
 		if err := ioutil.WriteFile(f, b, 0644); err != nil {
-			panic(c99.ErrString(err))
+			panic(cc.ErrString(err))
 		}
 	}
 }
 
 func predefined() []string {
-	predefined, inc, sys, err := c99.HostConfig("-std=c99")
+	predefined, inc, sys, err := cc.HostConfig("-std=c99")
 	if err != nil {
-		panic(c99.ErrString(err))
+		panic(cc.ErrString(err))
 	}
 
 	if len(inc) != 0 {
@@ -210,7 +210,7 @@ func predefined() []string {
 	}
 
 	if err := ioutil.WriteFile(filepath.Join(osArch, "predefined.h"), b.Bytes(), 0644); err != nil {
-		panic(c99.ErrString(err))
+		panic(cc.ErrString(err))
 	}
 
 	b.Reset()
@@ -227,7 +227,7 @@ func predefined() []string {
 	}
 	sys = sys[:w]
 	if err := ioutil.WriteFile(filepath.Join(osArch, "paths"), b.Bytes(), 0664); err != nil {
-		panic(c99.ErrString(err))
+		panic(cc.ErrString(err))
 	}
 
 	return sys
@@ -236,7 +236,7 @@ func predefined() []string {
 func mkdir(p string) {
 	if _, err := os.Stat(p); err != nil {
 		if !os.IsNotExist(err) {
-			panic(c99.ErrString(err))
+			panic(cc.ErrString(err))
 		}
 
 		if err := os.MkdirAll(p, 0775); err != nil {
@@ -274,8 +274,8 @@ func findRepo(s string) (string, error) {
 	return "", fmt.Errorf("%q: cannot find repository", s)
 }
 
-func defs(include string, tu *c99.TranslationUnit) {
-	model, err := c99.NewModel()
+func defs(include string, tu *cc.TranslationUnit) {
+	model, err := cc.NewModel()
 	if err != nil {
 		panic(err)
 	}
@@ -333,7 +333,7 @@ const (`, pn))
 		case *ir.Int64Value:
 			switch {
 			case op.Type.IsUnsigned():
-				fmt.Fprintf(buf, "X%s = %v", nm, uint64(c99.ConvertInt64(x.Value, op.Type, model)))
+				fmt.Fprintf(buf, "X%s = %v", nm, uint64(cc.ConvertInt64(x.Value, op.Type, model)))
 			default:
 				fmt.Fprintf(buf, "X%s = %v", nm, x.Value)
 			}
@@ -346,7 +346,7 @@ const (`, pn))
 	a = a[:0]
 	for _, v := range tu.FileScope.Idents {
 		switch x := v.(type) {
-		case *c99.EnumerationConstant:
+		case *cc.EnumerationConstant:
 			nm := string(dict.S(x.Token.Val))
 			if strings.HasPrefix(nm, "__") {
 				continue
@@ -360,12 +360,12 @@ const (`, pn))
 		buf.WriteByte('\n')
 	}
 	for _, nm := range a {
-		op := tu.FileScope.Idents[dict.SID(nm)].(*c99.EnumerationConstant).Operand
+		op := tu.FileScope.Idents[dict.SID(nm)].(*cc.EnumerationConstant).Operand
 		x := op.Value.(*ir.Int64Value)
 		buf.WriteByte('\n')
 		switch {
 		case op.Type.IsUnsigned():
-			fmt.Fprintf(buf, "C%s = %v", nm, uint64(c99.ConvertInt64(x.Value, op.Type, model)))
+			fmt.Fprintf(buf, "C%s = %v", nm, uint64(cc.ConvertInt64(x.Value, op.Type, model)))
 		default:
 			fmt.Fprintf(buf, "C%s = %v", nm, x.Value)
 		}
