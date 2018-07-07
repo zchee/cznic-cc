@@ -46,8 +46,8 @@ func NewModel() (m Model, err error) {
 			LongDouble: {8, 8, 4},
 
 			FloatComplex:      {8, 8, 4},
-			DoubleComplex:     {8, 8, 4},
-			LongDoubleComplex: {8, 8, 4},
+			DoubleComplex:     {16, 8, 4},
+			LongDoubleComplex: {16, 8, 4},
 
 			Void: {1, 1, 1},
 			Ptr:  {4, 4, 4},
@@ -77,8 +77,8 @@ func NewModel() (m Model, err error) {
 			LongDouble: {8, 8, 8},
 
 			FloatComplex:      {8, 8, 4},
-			DoubleComplex:     {8, 8, 4},
-			LongDoubleComplex: {8, 8, 4},
+			DoubleComplex:     {16, 8, 4},
+			LongDoubleComplex: {16, 8, 4},
 
 			Void: {1, 1, 1},
 			Ptr:  {8, 8, 8},
