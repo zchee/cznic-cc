@@ -1,6 +1,6 @@
 /* Definition of the cpu_set_t structure used by the POSIX 1003.1b-1993
    scheduling interface.
-   Copyright (C) 1996-2017 Free Software Foundation, Inc.
+   Copyright (C) 1996-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -21,7 +21,7 @@
 #define _BITS_CPU_SET_H 1
 
 #ifndef _SCHED_H
-#error "Never include <bits/cpu-set.h> directly; use <sched.h> instead."
+# error "Never include <bits/cpu-set.h> directly; use <sched.h> instead."
 #endif
 
 /* Size definition for CPU sets.  */
@@ -36,16 +36,17 @@ typedef __CPU_MASK_TYPE __cpu_mask;
 #define __CPUMASK(cpu)	((__cpu_mask) 1 << ((cpu) % __NCPUBITS))
 
 /* Data structure to describe CPU mask.  */
-typedef struct {
-	__cpu_mask __bits[__CPU_SETSIZE / __NCPUBITS];
+typedef struct
+{
+  __cpu_mask __bits[__CPU_SETSIZE / __NCPUBITS];
 } cpu_set_t;
 
 /* Access functions for CPU masks.  */
 #if __GNUC_PREREQ (2, 91)
-#define __CPU_ZERO_S(setsize, cpusetp) \
+# define __CPU_ZERO_S(setsize, cpusetp) \
   do __builtin_memset (cpusetp, '\0', setsize); while (0)
 #else
-#define __CPU_ZERO_S(setsize, cpusetp) \
+# define __CPU_ZERO_S(setsize, cpusetp) \
   do {									      \
     size_t __i;								      \
     size_t __imax = (setsize) / sizeof (__cpu_mask);			      \
@@ -80,10 +81,10 @@ typedef struct {
   __sched_cpucount (setsize, cpusetp)
 
 #if __GNUC_PREREQ (2, 91)
-#define __CPU_EQUAL_S(setsize, cpusetp1, cpusetp2) \
+# define __CPU_EQUAL_S(setsize, cpusetp1, cpusetp2) \
   (__builtin_memcmp (cpusetp1, cpusetp2, setsize) == 0)
 #else
-#define __CPU_EQUAL_S(setsize, cpusetp1, cpusetp2) \
+# define __CPU_EQUAL_S(setsize, cpusetp1, cpusetp2) \
   (__extension__							      \
    ({ const __cpu_mask *__arr1 = (cpusetp1)->__bits;			      \
       const __cpu_mask *__arr2 = (cpusetp2)->__bits;			      \
@@ -111,10 +112,13 @@ typedef struct {
 #define __CPU_ALLOC(count) __sched_cpualloc (count)
 #define __CPU_FREE(cpuset) __sched_cpufree (cpuset)
 
-__BEGIN_DECLS extern int __sched_cpucount(size_t __setsize, const cpu_set_t * __setp) __THROW;
-extern cpu_set_t *__sched_cpualloc(size_t __count)
-__THROW __wur;
-extern void __sched_cpufree(cpu_set_t * __set) __THROW;
+__BEGIN_DECLS
+
+extern int __sched_cpucount (size_t __setsize, const cpu_set_t *__setp)
+     __THROW;
+extern cpu_set_t *__sched_cpualloc (size_t __count) __THROW __wur;
+extern void __sched_cpufree (cpu_set_t *__set) __THROW;
 
 __END_DECLS
-#endif				/* bits/cpu-set.h */
+
+#endif /* bits/cpu-set.h */

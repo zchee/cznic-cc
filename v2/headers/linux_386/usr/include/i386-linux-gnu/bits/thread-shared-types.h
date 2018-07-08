@@ -1,5 +1,5 @@
 /* Common threading primitives definitions for both POSIX and C11.
-   Copyright (C) 2017 Free Software Foundation, Inc.
+   Copyright (C) 2017-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -42,6 +42,25 @@
 				    the internal structure.
    __PTHREAD_MUTEX_LOCK_ELISION   - 1 if the architecture supports lock
 				    elision or 0 otherwise.
+   __PTHREAD_MUTEX_NUSERS_AFTER_KIND - control where to put __nusers.  The
+				       preferred value for new architectures
+				       is 0.
+   __PTHREAD_MUTEX_USE_UNION      - control whether internal __spins and
+				    __list will be place inside a union for
+				    linuxthreads compatibility.
+				    The preferred value for new architectures
+				    is 0.
+
+   For a new port the preferred values for the required defines are:
+
+   #define __PTHREAD_COMPAT_PADDING_MID
+   #define __PTHREAD_COMPAT_PADDING_END
+   #define __PTHREAD_MUTEX_LOCK_ELISION         0
+   #define __PTHREAD_MUTEX_NUSERS_AFTER_KIND    0
+   #define __PTHREAD_MUTEX_USE_UNION            0
+
+   __PTHREAD_MUTEX_LOCK_ELISION can be set to 1 if the hardware plans to
+   eventually support lock elision using transactional memory.
 
    The additional macro defines any constraint for the lock alignment
    inside the thread structures:
@@ -59,87 +78,101 @@
 
 /* Common definition of pthread_mutex_t. */
 
-#if __WORDSIZE == 64
-typedef struct __pthread_internal_list {
-	struct __pthread_internal_list *__prev;
-	struct __pthread_internal_list *__next;
+#if !__PTHREAD_MUTEX_USE_UNION
+typedef struct __pthread_internal_list
+{
+  struct __pthread_internal_list *__prev;
+  struct __pthread_internal_list *__next;
 } __pthread_list_t;
 #else
-typedef struct __pthread_internal_slist {
-	struct __pthread_internal_slist *__next;
+typedef struct __pthread_internal_slist
+{
+  struct __pthread_internal_slist *__next;
 } __pthread_slist_t;
 #endif
 
 /* Lock elision support.  */
 #if __PTHREAD_MUTEX_LOCK_ELISION
-#if __WORDSIZE == 64
-#define __PTHREAD_SPINS_DATA	\
+# if !__PTHREAD_MUTEX_USE_UNION
+#  define __PTHREAD_SPINS_DATA	\
   short __spins;		\
   short __elision
-#define __PTHREAD_SPINS             0, 0
-#else
-#define __PTHREAD_SPINS_DATA	\
+#  define __PTHREAD_SPINS             0, 0
+# else
+#  define __PTHREAD_SPINS_DATA	\
   struct			\
   {				\
     short __espins;		\
     short __eelision;		\
   } __elision_data
-#define __PTHREAD_SPINS         { 0, 0 }
-#define __spins __elision_data.__espins
-#define __elision __elision_data.__eelision
-#endif
+#  define __PTHREAD_SPINS         { 0, 0 }
+#  define __spins __elision_data.__espins
+#  define __elision __elision_data.__eelision
+# endif
 #else
-#define __PTHREAD_SPINS_DATA int __spins
+# define __PTHREAD_SPINS_DATA int __spins
 /* Mutex __spins initializer used by PTHREAD_MUTEX_INITIALIZER.  */
-#define __PTHREAD_SPINS 0
+# define __PTHREAD_SPINS 0
 #endif
 
-struct __pthread_mutex_s {
-	int __lock __LOCK_ALIGNMENT;
-	unsigned int __count;
-	int __owner;
-#if __WORDSIZE == 64
-	unsigned int __nusers;
+struct __pthread_mutex_s
+{
+  int __lock __LOCK_ALIGNMENT;
+  unsigned int __count;
+  int __owner;
+#if !__PTHREAD_MUTEX_NUSERS_AFTER_KIND
+  unsigned int __nusers;
 #endif
-	/* KIND must stay at this position in the structure to maintain
-	   binary compatibility with static initializers.  */
-	int __kind;
-	 __PTHREAD_COMPAT_PADDING_MID
-#if __WORDSIZE == 64
-	 __PTHREAD_SPINS_DATA;
-	__pthread_list_t __list;
-#define __PTHREAD_MUTEX_HAVE_PREV      1
+  /* KIND must stay at this position in the structure to maintain
+     binary compatibility with static initializers.  */
+  int __kind;
+  __PTHREAD_COMPAT_PADDING_MID
+#if __PTHREAD_MUTEX_NUSERS_AFTER_KIND
+  unsigned int __nusers;
+#endif
+#if !__PTHREAD_MUTEX_USE_UNION
+  __PTHREAD_SPINS_DATA;
+  __pthread_list_t __list;
+# define __PTHREAD_MUTEX_HAVE_PREV      1
 #else
-	unsigned int __nusers;
-	__extension__ union {
-		__PTHREAD_SPINS_DATA;
-		__pthread_slist_t __list;
-	};
+  __extension__ union
+  {
+    __PTHREAD_SPINS_DATA;
+    __pthread_slist_t __list;
+  };
+# define __PTHREAD_MUTEX_HAVE_PREV      0
 #endif
- __PTHREAD_COMPAT_PADDING_END};
+  __PTHREAD_COMPAT_PADDING_END
+};
+
 
 /* Common definition of pthread_cond_t. */
 
-struct __pthread_cond_s {
-	__extension__ union {
-		__extension__ unsigned long long int __wseq;
-		struct {
-			unsigned int __low;
-			unsigned int __high;
-		} __wseq32;
-	};
-	__extension__ union {
-		__extension__ unsigned long long int __g1_start;
-		struct {
-			unsigned int __low;
-			unsigned int __high;
-		} __g1_start32;
-	};
-	unsigned int __g_refs[2] __LOCK_ALIGNMENT;
-	unsigned int __g_size[2];
-	unsigned int __g1_orig_size;
-	unsigned int __wrefs;
-	unsigned int __g_signals[2];
+struct __pthread_cond_s
+{
+  __extension__ union
+  {
+    __extension__ unsigned long long int __wseq;
+    struct
+    {
+      unsigned int __low;
+      unsigned int __high;
+    } __wseq32;
+  };
+  __extension__ union
+  {
+    __extension__ unsigned long long int __g1_start;
+    struct
+    {
+      unsigned int __low;
+      unsigned int __high;
+    } __g1_start32;
+  };
+  unsigned int __g_refs[2] __LOCK_ALIGNMENT;
+  unsigned int __g_size[2];
+  unsigned int __g1_orig_size;
+  unsigned int __wrefs;
+  unsigned int __g_signals[2];
 };
 
-#endif				/* _THREAD_SHARED_TYPES_H  */
+#endif /* _THREAD_SHARED_TYPES_H  */

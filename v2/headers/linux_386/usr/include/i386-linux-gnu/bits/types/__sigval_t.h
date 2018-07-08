@@ -1,5 +1,5 @@
-/* `INFINITY' constant for IEEE 754 machines.
-   Copyright (C) 2004-2017 Free Software Foundation, Inc.
+/* Define __sigval_t.
+   Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -16,14 +16,26 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#ifndef _MATH_H
-#error "Never use <bits/inf.h> directly; include <math.h> instead."
+#ifndef ____sigval_t_defined
+#define ____sigval_t_defined
+
+/* Type for data associated with a signal.  */
+#ifdef __USE_POSIX199309
+union sigval
+{
+  int sival_int;
+  void *sival_ptr;
+};
+
+typedef union sigval __sigval_t;
+#else
+union __sigval
+{
+  int __sival_int;
+  void *__sival_ptr;
+};
+
+typedef union __sigval __sigval_t;
 #endif
 
-/* IEEE positive infinity.  */
-
-#if __GNUC_PREREQ(3,3)
-#define INFINITY	(__builtin_inff())
-#else
-#define INFINITY	HUGE_VALF
 #endif

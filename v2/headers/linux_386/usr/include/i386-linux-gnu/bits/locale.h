@@ -1,5 +1,5 @@
 /* Definition of locale category symbol values.
-   Copyright (C) 2001-2017 Free Software Foundation, Inc.
+   Copyright (C) 2001-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
    <http://www.gnu.org/licenses/>.  */
 
 #if !defined _LOCALE_H && !defined _LANGINFO_H
-#error "Never use <bits/locale.h> directly; include <locale.h> instead."
+# error "Never use <bits/locale.h> directly; include <locale.h> instead."
 #endif
 
 #ifndef _BITS_LOCALE_H
@@ -37,4 +37,4 @@
 #define __LC_MEASUREMENT	11
 #define __LC_IDENTIFICATION	12
 
-#endif				/* bits/locale.h */
+#endif	/* bits/locale.h */

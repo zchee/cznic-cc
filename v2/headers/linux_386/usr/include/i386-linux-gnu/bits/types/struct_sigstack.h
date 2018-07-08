@@ -1,5 +1,5 @@
 /* Define struct sigstack.
-   Copyright (C) 1998-2017 Free Software Foundation, Inc.
+   Copyright (C) 1998-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -20,9 +20,10 @@
 #define __sigstack_defined 1
 
 /* Structure describing a signal stack (obsolete).  */
-struct sigstack {
-	void *ss_sp;		/* Signal stack pointer.  */
-	int ss_onstack;		/* Nonzero if executing on this stack.  */
-};
+struct sigstack
+  {
+    void *ss_sp;		/* Signal stack pointer.  */
+    int ss_onstack;		/* Nonzero if executing on this stack.  */
+  };
 
 #endif

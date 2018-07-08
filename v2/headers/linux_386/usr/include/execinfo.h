@@ -1,4 +1,4 @@
-/* Copyright (C) 1998-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1998-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -21,19 +21,23 @@
 #include <features.h>
 
 __BEGIN_DECLS
+
 /* Store up to SIZE return address of the current program state in
    ARRAY and return the exact number of values stored.  */
-extern int backtrace(void **__array, int __size) __nonnull((1));
+extern int backtrace (void **__array, int __size) __nonnull ((1));
+
 
 /* Return names of functions from the backtrace list in ARRAY in a newly
    malloc()ed memory block.  */
-extern char **backtrace_symbols(void *const *__array, int __size)
-__THROW __nonnull((1));
+extern char **backtrace_symbols (void *const *__array, int __size)
+     __THROW __nonnull ((1));
+
 
 /* This function is similar to backtrace_symbols() but it writes the result
    immediately to a file.  */
-extern void backtrace_symbols_fd(void *const *__array, int __size, int __fd)
-__THROW __nonnull((1));
+extern void backtrace_symbols_fd (void *const *__array, int __size, int __fd)
+     __THROW __nonnull ((1));
 
 __END_DECLS
-#endif				/* execinfo.h  */
+
+#endif /* execinfo.h  */

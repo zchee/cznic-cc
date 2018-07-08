@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -16,20 +16,21 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_SELECT_H
-#error "Never use <bits/select.h> directly; include <sys/select.h> instead."
+# error "Never use <bits/select.h> directly; include <sys/select.h> instead."
 #endif
 
 #include <bits/wordsize.h>
 
+
 #if defined __GNUC__ && __GNUC__ >= 2
 
-#if __WORDSIZE == 64
-#define __FD_ZERO_STOS "stosq"
-#else
-#define __FD_ZERO_STOS "stosl"
-#endif
+# if __WORDSIZE == 64
+#  define __FD_ZERO_STOS "stosq"
+# else
+#  define __FD_ZERO_STOS "stosl"
+# endif
 
-#define __FD_ZERO(fdsp) \
+# define __FD_ZERO(fdsp) \
   do {									      \
     int __d0, __d1;							      \
     __asm__ __volatile__ ("cld; rep; " __FD_ZERO_STOS			      \
@@ -40,11 +41,11 @@
 			  : "memory");					      \
   } while (0)
 
-#else				/* ! GNU CC */
+#else	/* ! GNU CC */
 
 /* We don't use `memset' because this would require a prototype and
    the array isn't too big.  */
-#define __FD_ZERO(set)  \
+# define __FD_ZERO(set)  \
   do {									      \
     unsigned int __i;							      \
     fd_set *__arr = (set);						      \
@@ -52,7 +53,7 @@
       __FDS_BITS (__arr)[__i] = 0;					      \
   } while (0)
 
-#endif				/* GNU CC */
+#endif	/* GNU CC */
 
 #define __FD_SET(d, set) \
   ((void) (__FDS_BITS (set)[__FD_ELT (d)] |= __FD_MASK (d)))

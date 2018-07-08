@@ -104,7 +104,7 @@ func testUCNTable(t *testing.T, tab []rune, fOk, fOther func(rune) bool, fcatego
 		if h == 0 {
 			h = l
 		}
-		for r := rune(l); r <= rune(h); r++ {
+		for r := l; r <= h; r++ {
 			m[r] = struct{}{}
 		}
 	}

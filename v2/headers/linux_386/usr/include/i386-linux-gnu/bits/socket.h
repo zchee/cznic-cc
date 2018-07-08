@@ -1,5 +1,5 @@
 /* System-specific socket constants and types.  Linux version.
-   Copyright (C) 1991-2017 Free Software Foundation, Inc.
+   Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -20,7 +20,7 @@
 #define __BITS_SOCKET_H
 
 #ifndef _SYS_SOCKET_H
-#error "Never include <bits/socket.h> directly; use <sys/socket.h> instead."
+# error "Never include <bits/socket.h> directly; use <sys/socket.h> instead."
 #endif
 
 #define __need_size_t
@@ -31,7 +31,7 @@
 /* Type for length arguments in socket calls.  */
 #ifndef __socklen_t_defined
 typedef __socklen_t socklen_t;
-#define __socklen_t_defined
+# define __socklen_t_defined
 #endif
 
 /* Get the architecture-dependent definition of enum __socket_type.  */
@@ -40,8 +40,8 @@ typedef __socklen_t socklen_t;
 /* Protocol families.  */
 #define PF_UNSPEC	0	/* Unspecified.  */
 #define PF_LOCAL	1	/* Local to host (pipes and file-domain).  */
-#define PF_UNIX		PF_LOCAL	/* POSIX name for PF_LOCAL.  */
-#define PF_FILE		PF_LOCAL	/* Another non-standard name for PF_LOCAL.  */
+#define PF_UNIX		PF_LOCAL /* POSIX name for PF_LOCAL.  */
+#define PF_FILE		PF_LOCAL /* Another non-standard name for PF_LOCAL.  */
 #define PF_INET		2	/* IP protocol family.  */
 #define PF_AX25		3	/* Amateur Radio AX.25.  */
 #define PF_IPX		4	/* Novell Internet Protocol.  */
@@ -57,7 +57,7 @@ typedef __socklen_t socklen_t;
 #define PF_SECURITY	14	/* Security callback pseudo AF.  */
 #define PF_KEY		15	/* PF_KEY key management API.  */
 #define PF_NETLINK	16
-#define PF_ROUTE	PF_NETLINK	/* Alias to emulate 4.4BSD.  */
+#define PF_ROUTE	PF_NETLINK /* Alias to emulate 4.4BSD.  */
 #define PF_PACKET	17	/* Packet family.  */
 #define PF_ASH		18	/* Ash.  */
 #define PF_ECONET	19	/* Acorn Econet.  */
@@ -163,6 +163,7 @@ typedef __socklen_t socklen_t;
 #define SOL_ALG		279
 #define SOL_NFC		280
 #define SOL_KCM		281
+#define SOL_TLS		282
 
 /* Maximum queue length specifiable by listen.  */
 #define SOMAXCONN	128
@@ -171,10 +172,12 @@ typedef __socklen_t socklen_t;
 #include <bits/sockaddr.h>
 
 /* Structure describing a generic socket address.  */
-struct sockaddr {
-	__SOCKADDR_COMMON(sa_);	/* Common data: address family and length.  */
-	char sa_data[14];	/* Address data.  */
-};
+struct sockaddr
+  {
+    __SOCKADDR_COMMON (sa_);	/* Common data: address family and length.  */
+    char sa_data[14];		/* Address data.  */
+  };
+
 
 /* Structure large enough to hold any socket address (with the historical
    exception of AF_UNIX).  */
@@ -182,101 +185,109 @@ struct sockaddr {
 #define _SS_PADSIZE \
   (_SS_SIZE - __SOCKADDR_COMMON_SIZE - sizeof (__ss_aligntype))
 
-struct sockaddr_storage {
-	__SOCKADDR_COMMON(ss_);	/* Address family, etc.  */
-	char __ss_padding[_SS_PADSIZE];
-	__ss_aligntype __ss_align;	/* Force desired alignment.  */
-};
+struct sockaddr_storage
+  {
+    __SOCKADDR_COMMON (ss_);	/* Address family, etc.  */
+    char __ss_padding[_SS_PADSIZE];
+    __ss_aligntype __ss_align;	/* Force desired alignment.  */
+  };
+
 
 /* Bits in the FLAGS argument to `send', `recv', et al.  */
-enum {
-	MSG_OOB = 0x01,		/* Process out-of-band data.  */
+enum
+  {
+    MSG_OOB		= 0x01,	/* Process out-of-band data.  */
 #define MSG_OOB		MSG_OOB
-	MSG_PEEK = 0x02,	/* Peek at incoming messages.  */
+    MSG_PEEK		= 0x02,	/* Peek at incoming messages.  */
 #define MSG_PEEK	MSG_PEEK
-	MSG_DONTROUTE = 0x04,	/* Don't use local routing.  */
+    MSG_DONTROUTE	= 0x04,	/* Don't use local routing.  */
 #define MSG_DONTROUTE	MSG_DONTROUTE
 #ifdef __USE_GNU
-	/* DECnet uses a different name.  */
-	MSG_TRYHARD = MSG_DONTROUTE,
-#define MSG_TRYHARD	MSG_DONTROUTE
+    /* DECnet uses a different name.  */
+    MSG_TRYHARD		= MSG_DONTROUTE,
+# define MSG_TRYHARD	MSG_DONTROUTE
 #endif
-	MSG_CTRUNC = 0x08,	/* Control data lost before delivery.  */
+    MSG_CTRUNC		= 0x08,	/* Control data lost before delivery.  */
 #define MSG_CTRUNC	MSG_CTRUNC
-	MSG_PROXY = 0x10,	/* Supply or ask second address.  */
+    MSG_PROXY		= 0x10,	/* Supply or ask second address.  */
 #define MSG_PROXY	MSG_PROXY
-	MSG_TRUNC = 0x20,
+    MSG_TRUNC		= 0x20,
 #define MSG_TRUNC	MSG_TRUNC
-	MSG_DONTWAIT = 0x40,	/* Nonblocking IO.  */
+    MSG_DONTWAIT	= 0x40, /* Nonblocking IO.  */
 #define MSG_DONTWAIT	MSG_DONTWAIT
-	MSG_EOR = 0x80,		/* End of record.  */
+    MSG_EOR		= 0x80, /* End of record.  */
 #define MSG_EOR		MSG_EOR
-	MSG_WAITALL = 0x100,	/* Wait for a full request.  */
+    MSG_WAITALL		= 0x100, /* Wait for a full request.  */
 #define MSG_WAITALL	MSG_WAITALL
-	MSG_FIN = 0x200,
+    MSG_FIN		= 0x200,
 #define MSG_FIN		MSG_FIN
-	MSG_SYN = 0x400,
+    MSG_SYN		= 0x400,
 #define MSG_SYN		MSG_SYN
-	MSG_CONFIRM = 0x800,	/* Confirm path validity.  */
+    MSG_CONFIRM		= 0x800, /* Confirm path validity.  */
 #define MSG_CONFIRM	MSG_CONFIRM
-	MSG_RST = 0x1000,
+    MSG_RST		= 0x1000,
 #define MSG_RST		MSG_RST
-	MSG_ERRQUEUE = 0x2000,	/* Fetch message from error queue.  */
+    MSG_ERRQUEUE	= 0x2000, /* Fetch message from error queue.  */
 #define MSG_ERRQUEUE	MSG_ERRQUEUE
-	MSG_NOSIGNAL = 0x4000,	/* Do not generate SIGPIPE.  */
+    MSG_NOSIGNAL	= 0x4000, /* Do not generate SIGPIPE.  */
 #define MSG_NOSIGNAL	MSG_NOSIGNAL
-	MSG_MORE = 0x8000,	/* Sender will send more.  */
+    MSG_MORE		= 0x8000,  /* Sender will send more.  */
 #define MSG_MORE	MSG_MORE
-	MSG_WAITFORONE = 0x10000,	/* Wait for at least one packet to return. */
+    MSG_WAITFORONE	= 0x10000, /* Wait for at least one packet to return.*/
 #define MSG_WAITFORONE	MSG_WAITFORONE
-	MSG_BATCH = 0x40000,	/* sendmmsg: more messages coming.  */
+    MSG_BATCH		= 0x40000, /* sendmmsg: more messages coming.  */
 #define MSG_BATCH	MSG_BATCH
-	MSG_FASTOPEN = 0x20000000,	/* Send data in TCP SYN.  */
+    MSG_ZEROCOPY	= 0x4000000, /* Use user data in kernel path.  */
+#define MSG_ZEROCOPY	MSG_ZEROCOPY
+    MSG_FASTOPEN	= 0x20000000, /* Send data in TCP SYN.  */
 #define MSG_FASTOPEN	MSG_FASTOPEN
 
-	MSG_CMSG_CLOEXEC = 0x40000000	/* Set close_on_exit for file
+    MSG_CMSG_CLOEXEC	= 0x40000000	/* Set close_on_exit for file
 					   descriptor received through
 					   SCM_RIGHTS.  */
 #define MSG_CMSG_CLOEXEC MSG_CMSG_CLOEXEC
-};
+  };
+
 
 /* Structure describing messages sent by
    `sendmsg' and received by `recvmsg'.  */
-struct msghdr {
-	void *msg_name;		/* Address to send to/receive from.  */
-	socklen_t msg_namelen;	/* Length of address data.  */
+struct msghdr
+  {
+    void *msg_name;		/* Address to send to/receive from.  */
+    socklen_t msg_namelen;	/* Length of address data.  */
 
-	struct iovec *msg_iov;	/* Vector of data to send/receive into.  */
-	size_t msg_iovlen;	/* Number of elements in the vector.  */
+    struct iovec *msg_iov;	/* Vector of data to send/receive into.  */
+    size_t msg_iovlen;		/* Number of elements in the vector.  */
 
-	void *msg_control;	/* Ancillary data (eg BSD filedesc passing). */
-	size_t msg_controllen;	/* Ancillary data buffer length.
+    void *msg_control;		/* Ancillary data (eg BSD filedesc passing). */
+    size_t msg_controllen;	/* Ancillary data buffer length.
 				   !! The type should be socklen_t but the
 				   definition of the kernel is incompatible
 				   with this.  */
 
-	int msg_flags;		/* Flags on received message.  */
-};
+    int msg_flags;		/* Flags on received message.  */
+  };
 
 /* Structure used for storage of ancillary data object information.  */
-struct cmsghdr {
-	size_t cmsg_len;	/* Length of data in cmsg_data plus length
+struct cmsghdr
+  {
+    size_t cmsg_len;		/* Length of data in cmsg_data plus length
 				   of cmsghdr structure.
 				   !! The type should be socklen_t but the
 				   definition of the kernel is incompatible
 				   with this.  */
-	int cmsg_level;		/* Originating protocol.  */
-	int cmsg_type;		/* Protocol specific type.  */
+    int cmsg_level;		/* Originating protocol.  */
+    int cmsg_type;		/* Protocol specific type.  */
 #if __glibc_c99_flexarr_available
-	__extension__ unsigned char __cmsg_data __flexarr;	/* Ancillary data.  */
+    __extension__ unsigned char __cmsg_data __flexarr; /* Ancillary data.  */
 #endif
-};
+  };
 
 /* Ancillary data object manipulation macros.  */
 #if __glibc_c99_flexarr_available
-#define CMSG_DATA(cmsg) ((cmsg)->__cmsg_data)
+# define CMSG_DATA(cmsg) ((cmsg)->__cmsg_data)
 #else
-#define CMSG_DATA(cmsg) ((unsigned char *) ((struct cmsghdr *) (cmsg) + 1))
+# define CMSG_DATA(cmsg) ((unsigned char *) ((struct cmsghdr *) (cmsg) + 1))
 #endif
 #define CMSG_NXTHDR(mhdr, cmsg) __cmsg_nxthdr (mhdr, cmsg)
 #define CMSG_FIRSTHDR(mhdr) \
@@ -288,145 +299,152 @@ struct cmsghdr {
 			 + CMSG_ALIGN (sizeof (struct cmsghdr)))
 #define CMSG_LEN(len)   (CMSG_ALIGN (sizeof (struct cmsghdr)) + (len))
 
-extern struct cmsghdr *__cmsg_nxthdr(struct msghdr *__mhdr, struct cmsghdr *__cmsg) __THROW;
+extern struct cmsghdr *__cmsg_nxthdr (struct msghdr *__mhdr,
+				      struct cmsghdr *__cmsg) __THROW;
 #ifdef __USE_EXTERN_INLINES
-#ifndef _EXTERN_INLINE
-#define _EXTERN_INLINE __extern_inline
-#endif
-_EXTERN_INLINE struct cmsghdr *__NTH(__cmsg_nxthdr(struct msghdr *__mhdr, struct cmsghdr *__cmsg))
+# ifndef _EXTERN_INLINE
+#  define _EXTERN_INLINE __extern_inline
+# endif
+_EXTERN_INLINE struct cmsghdr *
+__NTH (__cmsg_nxthdr (struct msghdr *__mhdr, struct cmsghdr *__cmsg))
 {
-	if ((size_t) __cmsg->cmsg_len < sizeof(struct cmsghdr))
-		/* The kernel header does this so there may be a reason.  */
-		return (struct cmsghdr *)0;
+  if ((size_t) __cmsg->cmsg_len < sizeof (struct cmsghdr))
+    /* The kernel header does this so there may be a reason.  */
+    return (struct cmsghdr *) 0;
 
-	__cmsg = (struct cmsghdr *)((unsigned char *)__cmsg + CMSG_ALIGN(__cmsg->cmsg_len));
-	if ((unsigned char *)(__cmsg + 1) > ((unsigned char *)__mhdr->msg_control + __mhdr->msg_controllen)
-	    || ((unsigned char *)__cmsg + CMSG_ALIGN(__cmsg->cmsg_len)
-		> ((unsigned char *)__mhdr->msg_control + __mhdr->msg_controllen)))
-		/* No more entries.  */
-		return (struct cmsghdr *)0;
-	return __cmsg;
+  __cmsg = (struct cmsghdr *) ((unsigned char *) __cmsg
+			       + CMSG_ALIGN (__cmsg->cmsg_len));
+  if ((unsigned char *) (__cmsg + 1) > ((unsigned char *) __mhdr->msg_control
+					+ __mhdr->msg_controllen)
+      || ((unsigned char *) __cmsg + CMSG_ALIGN (__cmsg->cmsg_len)
+	  > ((unsigned char *) __mhdr->msg_control + __mhdr->msg_controllen)))
+    /* No more entries.  */
+    return (struct cmsghdr *) 0;
+  return __cmsg;
 }
-#endif				/* Use `extern inline'.  */
+#endif	/* Use `extern inline'.  */
 
 /* Socket level message types.  This must match the definitions in
    <linux/socket.h>.  */
-enum {
-	SCM_RIGHTS = 0x01	/* Transfer file descriptors.  */
+enum
+  {
+    SCM_RIGHTS = 0x01		/* Transfer file descriptors.  */
 #define SCM_RIGHTS SCM_RIGHTS
 #ifdef __USE_GNU
-	    , SCM_CREDENTIALS = 0x02	/* Credentials passing.  */
-#define SCM_CREDENTIALS SCM_CREDENTIALS
+    , SCM_CREDENTIALS = 0x02	/* Credentials passing.  */
+# define SCM_CREDENTIALS SCM_CREDENTIALS
 #endif
-};
+  };
 
 #ifdef __USE_GNU
 /* User visible structure for SCM_CREDENTIALS message */
-struct ucred {
-	pid_t pid;		/* PID of sending process.  */
-	uid_t uid;		/* UID of sending process.  */
-	gid_t gid;		/* GID of sending process.  */
+struct ucred
+{
+  pid_t pid;			/* PID of sending process.  */
+  uid_t uid;			/* UID of sending process.  */
+  gid_t gid;			/* GID of sending process.  */
 };
 #endif
 
 /* Ugly workaround for unclean kernel headers.  */
 #ifndef __USE_MISC
-#ifndef FIOGETOWN
-#define __SYS_SOCKET_H_undef_FIOGETOWN
-#endif
-#ifndef FIOSETOWN
-#define __SYS_SOCKET_H_undef_FIOSETOWN
-#endif
-#ifndef SIOCATMARK
-#define __SYS_SOCKET_H_undef_SIOCATMARK
-#endif
-#ifndef SIOCGPGRP
-#define __SYS_SOCKET_H_undef_SIOCGPGRP
-#endif
-#ifndef SIOCGSTAMP
-#define __SYS_SOCKET_H_undef_SIOCGSTAMP
-#endif
-#ifndef SIOCGSTAMPNS
-#define __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-#endif
-#ifndef SIOCSPGRP
-#define __SYS_SOCKET_H_undef_SIOCSPGRP
-#endif
+# ifndef FIOGETOWN
+#  define __SYS_SOCKET_H_undef_FIOGETOWN
+# endif
+# ifndef FIOSETOWN
+#  define __SYS_SOCKET_H_undef_FIOSETOWN
+# endif
+# ifndef SIOCATMARK
+#  define __SYS_SOCKET_H_undef_SIOCATMARK
+# endif
+# ifndef SIOCGPGRP
+#  define __SYS_SOCKET_H_undef_SIOCGPGRP
+# endif
+# ifndef SIOCGSTAMP
+#  define __SYS_SOCKET_H_undef_SIOCGSTAMP
+# endif
+# ifndef SIOCGSTAMPNS
+#  define __SYS_SOCKET_H_undef_SIOCGSTAMPNS
+# endif
+# ifndef SIOCSPGRP
+#  define __SYS_SOCKET_H_undef_SIOCSPGRP
+# endif
 #endif
 #ifndef IOCSIZE_MASK
-#define __SYS_SOCKET_H_undef_IOCSIZE_MASK
+# define __SYS_SOCKET_H_undef_IOCSIZE_MASK
 #endif
 #ifndef IOCSIZE_SHIFT
-#define __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
+# define __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
 #endif
 #ifndef IOC_IN
-#define __SYS_SOCKET_H_undef_IOC_IN
+# define __SYS_SOCKET_H_undef_IOC_IN
 #endif
 #ifndef IOC_INOUT
-#define __SYS_SOCKET_H_undef_IOC_INOUT
+# define __SYS_SOCKET_H_undef_IOC_INOUT
 #endif
 #ifndef IOC_OUT
-#define __SYS_SOCKET_H_undef_IOC_OUT
+# define __SYS_SOCKET_H_undef_IOC_OUT
 #endif
 
 /* Get socket manipulation related informations from kernel headers.  */
 #include <asm/socket.h>
 
 #ifndef __USE_MISC
-#ifdef __SYS_SOCKET_H_undef_FIOGETOWN
-#undef __SYS_SOCKET_H_undef_FIOGETOWN
-#undef FIOGETOWN
-#endif
-#ifdef __SYS_SOCKET_H_undef_FIOSETOWN
-#undef __SYS_SOCKET_H_undef_FIOSETOWN
-#undef FIOSETOWN
-#endif
-#ifdef __SYS_SOCKET_H_undef_SIOCATMARK
-#undef __SYS_SOCKET_H_undef_SIOCATMARK
-#undef SIOCATMARK
-#endif
-#ifdef __SYS_SOCKET_H_undef_SIOCGPGRP
-#undef __SYS_SOCKET_H_undef_SIOCGPGRP
-#undef SIOCGPGRP
-#endif
-#ifdef __SYS_SOCKET_H_undef_SIOCGSTAMP
-#undef __SYS_SOCKET_H_undef_SIOCGSTAMP
-#undef SIOCGSTAMP
-#endif
-#ifdef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-#undef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-#undef SIOCGSTAMPNS
-#endif
-#ifdef __SYS_SOCKET_H_undef_SIOCSPGRP
-#undef __SYS_SOCKET_H_undef_SIOCSPGRP
-#undef SIOCSPGRP
-#endif
+# ifdef __SYS_SOCKET_H_undef_FIOGETOWN
+#  undef __SYS_SOCKET_H_undef_FIOGETOWN
+#  undef FIOGETOWN
+# endif
+# ifdef __SYS_SOCKET_H_undef_FIOSETOWN
+#  undef __SYS_SOCKET_H_undef_FIOSETOWN
+#  undef FIOSETOWN
+# endif
+# ifdef __SYS_SOCKET_H_undef_SIOCATMARK
+#  undef __SYS_SOCKET_H_undef_SIOCATMARK
+#  undef SIOCATMARK
+# endif
+# ifdef __SYS_SOCKET_H_undef_SIOCGPGRP
+#  undef __SYS_SOCKET_H_undef_SIOCGPGRP
+#  undef SIOCGPGRP
+# endif
+# ifdef __SYS_SOCKET_H_undef_SIOCGSTAMP
+#  undef __SYS_SOCKET_H_undef_SIOCGSTAMP
+#  undef SIOCGSTAMP
+# endif
+# ifdef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
+#  undef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
+#  undef SIOCGSTAMPNS
+# endif
+# ifdef __SYS_SOCKET_H_undef_SIOCSPGRP
+#  undef __SYS_SOCKET_H_undef_SIOCSPGRP
+#  undef SIOCSPGRP
+# endif
 #endif
 #ifdef __SYS_SOCKET_H_undef_IOCSIZE_MASK
-#undef __SYS_SOCKET_H_undef_IOCSIZE_MASK
-#undef IOCSIZE_MASK
+# undef __SYS_SOCKET_H_undef_IOCSIZE_MASK
+# undef IOCSIZE_MASK
 #endif
 #ifdef __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-#undef __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-#undef IOCSIZE_SHIFT
+# undef __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
+# undef IOCSIZE_SHIFT
 #endif
 #ifdef __SYS_SOCKET_H_undef_IOC_IN
-#undef __SYS_SOCKET_H_undef_IOC_IN
-#undef IOC_IN
+# undef __SYS_SOCKET_H_undef_IOC_IN
+# undef IOC_IN
 #endif
 #ifdef __SYS_SOCKET_H_undef_IOC_INOUT
-#undef __SYS_SOCKET_H_undef_IOC_INOUT
-#undef IOC_INOUT
+# undef __SYS_SOCKET_H_undef_IOC_INOUT
+# undef IOC_INOUT
 #endif
 #ifdef __SYS_SOCKET_H_undef_IOC_OUT
-#undef __SYS_SOCKET_H_undef_IOC_OUT
-#undef IOC_OUT
+# undef __SYS_SOCKET_H_undef_IOC_OUT
+# undef IOC_OUT
 #endif
 
 /* Structure used to manipulate the SO_LINGER option.  */
-struct linger {
-	int l_onoff;		/* Nonzero to linger on close.  */
-	int l_linger;		/* Time to linger.  */
-};
+struct linger
+  {
+    int l_onoff;		/* Nonzero to linger on close.  */
+    int l_linger;		/* Time to linger.  */
+  };
 
-#endif				/* bits/socket.h */
+#endif	/* bits/socket.h */

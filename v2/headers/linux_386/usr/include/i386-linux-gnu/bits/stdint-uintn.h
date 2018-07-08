@@ -1,5 +1,5 @@
 /* Define uintN_t types.
-   Copyright (C) 2017 Free Software Foundation, Inc.
+   Copyright (C) 2017-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -26,4 +26,4 @@ typedef __uint16_t uint16_t;
 typedef __uint32_t uint32_t;
 typedef __uint64_t uint64_t;
 
-#endif				/* bits/stdint-uintn.h */
+#endif /* bits/stdint-uintn.h */

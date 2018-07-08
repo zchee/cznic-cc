@@ -1,5 +1,5 @@
 /* Definitions of macros to access `dev_t' values.
-   Copyright (C) 1996-2017 Free Software Foundation, Inc.
+   Copyright (C) 1996-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -20,7 +20,7 @@
 #define _BITS_SYSMACROS_H 1
 
 #ifndef _SYS_SYSMACROS_H
-#error "Never include <bits/sysmacros.h> directly; use <sys/sysmacros.h> instead."
+# error "Never include <bits/sysmacros.h> directly; use <sys/sysmacros.h> instead."
 #endif
 
 /* dev_t in glibc is a 64-bit quantity, with 32-bit major and minor numbers.
@@ -71,4 +71,4 @@
     return __dev;						\
   }
 
-#endif				/* bits/sysmacros.h */
+#endif /* bits/sysmacros.h */

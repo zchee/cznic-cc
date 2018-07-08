@@ -32,8 +32,8 @@ void *__builtin_alloca(__SIZE_TYPE__ __size);
 void *__builtin_memcpy(void *dest, const void *src, __SIZE_TYPE__ n);
 void *__builtin_memset(void *s, int c, __SIZE_TYPE__ n);
 #ifdef __ccgo__
-void *__va_end;
-void *__va_start;
+void *__ccgo_va_end;
+void *__ccgo_va_start;
 #endif
 void __builtin_abort(void);
 void __builtin_exit(int __status);
@@ -51,8 +51,8 @@ void __register_stdfiles(void *, void *, void *, void *);
 #define __builtin_va_arg(ap, type) (type)ap
 #define __builtin_va_copy(dest, src) dest = src
 #ifdef __ccgo__
-#define __builtin_va_end(ap) ap = __va_end
-#define __builtin_va_start(ap, arg) ap = __va_start
+#define __builtin_va_end(ap) ap = __ccgo_va_end
+#define __builtin_va_start(ap, arg) ap = __ccgo_va_start
 #else
 #define __builtin_va_end(ap) ap = (void*)0
 #define __builtin_va_start(ap, arg) ap = (void*)-1

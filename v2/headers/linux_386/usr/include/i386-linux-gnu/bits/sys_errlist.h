@@ -1,5 +1,5 @@
 /* Declare sys_errlist and sys_nerr, or don't.  Compatibility (do) version.
-   Copyright (C) 2002-2017 Free Software Foundation, Inc.
+   Copyright (C) 2002-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _STDIO_H
-#error "Never include <bits/sys_errlist.h> directly; use <stdio.h> instead."
+# error "Never include <bits/sys_errlist.h> directly; use <stdio.h> instead."
 #endif
 
 /* sys_errlist and sys_nerr are deprecated.  Use strerror instead.  */

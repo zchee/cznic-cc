@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -32,12 +32,12 @@
 #ifndef __ASSEMBLER__
 
 __BEGIN_DECLS
-/* The error code set by various library functions.  */
-extern int *__errno_location(void)
-__THROW __attribute_const__;
-#define errno (*__errno_location ())
 
-#ifdef __USE_GNU
+/* The error code set by various library functions.  */
+extern int *__errno_location (void) __THROW __attribute_const__;
+# define errno (*__errno_location ())
+
+# ifdef __USE_GNU
 
 /* The full and simple forms of the name with which the program was
    invoked.  These variables are set up automatically at startup based on
@@ -47,13 +47,14 @@ extern char *program_invocation_short_name;
 
 /* bits/errno.h may have defined this type.  If it didn't, provide a
    fallback definition.  */
-#ifndef __error_t_defined
-#define __error_t_defined 1
+#  ifndef __error_t_defined
+#   define __error_t_defined 1
 typedef int error_t;
-#endif
+#  endif
 
-#endif				/* __USE_GNU */
+# endif /* __USE_GNU */
 
 __END_DECLS
-#endif				/* !__ASSEMBLER__ */
-#endif				/* errno.h */
+
+#endif /* !__ASSEMBLER__ */
+#endif /* errno.h */

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 #ifndef _ASM_GENERIC_IOCTL_H
 #define _ASM_GENERIC_IOCTL_H
 
@@ -28,11 +29,11 @@
  */
 
 #ifndef _IOC_SIZEBITS
-#define _IOC_SIZEBITS	14
+# define _IOC_SIZEBITS	14
 #endif
 
 #ifndef _IOC_DIRBITS
-#define _IOC_DIRBITS	2
+# define _IOC_DIRBITS	2
 #endif
 
 #define _IOC_NRMASK	((1 << _IOC_NRBITS)-1)
@@ -54,15 +55,15 @@
  */
 
 #ifndef _IOC_NONE
-#define _IOC_NONE	0U
+# define _IOC_NONE	0U
 #endif
 
 #ifndef _IOC_WRITE
-#define _IOC_WRITE	1U
+# define _IOC_WRITE	1U
 #endif
 
 #ifndef _IOC_READ
-#define _IOC_READ	2U
+# define _IOC_READ	2U
 #endif
 
 #define _IOC(dir,type,nr,size) \
@@ -101,4 +102,4 @@
 #define IOCSIZE_MASK	(_IOC_SIZEMASK << _IOC_SIZESHIFT)
 #define IOCSIZE_SHIFT	(_IOC_SIZESHIFT)
 
-#endif				/* _ASM_GENERIC_IOCTL_H */
+#endif /* _ASM_GENERIC_IOCTL_H */

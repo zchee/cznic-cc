@@ -1,5 +1,5 @@
 /* Declarations for getopt.
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Unlike the bulk of the getopt implementation, this file is NOT part
    of gnulib; gnulib also has a getopt.h but it is different.
@@ -29,10 +29,10 @@
    compatibility with old versions of LSB, glibc has to use 'char *const *'
    instead.  */
 #ifndef __getopt_argv_const
-#define __getopt_argv_const const
+# define __getopt_argv_const const
 #endif
 
 #include <bits/getopt_core.h>
 #include <bits/getopt_ext.h>
 
-#endif				/* getopt.h */
+#endif /* getopt.h */

@@ -1,5 +1,5 @@
 /* Definitions of macros to access `dev_t' values.
-   Copyright (C) 1996-2017 Free Software Foundation, Inc.
+   Copyright (C) 1996-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 #ifndef _SYS_SYSMACROS_H_OUTER
 
 #ifndef __SYSMACROS_DEPRECATED_INCLUSION
-#define _SYS_SYSMACROS_H_OUTER 1
+# define _SYS_SYSMACROS_H_OUTER 1
 #endif
 
 /* If <sys/sysmacros.h> is included after <sys/types.h>, these macros
@@ -68,29 +68,43 @@
   __extension__ __extern_inline __attribute_const__ rtype		     \
   __NTH (gnu_dev_##name proto)
 
-__BEGIN_DECLS __SYSMACROS_DECLARE_MAJOR(__SYSMACROS_DECL_TEMPL) __SYSMACROS_DECLARE_MINOR(__SYSMACROS_DECL_TEMPL) __SYSMACROS_DECLARE_MAKEDEV(__SYSMACROS_DECL_TEMPL)
+__BEGIN_DECLS
+
+__SYSMACROS_DECLARE_MAJOR (__SYSMACROS_DECL_TEMPL)
+__SYSMACROS_DECLARE_MINOR (__SYSMACROS_DECL_TEMPL)
+__SYSMACROS_DECLARE_MAKEDEV (__SYSMACROS_DECL_TEMPL)
+
 #ifdef __USE_EXTERN_INLINES
-__SYSMACROS_DEFINE_MAJOR(__SYSMACROS_IMPL_TEMPL) __SYSMACROS_DEFINE_MINOR(__SYSMACROS_IMPL_TEMPL) __SYSMACROS_DEFINE_MAKEDEV(__SYSMACROS_IMPL_TEMPL)
+
+__SYSMACROS_DEFINE_MAJOR (__SYSMACROS_IMPL_TEMPL)
+__SYSMACROS_DEFINE_MINOR (__SYSMACROS_IMPL_TEMPL)
+__SYSMACROS_DEFINE_MAKEDEV (__SYSMACROS_IMPL_TEMPL)
+
 #endif
-    __END_DECLS
-#endif				/* _SYS_SYSMACROS_H */
+
+__END_DECLS
+
+#endif /* _SYS_SYSMACROS_H */
+
 #ifndef __SYSMACROS_NEED_IMPLEMENTATION
-#undef __SYSMACROS_DECL_TEMPL
-#undef __SYSMACROS_IMPL_TEMPL
-#undef __SYSMACROS_DECLARE_MAJOR
-#undef __SYSMACROS_DECLARE_MINOR
-#undef __SYSMACROS_DECLARE_MAKEDEV
-#undef __SYSMACROS_DEFINE_MAJOR
-#undef __SYSMACROS_DEFINE_MINOR
-#undef __SYSMACROS_DEFINE_MAKEDEV
+# undef __SYSMACROS_DECL_TEMPL
+# undef __SYSMACROS_IMPL_TEMPL
+# undef __SYSMACROS_DECLARE_MAJOR
+# undef __SYSMACROS_DECLARE_MINOR
+# undef __SYSMACROS_DECLARE_MAKEDEV
+# undef __SYSMACROS_DEFINE_MAJOR
+# undef __SYSMACROS_DEFINE_MINOR
+# undef __SYSMACROS_DEFINE_MAKEDEV
 #endif
+
 #ifdef __SYSMACROS_DEPRECATED_INCLUSION
-#define major(dev) __SYSMACROS_DM (major) gnu_dev_major (dev)
-#define minor(dev) __SYSMACROS_DM (minor) gnu_dev_minor (dev)
-#define makedev(maj, min) __SYSMACROS_DM (makedev) gnu_dev_makedev (maj, min)
+# define major(dev) __SYSMACROS_DM (major) gnu_dev_major (dev)
+# define minor(dev) __SYSMACROS_DM (minor) gnu_dev_minor (dev)
+# define makedev(maj, min) __SYSMACROS_DM (makedev) gnu_dev_makedev (maj, min)
 #else
-#define major(dev) gnu_dev_major (dev)
-#define minor(dev) gnu_dev_minor (dev)
-#define makedev(maj, min) gnu_dev_makedev (maj, min)
+# define major(dev) gnu_dev_major (dev)
+# define minor(dev) gnu_dev_minor (dev)
+# define makedev(maj, min) gnu_dev_makedev (maj, min)
 #endif
-#endif				/* sys/sysmacros.h */
+
+#endif /* sys/sysmacros.h */

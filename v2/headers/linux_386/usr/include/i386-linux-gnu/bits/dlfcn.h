@@ -1,5 +1,5 @@
 /* System dependent definitions for run-time dynamic loading.
-   Copyright (C) 1996-2017 Free Software Foundation, Inc.
+   Copyright (C) 1996-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _DLFCN_H
-#error "Never use <bits/dlfcn.h> directly; include <dlfcn.h> instead."
+# error "Never use <bits/dlfcn.h> directly; include <dlfcn.h> instead."
 #endif
 
 /* The MODE argument to `dlopen' contains one of the following: */
@@ -51,12 +51,14 @@
    into
         foo = DL_CALL_FCT (fctp, (arg1, arg2));
 */
-#define DL_CALL_FCT(fctp, args) \
+# define DL_CALL_FCT(fctp, args) \
   (_dl_mcount_wrapper_check ((void *) (fctp)), (*(fctp)) args)
 
 __BEGIN_DECLS
+
 /* This function calls the profiling functions.  */
-extern void _dl_mcount_wrapper_check(void *__selfpc) __THROW;
+extern void _dl_mcount_wrapper_check (void *__selfpc) __THROW;
 
 __END_DECLS
+
 #endif

@@ -1,5 +1,5 @@
 /* Signal number definitions.  Linux version.
-   Copyright (C) 1995-2017 Free Software Foundation, Inc.
+   Copyright (C) 1995-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -55,4 +55,4 @@
 #undef	__SIGRTMAX
 #define __SIGRTMAX	64
 
-#endif				/* <signal.h> included.  */
+#endif	/* <signal.h> included.  */

@@ -1,5 +1,5 @@
 /* bits/types.h -- definitions of __*_t types underlying *_t types.
-   Copyright (C) 2002-2017 Free Software Foundation, Inc.
+   Copyright (C) 2002-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -65,6 +65,7 @@ __extension__ typedef long long int __intmax_t;
 __extension__ typedef unsigned long long int __uintmax_t;
 #endif
 
+
 /* The machine-dependent file <bits/typesizes.h> defines __*_T_TYPE
    macros for each of the OS types we define below.  The definitions
    of those macros must use the following macros for underlying types.
@@ -101,38 +102,39 @@ __extension__ typedef unsigned long long int __uintmax_t;
 #define __SLONGWORD_TYPE	long int
 #define __ULONGWORD_TYPE	unsigned long int
 #if __WORDSIZE == 32
-#define __SQUAD_TYPE		__quad_t
-#define __UQUAD_TYPE		__u_quad_t
-#define __SWORD_TYPE		int
-#define __UWORD_TYPE		unsigned int
-#define __SLONG32_TYPE		long int
-#define __ULONG32_TYPE		unsigned long int
-#define __S64_TYPE		__quad_t
-#define __U64_TYPE		__u_quad_t
+# define __SQUAD_TYPE		__quad_t
+# define __UQUAD_TYPE		__u_quad_t
+# define __SWORD_TYPE		int
+# define __UWORD_TYPE		unsigned int
+# define __SLONG32_TYPE		long int
+# define __ULONG32_TYPE		unsigned long int
+# define __S64_TYPE		__quad_t
+# define __U64_TYPE		__u_quad_t
 /* We want __extension__ before typedef's that use nonstandard base types
    such as `long long' in C89 mode.  */
-#define __STD_TYPE		__extension__ typedef
+# define __STD_TYPE		__extension__ typedef
 #elif __WORDSIZE == 64
-#define __SQUAD_TYPE		long int
-#define __UQUAD_TYPE		unsigned long int
-#define __SWORD_TYPE		long int
-#define __UWORD_TYPE		unsigned long int
-#define __SLONG32_TYPE		int
-#define __ULONG32_TYPE		unsigned int
-#define __S64_TYPE		long int
-#define __U64_TYPE		unsigned long int
+# define __SQUAD_TYPE		long int
+# define __UQUAD_TYPE		unsigned long int
+# define __SWORD_TYPE		long int
+# define __UWORD_TYPE		unsigned long int
+# define __SLONG32_TYPE		int
+# define __ULONG32_TYPE		unsigned int
+# define __S64_TYPE		long int
+# define __U64_TYPE		unsigned long int
 /* No need to mark the typedef with __extension__.   */
-#define __STD_TYPE		typedef
+# define __STD_TYPE		typedef
 #else
-#error
+# error
 #endif
 #include <bits/typesizes.h>	/* Defines __*_T_TYPE macros.  */
+
 
 __STD_TYPE __DEV_T_TYPE __dev_t;	/* Type of device numbers.  */
 __STD_TYPE __UID_T_TYPE __uid_t;	/* Type of user identifications.  */
 __STD_TYPE __GID_T_TYPE __gid_t;	/* Type of group identifications.  */
 __STD_TYPE __INO_T_TYPE __ino_t;	/* Type of file serial numbers.  */
-__STD_TYPE __INO64_T_TYPE __ino64_t;	/* Type of file serial numbers (LFS). */
+__STD_TYPE __INO64_T_TYPE __ino64_t;	/* Type of file serial numbers (LFS).*/
 __STD_TYPE __MODE_T_TYPE __mode_t;	/* Type of file attribute bitmasks.  */
 __STD_TYPE __NLINK_T_TYPE __nlink_t;	/* Type of file link counts.  */
 __STD_TYPE __OFF_T_TYPE __off_t;	/* Type of file sizes and offsets.  */
@@ -142,10 +144,10 @@ __STD_TYPE __FSID_T_TYPE __fsid_t;	/* Type of file system IDs.  */
 __STD_TYPE __CLOCK_T_TYPE __clock_t;	/* Type of CPU usage counts.  */
 __STD_TYPE __RLIM_T_TYPE __rlim_t;	/* Type for resource measurement.  */
 __STD_TYPE __RLIM64_T_TYPE __rlim64_t;	/* Type for resource measurement (LFS).  */
-__STD_TYPE __ID_T_TYPE __id_t;	/* General type for IDs.  */
+__STD_TYPE __ID_T_TYPE __id_t;		/* General type for IDs.  */
 __STD_TYPE __TIME_T_TYPE __time_t;	/* Seconds since the Epoch.  */
-__STD_TYPE __USECONDS_T_TYPE __useconds_t;	/* Count of microseconds.  */
-__STD_TYPE __SUSECONDS_T_TYPE __suseconds_t;	/* Signed count of microseconds.  */
+__STD_TYPE __USECONDS_T_TYPE __useconds_t; /* Count of microseconds.  */
+__STD_TYPE __SUSECONDS_T_TYPE __suseconds_t; /* Signed count of microseconds.  */
 
 __STD_TYPE __DADDR_T_TYPE __daddr_t;	/* The type of a disk address.  */
 __STD_TYPE __KEY_T_TYPE __key_t;	/* Type of an IPC key.  */
@@ -176,7 +178,7 @@ __STD_TYPE __FSFILCNT64_T_TYPE __fsfilcnt64_t;
 /* Type of miscellaneous file system fields.  */
 __STD_TYPE __FSWORD_T_TYPE __fsword_t;
 
-__STD_TYPE __SSIZE_T_TYPE __ssize_t;	/* Type of a byte count, or error.  */
+__STD_TYPE __SSIZE_T_TYPE __ssize_t; /* Type of a byte count, or error.  */
 
 /* Signed long type used in system calls.  */
 __STD_TYPE __SYSCALL_SLONG_TYPE __syscall_slong_t;
@@ -186,7 +188,6 @@ __STD_TYPE __SYSCALL_ULONG_TYPE __syscall_ulong_t;
 /* These few don't really vary by system, they always correspond
    to one of the other defined types.  */
 typedef __off64_t __loff_t;	/* Type of file sizes and offsets (LFS).  */
-typedef __quad_t *__qaddr_t;
 typedef char *__caddr_t;
 
 /* Duplicates info from stdint.h but this is used in unistd.h.  */
@@ -202,4 +203,4 @@ typedef int __sig_atomic_t;
 
 #undef __STD_TYPE
 
-#endif				/* bits/types.h */
+#endif /* bits/types.h */

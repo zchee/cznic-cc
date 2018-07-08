@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -16,7 +16,7 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_UTSNAME_H
-#error "Never include <bits/utsname.h> directly; use <sys/utsname.h> instead."
+# error "Never include <bits/utsname.h> directly; use <sys/utsname.h> instead."
 #endif
 
 /* Length of the entries in `struct utsname' is 65.  */

@@ -1,5 +1,5 @@
 /* Define __FP_LOGB0_IS_MIN and __FP_LOGBNAN_IS_MIN.  x86 version.
-   Copyright (C) 2016-2017 Free Software Foundation, Inc.
+   Copyright (C) 2016-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _MATH_H
-#error "Never use <bits/fp-logb.h> directly; include <math.h> instead."
+# error "Never use <bits/fp-logb.h> directly; include <math.h> instead."
 #endif
 
 #define __FP_LOGB0_IS_MIN	1

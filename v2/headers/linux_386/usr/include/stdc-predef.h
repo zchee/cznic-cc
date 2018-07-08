@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -34,19 +34,19 @@
    define these macros by default.  */
 
 #ifdef __GCC_IEC_559
-#if __GCC_IEC_559 > 0
-#define __STDC_IEC_559__		1
-#endif
+# if __GCC_IEC_559 > 0
+#  define __STDC_IEC_559__		1
+# endif
 #else
-#define __STDC_IEC_559__		1
+# define __STDC_IEC_559__		1
 #endif
 
 #ifdef __GCC_IEC_559_COMPLEX
-#if __GCC_IEC_559_COMPLEX > 0
-#define __STDC_IEC_559_COMPLEX__	1
-#endif
+# if __GCC_IEC_559_COMPLEX > 0
+#  define __STDC_IEC_559_COMPLEX__	1
+# endif
 #else
-#define __STDC_IEC_559_COMPLEX__	1
+# define __STDC_IEC_559_COMPLEX__	1
 #endif
 
 /* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is

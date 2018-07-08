@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -24,8 +24,10 @@
 
 #include <features.h>
 
-#ifndef	_STRING_H
-#include <string.h>
-#endif				/* string.h  */
 
-#endif				/* memory.h  */
+#ifndef	_STRING_H
+# include <string.h>
+#endif	/* string.h  */
+
+
+#endif	/* memory.h  */

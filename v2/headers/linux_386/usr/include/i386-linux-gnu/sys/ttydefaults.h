@@ -55,20 +55,20 @@
 #define CTRL(x)	(x&037)
 #define	CEOF		CTRL('d')
 #ifdef _POSIX_VDISABLE
-#define CEOL		_POSIX_VDISABLE
+# define CEOL		_POSIX_VDISABLE
 #else
-#define CEOL		'\0'	/* XXX avoid _POSIX_VDISABLE */
+# define CEOL		'\0'		/* XXX avoid _POSIX_VDISABLE */
 #endif
 #define	CERASE		0177
 #define	CINTR		CTRL('c')
 #ifdef _POSIX_VDISABLE
-#define CSTATUS	_POSIX_VDISABLE
+# define CSTATUS	_POSIX_VDISABLE
 #else
-#define CSTATUS	'\0'		/* XXX avoid _POSIX_VDISABLE */
+# define CSTATUS	'\0'		/* XXX avoid _POSIX_VDISABLE */
 #endif
 #define	CKILL		CTRL('u')
 #define	CMIN		1
-#define	CQUIT		034	/* FS, ^\ */
+#define	CQUIT		034		/* FS, ^\ */
 #define	CSUSP		CTRL('z')
 #define	CTIME		0
 #define	CDSUSP		CTRL('y')
@@ -85,17 +85,16 @@
 #define	CFLUSH		CDISCARD
 
 /* PROTECTED INCLUSION ENDS HERE */
-#endif				/* !_SYS_TTYDEFAULTS_H_ */
+#endif /* !_SYS_TTYDEFAULTS_H_ */
 
 /*
  * #define TTYDEFCHARS to include an array of default control characters.
  */
 #ifdef TTYDEFCHARS
-cc_t ttydefchars[NCCS] = {
-	CEOF, CEOL, CEOL, CERASE, CWERASE, CKILL, CREPRINT,
-	_POSIX_VDISABLE, CINTR, CQUIT, CSUSP, CDSUSP, CSTART, CSTOP, CLNEXT,
-	CDISCARD, CMIN, CTIME, CSTATUS, _POSIX_VDISABLE
+cc_t	ttydefchars[NCCS] = {
+	CEOF,	CEOL,	CEOL,	CERASE, CWERASE, CKILL, CREPRINT,
+	_POSIX_VDISABLE, CINTR,	CQUIT,	CSUSP,	CDSUSP,	CSTART,	CSTOP,	CLNEXT,
+	CDISCARD, CMIN,	CTIME,  CSTATUS, _POSIX_VDISABLE
 };
-
 #undef TTYDEFCHARS
 #endif

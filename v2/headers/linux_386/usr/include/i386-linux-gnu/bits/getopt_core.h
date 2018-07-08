@@ -1,5 +1,5 @@
 /* Declarations for getopt (basic, portable features only).
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library and is also part of gnulib.
    Patches to this file should be submitted to both projects.
 
@@ -26,11 +26,13 @@
    gnulib is not fixed.  */
 
 __BEGIN_DECLS
+
 /* For communication from 'getopt' to the caller.
    When 'getopt' finds an option that takes an argument,
    the argument value is returned here.
    Also, when 'ordering' is RETURN_IN_ORDER,
    each non-option ARGV-element is returned here.  */
+
 extern char *optarg;
 
 /* Index in ARGV of the next element to be scanned.
@@ -86,8 +88,9 @@ extern int optopt;
    enabled, the argv array (not the strings it points to) must be
    writable.  */
 
-extern int getopt(int ___argc, char *const *___argv, const char *__shortopts)
-__THROW __nonnull((2, 3));
+extern int getopt (int ___argc, char *const *___argv, const char *__shortopts)
+       __THROW __nonnull ((2, 3));
 
 __END_DECLS
-#endif				/* getopt_core.h */
+
+#endif /* getopt_core.h */

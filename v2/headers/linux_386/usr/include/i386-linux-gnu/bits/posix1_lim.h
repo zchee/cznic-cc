@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -24,6 +24,7 @@
 #ifndef	_BITS_POSIX1_LIM_H
 #define	_BITS_POSIX1_LIM_H	1
 
+
 /* These are the standard-mandated minimum values.  */
 
 /* Minimum number of operations in one list I/O call.  */
@@ -37,9 +38,9 @@
 
 /* Maximum simultaneous processes per real user ID.  */
 #ifdef __USE_XOPEN2K
-#define _POSIX_CHILD_MAX	25
+# define _POSIX_CHILD_MAX	25
 #else
-#define _POSIX_CHILD_MAX	6
+# define _POSIX_CHILD_MAX	6
 #endif
 
 /* Minimal number of timer expiration overruns.  */
@@ -73,22 +74,22 @@
 
 /* Number of simultaneous supplementary group IDs per process.  */
 #ifdef __USE_XOPEN2K
-#define _POSIX_NGROUPS_MAX	8
+# define _POSIX_NGROUPS_MAX	8
 #else
-#define _POSIX_NGROUPS_MAX	0
+# define _POSIX_NGROUPS_MAX	0
 #endif
 
 /* Number of files one process can have open at once.  */
 #ifdef __USE_XOPEN2K
-#define _POSIX_OPEN_MAX	20
+# define _POSIX_OPEN_MAX	20
 #else
-#define _POSIX_OPEN_MAX	16
+# define _POSIX_OPEN_MAX	16
 #endif
 
 #if !defined __USE_XOPEN2K || defined __USE_GNU
 /* Number of descriptors that a process may examine with `pselect' or
    `select'.  */
-#define _POSIX_FD_SETSIZE	_POSIX_OPEN_MAX
+# define _POSIX_FD_SETSIZE	_POSIX_OPEN_MAX
 #endif
 
 /* Number of bytes in a pathname.  */
@@ -134,38 +135,41 @@
 
 /* Maximum length of a timezone name (element of `tzname').  */
 #ifdef __USE_XOPEN2K
-#define _POSIX_TZNAME_MAX	6
+# define _POSIX_TZNAME_MAX	6
 #else
-#define _POSIX_TZNAME_MAX	3
+# define _POSIX_TZNAME_MAX	3
 #endif
 
 #if !defined __USE_XOPEN2K || defined __USE_GNU
 /* Maximum number of connections that can be queued on a socket.  */
-#define _POSIX_QLIMIT		1
+# define _POSIX_QLIMIT		1
 
 /* Maximum number of bytes that can be buffered on a socket for send
    or receive.  */
-#define _POSIX_HIWAT		_POSIX_PIPE_BUF
+# define _POSIX_HIWAT		_POSIX_PIPE_BUF
 
 /* Maximum number of elements in an `iovec' array.  */
-#define _POSIX_UIO_MAXIOV	16
+# define _POSIX_UIO_MAXIOV	16
 #endif
 
 /* Maximum clock resolution in nanoseconds.  */
 #define _POSIX_CLOCKRES_MIN	20000000
 
+
 /* Get the implementation-specific values for the above.  */
 #include <bits/local_lim.h>
 
+
 #ifndef	SSIZE_MAX
-#define SSIZE_MAX	LONG_MAX
+# define SSIZE_MAX	LONG_MAX
 #endif
+
 
 /* This value is a guaranteed minimum maximum.
    The current maximum can be got from `sysconf'.  */
 
 #ifndef	NGROUPS_MAX
-#define NGROUPS_MAX	8
+# define NGROUPS_MAX	8
 #endif
 
-#endif				/* bits/posix1_lim.h  */
+#endif	/* bits/posix1_lim.h  */

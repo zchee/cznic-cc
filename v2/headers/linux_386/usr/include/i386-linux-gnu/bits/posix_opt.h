@@ -1,5 +1,5 @@
 /* Define POSIX options for Linux.
-   Copyright (C) 1996-2017 Free Software Foundation, Inc.
+   Copyright (C) 1996-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -90,10 +90,10 @@
 
 #ifdef __USE_XOPEN2K8
 /* We support priority inheritence for robust mutexes.  */
-#define _POSIX_THREAD_ROBUST_PRIO_INHERIT	200809L
+# define _POSIX_THREAD_ROBUST_PRIO_INHERIT	200809L
 
 /* We do not support priority protection for robust mutexes.  */
-#define _POSIX_THREAD_ROBUST_PRIO_PROTECT	-1
+# define _POSIX_THREAD_ROBUST_PRIO_PROTECT	-1
 #endif
 
 /* We support POSIX.1b semaphores.  */
@@ -188,4 +188,4 @@
 /* Typed memory objects are not available.  */
 #define _POSIX_TYPED_MEMORY_OBJECTS	-1
 
-#endif				/* bits/posix_opt.h */
+#endif /* bits/posix_opt.h */

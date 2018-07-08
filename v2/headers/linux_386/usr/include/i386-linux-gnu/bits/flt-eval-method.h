@@ -1,5 +1,5 @@
 /* Define __GLIBC_FLT_EVAL_METHOD.  x86 version.
-   Copyright (C) 2016-2017 Free Software Foundation, Inc.
+   Copyright (C) 2016-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,17 +17,17 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _MATH_H
-#error "Never use <bits/flt-eval-method.h> directly; include <math.h> instead."
+# error "Never use <bits/flt-eval-method.h> directly; include <math.h> instead."
 #endif
 
 #ifdef __FLT_EVAL_METHOD__
-#if __FLT_EVAL_METHOD__ == -1
-#define __GLIBC_FLT_EVAL_METHOD	2
-#else
-#define __GLIBC_FLT_EVAL_METHOD	__FLT_EVAL_METHOD__
-#endif
+# if __FLT_EVAL_METHOD__ == -1
+#  define __GLIBC_FLT_EVAL_METHOD	2
+# else
+#  define __GLIBC_FLT_EVAL_METHOD	__FLT_EVAL_METHOD__
+# endif
 #elif defined __x86_64__
-#define __GLIBC_FLT_EVAL_METHOD	0
+# define __GLIBC_FLT_EVAL_METHOD	0
 #else
-#define __GLIBC_FLT_EVAL_METHOD	2
+# define __GLIBC_FLT_EVAL_METHOD	2
 #endif

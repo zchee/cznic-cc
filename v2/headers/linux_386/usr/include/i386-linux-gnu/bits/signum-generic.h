@@ -1,5 +1,5 @@
 /* Signal number constants.  Generic template.
-   Copyright (C) 1991-2017 Free Software Foundation, Inc.
+   Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -30,7 +30,7 @@
 #define	SIG_IGN	 ((__sighandler_t)  1)	/* Ignore signal.  */
 
 #ifdef __USE_XOPEN
-#define SIG_HOLD ((__sighandler_t) 2)	/* Add signal to hold mask.  */
+# define SIG_HOLD ((__sighandler_t) 2)	/* Add signal to hold mask.  */
 #endif
 
 /* We define here all the signal names listed in POSIX (1003.1-2008);
@@ -99,4 +99,4 @@
 /* Biggest signal number + 1 (including real-time signals).  */
 #define _NSIG		(__SIGRTMAX + 1)
 
-#endif				/* bits/signum-generic.h.  */
+#endif /* bits/signum-generic.h.  */

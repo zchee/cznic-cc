@@ -1,5 +1,5 @@
 /* Define FP_FAST_* macros.
-   Copyright (C) 2016-2017 Free Software Foundation, Inc.
+   Copyright (C) 2016-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,23 +17,23 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _MATH_H
-#error "Never use <bits/fp-fast.h> directly; include <math.h> instead."
+# error "Never use <bits/fp-fast.h> directly; include <math.h> instead."
 #endif
 
 #ifdef __USE_ISOC99
 
 /* The GCC 4.6 compiler will define __FP_FAST_FMA{,F,L} if the fma{,f,l}
    builtins are supported.  */
-#ifdef __FP_FAST_FMA
-#define FP_FAST_FMA 1
-#endif
+# ifdef __FP_FAST_FMA
+#  define FP_FAST_FMA 1
+# endif
 
-#ifdef __FP_FAST_FMAF
-#define FP_FAST_FMAF 1
-#endif
+# ifdef __FP_FAST_FMAF
+#  define FP_FAST_FMAF 1
+# endif
 
-#ifdef __FP_FAST_FMAL
-#define FP_FAST_FMAL 1
-#endif
+# ifdef __FP_FAST_FMAL
+#  define FP_FAST_FMAL 1
+# endif
 
 #endif

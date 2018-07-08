@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -25,20 +25,26 @@
 #include <features.h>
 
 __BEGIN_DECLS
+
 #include <bits/types.h>
+
 #if defined __USE_XOPEN || defined __USE_XOPEN2K
-#include <bits/types/time_t.h>
+# include <bits/types/time_t.h>
 #endif
+
 /* Structure describing file times.  */
-    struct utimbuf {
-	__time_t actime;	/* Access time.  */
-	__time_t modtime;	/* Modification time.  */
-};
+struct utimbuf
+  {
+    __time_t actime;		/* Access time.  */
+    __time_t modtime;		/* Modification time.  */
+  };
 
 /* Set the access and modification times of FILE to those given in
    *FILE_TIMES.  If FILE_TIMES is NULL, set them to the current time.  */
-extern int utime(const char *__file, const struct utimbuf *__file_times)
-__THROW __nonnull((1));
+extern int utime (const char *__file,
+		  const struct utimbuf *__file_times)
+     __THROW __nonnull ((1));
 
 __END_DECLS
-#endif				/* utime.h */
+
+#endif /* utime.h */

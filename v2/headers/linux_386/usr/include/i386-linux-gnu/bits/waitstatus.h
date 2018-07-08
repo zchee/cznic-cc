@@ -1,5 +1,5 @@
 /* Definitions of status bits for `wait' et al.
-   Copyright (C) 1992-2017 Free Software Foundation, Inc.
+   Copyright (C) 1992-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,10 +17,12 @@
    <http://www.gnu.org/licenses/>.  */
 
 #if !defined _SYS_WAIT_H && !defined _STDLIB_H
-#error "Never include <bits/waitstatus.h> directly; use <sys/wait.h> instead."
+# error "Never include <bits/waitstatus.h> directly; use <sys/wait.h> instead."
 #endif
 
+
 /* Everything extant so far uses these same bits.  */
+
 
 /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
 #define	__WEXITSTATUS(status)	(((status) & 0xff00) >> 8)
@@ -44,7 +46,7 @@
 /* Nonzero if STATUS indicates the child continued after a stop.  We only
    define this if <bits/waitflags.h> provides the WCONTINUED flag bit.  */
 #ifdef WCONTINUED
-#define __WIFCONTINUED(status)	((status) == __W_CONTINUED)
+# define __WIFCONTINUED(status)	((status) == __W_CONTINUED)
 #endif
 
 /* Nonzero if STATUS indicates the child dumped core.  */

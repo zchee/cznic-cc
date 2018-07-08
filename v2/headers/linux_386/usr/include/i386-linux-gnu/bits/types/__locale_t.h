@@ -1,5 +1,5 @@
 /* Definition of struct __locale_struct and __locale_t.
-   Copyright (C) 1997-2017 Free Software Foundation, Inc.
+   Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
 
@@ -25,19 +25,20 @@
    as opaque by applications; some details are exposed for the sake of
    efficiency in e.g. ctype functions.  */
 
-struct __locale_struct {
-	/* Note: LC_ALL is not a valid index into this array.  */
-	struct __locale_data *__locales[13];	/* 13 = __LC_LAST. */
+struct __locale_struct
+{
+  /* Note: LC_ALL is not a valid index into this array.  */
+  struct __locale_data *__locales[13]; /* 13 = __LC_LAST. */
 
-	/* To increase the speed of this solution we add some special members.  */
-	const unsigned short int *__ctype_b;
-	const int *__ctype_tolower;
-	const int *__ctype_toupper;
+  /* To increase the speed of this solution we add some special members.  */
+  const unsigned short int *__ctype_b;
+  const int *__ctype_tolower;
+  const int *__ctype_toupper;
 
-	/* Note: LC_ALL is not a valid index into this array.  */
-	const char *__names[13];
+  /* Note: LC_ALL is not a valid index into this array.  */
+  const char *__names[13];
 };
 
 typedef struct __locale_struct *__locale_t;
 
-#endif				/* bits/types/__locale_t.h */
+#endif /* bits/types/__locale_t.h */

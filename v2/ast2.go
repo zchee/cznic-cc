@@ -9,6 +9,7 @@ package cc
 import (
 	"fmt"
 	"go/token"
+	"math"
 	"math/big"
 	"sort"
 	"strconv"
@@ -1463,7 +1464,26 @@ loop2:
 		v, err = strconv.ParseFloat(s, 64)
 	}
 	if err != nil {
-		panic(fmt.Errorf("%v: %v", ctx.position(n), err))
+		switch {
+		case !strings.HasPrefix(s, "-") && strings.Contains(err.Error(), "value out of range"):
+			// linux_386/usr/include/math.h
+			//
+			// 	/* Value returned on overflow.  With IEEE 754 floating point, this is
+			// 	   +Infinity, otherwise the largest representable positive value.  */
+			// 	#if __GNUC_PREREQ (3, 3)
+			// 	# define HUGE_VAL (__builtin_huge_val ())
+			// 	#else
+			// 	/* This may provoke compiler warnings, and may not be rounded to
+			// 	   +Infinity in all IEEE 754 rounding modes, but is the best that can
+			// 	   be done in ISO C while remaining a constant expression.  10,000 is
+			// 	   greater than the maximum (decimal) exponent for all supported
+			// 	   floating-point formats and widths.  */
+			// 	# define HUGE_VAL 1e10000
+			// 	#endif
+			v = math.Inf(1)
+		default:
+			panic(fmt.Errorf("%v: %v", ctx.position(n), err))
+		}
 	}
 
 	// [0]6.4.4.2

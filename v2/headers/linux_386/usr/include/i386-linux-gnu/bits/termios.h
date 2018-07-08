@@ -1,5 +1,5 @@
 /* termios type and macro definitions.  Linux version.
-   Copyright (C) 1993-2017 Free Software Foundation, Inc.
+   Copyright (C) 1993-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,26 +17,27 @@
    <http://www.gnu.org/licenses/>.  */
 
 #ifndef _TERMIOS_H
-#error "Never include <bits/termios.h> directly; use <termios.h> instead."
+# error "Never include <bits/termios.h> directly; use <termios.h> instead."
 #endif
 
-typedef unsigned char cc_t;
-typedef unsigned int speed_t;
-typedef unsigned int tcflag_t;
+typedef unsigned char	cc_t;
+typedef unsigned int	speed_t;
+typedef unsigned int	tcflag_t;
 
 #define NCCS 32
-struct termios {
-	tcflag_t c_iflag;	/* input mode flags */
-	tcflag_t c_oflag;	/* output mode flags */
-	tcflag_t c_cflag;	/* control mode flags */
-	tcflag_t c_lflag;	/* local mode flags */
-	cc_t c_line;		/* line discipline */
-	cc_t c_cc[NCCS];	/* control characters */
-	speed_t c_ispeed;	/* input speed */
-	speed_t c_ospeed;	/* output speed */
+struct termios
+  {
+    tcflag_t c_iflag;		/* input mode flags */
+    tcflag_t c_oflag;		/* output mode flags */
+    tcflag_t c_cflag;		/* control mode flags */
+    tcflag_t c_lflag;		/* local mode flags */
+    cc_t c_line;			/* line discipline */
+    cc_t c_cc[NCCS];		/* control characters */
+    speed_t c_ispeed;		/* input speed */
+    speed_t c_ospeed;		/* output speed */
 #define _HAVE_STRUCT_TERMIOS_C_ISPEED 1
 #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
-};
+  };
 
 /* c_cc characters */
 #define VINTR 0
@@ -84,25 +85,25 @@ struct termios {
 #define OFILL	0000100
 #define OFDEL	0000200
 #if defined __USE_MISC || defined __USE_XOPEN
-#define NLDLY	0000400
-#define   NL0	0000000
-#define   NL1	0000400
-#define CRDLY	0003000
-#define   CR0	0000000
-#define   CR1	0001000
-#define   CR2	0002000
-#define   CR3	0003000
-#define TABDLY	0014000
-#define   TAB0	0000000
-#define   TAB1	0004000
-#define   TAB2	0010000
-#define   TAB3	0014000
-#define BSDLY	0020000
-#define   BS0	0000000
-#define   BS1	0020000
-#define FFDLY	0100000
-#define   FF0	0000000
-#define   FF1	0100000
+# define NLDLY	0000400
+# define   NL0	0000000
+# define   NL1	0000400
+# define CRDLY	0003000
+# define   CR0	0000000
+# define   CR1	0001000
+# define   CR2	0002000
+# define   CR3	0003000
+# define TABDLY	0014000
+# define   TAB0	0000000
+# define   TAB1	0004000
+# define   TAB2	0010000
+# define   TAB3	0014000
+# define BSDLY	0020000
+# define   BS0	0000000
+# define   BS1	0020000
+# define FFDLY	0100000
+# define   FF0	0000000
+# define   FF1	0100000
 #endif
 
 #define VTDLY	0040000
@@ -110,12 +111,12 @@ struct termios {
 #define   VT1	0040000
 
 #ifdef __USE_MISC
-#define XTABS	0014000
+# define XTABS	0014000
 #endif
 
 /* c_cflag bit meaning */
 #ifdef __USE_MISC
-#define CBAUD	0010017
+# define CBAUD	0010017
 #endif
 #define  B0	0000000		/* hang up */
 #define  B50	0000001
@@ -134,8 +135,8 @@ struct termios {
 #define  B19200	0000016
 #define  B38400	0000017
 #ifdef __USE_MISC
-#define EXTA B19200
-#define EXTB B38400
+# define EXTA B19200
+# define EXTB B38400
 #endif
 #define CSIZE	0000060
 #define   CS5	0000000
@@ -149,7 +150,7 @@ struct termios {
 #define HUPCL	0002000
 #define CLOCAL	0004000
 #ifdef __USE_MISC
-#define CBAUDEX 0010000
+# define CBAUDEX 0010000
 #endif
 #define  B57600   0010001
 #define  B115200  0010002
@@ -168,16 +169,16 @@ struct termios {
 #define  B4000000 0010017
 #define __MAX_BAUD B4000000
 #ifdef __USE_MISC
-#define CIBAUD	  002003600000	/* input baud rate (not used) */
-#define CMSPAR   010000000000	/* mark or space (stick) parity */
-#define CRTSCTS  020000000000	/* flow control */
+# define CIBAUD	  002003600000		/* input baud rate (not used) */
+# define CMSPAR   010000000000		/* mark or space (stick) parity */
+# define CRTSCTS  020000000000		/* flow control */
 #endif
 
 /* c_lflag bits */
 #define ISIG	0000001
 #define ICANON	0000002
 #if defined __USE_MISC || (defined __USE_XOPEN && !defined __USE_XOPEN2K)
-#define XCASE	0000004
+# define XCASE	0000004
 #endif
 #define ECHO	0000010
 #define ECHOE	0000020
@@ -186,15 +187,15 @@ struct termios {
 #define NOFLSH	0000200
 #define TOSTOP	0000400
 #ifdef __USE_MISC
-#define ECHOCTL 0001000
-#define ECHOPRT 0002000
-#define ECHOKE	 0004000
-#define FLUSHO	 0010000
-#define PENDIN	 0040000
+# define ECHOCTL 0001000
+# define ECHOPRT 0002000
+# define ECHOKE	 0004000
+# define FLUSHO	 0010000
+# define PENDIN	 0040000
 #endif
 #define IEXTEN	0100000
 #ifdef __USE_MISC
-#define EXTPROC 0200000
+# define EXTPROC 0200000
 #endif
 
 /* tcflow() and TCXONC use these */
@@ -212,6 +213,7 @@ struct termios {
 #define	TCSANOW		0
 #define	TCSADRAIN	1
 #define	TCSAFLUSH	2
+
 
 #define _IOT_termios /* Hurd ioctl type field.  */ \
   _IOT (_IOTS (cflag_t), 4, _IOTS (cc_t), NCCS, _IOTS (speed_t), 2)

@@ -1,5 +1,5 @@
 /* System-dependent timing definitions.  Linux version.
-   Copyright (C) 1996-2017 Free Software Foundation, Inc.
+   Copyright (C) 1996-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -37,45 +37,47 @@
    && !defined __USE_XOPEN2K
 /* Even though CLOCKS_PER_SEC has such a strange value CLK_TCK
    presents the real value for clock ticks per second for the system.  */
-extern long int __sysconf(int);
-#define CLK_TCK ((__clock_t) __sysconf (2))	/* 2 is _SC_CLK_TCK */
+extern long int __sysconf (int);
+# define CLK_TCK ((__clock_t) __sysconf (2))	/* 2 is _SC_CLK_TCK */
 #endif
 
 #ifdef __USE_POSIX199309
 /* Identifier for system-wide realtime clock.  */
-#define CLOCK_REALTIME			0
+# define CLOCK_REALTIME			0
 /* Monotonic system-wide clock.  */
-#define CLOCK_MONOTONIC		1
+# define CLOCK_MONOTONIC		1
 /* High-resolution timer from the CPU.  */
-#define CLOCK_PROCESS_CPUTIME_ID	2
+# define CLOCK_PROCESS_CPUTIME_ID	2
 /* Thread-specific CPU-time clock.  */
-#define CLOCK_THREAD_CPUTIME_ID	3
+# define CLOCK_THREAD_CPUTIME_ID	3
 /* Monotonic system-wide clock, not adjusted for frequency scaling.  */
-#define CLOCK_MONOTONIC_RAW		4
+# define CLOCK_MONOTONIC_RAW		4
 /* Identifier for system-wide realtime clock, updated only on ticks.  */
-#define CLOCK_REALTIME_COARSE		5
+# define CLOCK_REALTIME_COARSE		5
 /* Monotonic system-wide clock, updated only on ticks.  */
-#define CLOCK_MONOTONIC_COARSE		6
+# define CLOCK_MONOTONIC_COARSE		6
 /* Monotonic system-wide clock that includes time spent in suspension.  */
-#define CLOCK_BOOTTIME			7
+# define CLOCK_BOOTTIME			7
 /* Like CLOCK_REALTIME but also wakes suspended system.  */
-#define CLOCK_REALTIME_ALARM		8
+# define CLOCK_REALTIME_ALARM		8
 /* Like CLOCK_BOOTTIME but also wakes suspended system.  */
-#define CLOCK_BOOTTIME_ALARM		9
+# define CLOCK_BOOTTIME_ALARM		9
 /* Like CLOCK_REALTIME but in International Atomic Time.  */
-#define CLOCK_TAI			11
+# define CLOCK_TAI			11
 
 /* Flag to indicate time is absolute.  */
-#define TIMER_ABSTIME			1
+# define TIMER_ABSTIME			1
 #endif
 
 #ifdef __USE_GNU
-#include <bits/timex.h>
+# include <bits/timex.h>
 
 __BEGIN_DECLS
+
 /* Tune a POSIX clock.  */
-extern int clock_adjtime(__clockid_t __clock_id, struct timex *__utx) __THROW;
+extern int clock_adjtime (__clockid_t __clock_id, struct timex *__utx) __THROW;
 
 __END_DECLS
-#endif				/* use GNU */
-#endif				/* bits/time.h */
+#endif /* use GNU */
+
+#endif	/* bits/time.h */

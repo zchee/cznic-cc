@@ -1,4 +1,4 @@
-/* Copyright (C) 1992-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1992-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -24,14 +24,17 @@
 #include <stddef.h>
 
 __BEGIN_DECLS
+
 /* Remove any previous definitions.  */
 #undef	alloca
+
 /* Allocate a block that will be freed when the calling function exits.  */
-extern void *alloca(size_t __size) __THROW;
+extern void *alloca (size_t __size) __THROW;
 
 #ifdef	__GNUC__
-#define alloca(size)	__builtin_alloca (size)
-#endif				/* GCC.  */
+# define alloca(size)	__builtin_alloca (size)
+#endif /* GCC.  */
 
 __END_DECLS
-#endif				/* alloca.h */
+
+#endif /* alloca.h */
