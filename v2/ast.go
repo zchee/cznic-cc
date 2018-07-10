@@ -608,6 +608,7 @@ type Declarator struct {
 	Embedded             bool // [0]6.7.5-3: Not a full declarator.
 	IsField              bool
 	IsFunctionParameter  bool
+	IsBuiltin            bool
 	DirectDeclarator     *DirectDeclarator
 	PointerOpt           *PointerOpt
 }

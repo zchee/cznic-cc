@@ -1215,8 +1215,16 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 	case ExprFloat: // FLOATCONST
 		n.floatConst(ctx)
 	case ExprIdent: // IDENTIFIER
+		builtin := false
 		// [0]6.5.1
 		nm := n.Token.Val
+		var nm2 int
+		if ctx.tweaks.EnableImplicitBuiltins {
+			nm2 = dict.SID("__builtin_" + string(dict.S(nm)))
+			if n.Scope.LookupIdent(nm2) != nil {
+				builtin = true
+			}
+		}
 		if n.Scope.LookupIdent(nm) == nil {
 			if n.enum != nil {
 				if c := n.enum.find(nm); c != nil {
@@ -1227,7 +1235,7 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 
 			if ctx.tweaks.EnableImplicitBuiltins {
 				nm2 := dict.SID("__builtin_" + string(dict.S(nm)))
-				if n.Scope.LookupIdent(nm2) != nil {
+				if nm2 != 0 {
 					nm = nm2
 				} else {
 					if !ctx.tweaks.EnableImplicitDeclarations {
@@ -1235,10 +1243,10 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 					}
 				}
 			}
-
 		}
 		switch x := n.Scope.LookupIdent(nm).(type) {
 		case *Declarator:
+			x.IsBuiltin = builtin
 			n.Declarator = x
 			if arr2ptr {
 				x.Referenced++
