@@ -94,6 +94,7 @@ var (
 	idError                  = dict.SID("error")
 	idFile                   = dict.SID("__FILE__")
 	idFuncName               = dict.SID("__func__")
+	idFunction               = dict.SID("__FUNCTION__")
 	idIf                     = dict.SID("if")
 	idIfdef                  = dict.SID("ifdef")
 	idIfndef                 = dict.SID("ifndef")

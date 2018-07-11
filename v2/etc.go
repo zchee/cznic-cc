@@ -35,6 +35,18 @@ func debugStack() []byte {
 	return b
 }
 
+func debugStack2() []byte {
+	b := debug.Stack()
+	b = b[bytes.Index(b, bPanic)+1:]
+	b = b[bytes.Index(b, bPanic):]
+	b = b[bytes.Index(b, bNL)+1:]
+	a := bytes.SplitN(b, bNL, 3)
+	if len(a) > 2 {
+		a = a[:2]
+	}
+	return bytes.Join(a, bNL)
+}
+
 func trimSpace(toks []xc.Token) []xc.Token {
 	for len(toks) != 0 && toks[0].Rune == ' ' {
 		toks = toks[1:]

@@ -1134,7 +1134,8 @@ func (c *cpp) include(n Node, nm string, paths []string, w tokenWriter) {
 
 	if path == "" {
 		wd, _ := os.Getwd()
-		panic(fmt.Errorf("%v: nm %q, paths %q, wd %q", c.position(n), nm, paths, wd))
+		c.err(n, "include file not found: %s\nworking dir: %s\nsearch paths:\n\t%s", nm, wd, strings.Join(paths, "\n\t"))
+		return
 	}
 
 	s, err := NewFileSource2(path, true)

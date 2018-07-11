@@ -305,6 +305,11 @@ func Translate(tweaks *Tweaks, includePaths, sysIncludePaths []string, sources .
 	defer func() {
 		e := recover()
 		if !returned && err == nil {
+			if e != nil {
+				err = fmt.Errorf("%v\n%s", e, debugStack2())
+				return
+			}
+
 			err = fmt.Errorf("PANIC: %v\n%s", e, debugStack())
 		}
 	}()

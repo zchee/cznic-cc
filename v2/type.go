@@ -602,7 +602,17 @@ func (t *FunctionType) IsArithmeticType() bool { return false }
 func (t *FunctionType) IsCompatible(u Type) bool {
 	switch x := u.(type) {
 	case *FunctionType:
-		if len(t.Params) != len(x.Params) || t.Variadic != x.Variadic || !t.Result.IsCompatible(x.Result) {
+		if t.Variadic != x.Variadic || !t.Result.IsCompatible(x.Result) {
+			return false
+		}
+
+		if len(t.Params) != len(x.Params) {
+			switch {
+			case len(t.Params) == 1 && len(x.Params) == 0 && t.Params[0].Kind() == Void:
+				return true
+			case len(t.Params) == 0 && len(x.Params) == 1 && x.Params[0].Kind() == Void:
+				return true
+			}
 			return false
 		}
 
