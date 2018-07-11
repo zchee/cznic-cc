@@ -44,6 +44,9 @@ func debugStack2() []byte {
 	if len(a) > 2 {
 		a = a[:2]
 	}
+	if len(a) > 1 {
+		a = a[1:]
+	}
 	return bytes.Join(a, bNL)
 }
 
