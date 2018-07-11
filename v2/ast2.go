@@ -428,6 +428,8 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 
 	more:
 		switch x := t.(type) {
+		case *EnumType:
+			n.Operand = op.ConvertTo(ctx.model, t)
 		case *PointerType:
 			//dbg("", ctx.position(n), t, op)
 			n.Operand = op.ConvertTo(ctx.model, t)
