@@ -424,7 +424,7 @@ func (c *cpp) parse(src ...Source) (tokenReader, error) {
 }
 func (c *cpp) eval(r tokenReader, w tokenWriter) (err error) {
 	c.macros[idFile] = &Macro{ReplacementToks: []xc.Token{{Char: lex.NewChar(0, STRINGLITERAL)}}}
-	c.macros[idLine] = &Macro{ReplacementToks: []xc.Token{{Char: lex.NewChar(0, INTCONST)}}}
+	c.macros[idLineMacro] = &Macro{ReplacementToks: []xc.Token{{Char: lex.NewChar(0, INTCONST)}}}
 	if cs := c.expand(r, w, conds(nil).push(condZero), 0); len(cs) != 1 || cs.tos() != condZero {
 		return fmt.Errorf("unexpected top of condition stack value: %v", cs)
 	}
@@ -489,7 +489,7 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
 				switch nm {
 				case idFile:
 					m.ReplacementToks[0].Val = dict.SID(fmt.Sprintf("%q", c.position(t).Filename))
-				case idLine:
+				case idLineMacro:
 					m.ReplacementToks[0].Val = dict.SID(fmt.Sprint(c.position(t).Line))
 				}
 				// ------------------------------------------ C
@@ -872,8 +872,9 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 	}
 
 	if f := c.tweaks.TrackExpand; f != nil {
-		s0 := fmt.Sprint(cs)
-		defer func() { f(fmt.Sprintf("#%s // %v->%v %v", toksDump(line, ""), s0, y, c.position(line[0]))) }()
+		if cs.on() {
+			f(fmt.Sprintf("#%s", toksDump(line, "")))
+		}
 	}
 	switch t := line[0]; t.Rune {
 	case ccEOF:
@@ -1048,6 +1049,8 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 			default:
 				panic(fmt.Errorf("%v: %v", c.position(t), cs.tos()))
 			}
+		case idLine:
+			// ignored
 		case idPragma:
 			if !cs.on() {
 				break

@@ -99,7 +99,8 @@ var (
 	idIfndef                 = dict.SID("ifndef")
 	idInclude                = dict.SID("include")
 	idIncludeNext            = dict.SID("include_next")
-	idLine                   = dict.SID("__LINE__")
+	idLine                   = dict.SID("line")
+	idLineMacro              = dict.SID("__LINE__")
 	idMain                   = dict.SID("main")
 	idOne                    = dict.SID("1")
 	idPragma                 = dict.SID("pragma")
@@ -114,8 +115,8 @@ var (
 	idZero                   = dict.SID("0")
 
 	protectedMacro = map[int]bool{
-		idFile: true,
-		idLine: true,
+		idFile:      true,
+		idLineMacro: true,
 	}
 
 	keywords = map[int]rune{
