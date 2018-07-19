@@ -515,7 +515,7 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 		}
 		n.Operand = op.cpl(ctx)
 	case ExprChar: // CHARCONST
-		n.Operand = charConst(n.Token.S())
+		n.Operand = ctx.charConst(n.Token)
 	case ExprNe: // Expr "!=" Expr
 		lhs := n.Expr.eval(ctx, arr2ptr, fn)
 		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
@@ -1369,10 +1369,12 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 		default:
 			panic(fmt.Errorf("%v: TODO %q %q decadic: %v\n%s", ctx.position(n), s, suff, decadic, PrettyString(n)))
 		}
-	//TODO case ExprLChar: // LONGCHARCONST
-	//TODO case ExprLString: // LONGSTRINGLITERAL
+	case ExprLChar: // LONGCHARCONST
+		n.Operand = ctx.charConst(n.Token)
+	case ExprLString: // LONGSTRINGLITERAL
+		n.Operand = ctx.strConst(n.Token)
 	case ExprString: // STRINGLITERAL
-		n.Operand = strConst(n.Token)
+		n.Operand = ctx.strConst(n.Token)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}

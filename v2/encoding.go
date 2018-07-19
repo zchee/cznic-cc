@@ -5,7 +5,6 @@
 package cc
 
 import (
-	"bytes"
 	"encoding/binary"
 	"go/token"
 	"reflect"
@@ -112,6 +111,7 @@ var (
 	idVaArgs                 = dict.SID("__VA_ARGS__")
 	idVaList                 = dict.SID("va_list")
 	idWarning                = dict.SID("warning")
+	idWcharT                 = dict.SID("wchar_t")
 	idZero                   = dict.SID("0")
 
 	protectedMacro = map[int]bool{
@@ -300,27 +300,6 @@ func TokSrc(t xc.Token) string {
 	return string(t.Rune)
 }
 
-func charConst(b []byte) Operand {
-	s := string(b)
-	s = s[1 : len(s)-1] // Remove outer 's.
-	if len(s) == 1 {
-		return Operand{Type: Int, Value: &ir.Int64Value{Value: int64(s[0])}}
-	}
-
-	runes := []rune(s)
-	var r rune
-	switch runes[0] {
-	case '\\':
-		r, _ = decodeEscapeSequence(runes)
-		if r < 0 {
-			r = -r
-		}
-	default:
-		r = runes[0]
-	}
-	return Operand{Type: Int, Value: &ir.Int64Value{Value: int64(r)}}
-}
-
 // escape-sequence		{simple-sequence}|{octal-escape-sequence}|{hexadecimal-escape-sequence}|{universal-character-name}
 // simple-sequence		\\['\x22?\\abfnrtv]
 // octal-escape-sequence	\\{octal-digit}{octal-digit}?{octal-digit}?
@@ -417,36 +396,4 @@ func decodeHexQuad(runes []rune) int {
 		n = n<<4 | decodeHex(r)
 	}
 	return n
-}
-
-func strConst(t xc.Token) Operand {
-	s := t.S()
-	var buf bytes.Buffer
-	switch t.Rune {
-	case STRINGLITERAL:
-		s = s[1 : len(s)-1] // Remove outer "s.
-		runes := []rune(string(s))
-		for i := 0; i < len(runes); {
-			switch r := runes[i]; {
-			case r == '\\':
-				r, n := decodeEscapeSequence(runes[i:])
-				switch {
-				case r < 0:
-					buf.WriteByte(byte(-r))
-				default:
-					buf.WriteRune(r)
-				}
-				i += n
-			default:
-				buf.WriteByte(byte(r))
-				i++
-			}
-		}
-		return Operand{
-			Type:  &ArrayType{Item: Char, Size: Operand{Type: Int, Value: &ir.Int64Value{Value: int64(len(buf.Bytes()) + 1)}}},
-			Value: &ir.StringValue{StringID: ir.StringID(dict.ID(buf.Bytes()))},
-		}
-	default:
-		panic("internal error")
-	}
 }

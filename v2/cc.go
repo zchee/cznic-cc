@@ -29,6 +29,7 @@ package cc
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"go/scanner"
 	"go/token"
@@ -44,6 +45,7 @@ import (
 
 	"github.com/cznic/ir"
 	"github.com/cznic/strutil"
+	"github.com/cznic/xc"
 )
 
 const (
@@ -478,6 +480,126 @@ func (c *context) ptrDiff() Type {
 	}
 
 	return d.Type
+}
+
+func (c *context) wideChar() Type {
+	d, ok := c.scope.LookupIdent(idWcharT).(*Declarator)
+	if !ok {
+		sz := 2
+		for _, v := range []TypeKind{SChar, Short, Int, Long, LongLong} {
+			if c.model[v].Size >= sz {
+				return v
+			}
+		}
+		panic("internal error")
+	}
+
+	if !d.DeclarationSpecifier.IsTypedef() {
+		panic(d.Type)
+	}
+
+	return d.Type
+}
+
+func (c *context) charConst(t xc.Token) Operand {
+	switch t.Rune {
+	case CHARCONST:
+		s := string(t.S())
+		s = s[1 : len(s)-1] // Remove outer 's.
+		if len(s) == 1 {
+			return Operand{Type: Int, Value: &ir.Int64Value{Value: int64(s[0])}}
+		}
+
+		runes := []rune(s)
+		var r rune
+		switch runes[0] {
+		case '\\':
+			r, _ = decodeEscapeSequence(runes)
+			if r < 0 {
+				r = -r
+			}
+		default:
+			r = runes[0]
+		}
+		return Operand{Type: Int, Value: &ir.Int64Value{Value: int64(r)}}
+	case LONGCHARCONST:
+		s := t.S()
+		var buf bytes.Buffer
+		s = s[2 : len(s)-1]
+		runes := []rune(string(s))
+		for i := 0; i < len(runes); {
+			switch r := runes[i]; {
+			case r == '\\':
+				r, n := decodeEscapeSequence(runes[i:])
+				switch {
+				case r < 0:
+					buf.WriteByte(byte(-r))
+				default:
+					buf.WriteRune(r)
+				}
+				i += n
+			default:
+				buf.WriteByte(byte(r))
+				i++
+			}
+		}
+		s = buf.Bytes()
+		runes = []rune(string(s))
+		if len(runes) != 1 {
+			panic("TODO")
+		}
+
+		return Operand{Type: Long, Value: &ir.Int64Value{Value: int64(runes[0])}}
+	default:
+		panic("internal error")
+	}
+}
+
+func (c *context) strConst(t xc.Token) Operand {
+	s := t.S()
+	switch t.Rune {
+	case LONGSTRINGLITERAL:
+		s = s[1:] // Remove leading 'L'.
+		fallthrough
+	case STRINGLITERAL:
+		var buf bytes.Buffer
+		s = s[1 : len(s)-1] // Remove outer "s.
+		runes := []rune(string(s))
+		var wrunes []rune
+		for i := 0; i < len(runes); {
+			switch r := runes[i]; {
+			case r == '\\':
+				r, n := decodeEscapeSequence(runes[i:])
+				wrunes = append(wrunes, r)
+				switch {
+				case r < 0:
+					buf.WriteByte(byte(-r))
+				default:
+					buf.WriteRune(r)
+				}
+				i += n
+			default:
+				wrunes = append(wrunes, r)
+				buf.WriteByte(byte(r))
+				i++
+			}
+		}
+		switch t.Rune {
+		case LONGSTRINGLITERAL:
+			runes := []rune(buf.String())
+			typ := c.wideChar()
+			return Operand{
+				Type:  &ArrayType{Item: typ, Size: Operand{Type: Int, Value: &ir.Int64Value{Value: c.model.Sizeof(typ) * int64(len(runes)+1)}}},
+				Value: &ir.WideStringValue{Value: wrunes},
+			}
+		case STRINGLITERAL:
+			return Operand{
+				Type:  &ArrayType{Item: Char, Size: Operand{Type: Int, Value: &ir.Int64Value{Value: int64(len(buf.Bytes()) + 1)}}},
+				Value: &ir.StringValue{StringID: ir.StringID(dict.ID(buf.Bytes()))},
+			}
+		}
+	}
+	panic("internal error")
 }
 
 func (c *context) sizeof(t Type) Operand {

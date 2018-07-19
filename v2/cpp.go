@@ -90,10 +90,8 @@ func (p *tokenPipe) write(toks ...xc.Token) {
 		switch t.Rune {
 		case '\n', ' ':
 			// nop
-		case STRINGLITERAL:
+		case STRINGLITERAL, LONGSTRINGLITERAL:
 			p.s = append(p.s, t)
-		case LONGSTRINGLITERAL:
-			panic("TODO")
 		default:
 			if len(p.s) != 0 {
 				p.flush()
