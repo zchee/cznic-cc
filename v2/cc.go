@@ -291,6 +291,7 @@ type Tweaks struct { //TODO- remove all options
 	EnableTrigraphs             bool
 	IgnorePragmas               bool // #pragma
 	InjectFinalNL               bool // Specs want the source to always end in a newline.
+	PreprocessOnly              bool // like in CC -E foo.c
 	cppExpandTest               bool // Fake includes
 }
 
@@ -308,7 +309,7 @@ func Translate(tweaks *Tweaks, includePaths, sysIncludePaths []string, sources .
 		e := recover()
 		if !returned && err == nil {
 			if e != nil {
-				err = fmt.Errorf("%v\n%s", e, debugStack2())
+				err = fmt.Errorf("%v\n%s", e, debugStack())
 				return
 			}
 
@@ -331,6 +332,11 @@ func Translate(tweaks *Tweaks, includePaths, sysIncludePaths []string, sources .
 	ctx.sysIncludePaths = append([]string(nil), sysIncludePaths...)
 	if tu, err = ctx.parse(sources); err != nil {
 		return nil, err
+	}
+
+	if tweaks.PreprocessOnly {
+		returned = true
+		return nil, nil
 	}
 
 	if err := tu.ExternalDeclarationList.check(ctx); err != nil {
@@ -434,6 +440,20 @@ func (c *context) parse(in []Source) (_ *TranslationUnit, err error) {
 		returned = true
 	}()
 
+	if c.tweaks.PreprocessOnly {
+		for {
+			t := p.read()
+			if t.Rune == ccEOF {
+				break
+			}
+		}
+		if err := c.error(); err != nil {
+			return nil, err
+		}
+
+		return nil, cppErr
+	}
+
 	ok := lx.parse(TRANSLATION_UNIT)
 	if err := c.error(); err != nil || !ok {
 		go func() { // drain
@@ -485,7 +505,15 @@ func (c *context) ptrDiff() Type {
 func (c *context) wideChar() Type {
 	d, ok := c.scope.LookupIdent(idWcharT).(*Declarator)
 	if !ok {
-		sz := 2
+		var sz int
+		switch goos := env("GOOS", ""); goos {
+		case "windows":
+			sz = 2
+		case "linux":
+			sz = 2
+		default:
+			panic(goos)
+		}
 		for _, v := range []TypeKind{SChar, Short, Int, Long, LongLong} {
 			if c.model[v].Size >= sz {
 				return v

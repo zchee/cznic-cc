@@ -27,28 +27,7 @@ func PrettyString(v interface{}) string {
 	return strutil.PrettyString(v, "", "", printHooks)
 }
 
-func debugStack() []byte {
-	b := debug.Stack()
-	b = b[bytes.Index(b, bPanic)+1:]
-	b = b[bytes.Index(b, bPanic):]
-	b = b[bytes.Index(b, bNL)+1:]
-	return b
-}
-
-func debugStack2() []byte {
-	b := debug.Stack()
-	b = b[bytes.Index(b, bPanic)+1:]
-	b = b[bytes.Index(b, bPanic):]
-	b = b[bytes.Index(b, bNL)+1:]
-	a := bytes.SplitN(b, bNL, 3)
-	if len(a) > 2 {
-		a = a[:2]
-	}
-	if len(a) > 1 {
-		a = a[1:]
-	}
-	return bytes.Join(a, bNL)
-}
+func debugStack() []byte { return debug.Stack() }
 
 func trimSpace(toks []xc.Token) []xc.Token {
 	for len(toks) != 0 && toks[0].Rune == ' ' {
