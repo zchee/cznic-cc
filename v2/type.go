@@ -656,6 +656,7 @@ func (t *FunctionType) Equal(u Type) bool {
 	case TypeKind:
 		switch x {
 		case
+			Char,
 			Int,
 			Void:
 
