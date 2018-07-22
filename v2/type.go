@@ -1434,13 +1434,13 @@ func (t *TaggedUnionType) assign(ctx *context, op Operand) Operand {
 }
 
 // IsPointerType implements Type.
-func (t *TaggedUnionType) IsPointerType() bool { panic("TODO") }
+func (t *TaggedUnionType) IsPointerType() bool { return false }
 
 // IsIntegerType implements Type.
 func (t *TaggedUnionType) IsIntegerType() bool { return false }
 
 // IsScalarType implements Type.
-func (t *TaggedUnionType) IsScalarType() bool { panic("TODO") }
+func (t *TaggedUnionType) IsScalarType() bool { return false }
 
 func (t *TaggedUnionType) String() string { return fmt.Sprintf("union %s", dict.S(t.Tag)) }
 

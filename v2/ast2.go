@@ -419,7 +419,12 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 				break
 			}
 
-			panic(fmt.Errorf("%v: %v, (%v)%v, not a scalar", ctx.position(n), n.Case, t, op))
+			switch {
+			case t.Kind() == Union && ctx.tweaks.EnableUnionCasts:
+				// ok
+			default:
+				panic(fmt.Errorf("%v: %v, (%v)%v, not a scalar", ctx.position(n), n.Case, t, op))
+			}
 		}
 
 		if !op.isScalarType() && !isVaList(op.Type) {
@@ -437,6 +442,8 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 			t = x.Type
 			goto more
 		case *TaggedEnumType:
+			n.Operand = op.ConvertTo(ctx.model, t)
+		case *TaggedUnionType:
 			n.Operand = op.ConvertTo(ctx.model, t)
 		case TypeKind:
 			switch x {
@@ -461,7 +468,7 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 				panic(x)
 			}
 		default:
-			panic(fmt.Errorf("%v: %v", ctx.position(n), x))
+			panic(fmt.Errorf("%v: %T", ctx.position(n), x))
 		}
 		if n.Expr.Operand.Value != nil {
 			op := n.Expr.Operand.ConvertTo(ctx.model, t)

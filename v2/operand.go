@@ -312,7 +312,8 @@ func (o Operand) ConvertTo(m Model, t Type) (r Operand) {
 	case
 		*EnumType,
 		*PointerType,
-		*TaggedEnumType:
+		*TaggedEnumType,
+		*TaggedUnionType:
 
 		// ok
 	case TypeKind:
@@ -369,6 +370,14 @@ func (o Operand) ConvertTo(m Model, t Type) (r Operand) {
 			}
 
 			return Operand{Type: t, Value: &v}.normalize(m)
+		}
+
+		if t.Kind() == Union {
+			if v.Value != 0 {
+				panic("TODO")
+			}
+
+			return Operand{Type: t}
 		}
 
 		switch t.Kind() {

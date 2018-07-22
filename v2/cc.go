@@ -290,6 +290,7 @@ type Tweaks struct { //TODO- remove all options
 	EnablePointerCompatibility  bool // All pointers are assignment compatible.
 	EnableReturnExprInVoidFunc  bool // void f() { return 1; }
 	EnableTrigraphs             bool
+	EnableUnionCasts            bool // (union foo)0
 	IgnorePragmas               bool // #pragma
 	InjectFinalNL               bool // Specs want the source to always end in a newline.
 	PreprocessOnly              bool // like in CC -E foo.c
