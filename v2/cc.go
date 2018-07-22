@@ -280,6 +280,7 @@ type Tweaks struct { //TODO- remove all options
 	TrackExpand   func(string)
 	TrackIncludes func(string)
 
+	DefinesOnly                 bool // like in CC -E -dM foo.c
 	EnableAnonymousStructFields bool // struct{int;}
 	EnableBinaryLiterals        bool // 0b101010 == 42
 	EnableEmptyStructs          bool // struct{}
@@ -417,6 +418,9 @@ func (c *context) parse(in []Source) (_ *TranslationUnit, err error) {
 	}
 
 	p := newTokenPipe(1024)
+	if c.tweaks.PreprocessOnly {
+		p.emitWhiteSpace = true
+	}
 	lx.tc = p
 
 	var cppErr error
@@ -445,6 +449,12 @@ func (c *context) parse(in []Source) (_ *TranslationUnit, err error) {
 			t := p.read()
 			if t.Rune == ccEOF {
 				break
+			}
+
+			if f := c.tweaks.TrackExpand; f != nil {
+				if p := c.position(t); filepath.Base(p.Filename) != "builtin.h" {
+					f(TokSrc(t))
+				}
 			}
 		}
 		if err := c.error(); err != nil {

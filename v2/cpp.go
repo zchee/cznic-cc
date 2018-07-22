@@ -50,6 +50,8 @@ type tokenPipe struct {
 	b  []byte
 	ch chan xc.Token
 	s  []xc.Token
+
+	emitWhiteSpace bool
 }
 
 func newTokenPipe(n int) *tokenPipe { return &tokenPipe{ch: make(chan xc.Token, n)} }
@@ -89,7 +91,9 @@ func (p *tokenPipe) write(toks ...xc.Token) {
 	for _, t := range toks {
 		switch t.Rune {
 		case '\n', ' ':
-			// nop
+			if p.emitWhiteSpace {
+				p.ch <- t
+			}
 		case STRINGLITERAL, LONGSTRINGLITERAL:
 			p.s = append(p.s, t)
 		default:
@@ -467,9 +471,6 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
 			t.Rune = '\n'
 			t.Val = 0
 			w.write(t)
-			if f := c.tweaks.TrackExpand; f != nil && lvl == 0 {
-				f("\n")
-			}
 		case IDENTIFIER:
 			if !cs.on() {
 				break
@@ -537,9 +538,6 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
 			}
 
 			w.write(t)
-			if f := c.tweaks.TrackExpand; f != nil && lvl == 0 {
-				f(TokSrc(t))
-			}
 		case SENTINEL:
 			if !cs.on() {
 				panic("internal error 5")
@@ -556,9 +554,6 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
 			}
 
 			w.write(t)
-			if f := c.tweaks.TrackExpand; f != nil && lvl == 0 {
-				f(TokSrc(t))
-			}
 		}
 	}
 }
@@ -869,9 +864,11 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 		return cs
 	}
 
-	if f := c.tweaks.TrackExpand; f != nil {
-		if cs.on() {
-			f(fmt.Sprintf("#%s", toksDump(line, "")))
+	if cs.on() {
+		if f := c.tweaks.TrackExpand; f != nil && c.tweaks.DefinesOnly {
+			if s := toksDump(line, ""); strings.HasPrefix(s, "define") {
+				f(fmt.Sprintf("#%s", toksDump(line, "")))
+			}
 		}
 	}
 	switch t := line[0]; t.Rune {
