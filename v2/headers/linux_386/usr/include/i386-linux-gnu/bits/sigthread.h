@@ -28,17 +28,14 @@
 
 /* Modify the signal mask for the calling thread.  The arguments have
    the same meaning as for sigprocmask(2). */
-extern int pthread_sigmask (int __how,
-			    const __sigset_t *__restrict __newmask,
-			    __sigset_t *__restrict __oldmask)__THROW;
+extern int pthread_sigmask(int __how, const __sigset_t * __restrict __newmask, __sigset_t * __restrict __oldmask) __THROW;
 
 /* Send signal SIGNO to the given thread. */
-extern int pthread_kill (pthread_t __threadid, int __signo) __THROW;
+extern int pthread_kill(pthread_t __threadid, int __signo) __THROW;
 
 #ifdef __USE_GNU
 /* Queue signal and data to a thread.  */
-extern int pthread_sigqueue (pthread_t __threadid, int __signo,
-			     const union sigval __value) __THROW;
+extern int pthread_sigqueue(pthread_t __threadid, int __signo, const union sigval __value) __THROW;
 #endif
 
-#endif	/* bits/sigthread.h */
+#endif				/* bits/sigthread.h */

@@ -32,16 +32,12 @@
 #endif
 
 __BEGIN_DECLS
-
 /* Get definitions of __intmax_t and __uintmax_t.  */
 #include <bits/types.h>
-
 /* Get machine-dependent vector math functions declarations.  */
 #include <bits/math-vector.h>
-
 /* Gather machine dependent type support.  */
 #include <bits/floatn.h>
-
 /* Value returned on overflow.  With IEEE 754 floating point, this is
    +Infinity, otherwise the largest representable positive value.  */
 #if __GNUC_PREREQ (3, 3)
@@ -84,7 +80,6 @@ __BEGIN_DECLS
 #if __HAVE_FLOAT128X && __GLIBC_USE (IEC_60559_TYPES_EXT)
 # define HUGE_VAL_F128X (__builtin_huge_valf128x ())
 #endif
-
 #ifdef __USE_ISOC99
 /* IEEE positive infinity.  */
 # if __GNUC_PREREQ (3, 3)
@@ -92,7 +87,6 @@ __BEGIN_DECLS
 # else
 #  define INFINITY HUGE_VALF
 # endif
-
 /* IEEE Not A Number.  */
 # if __GNUC_PREREQ (3, 3)
 #  define NAN (__builtin_nanf (""))
@@ -102,8 +96,7 @@ __BEGIN_DECLS
    constant expression.  */
 #  define NAN (0.0f / 0.0f)
 # endif
-#endif /* __USE_ISOC99 */
-
+#endif				/* __USE_ISOC99 */
 #if __GLIBC_USE (IEC_60559_BFP_EXT)
 /* Signaling NaN macros, if supported.  */
 # if __GNUC_PREREQ (3, 3)
@@ -133,10 +126,8 @@ __BEGIN_DECLS
 #if __HAVE_FLOAT128X && __GLIBC_USE (IEC_60559_TYPES_EXT)
 # define SNANF128X (__builtin_nansf128x (""))
 #endif
-
 /* Get __GLIBC_FLT_EVAL_METHOD.  */
 #include <bits/flt-eval-method.h>
-
 #ifdef __USE_ISOC99
 /* Define the following typedefs.
 
@@ -176,7 +167,6 @@ typedef _Float128x double_t;
 #  error "Unknown __GLIBC_FLT_EVAL_METHOD"
 # endif
 #endif
-
 /* Define macros for the return values of ilogb and llogb, based on
    __FP_LOGB0_IS_MIN and __FP_LOGBNAN_IS_MIN.
 
@@ -186,7 +176,6 @@ typedef _Float128x double_t;
     FP_LLOGBNAN	Expands to a value returned by `llogb (NAN)'.
 
 */
-
 #include <bits/fp-logb.h>
 #ifdef __USE_ISOC99
 # if __FP_LOGB0_IS_MIN
@@ -217,7 +206,6 @@ typedef _Float128x double_t;
 #  define FP_LLOGBNAN	__FP_LONG_MAX
 # endif
 #endif
-
 /* Get the architecture specific values describing the floating-point
    evaluation.  The following symbols will get defined:
 
@@ -229,29 +217,26 @@ typedef _Float128x double_t;
 		This macro is defined only iff the `fma' function is
 		implemented directly with a hardware multiply-add instructions.
 */
-
 #include <bits/fp-fast.h>
-
 #if __GLIBC_USE (IEC_60559_BFP_EXT)
 /* Rounding direction macros for fromfp functions.  */
-enum
-  {
-    FP_INT_UPWARD =
+    enum {
+	FP_INT_UPWARD =
 # define FP_INT_UPWARD 0
-      FP_INT_UPWARD,
-    FP_INT_DOWNWARD =
+	    FP_INT_UPWARD,
+	FP_INT_DOWNWARD =
 # define FP_INT_DOWNWARD 1
-      FP_INT_DOWNWARD,
-    FP_INT_TOWARDZERO =
+	    FP_INT_DOWNWARD,
+	FP_INT_TOWARDZERO =
 # define FP_INT_TOWARDZERO 2
-      FP_INT_TOWARDZERO,
-    FP_INT_TONEARESTFROMZERO =
+	    FP_INT_TOWARDZERO,
+	FP_INT_TONEARESTFROMZERO =
 # define FP_INT_TONEARESTFROMZERO 3
-      FP_INT_TONEARESTFROMZERO,
-    FP_INT_TONEAREST =
+	    FP_INT_TONEARESTFROMZERO,
+	FP_INT_TONEAREST =
 # define FP_INT_TONEAREST 4
-      FP_INT_TONEAREST,
-  };
+	    FP_INT_TONEAREST,
+};
 #endif
 
 /* The file <bits/mathcalls.h> contains the prototypes for all the
@@ -295,7 +280,6 @@ enum
 
 #ifdef __USE_ISOC99
 
-
 /* Include the file of declarations again, this time using `float'
    instead of `double' and appending f to each function name.  */
 
@@ -316,17 +300,13 @@ enum
 #  ifdef __LDBL_COMPAT
 
 #   ifdef __USE_ISOC99
-extern float __nldbl_nexttowardf (float __x, long double __y)
-				  __THROW __attribute__ ((__const__));
+extern float __nldbl_nexttowardf(float __x, long double __y)
+__THROW __attribute__ ((__const__));
 #    ifdef __REDIRECT_NTH
-extern float __REDIRECT_NTH (nexttowardf, (float __x, long double __y),
-			     __nldbl_nexttowardf)
-     __attribute__ ((__const__));
-extern double __REDIRECT_NTH (nexttoward, (double __x, long double __y),
-			      nextafter) __attribute__ ((__const__));
-extern long double __REDIRECT_NTH (nexttowardl,
-				   (long double __x, long double __y),
-				   nextafter) __attribute__ ((__const__));
+extern float __REDIRECT_NTH(nexttowardf, (float __x, long double __y), __nldbl_nexttowardf)
+    __attribute__ ((__const__));
+extern double __REDIRECT_NTH(nexttoward, (double __x, long double __y), nextafter) __attribute__ ((__const__));
+extern long double __REDIRECT_NTH(nexttowardl, (long double __x, long double __y), nextafter) __attribute__ ((__const__));
 #    endif
 #   endif
 
@@ -353,9 +333,9 @@ extern long double __REDIRECT_NTH (nexttowardl,
 #  undef __MATH_DECLARING_DOUBLE
 #  undef __MATH_DECLARING_FLOATN
 
-# endif /* !(__NO_LONG_DOUBLE_MATH && _LIBC) || __LDBL_COMPAT */
+# endif				/* !(__NO_LONG_DOUBLE_MATH && _LIBC) || __LDBL_COMPAT */
 
-#endif	/* Use ISO C99.  */
+#endif				/* Use ISO C99.  */
 
 /* Include the file of declarations for _FloatN and _FloatNx
    types.  */
@@ -375,7 +355,7 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_PRECNAME
 # undef __MATH_DECLARING_DOUBLE
 # undef __MATH_DECLARING_FLOATN
-#endif /* __HAVE_DISTINCT_FLOAT16 || (__HAVE_FLOAT16 && !_LIBC).  */
+#endif				/* __HAVE_DISTINCT_FLOAT16 || (__HAVE_FLOAT16 && !_LIBC).  */
 
 #if __HAVE_DISTINCT_FLOAT32 || (__HAVE_FLOAT32 && !defined _LIBC)
 # define _Mdouble_		_Float32
@@ -392,7 +372,7 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_PRECNAME
 # undef __MATH_DECLARING_DOUBLE
 # undef __MATH_DECLARING_FLOATN
-#endif /* __HAVE_DISTINCT_FLOAT32 || (__HAVE_FLOAT32 && !_LIBC).  */
+#endif				/* __HAVE_DISTINCT_FLOAT32 || (__HAVE_FLOAT32 && !_LIBC).  */
 
 #if __HAVE_DISTINCT_FLOAT64 || (__HAVE_FLOAT64 && !defined _LIBC)
 # define _Mdouble_		_Float64
@@ -409,7 +389,7 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_PRECNAME
 # undef __MATH_DECLARING_DOUBLE
 # undef __MATH_DECLARING_FLOATN
-#endif /* __HAVE_DISTINCT_FLOAT64 || (__HAVE_FLOAT64 && !_LIBC).  */
+#endif				/* __HAVE_DISTINCT_FLOAT64 || (__HAVE_FLOAT64 && !_LIBC).  */
 
 #if __HAVE_DISTINCT_FLOAT128 || (__HAVE_FLOAT128 && !defined _LIBC)
 # define _Mdouble_		_Float128
@@ -426,7 +406,7 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_PRECNAME
 # undef __MATH_DECLARING_DOUBLE
 # undef __MATH_DECLARING_FLOATN
-#endif /* __HAVE_DISTINCT_FLOAT128 || (__HAVE_FLOAT128 && !_LIBC).  */
+#endif				/* __HAVE_DISTINCT_FLOAT128 || (__HAVE_FLOAT128 && !_LIBC).  */
 
 #if __HAVE_DISTINCT_FLOAT32X || (__HAVE_FLOAT32X && !defined _LIBC)
 # define _Mdouble_		_Float32x
@@ -443,7 +423,7 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_PRECNAME
 # undef __MATH_DECLARING_DOUBLE
 # undef __MATH_DECLARING_FLOATN
-#endif /* __HAVE_DISTINCT_FLOAT32X || (__HAVE_FLOAT32X && !_LIBC).  */
+#endif				/* __HAVE_DISTINCT_FLOAT32X || (__HAVE_FLOAT32X && !_LIBC).  */
 
 #if __HAVE_DISTINCT_FLOAT64X || (__HAVE_FLOAT64X && !defined _LIBC)
 # define _Mdouble_		_Float64x
@@ -460,7 +440,7 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_PRECNAME
 # undef __MATH_DECLARING_DOUBLE
 # undef __MATH_DECLARING_FLOATN
-#endif /* __HAVE_DISTINCT_FLOAT64X || (__HAVE_FLOAT64X && !_LIBC).  */
+#endif				/* __HAVE_DISTINCT_FLOAT64X || (__HAVE_FLOAT64X && !_LIBC).  */
 
 #if __HAVE_DISTINCT_FLOAT128X || (__HAVE_FLOAT128X && !defined _LIBC)
 # define _Mdouble_		_Float128x
@@ -477,12 +457,11 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_PRECNAME
 # undef __MATH_DECLARING_DOUBLE
 # undef __MATH_DECLARING_FLOATN
-#endif /* __HAVE_DISTINCT_FLOAT128X || (__HAVE_FLOAT128X && !_LIBC).  */
+#endif				/* __HAVE_DISTINCT_FLOAT128X || (__HAVE_FLOAT128X && !_LIBC).  */
 
 #undef	__MATHDECL_1
 #undef	__MATHDECL
 #undef	__MATHCALL
-
 
 #if defined __USE_MISC || defined __USE_XOPEN
 /* This variable is used by `gamma' and `lgamma'.  */
@@ -566,24 +545,23 @@ extern int signgam;
 #ifdef __USE_ISOC99
 
 /* All floating-point numbers can be put in one of these categories.  */
-enum
-  {
-    FP_NAN =
+enum {
+	FP_NAN =
 # define FP_NAN 0
-      FP_NAN,
-    FP_INFINITE =
+	    FP_NAN,
+	FP_INFINITE =
 # define FP_INFINITE 1
-      FP_INFINITE,
-    FP_ZERO =
+	    FP_INFINITE,
+	FP_ZERO =
 # define FP_ZERO 2
-      FP_ZERO,
-    FP_SUBNORMAL =
+	    FP_ZERO,
+	FP_SUBNORMAL =
 # define FP_SUBNORMAL 3
-      FP_SUBNORMAL,
-    FP_NORMAL =
+	    FP_SUBNORMAL,
+	FP_NORMAL =
 # define FP_NORMAL 4
-      FP_NORMAL
-  };
+	FP_NORMAL
+};
 
 /* GCC bug 66462 means we cannot use the math builtins with -fsignaling-nan,
    so disable builtins if this is enabled.  When fixed in a newer GCC,
@@ -593,11 +571,11 @@ enum
 # if __GNUC_PREREQ (4,4) && !defined __SUPPORT_SNAN__			      \
      && (!defined __OPTIMIZE_SIZE__ || defined __cplusplus)
      /* The check for __cplusplus allows the use of the builtin, even
-	when optimization for size is on.  This is provided for
-	libstdc++, only to let its configure test work when it is built
-	with -Os.  No further use of this definition of fpclassify is
-	expected in C++ mode, since libstdc++ provides its own version
-	of fpclassify in cmath (which undefines fpclassify).  */
+        when optimization for size is on.  This is provided for
+        libstdc++, only to let its configure test work when it is built
+        with -Os.  No further use of this definition of fpclassify is
+        expected in C++ mode, since libstdc++ provides its own version
+        of fpclassify in cmath (which undefines fpclassify).  */
 #  define fpclassify(x) __builtin_fpclassify (FP_NAN, FP_INFINITE,	      \
      FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x)
 # else
@@ -678,7 +656,7 @@ enum
 #  define math_errhandling	(MATH_ERRNO | MATH_ERREXCEPT)
 # endif
 
-#endif /* Use ISO C99.  */
+#endif				/* Use ISO C99.  */
 
 #if __GLIBC_USE (IEC_60559_BFP_EXT)
 # include <bits/iscanonical.h>
@@ -694,21 +672,25 @@ enum
       the correct parameter (regardless of type qualifiers (i.e.: const
       and volatile)).  */
 extern "C++" {
-inline int issignaling (float __val) { return __issignalingf (__val); }
-inline int issignaling (double __val) { return __issignaling (__val); }
-inline int
-issignaling (long double __val)
+	inline int issignaling(float __val)
 {
-#  ifdef __NO_LONG_DOUBLE_MATH
-  return __issignaling (__val);
-#  else
-  return __issignalingl (__val);
-#  endif
+	return __issignalingf(__val);
+} inline int issignaling(double __val) {
+		return __issignaling(__val);
 }
-#  if __HAVE_DISTINCT_FLOAT128
-inline int issignaling (_Float128 __val) { return __issignalingf128 (__val); }
+	inline int issignaling(long double __val) {
+#  ifdef __NO_LONG_DOUBLE_MATH
+		return __issignaling(__val);
+#  else
+		return __issignalingl(__val);
 #  endif
-} /* extern C++ */
+	}
+#  if __HAVE_DISTINCT_FLOAT128
+	inline int issignaling(_Float128 __val) {
+		return __issignalingf128(__val);
+	}
+#  endif
+}				/* extern C++ */
 # endif
 
 /* Return nonzero value if X is subnormal.  */
@@ -721,52 +703,38 @@ inline int issignaling (_Float128 __val) { return __issignalingf128 (__val); }
 #  else
 #   define iszero(x) (((__typeof (x)) (x)) == 0)
 #  endif
-# else	/* __cplusplus */
+# else				/* __cplusplus */
 extern "C++" {
 #  ifdef __SUPPORT_SNAN__
-inline int
-iszero (float __val)
-{
-  return __fpclassifyf (__val) == FP_ZERO;
-}
-inline int
-iszero (double __val)
-{
-  return __fpclassify (__val) == FP_ZERO;
-}
-inline int
-iszero (long double __val)
-{
+	inline int iszero(float __val) {
+		return __fpclassifyf(__val) == FP_ZERO;
+	} inline int iszero(double __val) {
+		return __fpclassify(__val) == FP_ZERO;
+	}
+	inline int iszero(long double __val) {
 #   ifdef __NO_LONG_DOUBLE_MATH
-  return __fpclassify (__val) == FP_ZERO;
+		return __fpclassify(__val) == FP_ZERO;
 #   else
-  return __fpclassifyl (__val) == FP_ZERO;
+		return __fpclassifyl(__val) == FP_ZERO;
 #   endif
-}
+	}
 #   if __HAVE_DISTINCT_FLOAT128
-inline int
-iszero (_Float128 __val)
-{
-  return __fpclassifyf128 (__val) == FP_ZERO;
-}
+	inline int iszero(_Float128 __val) {
+		return __fpclassifyf128(__val) == FP_ZERO;
+	}
 #   endif
 #  else
-template <class __T> inline bool
-iszero (__T __val)
-{
-  return __val == 0;
-}
+	template < class __T > inline bool iszero(__T __val) {
+		return __val == 0;
+	}
 #  endif
-} /* extern C++ */
-# endif	/* __cplusplus */
-#endif /* Use IEC_60559_BFP_EXT.  */
-
+}				/* extern C++ */
+# endif				/* __cplusplus */
+#endif				/* Use IEC_60559_BFP_EXT.  */
 #ifdef __USE_XOPEN
 /* X/Open wants another strange constant.  */
 # define MAXFLOAT	3.40282347e+38F
 #endif
-
-
 /* Some useful constants.  */
 #if defined __USE_MISC || defined __USE_XOPEN
 # define M_E		2.7182818284590452354	/* e */
@@ -783,133 +751,123 @@ iszero (__T __val)
 # define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif
-
 /* The above constants are not adequate for computation using `long double's.
    Therefore we provide as an extension constants with similar names as a
    GNU extension.  Provide enough digits for the 128-bit IEEE quad.  */
 #ifdef __USE_GNU
-# define M_El		2.718281828459045235360287471352662498L /* e */
-# define M_LOG2El	1.442695040888963407359924681001892137L /* log_2 e */
-# define M_LOG10El	0.434294481903251827651128918916605082L /* log_10 e */
-# define M_LN2l		0.693147180559945309417232121458176568L /* log_e 2 */
-# define M_LN10l	2.302585092994045684017991454684364208L /* log_e 10 */
-# define M_PIl		3.141592653589793238462643383279502884L /* pi */
-# define M_PI_2l	1.570796326794896619231321691639751442L /* pi/2 */
-# define M_PI_4l	0.785398163397448309615660845819875721L /* pi/4 */
-# define M_1_PIl	0.318309886183790671537767526745028724L /* 1/pi */
-# define M_2_PIl	0.636619772367581343075535053490057448L /* 2/pi */
-# define M_2_SQRTPIl	1.128379167095512573896158903121545172L /* 2/sqrt(pi) */
-# define M_SQRT2l	1.414213562373095048801688724209698079L /* sqrt(2) */
-# define M_SQRT1_2l	0.707106781186547524400844362104849039L /* 1/sqrt(2) */
+# define M_El		2.718281828459045235360287471352662498L	/* e */
+# define M_LOG2El	1.442695040888963407359924681001892137L	/* log_2 e */
+# define M_LOG10El	0.434294481903251827651128918916605082L	/* log_10 e */
+# define M_LN2l		0.693147180559945309417232121458176568L	/* log_e 2 */
+# define M_LN10l	2.302585092994045684017991454684364208L	/* log_e 10 */
+# define M_PIl		3.141592653589793238462643383279502884L	/* pi */
+# define M_PI_2l	1.570796326794896619231321691639751442L	/* pi/2 */
+# define M_PI_4l	0.785398163397448309615660845819875721L	/* pi/4 */
+# define M_1_PIl	0.318309886183790671537767526745028724L	/* 1/pi */
+# define M_2_PIl	0.636619772367581343075535053490057448L	/* 2/pi */
+# define M_2_SQRTPIl	1.128379167095512573896158903121545172L	/* 2/sqrt(pi) */
+# define M_SQRT2l	1.414213562373095048801688724209698079L	/* sqrt(2) */
+# define M_SQRT1_2l	0.707106781186547524400844362104849039L	/* 1/sqrt(2) */
 #endif
-
 #if __HAVE_FLOAT16 && defined __USE_GNU
-# define M_Ef16		__f16 (2.718281828459045235360287471352662498) /* e */
-# define M_LOG2Ef16	__f16 (1.442695040888963407359924681001892137) /* log_2 e */
-# define M_LOG10Ef16	__f16 (0.434294481903251827651128918916605082) /* log_10 e */
-# define M_LN2f16	__f16 (0.693147180559945309417232121458176568) /* log_e 2 */
-# define M_LN10f16	__f16 (2.302585092994045684017991454684364208) /* log_e 10 */
-# define M_PIf16	__f16 (3.141592653589793238462643383279502884) /* pi */
-# define M_PI_2f16	__f16 (1.570796326794896619231321691639751442) /* pi/2 */
-# define M_PI_4f16	__f16 (0.785398163397448309615660845819875721) /* pi/4 */
-# define M_1_PIf16	__f16 (0.318309886183790671537767526745028724) /* 1/pi */
-# define M_2_PIf16	__f16 (0.636619772367581343075535053490057448) /* 2/pi */
-# define M_2_SQRTPIf16	__f16 (1.128379167095512573896158903121545172) /* 2/sqrt(pi) */
-# define M_SQRT2f16	__f16 (1.414213562373095048801688724209698079) /* sqrt(2) */
-# define M_SQRT1_2f16	__f16 (0.707106781186547524400844362104849039) /* 1/sqrt(2) */
+# define M_Ef16		__f16 (2.718281828459045235360287471352662498)	/* e */
+# define M_LOG2Ef16	__f16 (1.442695040888963407359924681001892137)	/* log_2 e */
+# define M_LOG10Ef16	__f16 (0.434294481903251827651128918916605082)	/* log_10 e */
+# define M_LN2f16	__f16 (0.693147180559945309417232121458176568)	/* log_e 2 */
+# define M_LN10f16	__f16 (2.302585092994045684017991454684364208)	/* log_e 10 */
+# define M_PIf16	__f16 (3.141592653589793238462643383279502884)	/* pi */
+# define M_PI_2f16	__f16 (1.570796326794896619231321691639751442)	/* pi/2 */
+# define M_PI_4f16	__f16 (0.785398163397448309615660845819875721)	/* pi/4 */
+# define M_1_PIf16	__f16 (0.318309886183790671537767526745028724)	/* 1/pi */
+# define M_2_PIf16	__f16 (0.636619772367581343075535053490057448)	/* 2/pi */
+# define M_2_SQRTPIf16	__f16 (1.128379167095512573896158903121545172)	/* 2/sqrt(pi) */
+# define M_SQRT2f16	__f16 (1.414213562373095048801688724209698079)	/* sqrt(2) */
+# define M_SQRT1_2f16	__f16 (0.707106781186547524400844362104849039)	/* 1/sqrt(2) */
 #endif
-
 #if __HAVE_FLOAT32 && defined __USE_GNU
-# define M_Ef32		__f32 (2.718281828459045235360287471352662498) /* e */
-# define M_LOG2Ef32	__f32 (1.442695040888963407359924681001892137) /* log_2 e */
-# define M_LOG10Ef32	__f32 (0.434294481903251827651128918916605082) /* log_10 e */
-# define M_LN2f32	__f32 (0.693147180559945309417232121458176568) /* log_e 2 */
-# define M_LN10f32	__f32 (2.302585092994045684017991454684364208) /* log_e 10 */
-# define M_PIf32	__f32 (3.141592653589793238462643383279502884) /* pi */
-# define M_PI_2f32	__f32 (1.570796326794896619231321691639751442) /* pi/2 */
-# define M_PI_4f32	__f32 (0.785398163397448309615660845819875721) /* pi/4 */
-# define M_1_PIf32	__f32 (0.318309886183790671537767526745028724) /* 1/pi */
-# define M_2_PIf32	__f32 (0.636619772367581343075535053490057448) /* 2/pi */
-# define M_2_SQRTPIf32	__f32 (1.128379167095512573896158903121545172) /* 2/sqrt(pi) */
-# define M_SQRT2f32	__f32 (1.414213562373095048801688724209698079) /* sqrt(2) */
-# define M_SQRT1_2f32	__f32 (0.707106781186547524400844362104849039) /* 1/sqrt(2) */
+# define M_Ef32		__f32 (2.718281828459045235360287471352662498)	/* e */
+# define M_LOG2Ef32	__f32 (1.442695040888963407359924681001892137)	/* log_2 e */
+# define M_LOG10Ef32	__f32 (0.434294481903251827651128918916605082)	/* log_10 e */
+# define M_LN2f32	__f32 (0.693147180559945309417232121458176568)	/* log_e 2 */
+# define M_LN10f32	__f32 (2.302585092994045684017991454684364208)	/* log_e 10 */
+# define M_PIf32	__f32 (3.141592653589793238462643383279502884)	/* pi */
+# define M_PI_2f32	__f32 (1.570796326794896619231321691639751442)	/* pi/2 */
+# define M_PI_4f32	__f32 (0.785398163397448309615660845819875721)	/* pi/4 */
+# define M_1_PIf32	__f32 (0.318309886183790671537767526745028724)	/* 1/pi */
+# define M_2_PIf32	__f32 (0.636619772367581343075535053490057448)	/* 2/pi */
+# define M_2_SQRTPIf32	__f32 (1.128379167095512573896158903121545172)	/* 2/sqrt(pi) */
+# define M_SQRT2f32	__f32 (1.414213562373095048801688724209698079)	/* sqrt(2) */
+# define M_SQRT1_2f32	__f32 (0.707106781186547524400844362104849039)	/* 1/sqrt(2) */
 #endif
-
 #if __HAVE_FLOAT64 && defined __USE_GNU
-# define M_Ef64		__f64 (2.718281828459045235360287471352662498) /* e */
-# define M_LOG2Ef64	__f64 (1.442695040888963407359924681001892137) /* log_2 e */
-# define M_LOG10Ef64	__f64 (0.434294481903251827651128918916605082) /* log_10 e */
-# define M_LN2f64	__f64 (0.693147180559945309417232121458176568) /* log_e 2 */
-# define M_LN10f64	__f64 (2.302585092994045684017991454684364208) /* log_e 10 */
-# define M_PIf64	__f64 (3.141592653589793238462643383279502884) /* pi */
-# define M_PI_2f64	__f64 (1.570796326794896619231321691639751442) /* pi/2 */
-# define M_PI_4f64	__f64 (0.785398163397448309615660845819875721) /* pi/4 */
-# define M_1_PIf64	__f64 (0.318309886183790671537767526745028724) /* 1/pi */
-# define M_2_PIf64	__f64 (0.636619772367581343075535053490057448) /* 2/pi */
-# define M_2_SQRTPIf64	__f64 (1.128379167095512573896158903121545172) /* 2/sqrt(pi) */
-# define M_SQRT2f64	__f64 (1.414213562373095048801688724209698079) /* sqrt(2) */
-# define M_SQRT1_2f64	__f64 (0.707106781186547524400844362104849039) /* 1/sqrt(2) */
+# define M_Ef64		__f64 (2.718281828459045235360287471352662498)	/* e */
+# define M_LOG2Ef64	__f64 (1.442695040888963407359924681001892137)	/* log_2 e */
+# define M_LOG10Ef64	__f64 (0.434294481903251827651128918916605082)	/* log_10 e */
+# define M_LN2f64	__f64 (0.693147180559945309417232121458176568)	/* log_e 2 */
+# define M_LN10f64	__f64 (2.302585092994045684017991454684364208)	/* log_e 10 */
+# define M_PIf64	__f64 (3.141592653589793238462643383279502884)	/* pi */
+# define M_PI_2f64	__f64 (1.570796326794896619231321691639751442)	/* pi/2 */
+# define M_PI_4f64	__f64 (0.785398163397448309615660845819875721)	/* pi/4 */
+# define M_1_PIf64	__f64 (0.318309886183790671537767526745028724)	/* 1/pi */
+# define M_2_PIf64	__f64 (0.636619772367581343075535053490057448)	/* 2/pi */
+# define M_2_SQRTPIf64	__f64 (1.128379167095512573896158903121545172)	/* 2/sqrt(pi) */
+# define M_SQRT2f64	__f64 (1.414213562373095048801688724209698079)	/* sqrt(2) */
+# define M_SQRT1_2f64	__f64 (0.707106781186547524400844362104849039)	/* 1/sqrt(2) */
 #endif
-
 #if __HAVE_FLOAT128 && defined __USE_GNU
-# define M_Ef128	__f128 (2.718281828459045235360287471352662498) /* e */
-# define M_LOG2Ef128	__f128 (1.442695040888963407359924681001892137) /* log_2 e */
-# define M_LOG10Ef128	__f128 (0.434294481903251827651128918916605082) /* log_10 e */
-# define M_LN2f128	__f128 (0.693147180559945309417232121458176568) /* log_e 2 */
-# define M_LN10f128	__f128 (2.302585092994045684017991454684364208) /* log_e 10 */
-# define M_PIf128	__f128 (3.141592653589793238462643383279502884) /* pi */
-# define M_PI_2f128	__f128 (1.570796326794896619231321691639751442) /* pi/2 */
-# define M_PI_4f128	__f128 (0.785398163397448309615660845819875721) /* pi/4 */
-# define M_1_PIf128	__f128 (0.318309886183790671537767526745028724) /* 1/pi */
-# define M_2_PIf128	__f128 (0.636619772367581343075535053490057448) /* 2/pi */
-# define M_2_SQRTPIf128	__f128 (1.128379167095512573896158903121545172) /* 2/sqrt(pi) */
-# define M_SQRT2f128	__f128 (1.414213562373095048801688724209698079) /* sqrt(2) */
-# define M_SQRT1_2f128	__f128 (0.707106781186547524400844362104849039) /* 1/sqrt(2) */
+# define M_Ef128	__f128 (2.718281828459045235360287471352662498)	/* e */
+# define M_LOG2Ef128	__f128 (1.442695040888963407359924681001892137)	/* log_2 e */
+# define M_LOG10Ef128	__f128 (0.434294481903251827651128918916605082)	/* log_10 e */
+# define M_LN2f128	__f128 (0.693147180559945309417232121458176568)	/* log_e 2 */
+# define M_LN10f128	__f128 (2.302585092994045684017991454684364208)	/* log_e 10 */
+# define M_PIf128	__f128 (3.141592653589793238462643383279502884)	/* pi */
+# define M_PI_2f128	__f128 (1.570796326794896619231321691639751442)	/* pi/2 */
+# define M_PI_4f128	__f128 (0.785398163397448309615660845819875721)	/* pi/4 */
+# define M_1_PIf128	__f128 (0.318309886183790671537767526745028724)	/* 1/pi */
+# define M_2_PIf128	__f128 (0.636619772367581343075535053490057448)	/* 2/pi */
+# define M_2_SQRTPIf128	__f128 (1.128379167095512573896158903121545172)	/* 2/sqrt(pi) */
+# define M_SQRT2f128	__f128 (1.414213562373095048801688724209698079)	/* sqrt(2) */
+# define M_SQRT1_2f128	__f128 (0.707106781186547524400844362104849039)	/* 1/sqrt(2) */
 #endif
-
 #if __HAVE_FLOAT32X && defined __USE_GNU
-# define M_Ef32x	__f32x (2.718281828459045235360287471352662498) /* e */
-# define M_LOG2Ef32x	__f32x (1.442695040888963407359924681001892137) /* log_2 e */
-# define M_LOG10Ef32x	__f32x (0.434294481903251827651128918916605082) /* log_10 e */
-# define M_LN2f32x	__f32x (0.693147180559945309417232121458176568) /* log_e 2 */
-# define M_LN10f32x	__f32x (2.302585092994045684017991454684364208) /* log_e 10 */
-# define M_PIf32x	__f32x (3.141592653589793238462643383279502884) /* pi */
-# define M_PI_2f32x	__f32x (1.570796326794896619231321691639751442) /* pi/2 */
-# define M_PI_4f32x	__f32x (0.785398163397448309615660845819875721) /* pi/4 */
-# define M_1_PIf32x	__f32x (0.318309886183790671537767526745028724) /* 1/pi */
-# define M_2_PIf32x	__f32x (0.636619772367581343075535053490057448) /* 2/pi */
-# define M_2_SQRTPIf32x	__f32x (1.128379167095512573896158903121545172) /* 2/sqrt(pi) */
-# define M_SQRT2f32x	__f32x (1.414213562373095048801688724209698079) /* sqrt(2) */
-# define M_SQRT1_2f32x	__f32x (0.707106781186547524400844362104849039) /* 1/sqrt(2) */
+# define M_Ef32x	__f32x (2.718281828459045235360287471352662498)	/* e */
+# define M_LOG2Ef32x	__f32x (1.442695040888963407359924681001892137)	/* log_2 e */
+# define M_LOG10Ef32x	__f32x (0.434294481903251827651128918916605082)	/* log_10 e */
+# define M_LN2f32x	__f32x (0.693147180559945309417232121458176568)	/* log_e 2 */
+# define M_LN10f32x	__f32x (2.302585092994045684017991454684364208)	/* log_e 10 */
+# define M_PIf32x	__f32x (3.141592653589793238462643383279502884)	/* pi */
+# define M_PI_2f32x	__f32x (1.570796326794896619231321691639751442)	/* pi/2 */
+# define M_PI_4f32x	__f32x (0.785398163397448309615660845819875721)	/* pi/4 */
+# define M_1_PIf32x	__f32x (0.318309886183790671537767526745028724)	/* 1/pi */
+# define M_2_PIf32x	__f32x (0.636619772367581343075535053490057448)	/* 2/pi */
+# define M_2_SQRTPIf32x	__f32x (1.128379167095512573896158903121545172)	/* 2/sqrt(pi) */
+# define M_SQRT2f32x	__f32x (1.414213562373095048801688724209698079)	/* sqrt(2) */
+# define M_SQRT1_2f32x	__f32x (0.707106781186547524400844362104849039)	/* 1/sqrt(2) */
 #endif
-
 #if __HAVE_FLOAT64X && defined __USE_GNU
-# define M_Ef64x	__f64x (2.718281828459045235360287471352662498) /* e */
-# define M_LOG2Ef64x	__f64x (1.442695040888963407359924681001892137) /* log_2 e */
-# define M_LOG10Ef64x	__f64x (0.434294481903251827651128918916605082) /* log_10 e */
-# define M_LN2f64x	__f64x (0.693147180559945309417232121458176568) /* log_e 2 */
-# define M_LN10f64x	__f64x (2.302585092994045684017991454684364208) /* log_e 10 */
-# define M_PIf64x	__f64x (3.141592653589793238462643383279502884) /* pi */
-# define M_PI_2f64x	__f64x (1.570796326794896619231321691639751442) /* pi/2 */
-# define M_PI_4f64x	__f64x (0.785398163397448309615660845819875721) /* pi/4 */
-# define M_1_PIf64x	__f64x (0.318309886183790671537767526745028724) /* 1/pi */
-# define M_2_PIf64x	__f64x (0.636619772367581343075535053490057448) /* 2/pi */
-# define M_2_SQRTPIf64x	__f64x (1.128379167095512573896158903121545172) /* 2/sqrt(pi) */
-# define M_SQRT2f64x	__f64x (1.414213562373095048801688724209698079) /* sqrt(2) */
-# define M_SQRT1_2f64x	__f64x (0.707106781186547524400844362104849039) /* 1/sqrt(2) */
+# define M_Ef64x	__f64x (2.718281828459045235360287471352662498)	/* e */
+# define M_LOG2Ef64x	__f64x (1.442695040888963407359924681001892137)	/* log_2 e */
+# define M_LOG10Ef64x	__f64x (0.434294481903251827651128918916605082)	/* log_10 e */
+# define M_LN2f64x	__f64x (0.693147180559945309417232121458176568)	/* log_e 2 */
+# define M_LN10f64x	__f64x (2.302585092994045684017991454684364208)	/* log_e 10 */
+# define M_PIf64x	__f64x (3.141592653589793238462643383279502884)	/* pi */
+# define M_PI_2f64x	__f64x (1.570796326794896619231321691639751442)	/* pi/2 */
+# define M_PI_4f64x	__f64x (0.785398163397448309615660845819875721)	/* pi/4 */
+# define M_1_PIf64x	__f64x (0.318309886183790671537767526745028724)	/* 1/pi */
+# define M_2_PIf64x	__f64x (0.636619772367581343075535053490057448)	/* 2/pi */
+# define M_2_SQRTPIf64x	__f64x (1.128379167095512573896158903121545172)	/* 2/sqrt(pi) */
+# define M_SQRT2f64x	__f64x (1.414213562373095048801688724209698079)	/* sqrt(2) */
+# define M_SQRT1_2f64x	__f64x (0.707106781186547524400844362104849039)	/* 1/sqrt(2) */
 #endif
-
 #if __HAVE_FLOAT128X && defined __USE_GNU
 # error "M_* values needed for _Float128x"
 #endif
-
 /* When compiling in strict ISO C compatible mode we must not use the
    inline functions since they, among other things, do not set the
    `errno' variable correctly.  */
 #if defined __STRICT_ANSI__ && !defined __NO_MATH_INLINES
 # define __NO_MATH_INLINES	1
 #endif
-
 #ifdef __USE_ISOC99
 # if __GNUC_PREREQ (3, 1)
 /* ISO C99 defines some macros to compare number while taking care for
@@ -946,16 +904,13 @@ iszero (__T __val)
 		    __u != __v && (__u != __u || __v != __v); }))
 # endif
 #endif
-
 /* Get machine-dependent inline versions (if there are any).  */
 #ifdef __USE_EXTERN_INLINES
 # include <bits/mathinline.h>
 #endif
-
 /* Define special entry points to use when the compiler got told to
    only expect finite results.  */
 #if defined __FINITE_MATH_ONLY__ && __FINITE_MATH_ONLY__ > 0
-
 /* Include bits/math-finite.h for double.  */
 # define _Mdouble_ double
 # define __MATH_DECLARING_DOUBLE 1
@@ -970,11 +925,9 @@ iszero (__T __val)
 # undef __MATH_DECLARING_FLOATN
 # undef __REDIRFROM_X
 # undef __REDIRTO_X
-
 /* When __USE_ISOC99 is defined, include math-finite for float and
    long double, as well.  */
 # ifdef __USE_ISOC99
-
 /* Include bits/math-finite.h for float.  */
 #  define _Mdouble_ float
 #  define __MATH_DECLARING_DOUBLE 0
@@ -989,7 +942,6 @@ iszero (__T __val)
 #  undef __MATH_DECLARING_FLOATN
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
-
 /* Include bits/math-finite.h for long double.  */
 #  ifdef __MATH_DECLARE_LDOUBLE
 #   define _Mdouble_ long double
@@ -1011,11 +963,8 @@ iszero (__T __val)
 #   undef __REDIRFROM_X
 #   undef __REDIRTO_X
 #  endif
-
-# endif /* __USE_ISOC99.  */
-
+# endif				/* __USE_ISOC99.  */
 /* Include bits/math-finite.h for _FloatN and _FloatNx.  */
-
 # if (__HAVE_DISTINCT_FLOAT16 || (__HAVE_FLOAT16 && !defined _LIBC))	\
       && __GLIBC_USE (IEC_60559_TYPES_EXT)
 #  define _Mdouble_ _Float16
@@ -1036,7 +985,6 @@ iszero (__T __val)
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
 # endif
-
 # if (__HAVE_DISTINCT_FLOAT32 || (__HAVE_FLOAT32 && !defined _LIBC))	\
       && __GLIBC_USE (IEC_60559_TYPES_EXT)
 #  define _Mdouble_ _Float32
@@ -1058,7 +1006,6 @@ iszero (__T __val)
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
 # endif
-
 # if (__HAVE_DISTINCT_FLOAT64 || (__HAVE_FLOAT64 && !defined _LIBC))	\
       && __GLIBC_USE (IEC_60559_TYPES_EXT)
 #  define _Mdouble_ _Float64
@@ -1080,7 +1027,6 @@ iszero (__T __val)
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
 # endif
-
 # if (__HAVE_DISTINCT_FLOAT128 || (__HAVE_FLOAT128 && !defined _LIBC))	\
       && __GLIBC_USE (IEC_60559_TYPES_EXT)
 #  define _Mdouble_ _Float128
@@ -1102,7 +1048,6 @@ iszero (__T __val)
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
 # endif
-
 # if (__HAVE_DISTINCT_FLOAT32X || (__HAVE_FLOAT32X && !defined _LIBC))	\
       && __GLIBC_USE (IEC_60559_TYPES_EXT)
 #  define _Mdouble_ _Float32x
@@ -1124,7 +1069,6 @@ iszero (__T __val)
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
 # endif
-
 # if (__HAVE_DISTINCT_FLOAT64X || (__HAVE_FLOAT64X && !defined _LIBC))	\
       && __GLIBC_USE (IEC_60559_TYPES_EXT)
 #  define _Mdouble_ _Float64x
@@ -1149,7 +1093,6 @@ iszero (__T __val)
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
 # endif
-
 # if (__HAVE_DISTINCT_FLOAT128X || (__HAVE_FLOAT128X && !defined _LIBC)) \
       && __GLIBC_USE (IEC_60559_TYPES_EXT)
 #  define _Mdouble_ _Float128x
@@ -1170,9 +1113,7 @@ iszero (__T __val)
 #  undef __REDIRFROM_X
 #  undef __REDIRTO_X
 # endif
-
-#endif /* __FINITE_MATH_ONLY__ > 0.  */
-
+#endif				/* __FINITE_MATH_ONLY__ > 0.  */
 #if __GLIBC_USE (IEC_60559_BFP_EXT)
 /* An expression whose type has the widest of the evaluation formats
    of X and Y (which are of floating-point types).  */
@@ -1185,7 +1126,6 @@ iszero (__T __val)
 # else
 #  define __MATH_EVAL_FMT2(x, y) ((x) + (y))
 # endif
-
 /* Return X == Y but raising "invalid" and setting errno if X or Y is
    a NaN.  */
 # if !defined __cplusplus || (__cplusplus < 201103L && !defined __GNUC__)
@@ -1201,66 +1141,48 @@ iszero (__T __val)
    information, however, only the type of the macro expansion is
    relevant (actually evaluating the expression would be incorrect).
    Thus, the type is used as a template parameter for __iseqsig_type,
-   which calls the appropriate underlying function.  */
-extern "C++" {
-template<typename> struct __iseqsig_type;
+   which calls the appropriate underlying function.  */ extern "C++" {
+	template < typename > struct __iseqsig_type;
 
-template<> struct __iseqsig_type<float>
-{
-  static int __call (float __x, float __y) throw ()
-  {
-    return __iseqsigf (__x, __y);
-  }
-};
+	 template <> struct __iseqsig_type <float > {
+		static int __call(float __x, float __y) throw() {
+			return __iseqsigf(__x, __y);
+	}};
 
-template<> struct __iseqsig_type<double>
-{
-  static int __call (double __x, double __y) throw ()
-  {
-    return __iseqsig (__x, __y);
-  }
-};
+	template <> struct __iseqsig_type <double > {
+		static int __call(double __x, double __y) throw() {
+			return __iseqsig(__x, __y);
+	}};
 
-template<> struct __iseqsig_type<long double>
-{
-  static int __call (double __x, double __y) throw ()
-  {
+	template <> struct __iseqsig_type <long double > {
+		static int __call(double __x, double __y) throw() {
 #  ifndef __NO_LONG_DOUBLE_MATH
-    return __iseqsigl (__x, __y);
+			return __iseqsigl(__x, __y);
 #  else
-    return __iseqsig (__x, __y);
+			return __iseqsig(__x, __y);
 #  endif
-  }
-};
+	}};
 
 #  if __HAVE_DISTINCT_FLOAT128
-template<> struct __iseqsig_type<_Float128>
-{
-  static int __call (_Float128 __x, _Float128 __y) throw ()
-  {
-    return __iseqsigf128 (__x, __y);
-  }
-};
+	template <> struct __iseqsig_type <_Float128 > {
+		static int __call(_Float128 __x, _Float128 __y) throw() {
+			return __iseqsigf128(__x, __y);
+	}};
 #  endif
 
-template<typename _T1, typename _T2>
-inline int
-iseqsig (_T1 __x, _T2 __y) throw ()
-{
+	template < typename _T1, typename _T2 > inline int iseqsig(_T1 __x, _T2 __y) throw() {
 #  if __cplusplus >= 201103L
-  typedef decltype (__MATH_EVAL_FMT2 (__x, __y)) _T3;
+		typedef decltype(__MATH_EVAL_FMT2(__x, __y)) _T3;
 #  else
-  typedef __typeof (__MATH_EVAL_FMT2 (__x, __y)) _T3;
+		typedef __typeof(__MATH_EVAL_FMT2(__x, __y)) _T3;
 #  endif
-  return __iseqsig_type<_T3>::__call (__x, __y);
-}
+		return __iseqsig_type < _T3 >::__call(__x, __y);
+	}
 
-} /* extern "C++" */
-# endif /* __cplusplus */
+}				/* extern "C++" */
+# endif				/* __cplusplus */
 
 #endif
 
 __END_DECLS
-
-
-#endif /* math.h  */
+#endif				/* math.h  */

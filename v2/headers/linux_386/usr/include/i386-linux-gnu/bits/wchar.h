@@ -46,4 +46,4 @@
 # define __WCHAR_MIN	(-__WCHAR_MAX - 1)
 #endif
 
-#endif	/* bits/wchar.h */
+#endif				/* bits/wchar.h */

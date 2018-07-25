@@ -55,4 +55,4 @@
 #undef	__SIGRTMAX
 #define __SIGRTMAX	64
 
-#endif	/* <signal.h> included.  */
+#endif				/* <signal.h> included.  */

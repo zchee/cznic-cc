@@ -71,9 +71,10 @@ extern "C++" {
 	__extern_always_inline void *memchr(void *__s, int __c, size_t __n) __THROW
 {
 	return __builtin_memchr(__s, __c, __n);
-} __extern_always_inline const void *memchr(const void *__s, int __c, size_t __n) __THROW {
-		return __builtin_memchr(__s, __c, __n);
 }
+	__extern_always_inline const void *memchr(const void *__s, int __c, size_t __n) __THROW {
+		return __builtin_memchr(__s, __c, __n);
+	}
 #endif
 }
 #else
@@ -202,9 +203,10 @@ extern "C++" {
 	__extern_always_inline char *strchr(char *__s, int __c) __THROW
 {
 	return __builtin_strchr(__s, __c);
-} __extern_always_inline const char *strchr(const char *__s, int __c) __THROW {
-		return __builtin_strchr(__s, __c);
 }
+	__extern_always_inline const char *strchr(const char *__s, int __c) __THROW {
+		return __builtin_strchr(__s, __c);
+	}
 #endif
 }
 #else
@@ -223,9 +225,10 @@ extern "C++" {
 	__extern_always_inline char *strrchr(char *__s, int __c) __THROW
 {
 	return __builtin_strrchr(__s, __c);
-} __extern_always_inline const char *strrchr(const char *__s, int __c) __THROW {
-		return __builtin_strrchr(__s, __c);
 }
+	__extern_always_inline const char *strrchr(const char *__s, int __c) __THROW {
+		return __builtin_strrchr(__s, __c);
+	}
 #endif
 }
 #else
@@ -270,9 +273,10 @@ extern "C++" {
 	__extern_always_inline char *strpbrk(char *__s, const char *__accept) __THROW
 {
 	return __builtin_strpbrk(__s, __accept);
-} __extern_always_inline const char *strpbrk(const char *__s, const char *__accept) __THROW {
-		return __builtin_strpbrk(__s, __accept);
 }
+	__extern_always_inline const char *strpbrk(const char *__s, const char *__accept) __THROW {
+		return __builtin_strpbrk(__s, __accept);
+	}
 #endif
 }
 #else
@@ -291,9 +295,10 @@ extern "C++" {
 	__extern_always_inline char *strstr(char *__haystack, const char *__needle) __THROW
 {
 	return __builtin_strstr(__haystack, __needle);
-} __extern_always_inline const char *strstr(const char *__haystack, const char *__needle) __THROW {
-		return __builtin_strstr(__haystack, __needle);
 }
+	__extern_always_inline const char *strstr(const char *__haystack, const char *__needle) __THROW {
+		return __builtin_strstr(__haystack, __needle);
+	}
 #endif
 }
 #else
@@ -421,9 +426,10 @@ extern "C++" {
 	__extern_always_inline char *index(char *__s, int __c) __THROW
 {
 	return __builtin_index(__s, __c);
-} __extern_always_inline const char *index(const char *__s, int __c) __THROW {
-		return __builtin_index(__s, __c);
 }
+	__extern_always_inline const char *index(const char *__s, int __c) __THROW {
+		return __builtin_index(__s, __c);
+	}
 #endif
 }
 #else
@@ -443,9 +449,10 @@ extern "C++" {
 	__extern_always_inline char *rindex(char *__s, int __c) __THROW
 {
 	return __builtin_rindex(__s, __c);
-} __extern_always_inline const char *rindex(const char *__s, int __c) __THROW {
-		return __builtin_rindex(__s, __c);
 }
+	__extern_always_inline const char *rindex(const char *__s, int __c) __THROW {
+		return __builtin_rindex(__s, __c);
+	}
 #endif
 }
 #else

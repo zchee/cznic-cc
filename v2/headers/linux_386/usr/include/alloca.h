@@ -24,17 +24,14 @@
 #include <stddef.h>
 
 __BEGIN_DECLS
-
 /* Remove any previous definitions.  */
 #undef	alloca
-
 /* Allocate a block that will be freed when the calling function exits.  */
-extern void *alloca (size_t __size) __THROW;
+extern void *alloca(size_t __size) __THROW;
 
 #ifdef	__GNUC__
 # define alloca(size)	__builtin_alloca (size)
-#endif /* GCC.  */
+#endif				/* GCC.  */
 
 __END_DECLS
-
-#endif /* alloca.h */
+#endif				/* alloca.h */

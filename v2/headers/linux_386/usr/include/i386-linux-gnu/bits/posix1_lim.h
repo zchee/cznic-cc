@@ -24,7 +24,6 @@
 #ifndef	_BITS_POSIX1_LIM_H
 #define	_BITS_POSIX1_LIM_H	1
 
-
 /* These are the standard-mandated minimum values.  */
 
 /* Minimum number of operations in one list I/O call.  */
@@ -155,15 +154,12 @@
 /* Maximum clock resolution in nanoseconds.  */
 #define _POSIX_CLOCKRES_MIN	20000000
 
-
 /* Get the implementation-specific values for the above.  */
 #include <bits/local_lim.h>
-
 
 #ifndef	SSIZE_MAX
 # define SSIZE_MAX	LONG_MAX
 #endif
-
 
 /* This value is a guaranteed minimum maximum.
    The current maximum can be got from `sysconf'.  */
@@ -172,4 +168,4 @@
 # define NGROUPS_MAX	8
 #endif
 
-#endif	/* bits/posix1_lim.h  */
+#endif				/* bits/posix1_lim.h  */

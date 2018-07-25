@@ -130,7 +130,7 @@
 /* Defined to a complex type if __HAVE_<type> is 1.  */
 # if __HAVE_FLOAT16
 #  if !__GNUC_PREREQ (7, 0) || defined __cplusplus
-typedef _Complex float __cfloat16 __attribute__ ((__mode__ (__HC__)));
+typedef _Complex float __cfloat16 __attribute__ ((__mode__(__HC__)));
 #   define __CFLOAT16 __cfloat16
 #  else
 #   define __CFLOAT16 _Complex _Float16
@@ -189,7 +189,7 @@ typedef _Complex float __cfloat16 __attribute__ ((__mode__ (__HC__)));
 # if __HAVE_FLOAT16
 
 #  if !__GNUC_PREREQ (7, 0) || defined __cplusplus
-typedef float _Float16 __attribute__ ((__mode__ (__HF__)));
+typedef float _Float16 __attribute__ ((__mode__(__HF__)));
 #  endif
 
 #  if !__GNUC_PREREQ (7, 0)
@@ -317,6 +317,6 @@ typedef _Float128 _Float64x;
 
 # endif
 
-#endif /* !__ASSEMBLER__.  */
+#endif				/* !__ASSEMBLER__.  */
 
-#endif /* _BITS_FLOATN_COMMON_H */
+#endif				/* _BITS_FLOATN_COMMON_H */

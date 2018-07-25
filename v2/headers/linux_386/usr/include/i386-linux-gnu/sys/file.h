@@ -25,32 +25,23 @@
 #endif
 
 __BEGIN_DECLS
-
-
 /* Alternate names for values for the WHENCE argument to `lseek'.
    These are the same as SEEK_SET, SEEK_CUR, and SEEK_END, respectively.  */
 #ifndef L_SET
-# define L_SET	0	/* Seek from beginning of file.  */
-# define L_INCR	1	/* Seek from current position.  */
-# define L_XTND	2	/* Seek from end of file.  */
+# define L_SET	0		/* Seek from beginning of file.  */
+# define L_INCR	1		/* Seek from current position.  */
+# define L_XTND	2		/* Seek from end of file.  */
 #endif
-
-
 /* Operations for the `flock' call.  */
-#define	LOCK_SH	1	/* Shared lock.  */
-#define	LOCK_EX	2 	/* Exclusive lock.  */
-#define	LOCK_UN	8	/* Unlock.  */
+#define	LOCK_SH	1		/* Shared lock.  */
+#define	LOCK_EX	2		/* Exclusive lock.  */
+#define	LOCK_UN	8		/* Unlock.  */
 #define	__LOCK_ATOMIC	16	/* Atomic update.  */
-
 /* Can be OR'd in to one of the above.  */
-#define	LOCK_NB	4	/* Don't block when locking.  */
-
-
+#define	LOCK_NB	4		/* Don't block when locking.  */
 /* Apply or remove an advisory lock, according to OPERATION,
    on the file FD refers to.  */
-extern int flock (int __fd, int __operation) __THROW;
-
+extern int flock(int __fd, int __operation) __THROW;
 
 __END_DECLS
-
-#endif /* sys/file.h  */
+#endif				/* sys/file.h  */

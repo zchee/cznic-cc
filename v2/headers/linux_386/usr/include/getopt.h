@@ -35,4 +35,4 @@
 #include <bits/getopt_core.h>
 #include <bits/getopt_ext.h>
 
-#endif /* getopt.h */
+#endif				/* getopt.h */

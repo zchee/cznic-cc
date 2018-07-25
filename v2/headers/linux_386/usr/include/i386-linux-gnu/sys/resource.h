@@ -29,7 +29,6 @@ typedef __id_t id_t;
 #endif
 
 __BEGIN_DECLS
-
 /* The X/Open standard defines that all the functions below must use
    `int' as the type for the first argument.  When we are compiling with
    GNU extensions we change this slightly to provide better error
@@ -47,56 +46,47 @@ typedef int __priority_which_t;
 /* Put the soft and hard limits for RESOURCE in *RLIMITS.
    Returns 0 if successful, -1 if not (and sets errno).  */
 #ifndef __USE_FILE_OFFSET64
-extern int getrlimit (__rlimit_resource_t __resource,
-		      struct rlimit *__rlimits) __THROW;
+extern int getrlimit(__rlimit_resource_t __resource, struct rlimit *__rlimits) __THROW;
 #else
 # ifdef __REDIRECT_NTH
-extern int __REDIRECT_NTH (getrlimit, (__rlimit_resource_t __resource,
-				       struct rlimit *__rlimits), getrlimit64);
+extern int __REDIRECT_NTH(getrlimit, (__rlimit_resource_t __resource, struct rlimit * __rlimits), getrlimit64);
 # else
 #  define getrlimit getrlimit64
 # endif
 #endif
 #ifdef __USE_LARGEFILE64
-extern int getrlimit64 (__rlimit_resource_t __resource,
-			struct rlimit64 *__rlimits) __THROW;
+extern int getrlimit64(__rlimit_resource_t __resource, struct rlimit64 *__rlimits) __THROW;
 #endif
 
 /* Set the soft and hard limits for RESOURCE to *RLIMITS.
    Only the super-user can increase hard limits.
    Return 0 if successful, -1 if not (and sets errno).  */
 #ifndef __USE_FILE_OFFSET64
-extern int setrlimit (__rlimit_resource_t __resource,
-		      const struct rlimit *__rlimits) __THROW;
+extern int setrlimit(__rlimit_resource_t __resource, const struct rlimit *__rlimits) __THROW;
 #else
 # ifdef __REDIRECT_NTH
-extern int __REDIRECT_NTH (setrlimit, (__rlimit_resource_t __resource,
-				       const struct rlimit *__rlimits),
-			   setrlimit64);
+extern int __REDIRECT_NTH(setrlimit, (__rlimit_resource_t __resource, const struct rlimit * __rlimits), setrlimit64);
 # else
 #  define setrlimit setrlimit64
 # endif
 #endif
 #ifdef __USE_LARGEFILE64
-extern int setrlimit64 (__rlimit_resource_t __resource,
-			const struct rlimit64 *__rlimits) __THROW;
+extern int setrlimit64(__rlimit_resource_t __resource, const struct rlimit64 *__rlimits) __THROW;
 #endif
 
 /* Return resource usage information on process indicated by WHO
    and put it in *USAGE.  Returns 0 for success, -1 for failure.  */
-extern int getrusage (__rusage_who_t __who, struct rusage *__usage) __THROW;
+extern int getrusage(__rusage_who_t __who, struct rusage *__usage) __THROW;
 
 /* Return the highest priority of any process specified by WHICH and WHO
    (see above); if WHO is zero, the current process, process group, or user
    (as specified by WHO) is used.  A lower priority number means higher
    priority.  Priorities range from PRIO_MIN to PRIO_MAX (above).  */
-extern int getpriority (__priority_which_t __which, id_t __who) __THROW;
+extern int getpriority(__priority_which_t __which, id_t __who) __THROW;
 
 /* Set the priority of all processes specified by WHICH and WHO (see above)
    to PRIO.  Returns 0 on success, -1 on errors.  */
-extern int setpriority (__priority_which_t __which, id_t __who, int __prio)
-     __THROW;
+extern int setpriority(__priority_which_t __which, id_t __who, int __prio) __THROW;
 
 __END_DECLS
-
-#endif	/* sys/resource.h  */
+#endif				/* sys/resource.h  */

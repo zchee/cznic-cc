@@ -24,7 +24,7 @@
 #define SO_LINGER	13
 #define SO_BSDCOMPAT	14
 #define SO_REUSEPORT	15
-#ifndef SO_PASSCRED /* powerpc only differs in these */
+#ifndef SO_PASSCRED		/* powerpc only differs in these */
 #define SO_PASSCRED	16
 #define SO_PEERCRED	17
 #define SO_RCVLOWAT	18
@@ -107,4 +107,4 @@
 
 #define SO_ZEROCOPY		60
 
-#endif /* __ASM_GENERIC_SOCKET_H */
+#endif				/* __ASM_GENERIC_SOCKET_H */

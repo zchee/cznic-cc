@@ -19,27 +19,24 @@ typedef union pthread_attr_t pthread_attr_t;
 #endif
 
 /* Structure to transport application-defined values with signals.  */
-typedef struct sigevent
-  {
-    __sigval_t sigev_value;
-    int sigev_signo;
-    int sigev_notify;
+typedef struct sigevent {
+	__sigval_t sigev_value;
+	int sigev_signo;
+	int sigev_notify;
 
-    union
-      {
-	int _pad[__SIGEV_PAD_SIZE];
+	union {
+		int _pad[__SIGEV_PAD_SIZE];
 
-	/* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the
-	   thread to receive the signal.  */
-	__pid_t _tid;
+		/* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the
+		   thread to receive the signal.  */
+		__pid_t _tid;
 
-	struct
-	  {
-	    void (*_function) (__sigval_t);	/* Function to start.  */
-	    pthread_attr_t *_attribute;		/* Thread attributes.  */
-	  } _sigev_thread;
-      } _sigev_un;
-  } sigevent_t;
+		struct {
+			void (*_function) (__sigval_t);	/* Function to start.  */
+			pthread_attr_t *_attribute;	/* Thread attributes.  */
+		} _sigev_thread;
+	} _sigev_un;
+} sigevent_t;
 
 /* POSIX names to access some of the members.  */
 #define sigev_notify_function   _sigev_un._sigev_thread._function

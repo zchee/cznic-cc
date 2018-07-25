@@ -66,7 +66,6 @@ typedef wchar_t __gwchar_t;
 # define PRIdFAST32	__PRIPTR_PREFIX "d"
 # define PRIdFAST64	__PRI64_PREFIX "d"
 
-
 # define PRIi8		"i"
 # define PRIi16		"i"
 # define PRIi32		"i"
@@ -146,7 +145,6 @@ typedef wchar_t __gwchar_t;
 # define PRIXFAST32	__PRIPTR_PREFIX "X"
 # define PRIXFAST64	__PRI64_PREFIX "X"
 
-
 /* Macros for printing `intmax_t' and `uintmax_t'.  */
 # define PRIdMAX	__PRI64_PREFIX "d"
 # define PRIiMAX	__PRI64_PREFIX "i"
@@ -155,7 +153,6 @@ typedef wchar_t __gwchar_t;
 # define PRIxMAX	__PRI64_PREFIX "x"
 # define PRIXMAX	__PRI64_PREFIX "X"
 
-
 /* Macros for printing `intptr_t' and `uintptr_t'.  */
 # define PRIdPTR	__PRIPTR_PREFIX "d"
 # define PRIiPTR	__PRIPTR_PREFIX "i"
@@ -163,7 +160,6 @@ typedef wchar_t __gwchar_t;
 # define PRIuPTR	__PRIPTR_PREFIX "u"
 # define PRIxPTR	__PRIPTR_PREFIX "x"
 # define PRIXPTR	__PRIPTR_PREFIX "X"
-
 
 /* Macros for scanning format specifiers.  */
 
@@ -247,7 +243,6 @@ typedef wchar_t __gwchar_t;
 # define SCNxFAST32	__PRIPTR_PREFIX "x"
 # define SCNxFAST64	__PRI64_PREFIX "x"
 
-
 /* Macros for scanning `intmax_t' and `uintmax_t'.  */
 # define SCNdMAX	__PRI64_PREFIX "d"
 # define SCNiMAX	__PRI64_PREFIX "i"
@@ -262,173 +257,115 @@ typedef wchar_t __gwchar_t;
 # define SCNuPTR	__PRIPTR_PREFIX "u"
 # define SCNxPTR	__PRIPTR_PREFIX "x"
 
-
 __BEGIN_DECLS
-
 #if __WORDSIZE == 64
-
 /* We have to define the `uintmax_t' type using `ldiv_t'.  */
-typedef struct
-  {
-    long int quot;		/* Quotient.  */
-    long int rem;		/* Remainder.  */
-  } imaxdiv_t;
+    typedef struct {
+	long int quot;		/* Quotient.  */
+	long int rem;		/* Remainder.  */
+} imaxdiv_t;
 
 #else
-
 /* We have to define the `uintmax_t' type using `lldiv_t'.  */
-typedef struct
-  {
-    __extension__ long long int quot;	/* Quotient.  */
-    __extension__ long long int rem;	/* Remainder.  */
-  } imaxdiv_t;
+    typedef struct {
+	__extension__ long long int quot;	/* Quotient.  */
+	__extension__ long long int rem;	/* Remainder.  */
+} imaxdiv_t;
 
 #endif
 
-
 /* Compute absolute value of N.  */
-extern intmax_t imaxabs (intmax_t __n) __THROW __attribute__ ((__const__));
+extern intmax_t imaxabs(intmax_t __n)
+__THROW __attribute__ ((__const__));
 
 /* Return the `imaxdiv_t' representation of the value of NUMER over DENOM. */
-extern imaxdiv_t imaxdiv (intmax_t __numer, intmax_t __denom)
-      __THROW __attribute__ ((__const__));
+extern imaxdiv_t imaxdiv(intmax_t __numer, intmax_t __denom)
+__THROW __attribute__ ((__const__));
 
 /* Like `strtol' but convert to `intmax_t'.  */
-extern intmax_t strtoimax (const char *__restrict __nptr,
-			   char **__restrict __endptr, int __base) __THROW;
+extern intmax_t strtoimax(const char *__restrict __nptr, char **__restrict __endptr, int __base) __THROW;
 
 /* Like `strtoul' but convert to `uintmax_t'.  */
-extern uintmax_t strtoumax (const char *__restrict __nptr,
-			    char ** __restrict __endptr, int __base) __THROW;
+extern uintmax_t strtoumax(const char *__restrict __nptr, char **__restrict __endptr, int __base) __THROW;
 
 /* Like `wcstol' but convert to `intmax_t'.  */
-extern intmax_t wcstoimax (const __gwchar_t *__restrict __nptr,
-			   __gwchar_t **__restrict __endptr, int __base)
-     __THROW;
+extern intmax_t wcstoimax(const __gwchar_t * __restrict __nptr, __gwchar_t ** __restrict __endptr, int __base) __THROW;
 
 /* Like `wcstoul' but convert to `uintmax_t'.  */
-extern uintmax_t wcstoumax (const __gwchar_t *__restrict __nptr,
-			    __gwchar_t ** __restrict __endptr, int __base)
-     __THROW;
+extern uintmax_t wcstoumax(const __gwchar_t * __restrict __nptr, __gwchar_t ** __restrict __endptr, int __base) __THROW;
 
 #ifdef __USE_EXTERN_INLINES
 
 # if __WORDSIZE == 64
 
-extern long int __strtol_internal (const char *__restrict __nptr,
-				   char **__restrict __endptr,
-				   int __base, int __group)
-  __THROW __nonnull ((1)) __wur;
+extern long int __strtol_internal(const char *__restrict __nptr, char **__restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `strtol' but convert to `intmax_t'.  */
-__extern_inline intmax_t
-__NTH (strtoimax (const char *__restrict nptr, char **__restrict endptr,
-		  int base))
+__extern_inline intmax_t __NTH(strtoimax(const char *__restrict nptr, char **__restrict endptr, int base))
 {
-  return __strtol_internal (nptr, endptr, base, 0);
+	return __strtol_internal(nptr, endptr, base, 0);
 }
 
-extern unsigned long int __strtoul_internal (const char *__restrict __nptr,
-					     char ** __restrict __endptr,
-					     int __base, int __group)
-  __THROW __nonnull ((1)) __wur;
+extern unsigned long int __strtoul_internal(const char *__restrict __nptr, char **__restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `strtoul' but convert to `uintmax_t'.  */
-__extern_inline uintmax_t
-__NTH (strtoumax (const char *__restrict nptr, char **__restrict endptr,
-		  int base))
+__extern_inline uintmax_t __NTH(strtoumax(const char *__restrict nptr, char **__restrict endptr, int base))
 {
-  return __strtoul_internal (nptr, endptr, base, 0);
+	return __strtoul_internal(nptr, endptr, base, 0);
 }
 
-extern long int __wcstol_internal (const __gwchar_t * __restrict __nptr,
-				   __gwchar_t **__restrict __endptr,
-				   int __base, int __group)
-  __THROW __nonnull ((1)) __wur;
+extern long int __wcstol_internal(const __gwchar_t * __restrict __nptr, __gwchar_t ** __restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `wcstol' but convert to `intmax_t'.  */
-__extern_inline intmax_t
-__NTH (wcstoimax (const __gwchar_t *__restrict nptr,
-		  __gwchar_t **__restrict endptr, int base))
+__extern_inline intmax_t __NTH(wcstoimax(const __gwchar_t * __restrict nptr, __gwchar_t ** __restrict endptr, int base))
 {
-  return __wcstol_internal (nptr, endptr, base, 0);
+	return __wcstol_internal(nptr, endptr, base, 0);
 }
 
-extern unsigned long int __wcstoul_internal (const __gwchar_t *
-					     __restrict __nptr,
-					     __gwchar_t **
-					     __restrict __endptr,
-					     int __base, int __group)
-  __THROW __nonnull ((1)) __wur;
+extern unsigned long int __wcstoul_internal(const __gwchar_t * __restrict __nptr, __gwchar_t ** __restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `wcstoul' but convert to `uintmax_t'.  */
-__extern_inline uintmax_t
-__NTH (wcstoumax (const __gwchar_t *__restrict nptr,
-		  __gwchar_t **__restrict endptr, int base))
+__extern_inline uintmax_t __NTH(wcstoumax(const __gwchar_t * __restrict nptr, __gwchar_t ** __restrict endptr, int base))
 {
-  return __wcstoul_internal (nptr, endptr, base, 0);
+	return __wcstoul_internal(nptr, endptr, base, 0);
 }
 
-# else /* __WORDSIZE == 32 */
+# else				/* __WORDSIZE == 32 */
 
-__extension__
-extern long long int __strtoll_internal (const char *__restrict __nptr,
-					 char **__restrict __endptr,
-					 int __base, int __group)
-  __THROW __nonnull ((1)) __wur;
+__extension__ extern long long int __strtoll_internal(const char *__restrict __nptr, char **__restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `strtol' but convert to `intmax_t'.  */
-__extern_inline intmax_t
-__NTH (strtoimax (const char *__restrict nptr, char **__restrict endptr,
-		  int base))
+__extern_inline intmax_t __NTH(strtoimax(const char *__restrict nptr, char **__restrict endptr, int base))
 {
-  return __strtoll_internal (nptr, endptr, base, 0);
+	return __strtoll_internal(nptr, endptr, base, 0);
 }
 
-__extension__
-extern unsigned long long int __strtoull_internal (const char *
-						   __restrict __nptr,
-						   char **
-						   __restrict __endptr,
-						   int __base,
-						   int __group)
-  __THROW __nonnull ((1)) __wur;
+__extension__ extern unsigned long long int __strtoull_internal(const char *__restrict __nptr, char **__restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `strtoul' but convert to `uintmax_t'.  */
-__extern_inline uintmax_t
-__NTH (strtoumax (const char *__restrict nptr, char **__restrict endptr,
-		  int base))
+__extern_inline uintmax_t __NTH(strtoumax(const char *__restrict nptr, char **__restrict endptr, int base))
 {
-  return __strtoull_internal (nptr, endptr, base, 0);
+	return __strtoull_internal(nptr, endptr, base, 0);
 }
 
-__extension__
-extern long long int __wcstoll_internal (const __gwchar_t *__restrict __nptr,
-					 __gwchar_t **__restrict __endptr,
-					 int __base, int __group)
-  __THROW __nonnull ((1)) __wur;
+__extension__ extern long long int __wcstoll_internal(const __gwchar_t * __restrict __nptr, __gwchar_t ** __restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `wcstol' but convert to `intmax_t'.  */
-__extern_inline intmax_t
-__NTH (wcstoimax (const __gwchar_t *__restrict nptr,
-		  __gwchar_t **__restrict endptr, int base))
+__extern_inline intmax_t __NTH(wcstoimax(const __gwchar_t * __restrict nptr, __gwchar_t ** __restrict endptr, int base))
 {
-  return __wcstoll_internal (nptr, endptr, base, 0);
+	return __wcstoll_internal(nptr, endptr, base, 0);
 }
 
-
-__extension__
-extern unsigned long long int __wcstoull_internal (const __gwchar_t *
-						   __restrict __nptr,
-						   __gwchar_t **
-						   __restrict __endptr,
-						   int __base,
-						   int __group)
-  __THROW __nonnull ((1)) __wur;
+__extension__ extern unsigned long long int __wcstoull_internal(const __gwchar_t * __restrict __nptr, __gwchar_t ** __restrict __endptr, int __base, int __group)
+__THROW __nonnull((1)) __wur;
 /* Like `wcstoul' but convert to `uintmax_t'.  */
-__extern_inline uintmax_t
-__NTH (wcstoumax (const __gwchar_t *__restrict nptr,
-		  __gwchar_t **__restrict endptr, int base))
+__extern_inline uintmax_t __NTH(wcstoumax(const __gwchar_t * __restrict nptr, __gwchar_t ** __restrict endptr, int base))
 {
-  return __wcstoull_internal (nptr, endptr, base, 0);
+	return __wcstoull_internal(nptr, endptr, base, 0);
 }
 
-# endif	/* __WORDSIZE == 32	*/
-#endif	/* Use extern inlines.  */
+# endif				/* __WORDSIZE == 32     */
+#endif				/* Use extern inlines.  */
 
 __END_DECLS
-
-#endif /* inttypes.h */
+#endif				/* inttypes.h */

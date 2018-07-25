@@ -117,7 +117,7 @@ __USING_NAMESPACE_C99(mbstate_t)
 #if defined __USE_XOPEN && !defined __USE_UNIX98
 #include <wctype.h>
 #endif
- __BEGIN_DECLS __BEGIN_NAMESPACE_STD
+__BEGIN_DECLS __BEGIN_NAMESPACE_STD
 /* This incomplete type is defined in <time.h> but needed here because
    of `wcsftime'.  */
 struct tm;

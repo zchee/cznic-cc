@@ -71,4 +71,4 @@
     return __dev;						\
   }
 
-#endif /* bits/sysmacros.h */
+#endif				/* bits/sysmacros.h */

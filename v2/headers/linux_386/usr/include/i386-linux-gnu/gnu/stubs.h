@@ -2,7 +2,6 @@
    This file selects the right generated file of `__stub_FUNCTION' macros
    based on the architecture being compiled for.  */
 
-
 #if !defined __x86_64__
 # include <gnu/stubs-32.h>
 #endif

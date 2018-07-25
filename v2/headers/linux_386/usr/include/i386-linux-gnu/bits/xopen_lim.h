@@ -56,7 +56,6 @@
    if this is indeed fixed by the underlying system.
 */
 
-
 /* Maximum number of `iovec' structures that may be used in a single call
    to `readv', `writev', etc.  */
 #define	_XOPEN_IOV_MAX	_POSIX_UIO_MAXIOV
@@ -92,7 +91,6 @@
 
 /* Default process priority.  */
 #define NZERO		20
-
 
 /* Number of bits in a word of type `int'.  */
 #ifdef INT_MAX
@@ -145,4 +143,4 @@
 # endif
 #endif
 
-#endif /* bits/xopen_lim.h */
+#endif				/* bits/xopen_lim.h */

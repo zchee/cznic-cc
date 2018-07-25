@@ -114,7 +114,6 @@
    guard.  Feature test macros that can be handled from the first
    system header included are handled here.  */
 
-
 /* Undefine everything, so we get a clean slate.  */
 #undef	__USE_ISOC11
 #undef	__USE_ISOC99
@@ -431,7 +430,7 @@
 #  define __USE_LARGEFILE64	1
 # endif
 
-#endif	/* !ASSEMBLER */
+#endif				/* !ASSEMBLER */
 
 /* Decide whether we can define 'extern inline' functions in headers.  */
 #if __GNUC_PREREQ (2, 7) && defined __OPTIMIZE__ \
@@ -440,12 +439,10 @@
 # define __USE_EXTERN_INLINES	1
 #endif
 
-
 /* This is here only because every header file already includes this one.
    Get the definitions of all the appropriate `__stub_FUNCTION' symbols.
    <gnu/stubs.h> contains `#define __stub_FUNCTION' when FUNCTION is a stub
    that will always return failure (and set errno to ENOSYS).  */
 #include <gnu/stubs.h>
 
-
-#endif	/* features.h  */
+#endif				/* features.h  */

@@ -14,7 +14,7 @@
  * Even better than compiling with -DZ_PREFIX would be to use configure to set
  * this permanently in zconf.h using "./configure --zprefix".
  */
-#ifdef Z_PREFIX     /* may be set to #if 1 by ./configure */
+#ifdef Z_PREFIX			/* may be set to #if 1 by ./configure */
 #  define Z_PREFIX_SET
 
 /* all linked symbols and init macros */
@@ -221,13 +221,13 @@
 #  define STDC
 #endif
 
-#if defined(__OS400__) && !defined(STDC)    /* iSeries (formerly AS/400). */
+#if defined(__OS400__) && !defined(STDC)	/* iSeries (formerly AS/400). */
 #  define STDC
 #endif
 
 #ifndef STDC
-#  ifndef const /* cannot use !defined(STDC) && !defined(const) on Mac */
-#    define const       /* note: need a more gentle solution here */
+#  ifndef const			/* cannot use !defined(STDC) && !defined(const) on Mac */
+#    define const		/* note: need a more gentle solution here */
 #  endif
 #endif
 
@@ -238,16 +238,16 @@
 #endif
 
 #ifdef Z_SOLO
-   typedef unsigned long z_size_t;
+typedef unsigned long z_size_t;
 #else
 #  define z_longlong long long
 #  if defined(NO_SIZE_T)
-     typedef unsigned NO_SIZE_T z_size_t;
+typedef unsigned NO_SIZE_T z_size_t;
 #  elif defined(STDC)
 #    include <stddef.h>
-     typedef size_t z_size_t;
+typedef size_t z_size_t;
 #  else
-     typedef unsigned long z_size_t;
+typedef unsigned long z_size_t;
 #  endif
 #  undef z_longlong
 #endif
@@ -267,7 +267,7 @@
  * gzip.)
  */
 #ifndef MAX_WBITS
-#  define MAX_WBITS   15 /* 32K LZ77 window */
+#  define MAX_WBITS   15	/* 32K LZ77 window */
 #endif
 
 /* The memory requirements for deflate are (in bytes):
@@ -283,9 +283,9 @@
  for small objects.
 */
 
-                        /* Type declarations */
+			/* Type declarations */
 
-#ifndef OF /* function prototypes */
+#ifndef OF			/* function prototypes */
 #  ifdef STDC
 #    define OF(args)  args
 #  else
@@ -293,7 +293,7 @@
 #  endif
 #endif
 
-#ifndef Z_ARG /* function prototypes for stdarg */
+#ifndef Z_ARG			/* function prototypes for stdarg */
 #  if defined(STDC) || defined(Z_HAVE_STDARG_H)
 #    define Z_ARG(args)  args
 #  else
@@ -340,7 +340,7 @@
 #        define ZEXTERN extern __declspec(dllimport)
 #      endif
 #    endif
-#  endif  /* ZLIB_DLL */
+#  endif			/* ZLIB_DLL */
    /* If building or using zlib with the WINAPI/WINAPIV calling convention,
     * define ZLIB_WINAPI.
     * Caution: the standard ZLIB1.DLL is NOT compiled using ZLIB_WINAPI.
@@ -388,30 +388,30 @@
 #endif
 
 #if !defined(__MACTYPES__)
-typedef unsigned char  Byte;  /* 8 bits */
+typedef unsigned char Byte;	/* 8 bits */
 #endif
-typedef unsigned int   uInt;  /* 16 bits or more */
-typedef unsigned long  uLong; /* 32 bits or more */
+typedef unsigned int uInt;	/* 16 bits or more */
+typedef unsigned long uLong;	/* 32 bits or more */
 
 #ifdef SMALL_MEDIUM
    /* Borland C/C++ and some old MSC versions ignore FAR inside typedef */
 #  define Bytef Byte FAR
 #else
-   typedef Byte  FAR Bytef;
+typedef Byte FAR Bytef;
 #endif
-typedef char  FAR charf;
-typedef int   FAR intf;
-typedef uInt  FAR uIntf;
+typedef char FAR charf;
+typedef int FAR intf;
+typedef uInt FAR uIntf;
 typedef uLong FAR uLongf;
 
 #ifdef STDC
-   typedef void const *voidpc;
-   typedef void FAR   *voidpf;
-   typedef void       *voidp;
+typedef void const *voidpc;
+typedef void FAR *voidpf;
+typedef void *voidp;
 #else
-   typedef Byte const *voidpc;
-   typedef Byte FAR   *voidpf;
-   typedef Byte       *voidp;
+typedef Byte const *voidpc;
+typedef Byte FAR *voidpf;
+typedef Byte *voidp;
 #endif
 
 #if !defined(Z_U4) && !defined(Z_SOLO) && defined(STDC)
@@ -426,34 +426,34 @@ typedef uLong FAR uLongf;
 #endif
 
 #ifdef Z_U4
-   typedef Z_U4 z_crc_t;
+typedef Z_U4 z_crc_t;
 #else
-   typedef unsigned long z_crc_t;
+typedef unsigned long z_crc_t;
 #endif
 
-#if 1    /* was set to #if 1 by ./configure */
+#if 1				/* was set to #if 1 by ./configure */
 #  define Z_HAVE_UNISTD_H
 #endif
 
-#if 1    /* was set to #if 1 by ./configure */
+#if 1				/* was set to #if 1 by ./configure */
 #  define Z_HAVE_STDARG_H
 #endif
 
 #ifdef STDC
 #  ifndef Z_SOLO
-#    include <sys/types.h>      /* for off_t */
+#    include <sys/types.h>	/* for off_t */
 #  endif
 #endif
 
 #if defined(STDC) || defined(Z_HAVE_STDARG_H)
 #  ifndef Z_SOLO
-#    include <stdarg.h>         /* for va_list */
+#    include <stdarg.h>		/* for va_list */
 #  endif
 #endif
 
 #ifdef _WIN32
 #  ifndef Z_SOLO
-#    include <stddef.h>         /* for wchar_t */
+#    include <stddef.h>		/* for wchar_t */
 #  endif
 #endif
 
@@ -472,9 +472,9 @@ typedef uLong FAR uLongf;
 #endif
 #ifndef Z_SOLO
 #  if defined(Z_HAVE_UNISTD_H) || defined(_LARGEFILE64_SOURCE)
-#    include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
+#    include <unistd.h>		/* for SEEK_*, off_t, and _LFS64_LARGEFILE */
 #    ifdef VMS
-#      include <unixio.h>       /* for off_t */
+#      include <unixio.h>	/* for off_t */
 #    endif
 #    ifndef z_off_t
 #      define z_off_t off_t
@@ -495,9 +495,9 @@ typedef uLong FAR uLongf;
 #endif
 
 #if !defined(SEEK_SET) && !defined(Z_SOLO)
-#  define SEEK_SET        0       /* Seek from beginning of file.  */
-#  define SEEK_CUR        1       /* Seek from current position.  */
-#  define SEEK_END        2       /* Set file pointer to EOF plus "offset" */
+#  define SEEK_SET        0	/* Seek from beginning of file.  */
+#  define SEEK_CUR        1	/* Seek from current position.  */
+#  define SEEK_END        2	/* Set file pointer to EOF plus "offset" */
 #endif
 
 #ifndef z_off_t
@@ -516,19 +516,19 @@ typedef uLong FAR uLongf;
 
 /* MVS linker does not support external names larger than 8 bytes */
 #if defined(__MVS__)
-  #pragma map(deflateInit_,"DEIN")
-  #pragma map(deflateInit2_,"DEIN2")
-  #pragma map(deflateEnd,"DEEND")
-  #pragma map(deflateBound,"DEBND")
-  #pragma map(inflateInit_,"ININ")
-  #pragma map(inflateInit2_,"ININ2")
-  #pragma map(inflateEnd,"INEND")
-  #pragma map(inflateSync,"INSY")
-  #pragma map(inflateSetDictionary,"INSEDI")
-  #pragma map(compressBound,"CMBND")
-  #pragma map(inflate_table,"INTABL")
-  #pragma map(inflate_fast,"INFA")
-  #pragma map(inflate_copyright,"INCOPY")
+#pragma map(deflateInit_,"DEIN")
+#pragma map(deflateInit2_,"DEIN2")
+#pragma map(deflateEnd,"DEEND")
+#pragma map(deflateBound,"DEBND")
+#pragma map(inflateInit_,"ININ")
+#pragma map(inflateInit2_,"ININ2")
+#pragma map(inflateEnd,"INEND")
+#pragma map(inflateSync,"INSY")
+#pragma map(inflateSetDictionary,"INSEDI")
+#pragma map(compressBound,"CMBND")
+#pragma map(inflate_table,"INTABL")
+#pragma map(inflate_fast,"INFA")
+#pragma map(inflate_copyright,"INCOPY")
 #endif
 
-#endif /* ZCONF_H */
+#endif				/* ZCONF_H */

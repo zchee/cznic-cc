@@ -26,4 +26,4 @@ typedef __int16_t int16_t;
 typedef __int32_t int32_t;
 typedef __int64_t int64_t;
 
-#endif /* bits/stdint-intn.h */
+#endif				/* bits/stdint-intn.h */

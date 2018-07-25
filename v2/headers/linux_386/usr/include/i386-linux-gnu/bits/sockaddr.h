@@ -23,7 +23,6 @@
 #ifndef _BITS_SOCKADDR_H
 #define _BITS_SOCKADDR_H	1
 
-
 /* POSIX.1g specifies this type name for the `sa_family' member.  */
 typedef unsigned short int sa_family_t;
 
@@ -39,4 +38,4 @@ typedef unsigned short int sa_family_t;
 /* Size of struct sockaddr_storage.  */
 #define _SS_SIZE 128
 
-#endif	/* bits/sockaddr.h */
+#endif				/* bits/sockaddr.h */

@@ -79,15 +79,13 @@
 /* Common definition of pthread_mutex_t. */
 
 #if !__PTHREAD_MUTEX_USE_UNION
-typedef struct __pthread_internal_list
-{
-  struct __pthread_internal_list *__prev;
-  struct __pthread_internal_list *__next;
+typedef struct __pthread_internal_list {
+	struct __pthread_internal_list *__prev;
+	struct __pthread_internal_list *__next;
 } __pthread_list_t;
 #else
-typedef struct __pthread_internal_slist
-{
-  struct __pthread_internal_slist *__next;
+typedef struct __pthread_internal_slist {
+	struct __pthread_internal_slist *__next;
 } __pthread_slist_t;
 #endif
 
@@ -115,64 +113,55 @@ typedef struct __pthread_internal_slist
 # define __PTHREAD_SPINS 0
 #endif
 
-struct __pthread_mutex_s
-{
-  int __lock __LOCK_ALIGNMENT;
-  unsigned int __count;
-  int __owner;
+struct __pthread_mutex_s {
+	int __lock __LOCK_ALIGNMENT;
+	unsigned int __count;
+	int __owner;
 #if !__PTHREAD_MUTEX_NUSERS_AFTER_KIND
-  unsigned int __nusers;
+	unsigned int __nusers;
 #endif
-  /* KIND must stay at this position in the structure to maintain
-     binary compatibility with static initializers.  */
-  int __kind;
-  __PTHREAD_COMPAT_PADDING_MID
+	/* KIND must stay at this position in the structure to maintain
+	   binary compatibility with static initializers.  */
+	int __kind;
+	 __PTHREAD_COMPAT_PADDING_MID
 #if __PTHREAD_MUTEX_NUSERS_AFTER_KIND
-  unsigned int __nusers;
+	unsigned int __nusers;
 #endif
 #if !__PTHREAD_MUTEX_USE_UNION
-  __PTHREAD_SPINS_DATA;
-  __pthread_list_t __list;
+	 __PTHREAD_SPINS_DATA;
+	__pthread_list_t __list;
 # define __PTHREAD_MUTEX_HAVE_PREV      1
 #else
-  __extension__ union
-  {
-    __PTHREAD_SPINS_DATA;
-    __pthread_slist_t __list;
-  };
+	__extension__ union {
+		__PTHREAD_SPINS_DATA;
+		__pthread_slist_t __list;
+	};
 # define __PTHREAD_MUTEX_HAVE_PREV      0
 #endif
-  __PTHREAD_COMPAT_PADDING_END
-};
-
+ __PTHREAD_COMPAT_PADDING_END};
 
 /* Common definition of pthread_cond_t. */
 
-struct __pthread_cond_s
-{
-  __extension__ union
-  {
-    __extension__ unsigned long long int __wseq;
-    struct
-    {
-      unsigned int __low;
-      unsigned int __high;
-    } __wseq32;
-  };
-  __extension__ union
-  {
-    __extension__ unsigned long long int __g1_start;
-    struct
-    {
-      unsigned int __low;
-      unsigned int __high;
-    } __g1_start32;
-  };
-  unsigned int __g_refs[2] __LOCK_ALIGNMENT;
-  unsigned int __g_size[2];
-  unsigned int __g1_orig_size;
-  unsigned int __wrefs;
-  unsigned int __g_signals[2];
+struct __pthread_cond_s {
+	__extension__ union {
+		__extension__ unsigned long long int __wseq;
+		struct {
+			unsigned int __low;
+			unsigned int __high;
+		} __wseq32;
+	};
+	__extension__ union {
+		__extension__ unsigned long long int __g1_start;
+		struct {
+			unsigned int __low;
+			unsigned int __high;
+		} __g1_start32;
+	};
+	unsigned int __g_refs[2] __LOCK_ALIGNMENT;
+	unsigned int __g_size[2];
+	unsigned int __g1_orig_size;
+	unsigned int __wrefs;
+	unsigned int __g_signals[2];
 };
 
-#endif /* _THREAD_SHARED_TYPES_H  */
+#endif				/* _THREAD_SHARED_TYPES_H  */

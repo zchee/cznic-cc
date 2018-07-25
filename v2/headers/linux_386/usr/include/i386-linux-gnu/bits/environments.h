@@ -62,7 +62,7 @@
 # define _POSIX_V6_LP64_OFF64	1
 # define _XBS5_LP64_OFF64	1
 
-#else /* __WORDSIZE == 32 */
+#else				/* __WORDSIZE == 32 */
 
 /* We have 32-bit wide `int', `long int' and pointers and all platforms
    support LFS.  -mx32 has 64-bit wide `off_t'.  */
@@ -90,7 +90,7 @@
    # undef _XBS5_LPBIG_OFFBIG
    and sysconf tests for it at runtime.  */
 
-#endif /* __WORDSIZE == 32 */
+#endif				/* __WORDSIZE == 32 */
 
 #define __ILP32_OFF32_CFLAGS	"-m32"
 #define __ILP32_OFF32_LDFLAGS	"-m32"

@@ -36,9 +36,8 @@ typedef __CPU_MASK_TYPE __cpu_mask;
 #define __CPUMASK(cpu)	((__cpu_mask) 1 << ((cpu) % __NCPUBITS))
 
 /* Data structure to describe CPU mask.  */
-typedef struct
-{
-  __cpu_mask __bits[__CPU_SETSIZE / __NCPUBITS];
+typedef struct {
+	__cpu_mask __bits[__CPU_SETSIZE / __NCPUBITS];
 } cpu_set_t;
 
 /* Access functions for CPU masks.  */
@@ -112,13 +111,10 @@ typedef struct
 #define __CPU_ALLOC(count) __sched_cpualloc (count)
 #define __CPU_FREE(cpuset) __sched_cpufree (cpuset)
 
-__BEGIN_DECLS
-
-extern int __sched_cpucount (size_t __setsize, const cpu_set_t *__setp)
-     __THROW;
-extern cpu_set_t *__sched_cpualloc (size_t __count) __THROW __wur;
-extern void __sched_cpufree (cpu_set_t *__set) __THROW;
+__BEGIN_DECLS extern int __sched_cpucount(size_t __setsize, const cpu_set_t * __setp) __THROW;
+extern cpu_set_t *__sched_cpualloc(size_t __count)
+__THROW __wur;
+extern void __sched_cpufree(cpu_set_t * __set) __THROW;
 
 __END_DECLS
-
-#endif /* bits/cpu-set.h */
+#endif				/* bits/cpu-set.h */

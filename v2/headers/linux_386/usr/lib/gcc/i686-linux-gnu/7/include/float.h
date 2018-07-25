@@ -208,7 +208,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #undef DECIMAL_DIG
 #define DECIMAL_DIG	__DECIMAL_DIG__
 
-#endif /* C99 */
+#endif				/* C99 */
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 /* Versions of DECIMAL_DIG for each floating-point type.  */
@@ -235,7 +235,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define DBL_TRUE_MIN	__DBL_DENORM_MIN__
 #define LDBL_TRUE_MIN	__LDBL_DENORM_MIN__
 
-#endif /* C11 */
+#endif				/* C11 */
 
 #ifdef __STDC_WANT_IEC_60559_BFP_EXT__
 /* Number of decimal digits for which conversions between decimal
@@ -271,7 +271,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define FLT16_DECIMAL_DIG	__FLT16_DECIMAL_DIG__
 #undef FLT16_TRUE_MIN
 #define FLT16_TRUE_MIN		__FLT16_DENORM_MIN__
-#endif /* __FLT16_MANT_DIG__.  */
+#endif				/* __FLT16_MANT_DIG__.  */
 
 #ifdef __FLT32_MANT_DIG__
 #undef FLT32_MANT_DIG
@@ -296,7 +296,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define FLT32_DECIMAL_DIG	__FLT32_DECIMAL_DIG__
 #undef FLT32_TRUE_MIN
 #define FLT32_TRUE_MIN		__FLT32_DENORM_MIN__
-#endif /* __FLT32_MANT_DIG__.  */
+#endif				/* __FLT32_MANT_DIG__.  */
 
 #ifdef __FLT64_MANT_DIG__
 #undef FLT64_MANT_DIG
@@ -321,7 +321,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define FLT64_DECIMAL_DIG	__FLT64_DECIMAL_DIG__
 #undef FLT64_TRUE_MIN
 #define FLT64_TRUE_MIN		__FLT64_DENORM_MIN__
-#endif /* __FLT64_MANT_DIG__.  */
+#endif				/* __FLT64_MANT_DIG__.  */
 
 #ifdef __FLT128_MANT_DIG__
 #undef FLT128_MANT_DIG
@@ -346,7 +346,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define FLT128_DECIMAL_DIG	__FLT128_DECIMAL_DIG__
 #undef FLT128_TRUE_MIN
 #define FLT128_TRUE_MIN		__FLT128_DENORM_MIN__
-#endif /* __FLT128_MANT_DIG__.  */
+#endif				/* __FLT128_MANT_DIG__.  */
 
 #ifdef __FLT32X_MANT_DIG__
 #undef FLT32X_MANT_DIG
@@ -371,7 +371,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define FLT32X_DECIMAL_DIG	__FLT32X_DECIMAL_DIG__
 #undef FLT32X_TRUE_MIN
 #define FLT32X_TRUE_MIN		__FLT32X_DENORM_MIN__
-#endif /* __FLT32X_MANT_DIG__.  */
+#endif				/* __FLT32X_MANT_DIG__.  */
 
 #ifdef __FLT64X_MANT_DIG__
 #undef FLT64X_MANT_DIG
@@ -396,7 +396,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define FLT64X_DECIMAL_DIG	__FLT64X_DECIMAL_DIG__
 #undef FLT64X_TRUE_MIN
 #define FLT64X_TRUE_MIN		__FLT64X_DENORM_MIN__
-#endif /* __FLT64X_MANT_DIG__.  */
+#endif				/* __FLT64X_MANT_DIG__.  */
 
 #ifdef __FLT128X_MANT_DIG__
 #undef FLT128X_MANT_DIG
@@ -421,9 +421,9 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define FLT128X_DECIMAL_DIG	__FLT128X_DECIMAL_DIG__
 #undef FLT128X_TRUE_MIN
 #define FLT128X_TRUE_MIN	__FLT128X_DENORM_MIN__
-#endif /* __FLT128X_MANT_DIG__.  */
+#endif				/* __FLT128X_MANT_DIG__.  */
 
-#endif /* __STDC_WANT_IEC_60559_TYPES_EXT__.  */
+#endif				/* __STDC_WANT_IEC_60559_TYPES_EXT__.  */
 
 #ifdef __STDC_WANT_DEC_FP__
 /* Draft Technical Report 24732, extension for decimal floating-point
@@ -501,6 +501,6 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #undef DEC_EVAL_METHOD
 #define DEC_EVAL_METHOD	__DEC_EVAL_METHOD__
 
-#endif /* __STDC_WANT_DEC_FP__ */
+#endif				/* __STDC_WANT_DEC_FP__ */
 
-#endif /* _FLOAT_H___ */
+#endif				/* _FLOAT_H___ */

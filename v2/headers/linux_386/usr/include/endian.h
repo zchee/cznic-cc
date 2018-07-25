@@ -54,7 +54,6 @@
 # define __LONG_LONG_PAIR(HI, LO) HI, LO
 #endif
 
-
 #if defined __USE_MISC && !defined __ASSEMBLER__
 /* Conversion interfaces.  */
 # include <bits/byteswap.h>
@@ -94,4 +93,4 @@
 # endif
 #endif
 
-#endif	/* endian.h */
+#endif				/* endian.h */

@@ -29,7 +29,7 @@
 #  undef assert_perror
 # endif
 
-#endif /* assert.h	*/
+#endif				/* assert.h      */
 
 #define	_ASSERT_H	1
 #include <features.h>
@@ -59,32 +59,26 @@
 #  define assert_perror(errnum)	(__ASSERT_VOID_CAST (0))
 # endif
 
-#else /* Not NDEBUG.  */
+#else				/* Not NDEBUG.  */
 
 #ifndef _ASSERT_H_DECLS
 #define _ASSERT_H_DECLS
 __BEGIN_DECLS
-
 /* This prints an "Assertion failed" message and aborts.  */
-extern void __assert_fail (const char *__assertion, const char *__file,
-			   unsigned int __line, const char *__function)
-     __THROW __attribute__ ((__noreturn__));
+extern void __assert_fail(const char *__assertion, const char *__file, unsigned int __line, const char *__function)
+__THROW __attribute__ ((__noreturn__));
 
 /* Likewise, but prints the error text for ERRNUM.  */
-extern void __assert_perror_fail (int __errnum, const char *__file,
-				  unsigned int __line, const char *__function)
-     __THROW __attribute__ ((__noreturn__));
-
+extern void __assert_perror_fail(int __errnum, const char *__file, unsigned int __line, const char *__function)
+__THROW __attribute__ ((__noreturn__));
 
 /* The following is not at all used here but needed for standard
    compliance.  */
-extern void __assert (const char *__assertion, const char *__file, int __line)
-     __THROW __attribute__ ((__noreturn__));
-
+extern void __assert(const char *__assertion, const char *__file, int __line)
+__THROW __attribute__ ((__noreturn__));
 
 __END_DECLS
-#endif /* Not _ASSERT_H_DECLS */
-
+#endif				/* Not _ASSERT_H_DECLS */
 /* When possible, define assert so that it does not add extra
    parentheses around EXPR.  Otherwise, those added parentheses would
    suppress warnings we'd expect to be detected by gcc's -Wparentheses.  */
@@ -112,14 +106,12 @@ __END_DECLS
         __assert_fail (#expr, __FILE__, __LINE__, __ASSERT_FUNCTION);	\
     }))
 # endif
-
 # ifdef	__USE_GNU
 #  define assert_perror(errnum)						\
   (!(errnum)								\
    ? __ASSERT_VOID_CAST (0)						\
    : __assert_perror_fail ((errnum), __FILE__, __LINE__, __ASSERT_FUNCTION))
 # endif
-
 /* Version 2.4 and later of GCC define a magical variable `__PRETTY_FUNCTION__'
    which contains the name of the function currently being defined.
    This is broken in G++ before version 2.6.
@@ -134,10 +126,7 @@ __END_DECLS
 #   define __ASSERT_FUNCTION	((const char *) 0)
 #  endif
 # endif
-
-#endif /* NDEBUG.  */
-
-
+#endif				/* NDEBUG.  */
 #if defined __USE_ISOC11 && !defined __cplusplus
 # undef static_assert
 # define static_assert _Static_assert

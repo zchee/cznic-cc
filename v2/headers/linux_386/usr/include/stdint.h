@@ -36,81 +36,72 @@
 /* Unsigned.  */
 #include <bits/stdint-uintn.h>
 
-
 /* Small types.  */
 
 /* Signed.  */
-typedef signed char		int_least8_t;
-typedef short int		int_least16_t;
-typedef int			int_least32_t;
+typedef signed char int_least8_t;
+typedef short int int_least16_t;
+typedef int int_least32_t;
 #if __WORDSIZE == 64
-typedef long int		int_least64_t;
+typedef long int int_least64_t;
 #else
-__extension__
-typedef long long int		int_least64_t;
+__extension__ typedef long long int int_least64_t;
 #endif
 
 /* Unsigned.  */
-typedef unsigned char		uint_least8_t;
-typedef unsigned short int	uint_least16_t;
-typedef unsigned int		uint_least32_t;
+typedef unsigned char uint_least8_t;
+typedef unsigned short int uint_least16_t;
+typedef unsigned int uint_least32_t;
 #if __WORDSIZE == 64
-typedef unsigned long int	uint_least64_t;
+typedef unsigned long int uint_least64_t;
 #else
-__extension__
-typedef unsigned long long int	uint_least64_t;
+__extension__ typedef unsigned long long int uint_least64_t;
 #endif
-
 
 /* Fast types.  */
 
 /* Signed.  */
-typedef signed char		int_fast8_t;
+typedef signed char int_fast8_t;
 #if __WORDSIZE == 64
-typedef long int		int_fast16_t;
-typedef long int		int_fast32_t;
-typedef long int		int_fast64_t;
+typedef long int int_fast16_t;
+typedef long int int_fast32_t;
+typedef long int int_fast64_t;
 #else
-typedef int			int_fast16_t;
-typedef int			int_fast32_t;
-__extension__
-typedef long long int		int_fast64_t;
+typedef int int_fast16_t;
+typedef int int_fast32_t;
+__extension__ typedef long long int int_fast64_t;
 #endif
 
 /* Unsigned.  */
-typedef unsigned char		uint_fast8_t;
+typedef unsigned char uint_fast8_t;
 #if __WORDSIZE == 64
-typedef unsigned long int	uint_fast16_t;
-typedef unsigned long int	uint_fast32_t;
-typedef unsigned long int	uint_fast64_t;
+typedef unsigned long int uint_fast16_t;
+typedef unsigned long int uint_fast32_t;
+typedef unsigned long int uint_fast64_t;
 #else
-typedef unsigned int		uint_fast16_t;
-typedef unsigned int		uint_fast32_t;
-__extension__
-typedef unsigned long long int	uint_fast64_t;
+typedef unsigned int uint_fast16_t;
+typedef unsigned int uint_fast32_t;
+__extension__ typedef unsigned long long int uint_fast64_t;
 #endif
-
 
 /* Types for `void *' pointers.  */
 #if __WORDSIZE == 64
 # ifndef __intptr_t_defined
-typedef long int		intptr_t;
+typedef long int intptr_t;
 #  define __intptr_t_defined
 # endif
-typedef unsigned long int	uintptr_t;
+typedef unsigned long int uintptr_t;
 #else
 # ifndef __intptr_t_defined
-typedef int			intptr_t;
+typedef int intptr_t;
 #  define __intptr_t_defined
 # endif
-typedef unsigned int		uintptr_t;
+typedef unsigned int uintptr_t;
 #endif
 
-
 /* Largest integral types.  */
-typedef __intmax_t		intmax_t;
-typedef __uintmax_t		uintmax_t;
-
+typedef __intmax_t intmax_t;
+typedef __uintmax_t uintmax_t;
 
 # if __WORDSIZE == 64
 #  define __INT64_C(c)	c ## L
@@ -139,7 +130,6 @@ typedef __uintmax_t		uintmax_t;
 # define UINT32_MAX		(4294967295U)
 # define UINT64_MAX		(__UINT64_C(18446744073709551615))
 
-
 /* Minimum of signed integral types having a minimum size.  */
 # define INT_LEAST8_MIN		(-128)
 # define INT_LEAST16_MIN	(-32767-1)
@@ -156,7 +146,6 @@ typedef __uintmax_t		uintmax_t;
 # define UINT_LEAST16_MAX	(65535)
 # define UINT_LEAST32_MAX	(4294967295U)
 # define UINT_LEAST64_MAX	(__UINT64_C(18446744073709551615))
-
 
 /* Minimum of fast signed integral types having a minimum size.  */
 # define INT_FAST8_MIN		(-128)
@@ -190,7 +179,6 @@ typedef __uintmax_t		uintmax_t;
 # endif
 # define UINT_FAST64_MAX	(__UINT64_C(18446744073709551615))
 
-
 /* Values to test for integral types holding `void *' pointer.  */
 # if __WORDSIZE == 64
 #  define INTPTR_MIN		(-9223372036854775807L-1)
@@ -202,7 +190,6 @@ typedef __uintmax_t		uintmax_t;
 #  define UINTPTR_MAX		(4294967295U)
 # endif
 
-
 /* Minimum for largest signed integral type.  */
 # define INTMAX_MIN		(-__INT64_C(9223372036854775807)-1)
 /* Maximum for largest signed integral type.  */
@@ -210,7 +197,6 @@ typedef __uintmax_t		uintmax_t;
 
 /* Maximum for largest unsigned integral type.  */
 # define UINTMAX_MAX		(__UINT64_C(18446744073709551615))
-
 
 /* Limits of other integer types.  */
 
@@ -326,4 +312,4 @@ typedef __uintmax_t		uintmax_t;
 
 #endif
 
-#endif /* stdint.h */
+#endif				/* stdint.h */

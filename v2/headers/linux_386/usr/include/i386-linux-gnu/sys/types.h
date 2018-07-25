@@ -25,9 +25,7 @@
 #include <features.h>
 
 __BEGIN_DECLS
-
 #include <bits/types.h>
-
 #ifdef	__USE_MISC
 # ifndef __u_char_defined
 typedef __u_char u_char;
@@ -158,9 +156,9 @@ typedef unsigned int uint;
 #if !__GNUC_PREREQ (2, 7)
 
 /* These were defined by ISO C without the first `_'.  */
-typedef	unsigned char u_int8_t;
-typedef	unsigned short int u_int16_t;
-typedef	unsigned int u_int32_t;
+typedef unsigned char u_int8_t;
+typedef unsigned short int u_int16_t;
+typedef unsigned int u_int32_t;
 # if __WORDSIZE == 64
 typedef unsigned long int u_int64_t;
 # else
@@ -175,19 +173,17 @@ typedef int register_t;
 # define __u_intN_t(N, MODE) \
   typedef unsigned int u_int##N##_t __attribute__ ((__mode__ (MODE)))
 
-__u_intN_t (8, __QI__);
-__u_intN_t (16, __HI__);
-__u_intN_t (32, __SI__);
-__u_intN_t (64, __DI__);
+__u_intN_t(8, __QI__);
+__u_intN_t(16, __HI__);
+__u_intN_t(32, __SI__);
+__u_intN_t(64, __DI__);
 
-typedef int register_t __attribute__ ((__mode__ (__word__)));
-
+typedef int register_t __attribute__ ((__mode__(__word__)));
 
 /* Some code from BIND tests this macro to see if the types above are
    defined.  */
 #endif
 #define __BIT_TYPES_DEFINED__	1
-
 
 #ifdef	__USE_MISC
 /* In BSD <sys/types.h> is expected to define BYTE_ORDER.  */
@@ -204,8 +200,7 @@ typedef int register_t __attribute__ ((__mode__ (__word__)));
 # define __SYSMACROS_DEPRECATED_INCLUSION
 # include <sys/sysmacros.h>
 # undef __SYSMACROS_DEPRECATED_INCLUSION
-#endif /* Use misc.  */
-
+#endif				/* Use misc.  */
 
 #if (defined __USE_UNIX98 || defined __USE_XOPEN2K8) \
     && !defined __blksize_t_defined
@@ -216,38 +211,37 @@ typedef __blksize_t blksize_t;
 /* Types from the Large File Support interface.  */
 #ifndef __USE_FILE_OFFSET64
 # ifndef __blkcnt_t_defined
-typedef __blkcnt_t blkcnt_t;	 /* Type to count number of disk blocks.  */
+typedef __blkcnt_t blkcnt_t;	/* Type to count number of disk blocks.  */
 #  define __blkcnt_t_defined
 # endif
 # ifndef __fsblkcnt_t_defined
-typedef __fsblkcnt_t fsblkcnt_t; /* Type to count file system blocks.  */
+typedef __fsblkcnt_t fsblkcnt_t;	/* Type to count file system blocks.  */
 #  define __fsblkcnt_t_defined
 # endif
 # ifndef __fsfilcnt_t_defined
-typedef __fsfilcnt_t fsfilcnt_t; /* Type to count file system inodes.  */
+typedef __fsfilcnt_t fsfilcnt_t;	/* Type to count file system inodes.  */
 #  define __fsfilcnt_t_defined
 # endif
 #else
 # ifndef __blkcnt_t_defined
-typedef __blkcnt64_t blkcnt_t;	   /* Type to count number of disk blocks.  */
+typedef __blkcnt64_t blkcnt_t;	/* Type to count number of disk blocks.  */
 #  define __blkcnt_t_defined
 # endif
 # ifndef __fsblkcnt_t_defined
-typedef __fsblkcnt64_t fsblkcnt_t; /* Type to count file system blocks.  */
+typedef __fsblkcnt64_t fsblkcnt_t;	/* Type to count file system blocks.  */
 #  define __fsblkcnt_t_defined
 # endif
 # ifndef __fsfilcnt_t_defined
-typedef __fsfilcnt64_t fsfilcnt_t; /* Type to count file system inodes.  */
+typedef __fsfilcnt64_t fsfilcnt_t;	/* Type to count file system inodes.  */
 #  define __fsfilcnt_t_defined
 # endif
 #endif
 
 #ifdef __USE_LARGEFILE64
-typedef __blkcnt64_t blkcnt64_t;     /* Type to count number of disk blocks. */
-typedef __fsblkcnt64_t fsblkcnt64_t; /* Type to count file system blocks.  */
-typedef __fsfilcnt64_t fsfilcnt64_t; /* Type to count file system inodes.  */
+typedef __blkcnt64_t blkcnt64_t;	/* Type to count number of disk blocks. */
+typedef __fsblkcnt64_t fsblkcnt64_t;	/* Type to count file system blocks.  */
+typedef __fsfilcnt64_t fsfilcnt64_t;	/* Type to count file system inodes.  */
 #endif
-
 
 /* Now add the thread types.  */
 #if defined __USE_POSIX199506 || defined __USE_UNIX98
@@ -255,5 +249,4 @@ typedef __fsfilcnt64_t fsfilcnt64_t; /* Type to count file system inodes.  */
 #endif
 
 __END_DECLS
-
-#endif /* sys/types.h */
+#endif				/* sys/types.h */

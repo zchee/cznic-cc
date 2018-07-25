@@ -41,9 +41,8 @@
 	 __bswap_constant_16 (__x); }))
 # endif
 #else
-static __inline unsigned short int
-__bswap_16 (unsigned short int __bsx)
+static __inline unsigned short int __bswap_16(unsigned short int __bsx)
 {
-  return __bswap_constant_16 (__bsx);
+	return __bswap_constant_16(__bsx);
 }
 #endif

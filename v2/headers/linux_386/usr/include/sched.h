@@ -47,35 +47,30 @@ typedef __pid_t pid_t;
 #define sched_priority    sched_priority
 #define __sched_priority  sched_priority
 
-
 __BEGIN_DECLS
-
 /* Set scheduling parameters for a process.  */
-extern int sched_setparam (__pid_t __pid, const struct sched_param *__param)
-     __THROW;
+extern int sched_setparam(__pid_t __pid, const struct sched_param *__param) __THROW;
 
 /* Retrieve scheduling parameters for a particular process.  */
-extern int sched_getparam (__pid_t __pid, struct sched_param *__param) __THROW;
+extern int sched_getparam(__pid_t __pid, struct sched_param *__param) __THROW;
 
 /* Set scheduling algorithm and/or parameters for a process.  */
-extern int sched_setscheduler (__pid_t __pid, int __policy,
-			       const struct sched_param *__param) __THROW;
+extern int sched_setscheduler(__pid_t __pid, int __policy, const struct sched_param *__param) __THROW;
 
 /* Retrieve scheduling algorithm for a particular purpose.  */
-extern int sched_getscheduler (__pid_t __pid) __THROW;
+extern int sched_getscheduler(__pid_t __pid) __THROW;
 
 /* Yield the processor.  */
-extern int sched_yield (void) __THROW;
+extern int sched_yield(void) __THROW;
 
 /* Get maximum priority value for a scheduler.  */
-extern int sched_get_priority_max (int __algorithm) __THROW;
+extern int sched_get_priority_max(int __algorithm) __THROW;
 
 /* Get minimum priority value for a scheduler.  */
-extern int sched_get_priority_min (int __algorithm) __THROW;
+extern int sched_get_priority_min(int __algorithm) __THROW;
 
 /* Get the SCHED_RR interval for the named process.  */
-extern int sched_rr_get_interval (__pid_t __pid, struct timespec *__t) __THROW;
-
+extern int sched_rr_get_interval(__pid_t __pid, struct timespec *__t) __THROW;
 
 #ifdef __USE_GNU
 /* Access macros for `cpu_set'.  */
@@ -116,16 +111,12 @@ extern int sched_rr_get_interval (__pid_t __pid, struct timespec *__t) __THROW;
 # define CPU_ALLOC(count) __CPU_ALLOC (count)
 # define CPU_FREE(cpuset) __CPU_FREE (cpuset)
 
-
 /* Set the CPU affinity for a task */
-extern int sched_setaffinity (__pid_t __pid, size_t __cpusetsize,
-			      const cpu_set_t *__cpuset) __THROW;
+extern int sched_setaffinity(__pid_t __pid, size_t __cpusetsize, const cpu_set_t * __cpuset) __THROW;
 
 /* Get the CPU affinity for a task */
-extern int sched_getaffinity (__pid_t __pid, size_t __cpusetsize,
-			      cpu_set_t *__cpuset) __THROW;
+extern int sched_getaffinity(__pid_t __pid, size_t __cpusetsize, cpu_set_t * __cpuset) __THROW;
 #endif
 
 __END_DECLS
-
-#endif /* sched.h */
+#endif				/* sched.h */

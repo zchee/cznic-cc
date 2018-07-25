@@ -32,9 +32,9 @@
 #ifndef __ASSEMBLER__
 
 __BEGIN_DECLS
-
 /* The error code set by various library functions.  */
-extern int *__errno_location (void) __THROW __attribute_const__;
+extern int *__errno_location(void)
+__THROW __attribute_const__;
 # define errno (*__errno_location ())
 
 # ifdef __USE_GNU
@@ -52,9 +52,8 @@ extern char *program_invocation_short_name;
 typedef int error_t;
 #  endif
 
-# endif /* __USE_GNU */
+# endif				/* __USE_GNU */
 
 __END_DECLS
-
-#endif /* !__ASSEMBLER__ */
-#endif /* errno.h */
+#endif				/* !__ASSEMBLER__ */
+#endif				/* errno.h */

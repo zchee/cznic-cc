@@ -87,6 +87,7 @@ var (
 			"sys/select.h",
 			"sys/socket.h",
 			"sys/statfs.h",
+			"sys/times.h",
 			"sys/types.h",
 			"sys/uio.h",
 			"sys/un.h",

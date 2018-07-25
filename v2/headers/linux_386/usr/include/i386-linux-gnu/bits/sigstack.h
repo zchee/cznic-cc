@@ -29,4 +29,4 @@
 /* System default stack size.  */
 #define SIGSTKSZ	8192
 
-#endif /* bits/sigstack.h */
+#endif				/* bits/sigstack.h */

@@ -25,7 +25,6 @@
    because the guard macro for getopt.h in gnulib is not fixed.  */
 
 __BEGIN_DECLS
-
 /* Describe the long-named options requested by the application.
    The LONG_OPTIONS argument to getopt_long or getopt_long_only is a vector
    of 'struct option' terminated by an element containing a name which is
@@ -46,15 +45,13 @@ __BEGIN_DECLS
    value (the equivalent single-letter option character, if there is
    one).  For long options that have a zero 'flag' field, 'getopt'
    returns the contents of the 'val' field.  */
-
-struct option
-{
-  const char *name;
-  /* has_arg can't be an enum because some compilers complain about
-     type mismatches in all the code that assumes it is an int.  */
-  int has_arg;
-  int *flag;
-  int val;
+    struct option {
+	const char *name;
+	/* has_arg can't be an enum because some compilers complain about
+	   type mismatches in all the code that assumes it is an int.  */
+	int has_arg;
+	int *flag;
+	int val;
 };
 
 /* Names for the values of the 'has_arg' field of 'struct option'.  */
@@ -63,15 +60,10 @@ struct option
 #define required_argument	1
 #define optional_argument	2
 
-extern int getopt_long (int ___argc, char *__getopt_argv_const *___argv,
-			const char *__shortopts,
-		        const struct option *__longopts, int *__longind)
-       __THROW __nonnull ((2, 3));
-extern int getopt_long_only (int ___argc, char *__getopt_argv_const *___argv,
-			     const char *__shortopts,
-		             const struct option *__longopts, int *__longind)
-       __THROW __nonnull ((2, 3));
+extern int getopt_long(int ___argc, char *__getopt_argv_const * ___argv, const char *__shortopts, const struct option *__longopts, int *__longind)
+__THROW __nonnull((2, 3));
+extern int getopt_long_only(int ___argc, char *__getopt_argv_const * ___argv, const char *__shortopts, const struct option *__longopts, int *__longind)
+__THROW __nonnull((2, 3));
 
 __END_DECLS
-
-#endif /* getopt_ext.h */
+#endif				/* getopt_ext.h */

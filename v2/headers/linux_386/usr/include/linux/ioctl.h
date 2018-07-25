@@ -4,5 +4,4 @@
 
 #include <asm/ioctl.h>
 
-#endif /* _LINUX_IOCTL_H */
-
+#endif				/* _LINUX_IOCTL_H */

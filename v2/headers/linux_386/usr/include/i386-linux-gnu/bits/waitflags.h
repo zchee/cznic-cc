@@ -20,7 +20,6 @@
 # error "Never include <bits/waitflags.h> directly; use <sys/wait.h> instead."
 #endif
 
-
 /* Bits in the third argument to `waitpid'.  */
 #define	WNOHANG		1	/* Don't block waiting.  */
 #define	WUNTRACED	2	/* Report status of stopped children.  */
@@ -30,13 +29,13 @@
 # define WSTOPPED	2	/* Report stopped child (same as WUNTRACED). */
 # define WEXITED	4	/* Report dead child.  */
 # define WCONTINUED	8	/* Report continued child.  */
-# define WNOWAIT	0x01000000 /* Don't reap, just poll status.  */
+# define WNOWAIT	0x01000000	/* Don't reap, just poll status.  */
 #endif
 
-#define __WNOTHREAD     0x20000000 /* Don't wait on children of other threads
-				      in this group */
-#define __WALL		0x40000000 /* Wait for any child.  */
-#define __WCLONE	0x80000000 /* Wait for cloned process.  */
+#define __WNOTHREAD     0x20000000	/* Don't wait on children of other threads
+					   in this group */
+#define __WALL		0x40000000	/* Wait for any child.  */
+#define __WCLONE	0x80000000	/* Wait for cloned process.  */
 
 /* The following values are used by the `waitid' function.  */
 #if defined __USE_XOPEN_EXTENDED || defined __USE_XOPEN2K8
@@ -49,11 +48,10 @@
 # undef P_PID
 # undef P_PGID
 
-typedef enum
-{
-  P_ALL,		/* Wait for any child.  */
-  P_PID,		/* Wait for specified process.  */
-  P_PGID		/* Wait for members of process group.  */
+typedef enum {
+	P_ALL,			/* Wait for any child.  */
+	P_PID,			/* Wait for specified process.  */
+	P_PGID			/* Wait for members of process group.  */
 } idtype_t;
 # endif
 #endif

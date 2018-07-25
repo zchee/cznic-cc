@@ -72,7 +72,7 @@
 #  if !__GNUC_PREREQ (7, 0) || defined __cplusplus
 /* Add a typedef for older GCC compilers which don't natively support
    _Complex _Float128.  */
-typedef _Complex float __cfloat128 __attribute__ ((__mode__ (__TC__)));
+typedef _Complex float __cfloat128 __attribute__ ((__mode__(__TC__)));
 #   define __CFLOAT128 __cfloat128
 #  else
 #   define __CFLOAT128 _Complex _Float128
@@ -115,8 +115,8 @@ typedef __float128 _Float128;
 
 # endif
 
-#endif /* !__ASSEMBLER__.  */
+#endif				/* !__ASSEMBLER__.  */
 
 #include <bits/floatn-common.h>
 
-#endif /* _BITS_FLOATN_H */
+#endif				/* _BITS_FLOATN_H */

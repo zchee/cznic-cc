@@ -25,12 +25,10 @@
 #define __GLIBC_INTERNAL_STARTING_HEADER_IMPLEMENTATION
 #include <bits/libc-header-start.h>
 
-
 /* Maximum length of any multibyte character in any locale.
    We define this value here since the gcc header does not define
    the correct value.  */
 #define MB_LEN_MAX	16
-
 
 /* If we are not using GNU CC we have to define all the symbols ourself.
    Otherwise use gcc's definitions (see below).  */
@@ -107,12 +105,12 @@
 /* Maximum value an `unsigned long long int' can hold.  (Minimum is 0.)  */
 #   define ULLONG_MAX	18446744073709551615ULL
 
-#  endif /* ISO C99 */
+#  endif			/* ISO C99 */
 
-# endif	/* limits.h  */
-#endif	/* GCC 2.  */
+# endif				/* limits.h  */
+#endif				/* GCC 2.  */
 
-#endif	/* !_LIBC_LIMITS_H_ */
+#endif				/* !_LIBC_LIMITS_H_ */
 
  /* Get the compiler's limits.h, which defines almost all the ISO constants.
 
@@ -176,7 +174,7 @@
 # ifndef ULLONG_WIDTH
 #  define ULLONG_WIDTH 64
 # endif
-#endif /* Use IEC_60559_BFP_EXT.  */
+#endif				/* Use IEC_60559_BFP_EXT.  */
 
 #ifdef	__USE_POSIX
 /* POSIX adds things to <limits.h>.  */

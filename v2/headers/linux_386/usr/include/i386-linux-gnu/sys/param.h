@@ -24,12 +24,11 @@
 
 #include <sys/types.h>
 #include <limits.h>
-#include <endian.h>                     /* Define BYTE_ORDER et al.  */
-#include <signal.h>                     /* Define NSIG.  */
+#include <endian.h>		/* Define BYTE_ORDER et al.  */
+#include <signal.h>		/* Define NSIG.  */
 
 /* This file defines some things in system-specific ways.  */
 #include <bits/param.h>
-
 
 /* BSD names for some <limits.h> values.  */
 
@@ -63,21 +62,18 @@
 # endif
 #endif
 
-
 /* Magical constants.  */
 #ifndef NOGROUP
-# define NOGROUP	65535     /* Marker for empty group set member.  */
+# define NOGROUP	65535	/* Marker for empty group set member.  */
 #endif
 #ifndef NODEV
-# define NODEV		((dev_t) -1)    /* Non-existent device.  */
+# define NODEV		((dev_t) -1)	/* Non-existent device.  */
 #endif
-
 
 /* Unit of `st_blocks'.  */
 #ifndef DEV_BSIZE
 # define DEV_BSIZE	512
 #endif
-
 
 /* Bit map related macros.  */
 #define setbit(a,i)     ((a)[(i)/NBBY] |= 1<<((i)%NBBY))
@@ -102,5 +98,4 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-
-#endif  /* sys/param.h */
+#endif				/* sys/param.h */

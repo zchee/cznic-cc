@@ -68,24 +68,12 @@
   __extension__ __extern_inline __attribute_const__ rtype		     \
   __NTH (gnu_dev_##name proto)
 
-__BEGIN_DECLS
-
-__SYSMACROS_DECLARE_MAJOR (__SYSMACROS_DECL_TEMPL)
-__SYSMACROS_DECLARE_MINOR (__SYSMACROS_DECL_TEMPL)
-__SYSMACROS_DECLARE_MAKEDEV (__SYSMACROS_DECL_TEMPL)
-
+__BEGIN_DECLS __SYSMACROS_DECLARE_MAJOR(__SYSMACROS_DECL_TEMPL) __SYSMACROS_DECLARE_MINOR(__SYSMACROS_DECL_TEMPL) __SYSMACROS_DECLARE_MAKEDEV(__SYSMACROS_DECL_TEMPL)
 #ifdef __USE_EXTERN_INLINES
-
-__SYSMACROS_DEFINE_MAJOR (__SYSMACROS_IMPL_TEMPL)
-__SYSMACROS_DEFINE_MINOR (__SYSMACROS_IMPL_TEMPL)
-__SYSMACROS_DEFINE_MAKEDEV (__SYSMACROS_IMPL_TEMPL)
-
+__SYSMACROS_DEFINE_MAJOR(__SYSMACROS_IMPL_TEMPL) __SYSMACROS_DEFINE_MINOR(__SYSMACROS_IMPL_TEMPL) __SYSMACROS_DEFINE_MAKEDEV(__SYSMACROS_IMPL_TEMPL)
 #endif
-
-__END_DECLS
-
-#endif /* _SYS_SYSMACROS_H */
-
+    __END_DECLS
+#endif				/* _SYS_SYSMACROS_H */
 #ifndef __SYSMACROS_NEED_IMPLEMENTATION
 # undef __SYSMACROS_DECL_TEMPL
 # undef __SYSMACROS_IMPL_TEMPL
@@ -96,7 +84,6 @@ __END_DECLS
 # undef __SYSMACROS_DEFINE_MINOR
 # undef __SYSMACROS_DEFINE_MAKEDEV
 #endif
-
 #ifdef __SYSMACROS_DEPRECATED_INCLUSION
 # define major(dev) __SYSMACROS_DM (major) gnu_dev_major (dev)
 # define minor(dev) __SYSMACROS_DM (minor) gnu_dev_minor (dev)
@@ -106,5 +93,4 @@ __END_DECLS
 # define minor(dev) gnu_dev_minor (dev)
 # define makedev(maj, min) gnu_dev_makedev (maj, min)
 #endif
-
-#endif /* sys/sysmacros.h */
+#endif				/* sys/sysmacros.h */

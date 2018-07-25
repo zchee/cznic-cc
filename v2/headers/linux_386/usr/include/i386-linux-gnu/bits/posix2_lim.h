@@ -22,7 +22,6 @@
 #ifndef	_BITS_POSIX2_LIM_H
 #define	_BITS_POSIX2_LIM_H	1
 
-
 /* The maximum `ibase' and `obase' values allowed by the `bc' utility.  */
 #define	_POSIX2_BC_BASE_MAX		99
 
@@ -53,7 +52,6 @@
 /* The maximum number of bytes in a character class name.  We have no
    fixed limit, 2048 is a high number.  */
 #define	_POSIX2_CHARCLASS_NAME_MAX	14
-
 
 /* These values are implementation-specific,
    and may vary within the implementation.
@@ -87,4 +85,4 @@
 /* This value is defined like this in regex.h.  */
 #define	RE_DUP_MAX (0x7fff)
 
-#endif	/* bits/posix2_lim.h */
+#endif				/* bits/posix2_lim.h */

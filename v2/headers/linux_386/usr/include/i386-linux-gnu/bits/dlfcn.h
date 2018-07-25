@@ -55,10 +55,8 @@
   (_dl_mcount_wrapper_check ((void *) (fctp)), (*(fctp)) args)
 
 __BEGIN_DECLS
-
 /* This function calls the profiling functions.  */
-extern void _dl_mcount_wrapper_check (void *__selfpc) __THROW;
+extern void _dl_mcount_wrapper_check(void *__selfpc) __THROW;
 
 __END_DECLS
-
 #endif

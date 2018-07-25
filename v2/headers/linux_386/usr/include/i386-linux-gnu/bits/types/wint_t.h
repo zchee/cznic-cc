@@ -19,5 +19,5 @@
 
 typedef __WINT_TYPE__ wint_t;
 
-#endif /* _WINT_T */
-#endif /* bits/types/wint_t.h */
+#endif				/* _WINT_T */
+#endif				/* bits/types/wint_t.h */

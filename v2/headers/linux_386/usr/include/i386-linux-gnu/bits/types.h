@@ -65,7 +65,6 @@ __extension__ typedef long long int __intmax_t;
 __extension__ typedef unsigned long long int __uintmax_t;
 #endif
 
-
 /* The machine-dependent file <bits/typesizes.h> defines __*_T_TYPE
    macros for each of the OS types we define below.  The definitions
    of those macros must use the following macros for underlying types.
@@ -129,12 +128,11 @@ __extension__ typedef unsigned long long int __uintmax_t;
 #endif
 #include <bits/typesizes.h>	/* Defines __*_T_TYPE macros.  */
 
-
 __STD_TYPE __DEV_T_TYPE __dev_t;	/* Type of device numbers.  */
 __STD_TYPE __UID_T_TYPE __uid_t;	/* Type of user identifications.  */
 __STD_TYPE __GID_T_TYPE __gid_t;	/* Type of group identifications.  */
 __STD_TYPE __INO_T_TYPE __ino_t;	/* Type of file serial numbers.  */
-__STD_TYPE __INO64_T_TYPE __ino64_t;	/* Type of file serial numbers (LFS).*/
+__STD_TYPE __INO64_T_TYPE __ino64_t;	/* Type of file serial numbers (LFS). */
 __STD_TYPE __MODE_T_TYPE __mode_t;	/* Type of file attribute bitmasks.  */
 __STD_TYPE __NLINK_T_TYPE __nlink_t;	/* Type of file link counts.  */
 __STD_TYPE __OFF_T_TYPE __off_t;	/* Type of file sizes and offsets.  */
@@ -144,10 +142,10 @@ __STD_TYPE __FSID_T_TYPE __fsid_t;	/* Type of file system IDs.  */
 __STD_TYPE __CLOCK_T_TYPE __clock_t;	/* Type of CPU usage counts.  */
 __STD_TYPE __RLIM_T_TYPE __rlim_t;	/* Type for resource measurement.  */
 __STD_TYPE __RLIM64_T_TYPE __rlim64_t;	/* Type for resource measurement (LFS).  */
-__STD_TYPE __ID_T_TYPE __id_t;		/* General type for IDs.  */
+__STD_TYPE __ID_T_TYPE __id_t;	/* General type for IDs.  */
 __STD_TYPE __TIME_T_TYPE __time_t;	/* Seconds since the Epoch.  */
-__STD_TYPE __USECONDS_T_TYPE __useconds_t; /* Count of microseconds.  */
-__STD_TYPE __SUSECONDS_T_TYPE __suseconds_t; /* Signed count of microseconds.  */
+__STD_TYPE __USECONDS_T_TYPE __useconds_t;	/* Count of microseconds.  */
+__STD_TYPE __SUSECONDS_T_TYPE __suseconds_t;	/* Signed count of microseconds.  */
 
 __STD_TYPE __DADDR_T_TYPE __daddr_t;	/* The type of a disk address.  */
 __STD_TYPE __KEY_T_TYPE __key_t;	/* Type of an IPC key.  */
@@ -178,7 +176,7 @@ __STD_TYPE __FSFILCNT64_T_TYPE __fsfilcnt64_t;
 /* Type of miscellaneous file system fields.  */
 __STD_TYPE __FSWORD_T_TYPE __fsword_t;
 
-__STD_TYPE __SSIZE_T_TYPE __ssize_t; /* Type of a byte count, or error.  */
+__STD_TYPE __SSIZE_T_TYPE __ssize_t;	/* Type of a byte count, or error.  */
 
 /* Signed long type used in system calls.  */
 __STD_TYPE __SYSCALL_SLONG_TYPE __syscall_slong_t;
@@ -203,4 +201,4 @@ typedef int __sig_atomic_t;
 
 #undef __STD_TYPE
 
-#endif /* bits/types.h */
+#endif				/* bits/types.h */

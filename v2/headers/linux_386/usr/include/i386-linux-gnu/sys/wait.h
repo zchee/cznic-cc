@@ -25,7 +25,6 @@
 #include <features.h>
 
 __BEGIN_DECLS
-
 #include <bits/types.h>
 #ifndef __pid_t_defined
 typedef __pid_t pid_t;
@@ -60,7 +59,7 @@ typedef __pid_t pid_t;
 # ifdef __WIFCONTINUED
 #  define WIFCONTINUED(status)	__WIFCONTINUED (status)
 # endif
-#endif	/* <stdlib.h> not included.  */
+#endif				/* <stdlib.h> not included.  */
 
 #ifdef	__USE_MISC
 # define WCOREFLAG		__WCOREFLAG
@@ -74,7 +73,7 @@ typedef __pid_t pid_t;
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern __pid_t wait (int *__stat_loc);
+extern __pid_t wait(int *__stat_loc);
 
 #ifdef	__USE_MISC
 /* Special values for the PID argument to `waitpid' and `wait4'.  */
@@ -97,7 +96,7 @@ extern __pid_t wait (int *__stat_loc);
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern __pid_t waitpid (__pid_t __pid, int *__stat_loc, int __options);
+extern __pid_t waitpid(__pid_t __pid, int *__stat_loc, int __options);
 
 #if defined __USE_XOPEN_EXTENDED || defined __USE_XOPEN2K8
 # ifndef __id_t_defined
@@ -118,8 +117,7 @@ typedef __id_t id_t;
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern int waitid (idtype_t __idtype, __id_t __id, siginfo_t *__infop,
-		   int __options);
+extern int waitid(idtype_t __idtype, __id_t __id, siginfo_t * __infop, int __options);
 #endif
 
 #if defined __USE_MISC \
@@ -133,17 +131,13 @@ struct rusage;
    nil, store information about the child's resource usage there.  If the
    WUNTRACED bit is set in OPTIONS, return status for stopped children;
    otherwise don't.  */
-extern __pid_t wait3 (int *__stat_loc, int __options,
-		      struct rusage * __usage) __THROWNL;
+extern __pid_t wait3(int *__stat_loc, int __options, struct rusage *__usage) __THROWNL;
 #endif
 
 #ifdef __USE_MISC
 /* PID is like waitpid.  Other args are like wait3.  */
-extern __pid_t wait4 (__pid_t __pid, int *__stat_loc, int __options,
-		      struct rusage *__usage) __THROWNL;
-#endif /* Use misc.  */
-
+extern __pid_t wait4(__pid_t __pid, int *__stat_loc, int __options, struct rusage *__usage) __THROWNL;
+#endif				/* Use misc.  */
 
 __END_DECLS
-
-#endif /* sys/wait.h  */
+#endif				/* sys/wait.h  */

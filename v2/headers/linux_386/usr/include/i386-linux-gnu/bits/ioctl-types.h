@@ -23,24 +23,21 @@
 /* Get definition of constants for use with `ioctl'.  */
 #include <asm/ioctls.h>
 
-
-struct winsize
-  {
-    unsigned short int ws_row;
-    unsigned short int ws_col;
-    unsigned short int ws_xpixel;
-    unsigned short int ws_ypixel;
-  };
+struct winsize {
+	unsigned short int ws_row;
+	unsigned short int ws_col;
+	unsigned short int ws_xpixel;
+	unsigned short int ws_ypixel;
+};
 
 #define NCC 8
-struct termio
-  {
-    unsigned short int c_iflag;		/* input mode flags */
-    unsigned short int c_oflag;		/* output mode flags */
-    unsigned short int c_cflag;		/* control mode flags */
-    unsigned short int c_lflag;		/* local mode flags */
-    unsigned char c_line;		/* line discipline */
-    unsigned char c_cc[NCC];		/* control characters */
+struct termio {
+	unsigned short int c_iflag;	/* input mode flags */
+	unsigned short int c_oflag;	/* output mode flags */
+	unsigned short int c_cflag;	/* control mode flags */
+	unsigned short int c_lflag;	/* local mode flags */
+	unsigned char c_line;	/* line discipline */
+	unsigned char c_cc[NCC];	/* control characters */
 };
 
 /* modem lines */

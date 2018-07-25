@@ -16,5 +16,4 @@
 
 #define MAXHOSTNAMELEN	64	/* max length of hostname */
 
-
-#endif /* __ASM_GENERIC_PARAM_H */
+#endif				/* __ASM_GENERIC_PARAM_H */

@@ -21,7 +21,6 @@
 
 #include <bits/wordsize.h>
 
-
 #if defined __GNUC__ && __GNUC__ >= 2
 
 # if __WORDSIZE == 64
@@ -41,7 +40,7 @@
 			  : "memory");					      \
   } while (0)
 
-#else	/* ! GNU CC */
+#else				/* ! GNU CC */
 
 /* We don't use `memset' because this would require a prototype and
    the array isn't too big.  */
@@ -53,7 +52,7 @@
       __FDS_BITS (__arr)[__i] = 0;					      \
   } while (0)
 
-#endif	/* GNU CC */
+#endif				/* GNU CC */
 
 #define __FD_SET(d, set) \
   ((void) (__FDS_BITS (set)[__FD_ELT (d)] |= __FD_MASK (d)))

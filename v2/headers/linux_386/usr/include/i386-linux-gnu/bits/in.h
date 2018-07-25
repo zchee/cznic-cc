@@ -44,14 +44,14 @@
 /* Options for use with `getsockopt' and `setsockopt' at the IP level.
    The first word in the comment at the right is the data type used;
    "bool" means a boolean value stored in an `int'.  */
-#define        IP_OPTIONS      4       /* ip_opts; IP per-packet options.  */
-#define        IP_HDRINCL      3       /* int; Header is included with data.  */
-#define        IP_TOS          1       /* int; IP type of service and precedence.  */
-#define        IP_TTL          2       /* int; IP time to live.  */
-#define        IP_RECVOPTS     6       /* bool; Receive all IP options w/datagram.  */
+#define        IP_OPTIONS      4	/* ip_opts; IP per-packet options.  */
+#define        IP_HDRINCL      3	/* int; Header is included with data.  */
+#define        IP_TOS          1	/* int; IP type of service and precedence.  */
+#define        IP_TTL          2	/* int; IP time to live.  */
+#define        IP_RECVOPTS     6	/* bool; Receive all IP options w/datagram.  */
 /* For BSD compatibility.  */
-#define        IP_RECVRETOPTS  IP_RETOPTS       /* bool; Receive IP options for response.  */
-#define        IP_RETOPTS      7       /* ip_opts; Set/get IP per-packet options.  */
+#define        IP_RECVRETOPTS  IP_RETOPTS	/* bool; Receive IP options for response.  */
+#define        IP_RETOPTS      7	/* ip_opts; Set/get IP per-packet options.  */
 #define IP_MULTICAST_IF 32	/* in_addr; set/get IP multicast i/f */
 #define IP_MULTICAST_TTL 33	/* unsigned char; set/get IP multicast ttl */
 #define IP_MULTICAST_LOOP 34	/* bool; set/get IP multicast loopback */
@@ -59,16 +59,16 @@
 #define IP_DROP_MEMBERSHIP 36	/* ip_mreq; drop an IP group membership */
 #define IP_UNBLOCK_SOURCE 37	/* ip_mreq_source: unblock data from source */
 #define IP_BLOCK_SOURCE 38	/* ip_mreq_source: block data from source */
-#define IP_ADD_SOURCE_MEMBERSHIP 39 /* ip_mreq_source: join source group */
-#define IP_DROP_SOURCE_MEMBERSHIP 40 /* ip_mreq_source: leave source group */
+#define IP_ADD_SOURCE_MEMBERSHIP 39	/* ip_mreq_source: join source group */
+#define IP_DROP_SOURCE_MEMBERSHIP 40	/* ip_mreq_source: leave source group */
 #define IP_MSFILTER 41
 #ifdef __USE_MISC
 # define MCAST_JOIN_GROUP 42	/* group_req: join any-source group */
 # define MCAST_BLOCK_SOURCE 43	/* group_source_req: block from given group */
-# define MCAST_UNBLOCK_SOURCE 44 /* group_source_req: unblock from given group*/
+# define MCAST_UNBLOCK_SOURCE 44	/* group_source_req: unblock from given group */
 # define MCAST_LEAVE_GROUP 45	/* group_req: leave any-source group */
-# define MCAST_JOIN_SOURCE_GROUP 46 /* group_source_req: join source-spec gr */
-# define MCAST_LEAVE_SOURCE_GROUP 47 /* group_source_req: leave source-spec gr*/
+# define MCAST_JOIN_SOURCE_GROUP 46	/* group_source_req: join source-spec gr */
+# define MCAST_LEAVE_SOURCE_GROUP 47	/* group_source_req: leave source-spec gr */
 # define MCAST_MSFILTER 48
 # define IP_MULTICAST_ALL 49
 # define IP_UNICAST_IF 50
@@ -139,27 +139,24 @@
 /* Structure used to describe IP options for IP_OPTIONS and IP_RETOPTS.
    The `ip_dst' field is used for the first-hop gateway when using a
    source route (this gets put into the header proper).  */
-struct ip_opts
-  {
-    struct in_addr ip_dst;	/* First hop; zero without source route.  */
-    char ip_opts[40];		/* Actually variable in size.  */
-  };
+struct ip_opts {
+	struct in_addr ip_dst;	/* First hop; zero without source route.  */
+	char ip_opts[40];	/* Actually variable in size.  */
+};
 
 /* Like `struct ip_mreq' but including interface specification by index.  */
-struct ip_mreqn
-  {
-    struct in_addr imr_multiaddr;	/* IP multicast address of group */
-    struct in_addr imr_address;		/* local IP address of interface */
-    int	imr_ifindex;			/* Interface index */
-  };
+struct ip_mreqn {
+	struct in_addr imr_multiaddr;	/* IP multicast address of group */
+	struct in_addr imr_address;	/* local IP address of interface */
+	int imr_ifindex;	/* Interface index */
+};
 
 /* Structure used for IP_PKTINFO.  */
-struct in_pktinfo
-  {
-    int ipi_ifindex;			/* Interface index  */
-    struct in_addr ipi_spec_dst;	/* Routing destination address  */
-    struct in_addr ipi_addr;		/* Header destination address  */
-  };
+struct in_pktinfo {
+	int ipi_ifindex;	/* Interface index  */
+	struct in_addr ipi_spec_dst;	/* Routing destination address  */
+	struct in_addr ipi_addr;	/* Header destination address  */
+};
 #endif
 
 /* Options for use with `getsockopt' and `setsockopt' at the IPv6 level.

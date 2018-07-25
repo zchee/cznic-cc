@@ -50,4 +50,4 @@
 #  define EHWPOISON		133
 # endif
 
-#endif /* bits/errno.h.  */
+#endif				/* bits/errno.h.  */

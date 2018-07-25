@@ -106,9 +106,9 @@
 #  define F_SETLK	6	/* Set record locking info (non-blocking).  */
 #  define F_SETLKW	7	/* Set record locking info (blocking).  */
 # else
-#  define F_GETLK	F_GETLK64  /* Get record locking info.  */
-#  define F_SETLK	F_SETLK64  /* Set record locking info (non-blocking).*/
-#  define F_SETLKW	F_SETLKW64 /* Set record locking info (blocking).  */
+#  define F_GETLK	F_GETLK64	/* Get record locking info.  */
+#  define F_SETLK	F_SETLK64	/* Set record locking info (non-blocking). */
+#  define F_SETLKW	F_SETLKW64	/* Set record locking info (blocking).  */
 # endif
 #endif
 #ifndef F_GETLK64
@@ -159,7 +159,7 @@
 # if defined __O_RSYNC
 #  define O_RSYNC	__O_RSYNC	/* Synchronize read operations.  */
 # else
-#  define O_RSYNC	O_SYNC		/* Synchronize read operations.  */
+#  define O_RSYNC	O_SYNC	/* Synchronize read operations.  */
 # endif
 #endif
 
@@ -176,8 +176,8 @@
 #endif
 
 #if defined __USE_UNIX98 || defined __USE_XOPEN2K8
-# define F_SETOWN	__F_SETOWN /* Get owner (process receiving SIGIO).  */
-# define F_GETOWN	__F_GETOWN /* Set owner (process receiving SIGIO).  */
+# define F_SETOWN	__F_SETOWN	/* Get owner (process receiving SIGIO).  */
+# define F_GETOWN	__F_GETOWN	/* Set owner (process receiving SIGIO).  */
 #endif
 
 #ifndef __F_SETSIG
@@ -225,7 +225,6 @@
 # define F_UNLCK		2	/* Remove lock.  */
 #endif
 
-
 /* For old implementation of BSD flock.  */
 #ifndef F_EXLCK
 # define F_EXLCK		4	/* or 3 */
@@ -259,23 +258,20 @@
 # define DN_MULTISHOT	0x80000000	/* Don't remove notifier.  */
 #endif
 
-
 #ifdef __USE_GNU
 /* Owner types.  */
-enum __pid_type
-  {
-    F_OWNER_TID = 0,		/* Kernel thread.  */
-    F_OWNER_PID,		/* Process.  */
-    F_OWNER_PGRP,		/* Process group.  */
-    F_OWNER_GID = F_OWNER_PGRP	/* Alternative, obsolete name.  */
-  };
+enum __pid_type {
+	F_OWNER_TID = 0,	/* Kernel thread.  */
+	F_OWNER_PID,		/* Process.  */
+	F_OWNER_PGRP,		/* Process group.  */
+	F_OWNER_GID = F_OWNER_PGRP	/* Alternative, obsolete name.  */
+};
 
 /* Structure to use with F_GETOWN_EX and F_SETOWN_EX.  */
-struct f_owner_ex
-  {
-    enum __pid_type type;	/* Owner type of ID.  */
-    __pid_t pid;		/* ID of owner.  */
-  };
+struct f_owner_ex {
+	enum __pid_type type;	/* Owner type of ID.  */
+	__pid_t pid;		/* ID of owner.  */
+};
 #endif
 
 #ifdef __USE_GNU
@@ -304,7 +300,7 @@ struct f_owner_ex
 # define FASYNC		O_ASYNC
 # define FNONBLOCK	O_NONBLOCK
 # define FNDELAY	O_NDELAY
-#endif /* Use misc.  */
+#endif				/* Use misc.  */
 
 #ifndef __POSIX_FADV_DONTNEED
 #  define __POSIX_FADV_DONTNEED	4
@@ -312,26 +308,25 @@ struct f_owner_ex
 #endif
 /* Advise to `posix_fadvise'.  */
 #ifdef __USE_XOPEN2K
-# define POSIX_FADV_NORMAL	0 /* No further special treatment.  */
-# define POSIX_FADV_RANDOM	1 /* Expect random page references.  */
-# define POSIX_FADV_SEQUENTIAL	2 /* Expect sequential page references.  */
-# define POSIX_FADV_WILLNEED	3 /* Will need these pages.  */
-# define POSIX_FADV_DONTNEED	__POSIX_FADV_DONTNEED /* Don't need these pages.  */
-# define POSIX_FADV_NOREUSE	__POSIX_FADV_NOREUSE /* Data will be accessed once.  */
+# define POSIX_FADV_NORMAL	0	/* No further special treatment.  */
+# define POSIX_FADV_RANDOM	1	/* Expect random page references.  */
+# define POSIX_FADV_SEQUENTIAL	2	/* Expect sequential page references.  */
+# define POSIX_FADV_WILLNEED	3	/* Will need these pages.  */
+# define POSIX_FADV_DONTNEED	__POSIX_FADV_DONTNEED	/* Don't need these pages.  */
+# define POSIX_FADV_NOREUSE	__POSIX_FADV_NOREUSE	/* Data will be accessed once.  */
 #endif
-
 
 #ifdef __USE_GNU
 /* Flags for SYNC_FILE_RANGE.  */
-# define SYNC_FILE_RANGE_WAIT_BEFORE	1 /* Wait upon writeout of all pages
-					     in the range before performing the
-					     write.  */
-# define SYNC_FILE_RANGE_WRITE		2 /* Initiate writeout of all those
-					     dirty pages in the range which are
-					     not presently under writeback.  */
-# define SYNC_FILE_RANGE_WAIT_AFTER	4 /* Wait upon writeout of all pages in
-					     the range after performing the
-					     write.  */
+# define SYNC_FILE_RANGE_WAIT_BEFORE	1	/* Wait upon writeout of all pages
+						   in the range before performing the
+						   write.  */
+# define SYNC_FILE_RANGE_WRITE		2	/* Initiate writeout of all those
+						   dirty pages in the range which are
+						   not presently under writeback.  */
+# define SYNC_FILE_RANGE_WAIT_AFTER	4	/* Wait upon writeout of all pages in
+						   the range after performing the
+						   write.  */
 
 /* Flags for SPLICE and VMSPLICE.  */
 # define SPLICE_F_MOVE		1	/* Move pages instead of copying.  */
@@ -341,18 +336,15 @@ struct f_owner_ex
 # define SPLICE_F_MORE		4	/* Expect more data.  */
 # define SPLICE_F_GIFT		8	/* Pages passed in are a gift.  */
 
-
 /* Flags for fallocate.  */
 # include <linux/falloc.h>
 
-
 /* File handle structure.  */
-struct file_handle
-{
-  unsigned int handle_bytes;
-  int handle_type;
-  /* File identifier.  */
-  unsigned char f_handle[0];
+struct file_handle {
+	unsigned int handle_bytes;
+	int handle_type;
+	/* File identifier.  */
+	unsigned char f_handle[0];
 };
 
 /* Maximum handle size (for now).  */
@@ -378,77 +370,60 @@ struct file_handle
 #endif
 
 __BEGIN_DECLS
-
 #ifdef __USE_GNU
-
 /* Provide kernel hint to read ahead.  */
-extern __ssize_t readahead (int __fd, __off64_t __offset, size_t __count)
-    __THROW;
-
+extern __ssize_t readahead(int __fd, __off64_t __offset, size_t __count) __THROW;
 
 /* Selective file content synch'ing.
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
-extern int sync_file_range (int __fd, __off64_t __offset, __off64_t __count,
-			    unsigned int __flags);
-
+extern int sync_file_range(int __fd, __off64_t __offset, __off64_t __count, unsigned int __flags);
 
 /* Splice address range into a pipe.
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
-extern __ssize_t vmsplice (int __fdout, const struct iovec *__iov,
-			   size_t __count, unsigned int __flags);
+extern __ssize_t vmsplice(int __fdout, const struct iovec *__iov, size_t __count, unsigned int __flags);
 
 /* Splice two files together.
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
-extern __ssize_t splice (int __fdin, __off64_t *__offin, int __fdout,
-			 __off64_t *__offout, size_t __len,
-			 unsigned int __flags);
+extern __ssize_t splice(int __fdin, __off64_t * __offin, int __fdout, __off64_t * __offout, size_t __len, unsigned int __flags);
 
 /* In-kernel implementation of tee for pipe buffers.
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
-extern __ssize_t tee (int __fdin, int __fdout, size_t __len,
-		      unsigned int __flags);
+extern __ssize_t tee(int __fdin, int __fdout, size_t __len, unsigned int __flags);
 
 /* Reserve storage for the data of the file associated with FD.
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
 # ifndef __USE_FILE_OFFSET64
-extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+extern int fallocate(int __fd, int __mode, __off_t __offset, __off_t __len);
 # else
 #  ifdef __REDIRECT
-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
-				   __off64_t __len),
-		       fallocate64);
+extern int __REDIRECT(fallocate, (int __fd, int __mode, __off64_t __offset, __off64_t __len), fallocate64);
 #  else
 #   define fallocate fallocate64
 #  endif
 # endif
 # ifdef __USE_LARGEFILE64
-extern int fallocate64 (int __fd, int __mode, __off64_t __offset,
-			__off64_t __len);
+extern int fallocate64(int __fd, int __mode, __off64_t __offset, __off64_t __len);
 # endif
 
-
 /* Map file name to file handle.  */
-extern int name_to_handle_at (int __dfd, const char *__name,
-			      struct file_handle *__handle, int *__mnt_id,
-			      int __flags) __THROW;
+extern int name_to_handle_at(int __dfd, const char *__name, struct file_handle *__handle, int *__mnt_id, int __flags) __THROW;
 
 /* Open file using the file handle.
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
-extern int open_by_handle_at (int __mountdirfd, struct file_handle *__handle,
-			      int __flags);
+extern int open_by_handle_at(int __mountdirfd, struct file_handle *__handle, int __flags);
 
-#endif	/* use GNU */
+#endif				/* use GNU */
 
 __END_DECLS

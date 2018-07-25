@@ -29,7 +29,6 @@
 #endif
 
 __BEGIN_DECLS
-
 /* Read data from file descriptor FD, and put the result in the
    buffers described by IOVEC, which is a vector of COUNT 'struct iovec's.
    The buffers are filled in the order specified.
@@ -38,8 +37,7 @@ __BEGIN_DECLS
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t readv (int __fd, const struct iovec *__iovec, int __count)
-  __wur;
+extern ssize_t readv(int __fd, const struct iovec *__iovec, int __count) __wur;
 
 /* Write data pointed by the buffers described by IOVEC, which
    is a vector of COUNT 'struct iovec's, to file descriptor FD.
@@ -49,9 +47,7 @@ extern ssize_t readv (int __fd, const struct iovec *__iovec, int __count)
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t writev (int __fd, const struct iovec *__iovec, int __count)
-  __wur;
-
+extern ssize_t writev(int __fd, const struct iovec *__iovec, int __count) __wur;
 
 #ifdef __USE_MISC
 # ifndef __USE_FILE_OFFSET64
@@ -64,8 +60,7 @@ extern ssize_t writev (int __fd, const struct iovec *__iovec, int __count)
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t preadv (int __fd, const struct iovec *__iovec, int __count,
-		       __off_t __offset) __wur;
+extern ssize_t preadv(int __fd, const struct iovec *__iovec, int __count, __off_t __offset) __wur;
 
 /* Write data pointed by the buffers described by IOVEC, which is a
    vector of COUNT 'struct iovec's, to file descriptor FD at the given
@@ -76,17 +71,12 @@ extern ssize_t preadv (int __fd, const struct iovec *__iovec, int __count,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t pwritev (int __fd, const struct iovec *__iovec, int __count,
-			__off_t __offset) __wur;
+extern ssize_t pwritev(int __fd, const struct iovec *__iovec, int __count, __off_t __offset) __wur;
 
 # else
 #  ifdef __REDIRECT
-extern ssize_t __REDIRECT (preadv, (int __fd, const struct iovec *__iovec,
-				    int __count, __off64_t __offset),
-			   preadv64) __wur;
-extern ssize_t __REDIRECT (pwritev, (int __fd, const struct iovec *__iovec,
-				     int __count, __off64_t __offset),
-			   pwritev64) __wur;
+extern ssize_t __REDIRECT(preadv, (int __fd, const struct iovec * __iovec, int __count, __off64_t __offset), preadv64) __wur;
+extern ssize_t __REDIRECT(pwritev, (int __fd, const struct iovec * __iovec, int __count, __off64_t __offset), pwritev64) __wur;
 #  else
 #   define preadv preadv64
 #   define pwritev pwritev64
@@ -103,8 +93,7 @@ extern ssize_t __REDIRECT (pwritev, (int __fd, const struct iovec *__iovec,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t preadv64 (int __fd, const struct iovec *__iovec, int __count,
-			 __off64_t __offset) __wur;
+extern ssize_t preadv64(int __fd, const struct iovec *__iovec, int __count, __off64_t __offset) __wur;
 
 /* Write data pointed by the buffers described by IOVEC, which is a
    vector of COUNT 'struct iovec's, to file descriptor FD at the given
@@ -115,32 +104,22 @@ extern ssize_t preadv64 (int __fd, const struct iovec *__iovec, int __count,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t pwritev64 (int __fd, const struct iovec *__iovec, int __count,
-			  __off64_t __offset) __wur;
+extern ssize_t pwritev64(int __fd, const struct iovec *__iovec, int __count, __off64_t __offset) __wur;
 # endif
-#endif	/* Use misc.  */
-
+#endif				/* Use misc.  */
 
 #ifdef __USE_GNU
 # ifndef __USE_FILE_OFFSET64
 /* Same as preadv but with an additional flag argumenti defined at uio.h.  */
-extern ssize_t preadv2 (int __fp, const struct iovec *__iovec, int __count,
-			__off_t __offset, int ___flags) __wur;
+extern ssize_t preadv2(int __fp, const struct iovec *__iovec, int __count, __off_t __offset, int ___flags) __wur;
 
 /* Same as preadv but with an additional flag argument defined at uio.h.  */
-extern ssize_t pwritev2 (int __fd, const struct iovec *__iodev, int __count,
-			 __off_t __offset, int __flags) __wur;
+extern ssize_t pwritev2(int __fd, const struct iovec *__iodev, int __count, __off_t __offset, int __flags) __wur;
 
 # else
 #  ifdef __REDIRECT
-extern ssize_t __REDIRECT (pwritev2, (int __fd, const struct iovec *__iovec,
-				      int __count, __off64_t __offset,
-				      int __flags),
-			   pwritev64v2) __wur;
-extern ssize_t __REDIRECT (preadv2, (int __fd, const struct iovec *__iovec,
-				     int __count, __off64_t __offset,
-				     int __flags),
-			   preadv64v2) __wur;
+extern ssize_t __REDIRECT(pwritev2, (int __fd, const struct iovec * __iovec, int __count, __off64_t __offset, int __flags), pwritev64v2) __wur;
+extern ssize_t __REDIRECT(preadv2, (int __fd, const struct iovec * __iovec, int __count, __off64_t __offset, int __flags), preadv64v2) __wur;
 #  else
 #   define preadv2 preadv64v2
 #   define pwritev2 pwritev64v2
@@ -149,23 +128,17 @@ extern ssize_t __REDIRECT (preadv2, (int __fd, const struct iovec *__iovec,
 
 # ifdef __USE_LARGEFILE64
 /* Same as preadv but with an additional flag argumenti defined at uio.h.  */
-extern ssize_t preadv64v2 (int __fp, const struct iovec *__iovec,
-			   int __count, __off64_t __offset,
-			   int ___flags) __wur;
+extern ssize_t preadv64v2(int __fp, const struct iovec *__iovec, int __count, __off64_t __offset, int ___flags) __wur;
 
 /* Same as preadv but with an additional flag argument defined at uio.h.  */
-extern ssize_t pwritev64v2 (int __fd, const struct iovec *__iodev,
-			    int __count, __off64_t __offset,
-			    int __flags) __wur;
+extern ssize_t pwritev64v2(int __fd, const struct iovec *__iodev, int __count, __off64_t __offset, int __flags) __wur;
 # endif
-#endif /* Use GNU.  */
+#endif				/* Use GNU.  */
 
 __END_DECLS
-
 /* Some operating systems provide system-specific extensions to this
    header.  */
 #ifdef __USE_GNU
 # include <bits/uio-ext.h>
 #endif
-
-#endif /* sys/uio.h */
+#endif				/* sys/uio.h */

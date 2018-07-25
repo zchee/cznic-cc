@@ -20,9 +20,7 @@
 # error "Never include <bits/waitstatus.h> directly; use <sys/wait.h> instead."
 #endif
 
-
 /* Everything extant so far uses these same bits.  */
-
 
 /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
 #define	__WEXITSTATUS(status)	(((status) & 0xff00) >> 8)

@@ -20,24 +20,23 @@
 # error "Never include <bits/termios.h> directly; use <termios.h> instead."
 #endif
 
-typedef unsigned char	cc_t;
-typedef unsigned int	speed_t;
-typedef unsigned int	tcflag_t;
+typedef unsigned char cc_t;
+typedef unsigned int speed_t;
+typedef unsigned int tcflag_t;
 
 #define NCCS 32
-struct termios
-  {
-    tcflag_t c_iflag;		/* input mode flags */
-    tcflag_t c_oflag;		/* output mode flags */
-    tcflag_t c_cflag;		/* control mode flags */
-    tcflag_t c_lflag;		/* local mode flags */
-    cc_t c_line;			/* line discipline */
-    cc_t c_cc[NCCS];		/* control characters */
-    speed_t c_ispeed;		/* input speed */
-    speed_t c_ospeed;		/* output speed */
+struct termios {
+	tcflag_t c_iflag;	/* input mode flags */
+	tcflag_t c_oflag;	/* output mode flags */
+	tcflag_t c_cflag;	/* control mode flags */
+	tcflag_t c_lflag;	/* local mode flags */
+	cc_t c_line;		/* line discipline */
+	cc_t c_cc[NCCS];	/* control characters */
+	speed_t c_ispeed;	/* input speed */
+	speed_t c_ospeed;	/* output speed */
 #define _HAVE_STRUCT_TERMIOS_C_ISPEED 1
 #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
-  };
+};
 
 /* c_cc characters */
 #define VINTR 0
@@ -169,9 +168,9 @@ struct termios
 #define  B4000000 0010017
 #define __MAX_BAUD B4000000
 #ifdef __USE_MISC
-# define CIBAUD	  002003600000		/* input baud rate (not used) */
-# define CMSPAR   010000000000		/* mark or space (stick) parity */
-# define CRTSCTS  020000000000		/* flow control */
+# define CIBAUD	  002003600000	/* input baud rate (not used) */
+# define CMSPAR   010000000000	/* mark or space (stick) parity */
+# define CRTSCTS  020000000000	/* flow control */
 #endif
 
 /* c_lflag bits */
@@ -213,7 +212,6 @@ struct termios
 #define	TCSANOW		0
 #define	TCSADRAIN	1
 #define	TCSAFLUSH	2
-
 
 #define _IOT_termios /* Hurd ioctl type field.  */ \
   _IOT (_IOTS (cflag_t), 4, _IOTS (cc_t), NCCS, _IOTS (speed_t), 2)

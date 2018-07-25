@@ -188,4 +188,4 @@
 /* Typed memory objects are not available.  */
 #define _POSIX_TYPED_MEMORY_OBJECTS	-1
 
-#endif /* bits/posix_opt.h */
+#endif				/* bits/posix_opt.h */

@@ -55,9 +55,9 @@
 #define TIOCSETD	0x5423
 #define TIOCGETD	0x5424
 #define TCSBRKP		0x5425	/* Needed for POSIX tcsendbreak() */
-#define TIOCSBRK	0x5427  /* BSD compatibility */
-#define TIOCCBRK	0x5428  /* BSD compatibility */
-#define TIOCGSID	0x5429  /* Return the session ID of FD */
+#define TIOCSBRK	0x5427	/* BSD compatibility */
+#define TIOCCBRK	0x5428	/* BSD compatibility */
+#define TIOCGSID	0x5429	/* Return the session ID of FD */
 #define TCGETS2		_IOR('T', 0x2A, struct termios2)
 #define TCSETS2		_IOW('T', 0x2B, struct termios2)
 #define TCSETSW2	_IOW('T', 0x2C, struct termios2)
@@ -66,19 +66,19 @@
 #ifndef TIOCSRS485
 #define TIOCSRS485	0x542F
 #endif
-#define TIOCGPTN	_IOR('T', 0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
-#define TIOCSPTLCK	_IOW('T', 0x31, int)  /* Lock/unlock Pty */
-#define TIOCGDEV	_IOR('T', 0x32, unsigned int) /* Get primary device node of /dev/console */
-#define TCGETX		0x5432 /* SYS5 TCGETX compatibility */
+#define TIOCGPTN	_IOR('T', 0x30, unsigned int)	/* Get Pty Number (of pty-mux device) */
+#define TIOCSPTLCK	_IOW('T', 0x31, int)	/* Lock/unlock Pty */
+#define TIOCGDEV	_IOR('T', 0x32, unsigned int)	/* Get primary device node of /dev/console */
+#define TCGETX		0x5432	/* SYS5 TCGETX compatibility */
 #define TCSETX		0x5433
 #define TCSETXF		0x5434
 #define TCSETXW		0x5435
-#define TIOCSIG		_IOW('T', 0x36, int)  /* pty: generate signal */
+#define TIOCSIG		_IOW('T', 0x36, int)	/* pty: generate signal */
 #define TIOCVHANGUP	0x5437
-#define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-#define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-#define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-#define TIOCGPTPEER	_IO('T', 0x41) /* Safely open the slave */
+#define TIOCGPKT	_IOR('T', 0x38, int)	/* Get packet mode state */
+#define TIOCGPTLCK	_IOR('T', 0x39, int)	/* Get Pty lock state */
+#define TIOCGEXCL	_IOR('T', 0x40, int)	/* Get exclusive mode state */
+#define TIOCGPTPEER	_IO('T', 0x41)	/* Safely open the slave */
 
 #define FIONCLEX	0x5450
 #define FIOCLEX		0x5451
@@ -88,10 +88,10 @@
 #define TIOCSERSWILD	0x5455
 #define TIOCGLCKTRMIOS	0x5456
 #define TIOCSLCKTRMIOS	0x5457
-#define TIOCSERGSTRUCT	0x5458 /* For debugging only */
-#define TIOCSERGETLSR   0x5459 /* Get line status register */
-#define TIOCSERGETMULTI 0x545A /* Get multiport config  */
-#define TIOCSERSETMULTI 0x545B /* Set multiport config */
+#define TIOCSERGSTRUCT	0x5458	/* For debugging only */
+#define TIOCSERGETLSR   0x5459	/* Get line status register */
+#define TIOCSERGETMULTI 0x545A	/* Get multiport config  */
+#define TIOCSERSETMULTI 0x545B	/* Set multiport config */
 
 #define TIOCMIWAIT	0x545C	/* wait for a change on serial input line(s) */
 #define TIOCGICOUNT	0x545D	/* read serial port __inline__ interrupt counts */
@@ -116,4 +116,4 @@
 
 #define TIOCSER_TEMT	0x01	/* Transmitter physically empty */
 
-#endif /* __ASM_GENERIC_IOCTLS_H */
+#endif				/* __ASM_GENERIC_IOCTLS_H */

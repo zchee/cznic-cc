@@ -23,4 +23,4 @@
 
 typedef __locale_t locale_t;
 
-#endif /* bits/types/locale_t.h */
+#endif				/* bits/types/locale_t.h */

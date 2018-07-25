@@ -36,4 +36,4 @@
 #undef  FOPEN_MAX
 #define FOPEN_MAX 16
 
-#endif /* bits/stdio_lim.h */
+#endif				/* bits/stdio_lim.h */

@@ -70,7 +70,7 @@
 #  endif
 # endif
 
-#else	/* Not GCC.  */
+#else				/* Not GCC.  */
 
 # define __inline		/* No inline functions.  */
 
@@ -78,7 +78,7 @@
 # define __THROWNL
 # define __NTH(fct)	fct
 
-#endif	/* GCC.  */
+#endif				/* GCC.  */
 
 /* Compilers that are not clang may object to
        #if defined __clang__ && __has_extension(...)
@@ -103,7 +103,6 @@
 /* This is not a typedef so `const __ptr_t' does the right thing.  */
 #define __ptr_t void *
 
-
 /* C++ needs to know that types and declarations are C, not C++.  */
 #ifdef	__cplusplus
 # define __BEGIN_DECLS	extern "C" {
@@ -112,7 +111,6 @@
 # define __BEGIN_DECLS
 # define __END_DECLS
 #endif
-
 
 /* Fortify support.  */
 #define __bos(ptr) __builtin_object_size (ptr, __USE_FORTIFY_LEVEL > 1)
@@ -152,7 +150,6 @@
 # define __flexarr	[1]
 # define __glibc_c99_flexarr_available 0
 #endif
-
 
 /* __asm__ ("xyz") is used throughout the headers to rename functions
    at the assembly language level.  This is wrapped by the __REDIRECT
@@ -202,7 +199,7 @@
 #if __GNUC_PREREQ (2,96)
 # define __attribute_malloc__ __attribute__ ((__malloc__))
 #else
-# define __attribute_malloc__ /* Ignore */
+# define __attribute_malloc__	/* Ignore */
 #endif
 
 /* Tell the compiler which arguments to an allocation function
@@ -211,7 +208,7 @@
 # define __attribute_alloc_size__(params) \
   __attribute__ ((__alloc_size__ params))
 #else
-# define __attribute_alloc_size__(params) /* Ignore.  */
+# define __attribute_alloc_size__(params)	/* Ignore.  */
 #endif
 
 /* At some point during the gcc 2.96 development the `pure' attribute
@@ -220,14 +217,14 @@
 #if __GNUC_PREREQ (2,96)
 # define __attribute_pure__ __attribute__ ((__pure__))
 #else
-# define __attribute_pure__ /* Ignore */
+# define __attribute_pure__	/* Ignore */
 #endif
 
 /* This declaration tells the compiler that the value is constant.  */
 #if __GNUC_PREREQ (2,5)
 # define __attribute_const__ __attribute__ ((__const__))
 #else
-# define __attribute_const__ /* Ignore */
+# define __attribute_const__	/* Ignore */
 #endif
 
 /* At some point during the gcc 3.1 development the `used' attribute
@@ -238,14 +235,14 @@
 # define __attribute_noinline__ __attribute__ ((__noinline__))
 #else
 # define __attribute_used__ __attribute__ ((__unused__))
-# define __attribute_noinline__ /* Ignore */
+# define __attribute_noinline__	/* Ignore */
 #endif
 
 /* Since version 3.2, gcc allows marking deprecated functions.  */
 #if __GNUC_PREREQ (3,2)
 # define __attribute_deprecated__ __attribute__ ((__deprecated__))
 #else
-# define __attribute_deprecated__ /* Ignore */
+# define __attribute_deprecated__	/* Ignore */
 #endif
 
 /* Since version 4.5, gcc also allows one to specify the message printed
@@ -268,7 +265,7 @@
 #if __GNUC_PREREQ (2,8)
 # define __attribute_format_arg__(x) __attribute__ ((__format_arg__ (x)))
 #else
-# define __attribute_format_arg__(x) /* Ignore */
+# define __attribute_format_arg__(x)	/* Ignore */
 #endif
 
 /* At some point during the gcc 2.97 development the `strfmon' format
@@ -279,7 +276,7 @@
 # define __attribute_format_strfmon__(a,b) \
   __attribute__ ((__format__ (__strfmon__, a, b)))
 #else
-# define __attribute_format_strfmon__(a,b) /* Ignore */
+# define __attribute_format_strfmon__(a,b)	/* Ignore */
 #endif
 
 /* The nonull function attribute allows to mark pointer parameters which
@@ -299,10 +296,10 @@
 #  define __wur __attribute_warn_unused_result__
 # endif
 #else
-# define __attribute_warn_unused_result__ /* empty */
+# define __attribute_warn_unused_result__	/* empty */
 #endif
 #ifndef __wur
-# define __wur /* Ignore */
+# define __wur			/* Ignore */
 #endif
 
 /* Forces a function to be always inlined.  */
@@ -322,7 +319,7 @@
 #if __GNUC_PREREQ (4,3)
 # define __attribute_artificial__ __attribute__ ((__artificial__))
 #else
-# define __attribute_artificial__ /* Ignore */
+# define __attribute_artificial__	/* Ignore */
 #endif
 
 /* GCC 4.3 and above with -std=c99 or -std=gnu99 implements ISO C99
@@ -368,7 +365,7 @@
 
 /* __restrict is known in EGCS 1.2 and above. */
 #if !__GNUC_PREREQ (2,92)
-# define __restrict	/* Ignore */
+# define __restrict		/* Ignore */
 #endif
 
 /* ISO C99 also allows to declare arrays as non-overlapping.  The syntax is
@@ -489,4 +486,4 @@
 # define __HAVE_GENERIC_SELECTION 0
 #endif
 
-#endif	 /* sys/cdefs.h */
+#endif				/* sys/cdefs.h */

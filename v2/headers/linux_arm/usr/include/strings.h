@@ -56,9 +56,10 @@ extern "C++" {
 	__extern_always_inline char *index(char *__s, int __c) __THROW
 {
 	return __builtin_index(__s, __c);
-} __extern_always_inline const char *index(const char *__s, int __c) __THROW {
-		return __builtin_index(__s, __c);
 }
+	__extern_always_inline const char *index(const char *__s, int __c) __THROW {
+		return __builtin_index(__s, __c);
+	}
 #endif
 }
 #else
@@ -78,9 +79,10 @@ extern "C++" {
 	__extern_always_inline char *rindex(char *__s, int __c) __THROW
 {
 	return __builtin_rindex(__s, __c);
-} __extern_always_inline const char *rindex(const char *__s, int __c) __THROW {
-		return __builtin_rindex(__s, __c);
 }
+	__extern_always_inline const char *rindex(const char *__s, int __c) __THROW {
+		return __builtin_rindex(__s, __c);
+	}
 #endif
 }
 #else

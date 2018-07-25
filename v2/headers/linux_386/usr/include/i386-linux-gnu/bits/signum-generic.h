@@ -99,4 +99,4 @@
 /* Biggest signal number + 1 (including real-time signals).  */
 #define _NSIG		(__SIGRTMAX + 1)
 
-#endif /* bits/signum-generic.h.  */
+#endif				/* bits/signum-generic.h.  */

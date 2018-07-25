@@ -122,7 +122,7 @@ extern int toupper(int __c) __THROW;
 __END_NAMESPACE_STD
 /* ISO C99 introduced one new function.  */
 #ifdef	__USE_ISOC99
-__BEGIN_NAMESPACE_C99 __exctype(isblank);
+    __BEGIN_NAMESPACE_C99 __exctype(isblank);
 
 __END_NAMESPACE_C99
 #endif

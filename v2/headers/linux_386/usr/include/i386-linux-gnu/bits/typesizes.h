@@ -91,5 +91,4 @@
 /* Number of descriptors that can fit in an `fd_set'.  */
 #define __FD_SETSIZE		1024
 
-
-#endif /* bits/typesizes.h */
+#endif				/* bits/typesizes.h */

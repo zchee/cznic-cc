@@ -37,4 +37,4 @@
 #define __LC_MEASUREMENT	11
 #define __LC_IDENTIFICATION	12
 
-#endif	/* bits/locale.h */
+#endif				/* bits/locale.h */

@@ -58,7 +58,7 @@ __USING_NAMESPACE_STD(clock_t)
 #if !defined __time_t_defined && (defined _TIME_H || defined __need_time_t)
 #define __time_t_defined	1
 #include <bits/types.h>
- __BEGIN_NAMESPACE_STD
+__BEGIN_NAMESPACE_STD
 /* Returned by `time'.  */
 typedef __time_t time_t;
 __END_NAMESPACE_STD
