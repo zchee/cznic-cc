@@ -421,7 +421,8 @@ func (t *ArrayType) Equal(u Type) bool {
 	case
 		*FunctionType,
 		*PointerType,
-		*StructType:
+		*StructType,
+		*TaggedStructType:
 
 		return false
 	case TypeKind:

@@ -27,7 +27,13 @@ func PrettyString(v interface{}) string {
 	return strutil.PrettyString(v, "", "", printHooks)
 }
 
-func debugStack() []byte { return debug.Stack() }
+func debugStack() []byte {
+	b := debug.Stack()
+	b = b[bytes.Index(b, bPanic)+1:]
+	b = b[bytes.Index(b, bPanic):]
+	b = b[bytes.Index(b, bNL)+1:]
+	return b
+}
 
 func trimSpace(toks []xc.Token) []xc.Token {
 	for len(toks) != 0 && toks[0].Rune == ' ' {
@@ -84,7 +90,8 @@ func prefer(d *Declarator) bool {
 			return d.FunctionDefinition != nil
 		case
 			*EnumType,
-			*StructType:
+			*StructType,
+			*UnionType:
 
 			return true
 		case *PointerType:
