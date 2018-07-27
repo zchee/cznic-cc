@@ -17,6 +17,7 @@ typedef void *__FILE_TYPE__;
 
 __SIZE_TYPE__ __builtin_strlen(char *__s);
 __UINT64_TYPE__ __builtin_bswap64(__UINT64_TYPE__ x);
+char *__builtin_strchrnul(char *, int);
 char *__builtin_strcpy(char *__dest, char *__src);
 double __builtin_copysign(double x, double y);
 int __builtin_abs(int j);
@@ -25,7 +26,6 @@ int __builtin_isprint(int);
 int __builtin_memcmp(void *__s1, void *__s2, __SIZE_TYPE__ __n);
 int __builtin_printf(char *__format, ...);
 int __builtin_sprintf(char *__s, char *__format, ...);
-int __builtin_strchrnul(char *, int);
 int __builtin_strcmp(char *__s1, char *__s2);
 int __signbit(double x);
 int __signbitf(float x);

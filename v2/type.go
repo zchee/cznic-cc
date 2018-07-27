@@ -46,7 +46,7 @@ type Type interface {
 	IsVoidPointerType() bool
 	Kind() TypeKind
 	String() string
-	assign(ctx *context, op Operand) Operand
+	assign(ctx *context, n Node, op Operand) Operand
 }
 
 // TypeKind represents a particular type kind.
@@ -99,7 +99,7 @@ func (t TypeKind) IsUnsigned() bool { return t.IsIntegerType() && !isSigned[t] }
 func (t TypeKind) Kind() TypeKind { return t }
 
 // assign implements Type.
-func (t TypeKind) assign(ctx *context, op Operand) Operand {
+func (t TypeKind) assign(ctx *context, n Node, op Operand) Operand {
 	// [0]6.5.16.1
 	switch {
 	// One of the following shall hold:
@@ -440,10 +440,10 @@ func (t *ArrayType) Equal(u Type) bool {
 func (t *ArrayType) Kind() TypeKind { return Array }
 
 // assign implements Type.
-func (t *ArrayType) assign(ctx *context, op Operand) Operand {
+func (t *ArrayType) assign(ctx *context, n Node, op Operand) Operand {
 	switch {
 	case t.Size.Value == nil:
-		return (&PointerType{Item: t.Item}).assign(ctx, op)
+		return (&PointerType{Item: t.Item}).assign(ctx, n, op)
 	default:
 		panic("TODO")
 	}
@@ -546,7 +546,7 @@ func (t *EnumType) Equal(u Type) bool {
 func (t *EnumType) Kind() TypeKind { return Enum }
 
 // assign implements Type.
-func (t *EnumType) assign(ctx *context, op Operand) Operand {
+func (t *EnumType) assign(ctx *context, n Node, op Operand) Operand {
 	return op.ConvertTo(ctx.model, t)
 }
 
@@ -674,7 +674,7 @@ func (t *FunctionType) Equal(u Type) bool {
 func (t *FunctionType) Kind() TypeKind { return Function }
 
 // assign implements Type.
-func (t *FunctionType) assign(ctx *context, op Operand) Operand { panic("TODO") }
+func (t *FunctionType) assign(ctx *context, n Node, op Operand) Operand { panic("TODO") }
 
 // IsPointerType implements Type.
 func (t *FunctionType) IsPointerType() bool { return false }
@@ -781,7 +781,7 @@ func (t *NamedType) Equal(u Type) bool {
 func (t *NamedType) Kind() TypeKind { return t.Type.Kind() }
 
 // assign implements Type.
-func (t *NamedType) assign(ctx *context, op Operand) Operand { return t.Type.assign(ctx, op) }
+func (t *NamedType) assign(ctx *context, n Node, op Operand) Operand { return t.Type.assign(ctx, n, op) }
 
 // IsPointerType implements Type.
 func (t *NamedType) IsPointerType() bool { return t.Type.IsPointerType() }
@@ -896,7 +896,7 @@ func (t *PointerType) Equal(u Type) bool {
 func (t *PointerType) Kind() TypeKind { return Ptr }
 
 // assign implements Type.
-func (t *PointerType) assign(ctx *context, op Operand) (r Operand) {
+func (t *PointerType) assign(ctx *context, n Node, op Operand) (r Operand) {
 	// [0]6.5.16.1
 	switch {
 	// One of the following shall hold:
@@ -925,7 +925,7 @@ func (t *PointerType) assign(ctx *context, op Operand) (r Operand) {
 
 		return Operand{Type: t, Value: Null}
 	default:
-		panic(fmt.Errorf("%v <- %v, %v %v", t, op, op.Type.IsPointerType(), t.IsCompatible(op.Type)))
+		panic(fmt.Errorf("%v: lhs type %v <- operand %v, op.IsPointerType %v op.IsCompatible %v", ctx.position(n), t, op, op.Type.IsPointerType(), t.IsCompatible(op.Type)))
 	}
 }
 
@@ -1084,7 +1084,7 @@ func (t *StructType) Equal(u Type) bool {
 func (t *StructType) Kind() TypeKind { return Struct }
 
 // assign implements Type.
-func (t *StructType) assign(ctx *context, op Operand) Operand {
+func (t *StructType) assign(ctx *context, n Node, op Operand) Operand {
 	switch x := op.Type.(type) {
 	case *StructType:
 		if !t.IsCompatible(x) {
@@ -1190,7 +1190,7 @@ func (t *TaggedEnumType) Kind() TypeKind { return Int }
 func (t *TaggedEnumType) String() string { return fmt.Sprintf("enum %s", dict.S(t.Tag)) }
 
 // assign implements Type.
-func (t *TaggedEnumType) assign(ctx *context, op Operand) Operand {
+func (t *TaggedEnumType) assign(ctx *context, n Node, op Operand) Operand {
 	switch x := UnderlyingType(op.Type).(type) {
 	case *EnumType:
 		//TODO use IsCompatible
@@ -1311,11 +1311,11 @@ func (t *TaggedStructType) getType() Type {
 func (t *TaggedStructType) Kind() TypeKind { return Struct }
 
 // assign implements Type.
-func (t *TaggedStructType) assign(ctx *context, op Operand) Operand {
+func (t *TaggedStructType) assign(ctx *context, n Node, op Operand) Operand {
 	switch x := op.Type.(type) {
 	case *NamedType:
 		op.Type = x.Type
-		return t.assign(ctx, op)
+		return t.assign(ctx, n, op)
 	case *TaggedStructType:
 		t2 := t.getType()
 		u2 := x.getType()
@@ -1412,7 +1412,7 @@ func (t *TaggedUnionType) getType() Type {
 func (t *TaggedUnionType) Kind() TypeKind { return Union }
 
 // assign implements Type.
-func (t *TaggedUnionType) assign(ctx *context, op Operand) Operand {
+func (t *TaggedUnionType) assign(ctx *context, n Node, op Operand) Operand {
 	switch x := op.Type.(type) {
 	case *TaggedUnionType:
 		t2 := t.getType()
@@ -1519,7 +1519,7 @@ func (t *UnionType) Equal(u Type) bool {
 func (t *UnionType) Kind() TypeKind { return Union }
 
 // assign implements Type.
-func (t *UnionType) assign(ctx *context, op Operand) Operand {
+func (t *UnionType) assign(ctx *context, n Node, op Operand) Operand {
 	switch x := op.Type.(type) {
 	case *NamedType:
 		if !t.IsCompatible(x.Type) {

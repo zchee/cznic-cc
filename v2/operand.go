@@ -250,7 +250,7 @@ func newIntConst(ctx *context, n Node, v uint64, t ...TypeKind) (r Operand) {
 }
 
 func (o Operand) String() string {
-	return fmt.Sprintf("(%v, %v, %+v)", o.Type, o.Value, o.FieldProperties)
+	return fmt.Sprintf("(type %v, value %v, fieldProps %+v)", o.Type, o.Value, o.FieldProperties)
 }
 
 func (o Operand) isArithmeticType() bool { return o.Type.IsArithmeticType() }

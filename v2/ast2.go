@@ -1011,7 +1011,7 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 					continue
 				}
 
-				ops[i] = AdjustedParameterType(t.Params[i]).assign(ctx, rhs)
+				ops[i] = AdjustedParameterType(t.Params[i]).assign(ctx, n, rhs)
 			}
 		default:
 			switch {
@@ -1032,7 +1032,7 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 				case isVaList(t.Params[i]) && isVaList(rhs.Type):
 					ops[i] = rhs
 				default:
-					ops[i] = AdjustedParameterType(t.Params[i]).assign(ctx, rhs)
+					ops[i] = AdjustedParameterType(t.Params[i]).assign(ctx, n, rhs)
 				}
 			}
 			break out2
@@ -1116,7 +1116,7 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 			n.Expr2.enum = x
 		}
 		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
-		n.Operand.Type.assign(ctx, rhs)
+		n.Operand.Type.assign(ctx, n, rhs)
 	case ExprGt: // Expr '>' Expr
 		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).gt(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
 		if n.Expr.Equals(n.Expr2) {
@@ -2054,7 +2054,7 @@ func (n *Initializer) check(ctx *context, t Type, fn *Declarator, field bool) (r
 			// constraints and conversions as for simple assignment
 			// apply, taking the type of the scalar to be the
 			// unqualified version of its declared type.
-			t.assign(ctx, op)
+			t.assign(ctx, n, op)
 			return n.Expr.Operand
 		}
 
@@ -2282,10 +2282,18 @@ func (n *Declarator) check0(ctx *context, ds *DeclarationSpecifier, t Type, isOb
 		}
 
 		n.Parameters = nil
-		t.Params = t.Params[:0]
+		t.Params = make([]Type, len(fnParams))
+	outer:
 		for _, v := range fnParams {
-			v.IsFunctionParameter = true
-			t.Params = append(t.Params, v.Type)
+			nm := v.Name()
+			for i, w := range t.params {
+				if nm == w {
+					v.IsFunctionParameter = true
+					t.Params[i] = v.Type
+					continue outer
+				}
+			}
+			panic("TODO")
 		}
 	}
 	if n.Embedded {
