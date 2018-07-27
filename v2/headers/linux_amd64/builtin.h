@@ -25,6 +25,7 @@ int __builtin_isprint(int);
 int __builtin_memcmp(void *__s1, void *__s2, __SIZE_TYPE__ __n);
 int __builtin_printf(char *__format, ...);
 int __builtin_sprintf(char *__s, char *__format, ...);
+int __builtin_strchrnul(char *, int);
 int __builtin_strcmp(char *__s1, char *__s2);
 int __signbit(double x);
 int __signbitf(float x);
