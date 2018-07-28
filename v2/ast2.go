@@ -339,7 +339,8 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
 				UChar,
 				UInt,
 				ULong,
-				ULongLong:
+				ULongLong,
+				UShort:
 
 				n.Operand = ctx.sizeof(t)
 			default:
@@ -2427,6 +2428,9 @@ func (n *Declarator) insert(ctx *context, isFunction bool) {
 					//IncompatibleTypeDiff(ex.Type, n.Type) //TODO-
 					panic(fmt.Errorf("%v: %v\n%v: %v", ctx.position(ex), ex.Type, ctx.position(n), n.Type))
 				}
+			case LinkageExternal:
+				ex.Linkage = n.Linkage
+				n.Scope.Idents[nm] = n
 			default:
 				// Keep it internal.
 			}
