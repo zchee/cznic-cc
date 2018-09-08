@@ -134,7 +134,7 @@ func (m Model) Equal(n Model) bool {
 func (m Model) Sizeof(t Type) int64 {
 	switch x := UnderlyingType(t).(type) {
 	case *ArrayType:
-		if x.Size.Type == nil || x.Size.Value == nil {
+		if x.Size.Type == nil && x.Size.Value == nil { // T[], but not T[i+2]
 			return int64(m[Ptr].Size)
 		}
 
@@ -187,6 +187,8 @@ type FieldProperties struct {
 	Padding    int   // Adjustment to enforce proper alignment.
 	Size       int64 // Field size for copying.
 	Type       Type
+
+	Anonymous bool
 }
 
 // Mask returns the bit mask of bit field described by f.
@@ -200,6 +202,7 @@ func (f *FieldProperties) Mask() uint64 {
 
 // Layout computes the memory layout of t.
 func (m Model) Layout(t Type) (r []FieldProperties) {
+	//TODO memoize
 	switch x := UnderlyingType(t).(type) {
 	case *StructType:
 		if len(x.Fields) == 0 {
@@ -234,7 +237,7 @@ func (m Model) Layout(t Type) (r []FieldProperties) {
 					}
 
 					n := bitoff + v.Bits
-					if n > 32 {
+					if n > 64 { //TODO 32 on 32-bit architectures?
 						off = m.packBits(bitoff, i-1, off, r)
 						r[i] = FieldProperties{Offset: off, Bits: v.Bits, Declarator: v.Declarator, Type: v.Type}
 						bitoff = v.Bits
@@ -258,7 +261,7 @@ func (m Model) Layout(t Type) (r []FieldProperties) {
 				if off != z {
 					r[i-1].Padding = int(off - z)
 				}
-				r[i] = FieldProperties{Offset: off, Size: sz, Declarator: v.Declarator, Type: v.Type}
+				r[i] = FieldProperties{Offset: off, Size: sz, Declarator: v.Declarator, Type: v.Type, Anonymous: v.Anonymous}
 				if sz == 0 && i == len(x.Fields)-1 {
 					sz = 1
 					zeroFix = true
@@ -538,7 +541,13 @@ func (m Model) defaultArgumentPromotion(op Operand) (r Operand) {
 			u = x.Enums[0].Operand.Type
 		case *NamedType:
 			u = x.Type
-		case *PointerType:
+		case
+			*PointerType,
+			*StructType,
+			*TaggedStructType,
+			*TaggedUnionType,
+			*UnionType:
+
 			op.Type = x
 			return op
 		case *TaggedEnumType:
@@ -548,7 +557,10 @@ func (m Model) defaultArgumentPromotion(op Operand) (r Operand) {
 			switch x {
 			case Float:
 				return op.ConvertTo(m, Double)
-			case Double:
+			case
+				Double,
+				LongDouble:
+
 				return op
 			case
 				Char,

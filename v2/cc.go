@@ -39,6 +39,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -68,6 +69,8 @@ void _start(int argc, char **argv)
 var (
 	_ Source = (*FileSource)(nil)
 	_ Source = (*StringSource)(nil)
+
+	_ debug.GCStats
 
 	// YYDebug points to parser's yyDebug variable.
 	YYDebug        = &yyDebug
@@ -377,6 +380,7 @@ func newContext(t *Tweaks) (*context, error) {
 
 func (c *context) err(n Node, msg string, args ...interface{}) { c.errPos(n.Pos(), msg, args...) }
 func (c *context) newScope()                                   { c.scope = newScope(c.scope) }
+func (c *context) newStructScope()                             { c.scope = newScope(c.scope); c.scope.structScope = true }
 
 func (c *context) position(n Node) (r token.Position) {
 	if n != nil {
@@ -388,7 +392,9 @@ func (c *context) position(n Node) (r token.Position) {
 
 func (c *context) errPos(pos token.Pos, msg string, args ...interface{}) {
 	c.Lock()
-	c.errors.Add(fset.PositionFor(pos, true), fmt.Sprintf(msg, args...))
+	s := fmt.Sprintf(msg, args...)
+	//s = fmt.Sprintf("%s\n====%s\n----", s, debug.Stack())
+	c.errors.Add(fset.PositionFor(pos, true), s)
 	c.Unlock()
 }
 
@@ -521,7 +527,7 @@ func (c *context) wideChar() Type {
 		case "windows":
 			sz = 2
 		case "linux":
-			sz = 2
+			sz = 4
 		default:
 			panic(goos)
 		}
@@ -604,12 +610,10 @@ func (c *context) strConst(t xc.Token) Operand {
 		var buf bytes.Buffer
 		s = s[1 : len(s)-1] // Remove outer "s.
 		runes := []rune(string(s))
-		var wrunes []rune
 		for i := 0; i < len(runes); {
 			switch r := runes[i]; {
 			case r == '\\':
 				r, n := decodeEscapeSequence(runes[i:])
-				wrunes = append(wrunes, r)
 				switch {
 				case r < 0:
 					buf.WriteByte(byte(-r))
@@ -618,7 +622,6 @@ func (c *context) strConst(t xc.Token) Operand {
 				}
 				i += n
 			default:
-				wrunes = append(wrunes, r)
 				buf.WriteByte(byte(r))
 				i++
 			}
@@ -629,7 +632,7 @@ func (c *context) strConst(t xc.Token) Operand {
 			typ := c.wideChar()
 			return Operand{
 				Type:  &ArrayType{Item: typ, Size: Operand{Type: Int, Value: &ir.Int64Value{Value: c.model.Sizeof(typ) * int64(len(runes)+1)}}},
-				Value: &ir.WideStringValue{Value: wrunes},
+				Value: &ir.WideStringValue{Value: runes},
 			}
 		case STRINGLITERAL:
 			return Operand{
@@ -830,8 +833,9 @@ type Scope struct {
 	StructTags map[int]*StructOrUnionSpecifier // name ID: *StructOrUnionSpecifier
 
 	// parser support
-	typedefs map[int]struct{} // name: nothing
-	typedef  bool
+	typedefs    map[int]struct{} // name: nothing
+	typedef     bool
+	structScope bool
 }
 
 func newScope(parent *Scope) *Scope { return &Scope{Parent: parent} }
@@ -851,6 +855,9 @@ func (s *Scope) insertLabel(ctx *context, st *LabeledStmt) {
 }
 
 func (s *Scope) insertEnumTag(ctx *context, nm int, es *EnumSpecifier) {
+	for s.structScope {
+		s = s.Parent
+	}
 	if s.EnumTags == nil {
 		s.EnumTags = map[int]*EnumSpecifier{}
 	}
@@ -878,6 +885,9 @@ func (s *Scope) insertDeclarator(ctx *context, d *Declarator) {
 }
 
 func (s *Scope) insertEnumerationConstant(ctx *context, c *EnumerationConstant) {
+	for s.structScope {
+		s = s.Parent
+	}
 	if s.Idents == nil {
 		s.Idents = map[int]Node{}
 	}
@@ -898,7 +908,7 @@ func (s *Scope) insertEnumerationConstant(ctx *context, c *EnumerationConstant) 
 }
 
 func (s *Scope) insertStructTag(ctx *context, ss *StructOrUnionSpecifier) {
-	for s.Parent != nil {
+	for s.structScope {
 		s = s.Parent
 	}
 	if s.StructTags == nil {

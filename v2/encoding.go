@@ -80,7 +80,9 @@ var (
 	Null = &ir.AddressValue{}
 
 	idAsm                    = dict.SID("asm")
+	idAttribute              = dict.SID("__attribute__")
 	idBuiltinAlloca          = dict.SID("__builtin_alloca")
+	idBuiltinClasifyType     = dict.SID("__builtin_classify_type")
 	idBuiltinTypesCompatible = dict.SID("__builtin_types_compatible__") // Implements __builtin_types_compatible_p
 	idBuiltinVaList          = dict.SID("__builtin_va_list")
 	idChar                   = dict.SID("char")
@@ -107,7 +109,6 @@ var (
 	idSizeT                  = dict.SID("size_t")
 	idStatic                 = dict.SID("static")
 	idUndef                  = dict.SID("undef")
-	idUnnamed                = dict.SID("unnamed")
 	idVaArgs                 = dict.SID("__VA_ARGS__")
 	idVaList                 = dict.SID("va_list")
 	idWarning                = dict.SID("warning")
@@ -237,6 +238,36 @@ var (
 	}
 
 	followSetHasTypedefName = [len(yyParseTab)]bool{}
+
+	classifyType = map[TypeKind]int{
+		0:                 noTypeClass,
+		Void:              voidTypeClass,
+		Ptr:               pointerTypeClass,
+		Char:              charTypeClass,
+		SChar:             charTypeClass,
+		UChar:             charTypeClass,
+		Short:             integerTypeClass,
+		UShort:            integerTypeClass,
+		Int:               integerTypeClass,
+		UInt:              integerTypeClass,
+		Long:              integerTypeClass,
+		ULong:             integerTypeClass,
+		LongLong:          integerTypeClass,
+		ULongLong:         integerTypeClass,
+		Float:             realTypeClass,
+		Double:            realTypeClass,
+		LongDouble:        realTypeClass,
+		Bool:              booleanTypeClass,
+		FloatComplex:      complexTypeClass,
+		DoubleComplex:     complexTypeClass,
+		LongDoubleComplex: complexTypeClass,
+		Struct:            recordTypeClass,
+		Union:             unionTypeClass,
+		Enum:              enumeralTypeClass,
+		TypedefName:       noTypeClass,
+		Function:          functionTypeClass,
+		Array:             arrayTypeClass,
+	}
 )
 
 func init() {
@@ -397,3 +428,25 @@ func decodeHexQuad(runes []rune) int {
 	}
 	return n
 }
+
+// Values from GCC's typeclass.h
+const (
+	noTypeClass = iota - 1
+	voidTypeClass
+	integerTypeClass
+	charTypeClass
+	enumeralTypeClass
+	booleanTypeClass
+	pointerTypeClass
+	referenceTypeClass
+	offsetTypeClass
+	realTypeClass
+	complexTypeClass
+	functionTypeClass
+	methodTypeClass
+	recordTypeClass
+	unionTypeClass
+	arrayTypeClass
+	stringTypeClass
+	langTypeClass
+)

@@ -33,16 +33,15 @@ void *__builtin_alloca(__SIZE_TYPE__ __size);
 void *__builtin_memcpy(void *dest, const void *src, __SIZE_TYPE__ n);
 void *__builtin_memset(void *s, int c, __SIZE_TYPE__ n);
 #ifdef __ccgo__
-void *__ccgo_va_end;
-void *__ccgo_va_start;
+extern void *__ccgo_va_end;
+extern void *__ccgo_va_start;
 #endif
+void __GO__(char*);
 void __builtin_abort(void);
 void __builtin_exit(int __status);
 void __builtin_trap(void);
 void __register_stdfiles(void *, void *, void *, void *);
 
-#define __attribute(x)
-#define __attribute__(xyz)
 #define __builtin_choose_expr(a, b, c) (a) ? (b) : (c)
 #define __builtin_expect(exp, c) (exp)
 #define __builtin_offsetof(st, m) ((__SIZE_TYPE__)(&((st *)0)->m))

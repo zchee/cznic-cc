@@ -524,6 +524,7 @@ func TestCPPExpand(t *testing.T) {
 			return nil
 		}
 
+		t.Log(path)
 		ctx, err := newContext(&Tweaks{
 			cppExpandTest: true,
 		})
@@ -557,7 +558,7 @@ func TestCPPExpand(t *testing.T) {
 
 			t.Fatalf("unexpected success: %s", path)
 		default:
-			if c.error() != nil {
+			if err := c.error(); err != nil {
 				t.Fatal(ErrString(err))
 			}
 		}

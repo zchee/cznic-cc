@@ -74,7 +74,6 @@ var (
 			"grp.h",
 			"memory.h",
 			"netdb.h",
-			"netinet/tcp.h",
 			"pthread.h",
 			"pwd.h",
 			"sched.h",

@@ -390,6 +390,8 @@ func (n *ConstExpr) Pos() token.Pos {
 //	Declaration:
 //	        DeclarationSpecifiers InitDeclaratorListOpt ';'  // Case 0
 type Declaration struct {
+	Attributes            [][]xc.Token
+	Scope                 *Scope
 	DeclarationSpecifiers *DeclarationSpecifiers
 	InitDeclaratorListOpt *InitDeclaratorListOpt
 	Token                 xc.Token
@@ -587,7 +589,8 @@ func (n *DeclarationSpecifiersOpt) Pos() token.Pos {
 //	Declarator:
 //	        PointerOpt DirectDeclarator  // Case 0
 type Declarator struct {
-	AssignedTo           int                   // Declarator appears at the left side of assignment.
+	AssignedTo           int // Declarator appears at the left side of assignment.
+	Attributes           [][]xc.Token
 	Bits                 int                   // StructDeclarator: bit width when a bit field.
 	DeclarationSpecifier *DeclarationSpecifier // Nil for embedded declarators.
 	Definition           *Declarator           // Declaration -> definition.
@@ -602,7 +605,8 @@ type Declarator struct {
 	StorageDuration      StorageDuration  // Storage duration of the declared name, [0]6.2.4.
 	Type                 Type             // Declared type.
 	TypeQualifiers       []*TypeQualifier // From the PointerOpt production, if any.
-	vars                 []*Declarator    // Function declarator only.
+	unnamed              int
+	vars                 []*Declarator // Function declarator only.
 	AddressTaken         bool
 	Alloca               bool // Function declarator: Body calls __builtin_alloca
 	Embedded             bool // [0]6.7.5-3: Not a full declarator.
@@ -663,7 +667,7 @@ func (n *DeclaratorOpt) Pos() token.Pos {
 //	Designation:
 //	        DesignatorList '='  // Case 0
 type Designation struct {
-	List           []int
+	List           []int64
 	DesignatorList *DesignatorList
 	Token          xc.Token
 }
@@ -2295,6 +2299,7 @@ const (
 	LabeledStmtSwitchCase LabeledStmtCase = iota
 	LabeledStmtDefault
 	LabeledStmtLabel
+	LabeledStmtLabel2
 )
 
 // String implements fmt.Stringer
@@ -2306,6 +2311,8 @@ func (n LabeledStmtCase) String() string {
 		return "LabeledStmtDefault"
 	case LabeledStmtLabel:
 		return "LabeledStmtLabel"
+	case LabeledStmtLabel2:
+		return "LabeledStmtLabel2"
 	default:
 		return fmt.Sprintf("LabeledStmtCase(%v)", int(n))
 	}
@@ -2317,6 +2324,7 @@ func (n LabeledStmtCase) String() string {
 //	        "case" ConstExpr ':' Stmt  // Case LabeledStmtSwitchCase
 //	|       "default" ':' Stmt         // Case LabeledStmtDefault
 //	|       IDENTIFIER ':' Stmt        // Case LabeledStmtLabel
+//	|       TYPEDEF_NAME ':' Stmt      // Case LabeledStmtLabel2
 type LabeledStmt struct {
 	Case      LabeledStmtCase
 	ConstExpr *ConstExpr

@@ -8,6 +8,7 @@ package cc
 
 import (
 	"bufio"
+	"fmt"
 	"go/token"
 	"io"
 
@@ -28,6 +29,7 @@ var (
 		ENUM:         {},
 		FLOAT:        {},
 		GOTO:         {},
+		IDENTIFIER:   {},
 		INT:          {},
 		LONG:         {},
 		SHORT:        {},
@@ -130,16 +132,19 @@ type lexer struct {
 	*context
 	*lex.Lexer
 	ast         Node
+	attr        [][]xc.Token
+	attr2       [][]xc.Token
 	commentPos0 token.Pos
-	prev        int // Most recent result returned by Lex
+	currFn      int // [0]6.4.2.2
 	last        lex.Char
 	mode        int // CONSTANT_EXPRESSION, TRANSLATION_UNIT
+	prev        int // Most recent result returned by Lex
 	sc          int
 	t           *trigraphs
 	tc          *tokenPipe
-	currFn      int // [0]6.4.2.2
 
-	typedef bool // Prev token returned was TYPEDEF_NAME
+	noTypedefName bool // Do not consider next token a TYPEDEF_NAME
+	typedef       bool // Prev token returned was TYPEDEF_NAME
 
 	ungetBuffer
 }
@@ -176,17 +181,30 @@ func (l *lexer) comment(general bool)         { /*TODO*/ }
 func (l *lexer) parseExpr() bool              { return l.parse(CONSTANT_EXPRESSION) }
 
 func (l *lexer) Lex(lval *yySymType) (r int) {
+more:
 	//TODO use follow set to recover from errors.
 	l.lex(lval)
 	lval.Token.Rune = l.toC(lval.Token.Rune, lval.Token.Val)
 	typedef := l.typedef
 	l.typedef = false
+	noTypedefName := l.noTypedefName
+	l.noTypedefName = false
 	switch lval.Token.Rune {
 	case NON_REPL:
 		lval.Token.Rune = IDENTIFIER
 		fallthrough
 	case IDENTIFIER:
-		if typedef || !followSetHasTypedefName[lval.yys] {
+		if lval.Token.Val == idAttribute {
+			if len(l.attr) != 0 {
+				panic(fmt.Errorf("%v:", l.position(lval.Token)))
+			}
+
+			l.attr = nil
+			l.parseAttr(lval)
+			goto more
+		}
+
+		if noTypedefName || typedef || !followSetHasTypedefName[lval.yys] {
 			break
 		}
 
@@ -215,8 +233,73 @@ func (l *lexer) Lex(lval *yySymType) (r int) {
 		lval.Token.Val = 0
 	}
 
+	if l.prev == FOR {
+		l.newScope()
+	}
 	l.prev = int(lval.Token.Rune)
 	return l.prev
+}
+
+func (l *lexer) attrs() (r [][]xc.Token) {
+	l.attr, r = nil, l.attr
+	return r
+}
+
+func (l *lexer) parseAttr(lval *yySymType) {
+	l.lex(lval)
+	if lval.Token.Rune != '(' {
+		panic("TODO")
+	}
+
+	l.lex(lval)
+	if lval.Token.Rune != '(' {
+		panic("TODO")
+	}
+
+	l.parseAttrList(lval)
+	l.lex(lval)
+	if lval.Token.Rune != ')' {
+		panic("TODO")
+	}
+
+	l.lex(lval)
+	if lval.Token.Rune != ')' {
+		panic("TODO")
+	}
+}
+
+func (l *lexer) parseAttrList(lval *yySymType) {
+	for {
+		l.lex(lval)
+		switch t := lval.Token; t.Rune {
+		case IDENTIFIER:
+			l.attr = append(l.attr, []xc.Token{t})
+		case ')':
+			l.unget(t)
+			return
+		case '(':
+			l.parseAttrParams(lval)
+		case ',':
+			// ok
+		default:
+			panic(fmt.Errorf("%v: %v", l.position(lval.Token), PrettyString(lval.Token)))
+		}
+	}
+}
+
+func (l *lexer) parseAttrParams(lval *yySymType) {
+	for {
+		l.lex(lval)
+		switch t := lval.Token; t.Rune {
+		case STRINGLITERAL:
+			n := len(l.attr)
+			l.attr[n-1] = append(l.attr[n-1], t)
+		case ')':
+			return
+		default:
+			panic(fmt.Errorf("%v: %v", l.position(lval.Token), PrettyString(lval.Token)))
+		}
+	}
 }
 
 func (l *lexer) ReadChar() (c lex.Char, size int, err error) {

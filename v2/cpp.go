@@ -16,6 +16,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/cznic/golex/lex"
@@ -228,7 +229,7 @@ func (m *Macro) Eval(model Model, macros map[int]*Macro) (op Operand, err error)
 	ctx.model = model
 	c := newCPP(ctx)
 	c.macros = macros
-	if op, _ = c.constExpr(m.ReplacementToks); op.Type == nil {
+	if op, _ = c.constExpr(m.ReplacementToks, false); op.Type == nil {
 		return op, fmt.Errorf("cannot evaluate macro")
 	}
 
@@ -247,12 +248,20 @@ func (m *Macro) param(ap [][]xc.Token, nm int, out *[]xc.Token) bool {
 			o := *out
 			for i, v := range ap[i:] {
 				if i != 0 {
-					t := o[len(o)-1]
-					t.Rune = ','
-					t.Val = 0
-					o = append(o, t)
-					t.Rune = ' '
-					o = append(o, t)
+					switch lo := len(o); lo {
+					case 0:
+						var t xc.Token
+						t.Rune = ','
+						t.Val = 0
+						o = append(o, t)
+					default:
+						t := o[len(o)-1]
+						t.Rune = ','
+						t.Val = 0
+						o = append(o, t)
+						t.Rune = ' '
+						o = append(o, t)
+					}
 				}
 				o = append(o, v...)
 			}
@@ -266,12 +275,20 @@ func (m *Macro) param(ap [][]xc.Token, nm int, out *[]xc.Token) bool {
 			o := *out
 			for i, v := range ap[i:] {
 				if i != 0 {
-					t := o[len(o)-1]
-					t.Rune = ','
-					t.Val = 0
-					o = append(o, t)
-					t.Rune = ' '
-					o = append(o, t)
+					switch lo := len(o); lo {
+					case 0:
+						var t xc.Token
+						t.Rune = ','
+						t.Val = 0
+						o = append(o, t)
+					default:
+						t := o[len(o)-1]
+						t.Rune = ','
+						t.Val = 0
+						o = append(o, t)
+						t.Rune = ' '
+						o = append(o, t)
+					}
 				}
 				o = append(o, v...)
 			}
@@ -427,7 +444,7 @@ func (c *cpp) parse(src ...Source) (tokenReader, error) {
 func (c *cpp) eval(r tokenReader, w tokenWriter) (err error) {
 	c.macros[idFile] = &Macro{ReplacementToks: []xc.Token{{Char: lex.NewChar(0, STRINGLITERAL)}}}
 	c.macros[idLineMacro] = &Macro{ReplacementToks: []xc.Token{{Char: lex.NewChar(0, INTCONST)}}}
-	if cs := c.expand(r, w, conds(nil).push(condZero), 0); len(cs) != 1 || cs.tos() != condZero {
+	if cs := c.expand(r, w, conds(nil).push(condZero), 0, false); len(cs) != 1 || cs.tos() != condZero {
 		return fmt.Errorf("unexpected top of condition stack value: %v", cs)
 	}
 
@@ -459,7 +476,7 @@ func (c *cpp) eval(r tokenReader, w tokenWriter) (err error) {
 // 	note TS must be T^HS • TS’
 // 	return T^HS • expand(TS’);
 // }
-func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
+func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int, expandDefined bool) conds {
 	for {
 		t := r.read()
 		switch t.Rune {
@@ -477,6 +494,56 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
 			}
 
 			nm := t.Val
+			if nm == idDefined && expandDefined {
+			more:
+				switch t = r.read(); t.Rune {
+				case ccEOF:
+					panic("TODO")
+				case IDENTIFIER:
+					nm := t.Val
+					t.Rune = INTCONST
+					t.Val = idZero
+					if _, ok := c.macros[nm]; ok {
+						t.Val = idOne
+					}
+					w.write(t)
+					continue
+				case ' ':
+					goto more
+				case '(': // defined(name)
+					var u xc.Token
+					switch t = r.read(); t.Rune {
+					case ccEOF:
+						panic("TODO")
+					case IDENTIFIER:
+						nm := t.Val
+						u = t
+						u.Rune = INTCONST
+						u.Val = idZero
+						if _, ok := c.macros[nm]; ok {
+							u.Val = idOne
+						}
+					more2:
+						switch t = r.read(); t.Rune {
+						case ccEOF:
+							panic("TODO")
+						case ' ':
+							goto more2
+						case ')':
+							// ok done
+							w.write(u)
+							continue
+						default:
+							panic(t.String())
+						}
+					default:
+						panic(t.String())
+					}
+				default:
+					panic(t.String())
+				}
+			}
+
 			if c.hideSet[nm] != 0 {
 				// ------------------------------------------ B
 				w.write(t)
@@ -493,7 +560,7 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
 				}
 				// ------------------------------------------ C
 				c.hideSet[nm]++
-				toks := c.subst(m, nil)
+				toks := c.subst(m, nil, expandDefined)
 				for i, v := range toks {
 					toks[i].Char = lex.NewChar(t.Pos(), v.Rune)
 				}
@@ -528,7 +595,7 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int) conds {
 				ap := c.actuals(m, r)
 				t.Rune = SENTINEL
 				sentinels = append([]xc.Token{t}, sentinels...)
-				toks := append(c.subst(m, ap), sentinels...)
+				toks := append(c.subst(m, ap, expandDefined), sentinels...)
 				for i, v := range toks {
 					toks[i].Char = lex.NewChar(t.Pos(), v.Rune)
 				}
@@ -608,10 +675,10 @@ func (c *cpp) actuals(m *Macro, r tokenReader) (out [][]xc.Token) {
 	}
 }
 
-func (c *cpp) expands(toks []xc.Token) (out []xc.Token) {
+func (c *cpp) expands(toks []xc.Token, expandDefined bool) (out []xc.Token) {
 	var r, w tokenBuffer
 	r.toks = toks
-	c.expand(&r, &w, conds(nil).push(condZero), 1)
+	c.expand(&r, &w, conds(nil).push(condZero), 1, expandDefined)
 	return w.toks
 }
 
@@ -669,7 +736,7 @@ func (c *cpp) expands(toks []xc.Token) (out []xc.Token) {
 // 	note IS must be T^HS’ • IS’
 // 	return subst(IS’,FP,AP,HS,OS • THS’);
 // }
-func (c *cpp) subst(m *Macro, ap [][]xc.Token) (out []xc.Token) {
+func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Token) {
 	// dbg("%s %v %v", m.def.S(), m.variadic, ap)
 	repl := m.ReplacementToks
 	var arg []xc.Token
@@ -770,7 +837,7 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token) (out []xc.Token) {
 
 		if repl[0].Rune == IDENTIFIER && m.param(ap, repl[0].Val, &arg) {
 			// -------------------------------------------------- L
-			out = append(out, c.expands(arg)...)
+			out = append(out, c.expands(arg, expandDefined)...)
 			repl = repl[1:]
 			continue
 		}
@@ -802,6 +869,9 @@ func (c *cpp) glue(ls, rs []xc.Token) (n int, out []xc.Token) {
 	}
 
 	l := ls[len(ls)-1]
+	if l.Rune == NON_REPL {
+		l.Rune = IDENTIFIER
+	}
 	ls = ls[:len(ls)-1]
 	r := rs[0]
 	rs = rs[1:]
@@ -890,7 +960,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 		case idElif:
 			switch cs.tos() {
 			case condIfOff:
-				if _, ok := c.constExpr(line[1:]); ok {
+				if _, ok := c.constExpr(line[1:], true); ok {
 					return cs.pop().push(condIfOn)
 				}
 			case condIfOn:
@@ -922,7 +992,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				return cs.push(condIfSkip)
 			}
 
-			switch _, ok := c.constExpr(line[1:]); {
+			switch _, ok := c.constExpr(line[1:], true); {
 			case ok:
 				return cs.push(condIfOn)
 			default:
@@ -1028,7 +1098,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 					panic(PrettyString(line))
 				}
 
-				line = c.expands(trimAllSpace(line))
+				line = c.expands(trimAllSpace(line), false)
 				expanded = true
 				if c.tweaks.cppExpandTest {
 					w.write(line...)
@@ -1045,6 +1115,29 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				panic(fmt.Errorf("%v: %v", c.position(t), cs.tos()))
 			}
 		case idLine:
+			if !cs.on() {
+				break
+			}
+
+			f := fset.File(line[0].Pos())
+			off := f.Offset(line[0].Pos())
+			pos := c.position(line[0])
+			line = c.expands(trimAllSpace(line[1:]), false)
+			switch len(line) {
+			case 1: // #line linenum
+				n, err := strconv.ParseUint(string(line[0].S()), 10, 31)
+				if err != nil {
+					break
+				}
+
+				f.AddLineInfo(off, pos.Filename, int(n-1))
+				//TODO
+			case 2: // #line linenum filename
+				//TODO
+			default:
+				// ignore
+			}
+
 			// ignored
 		case idPragma:
 			if !cs.on() {
@@ -1142,6 +1235,10 @@ func (c *cpp) include(n Node, nm string, paths []string, w tokenWriter) {
 		return
 	}
 
+	if n, _ := s.Size(); n == 0 {
+		return
+	}
+
 	if f := c.tweaks.TrackIncludes; f != nil {
 		f(path)
 	}
@@ -1150,37 +1247,11 @@ func (c *cpp) include(n Node, nm string, paths []string, w tokenWriter) {
 		c.err(n, "%s", err.Error())
 	}
 
-	c.expand(r, w, conds(nil).push(condZero), 0)
+	c.expand(r, w, conds(nil).push(condZero), 0, false)
 }
 
-func (c *cpp) constExpr(toks []xc.Token) (op Operand, y bool) {
-	toks = trimAllSpace(toks)
-	for i, v := range toks { // [0]6.10.1-1
-		if v.Rune == IDENTIFIER && v.Val == idDefined {
-			s := toks[i:]
-			switch {
-			case len(s) > 1 && s[1].Rune == IDENTIFIER:
-				s[0].Rune = INTCONST
-				s[0].Val = idZero
-				if _, ok := c.macros[s[1].Val]; ok {
-					s[0].Val = idOne
-				}
-				s[1].Rune = ' '
-				continue
-			case len(s) > 3 && s[1].Rune == '(' && s[2].Rune == IDENTIFIER && s[3].Rune == ')':
-				s[0].Rune = INTCONST
-				s[0].Val = idZero
-				if _, ok := c.macros[s[2].Val]; ok {
-					s[0].Val = idOne
-				}
-				s[1].Rune = ' '
-				s[2].Rune = ' '
-				s[3].Rune = ' '
-				continue
-			}
-		}
-	}
-	toks = trimAllSpace(c.expands(trimAllSpace(toks)))
+func (c *cpp) constExpr(toks []xc.Token, expandDefined bool) (op Operand, y bool) {
+	toks = trimAllSpace(c.expands(trimAllSpace(toks), expandDefined))
 	for i, v := range toks {
 		if v.Rune == IDENTIFIER {
 			toks[i].Rune = INTCONST

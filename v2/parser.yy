@@ -358,9 +358,19 @@ import (
                         	Expr
 
                         // [0]6.7
+			//yy:field	Attributes	[][]xc.Token
+			//yy:field	Scope		*Scope
 			Declaration:
-                        	DeclarationSpecifiers InitDeclaratorListOpt ';'
+                        	DeclarationSpecifiers InitDeclaratorListOpt
 				{
+					lx.attr2 = lx.attr
+				}
+				';'
+				{
+					lhs.Scope = lx.scope
+					if len(lx.attr2) != 0 {
+						lhs.Attributes = lx.attrs()
+					}
 					lx.scope.typedef = false
 				}
 
@@ -433,7 +443,11 @@ import (
 				{
 					lhs.scope = lx.scope
 				}
-/*yy:case Empty      */ |	StructOrUnion IdentifierOpt '{' '}'
+/*yy:case Empty      */ |	StructOrUnion IdentifierOpt '{'
+				{
+					lx.noTypedefName = true // https://github.com/cznic/sqlite2go/issues/9
+				}
+				'}'
 				{
 					if !lx.tweaks.EnableEmptyStructs {
 						lx.err($1, "empty structs/unions not allowed")
@@ -441,9 +455,13 @@ import (
 				}
 /*yy:case Define     */ |	StructOrUnion IdentifierOpt '{'
 				{
-					lx.newScope()
+					lx.newStructScope()
 				}
-				StructDeclarationList '}'
+				StructDeclarationList
+				{
+					lx.noTypedefName = true // https://github.com/cznic/sqlite2go/issues/9
+				}
+				'}'
 				{
 					lhs.scope, _ = lx.popScope()
 				}
@@ -528,6 +546,7 @@ import (
 
                         // [0]6.7.5
 			//yy:field	AssignedTo		int			// Declarator appears at the left side of assignment.
+			//yy:field	Attributes		[][]xc.Token
 			//yy:field	Bits			int			// StructDeclarator: bit width when a bit field.
 			//yy:field	DeclarationSpecifier	*DeclarationSpecifier	// Nil for embedded declarators.
 			//yy:field	Definition		*Declarator		// Declaration -> definition.
@@ -542,6 +561,7 @@ import (
 			//yy:field	StorageDuration		StorageDuration		// Storage duration of the declared name, [0]6.2.4.
 			//yy:field	Type			Type			// Declared type.
 			//yy:field	TypeQualifiers		[]*TypeQualifier	// From the PointerOpt production, if any.
+			//yy:field	unnamed			int
 			//yy:field	vars			[]*Declarator		// Function declarator only.
 			//yy:field	AddressTaken		bool
 			//yy:field	Alloca			bool			// Function declarator: Body calls __builtin_alloca
@@ -552,6 +572,7 @@ import (
                         Declarator:
                         	PointerOpt DirectDeclarator
 				{
+					lhs.Attributes = lx.attrs()
 					lhs.Scope = lx.scope
 					if lx.scope.typedef {
 						delete(lx.scope.Idents, lhs.DirectDeclarator.nm())
@@ -696,7 +717,7 @@ import (
                         |	InitializerList ',' Designation Initializer
 
                         // [0]6.7.8
-			//yy:field	List	[]int
+			//yy:field	List	[]int64
                         Designation:
                         	DesignatorList '='
 
@@ -724,6 +745,10 @@ import (
                         	"case" ConstExpr ':' Stmt
 /*yy:case Default    */ |	"default" ':' Stmt
 /*yy:case Label      */ |	IDENTIFIER ':' Stmt
+				{
+					lx.scope.insertLabel(lx.context, lhs)
+				}
+/*yy:case Label2      */ |	TYPEDEF_NAME ':' Stmt
 				{
 					lx.scope.insertLabel(lx.context, lhs)
 				}
@@ -770,7 +795,13 @@ import (
 /*yy:case Do         */ IterationStmt:
                         	"do" Stmt "while" '(' ExprList ')' ';'
 /*yy:case ForDecl    */ |	"for" '(' Declaration ExprListOpt ';' ExprListOpt ')' Stmt
+				{
+					lx.popScope()
+				}
 /*yy:case For        */ |	"for" '(' ExprListOpt ';' ExprListOpt ';' ExprListOpt ')' Stmt
+				{
+					lx.popScope()
+				}
 /*yy:case While      */ |	"while" '(' ExprList ')' Stmt
 
                         // [0]6.8.6
@@ -806,6 +837,9 @@ import (
 				DeclarationListOpt FunctionBody
 				{
 					lhs.Declarator.FunctionDefinition = lhs
+					if lx.scope.Parent != nil {
+						panic("internal error")
+					}
 				}
 /*yy:case Int        */ |	Declarator
 				{
@@ -818,6 +852,9 @@ import (
 				DeclarationListOpt FunctionBody
 				{
 					lhs.Declarator.FunctionDefinition = lhs
+					if lx.scope.Parent != nil {
+						panic("internal error")
+					}
 				}
 
 			FunctionBody:
