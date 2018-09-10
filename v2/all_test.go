@@ -438,7 +438,7 @@ func exampleAST(rule int, src string) interface{} {
 		return fmt.Sprintf("TODO: %v", err) //TODOOK
 	}
 
-	l.unget(xc.Token{Char: lex.Char{Rune: r}})
+	l.unget(cppToken{Token: xc.Token{Char: lex.Char{Rune: r}}})
 	yyParse(l)
 	if err := ctx.error(); err != nil {
 		return fmt.Sprintf("TODO: %v", err) //TODOOK
@@ -570,7 +570,7 @@ func TestCPPExpand(t *testing.T) {
 				break
 			}
 
-			a = append(a, TokSrc(t))
+			a = append(a, TokSrc(t.Token))
 		}
 		s := strings.Join(a, "")
 		exp, err := ioutil.ReadFile(path + ".expect")
@@ -600,7 +600,7 @@ func (b *tokenBuffer) WriteTo(fset *token.FileSet, w io.Writer) {
 			fmt.Fprintf(w, "# %d %v\n", pos.Line, pos.Filename)
 		}
 		lpos = pos
-		w.Write([]byte(TokSrc(t)))
+		w.Write([]byte(TokSrc(t.Token)))
 	}
 }
 

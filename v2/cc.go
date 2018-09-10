@@ -460,7 +460,7 @@ func (c *context) parse(in []Source) (_ *TranslationUnit, err error) {
 
 			if f := c.tweaks.TrackExpand; f != nil {
 				if p := c.position(t); filepath.Base(p.Filename) != "builtin.h" {
-					f(TokSrc(t))
+					f(TokSrc(t.Token))
 				}
 			}
 		}

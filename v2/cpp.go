@@ -37,28 +37,56 @@ var (
 	_ tokenWriter = (*tokenPipe)(nil)
 )
 
+type cppToken struct {
+	xc.Token
+	hs map[int]struct{}
+}
+
+func (t *cppToken) has(nm int) bool { _, ok := t.hs[nm]; return ok }
+
+func (t *cppToken) cloneAdd(nm int) map[int]struct{} {
+	nhs := map[int]struct{}{nm: {}}
+	for k, v := range t.hs {
+		nhs[k] = v
+	}
+	return nhs
+}
+
+func (t *cppToken) hsAdd(hs map[int]struct{}) {
+	if len(hs) == 0 {
+		return
+	}
+
+	if len(t.hs) == 0 {
+		t.hs = map[int]struct{}{}
+	}
+	for k := range hs {
+		t.hs[k] = struct{}{}
+	}
+}
+
 type tokenWriter interface {
-	write(...xc.Token)
+	write(...cppToken)
 }
 
 type tokenReader interface {
-	read() xc.Token
-	unget(xc.Token)
-	ungets(...xc.Token)
+	read() cppToken
+	unget(cppToken)
+	ungets(...cppToken)
 }
 
 type tokenPipe struct {
 	b  []byte
-	ch chan xc.Token
-	s  []xc.Token
+	ch chan cppToken
+	s  []cppToken
 
 	emitWhiteSpace bool
 }
 
-func newTokenPipe(n int) *tokenPipe { return &tokenPipe{ch: make(chan xc.Token, n)} }
+func newTokenPipe(n int) *tokenPipe { return &tokenPipe{ch: make(chan cppToken, n)} }
 
-func (*tokenPipe) unget(xc.Token)     { panic("internal error") }
-func (*tokenPipe) ungets(...xc.Token) { panic("internal error") }
+func (*tokenPipe) unget(cppToken)     { panic("internal error") }
+func (*tokenPipe) ungets(...cppToken) { panic("internal error") }
 
 func (p *tokenPipe) close() {
 	if len(p.s) != 0 {
@@ -80,7 +108,7 @@ func (p *tokenPipe) flush() {
 	p.s = p.s[:0]
 }
 
-func (p *tokenPipe) read() xc.Token {
+func (p *tokenPipe) read() cppToken {
 	t, ok := <-p.ch
 	if !ok {
 		t.Rune = ccEOF
@@ -88,7 +116,7 @@ func (p *tokenPipe) read() xc.Token {
 	return t
 }
 
-func (p *tokenPipe) write(toks ...xc.Token) {
+func (p *tokenPipe) write(toks ...cppToken) {
 	for _, t := range toks {
 		switch t.Rune {
 		case '\n', ' ':
@@ -107,21 +135,21 @@ func (p *tokenPipe) write(toks ...xc.Token) {
 }
 
 type tokenBuffer struct {
-	toks0 []xc.Token
-	toks  []xc.Token
+	toks0 []cppToken
+	toks  []cppToken
 	ungetBuffer
 
 	last rune
 }
 
-func (b *tokenBuffer) write(t ...xc.Token) {
+func (b *tokenBuffer) write(t ...cppToken) {
 	b.toks = append(b.toks, t...)
 	if b.toks0 == nil || &b.toks0[0] != &b.toks[0] {
 		b.toks0 = b.toks
 	}
 }
 
-func (b *tokenBuffer) read() (t xc.Token) {
+func (b *tokenBuffer) read() (t cppToken) {
 	if len(b.ungetBuffer) != 0 {
 		return b.ungetBuffer.read()
 	}
@@ -152,9 +180,9 @@ type cppReader struct {
 	last rune
 }
 
-func (c *cppReader) unget(t xc.Token) { c.ungetBuffer = append(c.ungetBuffer, t) }
+func (c *cppReader) unget(t cppToken) { c.ungetBuffer = append(c.ungetBuffer, t) }
 
-func (c *cppReader) read() (t xc.Token) {
+func (c *cppReader) read() (t cppToken) {
 	if len(c.ungetBuffer) != 0 {
 		return c.ungetBuffer.read()
 	}
@@ -176,7 +204,7 @@ more:
 		c.decPos = 0
 	}
 
-	c.decBuf, c.decPos, t = decodeToken(c.decBuf, c.decPos)
+	c.decBuf, c.decPos, t.Token = decodeToken(c.decBuf, c.decPos)
 	if t.Rune == '#' && (c.last == '\n' || c.last == 0) {
 		t.Rune = DIRECTIVE
 	}
@@ -229,7 +257,7 @@ func (m *Macro) Eval(model Model, macros map[int]*Macro) (op Operand, err error)
 	ctx.model = model
 	c := newCPP(ctx)
 	c.macros = macros
-	if op, _ = c.constExpr(m.ReplacementToks, false); op.Type == nil {
+	if op, _ = c.constExpr(cppToks(m.ReplacementToks), false); op.Type == nil {
 		return op, fmt.Errorf("cannot evaluate macro")
 	}
 
@@ -237,7 +265,7 @@ func (m *Macro) Eval(model Model, macros map[int]*Macro) (op Operand, err error)
 	return op, nil
 }
 
-func (m *Macro) param(ap [][]xc.Token, nm int, out *[]xc.Token) bool {
+func (m *Macro) param(ap [][]cppToken, nm int, out *[]cppToken) bool {
 	*out = nil
 	if nm == idVaArgs {
 		if !m.IsVariadic {
@@ -250,7 +278,7 @@ func (m *Macro) param(ap [][]xc.Token, nm int, out *[]xc.Token) bool {
 				if i != 0 {
 					switch lo := len(o); lo {
 					case 0:
-						var t xc.Token
+						var t cppToken
 						t.Rune = ','
 						t.Val = 0
 						o = append(o, t)
@@ -277,7 +305,7 @@ func (m *Macro) param(ap [][]xc.Token, nm int, out *[]xc.Token) bool {
 				if i != 0 {
 					switch lo := len(o); lo {
 					case 0:
-						var t xc.Token
+						var t cppToken
 						t.Rune = ','
 						t.Val = 0
 						o = append(o, t)
@@ -312,11 +340,10 @@ func (nullReader) Read([]byte) (int, error) { return 0, io.EOF }
 
 type cpp struct {
 	*context
-	hideSet      map[int]int // name: hidden if != 0.
 	includeLevel int
 	lx           *lexer
 	macros       map[int]*Macro // name ID: macro
-	toks         []xc.Token
+	toks         []cppToken
 }
 
 func newCPP(ctx *context) *cpp {
@@ -328,7 +355,6 @@ func newCPP(ctx *context) *cpp {
 	lx.context = ctx
 	r := &cpp{
 		context: ctx,
-		hideSet: map[int]int{},
 		lx:      lx,
 		macros:  map[int]*Macro{},
 	}
@@ -339,7 +365,7 @@ func (c *cpp) parse(src ...Source) (tokenReader, error) {
 	var (
 		encBuf  []byte
 		encBuf1 [30]byte // Rune, position, optional value ID.
-		tokBuf  []xc.Token
+		tokBuf  []cppToken
 		tu      [][]uint32
 	)
 	for _, v := range src {
@@ -382,8 +408,8 @@ func (c *cpp) parse(src ...Source) (tokenReader, error) {
 			}()
 
 			var pf []uint32
-			var t xc.Token
-			var toks []xc.Token
+			var t cppToken
+			var toks []cppToken
 			for {
 				ch := lx.cppScan()
 				if ch.Rune == ccEOF {
@@ -395,7 +421,7 @@ func (c *cpp) parse(src ...Source) (tokenReader, error) {
 					t.Char = ch
 					t.Val = 0
 					if ch.Rune == '\n' {
-						toks = append(trimSpace(tokBuf), t)
+						toks = append(cppTrimSpace(tokBuf), t)
 						break
 					}
 
@@ -465,12 +491,12 @@ func (c *cpp) eval(r tokenReader, w tokenWriter) (err error) {
 //
 // 	else if TS is T^HS • TS’ and T is a "()-less macro" then
 //		// ---------------------------------------------------------- C
-// 		return expand(subst(ts(T ),{},{},HS ∪{T},{}) • TS’ );
+// 		return expand(subst(ts(T), {}, {}, HS \cup {T}, {}) • TS’ );
 //
 // 	else if TS is T^HS •(•TS’ and T is a "()’d macro" then
 //		// ---------------------------------------------------------- D
 // 		check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
-// 		return expand(subst(ts(T ),fp(T ),actuals,(HS ∩HS’) ∪{T },{}) • TS’’);
+// 		return expand(subst(ts(T), fp(T), actuals,(HS \cap HS’) \cup {T }, {}) • TS’’);
 //
 //	// ------------------------------------------------------------------ E
 // 	note TS must be T^HS • TS’
@@ -480,8 +506,11 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int, expandDefi
 	for {
 		t := r.read()
 		switch t.Rune {
+		// First, if TS is the empty set, the result is the
+		// empty set.
 		case ccEOF:
 			// -------------------------------------------------- A
+			// 		return {};
 			return cs
 		case DIRECTIVE:
 			cs = c.directive(r, w, cs)
@@ -511,7 +540,7 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int, expandDefi
 				case ' ':
 					goto more
 				case '(': // defined(name)
-					var u xc.Token
+					var u cppToken
 					switch t = r.read(); t.Rune {
 					case ccEOF:
 						panic("TODO")
@@ -544,14 +573,28 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int, expandDefi
 				}
 			}
 
-			if c.hideSet[nm] != 0 {
+			// Otherwise, if the token sequence begins with a token
+			// whose hide set contains that token, then the result
+			// is the token sequence beginning with that token
+			// (including its hide set) followed by the result of
+			// expand on the rest of the token sequence.
+			if t.has(nm) {
 				// ------------------------------------------ B
+				// 		return T^HS • expand(TS’);
 				w.write(t)
 				continue
 			}
 
 			m := c.macros[nm]
 			if m != nil && !m.IsFnLike {
+				// Otherwise, if the token sequence begins with
+				// an object-like macro, the result is the
+				// expansion of the rest of the token sequence
+				// beginning with the sequence returned by
+				// subst invoked with the replacement token
+				// sequence for the macro, two empty sets, the
+				// union of the macro’s hide set and the macro
+				// itself, and an empty set.
 				switch nm {
 				case idFile:
 					m.ReplacementToks[0].Val = dict.SID(fmt.Sprintf("%q", c.position(t).Filename))
@@ -559,61 +602,58 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int, expandDefi
 					m.ReplacementToks[0].Val = dict.SID(fmt.Sprint(c.position(t).Line))
 				}
 				// ------------------------------------------ C
-				c.hideSet[nm]++
-				toks := c.subst(m, nil, expandDefined)
+				// 		return expand(subst(ts(T), {}, {}, HS \cup {T}, {}) • TS’ );
+				toks := c.subst(m, nil, t.cloneAdd(nm), expandDefined)
 				for i, v := range toks {
 					toks[i].Char = lex.NewChar(t.Pos(), v.Rune)
 				}
-				r.ungets(c.sanitize(toks)...)
-				c.hideSet[nm]--
+				r.ungets(toks...)
 				continue
 			}
 
 			if m != nil && m.IsFnLike {
 				// ------------------------------------------ D
-				var sentinels []xc.Token
+				// 		check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
+				// 		return expand(subst(ts(T), fp(T), actuals,(HS \cap HS’) \cup {T }, {}) • TS’’);
+				hs := t.hs
 			again:
 				switch t2 := r.read(); t2.Rune {
-				case SENTINEL, '\n':
-					sentinels = append(sentinels, t2)
+				case '\n', ' ':
 					goto again
 				case '(':
 					// ok
 				case ccEOF:
-					r.ungets(sentinels...)
 					w.write(t)
 					continue
-				case ' ':
-					goto again
 				default:
-					r.ungets(sentinels...)
 					w.write(t)
 					w.write(t2)
 					continue
 				}
 
-				ap := c.actuals(m, r)
-				t.Rune = SENTINEL
-				sentinels = append([]xc.Token{t}, sentinels...)
-				toks := append(c.subst(m, ap, expandDefined), sentinels...)
+				ap, hs2 := c.actuals(m, r)
+				switch {
+				case len(hs2) == 0:
+					hs2 = map[int]struct{}{nm: {}}
+				default:
+					nhs := map[int]struct{}{}
+					for k := range hs {
+						if _, ok := hs2[k]; ok {
+							nhs[k] = struct{}{}
+						}
+					}
+					nhs[nm] = struct{}{}
+					hs2 = nhs
+				}
+				toks := c.subst(m, ap, hs2, expandDefined)
 				for i, v := range toks {
 					toks[i].Char = lex.NewChar(t.Pos(), v.Rune)
 				}
-				c.hideSet[nm]++
-				r.ungets(c.sanitize(toks)...)
+				r.ungets(toks...)
 				continue
 			}
 
 			w.write(t)
-		case SENTINEL:
-			if !cs.on() {
-				panic("internal error 5")
-			}
-
-			c.hideSet[t.Val]--
-			if c.hideSet[t.Val] < 0 {
-				panic(PrettyString(t))
-			}
 		default:
 			// -------------------------------------------------- E
 			if !cs.on() {
@@ -625,22 +665,13 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int, expandDefi
 	}
 }
 
-func (c *cpp) sanitize(toks []xc.Token) []xc.Token {
-	for i, v := range toks {
-		if v.Rune == IDENTIFIER && c.hideSet[v.Val] != 0 {
-			toks[i].Rune = NON_REPL
-		}
-	}
-	return toks
-}
-
-func (c *cpp) actuals(m *Macro, r tokenReader) (out [][]xc.Token) {
+func (c *cpp) actuals(m *Macro, r tokenReader) (out [][]cppToken, hs map[int]struct{}) {
 	var lvl, n int
 	for {
 		t := r.read()
 		if t.Rune < 0 {
 			c.err(t, "unexpected EOF")
-			return nil
+			return nil, nil
 		}
 
 		switch t.Rune {
@@ -652,12 +683,12 @@ func (c *cpp) actuals(m *Macro, r tokenReader) (out [][]xc.Token) {
 		case ')':
 			if lvl == 0 {
 				for i, v := range out {
-					out[i] = trimSpace(v)
+					out[i] = cppTrimSpace(v)
 				}
 				for len(out) < len(m.Args) {
 					out = append(out, nil)
 				}
-				return out
+				return out, t.hs
 			}
 
 			lvl--
@@ -666,7 +697,7 @@ func (c *cpp) actuals(m *Macro, r tokenReader) (out [][]xc.Token) {
 		}
 
 		for len(out) <= n {
-			out = append(out, []xc.Token{})
+			out = append(out, []cppToken{})
 		}
 		if t.Rune == '\n' {
 			t.Rune = ' '
@@ -675,7 +706,7 @@ func (c *cpp) actuals(m *Macro, r tokenReader) (out [][]xc.Token) {
 	}
 }
 
-func (c *cpp) expands(toks []xc.Token, expandDefined bool) (out []xc.Token) {
+func (c *cpp) expands(toks []cppToken, expandDefined bool) (out []cppToken) {
 	var r, w tokenBuffer
 	r.toks = toks
 	c.expand(&r, &w, conds(nil).push(condZero), 1, expandDefined)
@@ -684,70 +715,85 @@ func (c *cpp) expands(toks []xc.Token, expandDefined bool) (out []xc.Token) {
 
 // [1]pg 2.
 //
-// subst(IS,FP,AP,HS,OS ) /* substitute args, handle stringize and paste */
+// subst(IS, FP, AP, HS, OS) /* substitute args, handle stringize and paste */
 // {
 // 	if IS is {} then
 //		// ---------------------------------------------------------- A
-// 		return hsadd(HS,OS);
+// 		return hsadd(HS, OS);
 //
-// 	else if IS is #•T•IS’ and T is FP[i] then
+// 	else if IS is # • T • IS’ and T is FP[i] then
 //		// ---------------------------------------------------------- B
-// 		return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP)));
+// 		return subst(IS’, FP, AP, HS, OS • stringize(select(i, AP)));
 //
 // 	else if IS is ## • T • IS’ and T is FP[i] then
 //	{
 //		// ---------------------------------------------------------- C
-// 		if select(i,AP ) is {} then /* only if actuals can be empty */
+// 		if select(i, AP) is {} then /* only if actuals can be empty */
 //			// -------------------------------------------------- D
-// 			return subst(IS’,FP,AP,HS,OS);
+// 			return subst(IS’, FP, AP, HS, OS);
 // 		else
 //			// -------------------------------------------------- E
-// 			return subst(IS’,FP,AP,HS,glue(OS,select(i,AP)));
+// 			return subst(IS’, FP, AP, HS, glue(OS, select(i, AP)));
 // 	}
 //
 // 	else if IS is ## • T^HS’ • IS’ then
 //		// ---------------------------------------------------------- F
-// 		return subst(IS’,FP,AP,HS,glue(OS,T^HS’ ));
+// 		return subst(IS’, FP, AP, HS, glue(OS, T^HS’));
 //
-// 	else if IS is T•##^HS’ • IS’ and T is FP[i] then
+// 	else if IS is T • ##^HS’ • IS’ and T is FP[i] then
 //	{
 //		// ---------------------------------------------------------- G
-// 		if select(i,AP ) is {} then /* only if actuals can be empty */
+// 		if select(i, AP) is {} then /* only if actuals can be empty */
 //		{
 //			// -------------------------------------------------- H
 // 			if IS’ is T’ • IS’’ and T’ is FP[j] then
 //				// ------------------------------------------ I
-// 				return subst(IS’’,FP,AP,HS,OS • select(j,AP));
+// 				return subst(IS’’, FP, AP, HS, OS • select(j, AP));
 // 			else
 //				// ------------------------------------------ J
-// 				return subst(IS’,FP,AP,HS,OS);
+// 				return subst(IS’, FP, AP, HS, OS);
 // 		}
 //		else
 //			// -------------------------------------------------- K
-// 			return subst(##^HS’ • IS’,FP,AP,HS,OS • select(i,AP));
+// 			return subst(##^HS’ • IS’, FP, AP, HS, OS • select(i, AP));
 //
 //	}
 //
-// 	else if IS is T•IS’ and T is FP[i] then
+// 	else if IS is T • IS’ and T is FP[i] then
 //		// ---------------------------------------------------------- L
-// 		return subst(IS’,FP,AP,HS,OS • expand(select(i,AP)));
+// 		return subst(IS’, FP, AP, HS, OS • expand(select(i, AP)));
 //
 //	// ------------------------------------------------------------------ M
 // 	note IS must be T^HS’ • IS’
-// 	return subst(IS’,FP,AP,HS,OS • THS’);
+// 	return subst(IS’, FP, AP, HS, OS • T^HS’);
 // }
-func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Token) {
+//
+// A quick overview of subst is that it walks through the input sequence, IS,
+// building up an output sequence, OS, by handling each token from left to
+// right. (The order that this operation takes is left to the implementation
+// also, walking from left to right is more natural since the rest of the
+// algorithm is constrained to this ordering.) Stringizing is easy, pasting
+// requires trickier handling because the operation has a bunch of
+// combinations. After the entire input sequence is finished, the updated hide
+// set is applied to the output sequence, and that is the result of subst.
+func (c *cpp) subst(m *Macro, ap [][]cppToken, hs map[int]struct{}, expandDefined bool) (out []cppToken) {
 	// dbg("%s %v %v", m.def.S(), m.variadic, ap)
-	repl := m.ReplacementToks
-	var arg []xc.Token
+	repl := cppToks(m.ReplacementToks)
+	var arg []cppToken
 	for {
 		if len(repl) == 0 {
 			// -------------------------------------------------- A
-			return trimSpace(out)
+			// 		return hsadd(HS, OS);
+			out := cppTrimSpace(out)
+			for i := range out {
+				out[i].hsAdd(hs)
+			}
+			return out
 		}
 
 		if repl[0].Rune == '#' && len(repl) > 1 && repl[1].Rune == IDENTIFIER && m.param(ap, repl[1].Val, &arg) {
 			// -------------------------------------------------- B
+			// 		return subst(IS’, FP, AP, HS, OS • stringize(select(i, AP)));
 			out = append(out, c.stringize(arg))
 			repl = repl[2:]
 			continue
@@ -755,6 +801,7 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 
 		if repl[0].Rune == '#' && len(repl) > 2 && repl[1].Rune == ' ' && repl[2].Rune == IDENTIFIER && m.param(ap, repl[2].Val, &arg) {
 			// -------------------------------------------------- B
+			// 		return subst(IS’, FP, AP, HS, OS • stringize(select(i, AP)));
 			out = append(out, c.stringize(arg))
 			repl = repl[3:]
 			continue
@@ -764,11 +811,13 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 			// -------------------------------------------------- C
 			if len(arg) == 0 {
 				// ------------------------------------------ D
+				// 			return subst(IS’, FP, AP, HS, OS);
 				repl = repl[2:]
 				continue
 			}
 
 			// -------------------------------------------------- E
+			// 			return subst(IS’, FP, AP, HS, glue(OS, select(i, AP)));
 			_, out = c.glue(out, arg)
 			repl = repl[2:]
 			continue
@@ -778,11 +827,13 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 			// -------------------------------------------------- C
 			if len(arg) == 0 {
 				// ------------------------------------------ D
+				// 			return subst(IS’, FP, AP, HS, OS);
 				repl = repl[3:]
 				continue
 			}
 
 			// -------------------------------------------------- E
+			// 			return subst(IS’, FP, AP, HS, glue(OS, select(i, AP)));
 			_, out = c.glue(out, arg)
 			repl = repl[3:]
 			continue
@@ -790,6 +841,7 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 
 		if repl[0].Rune == PPPASTE && len(repl) > 1 && repl[1].Rune != ' ' {
 			// -------------------------------------------------- F
+			// 		return subst(IS’, FP, AP, HS, glue(OS, T^HS’));
 			_, out = c.glue(out, repl[1:2])
 			repl = repl[2:]
 			continue
@@ -797,6 +849,7 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 
 		if repl[0].Rune == PPPASTE && len(repl) > 2 && repl[1].Rune == ' ' {
 			// -------------------------------------------------- F
+			// 		return subst(IS’, FP, AP, HS, glue(OS, T^HS’));
 			_, out = c.glue(out, repl[2:3])
 			repl = repl[3:]
 			continue
@@ -806,10 +859,12 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 			// -------------------------------------------------- G
 			if len(arg) == 0 {
 				// ------------------------------------------ H
+				panic("TODO")
 				panic(c.position(repl[0]))
 			}
 
 			// -------------------------------------------------- K
+			// 			return subst(##^HS’ • IS’, FP, AP, HS, OS • select(i, AP));
 			out = append(out, arg...)
 			repl = repl[1:]
 			continue
@@ -825,11 +880,13 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 				}
 
 				// ------------------------------------------ J
+				// 				return subst(IS’, FP, AP, HS, OS);
 				repl = repl[3:]
 				continue
 			}
 
 			// -------------------------------------------------- K
+			// 			return subst(##^HS’ • IS’, FP, AP, HS, OS • select(i, AP));
 			out = append(out, arg...)
 			repl = repl[2:]
 			continue
@@ -837,12 +894,15 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 
 		if repl[0].Rune == IDENTIFIER && m.param(ap, repl[0].Val, &arg) {
 			// -------------------------------------------------- L
+			// 		return subst(IS’, FP, AP, HS, OS • expand(select(i, AP)));
 			out = append(out, c.expands(arg, expandDefined)...)
 			repl = repl[1:]
 			continue
 		}
 
 		// ---------------------------------------------------------- M
+		// 	note IS must be T^HS’ • IS’
+		// 	return subst(IS’, FP, AP, HS, OS • T^HS’);
 		out = append(out, repl[0])
 		repl = repl[1:]
 	}
@@ -851,7 +911,7 @@ func (c *cpp) subst(m *Macro, ap [][]xc.Token, expandDefined bool) (out []xc.Tok
 // paste last of left side with first of right side
 //
 // [1] pg. 3
-func (c *cpp) glue(ls, rs []xc.Token) (n int, out []xc.Token) {
+func (c *cpp) glue(ls, rs []cppToken) (n int, out []cppToken) {
 	for len(ls) != 0 && ls[len(ls)-1].Rune == ' ' {
 		ls = ls[:len(ls)-1]
 	}
@@ -869,9 +929,6 @@ func (c *cpp) glue(ls, rs []xc.Token) (n int, out []xc.Token) {
 	}
 
 	l := ls[len(ls)-1]
-	if l.Rune == NON_REPL {
-		l.Rune = IDENTIFIER
-	}
 	ls = ls[:len(ls)-1]
 	r := rs[0]
 	rs = rs[1:]
@@ -883,18 +940,18 @@ func (c *cpp) glue(ls, rs []xc.Token) (n int, out []xc.Token) {
 		case '#':
 			l.Rune = PPPASTE
 		default:
-			panic(PrettyString([]xc.Token{l, r}))
+			panic(PrettyString([]cppToken{l, r}))
 		}
 	default:
 		switch l.Rune {
 		case STRINGLITERAL:
-			s := TokSrc(l)
+			s := TokSrc(l.Token)
 			if len(s) > 2 && s[0] == '"' && s[len(s)-1] == '"' {
 				s = s[1 : len(s)-1]
 			}
-			l.Val = dict.SID(s + TokSrc(r))
+			l.Val = dict.SID(s + TokSrc(r.Token))
 		default:
-			l.Val = dict.SID(TokSrc(l) + TokSrc(r))
+			l.Val = dict.SID(TokSrc(l.Token) + TokSrc(r.Token))
 		}
 	}
 	return n, append(append(ls, l), rs...)
@@ -904,19 +961,19 @@ func (c *cpp) glue(ls, rs []xc.Token) (n int, out []xc.Token) {
 // containing the concatenated spellings of the tokens.
 //
 // [1] pg. 3
-func (c *cpp) stringize(s []xc.Token) xc.Token {
+func (c *cpp) stringize(s []cppToken) cppToken {
 	var a []string
 	for _, v := range s {
 		switch v.Rune {
 		case CHARCONST, LONGCHARCONST, LONGSTRINGLITERAL, STRINGLITERAL:
-			s := fmt.Sprintf("%q", TokSrc(v))
+			s := fmt.Sprintf("%q", TokSrc(v.Token))
 			a = append(a, s[1:len(s)-1])
 		default:
-			a = append(a, TokSrc(v))
+			a = append(a, TokSrc(v.Token))
 		}
 	}
 	if v := dict.SID(fmt.Sprintf(`"%s"`, strings.Join(a, ""))); v != 0 {
-		var t xc.Token
+		var t cppToken
 		if len(s) != 0 {
 			t = s[0]
 		}
@@ -925,7 +982,7 @@ func (c *cpp) stringize(s []xc.Token) xc.Token {
 		return t
 	}
 
-	return xc.Token{}
+	return cppToken{}
 }
 
 func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
@@ -936,8 +993,8 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 
 	if cs.on() {
 		if f := c.tweaks.TrackExpand; f != nil && c.tweaks.DefinesOnly {
-			if s := toksDump(line, ""); strings.HasPrefix(s, "define") {
-				f(fmt.Sprintf("#%s", toksDump(line, "")))
+			if s := cppToksDump(line, ""); strings.HasPrefix(s, "define") {
+				f(fmt.Sprintf("#%s", cppToksDump(line, "")))
 			}
 		}
 	}
@@ -986,7 +1043,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				break
 			}
 
-			panic(fmt.Errorf("%v: ERROR: %v", c.position(t), toksDump(line, "")))
+			panic(fmt.Errorf("%v: ERROR: %v", c.position(t), cppToksDump(line, "")))
 		case idIf:
 			if !cs.on() {
 				return cs.push(condIfSkip)
@@ -1003,7 +1060,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				return cs.push(condIfSkip)
 			}
 
-			line = trimAllSpace(line[1:])
+			line = cppTrimAllSpace(line[1:])
 			if len(line) == 0 {
 				c.err(t, "empty #ifdef not allowed")
 				break
@@ -1029,7 +1086,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				return cs.push(condIfSkip)
 			}
 
-			line = trimAllSpace(line[1:])
+			line = cppTrimAllSpace(line[1:])
 			if len(line) == 0 {
 				c.err(t, "empty #ifndef not allowed")
 				break
@@ -1058,7 +1115,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				break
 			}
 
-			line = trimAllSpace(line[1:])
+			line = cppTrimAllSpace(line[1:])
 			if len(line) == 0 {
 				c.err(t, "empty include not allowed")
 				break
@@ -1080,7 +1137,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 						return cs
 					}
 
-					nm += TokSrc(v)
+					nm += TokSrc(v.Token)
 				}
 				c.err(t, "invalid include file name specification")
 			case STRINGLITERAL:
@@ -1098,7 +1155,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 					panic(PrettyString(line))
 				}
 
-				line = c.expands(trimAllSpace(line), false)
+				line = c.expands(cppTrimAllSpace(line), false)
 				expanded = true
 				if c.tweaks.cppExpandTest {
 					w.write(line...)
@@ -1122,7 +1179,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 			f := fset.File(line[0].Pos())
 			off := f.Offset(line[0].Pos())
 			pos := c.position(line[0])
-			line = c.expands(trimAllSpace(line[1:]), false)
+			line = c.expands(cppTrimAllSpace(line[1:]), false)
 			switch len(line) {
 			case 1: // #line linenum
 				n, err := strconv.ParseUint(string(line[0].S()), 10, 31)
@@ -1154,7 +1211,7 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				break
 			}
 
-			line = trimSpace(line[1:])
+			line = cppTrimSpace(line[1:])
 			if len(line) == 0 {
 				panic("TODO")
 			}
@@ -1194,7 +1251,7 @@ func (c *cpp) include(n Node, nm string, paths []string, w tokenWriter) {
 
 	dir := filepath.Dir(c.position(n).Filename)
 	var path string
-	if n.(xc.Token).Val == idIncludeNext {
+	if n.(cppToken).Val == idIncludeNext {
 		for i, v := range paths {
 			if v == dir {
 				paths = paths[i+1:]
@@ -1250,8 +1307,8 @@ func (c *cpp) include(n Node, nm string, paths []string, w tokenWriter) {
 	c.expand(r, w, conds(nil).push(condZero), 0, false)
 }
 
-func (c *cpp) constExpr(toks []xc.Token, expandDefined bool) (op Operand, y bool) {
-	toks = trimAllSpace(c.expands(trimAllSpace(toks), expandDefined))
+func (c *cpp) constExpr(toks []cppToken, expandDefined bool) (op Operand, y bool) {
+	toks = cppTrimAllSpace(c.expands(cppTrimAllSpace(toks), expandDefined))
 	for i, v := range toks {
 		if v.Rune == IDENTIFIER {
 			toks[i].Rune = INTCONST
@@ -1278,10 +1335,10 @@ func (c *cpp) constExpr(toks []xc.Token, expandDefined bool) (op Operand, y bool
 	}
 }
 
-func (c *cpp) define(line []xc.Token) {
+func (c *cpp) define(line []cppToken) {
 	switch line[0].Rune {
 	case ' ':
-		c.defineMacro(line[1:])
+		c.defineMacro(xcToks(line[1:]))
 	default:
 		panic(PrettyString(line))
 	}
@@ -1418,7 +1475,7 @@ func (c *cpp) identicalParamLists(a, b []int) bool {
 	return true
 }
 
-func (c *cpp) line(r tokenReader) []xc.Token {
+func (c *cpp) line(r tokenReader) []cppToken {
 	c.toks = c.toks[:0]
 	for {
 		switch t := r.read(); t.Rune {

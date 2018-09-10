@@ -702,13 +702,16 @@ outer:
 		t := op.Type
 		for done := false; !done; {
 			switch x := t.(type) {
+			case *ArrayType:
+				t = x.Item
+				done = true
 			case *NamedType:
 				t = x.Type
 			case *PointerType:
 				t = x.Item
 				done = true
 			default:
-				panic(fmt.Errorf("%T", x))
+				panic(fmt.Errorf("%v: %T", ctx.position(n), x))
 			}
 		}
 	out:
@@ -2190,7 +2193,8 @@ func (n *Initializer) check(ctx *context, t Type, fn *Declarator, field bool, ar
 				return Operand{}
 			}
 
-			if t.Kind() == Union {
+			switch t.Kind() {
+			case Union:
 				x := UnderlyingType(t).(*UnionType)
 				if x.Fields[0].Type.Kind() == Array && n.Expr.IsZero() {
 					return op
@@ -2199,9 +2203,19 @@ func (n *Initializer) check(ctx *context, t Type, fn *Declarator, field bool, ar
 				if x.Fields[0].Type.IsCompatible(op.Type) {
 					return op
 				}
+			case Struct:
+				x := UnderlyingType(t).(*StructType)
+				f0 := x.Fields[0]
+				switch y := UnderlyingType(f0.Type).(type) {
+				case *ArrayType:
+					y.Item.assign(ctx, n, op)
+					return op
+				default:
+					panic(fmt.Errorf("%v: %T %v, %v", ctx.position(n), y, y, op.Type))
+				}
 			}
 
-			panic(ctx.position(n))
+			panic(fmt.Errorf("%v: typ %v, op type %v", ctx.position(n), t, op.Type))
 		}
 
 		if t.Kind() == Array {

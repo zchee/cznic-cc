@@ -108,11 +108,11 @@ func (t *trigraphs) ReadChar() (c lex.Char, size int, err error) {
 	return c, 1, nil
 }
 
-type ungetBuffer []xc.Token
+type ungetBuffer []cppToken
 
-func (u *ungetBuffer) unget(t xc.Token) { *u = append(*u, t) }
+func (u *ungetBuffer) unget(t cppToken) { *u = append(*u, t) }
 
-func (u *ungetBuffer) read() (t xc.Token) {
+func (u *ungetBuffer) read() (t cppToken) {
 	s := *u
 	n := len(s) - 1
 	t = s[n]
@@ -120,7 +120,7 @@ func (u *ungetBuffer) read() (t xc.Token) {
 	return t
 }
 
-func (u *ungetBuffer) ungets(toks ...xc.Token) {
+func (u *ungetBuffer) ungets(toks ...cppToken) {
 	s := *u
 	for i := len(toks) - 1; i >= 0; i-- {
 		s = append(s, toks[i])
@@ -275,7 +275,7 @@ func (l *lexer) parseAttrList(lval *yySymType) {
 		case IDENTIFIER:
 			l.attr = append(l.attr, []xc.Token{t})
 		case ')':
-			l.unget(t)
+			l.unget(cppToken{Token: t})
 			return
 		case '(':
 			l.parseAttrParams(lval)
@@ -340,12 +340,12 @@ again:
 
 func (l *lexer) lex(lval *yySymType) {
 	if len(l.ungetBuffer) != 0 {
-		lval.Token = l.ungetBuffer.read()
+		lval.Token = l.ungetBuffer.read().Token
 		return
 	}
 
 	if l.tc != nil {
-		lval.Token = l.tc.read()
+		lval.Token = l.tc.read().Token
 		l.First = lval.Token.Char
 		return
 	}
@@ -361,22 +361,22 @@ func (l *lexer) lex(lval *yySymType) {
 func (l *lexer) declareFuncName() {
 	pos := l.First.Pos() // '{'
 	l.ungets(
-		xc.Token{Char: lex.NewChar(pos, STATIC), Val: idStatic},
-		xc.Token{Char: lex.NewChar(pos, CONST), Val: idConst},
-		xc.Token{Char: lex.NewChar(pos, CHAR), Val: idChar},
-		xc.Token{Char: lex.NewChar(pos, IDENTIFIER), Val: idFuncName},
-		xc.Token{Char: lex.NewChar(pos, '[')},
-		xc.Token{Char: lex.NewChar(pos, ']')},
-		xc.Token{Char: lex.NewChar(pos, '=')},
-		xc.Token{Char: lex.NewChar(pos, STRINGLITERAL), Val: dict.SID(`"` + string(dict.S(l.currFn)) + `"`)},
-		xc.Token{Char: lex.NewChar(pos, ';')},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, STATIC), Val: idStatic}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, CONST), Val: idConst}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, CHAR), Val: idChar}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, IDENTIFIER), Val: idFuncName}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, '[')}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, ']')}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, '=')}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, STRINGLITERAL), Val: dict.SID(`"` + string(dict.S(l.currFn)) + `"`)}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, ';')}},
 	)
 }
 
 func (l *lexer) parse(mode int) bool {
 	var tok xc.Token
 	tok.Rune = rune(mode)
-	l.ungetBuffer = append(l.ungetBuffer, tok)
+	l.ungetBuffer = append(l.ungetBuffer, cppToken{Token: tok})
 	l.mode = mode
 	l.last.Rune = '\n'
 	return yyParse(l) == 0

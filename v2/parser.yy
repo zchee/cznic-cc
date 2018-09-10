@@ -116,7 +116,6 @@ import (
 	RETURN				"return"
 	RSH				">>"
 	RSHASSIGN			">>="
-	SENTINEL			// Hide set marker.
 	SHORT				"short"
 	SIGNED				"signed"
 	SIZEOF				"sizeof"

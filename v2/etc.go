@@ -35,6 +35,16 @@ func debugStack() []byte {
 	return b
 }
 
+func cppTrimSpace(toks []cppToken) []cppToken {
+	for len(toks) != 0 && toks[0].Rune == ' ' {
+		toks = toks[1:]
+	}
+	for len(toks) != 0 && toks[len(toks)-1].Rune == ' ' {
+		toks = toks[:len(toks)-1]
+	}
+	return toks
+}
+
 func trimSpace(toks []xc.Token) []xc.Token {
 	for len(toks) != 0 && toks[0].Rune == ' ' {
 		toks = toks[1:]
@@ -43,6 +53,20 @@ func trimSpace(toks []xc.Token) []xc.Token {
 		toks = toks[:len(toks)-1]
 	}
 	return toks
+}
+
+func cppTrimAllSpace(toks []cppToken) []cppToken {
+	w := 0
+	for _, v := range toks {
+		switch v.Rune {
+		case ' ', '\n':
+			// nop
+		default:
+			toks[w] = v
+			w++
+		}
+	}
+	return toks[:w]
 }
 
 func trimAllSpace(toks []xc.Token) []xc.Token {
@@ -62,6 +86,18 @@ func trimAllSpace(toks []xc.Token) []xc.Token {
 func isVaList(t Type) bool { //TODO export and use
 	x, ok := t.(*NamedType)
 	return ok && (x.Name == idVaList || x.Name == idBuiltinVaList)
+}
+
+func cppToksDump(toks []cppToken, sep string) string {
+	var a []string
+	for _, t := range toks {
+		if t.Rune == '\n' {
+			continue
+		}
+
+		a = append(a, TokSrc(t.Token))
+	}
+	return strings.Join(a, sep)
 }
 
 func toksDump(toks []xc.Token, sep string) string {
@@ -244,4 +280,20 @@ func printError(w io.Writer, pref string, err error) {
 	default:
 		fmt.Fprintf(w, "%s%v\n", pref, err)
 	}
+}
+
+func cppToks(toks []xc.Token) []cppToken {
+	r := make([]cppToken, len(toks))
+	for i, v := range toks {
+		r[i].Token = v
+	}
+	return r
+}
+
+func xcToks(toks []cppToken) []xc.Token {
+	r := make([]xc.Token, len(toks))
+	for i, v := range toks {
+		r[i] = v.Token
+	}
+	return r
 }
