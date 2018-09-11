@@ -342,6 +342,7 @@ type cpp struct {
 	*context
 	includeLevel int
 	lx           *lexer
+	macroStack   map[int][]*Macro
 	macros       map[int]*Macro // name ID: macro
 	toks         []cppToken
 }
@@ -354,9 +355,10 @@ func newCPP(ctx *context) *cpp {
 
 	lx.context = ctx
 	r := &cpp{
-		context: ctx,
-		lx:      lx,
-		macros:  map[int]*Macro{},
+		context:    ctx,
+		lx:         lx,
+		macroStack: map[int][]*Macro{},
+		macros:     map[int]*Macro{},
 	}
 	return r
 }
@@ -661,6 +663,33 @@ func (c *cpp) expand(r tokenReader, w tokenWriter, cs conds, lvl int, expandDefi
 			}
 
 			w.write(t)
+		}
+	}
+}
+
+func (c *cpp) pragmaActuals(nd Node, line []cppToken) (out []cppToken) {
+	first := true
+	for {
+		if len(line) == 0 {
+			c.err(nd, "unexpected EOF")
+			return nil
+		}
+
+		t := line[0]
+		line = line[1:]
+		switch t.Rune {
+		case '(':
+			if !first {
+				panic(fmt.Errorf("%v", t))
+			}
+
+			first = false
+		case STRINGLITERAL:
+			out = append(out, t)
+		case ')':
+			return out
+		default:
+			panic(fmt.Errorf("%v: %v (%v)", c.position(t), t, yySymName(int(t.Rune))))
 		}
 	}
 }
@@ -998,6 +1027,8 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 			}
 		}
 	}
+
+outer:
 	switch t := line[0]; t.Rune {
 	case ccEOF:
 		// nop
@@ -1201,11 +1232,62 @@ func (c *cpp) directive(r tokenReader, w tokenWriter, cs conds) (y conds) {
 				break
 			}
 
-			if c.tweaks.IgnorePragmas {
-				break
-			}
+			for {
+				line = line[1:]
+				if len(line) == 0 {
+					panic(fmt.Errorf("%v", c.position(t)))
+				}
 
-			panic(fmt.Errorf("%v", c.position(t)))
+				switch t = line[0]; {
+				case t.Rune == ' ':
+					// nop
+				case t.Val == idPushMacro:
+					actuals := c.pragmaActuals(t, line[1:])
+					if len(actuals) != 1 {
+						panic(fmt.Errorf("%v", c.position(t)))
+					}
+
+					t := actuals[0]
+					switch t.Rune {
+					case STRINGLITERAL:
+						nm := int(c.strConst(t.Token).Value.(*ir.StringValue).StringID)
+						m := c.macros[nm]
+						if m != nil {
+							c.macroStack[nm] = append(c.macroStack[nm], m)
+						}
+						break outer
+					default:
+						panic(fmt.Errorf("%v: %v", c.position(t), yySymName(int(actuals[0].Rune))))
+					}
+				case t.Val == idPopMacro:
+					actuals := c.pragmaActuals(t, line[1:])
+					if len(actuals) != 1 {
+						panic(fmt.Errorf("%v", c.position(t)))
+					}
+
+					t := actuals[0]
+					switch t.Rune {
+					case STRINGLITERAL:
+						nm := int(c.strConst(t.Token).Value.(*ir.StringValue).StringID)
+						s := c.macroStack[nm]
+						if n := len(s); n != 0 {
+							m := s[n-1]
+							s = s[:n-1]
+							c.macroStack[nm] = s
+							c.macros[nm] = m
+						}
+						break outer
+					default:
+						panic(fmt.Errorf("%v: %v", c.position(t), yySymName(int(actuals[0].Rune))))
+					}
+				default:
+					if c.tweaks.IgnoreUnknownPragmas {
+						break outer
+					}
+
+					panic(fmt.Errorf("%v: %#x, %v", c.position(t), t.Rune, t))
+				}
+			}
 		case idUndef:
 			if !cs.on() {
 				break

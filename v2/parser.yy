@@ -279,6 +279,7 @@ import (
 /*yy:case SizeofExpr */ |	"sizeof" Expr
 /*yy:case Not        */ |	'!' Expr
 /*yy:case Addrof     */ |	'&' Expr %prec UNARY
+/*yy:case Statement  */ |	'(' CompoundStmt ')'
 /*yy:case PExprList  */ |	'(' ExprList ')'
 /*yy:case CompLit    */ |	'(' TypeName ')' '{' InitializerList CommaOpt '}'
 				{

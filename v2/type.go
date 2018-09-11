@@ -131,6 +131,7 @@ func (t TypeKind) IsPointerType() bool {
 func (t TypeKind) IsIntegerType() bool {
 	switch t {
 	case
+		Bool,
 		Char,
 		Int,
 		Long,
@@ -269,6 +270,7 @@ func (t TypeKind) Equal(u Type) bool {
 	case TypeKind:
 		switch x {
 		case
+			Bool,
 			Char,
 			Double,
 			DoubleComplex,
@@ -1753,6 +1755,7 @@ func underlyingType(t Type, enums bool) Type {
 		case TypeKind:
 			switch x {
 			case
+				Bool,
 				Char,
 				Double,
 				DoubleComplex,

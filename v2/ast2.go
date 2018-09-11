@@ -48,6 +48,8 @@ func (d *DeclarationSpecifier) typ(ctx *context) Type {
 	// [0]6.7.2-2
 	if len(d.typeSpecifiers) == 1 {
 		switch d.typeSpecifiers[0] {
+		case TypeSpecifierBool:
+			return Bool
 		case TypeSpecifierChar:
 			return Char
 		case TypeSpecifierDouble:
@@ -270,7 +272,7 @@ func (d *DeclarationSpecifier) IsExtern() bool {
 
 func (n *ConstExpr) eval(ctx *context) Operand {
 	if n.Operand.Type == nil {
-		n.Operand = n.Expr.eval(ctx, true, nil)
+		n.Operand = n.Expr.eval(ctx, true, nil, nil, nil)
 		if n.Operand.Value == nil { // not a constant expression
 			panic(fmt.Errorf("TODO247 %v", ctx.position(n)))
 		}
@@ -278,7 +280,7 @@ func (n *ConstExpr) eval(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
+func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator, seq *int, sc []int) Operand {
 	if n.Operand.Type != nil {
 		return n.Operand
 	}
@@ -297,7 +299,7 @@ outer:
 		// The operand of the prefix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -307,7 +309,7 @@ outer:
 		// The operand of the prefix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -315,14 +317,14 @@ outer:
 		t := n.TypeName.check(ctx)
 		n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: int64(ctx.model.Alignof(t))}}
 	case ExprAlignofExpr: // "__alignof__" Expr
-		op := n.Expr.eval(ctx, false, fn)
+		op := n.Expr.eval(ctx, false, fn, seq, sc)
 		n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: int64(ctx.model.Alignof(underlyingType(op.Type, false)))}}
 	case ExprSizeofType: // "sizeof" '(' TypeName ')'
 		t := n.TypeName.check(ctx)
 		n.Operand = ctx.sizeof(t)
 	case ExprSizeofExpr: // "sizeof" Expr
 		// [0]6.5.3.4
-		switch t := n.Expr.eval(ctx, false, fn).Type.(type) { // [0]6.3.2.1-3
+		switch t := n.Expr.eval(ctx, false, fn, seq, sc).Type.(type) { // [0]6.3.2.1-3
 		case *ArrayType:
 			if t.Size.Type == nil {
 				panic(fmt.Errorf("%v", ctx.position(n)))
@@ -374,7 +376,7 @@ outer:
 		}
 	case ExprNot: // '!' Expr
 		n.Operand = Operand{Type: Int}
-		a := n.Expr.eval(ctx, arr2ptr, fn)
+		a := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if a.IsZero() { //TODO n.Expr.IsZero everywhere
 			n.Operand.Value = &ir.Int64Value{Value: 1}
 			break
@@ -385,14 +387,14 @@ outer:
 		}
 	case ExprAddrof: // '&' Expr
 		// [0]6.5.3.2
-		op := n.Expr.eval(ctx, false, fn) // [0]6.3.2.1-3
+		op := n.Expr.eval(ctx, false, fn, seq, sc) // [0]6.3.2.1-3
 		n.Operand = Operand{Type: &PointerType{op.Type}}
 		if d := n.Expr.Declarator; d != nil && n.Expr.Case != ExprPSelect {
 			d.AddressTaken = true
 		}
 		n.Operand.Value = op.Value
 	case ExprPExprList: // '(' ExprList ')'
-		n.Operand = n.ExprList.eval(ctx, arr2ptr, fn)
+		n.Operand = n.ExprList.eval(ctx, arr2ptr, fn, seq, sc)
 		n.Declarator = n.ExprList.declarator(ctx)
 	case ExprCompLit: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
 		t := n.TypeName.check(ctx)
@@ -427,7 +429,7 @@ outer:
 	case ExprCast: // '(' TypeName ')' Expr
 		// [0]6.5.4
 		t := n.TypeName.check(ctx)
-		op := n.Expr.eval(ctx, arr2ptr, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if t == Void {
 			n.Operand = Operand{Type: Void}
 			break
@@ -498,7 +500,7 @@ outer:
 		if !arr2ptr && n.Expr.Case == ExprCall { // int *f(); int *p = &*f();
 			arr2ptr = true
 		}
-		op := n.Expr.eval(ctx, arr2ptr, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		for t, done := op.Type, false; !done; {
 			switch x := t.(type) {
 			case *ArrayType:
@@ -518,7 +520,7 @@ outer:
 		// The operand of the unary + or - operator shall have
 		// arithmetic type; of the ~ operator, integer type; of the !
 		// operator, scalar type.
-		op := n.Expr.eval(ctx, arr2ptr, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if !op.isArithmeticType() {
 			panic(ctx.position(n))
 		}
@@ -528,7 +530,7 @@ outer:
 		// The operand of the unary + or - operator shall have
 		// arithmetic type; of the ~ operator, integer type; of the !
 		// operator, scalar type.
-		op := n.Expr.eval(ctx, arr2ptr, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if !op.isArithmeticType() {
 			panic(ctx.position(n))
 		}
@@ -538,7 +540,7 @@ outer:
 		// The operand of the unary + or - operator shall have
 		// arithmetic type; of the ~ operator, integer type; of the !
 		// operator, scalar type.
-		op := n.Expr.eval(ctx, arr2ptr, fn).integerPromotion(ctx.model)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc).integerPromotion(ctx.model)
 		if !op.Type.IsIntegerType() {
 			panic(ctx.position(n))
 		}
@@ -546,8 +548,8 @@ outer:
 	case ExprChar: // CHARCONST
 		n.Operand = ctx.charConst(n.Token)
 	case ExprNe: // Expr "!=" Expr
-		lhs := n.Expr.eval(ctx, arr2ptr, fn)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 0}}
 			break
@@ -606,17 +608,17 @@ outer:
 		}
 	case ExprModAssign: // Expr "%=" Expr
 		// [0]6.5.16.2
-		n.Expr.eval(ctx, arr2ptr, fn).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprLAnd: // Expr "&&" Expr
 		n.Operand = Operand{Type: Int}
-		n.Expr.eval(ctx, arr2ptr, fn)
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if n.Expr.IsZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 			break
 		}
 
-		n.Expr2.eval(ctx, arr2ptr, fn)
+		n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		if n.Expr2.IsZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 			break
@@ -627,11 +629,11 @@ outer:
 			break
 		}
 	case ExprAndAssign: // Expr "&=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprMulAssign: // Expr "*=" Expr
 		// [0]6.5.16.2
-		n.Expr.eval(ctx, arr2ptr, fn).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprPostInc: // Expr "++"
 		// [0]6.5.2.4
@@ -639,7 +641,7 @@ outer:
 		// The operand of the postfix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -651,8 +653,8 @@ outer:
 		// have integer type, or the left operand shall have qualified
 		// or unqualified arithmetic type and the right shall have
 		// arithmetic type.
-		lhs := n.Expr.eval(ctx, arr2ptr, fn)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		switch {
 		case
 			lhs.isPointerType() && rhs.isIntegerType(),
@@ -669,7 +671,7 @@ outer:
 		// The operand of the postfix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -681,8 +683,8 @@ outer:
 		// have integer type, or the left operand shall have qualified
 		// or unqualified arithmetic type and the right shall have
 		// arithmetic type.
-		lhs := n.Expr.eval(ctx, arr2ptr, fn)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		switch {
 		case
 			lhs.isPointerType() && rhs.isIntegerType(),
@@ -695,7 +697,7 @@ outer:
 		n.Operand = lhs
 	case ExprPSelect: // Expr "->" IDENTIFIER
 		n.Expr.AssignedTo = n.AssignedTo
-		op := n.Expr.eval(ctx, arr2ptr, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if d := n.Expr.Declarator; d != nil && n.AssignedTo {
 			d.AssignedTo++
 		}
@@ -761,7 +763,7 @@ outer:
 		}
 	case ExprSelect: // Expr '.' IDENTIFIER
 		n.Expr.AssignedTo = n.AssignedTo
-		op := n.Expr.eval(ctx, arr2ptr, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if d := n.Expr.Declarator; d != nil && n.AssignedTo {
 			d.AssignedTo++
 		}
@@ -816,25 +818,25 @@ outer:
 		}
 	case ExprDivAssign: // Expr "/=" Expr
 		// [0]6.5.16.2
-		n.Expr.eval(ctx, arr2ptr, fn).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprLsh: // Expr "<<" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 	case ExprLshAssign: // Expr "<<=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprLe: // Expr "<=" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).le(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).le(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 1}}
 		}
 	case ExprEq: // Expr "==" Expr
-		lhs := n.Expr.eval(ctx, arr2ptr, fn)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		switch x := underlyingType(lhs.Type, true).(type) {
 		case *EnumType:
 			n.Expr2.enum = x
 		}
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		n.Operand.Type = Int
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand.Value = &ir.Int64Value{Value: 1}
@@ -887,30 +889,30 @@ outer:
 			panic(fmt.Errorf("%v: %v %v", ctx.position(n), lhs, rhs))
 		}
 	case ExprGe: // Expr ">=" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).ge(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).ge(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 1}}
 		}
 	case ExprRsh: // Expr ">>" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 	case ExprRshAssign: // Expr ">>=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprXorAssign: // Expr "^=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprOrAssign: // Expr "|=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		n.Operand = n.Expr.Operand
 	case ExprLOr: // Expr "||" Expr
 		n.Operand = Operand{Type: Int}
-		n.Expr.eval(ctx, arr2ptr, fn)
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if n.Expr.IsNonZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 1}
 			break
 		}
 
-		n.Expr2.eval(ctx, arr2ptr, fn)
+		n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		if n.Expr2.IsNonZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 1}
 			break
@@ -920,9 +922,9 @@ outer:
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 		}
 	case ExprMod: // Expr '%' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn)) // [0]6.5.5
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)) // [0]6.5.5
 	case ExprAnd: // Expr '&' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		if n.isSideEffectsFree() {
 			// x & (x | y) == x
 			x, y := n.Expr, n.Expr2
@@ -969,8 +971,8 @@ outer:
 					panic("too many arguments of __builtin_types_compatible_p")
 				}
 
-				t := arg1.eval(ctx, arr2ptr, fn).Type
-				u := arg2.eval(ctx, arr2ptr, fn).Type
+				t := arg1.eval(ctx, arr2ptr, fn, seq, sc).Type
+				u := arg2.eval(ctx, arr2ptr, fn, seq, sc).Type
 				var v int64
 				if t.IsCompatible(u) {
 					v = 1
@@ -989,7 +991,7 @@ outer:
 					panic("too many arguments of __builtin_classify_type")
 				}
 
-				op := args.Expr.eval(ctx, arr2ptr, fn)
+				op := args.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 				v := noTypeClass
 				if x, ok := classifyType[op.Type.Kind()]; ok {
 					v = x
@@ -1002,8 +1004,8 @@ outer:
 		}
 
 		// [0]6.5.2.2
-		op := n.Expr.eval(ctx, arr2ptr, fn)
-		args := n.ArgumentExprListOpt.eval(ctx, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
+		args := n.ArgumentExprListOpt.eval(ctx, fn, seq, sc)
 		ops := make([]Operand, len(args))
 		n.CallArgs = ops
 		t := checkFn(ctx, op.Type)
@@ -1082,10 +1084,10 @@ outer:
 			}
 		}
 	case ExprMul: // Expr '*' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 	case ExprAdd: // Expr '+' Expr
-		lhs := n.Expr.eval(ctx, arr2ptr, fn)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		// [0]6.5.6
 		//
 		// For addition, either both operands shall have arithmetic
@@ -1094,7 +1096,7 @@ outer:
 		// equivalent to adding 1.)
 		switch {
 		case lhs.isArithmeticType() && rhs.isArithmeticType():
-			n.Operand = n.Expr.eval(ctx, arr2ptr, fn).add(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+			n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).add(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		case lhs.isPointerType() && rhs.isIntegerType():
 			n.Operand = lhs
 			n.Operand.Value = nil
@@ -1106,15 +1108,15 @@ outer:
 		}
 	case ExprSub: // Expr '-' Expr
 		// [0]6.5.6
-		lhs := n.Expr.eval(ctx, arr2ptr, fn)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		switch {
 		// 3. For subtraction, one of the following shall hold:
 		case
 			// both operands have arithmetic type;
 			lhs.isArithmeticType() && rhs.isArithmeticType():
 
-			n.Operand = n.Expr.eval(ctx, arr2ptr, fn).sub(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+			n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).sub(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 			if n.Operand.Type.IsIntegerType() && n.Expr.Equals(n.Expr2) {
 				n.Operand.Value = &ir.Int64Value{Value: 0}
 			}
@@ -1138,15 +1140,15 @@ outer:
 			panic(ctx.position(n))
 		}
 	case ExprDiv: // Expr '/' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn)) // [0]6.5.5
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)) // [0]6.5.5
 	case ExprLt: // Expr '<' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).lt(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).lt(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 0}}
 		}
 	case ExprAssign: // Expr '=' Expr
 		n.Expr.AssignedTo = true
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		if d := n.Expr.Declarator; d != nil {
 			d.AssignedTo++
 			if n.Expr.Case == ExprIdent {
@@ -1157,16 +1159,16 @@ outer:
 		case *EnumType:
 			n.Expr2.enum = x
 		}
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		n.Operand.Type.assign(ctx, n, rhs)
 	case ExprGt: // Expr '>' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).gt(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).gt(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 0}}
 		}
 	case ExprCond: // Expr '?' ExprList ':' Expr
 		// [0]6.5.15
-		cond := n.Expr.eval(ctx, arr2ptr, fn)
+		cond := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		// 2. The first operand shall have scalar type.
 		if !cond.isScalarType() {
 			panic(ctx.position(n))
@@ -1174,15 +1176,15 @@ outer:
 
 		switch {
 		case cond.IsNonZero():
-			n.Operand = n.ExprList.eval(ctx, arr2ptr, fn)
+			n.Operand = n.ExprList.eval(ctx, arr2ptr, fn, seq, sc)
 			break outer
 		case cond.IsZero():
-			n.Operand = n.Expr2.eval(ctx, arr2ptr, fn)
+			n.Operand = n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 			break outer
 		}
 
-		a := n.ExprList.eval(ctx, arr2ptr, fn)
-		b := n.Expr2.eval(ctx, arr2ptr, fn)
+		a := n.ExprList.eval(ctx, arr2ptr, fn, seq, sc)
+		b := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc)
 		switch {
 		// 3. One of the following shall hold for the second and third
 		// operands:
@@ -1232,8 +1234,8 @@ outer:
 		}
 	case ExprIndex: // Expr '[' ExprList ']'
 		// [0]6.5.2.1
-		op := n.Expr.eval(ctx, arr2ptr, fn)
-		index := n.ExprList.eval(ctx, true, fn)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
+		index := n.ExprList.eval(ctx, true, fn, seq, sc)
 		switch t := op.Type.(type) {
 		case *ArrayType:
 			if arr2ptr {
@@ -1272,12 +1274,12 @@ outer:
 			d.Referenced++
 		}
 	case ExprXor: // Expr '^' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 		}
 	case ExprOr: // Expr '|' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc))
 	case ExprFloat: // FLOATCONST
 		n.floatConst(ctx)
 	case ExprIdent: // IDENTIFIER
@@ -1350,6 +1352,7 @@ outer:
 			case TypeKind:
 				switch y {
 				case
+					Bool,
 					Char,
 					Double,
 					DoubleComplex,
@@ -1449,6 +1452,8 @@ outer:
 		n.Operand = ctx.strConst(n.Token)
 	case ExprString: // STRINGLITERAL
 		n.Operand = ctx.strConst(n.Token)
+	case ExprStatement: // '(' CompoundStmt ')'
+		n.Operand = n.CompoundStmt.check(ctx, fn, seq, sc, nil, false)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
@@ -1490,6 +1495,7 @@ outer:
 		case TypeKind:
 			switch x {
 			case
+				Bool,
 				Char,
 				Double,
 				DoubleComplex,
@@ -1613,17 +1619,17 @@ func checkFn(ctx *context, t Type) *FunctionType {
 	}
 }
 
-func (n *ArgumentExprListOpt) eval(ctx *context, fn *Declarator) []Operand {
+func (n *ArgumentExprListOpt) eval(ctx *context, fn *Declarator, seq *int, sc []int) []Operand {
 	if n == nil {
 		return nil
 	}
 
-	return n.ArgumentExprList.eval(ctx, fn)
+	return n.ArgumentExprList.eval(ctx, fn, seq, sc)
 }
 
-func (n *ArgumentExprList) eval(ctx *context, fn *Declarator) (r []Operand) {
+func (n *ArgumentExprList) eval(ctx *context, fn *Declarator, seq *int, sc []int) (r []Operand) {
 	for ; n != nil; n = n.ArgumentExprList {
-		r = append(r, n.Expr.eval(ctx, true, fn))
+		r = append(r, n.Expr.eval(ctx, true, fn, seq, sc))
 	}
 	return r
 }
@@ -1642,18 +1648,18 @@ func (n *TypeName) check(ctx *context) Type {
 	return n.Type
 }
 
-func (n *ExprListOpt) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
+func (n *ExprListOpt) eval(ctx *context, arr2ptr bool, fn *Declarator, seq *int, sc []int) Operand {
 	if n == nil {
 		return Operand{}
 	}
 
-	return n.ExprList.eval(ctx, arr2ptr, fn)
+	return n.ExprList.eval(ctx, arr2ptr, fn, seq, sc)
 }
 
-func (n *ExprList) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
+func (n *ExprList) eval(ctx *context, arr2ptr bool, fn *Declarator, seq *int, sc []int) Operand {
 	if n.Operand.Type == nil {
 		for l := n; l != nil; l = l.ExprList {
-			n.Operand = l.Expr.eval(ctx, arr2ptr, fn)
+			n.Operand = l.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 		}
 	}
 	return n.Operand
@@ -1667,12 +1673,12 @@ func (n *ExprList) declarator(ctx *context) (r *Declarator) {
 	}
 }
 
-func (n *ExprOpt) eval(ctx *context, arr2ptr bool, fn *Declarator) Operand {
+func (n *ExprOpt) eval(ctx *context, arr2ptr bool, fn *Declarator, seq *int, sc []int) Operand {
 	if n == nil {
 		return Operand{}
 	}
 
-	return n.Expr.eval(ctx, arr2ptr, fn)
+	return n.Expr.eval(ctx, arr2ptr, fn, seq, sc)
 }
 
 // Name returns the ID of the declared name.
@@ -1707,7 +1713,7 @@ func (n *ExternalDeclarationList) check(ctx *context) (err error) {
 func (n *ExternalDeclaration) check(ctx *context) {
 	switch n.Case {
 	case ExternalDeclarationDecl: // Declaration
-		n.Declaration.check(ctx, nil, nil, nil, false)
+		n.Declaration.check(ctx, nil, nil, nil, nil, false)
 	case ExternalDeclarationFunc: // FunctionDefinition
 		n.FunctionDefinition.check(ctx)
 	default:
@@ -1770,7 +1776,7 @@ func (n *DeclarationListOpt) check(ctx *context, scope *Scope) (r []*Declarator)
 	}
 
 	for l := n.DeclarationList; l != nil; l = l.DeclarationList {
-		r = append(r, l.Declaration.check(ctx, nil, nil, scope, true)...)
+		r = append(r, l.Declaration.check(ctx, nil, nil, nil, scope, true)...)
 	}
 	return r
 }
@@ -1781,7 +1787,7 @@ func (n *FunctionBody) check(ctx *context, fn *Declarator) {
 	n.CompoundStmt.check(ctx, fn, &seq, nil, nil, false)
 }
 
-func (n *CompoundStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
+func (n *CompoundStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) Operand {
 	// '{' BlockItemListOpt '}'
 	*seq++
 	sc = append(sc, *seq)
@@ -1796,7 +1802,7 @@ func (n *CompoundStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, i
 			n.scope.insertDeclarator(ctx, d)
 		}
 	}
-	n.BlockItemListOpt.check(ctx, fn, seq, sc, inSwitch, inLoop)
+	return n.BlockItemListOpt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 }
 
 func (n *Declarator) fpScope(ctx *context) *Scope { return n.DirectDeclarator.fpScope(ctx) }
@@ -1891,41 +1897,48 @@ func (n *DirectDeclarator) parameterNames() (r []int) {
 	}
 }
 
-func (n *BlockItemListOpt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
+func (n *BlockItemListOpt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) Operand {
 	if n == nil {
-		return
+		return Operand{Type: Void}
 	}
 
-	n.BlockItemList.check(ctx, fn, seq, sc, inSwitch, inLoop)
+	return n.BlockItemList.check(ctx, fn, seq, sc, inSwitch, inLoop)
 }
 
-func (n *BlockItemList) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
+func (n *BlockItemList) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) (r Operand) {
 	for ; n != nil; n = n.BlockItemList {
-		n.BlockItem.check(ctx, fn, seq, sc, inSwitch, inLoop)
+		op := n.BlockItem.check(ctx, fn, seq, sc, inSwitch, inLoop)
+		if n.BlockItemList == nil {
+			r = op
+		}
 	}
+	return r
 }
 
-func (n *BlockItem) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
+func (n *BlockItem) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) (r Operand) {
+	r = Operand{Type: Void}
 	switch n.Case {
 	case BlockItemDecl: // Declaration
-		n.Declaration.check(ctx, sc, fn, nil, false)
+		n.Declaration.check(ctx, seq, sc, fn, nil, false)
 	case BlockItemStmt: // Stmt
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
+		r = n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
+	return r
 }
 
-func (n *Stmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
+func (n *Stmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) (r Operand) {
+	r = Operand{Type: Void}
 	switch n.Case {
 	case StmtBlock: // CompoundStmt
 		n.CompoundStmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 	case StmtExpr: // ExprStmt
-		n.ExprStmt.check(ctx, fn)
+		r = n.ExprStmt.check(ctx, fn, seq, sc)
 	case StmtIter: // IterationStmt
 		n.IterationStmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 	case StmtJump: // JumpStmt
-		n.JumpStmt.check(ctx, fn, inSwitch, inLoop)
+		n.JumpStmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 	case StmtLabeled: // LabeledStmt
 		n.LabeledStmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 	case StmtSelect: // SelectionStmt
@@ -1933,6 +1946,7 @@ func (n *Stmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch 
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
+	return r
 }
 
 func (n *LabeledStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
@@ -1967,19 +1981,19 @@ func (n *LabeledStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, in
 func (n *SelectionStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
 	switch n.Case {
 	case SelectionStmtIfElse: // "if" '(' ExprList ')' Stmt "else" Stmt
-		if !n.ExprList.eval(ctx, true, fn).isScalarType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc).isScalarType() {
 			panic("TODO")
 		}
 		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 		n.Stmt2.check(ctx, fn, seq, sc, inSwitch, inLoop)
 	case SelectionStmtIf: // "if" '(' ExprList ')' Stmt
-		if !n.ExprList.eval(ctx, true, fn).isScalarType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc).isScalarType() {
 			panic("TODO")
 		}
 		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop)
 	case SelectionStmtSwitch: // "switch" '(' ExprList ')' Stmt
 		// [0]6.8.4.2
-		if !n.ExprList.eval(ctx, true, fn).isIntegerType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc).isIntegerType() {
 			panic("TODO")
 		}
 		n.SwitchOp = n.ExprList.Operand.integerPromotion(ctx.model)
@@ -1992,28 +2006,28 @@ func (n *SelectionStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, 
 func (n *IterationStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
 	switch n.Case {
 	case IterationStmtDo: // "do" Stmt "while" '(' ExprList ')' ';'
-		if !n.ExprList.eval(ctx, true, fn).isScalarType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc).isScalarType() {
 			panic(ctx.position)
 		}
 		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true)
 	case IterationStmtForDecl: // "for" '(' Declaration ExprListOpt ';' ExprListOpt ')' Stmt
-		n.Declaration.check(ctx, sc, fn, n.Declaration.Scope, false)
-		n.ExprListOpt.eval(ctx, true, fn)
-		if e := n.ExprListOpt.eval(ctx, true, fn); e.Type != nil && !e.isScalarType() {
+		n.Declaration.check(ctx, seq, sc, fn, n.Declaration.Scope, false)
+		n.ExprListOpt.eval(ctx, true, fn, seq, sc)
+		if e := n.ExprListOpt.eval(ctx, true, fn, seq, sc); e.Type != nil && !e.isScalarType() {
 			panic(ctx.position(n))
 		}
-		n.ExprListOpt2.eval(ctx, true, fn)
+		n.ExprListOpt2.eval(ctx, true, fn, seq, sc)
 		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true)
 	case IterationStmtFor: // "for" '(' ExprListOpt ';' ExprListOpt ';' ExprListOpt ')' Stmt
 		// [0]6.8.5.3
-		n.ExprListOpt.eval(ctx, true, fn)
-		if e := n.ExprListOpt2.eval(ctx, true, fn); e.Type != nil && !e.isScalarType() {
+		n.ExprListOpt.eval(ctx, true, fn, seq, sc)
+		if e := n.ExprListOpt2.eval(ctx, true, fn, seq, sc); e.Type != nil && !e.isScalarType() {
 			panic(ctx.position(n))
 		}
-		n.ExprListOpt3.eval(ctx, true, fn)
+		n.ExprListOpt3.eval(ctx, true, fn, seq, sc)
 		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true)
 	case IterationStmtWhile: // "while" '(' ExprList ')' Stmt
-		if e := n.ExprList.eval(ctx, true, fn); e.Type != nil && !e.isScalarType() {
+		if e := n.ExprList.eval(ctx, true, fn, seq, sc); e.Type != nil && !e.isScalarType() {
 			panic(ctx.position(n))
 		}
 		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true)
@@ -2022,7 +2036,7 @@ func (n *IterationStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, 
 	}
 }
 
-func (n *JumpStmt) check(ctx *context, fn *Declarator, inSwitch *SelectionStmt, inLoop bool) {
+func (n *JumpStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool) {
 	switch n.Case {
 	case JumpStmtBreak: // "break" ';'
 		// [0]6.8.6.3
@@ -2046,7 +2060,7 @@ func (n *JumpStmt) check(ctx *context, fn *Declarator, inSwitch *SelectionStmt, 
 		}
 	case JumpStmtReturn: // "return" ExprListOpt ';'
 		// [0]6.8.6.4
-		op := n.ExprListOpt.eval(ctx, true, fn)
+		op := n.ExprListOpt.eval(ctx, true, fn, seq, sc)
 		switch t := fn.Type.(*FunctionType).Result; t.Kind() {
 		case Void:
 			if op.Type != nil {
@@ -2067,19 +2081,19 @@ func (n *JumpStmt) check(ctx *context, fn *Declarator, inSwitch *SelectionStmt, 
 	}
 }
 
-func (n *ExprStmt) check(ctx *context, fn *Declarator) {
+func (n *ExprStmt) check(ctx *context, fn *Declarator, seq *int, sc []int) Operand {
 	// ExprListOpt ';'
-	n.ExprListOpt.eval(ctx, true, fn)
+	return n.ExprListOpt.eval(ctx, true, fn, seq, sc)
 }
 
-func (n *Declaration) check(ctx *context, sc []int, fn *Declarator, scope *Scope, fnParam bool) []*Declarator {
+func (n *Declaration) check(ctx *context, seq *int, sc []int, fn *Declarator, scope *Scope, fnParam bool) []*Declarator {
 	// DeclarationSpecifiers InitDeclaratorListOpt ';'
 	ds := &DeclarationSpecifier{}
 	n.DeclarationSpecifiers.check(ctx, ds)
 	if len(ds.TypeSpecifiers) == 0 { // [0]6.7.2-2
 		panic("TODO")
 	}
-	r := n.InitDeclaratorListOpt.check(ctx, ds, sc, fn, scope)
+	r := n.InitDeclaratorListOpt.check(ctx, ds, seq, sc, fn, scope)
 	for _, v := range r {
 		if fnParam {
 			v.IsFunctionParameter = true
@@ -2100,22 +2114,22 @@ func (n *Declaration) check(ctx *context, sc []int, fn *Declarator, scope *Scope
 	return r
 }
 
-func (n *InitDeclaratorListOpt) check(ctx *context, ds *DeclarationSpecifier, sc []int, fn *Declarator, scope *Scope) []*Declarator {
+func (n *InitDeclaratorListOpt) check(ctx *context, ds *DeclarationSpecifier, seq *int, sc []int, fn *Declarator, scope *Scope) []*Declarator {
 	if n == nil {
 		return nil
 	}
 
-	return n.InitDeclaratorList.check(ctx, ds, sc, fn, scope)
+	return n.InitDeclaratorList.check(ctx, ds, seq, sc, fn, scope)
 }
 
-func (n *InitDeclaratorList) check(ctx *context, ds *DeclarationSpecifier, sc []int, fn *Declarator, scope *Scope) (r []*Declarator) {
+func (n *InitDeclaratorList) check(ctx *context, ds *DeclarationSpecifier, seq *int, sc []int, fn *Declarator, scope *Scope) (r []*Declarator) {
 	for ; n != nil; n = n.InitDeclaratorList {
-		r = append(r, n.InitDeclarator.check(ctx, ds, sc, fn, scope))
+		r = append(r, n.InitDeclarator.check(ctx, ds, seq, sc, fn, scope))
 	}
 	return r
 }
 
-func (n *InitDeclarator) check(ctx *context, ds *DeclarationSpecifier, sc []int, fn *Declarator, scope *Scope) *Declarator {
+func (n *InitDeclarator) check(ctx *context, ds *DeclarationSpecifier, seq *int, sc []int, fn *Declarator, scope *Scope) *Declarator {
 	if scope != nil {
 		n.Declarator.Scope = scope
 	}
@@ -2128,7 +2142,7 @@ func (n *InitDeclarator) check(ctx *context, ds *DeclarationSpecifier, sc []int,
 		}
 		n.Declarator.Initializer = n.Initializer
 		n.Declarator.check(ctx, ds, ds.typ(ctx), true, sc, fn)
-		n.Initializer.check(ctx, n.Declarator.Type, fn, false, nil)
+		n.Initializer.check(ctx, n.Declarator.Type, fn, false, nil, seq, sc)
 		if ex := n.Declarator.Scope.Idents[n.Declarator.Name()].(*Declarator); ex != nil && ex != n.Declarator {
 			switch {
 			case ex.Initializer == nil:
@@ -2145,13 +2159,13 @@ func (n *InitDeclarator) check(ctx *context, ds *DeclarationSpecifier, sc []int,
 	return n.Declarator
 }
 
-func (n *Initializer) check(ctx *context, t Type, fn *Declarator, field bool, arr *ArrayType) (r Operand) {
+func (n *Initializer) check(ctx *context, t Type, fn *Declarator, field bool, arr *ArrayType, seq *int, sc []int) (r Operand) {
 	// [0]6.7.8
 	switch n.Case {
 	case InitializerCompLit: // '{' InitializerList CommaOpt '}'
 		return n.InitializerList.check(ctx, t, fn)
 	case InitializerExpr: // Expr
-		op := n.Expr.eval(ctx, true, fn)
+		op := n.Expr.eval(ctx, true, fn, seq, sc)
 		switch {
 		case t.Kind() == Function && op.Type.IsPointerType() && UnderlyingType(op.Type).(*PointerType).Item.Kind() == Function:
 			t.assign(ctx, n, op)
@@ -2202,16 +2216,6 @@ func (n *Initializer) check(ctx *context, t Type, fn *Declarator, field bool, ar
 
 				if x.Fields[0].Type.IsCompatible(op.Type) {
 					return op
-				}
-			case Struct:
-				x := UnderlyingType(t).(*StructType)
-				f0 := x.Fields[0]
-				switch y := UnderlyingType(f0.Type).(type) {
-				case *ArrayType:
-					y.Item.assign(ctx, n, op)
-					return op
-				default:
-					panic(fmt.Errorf("%v: %T %v, %v", ctx.position(n), y, y, op.Type))
 				}
 			}
 
@@ -2336,13 +2340,13 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 					case nv < index:
 						r.Values = append(r.Values, make([]ir.Value, index-nv)...)
 					case nv > index:
-						r.Values[index] = n.Initializer.check(ctx, x.Item, fn, false, x)
+						r.Values[index] = n.Initializer.check(ctx, x.Item, fn, false, x, nil, nil)
 						index++
 						continue
 					}
 				}
 
-				r.Values = append(r.Values, n.Initializer.check(ctx, x.Item, fn, false, x))
+				r.Values = append(r.Values, n.Initializer.check(ctx, x.Item, fn, false, x, nil, nil))
 				if index > maxIndex {
 					maxIndex = index
 				}
@@ -2369,7 +2373,7 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 					case nv < field:
 						r.Values = append(r.Values, make([]ir.Value, field-nv)...)
 					case nv > field:
-						r.Values[field] = n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil)
+						r.Values[field] = n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil, nil, nil)
 						field++
 						continue
 					}
@@ -2380,7 +2384,7 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 				}
 				switch {
 				case field < len(x.Fields):
-					r.Values = append(r.Values, n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil))
+					r.Values = append(r.Values, n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil, nil, nil))
 					field++
 				default:
 					panic(fmt.Errorf("%v: TODO", ctx.position(n.Initializer)))
@@ -2436,7 +2440,7 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 					case nv < field:
 						r.Values = append(r.Values, make([]ir.Value, field-nv)...)
 					case nv > field:
-						r.Values[field] = n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil)
+						r.Values[field] = n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil, nil, nil)
 						field++
 						continue
 					}
@@ -2447,7 +2451,7 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 				}
 				switch {
 				case field < len(x.Fields):
-					r.Values = append(r.Values, n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil))
+					r.Values = append(r.Values, n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil, nil, nil))
 					field++
 				default:
 					panic(fmt.Errorf("%v: TODO", ctx.position(n.Initializer)))
@@ -2868,7 +2872,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 	case DirectDeclaratorArraySize: // DirectDeclarator '[' "static" TypeQualifierListOpt Expr ']'
 		var tq []*TypeQualifier
 		n.TypeQualifierListOpt.check(ctx, &tq)
-		sz := n.Expr.eval(ctx, true, fn)
+		sz := n.Expr.eval(ctx, true, fn, nil, nil)
 		t := &ArrayType{
 			Item:           t,
 			Size:           sz,
@@ -2887,7 +2891,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 	case DirectDeclaratorArray: // DirectDeclarator '[' TypeQualifierListOpt ExprOpt ']'
 		var tq []*TypeQualifier
 		n.TypeQualifierListOpt.check(ctx, &tq)
-		n.ExprOpt.eval(ctx, true, fn)
+		n.ExprOpt.eval(ctx, true, fn, nil, nil)
 		var sz Operand
 		if o := n.ExprOpt; o != nil {
 			sz = o.Expr.Operand
@@ -3015,7 +3019,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 	case DirectAbstractDeclaratorDArrSize: // DirectAbstractDeclaratorOpt '[' "static" TypeQualifierListOpt Expr ']'
 		var tq []*TypeQualifier
 		n.TypeQualifierListOpt.check(ctx, &tq)
-		sz := n.Expr.eval(ctx, true, nil)
+		sz := n.Expr.eval(ctx, true, nil, nil, nil)
 		t := &ArrayType{
 			Item: t,
 			Size: sz,
@@ -3027,7 +3031,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 		return n.DirectAbstractDeclaratorOpt.DirectAbstractDeclarator.check(ctx, t)
 	//TODO case DirectAbstractDeclaratorDArrVL: // DirectAbstractDeclaratorOpt '[' '*' ']'
 	case DirectAbstractDeclaratorDArr: // DirectAbstractDeclaratorOpt '[' ExprOpt ']'
-		n.ExprOpt.eval(ctx, true, nil)
+		n.ExprOpt.eval(ctx, true, nil, nil, nil)
 		var sz Operand
 		if o := n.ExprOpt; o != nil {
 			sz = o.Expr.Operand
@@ -3045,7 +3049,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 	case DirectAbstractDeclaratorDArr2: // DirectAbstractDeclaratorOpt '[' TypeQualifierList ExprOpt ']'
 		var tq []*TypeQualifier
 		n.TypeQualifierListOpt.check(ctx, &tq)
-		n.ExprOpt.eval(ctx, true, nil)
+		n.ExprOpt.eval(ctx, true, nil, nil, nil)
 		var sz Operand
 		if o := n.ExprOpt; o != nil {
 			sz = o.Expr.Operand
@@ -3108,8 +3112,8 @@ func (n *TypeQualifier) check(ctx *context, ds *DeclarationSpecifier) {
 
 func (n *TypeSpecifier) check(ctx *context, ds *DeclarationSpecifier) {
 	switch n.Case {
-	//TODO case TypeSpecifierBool: // "_Bool"
 	case
+		TypeSpecifierBool,     // "_Bool"
 		TypeSpecifierChar,     // "char"
 		TypeSpecifierComplex,  // "_Complex"
 		TypeSpecifierDouble,   // "double"
@@ -3130,7 +3134,7 @@ func (n *TypeSpecifier) check(ctx *context, ds *DeclarationSpecifier) {
 	case TypeSpecifierTypeof: // "typeof" '(' TypeName ')'
 		n.typ = n.TypeName.check(ctx)
 	case TypeSpecifierTypeofExpr: // "typeof" '(' Expr ')'
-		op := n.Expr.eval(ctx, false, nil)
+		op := n.Expr.eval(ctx, false, nil, nil, nil)
 		n.typ = op.Type
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
@@ -3421,6 +3425,7 @@ func (n *Expr) isSideEffectsFree() bool {
 		ExprPreDec,    // "--" Expr
 		ExprPreInc,    // "++" Expr
 		ExprRshAssign, // Expr ">>=" Expr
+		ExprStatement, // '(' CompoundStmt ')' //TODO we can do better
 		ExprSubAssign, // Expr "-=" Expr
 		ExprXorAssign: // Expr "^=" Expr
 

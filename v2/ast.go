@@ -1190,6 +1190,7 @@ const (
 	ExprSizeofExpr
 	ExprNot
 	ExprAddrof
+	ExprStatement
 	ExprPExprList
 	ExprCompLit
 	ExprCast
@@ -1261,6 +1262,8 @@ func (n ExprCase) String() string {
 		return "ExprNot"
 	case ExprAddrof:
 		return "ExprAddrof"
+	case ExprStatement:
+		return "ExprStatement"
 	case ExprPExprList:
 		return "ExprPExprList"
 	case ExprCompLit:
@@ -1377,6 +1380,7 @@ func (n ExprCase) String() string {
 //	|       "sizeof" Expr                                      // Case ExprSizeofExpr
 //	|       '!' Expr                                           // Case ExprNot
 //	|       '&' Expr                                           // Case ExprAddrof
+//	|       '(' CompoundStmt ')'                               // Case ExprStatement
 //	|       '(' ExprList ')'                                   // Case ExprPExprList
 //	|       '(' TypeName ')' '{' InitializerList CommaOpt '}'  // Case ExprCompLit
 //	|       '(' TypeName ')' Expr                              // Case ExprCast
@@ -1437,6 +1441,7 @@ type Expr struct {
 	ArgumentExprListOpt *ArgumentExprListOpt
 	Case                ExprCase
 	CommaOpt            *CommaOpt
+	CompoundStmt        *CompoundStmt
 	Expr                *Expr
 	Expr2               *Expr
 	ExprList            *ExprList
@@ -1462,9 +1467,9 @@ func (n *Expr) Pos() token.Pos {
 	}
 
 	switch n.Case {
-	case 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51:
+	case 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52:
 		return n.Expr.Pos()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 52, 53, 54, 55, 56, 57:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 53, 54, 55, 56, 57, 58:
 		return n.Token.Pos()
 	default:
 		panic("internal error")

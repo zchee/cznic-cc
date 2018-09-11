@@ -327,6 +327,7 @@ func (o Operand) ConvertTo(m Model, t Type) (r Operand) {
 	case TypeKind:
 		switch x {
 		case
+			Bool,
 			Char,
 			Double,
 			DoubleComplex,
