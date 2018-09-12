@@ -888,7 +888,6 @@ func (c *cpp) subst(m *Macro, ap [][]cppToken, hs map[int]struct{}, expandDefine
 			// -------------------------------------------------- G
 			if len(arg) == 0 {
 				// ------------------------------------------ H
-				panic("TODO")
 				panic(c.position(repl[0]))
 			}
 
@@ -905,7 +904,7 @@ func (c *cpp) subst(m *Macro, ap [][]cppToken, hs map[int]struct{}, expandDefine
 				// ------------------------------------------ H
 				if len(repl) > 3 && repl[3].Rune == IDENTIFIER && m.param(ap, repl[3].Val, &arg) {
 					// ---------------------------------- I
-					panic("TODO")
+					panic(c.position(repl[0]))
 				}
 
 				// ------------------------------------------ J
