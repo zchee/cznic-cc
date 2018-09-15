@@ -3395,6 +3395,8 @@ func (n *DeclarationSpecifiersOpt) check(ctx *context, ds *DeclarationSpecifier)
 func (n *Declarator) IsTLD() bool { return n.Scope.Parent == nil }
 
 func (n *Expr) isSideEffectsFree() bool {
+	return false //TODO-
+
 	switch n.Case {
 	case
 		ExprChar,       // CHARCONST
@@ -3505,6 +3507,8 @@ func (n *ExprList) IsNonZero() bool {
 
 // IsNonZero reports whether n is provably non zero.
 func (n *Expr) IsNonZero() bool {
+	return n.Operand.IsNonZero() //TODO-
+
 	if n.Operand.IsNonZero() {
 		return true
 	}
@@ -3512,6 +3516,7 @@ func (n *Expr) IsNonZero() bool {
 	switch n.Case {
 	case
 		ExprAdd,        // Expr '+' Expr
+		ExprAddAssign,  // Expr "+=" Expr
 		ExprAnd,        // Expr '&' Expr
 		ExprAndAssign,  // Expr "&=" Expr
 		ExprCall,       // Expr '(' ArgumentExprListOpt ')'
@@ -3536,10 +3541,12 @@ func (n *Expr) IsNonZero() bool {
 		ExprPreDec,     // "--" Expr
 		ExprPreInc,     // Expr "++"
 		ExprRsh,        // Expr ">>" Expr
+		ExprRshAssign,  // Expr ">>=" Expr
 		ExprSelect,     // Expr '.' IDENTIFIER
 		ExprSizeofExpr, // "sizeof" Expr
 		ExprSizeofType, // "sizeof" '(' TypeName ')'
 		ExprString,     // STRINGLITERAL
+		ExprSubAssign,  // Expr "-=" Expr
 		ExprSub:        // Expr '-' Expr
 
 		return false
@@ -3558,7 +3565,7 @@ func (n *Expr) IsNonZero() bool {
 			}
 		}
 	case ExprAssign: // Expr '=' Expr
-		return n.Expr.IsNonZero()
+		return n.Expr2.IsNonZero()
 	case ExprCast: // '(' TypeName ')' Expr
 		return n.Expr.IsNonZero()
 	case ExprCond: // Expr '?' ExprList ':' Expr
@@ -3602,6 +3609,8 @@ func (n *ExprList) IsZero() bool {
 
 // IsZero reports whether n is provably zero.
 func (n *Expr) IsZero() bool {
+	return n.Operand.IsZero() //TODO-
+
 	if n.Operand.IsZero() {
 		return true
 	}
@@ -3609,6 +3618,7 @@ func (n *Expr) IsZero() bool {
 	switch n.Case {
 	case
 		ExprAdd,        // Expr '+' Expr
+		ExprAddAssign,  // Expr "+=" Expr
 		ExprAddrof,     // '&' Expr
 		ExprCall,       // Expr '(' ArgumentExprListOpt ')'
 		ExprChar,       // CHARCONST
@@ -3632,6 +3642,8 @@ func (n *Expr) IsZero() bool {
 		ExprPreDec,     // "--" Expr
 		ExprPreInc,     // Expr "++"
 		ExprRsh,        // Expr ">>" Expr
+		ExprRshAssign,  // Expr ">>=" Expr
+		ExprSubAssign,  // Expr "-=" Expr
 		ExprSelect,     // Expr '.' IDENTIFIER
 		ExprSizeofExpr, // "sizeof" Expr
 		ExprSizeofType, // "sizeof" '(' TypeName ')'
@@ -3644,7 +3656,7 @@ func (n *Expr) IsZero() bool {
 	case ExprAndAssign: // Expr "&=" Expr
 		return n.Expr.IsZero() || n.Expr2.IsZero()
 	case ExprAssign: // Expr '=' Expr
-		return n.Expr.IsZero()
+		return n.Expr2.IsZero()
 	case ExprCast: // '(' TypeName ')' Expr
 		return n.Expr.IsZero()
 	case ExprCond: // Expr '?' ExprList ':' Expr
@@ -3702,6 +3714,8 @@ func (n *ExprList) equals2(m *Expr) bool {
 
 // Equals reports whether s equals m.
 func (n *Expr) Equals(m *Expr) bool {
+	return false //TODO-
+
 	if n.Operand.Type != m.Operand.Type || n.Operand.Value != m.Operand.Value || !n.isSideEffectsFree() || !m.isSideEffectsFree() {
 		return false
 	}
