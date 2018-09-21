@@ -1256,7 +1256,7 @@ func (t *TaggedEnumType) IsCompatible(u Type) bool {
 func (t *TaggedEnumType) IsIntegerType() bool { return true }
 
 // IsPointerType implements Type.
-func (t *TaggedEnumType) IsPointerType() bool { panic("TODO") }
+func (t *TaggedEnumType) IsPointerType() bool { return false }
 
 // IsScalarType implements Type.
 func (t *TaggedEnumType) IsScalarType() bool { return true }
@@ -1623,12 +1623,12 @@ func (t *UnionType) assign(ctx *context, n Node, op Operand) Operand {
 
 		return Operand{Type: t}
 	default:
-		panic(fmt.Errorf("%T %v", x, x))
+		panic(fmt.Errorf("%v: %T %v", ctx.position(n), x, x))
 	}
 }
 
 // IsPointerType implements Type.
-func (t *UnionType) IsPointerType() bool { panic("TODO") }
+func (t *UnionType) IsPointerType() bool { return false }
 
 // IsIntegerType implements Type.
 func (t *UnionType) IsIntegerType() bool { return false }

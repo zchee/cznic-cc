@@ -392,17 +392,35 @@ func (o Operand) ConvertTo(m Model, t Type) (r Operand) {
 			return Operand{Type: t}
 		}
 
-		switch t.Kind() {
-		case Double, LongDouble:
-			return Operand{Type: t, Value: &ir.Float64Value{Value: float64(o.Value.(*ir.Int64Value).Value)}}.normalize(m)
-		case DoubleComplex:
-			return Operand{Type: t, Value: &ir.Complex128Value{Value: complex(float64(o.Value.(*ir.Int64Value).Value), 0)}}.normalize(m)
-		case Float:
-			return Operand{Type: t, Value: &ir.Float32Value{Value: float32(o.Value.(*ir.Int64Value).Value)}}.normalize(m)
-		case FloatComplex:
-			return Operand{Type: t, Value: &ir.Complex64Value{Value: complex(float32(o.Value.(*ir.Int64Value).Value), 0)}}.normalize(m)
+		switch {
+		case o.Type.IsUnsigned():
+			val := uint64(v.Value)
+			switch t.Kind() {
+			case Double, LongDouble:
+				return Operand{Type: t, Value: &ir.Float64Value{Value: float64(val)}}.normalize(m)
+			case DoubleComplex:
+				return Operand{Type: t, Value: &ir.Complex128Value{Value: complex(float64(val), 0)}}.normalize(m)
+			case Float:
+				return Operand{Type: t, Value: &ir.Float32Value{Value: float32(val)}}.normalize(m)
+			case FloatComplex:
+				return Operand{Type: t, Value: &ir.Complex64Value{Value: complex(float32(val), 0)}}.normalize(m)
+			default:
+				panic(t)
+			}
 		default:
-			panic(t)
+			val := v.Value
+			switch t.Kind() {
+			case Double, LongDouble:
+				return Operand{Type: t, Value: &ir.Float64Value{Value: float64(val)}}.normalize(m)
+			case DoubleComplex:
+				return Operand{Type: t, Value: &ir.Complex128Value{Value: complex(float64(val), 0)}}.normalize(m)
+			case Float:
+				return Operand{Type: t, Value: &ir.Float32Value{Value: float32(val)}}.normalize(m)
+			case FloatComplex:
+				return Operand{Type: t, Value: &ir.Complex64Value{Value: complex(float32(val), 0)}}.normalize(m)
+			default:
+				panic(t)
+			}
 		}
 	}
 
@@ -915,6 +933,12 @@ func (o Operand) ne(ctx *context, p Operand) (r Operand) {
 	case *ir.Int64Value:
 		var val int64
 		if x.Value != p.Value.(*ir.Int64Value).Value {
+			val = 1
+		}
+		r.Value = &ir.Int64Value{Value: val}
+	case *ir.Float32Value:
+		var val int64
+		if x.Value != p.Value.(*ir.Float32Value).Value {
 			val = 1
 		}
 		r.Value = &ir.Int64Value{Value: val}

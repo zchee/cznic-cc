@@ -1731,7 +1731,7 @@ func (n *FunctionDefinition) check(ctx *context) {
 	case FunctionDefinitionSpec: // DeclarationSpecifiers Declarator DeclarationListOpt FunctionBody
 		n.DeclarationSpecifiers.check(ctx, ds)
 		if len(ds.TypeSpecifiers) == 0 { // [0]6.7.2-2
-			panic("TODO")
+			ds.typeSpecifiers = []TypeSpecifierCase{TypeSpecifierInt}
 		}
 	case FunctionDefinitionInt: // Declarator DeclarationListOpt FunctionBody
 		ds.typeSpecifiers = []TypeSpecifierCase{TypeSpecifierInt}
