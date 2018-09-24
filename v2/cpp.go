@@ -1331,9 +1331,17 @@ func (c *cpp) include(n Node, nm string, paths []string, w tokenWriter) {
 	defer func() { c.includeLevel-- }()
 
 	dir := filepath.Dir(c.position(n).Filename)
+	if d, err := filepath.Abs(dir); err == nil {
+		dir = d
+	}
 	var path string
 	if n.(cppToken).Val == idIncludeNext {
+		nmDir, _ := filepath.Split(nm)
 		for i, v := range paths {
+			if w, err := filepath.Abs(v); err == nil {
+				v = w
+			}
+			v = filepath.Join(v, nmDir)
 			if v == dir {
 				paths = paths[i+1:]
 				break
