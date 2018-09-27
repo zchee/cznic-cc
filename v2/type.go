@@ -1173,7 +1173,7 @@ func (t *StructType) assign(ctx *context, n Node, op Operand) Operand {
 
 		return Operand{Type: t}
 	default:
-		panic(fmt.Errorf("%T %v", x, x))
+		panic(fmt.Errorf("%v: %T %v", ctx.position(n), x, x))
 	}
 }
 

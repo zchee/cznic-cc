@@ -18,12 +18,6 @@
 //go:generate sh -c "go test -run ^Example |fe"
 //go:generate gofmt -l -s -w .
 
-//TODO bit field arithmetic
-//		20040709-1.c
-//		20040709-2.c
-
-//TODO remove all options.
-
 // Package cc is a C99 compiler front end. Work In Progress. API unstable.
 package cc
 
