@@ -434,19 +434,6 @@ outer:
 			n.Operand = Operand{Type: Void}
 			break
 		}
-
-		if !t.IsScalarType() {
-			if isVaList(t) {
-				if !op.isIntegerType() {
-					panic("TODO")
-				}
-
-				// va_start, va_end
-				n.Operand.Type = t
-				break
-			}
-		}
-
 	more:
 		switch x := t.(type) {
 		case *EnumType:
@@ -1047,8 +1034,6 @@ outer:
 		case len(args) == len(params):
 			for i, rhs := range args {
 				switch {
-				case isVaList(t.Params[i]) && isVaList(rhs.Type):
-					ops[i] = rhs
 				case rhs.Type.Kind() == Ptr && t.Params[i].IsIntegerType():
 					ops[i] = rhs.ConvertTo(ctx.model, t.Params[i])
 				default:
@@ -1062,8 +1047,6 @@ outer:
 				switch {
 				case i >= len(t.Params):
 					ops[i] = ctx.model.defaultArgumentPromotion(rhs)
-				case isVaList(t.Params[i]) && isVaList(rhs.Type):
-					ops[i] = rhs
 				case rhs.Type.Kind() == Ptr && t.Params[i].IsIntegerType():
 					ops[i] = rhs.ConvertTo(ctx.model, t.Params[i])
 				default:
