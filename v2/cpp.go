@@ -1073,7 +1073,7 @@ outer:
 				break
 			}
 
-			panic(fmt.Errorf("%v: ERROR: %v", c.position(t), cppToksDump(line, "")))
+			c.err(t, "%s", cppToksDump(line, ""))
 		case idIf:
 			if !cs.on() {
 				return cs.push(condIfSkip)
