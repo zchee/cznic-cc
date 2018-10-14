@@ -9,18 +9,7 @@
 
 #include "predefined.h"
 
-typedef struct {
-	int size;
-	char data;
-} __builtin_va_list_item;
-
-typedef struct {
-	int size;
-	int count;
-	__builtin_va_list_item *item; // struct { int size; char data[.size] } padded to align 8
-} __builtin_va_list_header;
-
-typedef __builtin_va_list_header *__builtin_va_list;
+typedef void *__builtin_va_list;
 
 typedef void *__FILE_TYPE__;
 
@@ -43,14 +32,12 @@ void *__GO2__(char*);
 void *__builtin_alloca(__SIZE_TYPE__ __size);
 void *__builtin_memcpy(void *dest, const void *src, __SIZE_TYPE__ n);
 void *__builtin_memset(void *s, int c, __SIZE_TYPE__ n);
-#ifdef __ccgo__
-__builtin_va_list_header __builtin_va_list_header_instance; // Force Go type definition
-#endif
 void __GO__(char*);
 void __builtin_abort(void);
 void __builtin_exit(int __status);
 void __builtin_free(void*);
 void __builtin_trap(void);
+void __builtin_va_end(__builtin_va_list);
 void __register_stdfiles(void *, void *, void *, void *);
 
 #define __builtin_choose_expr(a, b, c) (a) ? (b) : (c)
@@ -62,7 +49,7 @@ void __register_stdfiles(void *, void *, void *, void *);
 #define __builtin_va_arg(ap, type) (type)ap
 #ifdef __ccgo__
 #define __builtin_va_copy(dest, src) dest = __builtin_va_copy(src)
-#define __builtin_va_end(ap) __builtin_free(ap)
+#define __builtin_va_end(ap) __builtin_va_end(ap)
 #define __builtin_va_start(ap, arg) ap = __GO2__("X__builtin_va_start(tls, ap)")
 #else
 #define __builtin_va_copy(dest, src) dest = src
