@@ -47,8 +47,8 @@ package cc
 import (
 	"fmt"
 
-	"github.com/cznic/xc"
-	"github.com/cznic/golex/lex"
+	"modernc.org/xc"
+	"modernc.org/golex/lex"
 )
 %}
 

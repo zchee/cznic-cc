@@ -20,7 +20,7 @@ package cc
 import (
         "fmt"
 
-        "github.com/cznic/golex/lex"
+        "modernc.org/golex/lex"
 )
 
 const (

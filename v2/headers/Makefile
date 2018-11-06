@@ -35,7 +35,7 @@ editor:
 	gofmt -l -s -w *.go
 	go test -i
 	go test 2>&1 | tee log
-	go run generator.go -crt github.com/cznic/crt 2>&1 | tee -a log
+	go run generator.go -crt modernc.org/crt 2>&1 | tee -a log
 	find -name \*.c -or -name \*.h | xargs -n1 indent -linux -l -1
 	find -name \*.c~ -or -name \*.h~ | xargs rm
 
