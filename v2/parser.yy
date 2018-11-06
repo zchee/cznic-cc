@@ -445,7 +445,7 @@ import (
 				}
 /*yy:case Empty      */ |	StructOrUnion IdentifierOpt '{'
 				{
-					lx.noTypedefName = true // https://github.com/cznic/sqlite2go/issues/9
+					lx.noTypedefName = true // https://gitlab.com/cznic/sqlite2go/issues/9
 				}
 				'}'
 				{
@@ -459,7 +459,7 @@ import (
 				}
 				StructDeclarationList
 				{
-					lx.noTypedefName = true // https://github.com/cznic/sqlite2go/issues/9
+					lx.noTypedefName = true // https://gitlab.com/cznic/sqlite2go/issues/9
 				}
 				'}'
 				{
