@@ -41,15 +41,15 @@
 // otherwise, arising from, out of or in connection with the
 // software or the use or other dealings in the software.
 
-package cc
+package cc // import "modernc.org/cc"
 
 import __yyfmt__ "fmt"
 
 import (
 	"fmt"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/xc"
 )
 
 type yySymType struct {
@@ -2680,10 +2680,10 @@ yynewstate:
 	case 9:
 		{
 			yyVAL.node = &ArgumentExpressionList{
-				Case: 1,
+				Case:                   1,
 				ArgumentExpressionList: yyS[yypt-2].node.(*ArgumentExpressionList),
-				Token:      yyS[yypt-1].Token,
-				Expression: yyS[yypt-0].node.(*Expression),
+				Token:                  yyS[yypt-1].Token,
+				Expression:             yyS[yypt-0].node.(*Expression),
 			}
 		}
 	case 10:
@@ -2770,11 +2770,11 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &Expression{
-				Case:       9,
-				Expression: yyS[yypt-3].node.(*Expression),
-				Token:      yyS[yypt-2].Token,
+				Case:                      9,
+				Expression:                yyS[yypt-3].node.(*Expression),
+				Token:                     yyS[yypt-2].Token,
 				ArgumentExpressionListOpt: yyS[yypt-1].node.(*ArgumentExpressionListOpt),
-				Token2: yyS[yypt-0].Token,
+				Token2:                    yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			o := lhs.ArgumentExpressionListOpt
@@ -3326,7 +3326,7 @@ yynewstate:
 			lhs := &Declaration{
 				DeclarationSpecifiers: yyS[yypt-2].node.(*DeclarationSpecifiers),
 				InitDeclaratorListOpt: yyS[yypt-1].node.(*InitDeclaratorListOpt),
-				Token: yyS[yypt-0].Token,
+				Token:                 yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			ts0 := lhs.DeclarationSpecifiers.typeSpecifiers()
@@ -3388,7 +3388,7 @@ yynewstate:
 	case 81:
 		{
 			yyVAL.node = &Declaration{
-				Case: 1,
+				Case:                    1,
 				StaticAssertDeclaration: yyS[yypt-0].node.(*StaticAssertDeclaration),
 			}
 		}
@@ -3719,7 +3719,7 @@ yynewstate:
 	case 111:
 		{
 			lhs := &TypeSpecifier{
-				Case: 11,
+				Case:                   11,
 				StructOrUnionSpecifier: yyS[yypt-0].node.(*StructOrUnionSpecifier),
 			}
 			yyVAL.node = lhs
@@ -3789,9 +3789,9 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &StructOrUnionSpecifier{
-				StructOrUnion: yyS[yypt-5].node.(*StructOrUnion),
-				IdentifierOpt: yyS[yypt-4].node.(*IdentifierOpt),
-				Token:         yyS[yypt-3].Token,
+				StructOrUnion:         yyS[yypt-5].node.(*StructOrUnion),
+				IdentifierOpt:         yyS[yypt-4].node.(*IdentifierOpt),
+				Token:                 yyS[yypt-3].Token,
 				StructDeclarationList: yyS[yypt-1].node.(*StructDeclarationList).reverse(),
 				Token2:                yyS[yypt-0].Token,
 			}
@@ -3901,7 +3901,7 @@ yynewstate:
 	case 123:
 		{
 			yyVAL.node = &StructDeclarationList{
-				Case: 1,
+				Case:                  1,
 				StructDeclarationList: yyS[yypt-1].node.(*StructDeclarationList),
 				StructDeclaration:     yyS[yypt-0].node.(*StructDeclaration),
 			}
@@ -3948,9 +3948,9 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &StructDeclaration{
-				Case: 1,
+				Case:                   1,
 				SpecifierQualifierList: yyS[yypt-1].node.(*SpecifierQualifierList),
-				Token: yyS[yypt-0].Token,
+				Token:                  yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			s := lhs.SpecifierQualifierList
@@ -3994,7 +3994,7 @@ yynewstate:
 	case 126:
 		{
 			yyVAL.node = &StructDeclaration{
-				Case: 2,
+				Case:                    2,
 				StaticAssertDeclaration: yyS[yypt-0].node.(*StaticAssertDeclaration),
 			}
 		}
@@ -4548,7 +4548,7 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &ParameterDeclaration{
-				Case: 1,
+				Case:                  1,
 				DeclarationSpecifiers: yyS[yypt-1].node.(*DeclarationSpecifiers),
 				AbstractDeclaratorOpt: yyS[yypt-0].node.(*AbstractDeclaratorOpt),
 			}
@@ -4700,11 +4700,11 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &DirectAbstractDeclarator{
-				Case: 1,
+				Case:                        1,
 				DirectAbstractDeclaratorOpt: yyS[yypt-3].node.(*DirectAbstractDeclaratorOpt),
-				Token:         yyS[yypt-2].Token,
-				ExpressionOpt: yyS[yypt-1].node.(*ExpressionOpt),
-				Token2:        yyS[yypt-0].Token,
+				Token:                       yyS[yypt-2].Token,
+				ExpressionOpt:               yyS[yypt-1].node.(*ExpressionOpt),
+				Token2:                      yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			nElements := -1
@@ -4735,12 +4735,12 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &DirectAbstractDeclarator{
-				Case: 2,
+				Case:                        2,
 				DirectAbstractDeclaratorOpt: yyS[yypt-4].node.(*DirectAbstractDeclaratorOpt),
-				Token:             yyS[yypt-3].Token,
-				TypeQualifierList: yyS[yypt-2].node.(*TypeQualifierList).reverse(),
-				ExpressionOpt:     yyS[yypt-1].node.(*ExpressionOpt),
-				Token2:            yyS[yypt-0].Token,
+				Token:                       yyS[yypt-3].Token,
+				TypeQualifierList:           yyS[yypt-2].node.(*TypeQualifierList).reverse(),
+				ExpressionOpt:               yyS[yypt-1].node.(*ExpressionOpt),
+				Token2:                      yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			if o := lhs.ExpressionOpt; o != nil {
@@ -4767,13 +4767,13 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &DirectAbstractDeclarator{
-				Case: 3,
+				Case:                        3,
 				DirectAbstractDeclaratorOpt: yyS[yypt-5].node.(*DirectAbstractDeclaratorOpt),
-				Token:                yyS[yypt-4].Token,
-				Token2:               yyS[yypt-3].Token,
-				TypeQualifierListOpt: yyS[yypt-2].node.(*TypeQualifierListOpt),
-				Expression:           yyS[yypt-1].node.(*Expression),
-				Token3:               yyS[yypt-0].Token,
+				Token:                       yyS[yypt-4].Token,
+				Token2:                      yyS[yypt-3].Token,
+				TypeQualifierListOpt:        yyS[yypt-2].node.(*TypeQualifierListOpt),
+				Expression:                  yyS[yypt-1].node.(*Expression),
+				Token3:                      yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			lhs.Expression.eval(lx)
@@ -4798,13 +4798,13 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &DirectAbstractDeclarator{
-				Case: 4,
+				Case:                        4,
 				DirectAbstractDeclaratorOpt: yyS[yypt-5].node.(*DirectAbstractDeclaratorOpt),
-				Token:             yyS[yypt-4].Token,
-				TypeQualifierList: yyS[yypt-3].node.(*TypeQualifierList).reverse(),
-				Token2:            yyS[yypt-2].Token,
-				Expression:        yyS[yypt-1].node.(*Expression),
-				Token3:            yyS[yypt-0].Token,
+				Token:                       yyS[yypt-4].Token,
+				TypeQualifierList:           yyS[yypt-3].node.(*TypeQualifierList).reverse(),
+				Token2:                      yyS[yypt-2].Token,
+				Expression:                  yyS[yypt-1].node.(*Expression),
+				Token3:                      yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			lhs.Expression.eval(lx)
@@ -4828,11 +4828,11 @@ yynewstate:
 	case 194:
 		{
 			lhs := &DirectAbstractDeclarator{
-				Case: 5,
+				Case:                        5,
 				DirectAbstractDeclaratorOpt: yyS[yypt-3].node.(*DirectAbstractDeclaratorOpt),
-				Token:  yyS[yypt-2].Token,
-				Token2: yyS[yypt-1].Token,
-				Token3: yyS[yypt-0].Token,
+				Token:                       yyS[yypt-2].Token,
+				Token2:                      yyS[yypt-1].Token,
+				Token3:                      yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			var dd *DirectDeclarator
@@ -4894,11 +4894,11 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lhs := &DirectAbstractDeclarator{
-				Case: 7,
+				Case:                     7,
 				DirectAbstractDeclarator: yyS[yypt-4].node.(*DirectAbstractDeclarator),
-				Token:                yyS[yypt-3].Token,
-				ParameterTypeListOpt: yyS[yypt-1].node.(*ParameterTypeListOpt),
-				Token2:               yyS[yypt-0].Token,
+				Token:                    yyS[yypt-3].Token,
+				ParameterTypeListOpt:     yyS[yypt-1].node.(*ParameterTypeListOpt),
+				Token2:                   yyS[yypt-0].Token,
 			}
 			yyVAL.node = lhs
 			lhs.paramsScope, _ = lx.popScope(lhs.Token2)
@@ -5360,9 +5360,9 @@ yynewstate:
 	case 249:
 		{
 			yyVAL.node = &ExternalDeclaration{
-				Case: 2,
+				Case:                    2,
 				BasicAssemblerStatement: yyS[yypt-1].node.(*BasicAssemblerStatement),
-				Token: yyS[yypt-0].Token,
+				Token:                   yyS[yypt-0].Token,
 			}
 		}
 	case 250:
@@ -5510,9 +5510,9 @@ yynewstate:
 	case 266:
 		{
 			yyVAL.node = &AssemblerInstructions{
-				Case: 1,
+				Case:                  1,
 				AssemblerInstructions: yyS[yypt-1].node.(*AssemblerInstructions),
-				Token: yyS[yypt-0].Token,
+				Token:                 yyS[yypt-0].Token,
 			}
 		}
 	case 267:
@@ -5539,10 +5539,10 @@ yynewstate:
 		{
 			yyVAL.node = &AssemblerOperand{
 				AssemblerSymbolicNameOpt: yyS[yypt-4].node.(*AssemblerSymbolicNameOpt),
-				Token:      yyS[yypt-3].Token,
-				Token2:     yyS[yypt-2].Token,
-				Expression: yyS[yypt-1].node.(*Expression),
-				Token3:     yyS[yypt-0].Token,
+				Token:                    yyS[yypt-3].Token,
+				Token2:                   yyS[yypt-2].Token,
+				Expression:               yyS[yypt-1].node.(*Expression),
+				Token3:                   yyS[yypt-0].Token,
 			}
 		}
 	case 271:

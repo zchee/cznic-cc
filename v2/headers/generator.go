@@ -19,11 +19,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cznic/cc/v2"
-	"github.com/cznic/ir"
-	"github.com/cznic/sortutil"
-	"github.com/cznic/strutil"
-	"github.com/cznic/xc"
+	"modernc.org/cc/v2"
+	"modernc.org/ir"
+	"modernc.org/sortutil"
+	"modernc.org/strutil"
+	"modernc.org/xc"
 )
 
 var (
@@ -145,7 +145,7 @@ func main() {
 			cc.NewStringSource("main.c", fmt.Sprintf(`
 #include "./%s/builtin.h"
 
-// Output of gcc features.c && ./a.out in github.com/cznic/cc/v2/headers on linux_amd64.
+// Output of gcc features.c && ./a.out in modernc.org/cc/v2/headers on linux_amd64.
 #define _POSIX_SOURCE 1
 #define _POSIX_C_SOURCE 200809
 #define _DEFAULT_SOURCE 1

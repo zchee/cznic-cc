@@ -50,7 +50,7 @@ import __yyfmt__ "fmt"
 import __sync__ "sync"
 
 import (
-	"github.com/cznic/xc"
+	"modernc.org/xc"
 )
 
 var yyPool = __sync__.Pool{New: func() interface{} { s := make([]yySymType, 200); return &s }}

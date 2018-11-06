@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package cc // import "modernc.org/cc/v2"
 
 import (
 	"encoding/binary"
@@ -10,10 +10,10 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/ir"
-	"github.com/cznic/strutil"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/ir"
+	"modernc.org/strutil"
+	"modernc.org/xc"
 )
 
 var (

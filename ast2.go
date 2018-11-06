@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package cc // import "modernc.org/cc"
 
 import (
 	"fmt"
@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/mathutil"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/mathutil"
+	"modernc.org/xc"
 )
 
 type operand interface {
@@ -347,7 +347,7 @@ loop0:
 					stars = dd.Declarator.stars()
 					if stars == 0 {
 						copy(dds[i:], dds[i+1:])
-						dds = dds[:len(dds)-1 : len(dds)-1]
+						dds = dds[: len(dds)-1 : len(dds)-1]
 						goto again
 					}
 				} else {
@@ -2800,7 +2800,7 @@ func (n *IdentifierListOpt) post(lx *lexer, dlo *DeclarationListOpt) {
 		}
 		nm := t.Val
 		if r, ok := ilm[nm]; ok {
-			lx.report.ErrTok(t, "duplicate parameter name declaration, previous at %s", r.pos)
+			lx.report.ErrTok(t, "duplicate parameter name declaration, previous at %s", position(r.pos))
 			continue
 		}
 

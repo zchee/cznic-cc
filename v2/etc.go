@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package cc // import "modernc.org/cc/v2"
 
 import (
 	"bytes"
@@ -13,8 +13,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/cznic/strutil"
-	"github.com/cznic/xc"
+	"modernc.org/strutil"
+	"modernc.org/xc"
 )
 
 var (

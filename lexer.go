@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package cc // import "modernc.org/cc"
 
 import (
 	"bytes"
@@ -11,8 +11,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/xc"
 )
 
 // Lexer state

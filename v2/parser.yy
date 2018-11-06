@@ -46,7 +46,7 @@
 package cc
 
 import (
-	"github.com/cznic/xc"
+	"modernc.org/xc"
 )
 %}
 

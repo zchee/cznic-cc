@@ -8,8 +8,8 @@ package cc
 
 import (
 	"fmt"
-	"github.com/cznic/xc"
 	"go/token"
+	"modernc.org/xc"
 )
 
 // AbstractDeclaratorCase represents case numbers of production AbstractDeclarator

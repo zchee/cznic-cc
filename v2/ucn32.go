@@ -4,7 +4,7 @@
 
 // +build 386 arm armbe mips mipsle sparc
 
-package cc
+package cc // import "modernc.org/cc/v2"
 
 var ucnDigits = [...]uint32{
 	0x33: 0x3ff,

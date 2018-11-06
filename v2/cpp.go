@@ -5,7 +5,7 @@
 // [0]: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 // [1]: https://www.spinellis.gr/blog/20060626/cpp.algo.pdf
 
-package cc
+package cc // import "modernc.org/cc/v2"
 
 import (
 	"bytes"
@@ -19,10 +19,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/ir"
-	"github.com/cznic/mathutil"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/ir"
+	"modernc.org/mathutil"
+	"modernc.org/xc"
 )
 
 const (

@@ -7,7 +7,7 @@
 //go:generate golex -o scanner.go scanner.l
 
 //go:generate rm -f ast.go
-//go:generate yy -kind Case -o parser.y -astImport "\"github.com/cznic/xc\";\"go/token\";\"fmt\"" -prettyString PrettyString parser.yy
+//go:generate yy -kind Case -o parser.y -astImport "\"modernc.org/xc\";\"go/token\";\"fmt\"" -prettyString PrettyString parser.yy
 
 //go:generate rm -f parser.go
 //go:generate goyacc -o /dev/null -xegen xegen parser.y
@@ -19,7 +19,7 @@
 //go:generate gofmt -l -s -w .
 
 // Package cc is a C99 compiler front end. Work In Progress. API unstable.
-package cc
+package cc // import "modernc.org/cc/v2"
 
 import (
 	"bufio"
@@ -38,9 +38,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cznic/ir"
-	"github.com/cznic/strutil"
-	"github.com/cznic/xc"
+	"modernc.org/ir"
+	"modernc.org/strutil"
+	"modernc.org/xc"
 )
 
 const (

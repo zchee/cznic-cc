@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package cc // import "modernc.org/cc"
 
 import (
 	"bufio"
@@ -27,9 +27,9 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/mathutil"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/mathutil"
+	"modernc.org/xc"
 )
 
 func printStack() { debug.PrintStack() }
@@ -174,7 +174,7 @@ func testUCNTable(t *testing.T, tab []rune, fOk, fOther func(rune) bool, fcatego
 		if h == 0 {
 			h = l
 		}
-		for r := rune(l); r <= rune(h); r++ {
+		for r := l; r <= h; r++ {
 			m[r] = struct{}{}
 		}
 	}
@@ -2565,7 +2565,7 @@ func TestIssue50(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/57
+// https://gitlab.com/cznic/cc/issues/57
 func TestIssue57(t *testing.T) {
 	tu, err := Parse("", []string{"testdata/issue57.c"}, newTestModel())
 	if err != nil {
@@ -2604,7 +2604,7 @@ func TestIssue57(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/62
+// https://gitlab.com/cznic/cc/issues/62
 func TestIssue62(t *testing.T) {
 	tu, err := Parse("", []string{"testdata/issue62.c"}, newTestModel())
 	if err != nil {
@@ -2628,7 +2628,7 @@ func TestIssue62(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/64
+// https://gitlab.com/cznic/cc/issues/64
 func TestIssue64(t *testing.T) {
 	if _, err := Parse("", []string{"testdata/issue64.c"}, newTestModel()); err == nil {
 		t.Fatal("expected error")
@@ -2637,7 +2637,7 @@ func TestIssue64(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/65
+// https://gitlab.com/cznic/cc/issues/65
 func TestIssue65(t *testing.T) {
 	tu, err := Parse("", []string{"testdata/issue65.c"}, newTestModel())
 	if err != nil {
@@ -2682,7 +2682,7 @@ func TestIssue65(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/66
+// https://gitlab.com/cznic/cc/issues/66
 func TestIssue66(t *testing.T) {
 	tu, err := Parse("", []string{"testdata/issue66.c"}, newTestModel())
 	if err != nil {
@@ -2704,7 +2704,7 @@ func TestIssue66(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/67
+// https://gitlab.com/cznic/cc/issues/67
 func TestIssue67(t *testing.T) {
 	tu, err := Parse("", []string{"testdata/issue67.c"}, newTestModel(), KeepComments())
 	if err != nil {
@@ -2728,7 +2728,7 @@ testdata/issue67.c:9:1: "// abc7\n// def8"`; g != e {
 	}
 }
 
-// https://github.com/cznic/cc/issues/68
+// https://gitlab.com/cznic/cc/issues/68
 func TestIssue68(t *testing.T) {
 	if _, err := Parse("", []string{"testdata/issue68.h"}, newTestModel()); err == nil {
 		t.Fatal("expected error")
@@ -2739,14 +2739,14 @@ func TestIssue68(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/69
+// https://gitlab.com/cznic/cc/issues/69
 func TestIssue69(t *testing.T) {
 	if _, err := Parse("", []string{"testdata/issue69.h"}, newTestModel()); err != nil {
 		t.Fatal(err)
 	}
 }
 
-// https://github.com/cznic/cc/issues/72
+// https://gitlab.com/cznic/cc/issues/72
 func TestIssue72(t *testing.T) {
 	if _, err := Parse(
 		"", []string{"testdata/issue72.h"}, newTestModel(),
@@ -2756,7 +2756,7 @@ func TestIssue72(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/74
+// https://gitlab.com/cznic/cc/issues/74
 func TestIssue74EnableWideBitFieldTypes(t *testing.T) {
 	if _, err := Parse(
 		"", []string{"testdata/issue74.h"}, newTestModel(),
@@ -2766,7 +2766,7 @@ func TestIssue74EnableWideBitFieldTypes(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/77
+// https://gitlab.com/cznic/cc/issues/77
 func TestIssue77(t *testing.T) {
 	if _, err := Parse(
 		"", []string{"testdata/issue77.c"}, newTestModel(),
@@ -2775,7 +2775,7 @@ func TestIssue77(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/78
+// https://gitlab.com/cznic/cc/issues/78
 func TestIssue78(t *testing.T) {
 	if _, err := Parse(
 		"", []string{"testdata/issue78.c"}, newTestModel(),
@@ -2809,7 +2809,7 @@ func TestIssue78(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/80
+// https://gitlab.com/cznic/cc/issues/80
 func TestIssue80(t *testing.T) {
 	tu, err := Parse(
 		"", []string{"testdata/issue80.c"}, newTestModel(),
@@ -2885,7 +2885,7 @@ func TestIssue80(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/81
+// https://gitlab.com/cznic/cc/issues/81
 func TestIssue81(t *testing.T) {
 	tu, err := Parse(
 		"", []string{"testdata/issue81.c"}, newTestModel(),
@@ -2911,7 +2911,7 @@ func TestIssue81(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/82
+// https://gitlab.com/cznic/cc/issues/82
 func TestIssue82(t *testing.T) {
 	if g, e := testPreprocessor(t, "testdata/issue82.c"),
 		`d(2)
@@ -2920,7 +2920,7 @@ d(2, 3)`; g != e {
 	}
 }
 
-// https://github.com/cznic/cc/issues/84
+// https://gitlab.com/cznic/cc/issues/84
 func TestIssue84(t *testing.T) {
 	if g, e := testPreprocessor(t, "testdata/issue84.c"),
 		`c(1, 2, 3);
@@ -3099,7 +3099,7 @@ func TestGCCTests(t *testing.T) {
 	testDir(t, "testdata/gcc-6.3.0/gcc/testsuite/gcc.c-torture/execute/")
 }
 
-// https://github.com/cznic/cc/issues/85
+// https://gitlab.com/cznic/cc/issues/85
 func TestIssue85(t *testing.T) {
 	tu, err := Parse(
 		"", []string{"testdata/issue85.c"}, newTestModel(), EnableOmitFuncRetType(),
@@ -3137,7 +3137,7 @@ func TestIssue85(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/86
+// https://gitlab.com/cznic/cc/issues/86
 func TestIssue86(t *testing.T) {
 	_, err := Parse(
 		"", []string{"testdata/issue86.c"}, newTestModel(), EnableOmitFuncRetType(),
@@ -3175,7 +3175,7 @@ func TestArray(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/87
+// https://gitlab.com/cznic/cc/issues/87
 func TestIssue87(t *testing.T) {
 	if _, err := Parse(
 		"", []string{"testdata/issue87.c"}, newTestModel(),
@@ -3190,7 +3190,7 @@ func TestIssue87(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/88
+// https://gitlab.com/cznic/cc/issues/88
 func TestIssue88(t *testing.T) {
 	ast, err := Parse(
 		"", []string{"testdata/issue88.c"}, newTestModel(),
@@ -3208,7 +3208,7 @@ func TestIssue88(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/89
+// https://gitlab.com/cznic/cc/issues/89
 func TestIssue89(t *testing.T) {
 	ast, err := Parse(
 		"", []string{"testdata/issue89.c"}, newTestModel(), EnableImplicitFuncDef(),
@@ -3230,7 +3230,7 @@ func TestIssue89(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/90
+// https://gitlab.com/cznic/cc/issues/90
 func TestIssue90(t *testing.T) {
 	ast, err := Parse(
 		"", []string{"testdata/issue90.c"}, newTestModel(), EnableImplicitFuncDef(),
@@ -3254,7 +3254,7 @@ func TestIssue90(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/92
+// https://gitlab.com/cznic/cc/issues/92
 func TestIssue92(t *testing.T) {
 	if _, err := Parse(
 		"", []string{"testdata/issue92.c"}, newTestModel(),
@@ -3269,7 +3269,7 @@ func TestIssue92(t *testing.T) {
 	}
 }
 
-// https://github.com/cznic/cc/issues/93
+// https://gitlab.com/cznic/cc/issues/93
 func TestIssue93(t *testing.T) {
 	if _, err := Parse(
 		"", []string{"testdata/issue93.c"}, newTestModel(),

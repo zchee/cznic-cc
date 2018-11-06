@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package cc // import "modernc.org/cc"
 
 import (
 	"reflect"
 	"strconv"
 	"strings"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/strutil"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/strutil"
+	"modernc.org/xc"
 )
 
 const (

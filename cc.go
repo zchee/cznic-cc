@@ -17,7 +17,7 @@
 //
 // 2018-07-01 This package is no longer maintained. Please see the v2 version at
 //
-//	https://github.com/cznic/cc/v2
+//	https://modernc.org/cc/v2
 //
 // Links
 //
@@ -27,7 +27,7 @@
 //  [1]: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1406.pdf
 //  [2]: https://github.com/rsc/c2go/blob/fc8cbfad5a47373828c81c7a56cccab8b221d310/cc/cc.y
 //  [3]: https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html
-package cc
+package cc // import "modernc.org/cc"
 
 import (
 	"bufio"
@@ -39,10 +39,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/cznic/golex/lex"
-	"github.com/cznic/mathutil"
-	"github.com/cznic/strutil"
-	"github.com/cznic/xc"
+	"modernc.org/golex/lex"
+	"modernc.org/mathutil"
+	"modernc.org/strutil"
+	"modernc.org/xc"
 )
 
 const (

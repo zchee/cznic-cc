@@ -4,7 +4,7 @@
 
 //go:generate go run generator.go
 
-package headers
+package headers // import "modernc.org/cc/v2/headers"
 
 import (
 	"fmt"
