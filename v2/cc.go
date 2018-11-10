@@ -294,13 +294,11 @@ type Tweaks struct { //TODO- remove all options
 	cppExpandTest               bool // Fake includes
 }
 
-// Translate preprocesses, parses and type checks a translation unit using fset
-// to record node and error positions, includePaths and sysIncludePaths for
-// looking for "foo.h" and <foo.h> files. A special path "@" is interpretted as
-// 'the same directory as where the file with the #include is'. The input
-// consists of sources which must include any predefined/builtin stuff.
-//
-// The returned scope is the file scope of the Translation unit.
+// Translate preprocesses, parses and type checks a translation unit using
+// includePaths and sysIncludePaths for looking for "foo.h" and <foo.h> files.
+// A special path "@" is interpretted as 'the same directory as where the file
+// with the #include is'. The input consists of sources which must include any
+// predefined/builtin stuff.
 func Translate(tweaks *Tweaks, includePaths, sysIncludePaths []string, sources ...Source) (tu *TranslationUnit, err error) {
 	returned := false
 
