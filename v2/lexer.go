@@ -135,7 +135,7 @@ type lexer struct {
 	attr        [][]xc.Token
 	attr2       [][]xc.Token
 	commentPos0 token.Pos
-	currFn      int // [0]6.4.2.2
+	currFn      *Declarator // [0]6.4.2.2
 	last        lex.Char
 	mode        int // CONSTANT_EXPRESSION, TRANSLATION_UNIT
 	prev        int // Most recent result returned by Lex
@@ -368,9 +368,26 @@ func (l *lexer) declareFuncName() {
 		cppToken{Token: xc.Token{Char: lex.NewChar(pos, '[')}},
 		cppToken{Token: xc.Token{Char: lex.NewChar(pos, ']')}},
 		cppToken{Token: xc.Token{Char: lex.NewChar(pos, '=')}},
-		cppToken{Token: xc.Token{Char: lex.NewChar(pos, STRINGLITERAL), Val: dict.SID(`"` + string(dict.S(l.currFn)) + `"`)}},
+		cppToken{Token: xc.Token{Char: lex.NewChar(pos, STRINGLITERAL), Val: dict.SID(`"` + string(dict.S(l.currFn.Name())) + `"`)}},
 		cppToken{Token: xc.Token{Char: lex.NewChar(pos, ';')}},
 	)
+}
+
+func (l *lexer) insertParamNames() {
+	if l.currFn == nil {
+		return
+	}
+
+	defer func() { l.currFn = nil }()
+
+	fp := l.currFn.fpScope(l.context)
+	if fp == nil {
+		return
+	}
+
+	for k, v := range fp.typedefs {
+		l.scope.insertTypedef(l.context, k, v)
+	}
 }
 
 func (l *lexer) parse(mode int) bool {

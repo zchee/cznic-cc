@@ -574,10 +574,7 @@ import (
 				{
 					lhs.Attributes = lx.attrs()
 					lhs.Scope = lx.scope
-					if lx.scope.typedef {
-						delete(lx.scope.Idents, lhs.DirectDeclarator.nm())
-						lx.scope.insertTypedef(lx.context, lhs)
-					}
+					lx.scope.insertTypedef(lx.context, lhs.Name(), lx.scope.typedef)
 				}
 
                         DeclaratorOpt:
@@ -759,6 +756,7 @@ import (
 				'{'
 				{
 					lx.newScope()
+					lx.insertParamNames()
 				}
 				BlockItemListOpt '}'
 				{
@@ -832,7 +830,7 @@ import (
                                 DeclarationSpecifiers Declarator
 				{
 					lx.scope.typedef = false
-					lx.currFn = $2.(*Declarator).Name()
+					lx.currFn = $2.(*Declarator)
 				}
 				DeclarationListOpt FunctionBody
 				{
@@ -847,7 +845,7 @@ import (
 						lx.err($1, "omitting function declaration specifiers not allowed")
 					}
 					lx.scope.typedef = false
-					lx.currFn = $1.(*Declarator).Name()
+					lx.currFn = $1.(*Declarator)
 				}
 				DeclarationListOpt FunctionBody
 				{

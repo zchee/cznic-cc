@@ -825,7 +825,8 @@ type Scope struct {
 	StructTags map[int]*StructOrUnionSpecifier // name ID: *StructOrUnionSpecifier
 
 	// parser support
-	typedefs    map[int]struct{} // name: nothing
+	//TODO move to lx.names, not needed after parsing
+	typedefs    map[int]bool // name: isTypedef
 	typedef     bool
 	structScope bool
 }
@@ -914,18 +915,18 @@ func (s *Scope) insertStructTag(ctx *context, ss *StructOrUnionSpecifier) {
 	s.StructTags[nm] = ss
 }
 
-func (s *Scope) insertTypedef(ctx *context, d *Declarator) {
+func (s *Scope) insertTypedef(ctx *context, nm int, isTypedef bool) {
 	if s.typedefs == nil {
-		s.typedefs = map[int]struct{}{}
+		s.typedefs = map[int]bool{}
 	}
 	// Redefinitions, if any, are ignored during parsing, but checked later in insertDeclarator.
-	s.typedefs[d.Name()] = struct{}{}
+	s.typedefs[nm] = isTypedef
 }
 
 func (s *Scope) isTypedef(nm int) bool {
 	for s != nil {
-		if _, ok := s.typedefs[nm]; ok {
-			return true
+		if v, ok := s.typedefs[nm]; ok {
+			return v
 		}
 
 		s = s.Parent

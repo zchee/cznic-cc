@@ -3653,10 +3653,7 @@ yynewstate:
 			yyVAL.node = lhs
 			lhs.Attributes = lx.attrs()
 			lhs.Scope = lx.scope
-			if lx.scope.typedef {
-				delete(lx.scope.Idents, lhs.DirectDeclarator.nm())
-				lx.scope.insertTypedef(lx.context, lhs)
-			}
+			lx.scope.insertTypedef(lx.context, lhs.Name(), lx.scope.typedef)
 		}
 	case 142:
 		{
@@ -4222,6 +4219,7 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lx.newScope()
+			lx.insertParamNames()
 		}
 	case 214:
 		{
@@ -4440,7 +4438,7 @@ yynewstate:
 		{
 			lx := yylex.(*lexer)
 			lx.scope.typedef = false
-			lx.currFn = yyS[yypt-0].node.(*Declarator).Name()
+			lx.currFn = yyS[yypt-0].node.(*Declarator)
 		}
 	case 238:
 		{
@@ -4465,7 +4463,7 @@ yynewstate:
 				lx.err(yyS[yypt-0].node, "omitting function declaration specifiers not allowed")
 			}
 			lx.scope.typedef = false
-			lx.currFn = yyS[yypt-0].node.(*Declarator).Name()
+			lx.currFn = yyS[yypt-0].node.(*Declarator)
 		}
 	case 240:
 		{

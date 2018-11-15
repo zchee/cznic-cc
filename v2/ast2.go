@@ -1817,7 +1817,8 @@ func (n *DirectDeclarator) fpScope(ctx *context) *Scope {
 	//TODO case DirectDeclaratorArraySize2: // DirectDeclarator '[' TypeQualifierList "static" Expr ']'
 	//TODO case DirectDeclaratorArrayVar: // DirectDeclarator '[' TypeQualifierListOpt '*' ']'
 	//TODO case DirectDeclaratorArray: // DirectDeclarator '[' TypeQualifierListOpt ExprOpt ']'
-	//TODO case DirectDeclaratorIdent: // IDENTIFIER
+	case DirectDeclaratorIdent: // IDENTIFIER
+		return nil
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
