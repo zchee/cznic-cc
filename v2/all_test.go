@@ -662,7 +662,6 @@ func TestParseSQLite(t *testing.T) {
 	ctx.includePaths = []string{"@"}
 	ctx.sysIncludePaths = searchPaths
 	if _, err := ctx.parse([]Source{MustBuiltin(), MustFileSource(sqlite3c)}); err != nil {
-		dbg("%T %v", err, PrettyString(err))
 		t.Fatalf("%v", ErrString(err))
 	}
 }
@@ -802,4 +801,91 @@ func TestTypecheckTCCTests(t *testing.T) {
 			t.Fatal(ErrString(err))
 		}
 	}
+}
+
+func TestParseJhjourdan(t *testing.T) {
+	var re *regexp.Regexp
+	if s := *oRE; s != "" {
+		re = regexp.MustCompile(s)
+	}
+
+	model, err := NewModel()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var ok, n int
+	if err := filepath.Walk(filepath.FromSlash("testdata/jhjourdan/"), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || !strings.HasSuffix(path, ".c") {
+			return nil
+		}
+
+		if re != nil && !re.MatchString(path) {
+			return nil
+		}
+
+		ctx, err := newContext(&Tweaks{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx.model = model
+		ctx.includePaths = []string{"@"}
+		ctx.sysIncludePaths = searchPaths
+		n++
+		if _, err := ctx.parse([]Source{MustBuiltin(), MustFileSource(path)}); err != nil {
+			t.Errorf("%v", ErrString(err))
+			return nil
+		}
+
+		ok++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("jhjourdan parse\tok %v n %v\n", ok, n)
+}
+
+func TestTypecheckJhjourdan(t *testing.T) {
+	var re *regexp.Regexp
+	if s := *oRE; s != "" {
+		re = regexp.MustCompile(s)
+	}
+
+	var ok, n int
+	if err := filepath.Walk(filepath.FromSlash("testdata/jhjourdan/"), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || !strings.HasSuffix(path, ".c") {
+			return nil
+		}
+
+		if re != nil && !re.MatchString(path) {
+			return nil
+		}
+
+		n++
+		if _, err := Translate(
+			&Tweaks{},
+			[]string{"@"},
+			searchPaths,
+			MustBuiltin(),
+			MustFileSource(path),
+		); err != nil {
+			t.Errorf("%v", ErrString(err))
+			return nil
+		}
+
+		ok++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("jhjourdan typecheck\tok %v n %v\n", ok, n)
 }
