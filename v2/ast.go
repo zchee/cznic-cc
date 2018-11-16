@@ -1374,8 +1374,8 @@ func (n ExprCase) String() string {
 //	Expr:
 //	        "++" Expr                                          // Case ExprPreInc
 //	|       "--" Expr                                          // Case ExprPreDec
-//	|       "__alignof__" '(' TypeName ')'                     // Case ExprAlignofType
-//	|       "__alignof__" Expr                                 // Case ExprAlignofExpr
+//	|       "_Alignof" '(' TypeName ')'                        // Case ExprAlignofType
+//	|       "_Alignof" Expr                                    // Case ExprAlignofExpr
 //	|       "sizeof" '(' TypeName ')'                          // Case ExprSizeofType
 //	|       "sizeof" Expr                                      // Case ExprSizeofExpr
 //	|       '!' Expr                                           // Case ExprNot
@@ -3237,6 +3237,7 @@ const (
 	TypeQualifierConst TypeQualifierCase = iota
 	TypeQualifierRestrict
 	TypeQualifierVolatile
+	TypeQualifierAtomic
 )
 
 // String implements fmt.Stringer
@@ -3248,6 +3249,8 @@ func (n TypeQualifierCase) String() string {
 		return "TypeQualifierRestrict"
 	case TypeQualifierVolatile:
 		return "TypeQualifierVolatile"
+	case TypeQualifierAtomic:
+		return "TypeQualifierAtomic"
 	default:
 		return fmt.Sprintf("TypeQualifierCase(%v)", int(n))
 	}
@@ -3259,6 +3262,7 @@ func (n TypeQualifierCase) String() string {
 //	        "const"     // Case TypeQualifierConst
 //	|       "restrict"  // Case TypeQualifierRestrict
 //	|       "volatile"  // Case TypeQualifierVolatile
+//	|       "_Atomic"   // Case TypeQualifierAtomic
 type TypeQualifier struct {
 	Case  TypeQualifierCase
 	Token xc.Token
@@ -3377,6 +3381,7 @@ const (
 	TypeSpecifierName
 	TypeSpecifierTypeofExpr
 	TypeSpecifierTypeof
+	TypeSpecifierAtomic
 )
 
 // String implements fmt.Stringer
@@ -3414,6 +3419,8 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierTypeofExpr"
 	case TypeSpecifierTypeof:
 		return "TypeSpecifierTypeof"
+	case TypeSpecifierAtomic:
+		return "TypeSpecifierAtomic"
 	default:
 		return fmt.Sprintf("TypeSpecifierCase(%v)", int(n))
 	}
@@ -3422,22 +3429,23 @@ func (n TypeSpecifierCase) String() string {
 // TypeSpecifier represents data reduced by productions:
 //
 //	TypeSpecifier:
-//	        "_Bool"                    // Case TypeSpecifierBool
-//	|       "_Complex"                 // Case TypeSpecifierComplex
-//	|       "char"                     // Case TypeSpecifierChar
-//	|       "double"                   // Case TypeSpecifierDouble
-//	|       "float"                    // Case TypeSpecifierFloat
-//	|       "int"                      // Case TypeSpecifierInt
-//	|       "long"                     // Case TypeSpecifierLong
-//	|       "short"                    // Case TypeSpecifierShort
-//	|       "signed"                   // Case TypeSpecifierSigned
-//	|       "unsigned"                 // Case TypeSpecifierUnsigned
-//	|       "void"                     // Case TypeSpecifierVoid
-//	|       EnumSpecifier              // Case TypeSpecifierEnum
-//	|       StructOrUnionSpecifier     // Case TypeSpecifierStruct
-//	|       TYPEDEF_NAME               // Case TypeSpecifierName
-//	|       "typeof" '(' Expr ')'      // Case TypeSpecifierTypeofExpr
-//	|       "typeof" '(' TypeName ')'  // Case TypeSpecifierTypeof
+//	        "_Bool"                               // Case TypeSpecifierBool
+//	|       "_Complex"                            // Case TypeSpecifierComplex
+//	|       "char"                                // Case TypeSpecifierChar
+//	|       "double"                              // Case TypeSpecifierDouble
+//	|       "float"                               // Case TypeSpecifierFloat
+//	|       "int"                                 // Case TypeSpecifierInt
+//	|       "long"                                // Case TypeSpecifierLong
+//	|       "short"                               // Case TypeSpecifierShort
+//	|       "signed"                              // Case TypeSpecifierSigned
+//	|       "unsigned"                            // Case TypeSpecifierUnsigned
+//	|       "void"                                // Case TypeSpecifierVoid
+//	|       EnumSpecifier                         // Case TypeSpecifierEnum
+//	|       StructOrUnionSpecifier                // Case TypeSpecifierStruct
+//	|       TYPEDEF_NAME                          // Case TypeSpecifierName
+//	|       "typeof" '(' Expr ')'                 // Case TypeSpecifierTypeofExpr
+//	|       "typeof" '(' TypeName ')'             // Case TypeSpecifierTypeof
+//	|       "_Atomic" ATOMIC_LPAREN TypeName ')'  // Case TypeSpecifierAtomic
 type TypeSpecifier struct {
 	scope                  *Scope
 	typ                    Type // typeof
@@ -3469,7 +3477,7 @@ func (n *TypeSpecifier) Pos() token.Pos {
 		return n.EnumSpecifier.Pos()
 	case 12:
 		return n.StructOrUnionSpecifier.Pos()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16:
 		return n.Token.Pos()
 	default:
 		panic("internal error")

@@ -72,7 +72,10 @@ import (
 	ANDAND				"&&"
 	ANDASSIGN			"&="
 	ARROW				"->"
-	ALIGNOF				"__alignof__"
+	ALIGNAS				"_Alignas"
+	ALIGNOF				"_Alignof"
+	ATOMIC				"_Atomic"
+	ATOMIC_LPAREN			"("
 	AUTO				"auto"
 	BOOL				"_Bool"
 	BREAK				"break"
@@ -94,9 +97,11 @@ import (
 	EXTERN				"extern"
 	FLOAT				"float"
 	FOR				"for"
+	GENERIC				"_Generic"
 	GEQ				">="
 	GOTO				"goto"
 	IF				"if"
+	IMAGINARY			"_Imaginary"
 	INC				"++"
 	INLINE				"inline"
 	INT				"int"
@@ -108,6 +113,7 @@ import (
 	MULASSIGN			"*="
 	NEQ				"!="
 	NON_REPL			// [0]6.10.3.4-2
+	NORETURN			"_Noreturn"
 	ORASSIGN			"|="
 	OROR				"||"
 	PPPASTE				"##"
@@ -120,9 +126,11 @@ import (
 	SIGNED				"signed"
 	SIZEOF				"sizeof"
 	STATIC				"static"
+	STATIC_ASSERT			"_Static_assert"
 	STRUCT				"struct"
 	SUBASSIGN			"-="
 	SWITCH				"switch"
+	THREAD_LOCAL			"_Thread_local"
 	TYPEDEF				"typedef"
 	TYPEDEF_NAME			"typedef name"
 	TYPEOF				"typeof"
@@ -273,8 +281,8 @@ import (
 /*yy:case PreInc     */ Expr:
                         	"++" Expr
 /*yy:case PreDec     */ |	"--" Expr
-/*yy:case AlignofType*/ |	"__alignof__" '(' TypeName ')' %prec ALIGNOF
-/*yy:case AlignofExpr*/ |	"__alignof__" Expr
+/*yy:case AlignofType*/ |	"_Alignof" '(' TypeName ')' %prec ALIGNOF
+/*yy:case AlignofExpr*/ |	"_Alignof" Expr
 /*yy:case SizeofType */ |	"sizeof" '(' TypeName ')' %prec SIZEOF
 /*yy:case SizeofExpr */ |	"sizeof" Expr
 /*yy:case Not        */ |	'!' Expr
@@ -434,6 +442,7 @@ import (
 				}
 /*yy:case TypeofExpr */	|	"typeof" '(' Expr ')'
 /*yy:case Typeof     */	|	"typeof" '(' TypeName ')'
+/*yy:case Atomic     */	|	"_Atomic" ATOMIC_LPAREN TypeName ')'
 
                         // [0]6.7.2.1
 			//yy:field	scope	*Scope	// Declare the struct tag in scope.parent.
@@ -539,6 +548,7 @@ import (
                         	"const"
 /*yy:case Restrict   */ |	"restrict"
 /*yy:case Volatile   */ |	"volatile"
+/*yy:case Atomic     */ |	"_Atomic"
 
                         // [0]6.7.4
 			FunctionSpecifier:

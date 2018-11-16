@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	noTypedefNameAfter = map[int]struct{}{
+	noTypedefNameAfter = map[rune]struct{}{
 		'*':          {},
 		'.':          {},
 		ARROW:        {},
@@ -137,8 +137,8 @@ type lexer struct {
 	commentPos0 token.Pos
 	currFn      *Declarator // [0]6.4.2.2
 	last        lex.Char
-	mode        int // CONSTANT_EXPRESSION, TRANSLATION_UNIT
-	prev        int // Most recent result returned by Lex
+	mode        int      // CONSTANT_EXPRESSION, TRANSLATION_UNIT
+	prev        xc.Token // Most recent result returned by Lex
 	sc          int
 	t           *trigraphs
 	tc          *tokenPipe
@@ -190,6 +190,10 @@ more:
 	noTypedefName := l.noTypedefName
 	l.noTypedefName = false
 	switch lval.Token.Rune {
+	case '(':
+		if l.prev.Rune == ATOMIC && l.prev.Pos()+token.Pos(len("_Atomic")) == lval.Token.Pos() {
+			lval.Token.Rune = ATOMIC_LPAREN
+		}
 	case NON_REPL:
 		lval.Token.Rune = IDENTIFIER
 		fallthrough
@@ -208,7 +212,7 @@ more:
 			break
 		}
 
-		if _, ok := noTypedefNameAfter[l.prev]; ok {
+		if _, ok := noTypedefNameAfter[l.prev.Rune]; ok {
 			break
 		}
 
@@ -233,11 +237,11 @@ more:
 		lval.Token.Val = 0
 	}
 
-	if l.prev == FOR {
+	if l.prev.Rune == FOR {
 		l.newScope()
 	}
-	l.prev = int(lval.Token.Rune)
-	return l.prev
+	l.prev = lval.Token
+	return int(l.prev.Rune)
 }
 
 func (l *lexer) attrs() (r [][]xc.Token) {
