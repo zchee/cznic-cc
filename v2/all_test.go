@@ -804,6 +804,10 @@ func TestTypecheckTCCTests(t *testing.T) {
 }
 
 func TestParseJhjourdan(t *testing.T) {
+	var blacklist = map[string]struct{}{
+		"bitfield_declaration_ambiguity.fail.c": {}, // fails only during typecheck
+	}
+
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
 		re = regexp.MustCompile(s)
@@ -821,6 +825,10 @@ func TestParseJhjourdan(t *testing.T) {
 		}
 
 		if info.IsDir() || !strings.HasSuffix(path, ".c") {
+			return nil
+		}
+
+		if _, ok := blacklist[filepath.Base(path)]; ok {
 			return nil
 		}
 
@@ -871,7 +879,7 @@ func TestTypecheckJhjourdan(t *testing.T) {
 			return err
 		}
 
-		if info.IsDir() || !strings.HasSuffix(path, ".c") || strings.HasSuffix(path, ".fail.c") {
+		if info.IsDir() || !strings.HasSuffix(path, ".c") {
 			return nil
 		}
 

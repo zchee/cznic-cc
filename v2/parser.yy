@@ -262,6 +262,10 @@ import (
                         EnumerationConstant:
                         	IDENTIFIER
 
+/*yy:case TypeName   */ AlignmentSpecifier:
+				"_Alignas" '(' TypeName ')'
+/*yy:case ConstExpr  */	|	"_Alignas" '(' ConstExpr ')'
+
                         // [0]6.5.2
                         ArgumentExprList:
                         	Expr
@@ -388,6 +392,7 @@ import (
 /*yy:case Storage    */ |	StorageClassSpecifier DeclarationSpecifiersOpt
 /*yy:case Qualifier  */ |	TypeQualifier DeclarationSpecifiersOpt
 /*yy:case Specifier  */ |	TypeSpecifier DeclarationSpecifiersOpt
+/*yy:case Alignment  */ |	AlignmentSpecifier DeclarationSpecifiersOpt
 
                         DeclarationSpecifiersOpt:
                         	/* empty */ {}
@@ -551,8 +556,9 @@ import (
 /*yy:case Atomic     */ |	"_Atomic"
 
                         // [0]6.7.4
-			FunctionSpecifier:
+/*yy:case Inline     */	FunctionSpecifier:
 				"inline"
+/*yy:case Noreturn   */	|	"_Noreturn"
 
                         // [0]6.7.5
 			//yy:field	AssignedTo		int			// Declarator appears at the left side of assignment.
@@ -768,9 +774,14 @@ import (
 					lx.newScope()
 					lx.insertParamNames()
 				}
-				BlockItemListOpt '}'
+				BlockItemListOpt
 				{
-					lhs.scope, _ = lx.popScope()
+					s, _ := lx.popScope()
+					lx.ssPush(s)
+				}
+				'}'
+				{
+					lhs.scope = lx.ssPop()
 				}
 
                         // [0]6.8.2

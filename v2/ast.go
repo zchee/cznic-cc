@@ -100,6 +100,57 @@ func (n *AbstractDeclaratorOpt) Pos() token.Pos {
 	return n.AbstractDeclarator.Pos()
 }
 
+// AlignmentSpecifierCase represents case numbers of production AlignmentSpecifier
+type AlignmentSpecifierCase int
+
+// Values of type AlignmentSpecifierCase
+const (
+	AlignmentSpecifierTypeName AlignmentSpecifierCase = iota
+	AlignmentSpecifierConstExpr
+)
+
+// String implements fmt.Stringer
+func (n AlignmentSpecifierCase) String() string {
+	switch n {
+	case AlignmentSpecifierTypeName:
+		return "AlignmentSpecifierTypeName"
+	case AlignmentSpecifierConstExpr:
+		return "AlignmentSpecifierConstExpr"
+	default:
+		return fmt.Sprintf("AlignmentSpecifierCase(%v)", int(n))
+	}
+}
+
+// AlignmentSpecifier represents data reduced by productions:
+//
+//	AlignmentSpecifier:
+//	        "_Alignas" '(' TypeName ')'   // Case AlignmentSpecifierTypeName
+//	|       "_Alignas" '(' ConstExpr ')'  // Case AlignmentSpecifierConstExpr
+type AlignmentSpecifier struct {
+	Case      AlignmentSpecifierCase
+	ConstExpr *ConstExpr
+	Token     xc.Token
+	Token2    xc.Token
+	Token3    xc.Token
+	TypeName  *TypeName
+}
+
+func (n *AlignmentSpecifier) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *AlignmentSpecifier) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *AlignmentSpecifier) Pos() token.Pos {
+	if n == nil {
+		return 0
+	}
+
+	return n.Token.Pos()
+}
+
 // ArgumentExprList represents data reduced by productions:
 //
 //	ArgumentExprList:
@@ -498,6 +549,7 @@ const (
 	DeclarationSpecifiersStorage
 	DeclarationSpecifiersQualifier
 	DeclarationSpecifiersSpecifier
+	DeclarationSpecifiersAlignment
 )
 
 // String implements fmt.Stringer
@@ -511,6 +563,8 @@ func (n DeclarationSpecifiersCase) String() string {
 		return "DeclarationSpecifiersQualifier"
 	case DeclarationSpecifiersSpecifier:
 		return "DeclarationSpecifiersSpecifier"
+	case DeclarationSpecifiersAlignment:
+		return "DeclarationSpecifiersAlignment"
 	default:
 		return fmt.Sprintf("DeclarationSpecifiersCase(%v)", int(n))
 	}
@@ -523,7 +577,9 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       StorageClassSpecifier DeclarationSpecifiersOpt  // Case DeclarationSpecifiersStorage
 //	|       TypeQualifier DeclarationSpecifiersOpt          // Case DeclarationSpecifiersQualifier
 //	|       TypeSpecifier DeclarationSpecifiersOpt          // Case DeclarationSpecifiersSpecifier
+//	|       AlignmentSpecifier DeclarationSpecifiersOpt     // Case DeclarationSpecifiersAlignment
 type DeclarationSpecifiers struct {
+	AlignmentSpecifier       *AlignmentSpecifier
 	Case                     DeclarationSpecifiersCase
 	DeclarationSpecifiersOpt *DeclarationSpecifiersOpt
 	FunctionSpecifier        *FunctionSpecifier
@@ -546,6 +602,8 @@ func (n *DeclarationSpecifiers) Pos() token.Pos {
 	}
 
 	switch n.Case {
+	case 4:
+		return n.AlignmentSpecifier.Pos()
 	case 0:
 		return n.FunctionSpecifier.Pos()
 	case 1:
@@ -1795,11 +1853,34 @@ func (n *FunctionDefinition) Pos() token.Pos {
 	}
 }
 
-// FunctionSpecifier represents data reduced by production:
+// FunctionSpecifierCase represents case numbers of production FunctionSpecifier
+type FunctionSpecifierCase int
+
+// Values of type FunctionSpecifierCase
+const (
+	FunctionSpecifierInline FunctionSpecifierCase = iota
+	FunctionSpecifierNoreturn
+)
+
+// String implements fmt.Stringer
+func (n FunctionSpecifierCase) String() string {
+	switch n {
+	case FunctionSpecifierInline:
+		return "FunctionSpecifierInline"
+	case FunctionSpecifierNoreturn:
+		return "FunctionSpecifierNoreturn"
+	default:
+		return fmt.Sprintf("FunctionSpecifierCase(%v)", int(n))
+	}
+}
+
+// FunctionSpecifier represents data reduced by productions:
 //
 //	FunctionSpecifier:
-//	        "inline"  // Case 0
+//	        "inline"     // Case FunctionSpecifierInline
+//	|       "_Noreturn"  // Case FunctionSpecifierNoreturn
 type FunctionSpecifier struct {
+	Case  FunctionSpecifierCase
 	Token xc.Token
 }
 

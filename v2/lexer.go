@@ -140,6 +140,7 @@ type lexer struct {
 	mode        int      // CONSTANT_EXPRESSION, TRANSLATION_UNIT
 	prev        xc.Token // Most recent result returned by Lex
 	sc          int
+	ss          []*Scope
 	t           *trigraphs
 	tc          *tokenPipe
 
@@ -179,6 +180,8 @@ func (l *lexer) Error(msg string)             { l.err(l.First, "%v", msg) }
 func (l *lexer) ReadRune() (rune, int, error) { panic("internal error 10") }
 func (l *lexer) comment(general bool)         { /*TODO*/ }
 func (l *lexer) parseExpr() bool              { return l.parse(CONSTANT_EXPRESSION) }
+func (l *lexer) ssPop() (s *Scope)            { n := len(l.ss); s = l.ss[n-1]; l.ss = l.ss[:n-1]; return s }
+func (l *lexer) ssPush(s *Scope)              { l.ss = append(l.ss, s) }
 
 func (l *lexer) Lex(lval *yySymType) (r int) {
 more:

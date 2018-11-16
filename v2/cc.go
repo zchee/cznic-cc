@@ -405,6 +405,8 @@ func (c *context) error() error {
 }
 
 func (c *context) parse(in []Source) (_ *TranslationUnit, err error) {
+	defer func() { c.scope.typedefs = nil }()
+
 	cpp := newCPP(c)
 	r, err := cpp.parse(in...)
 	if err != nil {
@@ -825,8 +827,8 @@ type Scope struct {
 	StructTags map[int]*StructOrUnionSpecifier // name ID: *StructOrUnionSpecifier
 
 	// parser support
-	//TODO move to lx.names, not needed after parsing
-	typedefs    map[int]bool // name: isTypedef
+	typedefs map[int]bool // name: isTypedef
+
 	typedef     bool
 	structScope bool
 }
@@ -916,6 +918,7 @@ func (s *Scope) insertStructTag(ctx *context, ss *StructOrUnionSpecifier) {
 }
 
 func (s *Scope) insertTypedef(ctx *context, nm int, isTypedef bool) {
+	//dbg("%p(parent %p).insertTypedef(%q, %v)", s, s.Parent, dict.S(nm), isTypedef)
 	if s.typedefs == nil {
 		s.typedefs = map[int]bool{}
 	}
@@ -924,8 +927,11 @@ func (s *Scope) insertTypedef(ctx *context, nm int, isTypedef bool) {
 }
 
 func (s *Scope) isTypedef(nm int) bool {
+	//dbg("==== %p(parent %p).isTypedef(%q)", s, s.Parent, dict.S(nm))
 	for s != nil {
+		//dbg("%p", s)
 		if v, ok := s.typedefs[nm]; ok {
+			//dbg("%p -> %v %v", s, v, ok)
 			return v
 		}
 
