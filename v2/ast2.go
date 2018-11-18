@@ -1673,8 +1673,7 @@ func (n *DirectDeclarator) nm() int {
 		DirectDeclaratorArray,
 		DirectDeclaratorArraySize,
 		DirectDeclaratorArrayVar,
-		DirectDeclaratorIdentList,
-		DirectDeclaratorParamList:
+		DirectDeclaratorParameters:
 
 		return n.DirectDeclarator.nm()
 	case DirectDeclaratorIdent:
@@ -1793,25 +1792,30 @@ func (n *Declarator) fpScope(ctx *context) *Scope { return n.DirectDeclarator.fp
 func (n *DirectDeclarator) fpScope(ctx *context) *Scope {
 	switch n.Case {
 	//TODO case DirectDeclaratorParen: // '(' Declarator ')'
-	case DirectDeclaratorIdentList: // DirectDeclarator '(' IdentifierListOpt ')'
-		switch n.DirectDeclarator.Case {
-		case DirectDeclaratorIdent:
-			return n.paramScope
-		default:
-			panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.DirectDeclarator.Case))
-		}
-	case DirectDeclaratorParamList: // DirectDeclarator '(' ParameterTypeList ')'
-		switch n.DirectDeclarator.Case {
-		case DirectDeclaratorParen:
-			if n.DirectDeclarator.Declarator.DirectDeclarator.Case == DirectDeclaratorIdent {
+	case DirectDeclaratorParameters:
+		switch p := n.Parameters; p.Case {
+		case ParametersIdentList: // IdentifierListOpt
+			switch n.DirectDeclarator.Case {
+			case DirectDeclaratorIdent:
 				return n.paramScope
+			default:
+				panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.DirectDeclarator.Case))
 			}
+		case ParametersParamTypes: // ParameterTypeList
+			switch n.DirectDeclarator.Case {
+			case DirectDeclaratorParen:
+				if n.DirectDeclarator.Declarator.DirectDeclarator.Case == DirectDeclaratorIdent {
+					return n.paramScope
+				}
 
-			return n.DirectDeclarator.Declarator.DirectDeclarator.fpScope(ctx)
-		case DirectDeclaratorIdent:
-			return n.paramScope
+				return n.DirectDeclarator.Declarator.DirectDeclarator.fpScope(ctx)
+			case DirectDeclaratorIdent:
+				return n.paramScope
+			default:
+				panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.DirectDeclarator.Case))
+			}
 		default:
-			panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.DirectDeclarator.Case))
+			panic(fmt.Errorf("%v: TODO %v", ctx.position(p), p.Case))
 		}
 	//TODO case DirectDeclaratorArraySize: // DirectDeclarator '[' "static" TypeQualifierListOpt Expr ']'
 	//TODO case DirectDeclaratorArraySize2: // DirectDeclarator '[' TypeQualifierList "static" Expr ']'
@@ -1831,30 +1835,19 @@ func (n *Declarator) ParameterNames() []int { return n.DirectDeclarator.paramete
 func (n *DirectDeclarator) parameterNames() (r []int) {
 	switch n.Case {
 	//TODO case DirectDeclaratorParen: // '(' Declarator ')'
-	case DirectDeclaratorIdentList: // DirectDeclarator '(' IdentifierListOpt ')'
-		switch n.DirectDeclarator.Case {
-		case DirectDeclaratorIdent:
-			return n.IdentifierListOpt.check()
-		default:
-			panic(n.DirectDeclarator.Case)
-		}
-	case DirectDeclaratorParamList: // DirectDeclarator '(' ParameterTypeList ')'
-		switch n.DirectDeclarator.Case {
-		case DirectDeclaratorIdent:
-			for l := n.ParameterTypeList.ParameterList; l != nil; l = l.ParameterList {
-				switch n := l.ParameterDeclaration; n.Case {
-				case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclaratorOpt
-					r = append(r, 0)
-				case ParameterDeclarationDeclarator: // DeclarationSpecifiers Declarator
-					r = append(r, n.Declarator.Name())
-				default:
-					panic(n.Case)
-				}
+	case DirectDeclaratorParameters:
+		switch p := n.Parameters; p.Case {
+		case ParametersIdentList: // IdentifierListOpt
+			switch n.DirectDeclarator.Case {
+			case DirectDeclaratorIdent:
+				return p.IdentifierListOpt.check()
+			default:
+				panic(n.DirectDeclarator.Case)
 			}
-			return r
-		case DirectDeclaratorParen:
-			if n.DirectDeclarator.Declarator.DirectDeclarator.Case == DirectDeclaratorIdent {
-				for l := n.ParameterTypeList.ParameterList; l != nil; l = l.ParameterList {
+		case ParametersParamTypes: // ParameterTypeList
+			switch n.DirectDeclarator.Case {
+			case DirectDeclaratorIdent:
+				for l := p.ParameterTypeList.ParameterList; l != nil; l = l.ParameterList {
 					switch n := l.ParameterDeclaration; n.Case {
 					case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclaratorOpt
 						r = append(r, 0)
@@ -1865,11 +1858,27 @@ func (n *DirectDeclarator) parameterNames() (r []int) {
 					}
 				}
 				return r
-			}
+			case DirectDeclaratorParen:
+				if n.DirectDeclarator.Declarator.DirectDeclarator.Case == DirectDeclaratorIdent {
+					for l := p.ParameterTypeList.ParameterList; l != nil; l = l.ParameterList {
+						switch n := l.ParameterDeclaration; n.Case {
+						case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclaratorOpt
+							r = append(r, 0)
+						case ParameterDeclarationDeclarator: // DeclarationSpecifiers Declarator
+							r = append(r, n.Declarator.Name())
+						default:
+							panic(n.Case)
+						}
+					}
+					return r
+				}
 
-			return n.DirectDeclarator.Declarator.DirectDeclarator.parameterNames()
+				return n.DirectDeclarator.Declarator.DirectDeclarator.parameterNames()
+			default:
+				panic(n.DirectDeclarator.Case)
+			}
 		default:
-			panic(n.DirectDeclarator.Case)
+			panic(fmt.Errorf("TODO %v", p.Case))
 		}
 	//TODO case DirectDeclaratorArraySize: // DirectDeclarator '[' "static" TypeQualifierListOpt Expr ']'
 	//TODO case DirectDeclaratorArraySize2: // DirectDeclarator '[' TypeQualifierList "static" Expr ']'
@@ -2839,20 +2848,25 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 	switch n.Case {
 	case DirectDeclaratorParen: // '(' Declarator ')'
 		return n.Declarator.check(ctx, nil, t, false, sc, fn)
-	case DirectDeclaratorIdentList: // DirectDeclarator '(' IdentifierListOpt ')'
-		t := &FunctionType{
-			params: n.IdentifierListOpt.check(),
-			Result: t,
+	case DirectDeclaratorParameters:
+		switch p := n.Parameters; p.Case {
+		case ParametersIdentList: // IdentifierListOpt
+			t := &FunctionType{
+				params: p.IdentifierListOpt.check(),
+				Result: t,
+			}
+			return n.DirectDeclarator.check(ctx, t, sc, fn)
+		case ParametersParamTypes: // ParameterTypeList
+			fp, variadic := p.ParameterTypeList.check(ctx)
+			t := &FunctionType{
+				Params:   fp,
+				Result:   t,
+				Variadic: variadic,
+			}
+			return n.DirectDeclarator.check(ctx, t, sc, fn)
+		default:
+			panic(fmt.Errorf("%v: TODO %v", ctx.position(p), p.Case))
 		}
-		return n.DirectDeclarator.check(ctx, t, sc, fn)
-	case DirectDeclaratorParamList: // DirectDeclarator '(' ParameterTypeList ')'
-		fp, variadic := n.ParameterTypeList.check(ctx)
-		t := &FunctionType{
-			Params:   fp,
-			Result:   t,
-			Variadic: variadic,
-		}
-		return n.DirectDeclarator.check(ctx, t, sc, fn)
 	case DirectDeclaratorArraySize: // DirectDeclarator '[' "static" TypeQualifierListOpt Expr ']'
 		var tq []*TypeQualifier
 		n.TypeQualifierListOpt.check(ctx, &tq)

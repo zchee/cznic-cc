@@ -183,7 +183,10 @@ func (t TypeKind) IsScalarType() bool {
 		UShort:
 
 		return true
-	case Void:
+	case
+		Bool,
+		Void:
+
 		return false
 	default:
 		panic(t)
@@ -795,6 +798,7 @@ func (t *NamedType) Equal(u Type) bool {
 	case TypeKind:
 		switch x {
 		case
+			Bool,
 			Char,
 			Double,
 			Float,

@@ -846,6 +846,7 @@ func TestParseJhjourdan(t *testing.T) {
 		ctx.sysIncludePaths = searchPaths
 		n++
 		shouldFail := strings.HasSuffix(path, ".fail.c")
+		//dbg("", path)
 		switch _, err := ctx.parse([]Source{MustBuiltin(), MustFileSource(path)}); {
 		case err != nil:
 			if !shouldFail {
@@ -888,15 +889,25 @@ func TestTypecheckJhjourdan(t *testing.T) {
 		}
 
 		n++
-		if _, err := Translate(
+		shouldFail := strings.HasSuffix(path, ".fail.c")
+		_, err = Translate(
 			&Tweaks{},
 			[]string{"@"},
 			searchPaths,
 			MustBuiltin(),
 			MustFileSource(path),
-		); err != nil {
-			t.Errorf("%v", ErrString(err))
-			return nil
+		)
+		switch {
+		case err != nil:
+			if !shouldFail {
+				t.Errorf("%v", ErrString(err))
+				return nil
+			}
+		default:
+			if shouldFail {
+				t.Errorf("%v: unexpected success", path)
+				return nil
+			}
 		}
 
 		ok++

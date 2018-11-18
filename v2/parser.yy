@@ -593,6 +593,10 @@ import (
 					lx.scope.insertTypedef(lx.context, lhs.Name(), lx.scope.typedef)
 				}
 
+/*yy:case IdentList  */	Parameters:
+				IdentifierListOpt
+/*yy:case ParamTypes */ |	ParameterTypeList
+
                         DeclaratorOpt:
                         	/* empty */ {}
                         |	Declarator
@@ -604,19 +608,16 @@ import (
 				{
 					lhs.Declarator.Embedded = true
 				}
-/*yy:case IdentList  */ |	DirectDeclarator '('
+/*yy:case Parameters  */ |	DirectDeclarator
 				{
 					lx.newScope()
+					lx.fixDeclarator($1)
 				}
-				IdentifierListOpt ')'
+				'(' Parameters
 				{
-					lhs.paramScope, _ = lx.popScope()
+					lx.postFixDeclarator(lx.context)
 				}
-/*yy:case ParamList  */ |	DirectDeclarator '('
-				{
-					lx.newScope()
-				}
-				ParameterTypeList ')'
+				')'
 				{
 					lhs.paramScope, _ = lx.popScope()
 				}
@@ -766,6 +767,29 @@ import (
 					lx.scope.insertLabel(lx.context, lhs)
 				}
 
+			statementEnd:
+				{
+					if s := lx.scope; s.forStmtEndScope != nil {
+						switch yychar {
+						case '}':
+							var lval yySymType
+							lx.lex(&lval)
+							lval.Token.Rune = lx.toC(lval.Token.Rune, lval.Token.Val)
+							lx.unget(cppToken{Token: lval.Token})
+							switch lval.Token.Rune {
+							case ELSE:
+								// nop
+							default:
+								lx.scope = s.forStmtEndScope
+							}
+						case ELSE:
+							// nop
+						default:
+							lx.scope = s.forStmtEndScope
+						}
+					}
+				}
+
                         // [0]6.8.2
 			//yy:field	scope	*Scope
                         CompoundStmt:
@@ -776,12 +800,12 @@ import (
 				}
 				BlockItemListOpt
 				{
-					s, _ := lx.popScope()
-					lx.ssPush(s)
+					lx.ssave, _ = lx.popScope()
 				}
+				statementEnd
 				'}'
 				{
-					lhs.scope = lx.ssPop()
+					lhs.scope = lx.ssave
 				}
 
                         // [0]6.8.2
@@ -800,7 +824,7 @@ import (
 
                         // [0]6.8.3
                         ExprStmt:
-                        	ExprListOpt ';'
+                        	ExprListOpt statementEnd ';'
 
                         // [0]6.8.4
 			//yy:field	Cases		[]*LabeledStmt
@@ -812,28 +836,22 @@ import (
 
                         // [0]6.8.5
 /*yy:case Do         */ IterationStmt:
-                        	"do" Stmt "while" '(' ExprList ')' ';'
+                        	"do" Stmt "while" '(' ExprList ')' statementEnd ';'
 /*yy:case ForDecl    */ |	"for" '(' Declaration ExprListOpt ';' ExprListOpt ')' Stmt
-				{
-					lx.popScope()
-				}
 /*yy:case For        */ |	"for" '(' ExprListOpt ';' ExprListOpt ';' ExprListOpt ')' Stmt
-				{
-					lx.popScope()
-				}
 /*yy:case While      */ |	"while" '(' ExprList ')' Stmt
 
                         // [0]6.8.6
 			//yy:field	ReturnOperand	Operand
 			//yy:field	scope		*Scope
 /*yy:case Break      */ JumpStmt:
-                        	"break" ';'
-/*yy:case Continue   */ |	"continue" ';'
-/*yy:case Goto       */ |	"goto" IDENTIFIER ';'
+                        	"break" statementEnd ';'
+/*yy:case Continue   */ |	"continue" statementEnd ';'
+/*yy:case Goto       */ |	"goto" IDENTIFIER statementEnd ';'
 				{
 					lhs.scope = lx.scope
 				}
-/*yy:case Return     */ |	"return" ExprListOpt ';'
+/*yy:case Return     */ |	"return" ExprListOpt statementEnd ';'
 
                         // [0]6.9
                         //yy:list

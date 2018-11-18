@@ -371,7 +371,7 @@ func newContext(t *Tweaks) (*context, error) {
 }
 
 func (c *context) err(n Node, msg string, args ...interface{}) { c.errPos(n.Pos(), msg, args...) }
-func (c *context) newScope()                                   { c.scope = newScope(c.scope) }
+func (c *context) newScope() *Scope                            { c.scope = newScope(c.scope); return c.scope }
 func (c *context) newStructScope()                             { c.scope = newScope(c.scope); c.scope.structScope = true }
 
 func (c *context) position(n Node) (r token.Position) {
@@ -828,9 +828,11 @@ type Scope struct {
 
 	// parser support
 	typedefs map[int]bool // name: isTypedef
+	fixDecl  int
 
-	typedef     bool
-	structScope bool
+	forStmtEndScope *Scope
+	structScope     bool
+	typedef         bool
 }
 
 func newScope(parent *Scope) *Scope { return &Scope{Parent: parent} }

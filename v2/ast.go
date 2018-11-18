@@ -387,12 +387,13 @@ func (n *CommaOpt) Pos() token.Pos {
 // CompoundStmt represents data reduced by production:
 //
 //	CompoundStmt:
-//	        '{' BlockItemListOpt '}'  // Case 0
+//	        '{' BlockItemListOpt statementEnd '}'  // Case 0
 type CompoundStmt struct {
 	scope            *Scope
 	BlockItemListOpt *BlockItemListOpt
 	Token            xc.Token
 	Token2           xc.Token
+	statementEnd     *statementEnd
 }
 
 func (n *CompoundStmt) fragment() interface{} { return n }
@@ -971,8 +972,7 @@ type DirectDeclaratorCase int
 // Values of type DirectDeclaratorCase
 const (
 	DirectDeclaratorParen DirectDeclaratorCase = iota
-	DirectDeclaratorIdentList
-	DirectDeclaratorParamList
+	DirectDeclaratorParameters
 	DirectDeclaratorArraySize
 	DirectDeclaratorArraySize2
 	DirectDeclaratorArrayVar
@@ -985,10 +985,8 @@ func (n DirectDeclaratorCase) String() string {
 	switch n {
 	case DirectDeclaratorParen:
 		return "DirectDeclaratorParen"
-	case DirectDeclaratorIdentList:
-		return "DirectDeclaratorIdentList"
-	case DirectDeclaratorParamList:
-		return "DirectDeclaratorParamList"
+	case DirectDeclaratorParameters:
+		return "DirectDeclaratorParameters"
 	case DirectDeclaratorArraySize:
 		return "DirectDeclaratorArraySize"
 	case DirectDeclaratorArraySize2:
@@ -1008,8 +1006,7 @@ func (n DirectDeclaratorCase) String() string {
 //
 //	DirectDeclarator:
 //	        '(' Declarator ')'                                           // Case DirectDeclaratorParen
-//	|       DirectDeclarator '(' IdentifierListOpt ')'                   // Case DirectDeclaratorIdentList
-//	|       DirectDeclarator '(' ParameterTypeList ')'                   // Case DirectDeclaratorParamList
+//	|       DirectDeclarator '(' Parameters ')'                          // Case DirectDeclaratorParameters
 //	|       DirectDeclarator '[' "static" TypeQualifierListOpt Expr ']'  // Case DirectDeclaratorArraySize
 //	|       DirectDeclarator '[' TypeQualifierList "static" Expr ']'     // Case DirectDeclaratorArraySize2
 //	|       DirectDeclarator '[' TypeQualifierListOpt '*' ']'            // Case DirectDeclaratorArrayVar
@@ -1022,8 +1019,7 @@ type DirectDeclarator struct {
 	DirectDeclarator     *DirectDeclarator
 	Expr                 *Expr
 	ExprOpt              *ExprOpt
-	IdentifierListOpt    *IdentifierListOpt
-	ParameterTypeList    *ParameterTypeList
+	Parameters           *Parameters
 	Token                xc.Token
 	Token2               xc.Token
 	Token3               xc.Token
@@ -1045,9 +1041,9 @@ func (n *DirectDeclarator) Pos() token.Pos {
 	}
 
 	switch n.Case {
-	case 1, 2, 3, 4, 5, 6:
+	case 1, 2, 3, 4, 5:
 		return n.DirectDeclarator.Pos()
-	case 0, 7:
+	case 0, 6:
 		return n.Token.Pos()
 	default:
 		panic("internal error")
@@ -1640,10 +1636,11 @@ func (n *ExprOpt) Pos() token.Pos {
 // ExprStmt represents data reduced by production:
 //
 //	ExprStmt:
-//	        ExprListOpt ';'  // Case 0
+//	        ExprListOpt statementEnd ';'  // Case 0
 type ExprStmt struct {
-	ExprListOpt *ExprListOpt
-	Token       xc.Token
+	ExprListOpt  *ExprListOpt
+	Token        xc.Token
+	statementEnd *statementEnd
 }
 
 func (n *ExprStmt) fragment() interface{} { return n }
@@ -1660,6 +1657,10 @@ func (n *ExprStmt) Pos() token.Pos {
 	}
 
 	if p := n.ExprListOpt.Pos(); p != 0 {
+		return p
+	}
+
+	if p := n.statementEnd.Pos(); p != 0 {
 		return p
 	}
 
@@ -2282,7 +2283,7 @@ func (n IterationStmtCase) String() string {
 // IterationStmt represents data reduced by productions:
 //
 //	IterationStmt:
-//	        "do" Stmt "while" '(' ExprList ')' ';'                          // Case IterationStmtDo
+//	        "do" Stmt "while" '(' ExprList ')' statementEnd ';'             // Case IterationStmtDo
 //	|       "for" '(' Declaration ExprListOpt ';' ExprListOpt ')' Stmt      // Case IterationStmtForDecl
 //	|       "for" '(' ExprListOpt ';' ExprListOpt ';' ExprListOpt ')' Stmt  // Case IterationStmtFor
 //	|       "while" '(' ExprList ')' Stmt                                   // Case IterationStmtWhile
@@ -2299,6 +2300,7 @@ type IterationStmt struct {
 	Token3       xc.Token
 	Token4       xc.Token
 	Token5       xc.Token
+	statementEnd *statementEnd
 }
 
 func (n *IterationStmt) fragment() interface{} { return n }
@@ -2347,10 +2349,10 @@ func (n JumpStmtCase) String() string {
 // JumpStmt represents data reduced by productions:
 //
 //	JumpStmt:
-//	        "break" ';'               // Case JumpStmtBreak
-//	|       "continue" ';'            // Case JumpStmtContinue
-//	|       "goto" IDENTIFIER ';'     // Case JumpStmtGoto
-//	|       "return" ExprListOpt ';'  // Case JumpStmtReturn
+//	        "break" statementEnd ';'               // Case JumpStmtBreak
+//	|       "continue" statementEnd ';'            // Case JumpStmtContinue
+//	|       "goto" IDENTIFIER statementEnd ';'     // Case JumpStmtGoto
+//	|       "return" ExprListOpt statementEnd ';'  // Case JumpStmtReturn
 type JumpStmt struct {
 	ReturnOperand Operand
 	scope         *Scope
@@ -2359,6 +2361,7 @@ type JumpStmt struct {
 	Token         xc.Token
 	Token2        xc.Token
 	Token3        xc.Token
+	statementEnd  *statementEnd
 }
 
 func (n *JumpStmt) fragment() interface{} { return n }
@@ -2608,6 +2611,61 @@ func (n *ParameterTypeListOpt) Pos() token.Pos {
 	}
 
 	return n.ParameterTypeList.Pos()
+}
+
+// ParametersCase represents case numbers of production Parameters
+type ParametersCase int
+
+// Values of type ParametersCase
+const (
+	ParametersIdentList ParametersCase = iota
+	ParametersParamTypes
+)
+
+// String implements fmt.Stringer
+func (n ParametersCase) String() string {
+	switch n {
+	case ParametersIdentList:
+		return "ParametersIdentList"
+	case ParametersParamTypes:
+		return "ParametersParamTypes"
+	default:
+		return fmt.Sprintf("ParametersCase(%v)", int(n))
+	}
+}
+
+// Parameters represents data reduced by productions:
+//
+//	Parameters:
+//	        IdentifierListOpt  // Case ParametersIdentList
+//	|       ParameterTypeList  // Case ParametersParamTypes
+type Parameters struct {
+	Case              ParametersCase
+	IdentifierListOpt *IdentifierListOpt
+	ParameterTypeList *ParameterTypeList
+}
+
+func (n *Parameters) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *Parameters) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *Parameters) Pos() token.Pos {
+	if n == nil {
+		return 0
+	}
+
+	switch n.Case {
+	case 0:
+		return n.IdentifierListOpt.Pos()
+	case 1:
+		return n.ParameterTypeList.Pos()
+	default:
+		panic("internal error")
+	}
 }
 
 // PointerCase represents case numbers of production Pointer
@@ -3588,4 +3646,27 @@ func (n *VolatileOpt) Pos() token.Pos {
 	}
 
 	return n.Token.Pos()
+}
+
+// statementEnd represents data reduced by production:
+//
+//	statementEnd:
+//	        /* empty */  // Case 0
+type statementEnd struct {
+}
+
+func (n *statementEnd) fragment() interface{} { return n }
+
+// String implements fmt.Stringer.
+func (n *statementEnd) String() string {
+	return PrettyString(n)
+}
+
+// Pos reports the position of the first component of n or zero if it's empty.
+func (n *statementEnd) Pos() token.Pos {
+	if n == nil {
+		return 0
+	}
+
+	return 0
 }
