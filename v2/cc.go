@@ -933,6 +933,11 @@ func (s *Scope) isTypedef(nm int) bool {
 	for s != nil {
 		//dbg("%p", s)
 		if v, ok := s.typedefs[nm]; ok {
+			if s.structScope && !v {
+				s = s.Parent
+				continue
+			}
+
 			//dbg("%p -> %v %v", s, v, ok)
 			return v
 		}

@@ -143,7 +143,10 @@ func (m Model) Sizeof(t Type) int64 {
 		return m.Sizeof(x.Enums[0].Operand.Type)
 	case *NamedType:
 		return m.Sizeof(x.Type)
-	case *PointerType:
+	case
+		*FunctionType,
+		*PointerType:
+
 		return int64(m[Ptr].Size)
 	case *StructType:
 		layout := m.Layout(x)

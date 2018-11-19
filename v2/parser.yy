@@ -282,6 +282,7 @@ import (
 			//yy:field	Scope		*Scope		// Case Ident, CompLit.
 			//yy:field	enum		*EnumType
 			//yy:field	AssignedTo	bool		// Expression appears at the left side of assignment.
+			//yy:field	HasLabels	bool
 /*yy:case PreInc     */ Expr:
                         	"++" Expr
 /*yy:case PreDec     */ |	"--" Expr
@@ -746,6 +747,7 @@ import (
 /*yy:case Index      */ |	'[' ConstExpr ']'
 
                         // [0]6.8
+			//yy:field	HasLabels	bool
 /*yy:case Block      */ Stmt:
 				CompoundStmt
 /*yy:case Expr       */ |	ExprStmt
@@ -755,6 +757,7 @@ import (
 /*yy:case Select     */ |	SelectionStmt
 
                         // [0]6.8.1
+			//yy:field	HasLabels	bool
 /*yy:case SwitchCase */ LabeledStmt:
                         	"case" ConstExpr ':' Stmt
 /*yy:case Default    */ |	"default" ':' Stmt
@@ -792,6 +795,7 @@ import (
 
                         // [0]6.8.2
 			//yy:field	scope	*Scope
+			//yy:field	HasLabels	bool
                         CompoundStmt:
 				'{'
 				{
@@ -823,18 +827,21 @@ import (
 /*yy:case Stmt       */ |	Stmt
 
                         // [0]6.8.3
+			//yy:field	HasLabels	bool
                         ExprStmt:
                         	ExprListOpt statementEnd ';'
 
                         // [0]6.8.4
 			//yy:field	Cases		[]*LabeledStmt
 			//yy:field	SwitchOp	Operand	// Promoted switch operand
+			//yy:field	HasLabels	bool
 /*yy:case IfElse     */ SelectionStmt:
                         	"if" '(' ExprList ')' Stmt "else" Stmt
 /*yy:case If         */ |	"if" '(' ExprList ')' Stmt %prec NOELSE
 /*yy:case Switch     */ |	"switch" '(' ExprList ')' Stmt
 
                         // [0]6.8.5
+			//yy:field	HasLabels	bool
 /*yy:case Do         */ IterationStmt:
                         	"do" Stmt "while" '(' ExprList ')' statementEnd ';'
 /*yy:case ForDecl    */ |	"for" '(' Declaration ExprListOpt ';' ExprListOpt ')' Stmt
@@ -844,6 +851,7 @@ import (
                         // [0]6.8.6
 			//yy:field	ReturnOperand	Operand
 			//yy:field	scope		*Scope
+			//yy:field	HasLabels	bool
 /*yy:case Break      */ JumpStmt:
                         	"break" statementEnd ';'
 /*yy:case Continue   */ |	"continue" statementEnd ';'
