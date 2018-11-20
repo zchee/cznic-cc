@@ -294,7 +294,7 @@ func (n *Expr) eval(ctx *context, arr2ptr bool, fn *Declarator, seq *int, sc []i
 		if n.Operand.Type != nil && n.Operand.Type.IsArithmeticType() {
 			n.Operand = n.Operand.normalize(ctx.model)
 		}
-		if n.HasLabels {
+		if n.UseGotos {
 			*hasLabels = true
 		}
 	}()
@@ -307,7 +307,7 @@ outer:
 		// The operand of the prefix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -317,7 +317,7 @@ outer:
 		// The operand of the prefix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -325,14 +325,14 @@ outer:
 		t := n.TypeName.check(ctx)
 		n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: int64(ctx.model.Alignof(t))}}
 	case ExprAlignofExpr: // "__alignof__" Expr
-		op := n.Expr.eval(ctx, false, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, false, fn, seq, sc, &n.UseGotos)
 		n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: int64(ctx.model.Alignof(underlyingType(op.Type, false)))}}
 	case ExprSizeofType: // "sizeof" '(' TypeName ')'
 		t := n.TypeName.check(ctx)
 		n.Operand = ctx.sizeof(t)
 	case ExprSizeofExpr: // "sizeof" Expr
 		// [0]6.5.3.4
-		switch t := n.Expr.eval(ctx, false, fn, seq, sc, &n.HasLabels).Type.(type) { // [0]6.3.2.1-3
+		switch t := n.Expr.eval(ctx, false, fn, seq, sc, &n.UseGotos).Type.(type) { // [0]6.3.2.1-3
 		case *ArrayType:
 			if t.Size.Type == nil {
 				panic(fmt.Errorf("%v", ctx.position(n)))
@@ -384,7 +384,7 @@ outer:
 		}
 	case ExprNot: // '!' Expr
 		n.Operand = Operand{Type: Int}
-		a := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		a := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if a.IsZero() { //TODO n.Expr.IsZero everywhere
 			n.Operand.Value = &ir.Int64Value{Value: 1}
 			break
@@ -395,14 +395,14 @@ outer:
 		}
 	case ExprAddrof: // '&' Expr
 		// [0]6.5.3.2
-		op := n.Expr.eval(ctx, false, fn, seq, sc, &n.HasLabels) // [0]6.3.2.1-3
+		op := n.Expr.eval(ctx, false, fn, seq, sc, &n.UseGotos) // [0]6.3.2.1-3
 		n.Operand = Operand{Type: &PointerType{op.Type}}
 		if d := n.Expr.Declarator; d != nil && n.Expr.Case != ExprPSelect {
 			d.AddressTaken = true
 		}
 		n.Operand.Value = op.Value
 	case ExprPExprList: // '(' ExprList ')'
-		n.Operand = n.ExprList.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Operand = n.ExprList.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		n.Declarator = n.ExprList.declarator(ctx)
 	case ExprCompLit: // '(' TypeName ')' '{' InitializerList CommaOpt '}'
 		t := n.TypeName.check(ctx)
@@ -437,7 +437,7 @@ outer:
 	case ExprCast: // '(' TypeName ')' Expr
 		// [0]6.5.4
 		t := n.TypeName.check(ctx)
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if t == Void {
 			n.Operand = Operand{Type: Void}
 			break
@@ -495,7 +495,7 @@ outer:
 		if !arr2ptr && n.Expr.Case == ExprCall { // int *f(); int *p = &*f();
 			arr2ptr = true
 		}
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		for t, done := op.Type, false; !done; {
 			switch x := t.(type) {
 			case *ArrayType:
@@ -515,7 +515,7 @@ outer:
 		// The operand of the unary + or - operator shall have
 		// arithmetic type; of the ~ operator, integer type; of the !
 		// operator, scalar type.
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if !op.isArithmeticType() {
 			panic(ctx.position(n))
 		}
@@ -525,7 +525,7 @@ outer:
 		// The operand of the unary + or - operator shall have
 		// arithmetic type; of the ~ operator, integer type; of the !
 		// operator, scalar type.
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if !op.isArithmeticType() {
 			panic(ctx.position(n))
 		}
@@ -535,7 +535,7 @@ outer:
 		// The operand of the unary + or - operator shall have
 		// arithmetic type; of the ~ operator, integer type; of the !
 		// operator, scalar type.
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).integerPromotion(ctx.model)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).integerPromotion(ctx.model)
 		if !op.Type.IsIntegerType() {
 			panic(ctx.position(n))
 		}
@@ -543,8 +543,8 @@ outer:
 	case ExprChar: // CHARCONST
 		n.Operand = ctx.charConst(n.Token)
 	case ExprNe: // Expr "!=" Expr
-		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 0}}
 			break
@@ -603,17 +603,17 @@ outer:
 		}
 	case ExprModAssign: // Expr "%=" Expr
 		// [0]6.5.16.2
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprLAnd: // Expr "&&" Expr
 		n.Operand = Operand{Type: Int}
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if n.Expr.IsZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 			break
 		}
 
-		n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if n.Expr2.IsZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 			break
@@ -624,11 +624,11 @@ outer:
 			break
 		}
 	case ExprAndAssign: // Expr "&=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprMulAssign: // Expr "*=" Expr
 		// [0]6.5.16.2
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprPostInc: // Expr "++"
 		// [0]6.5.2.4
@@ -636,7 +636,7 @@ outer:
 		// The operand of the postfix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -648,8 +648,8 @@ outer:
 		// have integer type, or the left operand shall have qualified
 		// or unqualified arithmetic type and the right shall have
 		// arithmetic type.
-		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		switch {
 		case
 			lhs.isPointerType() && rhs.isIntegerType(),
@@ -666,7 +666,7 @@ outer:
 		// The operand of the postfix increment or decrement operator
 		// shall have qualified or unqualified real or pointer type and
 		// shall be a modifiable lvalue.
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if !n.Operand.isScalarType() {
 			panic(ctx.position(n))
 		}
@@ -678,8 +678,8 @@ outer:
 		// have integer type, or the left operand shall have qualified
 		// or unqualified arithmetic type and the right shall have
 		// arithmetic type.
-		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		switch {
 		case
 			lhs.isPointerType() && rhs.isIntegerType(),
@@ -692,7 +692,7 @@ outer:
 		n.Operand = lhs
 	case ExprPSelect: // Expr "->" IDENTIFIER
 		n.Expr.AssignedTo = n.AssignedTo
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if d := n.Expr.Declarator; d != nil && n.AssignedTo {
 			d.AssignedTo++
 		}
@@ -758,7 +758,7 @@ outer:
 		}
 	case ExprSelect: // Expr '.' IDENTIFIER
 		n.Expr.AssignedTo = n.AssignedTo
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if d := n.Expr.Declarator; d != nil && n.AssignedTo {
 			d.AssignedTo++
 		}
@@ -813,25 +813,25 @@ outer:
 		}
 	case ExprDivAssign: // Expr "/=" Expr
 		// [0]6.5.16.2
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprLsh: // Expr "<<" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 	case ExprLshAssign: // Expr "<<=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).lsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprLe: // Expr "<=" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).le(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).le(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 1}}
 		}
 	case ExprEq: // Expr "==" Expr
-		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		switch x := underlyingType(lhs.Type, true).(type) {
 		case *EnumType:
 			n.Expr2.enum = x
 		}
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		n.Operand.Type = Int
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand.Value = &ir.Int64Value{Value: 1}
@@ -884,30 +884,30 @@ outer:
 			panic(fmt.Errorf("%v: %v %v", ctx.position(n), lhs, rhs))
 		}
 	case ExprGe: // Expr ">=" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).ge(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).ge(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 1}}
 		}
 	case ExprRsh: // Expr ">>" Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 	case ExprRshAssign: // Expr ">>=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).rsh(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprXorAssign: // Expr "^=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprOrAssign: // Expr "|=" Expr
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		n.Operand = n.Expr.Operand
 	case ExprLOr: // Expr "||" Expr
 		n.Operand = Operand{Type: Int}
-		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if n.Expr.IsNonZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 1}
 			break
 		}
 
-		n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if n.Expr2.IsNonZero() {
 			n.Operand.Value = &ir.Int64Value{Value: 1}
 			break
@@ -917,9 +917,9 @@ outer:
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 		}
 	case ExprMod: // Expr '%' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)) // [0]6.5.5
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).mod(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)) // [0]6.5.5
 	case ExprAnd: // Expr '&' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).and(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		if n.isSideEffectsFree() {
 			// x & (x | y) == x
 			x, y := n.Expr, n.Expr2
@@ -966,8 +966,8 @@ outer:
 					panic("too many arguments of __builtin_types_compatible_p")
 				}
 
-				t := arg1.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).Type
-				u := arg2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).Type
+				t := arg1.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).Type
+				u := arg2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).Type
 				var v int64
 				if t.IsCompatible(u) {
 					v = 1
@@ -986,7 +986,7 @@ outer:
 					panic("too many arguments of __builtin_classify_type")
 				}
 
-				op := args.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+				op := args.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 				v := noTypeClass
 				if x, ok := classifyType[op.Type.Kind()]; ok {
 					v = x
@@ -999,8 +999,8 @@ outer:
 		}
 
 		// [0]6.5.2.2
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		args := n.ArgumentExprListOpt.eval(ctx, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		args := n.ArgumentExprListOpt.eval(ctx, fn, seq, sc, &n.UseGotos)
 		ops := make([]Operand, len(args))
 		n.CallArgs = ops
 		t := checkFn(ctx, op.Type)
@@ -1075,10 +1075,10 @@ outer:
 			}
 		}
 	case ExprMul: // Expr '*' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).mul(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 	case ExprAdd: // Expr '+' Expr
-		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		// [0]6.5.6
 		//
 		// For addition, either both operands shall have arithmetic
@@ -1087,7 +1087,7 @@ outer:
 		// equivalent to adding 1.)
 		switch {
 		case lhs.isArithmeticType() && rhs.isArithmeticType():
-			n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).add(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+			n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).add(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		case lhs.isPointerType() && rhs.isIntegerType():
 			n.Operand = lhs
 			n.Operand.Value = nil
@@ -1099,15 +1099,15 @@ outer:
 		}
 	case ExprSub: // Expr '-' Expr
 		// [0]6.5.6
-		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		lhs := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		switch {
 		// 3. For subtraction, one of the following shall hold:
 		case
 			// both operands have arithmetic type;
 			lhs.isArithmeticType() && rhs.isArithmeticType():
 
-			n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).sub(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+			n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).sub(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 			if n.Operand.Type.IsIntegerType() && n.Expr.Equals(n.Expr2) {
 				n.Operand.Value = &ir.Int64Value{Value: 0}
 			}
@@ -1131,15 +1131,15 @@ outer:
 			panic(ctx.position(n))
 		}
 	case ExprDiv: // Expr '/' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)) // [0]6.5.5
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).div(ctx, n, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)) // [0]6.5.5
 	case ExprLt: // Expr '<' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).lt(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).lt(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 0}}
 		}
 	case ExprAssign: // Expr '=' Expr
 		n.Expr.AssignedTo = true
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		if d := n.Expr.Declarator; d != nil {
 			d.AssignedTo++
 			if n.Expr.Case == ExprIdent {
@@ -1150,16 +1150,16 @@ outer:
 		case *EnumType:
 			n.Expr2.enum = x
 		}
-		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		rhs := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		n.Operand.Type.assign(ctx, n, rhs)
 	case ExprGt: // Expr '>' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).gt(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).gt(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand = Operand{Type: Int, Value: &ir.Int64Value{Value: 0}}
 		}
 	case ExprCond: // Expr '?' ExprList ':' Expr
 		// [0]6.5.15
-		cond := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		cond := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		// 2. The first operand shall have scalar type.
 		if !cond.isScalarType() {
 			panic(ctx.position(n))
@@ -1167,15 +1167,15 @@ outer:
 
 		switch {
 		case cond.IsNonZero():
-			n.Operand = n.ExprList.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+			n.Operand = n.ExprList.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 			break outer
 		case cond.IsZero():
-			n.Operand = n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+			n.Operand = n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 			break outer
 		}
 
-		a := n.ExprList.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		b := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
+		a := n.ExprList.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		b := n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		switch {
 		// 3. One of the following shall hold for the second and third
 		// operands:
@@ -1225,8 +1225,8 @@ outer:
 		}
 	case ExprIndex: // Expr '[' ExprList ']'
 		// [0]6.5.2.1
-		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels)
-		index := n.ExprList.eval(ctx, true, fn, seq, sc, &n.HasLabels)
+		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
+		index := n.ExprList.eval(ctx, true, fn, seq, sc, &n.UseGotos)
 		switch t := op.Type.(type) {
 		case *ArrayType:
 			if arr2ptr {
@@ -1265,12 +1265,12 @@ outer:
 			d.Referenced++
 		}
 	case ExprXor: // Expr '^' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).xor(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 		if n.Expr.Equals(n.Expr2) {
 			n.Operand.Value = &ir.Int64Value{Value: 0}
 		}
 	case ExprOr: // Expr '|' Expr
-		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.HasLabels))
+		n.Operand = n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos).or(ctx, n.Expr2.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos))
 	case ExprFloat: // FLOATCONST
 		n.floatConst(ctx)
 	case ExprIdent: // IDENTIFIER
@@ -1444,7 +1444,7 @@ outer:
 	case ExprString: // STRINGLITERAL
 		n.Operand = ctx.strConst(n.Token)
 	case ExprStatement: // '(' CompoundStmt ')'
-		n.Operand = n.CompoundStmt.check(ctx, fn, seq, sc, nil, false, &n.HasLabels)
+		n.Operand = n.CompoundStmt.check(ctx, fn, seq, sc, nil, false, &n.UseGotos)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
@@ -1793,8 +1793,8 @@ func (n *CompoundStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, i
 			n.scope.insertDeclarator(ctx, d)
 		}
 	}
-	r := n.BlockItemListOpt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
-	if n.HasLabels {
+	r := n.BlockItemListOpt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
+	if n.UseGotos {
 		*hasLabels = true
 	}
 	return r
@@ -1938,21 +1938,21 @@ func (n *Stmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch 
 	r = Operand{Type: Void}
 	switch n.Case {
 	case StmtBlock: // CompoundStmt
-		n.CompoundStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.CompoundStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case StmtExpr: // ExprStmt
-		r = n.ExprStmt.check(ctx, fn, seq, sc, &n.HasLabels)
+		r = n.ExprStmt.check(ctx, fn, seq, sc, &n.UseGotos)
 	case StmtIter: // IterationStmt
-		n.IterationStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.IterationStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case StmtJump: // JumpStmt
-		n.JumpStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.JumpStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case StmtLabeled: // LabeledStmt
-		n.LabeledStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.LabeledStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case StmtSelect: // SelectionStmt
-		n.SelectionStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.SelectionStmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
-	if n.HasLabels {
+	if n.UseGotos {
 		*hasLabels = true
 	}
 	return r
@@ -1971,48 +1971,48 @@ func (n *LabeledStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, in
 			panic("TODO")
 		}
 		inSwitch.Cases = append(inSwitch.Cases, n)
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case LabeledStmtDefault: // "default" ':' Stmt
 		if inSwitch == nil {
 			panic("TODO")
 		}
 		inSwitch.Cases = append(inSwitch.Cases, n)
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case LabeledStmtLabel: // IDENTIFIER ':' Stmt
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case LabeledStmtLabel2: // TYPEDEF_NAME ':' Stmt
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
-	n.HasLabels = true
+	n.UseGotos = true
 	*hasLabels = true
 }
 
 func (n *SelectionStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool, hasLabels *bool) {
 	switch n.Case {
 	case SelectionStmtIfElse: // "if" '(' ExprList ')' Stmt "else" Stmt
-		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.HasLabels).isScalarType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.UseGotos).isScalarType() {
 			panic("TODO")
 		}
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
-		n.Stmt2.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
+		n.Stmt2.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case SelectionStmtIf: // "if" '(' ExprList ')' Stmt
-		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.HasLabels).isScalarType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.UseGotos).isScalarType() {
 			panic("TODO")
 		}
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, inLoop, &n.UseGotos)
 	case SelectionStmtSwitch: // "switch" '(' ExprList ')' Stmt
 		// [0]6.8.4.2
-		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.HasLabels).isIntegerType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.UseGotos).isIntegerType() {
 			panic("TODO")
 		}
 		n.SwitchOp = n.ExprList.Operand.integerPromotion(ctx.model)
-		n.Stmt.check(ctx, fn, seq, sc, n, inLoop, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, n, inLoop, &n.UseGotos)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
-	if n.HasLabels {
+	if n.UseGotos {
 		*hasLabels = true
 	}
 }
@@ -2020,35 +2020,35 @@ func (n *SelectionStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, 
 func (n *IterationStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwitch *SelectionStmt, inLoop bool, hasLabels *bool) {
 	switch n.Case {
 	case IterationStmtDo: // "do" Stmt "while" '(' ExprList ')' ';'
-		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.HasLabels).isScalarType() {
+		if !n.ExprList.eval(ctx, true, fn, seq, sc, &n.UseGotos).isScalarType() {
 			panic(ctx.position)
 		}
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.UseGotos)
 	case IterationStmtForDecl: // "for" '(' Declaration ExprListOpt ';' ExprListOpt ')' Stmt
 		n.Declaration.check(ctx, seq, sc, fn, n.Declaration.Scope, false)
-		n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.HasLabels)
-		if e := n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.HasLabels); e.Type != nil && !e.isScalarType() {
+		n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.UseGotos)
+		if e := n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.UseGotos); e.Type != nil && !e.isScalarType() {
 			panic(ctx.position(n))
 		}
-		n.ExprListOpt2.eval(ctx, true, fn, seq, sc, &n.HasLabels)
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.HasLabels)
+		n.ExprListOpt2.eval(ctx, true, fn, seq, sc, &n.UseGotos)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.UseGotos)
 	case IterationStmtFor: // "for" '(' ExprListOpt ';' ExprListOpt ';' ExprListOpt ')' Stmt
 		// [0]6.8.5.3
-		n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.HasLabels)
-		if e := n.ExprListOpt2.eval(ctx, true, fn, seq, sc, &n.HasLabels); e.Type != nil && !e.isScalarType() {
+		n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.UseGotos)
+		if e := n.ExprListOpt2.eval(ctx, true, fn, seq, sc, &n.UseGotos); e.Type != nil && !e.isScalarType() {
 			panic(ctx.position(n))
 		}
-		n.ExprListOpt3.eval(ctx, true, fn, seq, sc, &n.HasLabels)
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.HasLabels)
+		n.ExprListOpt3.eval(ctx, true, fn, seq, sc, &n.UseGotos)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.UseGotos)
 	case IterationStmtWhile: // "while" '(' ExprList ')' Stmt
-		if e := n.ExprList.eval(ctx, true, fn, seq, sc, &n.HasLabels); e.Type != nil && !e.isScalarType() {
+		if e := n.ExprList.eval(ctx, true, fn, seq, sc, &n.UseGotos); e.Type != nil && !e.isScalarType() {
 			panic(ctx.position(n))
 		}
-		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.HasLabels)
+		n.Stmt.check(ctx, fn, seq, sc, inSwitch, true, &n.UseGotos)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
-	if n.HasLabels {
+	if n.UseGotos {
 		*hasLabels = true
 	}
 }
@@ -2060,7 +2060,6 @@ func (n *JumpStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwi
 		//
 		// 1. A break statement shall appear only in or as a switch
 		// body or loop body.
-		n.HasLabels = true //TODO improve
 		if inSwitch == nil && !inLoop {
 			panic(ctx.position)
 		}
@@ -2069,18 +2068,18 @@ func (n *JumpStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwi
 		//
 		// 1. A continue statement shall appear only in or as a loop
 		// body.
-		n.HasLabels = true //TODO improve
+		n.UseGotos = true //TODO improve
 		if !inLoop {
 			panic(ctx.position(n))
 		}
 	case JumpStmtGoto: // "goto" IDENTIFIER ';'
-		n.HasLabels = true
+		n.UseGotos = true
 		if nm := n.Token2.Val; n.scope.LookupLabel(nm) == nil {
 			panic(ctx.position(n))
 		}
 	case JumpStmtReturn: // "return" ExprListOpt ';'
 		// [0]6.8.6.4
-		op := n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.HasLabels)
+		op := n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.UseGotos)
 		switch t := fn.Type.(*FunctionType).Result; t.Kind() {
 		case Void:
 			if op.Type != nil {
@@ -2099,15 +2098,15 @@ func (n *JumpStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwi
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
-	if n.HasLabels {
+	if n.UseGotos {
 		*hasLabels = true
 	}
 }
 
 func (n *ExprStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, hasLabels *bool) Operand {
 	// ExprListOpt ';'
-	r := n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.HasLabels)
-	if n.HasLabels {
+	r := n.ExprListOpt.eval(ctx, true, fn, seq, sc, &n.UseGotos)
+	if n.UseGotos {
 		*hasLabels = true
 	}
 	return r

@@ -390,7 +390,7 @@ func (n *CommaOpt) Pos() token.Pos {
 //	        '{' BlockItemListOpt statementEnd '}'  // Case 0
 type CompoundStmt struct {
 	scope            *Scope
-	HasLabels        bool
+	UseGotos         bool
 	BlockItemListOpt *BlockItemListOpt
 	Token            xc.Token
 	Token2           xc.Token
@@ -1493,7 +1493,7 @@ type Expr struct {
 	Scope               *Scope // Case Ident, CompLit.
 	enum                *EnumType
 	AssignedTo          bool // Expression appears at the left side of assignment.
-	HasLabels           bool
+	UseGotos            bool
 	ArgumentExprListOpt *ArgumentExprListOpt
 	Case                ExprCase
 	CommaOpt            *CommaOpt
@@ -1640,7 +1640,7 @@ func (n *ExprOpt) Pos() token.Pos {
 //	ExprStmt:
 //	        ExprListOpt statementEnd ';'  // Case 0
 type ExprStmt struct {
-	HasLabels    bool
+	UseGotos     bool
 	ExprListOpt  *ExprListOpt
 	Token        xc.Token
 	statementEnd *statementEnd
@@ -2291,7 +2291,7 @@ func (n IterationStmtCase) String() string {
 //	|       "for" '(' ExprListOpt ';' ExprListOpt ';' ExprListOpt ')' Stmt  // Case IterationStmtFor
 //	|       "while" '(' ExprList ')' Stmt                                   // Case IterationStmtWhile
 type IterationStmt struct {
-	HasLabels    bool
+	UseGotos     bool
 	Case         IterationStmtCase
 	Declaration  *Declaration
 	ExprList     *ExprList
@@ -2360,7 +2360,7 @@ func (n JumpStmtCase) String() string {
 type JumpStmt struct {
 	ReturnOperand Operand
 	scope         *Scope
-	HasLabels     bool
+	UseGotos      bool
 	Case          JumpStmtCase
 	ExprListOpt   *ExprListOpt
 	Token         xc.Token
@@ -2420,7 +2420,7 @@ func (n LabeledStmtCase) String() string {
 //	|       IDENTIFIER ':' Stmt        // Case LabeledStmtLabel
 //	|       TYPEDEF_NAME ':' Stmt      // Case LabeledStmtLabel2
 type LabeledStmt struct {
-	HasLabels bool
+	UseGotos  bool
 	Case      LabeledStmtCase
 	ConstExpr *ConstExpr
 	Stmt      *Stmt
@@ -2779,17 +2779,17 @@ func (n SelectionStmtCase) String() string {
 //	|       "if" '(' ExprList ')' Stmt              // Case SelectionStmtIf
 //	|       "switch" '(' ExprList ')' Stmt          // Case SelectionStmtSwitch
 type SelectionStmt struct {
-	Cases     []*LabeledStmt
-	SwitchOp  Operand // Promoted switch operand
-	HasLabels bool
-	Case      SelectionStmtCase
-	ExprList  *ExprList
-	Stmt      *Stmt
-	Stmt2     *Stmt
-	Token     xc.Token
-	Token2    xc.Token
-	Token3    xc.Token
-	Token4    xc.Token
+	Cases    []*LabeledStmt
+	SwitchOp Operand // Promoted switch operand
+	UseGotos bool
+	Case     SelectionStmtCase
+	ExprList *ExprList
+	Stmt     *Stmt
+	Stmt2    *Stmt
+	Token    xc.Token
+	Token2   xc.Token
+	Token3   xc.Token
+	Token4   xc.Token
 }
 
 func (n *SelectionStmt) fragment() interface{} { return n }
@@ -2932,7 +2932,7 @@ func (n StmtCase) String() string {
 //	|       LabeledStmt    // Case StmtLabeled
 //	|       SelectionStmt  // Case StmtSelect
 type Stmt struct {
-	HasLabels     bool
+	UseGotos      bool
 	Case          StmtCase
 	CompoundStmt  *CompoundStmt
 	ExprStmt      *ExprStmt

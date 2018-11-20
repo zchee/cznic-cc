@@ -1043,6 +1043,17 @@ func ConvertFloat64(v float64, t Type, m Model) int64 {
 // masking and/or sign extending as appropriate.
 func ConvertInt64(n int64, t Type, m Model) int64 {
 	switch x := UnderlyingType(t).(type) {
+	case TypeKind:
+		if x == Ptr {
+			switch m[Ptr].Size {
+			case 4:
+				return int64(uint32(n))
+			case 8:
+				return n
+			default:
+				panic("internal error")
+			}
+		}
 	case *EnumType:
 		t = x.Enums[0].Operand.Type
 	}
@@ -1090,6 +1101,7 @@ func ConvertInt64(n int64, t Type, m Model) int64 {
 		panic(fmt.Errorf("TODO %v %T %v", sz, t, t))
 	}
 }
+
 func (o Operand) normalize(m Model) (r Operand) {
 	switch x := o.Value.(type) {
 	case *ir.Int64Value:
