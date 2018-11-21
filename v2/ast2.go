@@ -2068,7 +2068,6 @@ func (n *JumpStmt) check(ctx *context, fn *Declarator, seq *int, sc []int, inSwi
 		//
 		// 1. A continue statement shall appear only in or as a loop
 		// body.
-		n.UseGotos = true //TODO improve
 		if !inLoop {
 			panic(ctx.position(n))
 		}
