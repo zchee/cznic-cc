@@ -678,7 +678,8 @@ func (t *FunctionType) Equal(u Type) bool {
 	case
 		*NamedType,
 		*PointerType,
-		*StructType:
+		*StructType,
+		*TaggedStructType:
 
 		return false
 	case TypeKind:

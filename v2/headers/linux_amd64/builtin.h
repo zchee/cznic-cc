@@ -48,9 +48,11 @@ void __register_stdfiles(void *, void *, void *, void *);
 #define __builtin_types_compatible_p(type1, type2) __builtin_types_compatible__((type1){}, (type2){})
 #define __builtin_va_arg(ap, type) (type)ap
 #ifdef __ccgo__
+void __log(char*, ...);
 #define __builtin_va_copy(dest, src) dest = __builtin_va_copy(src)
 #define __builtin_va_end(ap) __builtin_va_end(ap)
 #define __builtin_va_start(ap, arg) ap = __GO2__("X__builtin_va_start(tls, ap)")
+#define __log(s, ...) __log("%s:%i.%s: " s, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #else
 #define __builtin_va_copy(dest, src) dest = src
 #define __builtin_va_end(ap) ap = (void*)0
