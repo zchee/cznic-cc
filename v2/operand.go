@@ -483,7 +483,10 @@ func (o Operand) ConvertTo(m Model, t Type) (r Operand) {
 			}
 
 			o.Value = &ir.Int64Value{Value: int64(x.Offset)}
-		case *ir.Int64Value:
+		case
+			*ir.Int64Value,
+			*ir.StringValue:
+
 			// nop
 		default:
 			//fmt.Printf("TODO405 %T %v -> %v\n", x, o, t) //TODO-
