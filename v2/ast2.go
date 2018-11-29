@@ -2390,16 +2390,12 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 				if n.Designation != nil {
 					dst, nt := n.Designation.check(ctx, x)
 					field = int(dst[0])
-					if len(dst) != 1 {
-						panic(fmt.Errorf("%v: %v %v", ctx.position(n), dst, nt))
-					}
-
 					switch nv := len(r.Values); {
 
 					case nv < field:
 						r.Values = append(r.Values, make([]ir.Value, field-nv)...)
 					case nv > field:
-						r.Values[field] = n.Initializer.check(ctx, x.Fields[field].Type, fn, true, nil, nil, nil)
+						r.Values[field] = n.Initializer.check(ctx, nt, fn, true, nil, nil, nil)
 						field++
 						continue
 					}
@@ -2491,16 +2487,16 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 	}
 }
 
-func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
+func (n *Designation) check(ctx *context, t Type) (r []int64, _ Type) {
 	switch x := underlyingType(t, true).(type) {
 	case *ArrayType:
-		nt = x.Item
+		n.Type = x.Item
 		for l := n.DesignatorList; l != nil; l = l.DesignatorList {
-			switch n := l.Designator; n.Case {
+			switch d := l.Designator; d.Case {
 			case DesignatorField: // '.' IDENTIFIER
 				panic("TODO")
 			case DesignatorIndex: // '[' ConstExpr ']'
-				op := n.ConstExpr.eval(ctx)
+				op := d.ConstExpr.eval(ctx)
 				switch x := op.Value.(type) {
 				case *ir.Int64Value:
 					if v := x.Value; v < mathutil.MinInt || v > mathutil.MaxInt {
@@ -2509,7 +2505,7 @@ func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
 
 					r = append(r, x.Value)
 				default:
-					panic(fmt.Errorf("%v: %T", ctx.position(n), x))
+					panic(fmt.Errorf("%v: %T", ctx.position(d), x))
 				}
 			default:
 				panic("TODO")
@@ -2518,16 +2514,16 @@ func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
 	case *StructType:
 		t := Type(x)
 		for l := n.DesignatorList; l != nil; l = l.DesignatorList {
-			switch n := l.Designator; n.Case {
+			switch d := l.Designator; d.Case {
 			case DesignatorField: // '.' IDENTIFIER
-				nm := n.Token2.Val
+				nm := d.Token2.Val
 				var f *FieldProperties
 				switch x := t.(type) {
 				case *StructType:
 					ctx.model.Layout(t)
 					f = x.Field(nm)
 					if f == nil || f.Type == nil {
-						panic(fmt.Errorf("(C) %v: TODO %q", ctx.position(n.Token2), dict.S(nm)))
+						panic(fmt.Errorf("(C) %v: TODO %q", ctx.position(d.Token2), dict.S(nm)))
 					}
 
 					if fi := f.Declarator.Field; fi > len(x.Fields) || x.Fields[fi].Name != nm {
@@ -2537,24 +2533,24 @@ func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
 					ctx.model.Layout(t)
 					f = x.Field(nm)
 					if f == nil || f.Type == nil {
-						panic(fmt.Errorf("(C) %v: TODO %q", ctx.position(n.Token2), dict.S(nm)))
+						panic(fmt.Errorf("(C) %v: TODO %q", ctx.position(d.Token2), dict.S(nm)))
 					}
 
 					if fi := f.Declarator.Field; fi > len(x.Fields) || x.Fields[fi].Name != nm {
 						panic("TODO")
 					}
 				default:
-					panic(fmt.Errorf("%v", ctx.position(n)))
+					panic(fmt.Errorf("%v", ctx.position(d)))
 				}
 
 				r = append(r, int64(f.Declarator.Field))
 				t = f.Type
-				nt = t
+				n.Type = t
 			case DesignatorIndex: // '[' ConstExpr ']'
-				op := n.ConstExpr.eval(ctx)
+				op := d.ConstExpr.eval(ctx)
 				switch x := UnderlyingType(t).(type) {
 				case *ArrayType:
-					nt = x.Item
+					n.Type = x.Item
 					switch y := op.Value.(type) {
 					case *ir.Int64Value:
 						if x.Size.Value == nil {
@@ -2566,10 +2562,10 @@ func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
 						}
 						r = append(r, y.Value)
 					default:
-						panic(fmt.Errorf("%v: %v %T %v", ctx.position(n), t, y, op))
+						panic(fmt.Errorf("%v: %v %T %v", ctx.position(d), t, y, op))
 					}
 				default:
-					panic(fmt.Errorf("%v: %v %T %v", ctx.position(n), t, x, op))
+					panic(fmt.Errorf("%v: %v %T %v", ctx.position(d), t, x, op))
 				}
 			default:
 				panic("TODO")
@@ -2578,9 +2574,9 @@ func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
 	case *UnionType:
 		t := Type(x)
 		for l := n.DesignatorList; l != nil; l = l.DesignatorList {
-			switch n := l.Designator; n.Case {
+			switch d := l.Designator; d.Case {
 			case DesignatorField: // '.' IDENTIFIER
-				nm := n.Token2.Val
+				nm := d.Token2.Val
 				var f *FieldProperties
 				switch x := t.(type) {
 				//TODO case *StructType:
@@ -2596,23 +2592,23 @@ func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
 					ctx.model.Layout(t)
 					f = x.Field(nm)
 					if f == nil || f.Type == nil {
-						panic(fmt.Errorf("(C) %v: TODO %q", ctx.position(n.Token2), dict.S(nm)))
+						panic(fmt.Errorf("(C) %v: TODO %q", ctx.position(d.Token2), dict.S(nm)))
 					}
 
 					if fi := f.Declarator.Field; fi > len(x.Fields) || x.Fields[fi].Name != nm {
 						panic("TODO")
 					}
 				default:
-					panic(fmt.Errorf("%v: %T", ctx.position(n), x))
+					panic(fmt.Errorf("%v: %T", ctx.position(d), x))
 				}
 
 				r = append(r, int64(f.Declarator.Field))
 				t = f.Type
-				nt = t
+				n.Type = t
 			//TODO case DesignatorIndex: // '[' ConstExpr ']'
 			//TODO 	panic("TODO")
 			default:
-				panic(n.Case)
+				panic(d.Case)
 			}
 		}
 		if len(r) > 1 {
@@ -2622,7 +2618,7 @@ func (n *Designation) check(ctx *context, t Type) (r []int64, nt Type) {
 		panic(fmt.Errorf("%v: %T", ctx.position(n), x))
 	}
 	n.List = r
-	return r, nt
+	return r, n.Type
 }
 
 func (n *Declarator) check(ctx *context, ds *DeclarationSpecifier, t Type, isObject bool, sc []int, fn *Declarator) (r Type) {

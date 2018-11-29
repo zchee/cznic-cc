@@ -1552,6 +1552,8 @@ func (t *UnionType) IsCompatible(u Type) bool {
 	}
 
 	switch x := UnderlyingType(u).(type) {
+	case *PointerType:
+		return false
 	case TypeKind:
 		if x.IsScalarType() {
 			return false

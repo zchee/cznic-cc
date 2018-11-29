@@ -733,6 +733,7 @@ import (
 
                         // [0]6.7.8
 			//yy:field	List	[]int64
+			//yy:field	Type	Type
                         Designation:
                         	DesignatorList '='
 

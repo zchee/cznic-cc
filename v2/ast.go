@@ -728,6 +728,7 @@ func (n *DeclaratorOpt) Pos() token.Pos {
 //	        DesignatorList '='  // Case 0
 type Designation struct {
 	List           []int64
+	Type           Type
 	DesignatorList *DesignatorList
 	Token          xc.Token
 }
