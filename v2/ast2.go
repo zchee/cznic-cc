@@ -338,6 +338,16 @@ outer:
 				panic(fmt.Errorf("%v", ctx.position(n)))
 			}
 
+			if t.IsVLA() {
+				switch d := n.Expr.Declarator; {
+				case d != nil && d.IsFunctionParameter:
+					panic(fmt.Errorf("%v", ctx.position(n)))
+				default:
+					n.Operand = Operand{Type: Int}
+					break outer
+				}
+			}
+
 			switch d := n.Expr.Declarator; {
 			case d != nil && d.IsFunctionParameter:
 				n.Operand = ctx.sizeof(Ptr)
@@ -380,6 +390,9 @@ outer:
 			panic(t)
 		}
 		if n.Operand.Value == nil {
+			if x, ok := n.Expr.Operand.Type.(*ArrayType); ok {
+				panic(fmt.Errorf("%v: %p %s", ctx.position(n), x, PrettyString(x)))
+			}
 			panic(fmt.Errorf("%v", ctx.position(n)))
 		}
 	case ExprNot: // '!' Expr
@@ -2441,6 +2454,8 @@ func (n *InitializerList) check(ctx *context, t Type, fn *Declarator) Operand {
 					default:
 						panic(fmt.Errorf("%v: %v", ctx.position(n), t))
 					}
+				case 1: // Initializer
+					return n.Initializer.check(ctx, t, fn, false, nil, nil, nil)
 				default:
 					panic(fmt.Errorf("%v: %v", ctx.position(n), n.Case))
 				}
@@ -2786,6 +2801,8 @@ func (n *Declarator) insert(ctx *context, isFunction bool) {
 				if prefer(n) || !prefer(ex) {
 					n.Scope.Idents[nm] = n
 				}
+			case LinkageInternal:
+				n.Scope.Idents[nm] = n // musl-1.1.20 src/time/__tz.c:23:41
 			default:
 				panic(fmt.Errorf("%v: %v %v %v:", ctx.position(n), n.Linkage, isFunction, ctx.position(ex)))
 			}
@@ -2903,6 +2920,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 		sz := n.Expr.eval(ctx, true, fn, nil, nil, &dummy)
 		t := &ArrayType{
 			Item:           t,
+			Length:         n.Expr,
 			Size:           sz,
 			TypeQualifiers: tq,
 		}
@@ -2921,11 +2939,14 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 		n.TypeQualifierListOpt.check(ctx, &tq)
 		n.ExprOpt.eval(ctx, true, fn, nil, nil, &dummy)
 		var sz Operand
+		var e *Expr
 		if o := n.ExprOpt; o != nil {
-			sz = o.Expr.Operand
+			e = o.Expr
+			sz = e.Operand
 		}
 		t := &ArrayType{
 			Item:           t,
+			Length:         e,
 			Size:           sz,
 			TypeQualifiers: tq,
 		}
@@ -3050,8 +3071,9 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 		n.TypeQualifierListOpt.check(ctx, &tq)
 		sz := n.Expr.eval(ctx, true, nil, nil, nil, &dummy)
 		t := &ArrayType{
-			Item: t,
-			Size: sz,
+			Item:   t,
+			Length: n.Expr,
+			Size:   sz,
 		}
 		if n.DirectAbstractDeclaratorOpt == nil {
 			return t
@@ -3063,12 +3085,15 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 	case DirectAbstractDeclaratorDArr: // DirectAbstractDeclaratorOpt '[' ExprOpt ']'
 		n.ExprOpt.eval(ctx, true, nil, nil, nil, &dummy)
 		var sz Operand
+		var e *Expr
 		if o := n.ExprOpt; o != nil {
-			sz = o.Expr.Operand
+			e = o.Expr
+			sz = e.Operand
 		}
 		t := &ArrayType{
-			Item: t,
-			Size: sz,
+			Item:   t,
+			Length: e,
+			Size:   sz,
 		}
 		if n.DirectAbstractDeclaratorOpt == nil {
 			return t
@@ -3081,12 +3106,15 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 		n.TypeQualifierListOpt.check(ctx, &tq)
 		n.ExprOpt.eval(ctx, true, nil, nil, nil, &dummy)
 		var sz Operand
+		var e *Expr
 		if o := n.ExprOpt; o != nil {
-			sz = o.Expr.Operand
+			e = o.Expr
+			sz = e.Operand
 		}
 		t := &ArrayType{
-			Item: t,
-			Size: sz,
+			Item:   t,
+			Length: e,
+			Size:   sz,
 		}
 		if n.DirectAbstractDeclaratorOpt == nil {
 			return t

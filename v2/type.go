@@ -368,9 +368,12 @@ func (t TypeKind) String() string {
 // ArrayType type represents an array type.
 type ArrayType struct {
 	Item           Type
+	Length         *Expr
 	Size           Operand
 	TypeQualifiers []*TypeQualifier // Eg. double a[restrict 3][5], see 6.7.5.3-21.
 }
+
+func (t *ArrayType) IsVLA() bool { return t.Length != nil && t.Length.Operand.Value == nil }
 
 // IsUnsigned implements Type.
 func (t *ArrayType) IsUnsigned() bool { panic("TODO") }
