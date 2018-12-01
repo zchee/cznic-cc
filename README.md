@@ -22,4 +22,4 @@ Changelog
 
 2018-07-01 This package is no longer maintained. Please see the v2 version at
 
-[https://modernc.org/cc/tree/master/v2](https://modernc.org/cc/tree/master/v2)
+[https://modernc.org/cc/v2](https://modernc.org/cc/v2)
