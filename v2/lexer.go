@@ -302,7 +302,7 @@ func (l *lexer) parseAttrParams(lval *yySymType) {
 	for {
 		l.lex(lval)
 		switch t := lval.Token; t.Rune {
-		case STRINGLITERAL:
+		case IDENTIFIER, STRINGLITERAL:
 			n := len(l.attr)
 			l.attr[n-1] = append(l.attr[n-1], t)
 		case ')':
