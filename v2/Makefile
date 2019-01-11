@@ -11,12 +11,12 @@ all: editor
 	go vet 2>&1 | grep -v $(ngrep) || true
 	golint 2>&1 | grep -v $(ngrep) || true
 	make todo
-	unused . || true
 	misspell *.go
-	gosimple || true
+	staticcheck || true
 	maligned || true
 	unconvert -apply
 	grep -n 'FAIL\|PASS' log
+	go version
 	date
 
 clean:
@@ -35,6 +35,7 @@ edit:
 	gvim -p Makefile *.l *.yy *_test.go log ast2.go cc.go cpp.go encoding.go enum.go etc.go lexer.go model.go operand.go type.go
 
 editor: ast.go parser.go scanner.go trigraphs.go stringer.go
+	go version
 	gofmt -l -s -w *.go
 	GOOS=linux GOARCH=arm go build
 	GOOS=linux GOARCH=386 go build

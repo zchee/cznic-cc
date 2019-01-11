@@ -29,9 +29,20 @@ func PrettyString(v interface{}) string {
 
 func debugStack() []byte {
 	b := debug.Stack()
-	b = b[bytes.Index(b, bPanic)+1:]
-	b = b[bytes.Index(b, bPanic):]
-	b = b[bytes.Index(b, bNL)+1:]
+	i := bytes.Index(b, bPanic) + 1
+	if i <= 0 {
+		return b
+	}
+
+	b = b[i:]
+	if i = bytes.Index(b, bPanic); i <= 0 {
+		return b
+	}
+
+	b = b[i:]
+	if i = bytes.Index(b, bPanic); i > 0 {
+		b = b[i:]
+	}
 	return b
 }
 
