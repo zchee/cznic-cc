@@ -430,6 +430,7 @@ import (
 /*yy:case Bool       */ TypeSpecifier:
                         	"_Bool"
 /*yy:case Complex    */ |	"_Complex"
+/*yy:case Imaginary  */ |	"_Imaginary"
 /*yy:case Char       */ |	"char"
 /*yy:case Double     */ |	"double"
 /*yy:case Float      */ |	"float"

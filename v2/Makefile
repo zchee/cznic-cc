@@ -35,7 +35,7 @@ edit:
 
 editor: ast.go parser.go scanner.go trigraphs.go stringer.go
 	go version
-	$(shell until `unconvert .` ; do unconvert -apply . ; done)
+	./unconvert.sh
 	gofmt -l -s -w *.go
 	#TODO GOOS=linux GOARCH=arm go build
 	#TODO GOOS=linux GOARCH=386 go build

@@ -9,6 +9,7 @@ package cc // import "modernc.org/cc/v2"
 import (
 	"bytes"
 	"fmt"
+	"go/token"
 
 	"modernc.org/ir"
 )
@@ -36,6 +37,7 @@ type fieldFinder interface {
 
 // Type represents a C type.
 type Type interface {
+	Node
 	Equal(Type) bool
 	IsArithmeticType() bool
 	IsCompatible(Type) bool // [0]6.2.7
@@ -51,6 +53,8 @@ type Type interface {
 
 // TypeKind represents a particular type kind.
 type TypeKind int
+
+func (t TypeKind) Pos() token.Pos { return token.Pos(0) }
 
 // TypeKind values.
 const (
@@ -76,6 +80,10 @@ const (
 	FloatComplex
 	DoubleComplex
 	LongDoubleComplex
+
+	FloatImaginary
+	DoubleImaginary
+	LongDoubleImaginary
 
 	Array
 	Enum
@@ -133,8 +141,11 @@ func (t TypeKind) IsIntegerType() bool {
 	case
 		Bool,
 		Char,
+		DoubleImaginary,
+		FloatImaginary,
 		Int,
 		Long,
+		LongDoubleImaginary,
 		LongLong,
 		SChar,
 		Short,
@@ -277,12 +288,15 @@ func (t TypeKind) Equal(u Type) bool {
 			Char,
 			Double,
 			DoubleComplex,
+			DoubleImaginary,
 			Float,
 			FloatComplex,
+			FloatImaginary,
 			Int,
 			Long,
 			LongDouble,
 			LongDoubleComplex,
+			LongDoubleImaginary,
 			LongLong,
 			SChar,
 			Short,
@@ -334,6 +348,12 @@ func (t TypeKind) String() string {
 		return "double"
 	case LongDouble:
 		return "long double"
+	case FloatImaginary:
+		return "float imaginary"
+	case DoubleImaginary:
+		return "double imaginary"
+	case LongDoubleImaginary:
+		return "long double imaginary"
 	case FloatComplex:
 		return "float complex"
 	case DoubleComplex:
@@ -371,7 +391,10 @@ type ArrayType struct {
 	Length         *Expr
 	Size           Operand
 	TypeQualifiers []*TypeQualifier // Eg. double a[restrict 3][5], see 6.7.5.3-21.
+	pos            token.Pos
 }
+
+func (t *ArrayType) Pos() token.Pos { return t.pos }
 
 func (t *ArrayType) IsVLA() bool { return t.Length != nil && t.Length.Operand.Value == nil }
 
@@ -497,7 +520,10 @@ type EnumType struct {
 	Enums []*EnumerationConstant
 	Min   int64
 	Max   uint64
+	pos   token.Pos
 }
+
+func (t *EnumType) Pos() token.Pos { return t.pos }
 
 func (t *EnumType) find(nm int) *EnumerationConstant {
 	for _, v := range t.Enums {
@@ -597,7 +623,8 @@ type Field struct {
 	PackedType Type // Bits != 0: underlaying struct field type
 	Type       Type
 
-	Anonymous bool
+	Anonymous       bool
+	IsFlexibleArray bool
 }
 
 func (f Field) equal(g Field) bool {
@@ -616,7 +643,10 @@ type FunctionType struct {
 	Result   Type
 	Variadic bool
 	params   []int
+	pos      token.Pos
 }
+
+func (t *FunctionType) Pos() token.Pos { return t.pos }
 
 // IsUnsigned implements Type.
 func (t *FunctionType) IsUnsigned() bool { panic("TODO") }
@@ -754,7 +784,10 @@ func (t *FunctionType) String() string {
 type NamedType struct {
 	Name int
 	Type Type // The type Name refers to.
+	pos  token.Pos
 }
+
+func (t *NamedType) Pos() token.Pos { return t.pos }
 
 // IsUnsigned implements Type.
 func (t *NamedType) IsUnsigned() bool { return t.Type.IsUnsigned() }
@@ -850,7 +883,10 @@ func (t *NamedType) String() string { return string(dict.S(t.Name)) }
 // PointerType represents a pointer type.
 type PointerType struct {
 	Item Type
+	pos  token.Pos
 }
+
+func (t *PointerType) Pos() token.Pos { return t.pos }
 
 // IsUnsigned implements Type.
 func (t *PointerType) IsUnsigned() bool { return true }
@@ -1021,10 +1057,11 @@ func (t *PointerType) IsScalarType() bool { return true }
 func (t *PointerType) String() string { return fmt.Sprintf("pointer to %v", t.Item) }
 
 type structBase struct {
-	Fields []Field
-	Tag    int
-	scope  *Scope
-	layout []FieldProperties
+	Fields                 []Field
+	HasFlexibleArrayMember bool
+	Tag                    int
+	scope                  *Scope
+	layout                 []FieldProperties
 }
 
 func (s *structBase) findField(nm int) *FieldProperties {
@@ -1054,7 +1091,12 @@ func (s *structBase) findField(nm int) *FieldProperties {
 }
 
 // StructType represents a struct type.
-type StructType struct{ structBase }
+type StructType struct {
+	structBase
+	pos token.Pos
+}
+
+func (t *StructType) Pos() token.Pos { return t.pos }
 
 // IsUnsigned implements Type.
 func (t *StructType) IsUnsigned() bool { panic("TODO") }
@@ -1215,7 +1257,10 @@ type TaggedEnumType struct {
 	Tag   int
 	Type  Type
 	scope *Scope
+	pos   token.Pos
 }
+
+func (t *TaggedEnumType) Pos() token.Pos { return t.pos }
 
 // IsUnsigned implements Type.
 func (t *TaggedEnumType) IsUnsigned() bool { return t.Type.IsUnsigned() }
@@ -1315,7 +1360,10 @@ type TaggedStructType struct {
 	Tag   int
 	Type  Type
 	scope *Scope
+	pos   token.Pos
 }
+
+func (t *TaggedStructType) Pos() token.Pos { return t.pos }
 
 // IsUnsigned implements Type.
 func (t *TaggedStructType) IsUnsigned() bool { panic("TODO") }
@@ -1443,7 +1491,12 @@ func (t *TaggedStructType) IsScalarType() bool { return false }
 func (t *TaggedStructType) String() string { return fmt.Sprintf("struct %s", dict.S(t.Tag)) }
 
 // UnionType represents a union type.
-type UnionType struct{ structBase }
+type UnionType struct {
+	structBase
+	pos token.Pos
+}
+
+func (t *UnionType) Pos() token.Pos { return t.pos }
 
 // Field returns the properties of field nm or nil if the field does not exist.
 func (t *UnionType) Field(nm int) *FieldProperties {
@@ -1458,7 +1511,10 @@ type TaggedUnionType struct {
 	Tag   int
 	Type  Type
 	scope *Scope
+	pos   token.Pos
 }
+
+func (t *TaggedUnionType) Pos() token.Pos { return t.pos }
 
 // IsUnsigned implements Type.
 func (t *TaggedUnionType) IsUnsigned() bool { panic("TODO") }
@@ -1670,7 +1726,7 @@ func AdjustedParameterType(t Type) Type {
 	for {
 		switch x := u.(type) {
 		case *ArrayType:
-			return &PointerType{t}
+			return &PointerType{t, t.Pos()}
 		case *NamedType:
 			if isVaList(x) {
 				return x
@@ -1769,12 +1825,15 @@ func underlyingType(t Type, enums bool) Type {
 				Char,
 				Double,
 				DoubleComplex,
+				DoubleImaginary,
 				Float,
 				FloatComplex,
+				FloatImaginary,
 				Int,
 				Long,
 				LongDouble,
 				LongDoubleComplex,
+				LongDoubleImaginary,
 				LongLong,
 				Ptr,
 				SChar,

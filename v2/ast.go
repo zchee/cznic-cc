@@ -3515,6 +3515,7 @@ type TypeSpecifierCase int
 const (
 	TypeSpecifierBool TypeSpecifierCase = iota
 	TypeSpecifierComplex
+	TypeSpecifierImaginary
 	TypeSpecifierChar
 	TypeSpecifierDouble
 	TypeSpecifierFloat
@@ -3539,6 +3540,8 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierBool"
 	case TypeSpecifierComplex:
 		return "TypeSpecifierComplex"
+	case TypeSpecifierImaginary:
+		return "TypeSpecifierImaginary"
 	case TypeSpecifierChar:
 		return "TypeSpecifierChar"
 	case TypeSpecifierDouble:
@@ -3579,6 +3582,7 @@ func (n TypeSpecifierCase) String() string {
 //	TypeSpecifier:
 //	        "_Bool"                               // Case TypeSpecifierBool
 //	|       "_Complex"                            // Case TypeSpecifierComplex
+//	|       "_Imaginary"                          // Case TypeSpecifierImaginary
 //	|       "char"                                // Case TypeSpecifierChar
 //	|       "double"                              // Case TypeSpecifierDouble
 //	|       "float"                               // Case TypeSpecifierFloat
@@ -3621,11 +3625,11 @@ func (n *TypeSpecifier) Pos() token.Pos {
 	}
 
 	switch n.Case {
-	case 11:
-		return n.EnumSpecifier.Pos()
 	case 12:
+		return n.EnumSpecifier.Pos()
+	case 13:
 		return n.StructOrUnionSpecifier.Pos()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17:
 		return n.Token.Pos()
 	default:
 		panic("internal error")

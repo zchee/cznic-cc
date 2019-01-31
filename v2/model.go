@@ -45,6 +45,10 @@ func NewModel() (m Model, err error) {
 			Double:     {8, 4, 4},
 			LongDouble: {8, 4, 4},
 
+			FloatImaginary:      {4, 4, 4},
+			DoubleImaginary:     {8, 4, 4},
+			LongDoubleImaginary: {8, 4, 4},
+
 			FloatComplex:      {8, 4, 4},
 			DoubleComplex:     {16, 4, 4},
 			LongDoubleComplex: {16, 4, 4},
@@ -70,6 +74,10 @@ func NewModel() (m Model, err error) {
 			Float:      {4, 4, 4},
 			Double:     {8, 8, 4},
 			LongDouble: {8, 8, 4},
+
+			FloatImaginary:      {4, 4, 4},
+			DoubleImaginary:     {8, 8, 4},
+			LongDoubleImaginary: {8, 8, 4},
 
 			FloatComplex:      {8, 8, 4},
 			DoubleComplex:     {16, 8, 4},
@@ -101,6 +109,10 @@ func NewModel() (m Model, err error) {
 			Float:      {4, 4, 4},
 			Double:     {8, 8, 8},
 			LongDouble: {8, 8, 8},
+
+			FloatImaginary:      {4, 4, 4},
+			DoubleImaginary:     {8, 8, 8},
+			LongDoubleImaginary: {8, 8, 8},
 
 			FloatComplex:      {8, 8, 4},
 			DoubleComplex:     {16, 8, 4},
@@ -134,11 +146,15 @@ func (m Model) Equal(n Model) bool {
 func (m Model) Sizeof(t Type) int64 {
 	switch x := UnderlyingType(t).(type) {
 	case *ArrayType:
-		if x.Size.Type == nil && x.Size.Value == nil { // T[], but not T[i+2]
-			return int64(m[Ptr].Size)
+		if x.Size.Value != nil { // T[42]
+			return m.Sizeof(x.Item) * x.Size.Value.(*ir.Int64Value).Value
 		}
 
-		return m.Sizeof(x.Item) * x.Size.Value.(*ir.Int64Value).Value
+		if x.Length != nil {
+			panic(fmt.Errorf("Sizeof(%v): variable length array", t))
+		}
+
+		panic(fmt.Errorf("Sizeof(%v): incomplete array", t))
 	case *EnumType:
 		return m.Sizeof(x.Enums[0].Operand.Type)
 	case *NamedType:
@@ -191,7 +207,8 @@ type FieldProperties struct {
 	Size       int64 // Field size for copying.
 	Type       Type
 
-	Anonymous bool
+	Anonymous       bool
+	IsFlexibleArray bool
 }
 
 // Mask returns the bit mask of bit field described by f.
@@ -254,7 +271,10 @@ func (m Model) Layout(t Type) (r []FieldProperties) {
 					off = m.packBits(bitoff, i-1, off, r)
 					bitoff = 0
 				}
-				sz := m.Sizeof(v.Type)
+				var sz int64
+				if !v.IsFlexibleArray {
+					sz = m.Sizeof(v.Type)
+				}
 				a := m.StructAlignof(v.Type)
 				z := off
 				if a != 0 {
@@ -264,6 +284,7 @@ func (m Model) Layout(t Type) (r []FieldProperties) {
 					r[i-1].Padding = int(off - z)
 				}
 				r[i] = FieldProperties{Offset: off, Size: sz, Declarator: v.Declarator, Type: v.Type, Anonymous: v.Anonymous}
+				r[i] = FieldProperties{Offset: off, Size: sz, Declarator: v.Declarator, Type: v.Type, Anonymous: v.Anonymous, IsFlexibleArray: v.IsFlexibleArray}
 				off += sz
 			}
 		}

@@ -655,7 +655,11 @@ func (c *context) sizeof(t Type) Operand {
 		panic(d.Type)
 	}
 
-	return Operand{Type: d.Type, Value: &ir.Int64Value{Value: sz}}
+	r := Operand{Type: d.Type, Value: &ir.Int64Value{Value: sz}}
+	if x, ok := underlyingType(t, false).(*ArrayType); ok && x.Size.Value == nil {
+		r.Value = nil
+	}
+	return r
 }
 
 func (c *context) toC(ch rune, val int) rune {

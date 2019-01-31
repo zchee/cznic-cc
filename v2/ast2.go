@@ -174,6 +174,12 @@ func (d *DeclarationSpecifier) typ(ctx *context) Type {
 		return FloatComplex
 	case d.is(TypeSpecifierDouble, TypeSpecifierLong):
 		return LongDouble
+	case d.is(TypeSpecifierImaginary, TypeSpecifierDouble):
+		return DoubleImaginary
+	case d.is(TypeSpecifierImaginary, TypeSpecifierFloat):
+		return FloatImaginary
+	case d.is(TypeSpecifierImaginary, TypeSpecifierDouble, TypeSpecifierLong):
+		return LongDoubleImaginary
 	case d.is(TypeSpecifierInt, TypeSpecifierLong):
 		return Long
 	case d.is(TypeSpecifierInt, TypeSpecifierLong, TypeSpecifierLong):
@@ -369,10 +375,16 @@ outer:
 			case
 				Char,
 				Double,
+				DoubleComplex,
+				DoubleImaginary,
 				Float,
+				FloatComplex,
+				FloatImaginary,
 				Int,
 				Long,
 				LongDouble,
+				LongDoubleComplex,
+				LongDoubleImaginary,
 				LongLong,
 				Short,
 				UChar,
@@ -409,7 +421,7 @@ outer:
 	case ExprAddrof: // '&' Expr
 		// [0]6.5.3.2
 		op := n.Expr.eval(ctx, false, fn, seq, sc, &n.UseGotos) // [0]6.3.2.1-3
-		n.Operand = Operand{Type: &PointerType{op.Type}}
+		n.Operand = Operand{Type: &PointerType{op.Type, n.Pos()}}
 		if d := n.Expr.Declarator; d != nil && n.Expr.Case != ExprPSelect {
 			d.AddressTaken = true
 		}
@@ -477,12 +489,15 @@ outer:
 				Char,
 				Double,
 				DoubleComplex,
+				DoubleImaginary,
 				Float,
 				FloatComplex,
+				FloatImaginary,
 				Int,
 				Long,
 				LongDouble,
 				LongDoubleComplex,
+				LongDoubleImaginary,
 				LongLong,
 				SChar,
 				Short,
@@ -1360,12 +1375,15 @@ outer:
 					Char,
 					Double,
 					DoubleComplex,
+					DoubleImaginary,
 					Float,
 					FloatComplex,
+					FloatImaginary,
 					Int,
 					Long,
 					LongDouble,
 					LongDoubleComplex,
+					LongDoubleImaginary,
 					LongLong,
 					SChar,
 					Short,
@@ -1479,10 +1497,10 @@ outer:
 	for {
 		switch x := t.(type) {
 		case *ArrayType:
-			n.Operand.Type = &PointerType{x.Item}
+			n.Operand.Type = &PointerType{x.Item, n.Pos()}
 			return n.Operand
 		case *FunctionType:
-			n.Operand.Type = &PointerType{x}
+			n.Operand.Type = &PointerType{x, n.Pos()}
 			return n.Operand
 		case *NamedType:
 			t = x.Type
@@ -1503,12 +1521,15 @@ outer:
 				Char,
 				Double,
 				DoubleComplex,
+				DoubleImaginary,
 				Float,
 				FloatComplex,
+				FloatImaginary,
 				Int,
 				Long,
 				LongDouble,
 				LongDoubleComplex,
+				LongDoubleImaginary,
 				LongLong,
 				SChar,
 				Short,
@@ -2866,9 +2887,9 @@ func (n *Pointer) check(ctx *context, t Type, tq *[]*TypeQualifier) Type {
 	n.TypeQualifierListOpt.check(ctx, tq)
 	switch n.Case {
 	case PointerBase: // '*' TypeQualifierListOpt
-		return &PointerType{t}
+		return &PointerType{t, n.Pos()}
 	case PointerPtr: // '*' TypeQualifierListOpt Pointer
-		return n.Pointer.check(ctx, &PointerType{t}, tq)
+		return n.Pointer.check(ctx, &PointerType{t, n.Pos()}, tq)
 	default:
 		panic(fmt.Errorf("%v: TODO %v", ctx.position(n), n.Case))
 	}
@@ -2901,6 +2922,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 			t := &FunctionType{
 				params: p.IdentifierListOpt.check(),
 				Result: t,
+				pos:    n.Pos(),
 			}
 			return n.DirectDeclarator.check(ctx, t, sc, fn)
 		case ParametersParamTypes: // ParameterTypeList
@@ -2909,6 +2931,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 				Params:   fp,
 				Result:   t,
 				Variadic: variadic,
+				pos:      n.Pos(),
 			}
 			return n.DirectDeclarator.check(ctx, t, sc, fn)
 		default:
@@ -2923,6 +2946,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 			Length:         n.Expr,
 			Size:           sz,
 			TypeQualifiers: tq,
+			pos:            n.Pos(),
 		}
 		return n.DirectDeclarator.check(ctx, t, sc, fn)
 	//TODO case DirectDeclaratorArraySize2: // DirectDeclarator '[' TypeQualifierList "static" Expr ']'
@@ -2932,6 +2956,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 		t := &ArrayType{
 			Item:           t,
 			TypeQualifiers: tq,
+			pos:            n.Pos(),
 		}
 		return n.DirectDeclarator.check(ctx, t, sc, fn)
 	case DirectDeclaratorArray: // DirectDeclarator '[' TypeQualifierListOpt ExprOpt ']'
@@ -2949,6 +2974,7 @@ func (n *DirectDeclarator) check(ctx *context, t Type, sc []int, fn *Declarator)
 			Length:         e,
 			Size:           sz,
 			TypeQualifiers: tq,
+			pos:            n.Pos(),
 		}
 		return n.DirectDeclarator.check(ctx, t, sc, fn)
 	case DirectDeclaratorIdent: // IDENTIFIER
@@ -3056,6 +3082,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 			Params:   fp,
 			Result:   t,
 			Variadic: variadic,
+			pos:      n.Pos(),
 		}
 		return t
 	case DirectAbstractDeclaratorDFn: // DirectAbstractDeclarator '(' ParameterTypeListOpt ')'
@@ -3064,6 +3091,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 			Params:   fp,
 			Result:   t,
 			Variadic: variadic,
+			pos:      n.Pos(),
 		}
 		return n.DirectAbstractDeclarator.check(ctx, t)
 	case DirectAbstractDeclaratorDArrSize: // DirectAbstractDeclaratorOpt '[' "static" TypeQualifierListOpt Expr ']'
@@ -3074,6 +3102,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 			Item:   t,
 			Length: n.Expr,
 			Size:   sz,
+			pos:    n.Pos(),
 		}
 		if n.DirectAbstractDeclaratorOpt == nil {
 			return t
@@ -3094,6 +3123,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 			Item:   t,
 			Length: e,
 			Size:   sz,
+			pos:    n.Pos(),
 		}
 		if n.DirectAbstractDeclaratorOpt == nil {
 			return t
@@ -3115,6 +3145,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, t Type) Type {
 			Item:   t,
 			Length: e,
 			Size:   sz,
+			pos:    n.Pos(),
 		}
 		if n.DirectAbstractDeclaratorOpt == nil {
 			return t
@@ -3204,18 +3235,19 @@ func (n *TypeSpecifier) check(ctx *context, ds *DeclarationSpecifier) {
 			panic(fmt.Errorf("TODO %T", x))
 		}
 	case
-		TypeSpecifierBool,     // "_Bool"
-		TypeSpecifierChar,     // "char"
-		TypeSpecifierComplex,  // "_Complex"
-		TypeSpecifierDouble,   // "double"
-		TypeSpecifierFloat,    // "float"
-		TypeSpecifierInt,      // "int"
-		TypeSpecifierLong,     // "long"
-		TypeSpecifierName,     // TYPEDEF_NAME
-		TypeSpecifierShort,    // "short"
-		TypeSpecifierSigned,   // "signed"
-		TypeSpecifierUnsigned, // "unsigned"
-		TypeSpecifierVoid:     // "void"
+		TypeSpecifierBool,      // "_Bool"
+		TypeSpecifierChar,      // "char"
+		TypeSpecifierComplex,   // "_Complex"
+		TypeSpecifierDouble,    // "double"
+		TypeSpecifierFloat,     // "float"
+		TypeSpecifierImaginary, // "_Imaginary"
+		TypeSpecifierInt,       // "int"
+		TypeSpecifierLong,      // "long"
+		TypeSpecifierName,      // TYPEDEF_NAME
+		TypeSpecifierShort,     // "short"
+		TypeSpecifierSigned,    // "signed"
+		TypeSpecifierUnsigned,  // "unsigned"
+		TypeSpecifierVoid:      // "void"
 
 		// nop
 	case TypeSpecifierEnum: // EnumSpecifier
@@ -3240,7 +3272,7 @@ func (n *EnumSpecifier) check(ctx *context) { // [0]6.7.2.2
 	}
 	switch n.Case {
 	case EnumSpecifierTag: // "enum" IDENTIFIER
-		n.typ = &TaggedEnumType{Tag: n.Tag, scope: n.scope}
+		n.typ = &TaggedEnumType{Tag: n.Tag, scope: n.scope, pos: n.Pos()}
 	case EnumSpecifierDefine: // "enum" IdentifierOpt '{' EnumeratorList CommaOpt '}'
 		t := n.EnumeratorList.check(ctx, n.scope)
 		t.Tag = n.Tag
@@ -3297,7 +3329,7 @@ func (n *EnumSpecifier) isCompatible(m *EnumSpecifier) bool {
 }
 
 func (n *EnumeratorList) check(ctx *context, s *Scope) *EnumType {
-	r := &EnumType{}
+	r := &EnumType{pos: n.Pos()}
 	iota := int64(-1)
 	for ; n != nil; n = n.EnumeratorList {
 		r.Enums = append(r.Enums, n.Enumerator.check(ctx, s, &iota))
@@ -3337,16 +3369,16 @@ func (n *StructOrUnionSpecifier) check(ctx *context) {
 	case StructOrUnionSpecifierTag: // StructOrUnion IDENTIFIER
 		switch n.StructOrUnion.Case {
 		case StructOrUnionStruct:
-			n.typ = &TaggedStructType{Tag: n.Token.Val, scope: n.scope}
+			n.typ = &TaggedStructType{Tag: n.Token.Val, scope: n.scope, pos: n.Pos()}
 		case StructOrUnionUnion:
-			n.typ = &TaggedUnionType{Tag: n.Token.Val, scope: n.scope}
+			n.typ = &TaggedUnionType{Tag: n.Token.Val, scope: n.scope, pos: n.Pos()}
 		default:
 			panic(ctx.position(n))
 		}
 	case StructOrUnionSpecifierEmpty: // StructOrUnion IdentifierOpt '{' '}'
 		switch n.StructOrUnion.Case {
 		case StructOrUnionStruct:
-			n.typ = &StructType{structBase{Tag: tag}}
+			n.typ = &StructType{structBase{Tag: tag}, n.Pos()}
 		default:
 			panic(ctx.position(n))
 		}
@@ -3356,9 +3388,24 @@ func (n *StructOrUnionSpecifier) check(ctx *context) {
 	case StructOrUnionSpecifierDefine: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
 		switch n.StructOrUnion.Case {
 		case StructOrUnionStruct:
-			n.typ = &StructType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx), scope: n.scope}}
+			t := &StructType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx), scope: n.scope}, n.Pos()}
+			for i, v := range t.Fields {
+				if x, ok := underlyingType(v.Type, true).(*ArrayType); ok {
+					if x.Size.Value == nil && x.Length == nil {
+						t.Fields[i].IsFlexibleArray = true
+						if t.HasFlexibleArrayMember {
+							ctx.err(v.Declarator, "struct has multiple flexible array members")
+						}
+						t.HasFlexibleArrayMember = true
+						if i != len(t.Fields)-1 {
+							ctx.err(v.Declarator, "flexible array member must be last")
+						}
+					}
+				}
+			}
+			n.typ = t
 		default:
-			n.typ = &UnionType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx), scope: n.scope}}
+			n.typ = &UnionType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx), scope: n.scope}, n.Pos()}
 		}
 		if tag != 0 {
 			n.scope.Parent.insertStructTag(ctx, n)
