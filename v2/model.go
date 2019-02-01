@@ -283,7 +283,6 @@ func (m Model) Layout(t Type) (r []FieldProperties) {
 				if off != z {
 					r[i-1].Padding = int(off - z)
 				}
-				r[i] = FieldProperties{Offset: off, Size: sz, Declarator: v.Declarator, Type: v.Type, Anonymous: v.Anonymous}
 				r[i] = FieldProperties{Offset: off, Size: sz, Declarator: v.Declarator, Type: v.Type, Anonymous: v.Anonymous, IsFlexibleArray: v.IsFlexibleArray}
 				off += sz
 			}
@@ -393,11 +392,7 @@ func (m *Model) packBits(bitoff, i int, off int64, r []FieldProperties) int64 {
 func (m Model) Alignof(t Type) int {
 	switch x := t.(type) {
 	case *ArrayType:
-		if x.Size.Value != nil {
-			return m.Alignof(x.Item)
-		}
-
-		return m[Ptr].Align
+		return m.Alignof(x.Item)
 	case *EnumType:
 		return m.Alignof(x.Enums[0].Operand.Type)
 	case *NamedType:
@@ -471,11 +466,7 @@ func (m Model) Alignof(t Type) int {
 func (m Model) StructAlignof(t Type) int {
 	switch x := t.(type) {
 	case *ArrayType:
-		if x.Size.Value != nil {
-			return m.StructAlignof(x.Item)
-		}
-
-		return m[Ptr].StructAlign
+		return m.StructAlignof(x.Item)
 	case *EnumType:
 		return m.StructAlignof(x.Enums[0].Operand.Type)
 	case *NamedType:
