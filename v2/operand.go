@@ -294,7 +294,7 @@ func (o Operand) add(ctx *context, p Operand) (r Operand) {
 
 func (o Operand) and(ctx *context, p Operand) (r Operand) {
 	if !o.isIntegerType() || !p.isIntegerType() {
-		panic(fmt.Errorf("TODO %v & %v", o.Type, p.Type))
+		panic(fmt.Errorf("TODO %v & %v", o, p))
 	}
 
 	o, p = UsualArithmeticConversions(ctx.model, o, p)

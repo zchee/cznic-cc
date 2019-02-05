@@ -1255,19 +1255,22 @@ outer:
 		// [0]6.5.2.1
 		op := n.Expr.eval(ctx, arr2ptr, fn, seq, sc, &n.UseGotos)
 		index := n.ExprList.eval(ctx, true, fn, seq, sc, &n.UseGotos)
-		switch t := op.Type.(type) {
+		t := op.Type
+	more3:
+		switch x := t.(type) {
 		case *ArrayType:
 			if arr2ptr {
 				panic("internal error")
 			}
-			n.Operand = Operand{Type: t.Item}
+			n.Operand = Operand{Type: x.Item}
 		case *PointerType:
-			n.Operand = Operand{Type: t.Item}
+			n.Operand = Operand{Type: x.Item}
 		case *NamedType:
-			n.Operand = Operand{Type: t.Type}
+			t = x.Type
+			goto more3
 		case TypeKind:
-			if !t.IsIntegerType() {
-				panic(fmt.Errorf("%v: %T %v", ctx.position(n), t, t))
+			if !x.IsIntegerType() {
+				panic(fmt.Errorf("%v: %T %v", ctx.position(n), x, x))
 			}
 
 			r := UnderlyingType(index.Type)
@@ -1278,7 +1281,7 @@ outer:
 				panic(fmt.Errorf("%v: %v[%v]", ctx.position(n), op.Type, index))
 			}
 		default:
-			panic(fmt.Errorf("%v: %T %v", ctx.position(n), t, t))
+			panic(fmt.Errorf("%v: %T %v", ctx.position(n), x, x))
 		}
 		if !index.isIntegerType() {
 			l := UnderlyingType(op.Type)

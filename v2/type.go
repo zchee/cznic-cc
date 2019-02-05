@@ -1384,9 +1384,7 @@ func (t *TaggedStructType) IsCompatible(u Type) bool {
 		return true
 	}
 
-	a := UnderlyingType(t)
-	b := UnderlyingType(u)
-	return UnderlyingType(a).IsCompatible(UnderlyingType(b))
+	return false
 }
 
 // Equal implements Type.
