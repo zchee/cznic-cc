@@ -29,6 +29,7 @@ func (n *TranslationUnit) Pos() token.Pos { return token.Pos(0) }
 
 // DeclarationSpecifier describes declaration specifiers.
 type DeclarationSpecifier struct {
+	Parent                 *DeclarationSpecifier
 	AlignmentSpecifiers    []*AlignmentSpecifier
 	FunctionSpecifiers     []*FunctionSpecifier
 	StorageClassSpecifiers []*StorageClassSpecifier
@@ -250,6 +251,20 @@ func (d *DeclarationSpecifier) IsTypedef() bool {
 		}
 	}
 	return false
+}
+
+// IsVolatile reports whether the type qualifier specifier "volatile" is present.
+func (d *DeclarationSpecifier) IsVolatile() bool {
+	if d == nil {
+		return false
+	}
+
+	for _, v := range d.TypeQualifiers {
+		if v.Case == TypeQualifierVolatile {
+			return true
+		}
+	}
+	return d.Parent.IsVolatile()
 }
 
 // IsStatic reports whether the storage class specifier "static" is present.
@@ -3256,7 +3271,7 @@ func (n *TypeSpecifier) check(ctx *context, ds *DeclarationSpecifier) {
 	case TypeSpecifierEnum: // EnumSpecifier
 		n.EnumSpecifier.check(ctx)
 	case TypeSpecifierStruct: // StructOrUnionSpecifier
-		n.StructOrUnionSpecifier.check(ctx)
+		n.StructOrUnionSpecifier.check(ctx, ds)
 	case TypeSpecifierTypeof: // "typeof" '(' TypeName ')'
 		n.typ = n.TypeName.check(ctx)
 	case TypeSpecifierTypeofExpr: // "typeof" '(' Expr ')'
@@ -3363,7 +3378,7 @@ func (n *Enumerator) check(ctx *context, s *Scope, iota *int64) *EnumerationCons
 	}
 }
 
-func (n *StructOrUnionSpecifier) check(ctx *context) {
+func (n *StructOrUnionSpecifier) check(ctx *context, parent *DeclarationSpecifier) {
 	var tag int
 	if n.IdentifierOpt != nil {
 		tag = n.IdentifierOpt.Token.Val
@@ -3391,7 +3406,7 @@ func (n *StructOrUnionSpecifier) check(ctx *context) {
 	case StructOrUnionSpecifierDefine: // StructOrUnion IdentifierOpt '{' StructDeclarationList '}'
 		switch n.StructOrUnion.Case {
 		case StructOrUnionStruct:
-			t := &StructType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx), scope: n.scope}, n.Pos()}
+			t := &StructType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx, parent), scope: n.scope}, n.Pos()}
 			for i, v := range t.Fields {
 				if x, ok := underlyingType(v.Type, true).(*ArrayType); ok {
 					if x.Size.Value == nil && x.Length == nil {
@@ -3408,7 +3423,7 @@ func (n *StructOrUnionSpecifier) check(ctx *context) {
 			}
 			n.typ = t
 		default:
-			n.typ = &UnionType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx), scope: n.scope}, n.Pos()}
+			n.typ = &UnionType{structBase{Tag: tag, Fields: n.StructDeclarationList.check(ctx, parent), scope: n.scope}, n.Pos()}
 		}
 		if tag != 0 {
 			n.scope.Parent.insertStructTag(ctx, n)
@@ -3418,10 +3433,10 @@ func (n *StructOrUnionSpecifier) check(ctx *context) {
 	}
 }
 
-func (n *StructDeclarationList) check(ctx *context) (r []Field) {
+func (n *StructDeclarationList) check(ctx *context, parent *DeclarationSpecifier) (r []Field) {
 	field := 0
 	for ; n != nil; n = n.StructDeclarationList {
-		r = append(r, n.StructDeclaration.check(ctx, &field)...)
+		r = append(r, n.StructDeclaration.check(ctx, parent, &field)...)
 	}
 	for len(r) > 0 && r[len(r)-1].Bits < 0 {
 		r = r[:len(r)-1]
@@ -3429,14 +3444,14 @@ func (n *StructDeclarationList) check(ctx *context) (r []Field) {
 	return r
 }
 
-func (n *StructDeclaration) check(ctx *context, field *int) []Field {
+func (n *StructDeclaration) check(ctx *context, parent *DeclarationSpecifier, field *int) []Field {
 	switch n.Case {
 	case StructDeclarationBase: // SpecifierQualifierList StructDeclaratorList ';'
-		ds := &DeclarationSpecifier{}
+		ds := &DeclarationSpecifier{Parent: parent}
 		n.SpecifierQualifierList.check(ctx, ds)
 		return n.StructDeclaratorList.check(ctx, ds, field)
 	case StructDeclarationAnon: // SpecifierQualifierList ';'
-		ds := &DeclarationSpecifier{}
+		ds := &DeclarationSpecifier{Parent: parent}
 		n.SpecifierQualifierList.check(ctx, ds)
 		*field++
 		return []Field{{Type: ds.typ(ctx), Anonymous: true}}
