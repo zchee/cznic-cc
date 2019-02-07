@@ -1287,6 +1287,8 @@ func (t *TaggedEnumType) Equal(u Type) bool {
 		}
 
 		panic(fmt.Errorf("%v", x))
+	case *PointerType:
+		return false
 	default:
 		panic(fmt.Errorf("%T", x))
 	}

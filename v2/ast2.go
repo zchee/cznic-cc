@@ -27,6 +27,8 @@ type Node interface {
 // Pos implements Node.
 func (n *TranslationUnit) Pos() token.Pos { return token.Pos(0) }
 
+func (d *Declarator) IsVolatile() bool { return d != nil && d.DeclarationSpecifier.IsVolatile() }
+
 // DeclarationSpecifier describes declaration specifiers.
 type DeclarationSpecifier struct {
 	Parent                 *DeclarationSpecifier
