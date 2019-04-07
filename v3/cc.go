@@ -177,6 +177,7 @@ type Config3 struct {
 	RejectIncludeNext                       bool // Pedantic: do not silently accept "#include_next".
 	RejectInvalidVariadicMacros             bool // Pedantic: do not silently accept "#define foo(bar...)". Standard allows only #define foo(bar, ...)
 	RejectLabelValues                       bool // Pedantic: do not silently accept "foo: bar(); void *ptr = &&foo;" or "goto *ptr".
+	RejectLineExtraTokens                   bool // Pedantic: do not silently accept "#line 1234 \"foo.c\" bar".
 	RejectMissingConditionalExpr            bool // Pedantic: do not silently accept "foo = bar ? : baz;".
 	RejectMissingDeclarationSpecifiers      bool // Pedantic: do not silently accept "main() {}".
 	RejectMissingFinalNewline               bool // Pedantic: do not silently accept "foo\nbar".

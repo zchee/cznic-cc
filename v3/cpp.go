@@ -2196,7 +2196,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 	case PPNUMBER:
 		ln, err := strconv.ParseInt(t.String(), 10, 31)
 		if err != nil || ln < 1 {
-			c.err(t, "expected positive integer")
+			c.err(t, "expected positive integer less or equal 2147483647")
 			return
 		}
 
@@ -2222,6 +2222,12 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 			s := t.String()
 			s = s[1 : len(s)-1]
 			c.file.AddLineInfo(int(n.Toks[len(n.Toks)-1].pos), s, int(ln))
+			for len(toks) != 0 && toks[0].char == ' ' {
+				toks = toks[1:]
+			}
+			if len(toks) != 0 && c.ctx.cfg.RejectLineExtraTokens {
+				c.err(toks[0], "expected new-line")
+			}
 		default:
 			c.err(t, "expected string literal")
 			return
