@@ -2175,12 +2175,61 @@ func (n *ppTextLine) translationPhase4(c *cpp) { c.send(n.Toks) }
 
 type ppLineDirective struct {
 	Toks []token3
+	Args []token3
 }
 
 func (n *ppLineDirective) toks() []token3 { return n.Toks }
 
 func (n *ppLineDirective) translationPhase4(c *cpp) {
-	//TODO implement ppLineDirective.translationPhase4
+	var w cppWriter
+	var toks []cppToken
+	for _, v := range n.Args {
+		toks = append(toks, cppToken{token4: token4{fileID: c.fileID, token3: v}})
+	}
+	c.expand(&cppReader{buf: toks}, &w, true)
+	toks = w.toks
+	if len(toks) == 0 {
+		return
+	}
+
+	switch t := toks[0]; t.char {
+	case PPNUMBER:
+		ln, err := strconv.ParseInt(t.String(), 10, 31)
+		if err != nil || ln < 1 {
+			c.err(t, "expected positive integer")
+			return
+		}
+
+		for len(toks) != 0 && toks[0].char == ' ' {
+			toks = toks[1:]
+		}
+		if len(toks) == 1 {
+			c.file.AddLineInfo(int(n.Toks[len(n.Toks)-1].pos), c.file.Name(), int(ln))
+			return
+		}
+
+		toks = toks[1:]
+		for len(toks) != 0 && toks[0].char == ' ' {
+			toks = toks[1:]
+		}
+		if len(toks) == 0 {
+			c.file.AddLineInfo(int(n.Toks[len(n.Toks)-1].pos), c.file.Name(), int(ln))
+			return
+		}
+
+		switch t := toks[0]; t.char {
+		case STRINGLITERAL:
+			s := t.String()
+			s = s[1 : len(s)-1]
+			c.file.AddLineInfo(int(n.Toks[len(n.Toks)-1].pos), s, int(ln))
+		default:
+			c.err(t, "expected string literal")
+			return
+		}
+	default:
+		c.err(toks[0], "expected integer literal")
+		return
+	}
 }
 
 type ppUndefDirective struct {

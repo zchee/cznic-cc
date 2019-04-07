@@ -243,33 +243,33 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 }
 
 // ==== jnml@4670:~/src/modernc.org/cc/v3> date ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 | tee log
-// Sun Apr  7 17:00:23 CEST 2019
+// Sun Apr  7 19:29:03 CEST 2019
 // === RUN   TestDevParse
 // === RUN   TestDevParse/.c
 // === RUN   TestDevParse/.c/gnu
-// --- PASS: TestDevParse (608.35s)
-//     --- PASS: TestDevParse/.c (308.47s)
+// --- PASS: TestDevParse (599.56s)
+//     --- PASS: TestDevParse/.c (302.66s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
-//           4024/4293   93.73% gcc-8.3.0/gcc/testsuite/gcc.dg
+//           4022/4293   93.69% gcc-8.3.0/gcc/testsuite/gcc.dg
 //           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
 //           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 915,154, bytes 11,155,832,881, ok 25,959, 5m7.981321981s, 36,222,433 B/s, mem 2,348,516,048
-//     --- PASS: TestDevParse/.c/gnu (299.89s)
+//         files 32,433, sources 915,057, bytes 11,155,114,143, ok 25,954, 5m1.791697922s, 36,962,958 B/s, mem 2,348,531,968
+//     --- PASS: TestDevParse/.c/gnu (296.90s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
-//           4029/4293   93.85% gcc-8.3.0/gcc/testsuite/gcc.dg
+//           4027/4293   93.80% gcc-8.3.0/gcc/testsuite/gcc.dg
 //           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
 //           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 907,275, bytes 11,150,083,445, ok 26,110, 4m58.472595758s, 37,357,143 B/s, mem 23,596,000
+//         files 32,433, sources 907,268, bytes 11,150,255,472, ok 26,105, 4m55.475385199s, 37,736,664 B/s, mem 23,623,056
 // PASS
-// ok  	modernc.org/cc/v3	608.738s
+// ok  	modernc.org/cc/v3	599.924s
 // ==== jnml@4670:~/src/modernc.org/cc/v3>
 
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3> date |& tee log ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 |& tee -a log
@@ -617,7 +617,7 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string) {
 }
 
 func ExampleInitDeclaratorList_uCN() {
-	fmt.Println(exampleAST(93, `int a·z, a\u00b7z;`))
+	fmt.Println(exampleAST(0, `int a·z, a\u00b7z;`))
 	// Output:
 	// &cc.InitDeclaratorList{
 	// · InitDeclarator: &cc.InitDeclarator{
@@ -641,5 +641,23 @@ func ExampleInitDeclaratorList_uCN() {
 	// · · },
 	// · · Token: example.c:1:9: ',' ",",
 	// · },
+	// }
+}
+
+func ExampleDirectDeclarator_line() {
+	fmt.Println(exampleAST(0, "#line 1234\nint i;"))
+	// Output:
+	// &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1234:5: IDENTIFIER "i",
+	// }
+}
+
+func ExampleDirectDeclarator_line2() {
+	fmt.Println(exampleAST(0, "#line 1234 \"foo.c\"\nint i;"))
+	// Output:
+	// &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: foo.c:1234:5: IDENTIFIER "i",
 	// }
 }

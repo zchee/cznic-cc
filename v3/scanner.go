@@ -319,7 +319,7 @@ func (s *scanner) lex() {
 			case 'U':
 				n = 4
 			default:
-				panic("internal error")
+				panic("internal error") //TODOOK
 			}
 			i++ // Skip 'u' or 'U'
 			l := len(s.bytesBuf)
@@ -328,7 +328,7 @@ func (s *scanner) lex() {
 			}
 			r, err := strconv.ParseUint(string(s.bytesBuf[l:l+n]), 16, 32)
 			if err != nil {
-				panic("internal error")
+				panic("internal error") //TODOOK
 			}
 
 			n2 := utf8.EncodeRune(s.bytesBuf[l:], rune(r))
@@ -628,8 +628,25 @@ func (s *scanner) parseLine(toks []token3) *ppLineDirective {
 		s.err(tok, "unexpected new-line")
 		return &ppLineDirective{Toks: toks}
 	default:
-		return &ppLineDirective{Toks: s.scanLineToEOL(toks)}
+		toks := s.scanLineToEOL(toks)
+		r := &ppLineDirective{Toks: toks}
+		toks = toks[:len(toks)-1] // sans new-line
+		toks = ltrim(toks)
+		toks = toks[1:] // Skip '#'
+		toks = ltrim(toks)
+		toks = toks[1:] // Skip "line"
+		r.Args = ltrim(toks)
+		return r
 	}
+}
+
+func ltrim(toks []token3) []token3 {
+	for i, v := range toks {
+		if v.char != ' ' {
+			return toks[i:]
+		}
+	}
+	return toks
 }
 
 // # undef identifier new-line
