@@ -12,8 +12,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"modernc.org/mathutil"
 	"modernc.org/token"
@@ -300,6 +302,39 @@ func (s *scanner) lex() {
 	switch {
 	case s.tok.char == ' ' && !s.preserveWhiteSpace && !s.ctx.cfg.PreserveWhiteSpace:
 		s.tok.value = idSpace
+	case s.tok.char == IDENTIFIER:
+		for i := 0; i < len(s.charBuf); {
+			c := s.charBuf[i].c
+			if c != '\\' {
+				s.bytesBuf = append(s.bytesBuf, c)
+				i++
+				continue
+			}
+
+			i++ // Skip '\\'
+			var n int
+			switch s.charBuf[i].c {
+			case 'u':
+				n = 4
+			case 'U':
+				n = 4
+			default:
+				panic("internal error")
+			}
+			i++ // Skip 'u' or 'U'
+			l := len(s.bytesBuf)
+			for i0 := i; i < i0+n; i++ {
+				s.bytesBuf = append(s.bytesBuf, s.charBuf[i].c)
+			}
+			r, err := strconv.ParseUint(string(s.bytesBuf[l:l+n]), 16, 32)
+			if err != nil {
+				panic("internal error")
+			}
+
+			n2 := utf8.EncodeRune(s.bytesBuf[l:], rune(r))
+			s.bytesBuf = s.bytesBuf[:l+n2]
+		}
+		s.tok.value = dict.id(s.bytesBuf)
 	default:
 		for _, v := range s.charBuf {
 			s.bytesBuf = append(s.bytesBuf, v.c)

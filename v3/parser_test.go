@@ -243,12 +243,12 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 }
 
 // ==== jnml@4670:~/src/modernc.org/cc/v3> date ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 | tee log
-// Sun Apr  7 14:49:00 CEST 2019
+// Sun Apr  7 17:00:23 CEST 2019
 // === RUN   TestDevParse
 // === RUN   TestDevParse/.c
 // === RUN   TestDevParse/.c/gnu
-// --- PASS: TestDevParse (618.20s)
-//     --- PASS: TestDevParse/.c (318.97s)
+// --- PASS: TestDevParse (608.35s)
+//     --- PASS: TestDevParse/.c (308.47s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
 //           4024/4293   93.73% gcc-8.3.0/gcc/testsuite/gcc.dg
@@ -257,8 +257,8 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 915,158, bytes 11,155,757,592, ok 25,957, 5m18.085661536s, 35,071,551 B/s, mem 2,348,520,704
-//     --- PASS: TestDevParse/.c/gnu (299.23s)
+//         files 32,433, sources 915,154, bytes 11,155,832,881, ok 25,959, 5m7.981321981s, 36,222,433 B/s, mem 2,348,516,048
+//     --- PASS: TestDevParse/.c/gnu (299.89s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
 //           4029/4293   93.85% gcc-8.3.0/gcc/testsuite/gcc.dg
@@ -267,9 +267,9 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 907,270, bytes 11,149,923,880, ok 26,108, 4m58.154613418s, 37,396,449 B/s, mem 23,587,584
+//         files 32,433, sources 907,275, bytes 11,150,083,445, ok 26,110, 4m58.472595758s, 37,357,143 B/s, mem 23,596,000
 // PASS
-// ok  	modernc.org/cc/v3	618.558s
+// ok  	modernc.org/cc/v3	608.738s
 // ==== jnml@4670:~/src/modernc.org/cc/v3>
 
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3> date |& tee log ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 |& tee -a log
@@ -617,7 +617,7 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string) {
 }
 
 func ExampleInitDeclaratorList_uCN() {
-	fmt.Println(exampleAST(93, "int a·z, a\u00b7z;"))
+	fmt.Println(exampleAST(93, `int a·z, a\u00b7z;`))
 	// Output:
 	// &cc.InitDeclaratorList{
 	// · InitDeclarator: &cc.InitDeclarator{
