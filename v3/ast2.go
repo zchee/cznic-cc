@@ -162,7 +162,7 @@ func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }
 func (n *LabeledStatement) LexicalScope() Scope { return n.lexicalScope }
 
 // ResolvedIn reports which scope the identifier of cases
-// PrimaryExpressionIdent, PrimaryExpressionEnum was resolved in, if any.
+// PrimaryExpressionIdent, PrimaryExpressionEnum were resolved in, if any.
 func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
 
 // LexicalScope returns the lexical scope of n.

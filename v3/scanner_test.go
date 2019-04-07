@@ -7,6 +7,7 @@ package cc // import "modernc.org/cc/v3"
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -52,6 +53,17 @@ func TestScanner(t *testing.T) {
 			t.Errorf("%v: %v %v", i, g.str(file), e.str(file))
 		}
 	}
+}
+
+func (t *token3) str(file *token.File) string {
+	pos := ""
+	switch {
+	case t.pos <= 0 || int(t.pos) > file.Size()+1:
+		pos = fmt.Sprintf("offset:%v", t.pos)
+	default:
+		pos = file.Position(t.Pos()).String()
+	}
+	return fmt.Sprintf("%v: %+q(%#x) %q", pos, string(t.char), t.char, t.value)
 }
 
 func toks(v ...interface{}) (r []token3) {

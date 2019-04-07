@@ -152,17 +152,6 @@ type token3 struct {
 func (t token3) Pos() token.Pos { return token.Pos(t.pos) }
 func (t token3) String() string { return t.value.String() }
 
-func (t *token3) str(file *token.File) string {
-	pos := ""
-	switch {
-	case t.pos <= 0 || int(t.pos) > file.Size()+1:
-		pos = fmt.Sprintf("offset:%v", t.pos)
-	default:
-		pos = file.Position(t.Pos()).String()
-	}
-	return fmt.Sprintf("%v: %+q(%#x) %q", pos, string(t.char), t.char, t.value)
-}
-
 type scanner struct {
 	bomFix        int
 	bytesBuf      []byte

@@ -2283,6 +2283,7 @@ func (n *ppDefineFunctionMacroDirective) translationPhase4(c *cpp) {
 
 		if !m.isFnLike {
 			c.err(n.Name, "redefinition of an object-like macro with a function-like one")
+			return
 		}
 
 		ok := len(m.fp) == len(n.IdentifierList)

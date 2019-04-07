@@ -242,6 +242,36 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 	b.SetBytes(sz)
 }
 
+// ==== jnml@4670:~/src/modernc.org/cc/v3> date ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 | tee log
+// Sun Apr  7 14:49:00 CEST 2019
+// === RUN   TestDevParse
+// === RUN   TestDevParse/.c
+// === RUN   TestDevParse/.c/gnu
+// --- PASS: TestDevParse (618.20s)
+//     --- PASS: TestDevParse/.c (318.97s)
+//         ---- pass at least 1000 files
+//           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
+//           4024/4293   93.73% gcc-8.3.0/gcc/testsuite/gcc.dg
+//           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
+//           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
+//           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
+//           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
+//           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
+//         files 32,433, sources 915,158, bytes 11,155,757,592, ok 25,957, 5m18.085661536s, 35,071,551 B/s, mem 2,348,520,704
+//     --- PASS: TestDevParse/.c/gnu (299.23s)
+//         ---- pass at least 1000 files
+//           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
+//           4029/4293   93.85% gcc-8.3.0/gcc/testsuite/gcc.dg
+//           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
+//           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
+//           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
+//           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
+//           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
+//         files 32,433, sources 907,270, bytes 11,149,923,880, ok 26,108, 4m58.154613418s, 37,396,449 B/s, mem 23,587,584
+// PASS
+// ok  	modernc.org/cc/v3	618.558s
+// ==== jnml@4670:~/src/modernc.org/cc/v3>
+
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3> date |& tee log ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 |& tee -a log
 // Fri Apr  5 15:47:58 CEST 2019
 // === RUN   TestDevParse
@@ -584,4 +614,32 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string) {
 		}
 	}
 	b.SetBytes(bytes)
+}
+
+func ExampleInitDeclaratorList_uCN() {
+	fmt.Println(exampleAST(93, "int a·z, a\u00b7z;"))
+	// Output:
+	// &cc.InitDeclaratorList{
+	// · InitDeclarator: &cc.InitDeclarator{
+	// · · Case: InitDeclaratorDecl,
+	// · · Declarator: &cc.Declarator{
+	// · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · Case: DirectDeclaratorIdent,
+	// · · · · Token: example.c:1:5: IDENTIFIER "a·z",
+	// · · · },
+	// · · },
+	// · },
+	// · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · InitDeclarator: &cc.InitDeclarator{
+	// · · · Case: InitDeclaratorDecl,
+	// · · · Declarator: &cc.Declarator{
+	// · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · Token: example.c:1:11: IDENTIFIER "a·z",
+	// · · · · },
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:9: ',' ",",
+	// · },
+	// }
 }
