@@ -243,7 +243,7 @@ func (s *scanner) errLine(x interface{}, msg string, args ...interface{}) {
 	case nil:
 		toks = []token3{{}}
 	case ppLine:
-		toks = x.toks()
+		toks = x.getToks()
 	default:
 		panic(fmt.Sprintf("internal error %T", x)) //TODOOK
 	}
@@ -561,7 +561,7 @@ func (s *scanner) scanLine() (r ppLine) {
 		toks = s.scanToNonBlankToken(toks)
 		switch tok := toks[len(toks)-1]; tok.char {
 		case '\n':
-			return &ppEmptyDirective{Toks: toks}
+			return &ppEmptyDirective{toks: toks}
 		case IDENTIFIER:
 			switch tok.value {
 			case idDefine:
@@ -589,7 +589,7 @@ func (s *scanner) scanLine() (r ppLine) {
 				s.preserveWhiteSpace = true
 				n := len(toks)
 				toks := s.scanLineToEOL(toks)
-				r := &ppIncludeDirective{Arg: toks[n : len(toks)-1], Toks: toks, IncludeNext: includeNext}
+				r := &ppIncludeDirective{arg: toks[n : len(toks)-1], toks: toks, includeNext: includeNext}
 				s.preserveWhiteSpace = save
 				return r
 			case idUndef:
@@ -604,19 +604,19 @@ func (s *scanner) scanLine() (r ppLine) {
 				if len(msg) != 0 && msg[0].char == ' ' {
 					msg = msg[1:]
 				}
-				return &ppErrorDirective{Toks: toks, Msg: msg}
+				return &ppErrorDirective{toks: toks, msg: msg}
 			case idPragma:
 				// pragma pp-tokens_opt new-line
-				return &ppPragmaDirective{Toks: s.scanLineToEOL(toks)}
+				return &ppPragmaDirective{toks: s.scanLineToEOL(toks)}
 			}
 		}
 
 		// # non-directive
-		return &ppNonDirective{Toks: s.scanLineToEOL(toks)}
+		return &ppNonDirective{toks: s.scanLineToEOL(toks)}
 	case '\n':
-		return &ppTextLine{Toks: toks}
+		return &ppTextLine{toks: toks}
 	default:
-		return &ppTextLine{Toks: s.scanLineToEOL(toks)}
+		return &ppTextLine{toks: s.scanLineToEOL(toks)}
 	}
 }
 
@@ -626,16 +626,16 @@ func (s *scanner) parseLine(toks []token3) *ppLineDirective {
 	switch tok := toks[len(toks)-1]; tok.char {
 	case '\n':
 		s.err(tok, "unexpected new-line")
-		return &ppLineDirective{Toks: toks}
+		return &ppLineDirective{toks: toks}
 	default:
 		toks := s.scanLineToEOL(toks)
-		r := &ppLineDirective{Toks: toks}
+		r := &ppLineDirective{toks: toks}
 		toks = toks[:len(toks)-1] // sans new-line
 		toks = ltrim(toks)
 		toks = toks[1:] // Skip '#'
 		toks = ltrim(toks)
 		toks = toks[1:] // Skip "line"
-		r.Args = ltrim(toks)
+		r.args = ltrim(toks)
 		return r
 	}
 }
@@ -655,22 +655,22 @@ func (s *scanner) parseUndef(toks []token3) *ppUndefDirective {
 	switch tok := toks[len(toks)-1]; tok.char {
 	case '\n':
 		s.err(&tok, "expected identifier")
-		return &ppUndefDirective{Toks: toks}
+		return &ppUndefDirective{toks: toks}
 	case IDENTIFIER:
 		name := tok
 		toks = s.scanToNonBlankToken(toks)
 		switch tok := toks[len(toks)-1]; tok.char {
 		case '\n':
-			return &ppUndefDirective{Name: name, Toks: toks}
+			return &ppUndefDirective{name: name, toks: toks}
 		default:
 			if s.ctx.cfg.RejectUndefExtraTokens {
 				s.err(&tok, "extra tokens after #undef")
 			}
-			return &ppUndefDirective{Name: name, Toks: s.scanLineToEOL(toks)}
+			return &ppUndefDirective{name: name, toks: s.scanLineToEOL(toks)}
 		}
 	default:
 		s.err(&tok, "expected identifier")
-		return &ppUndefDirective{Toks: s.scanLineToEOL(toks)}
+		return &ppUndefDirective{toks: s.scanLineToEOL(toks)}
 	}
 }
 
@@ -695,19 +695,19 @@ func (s *scanner) parseIfndef(toks []token3) *ppIfndefDirective {
 		toks = s.scanToNonBlankToken(toks)
 		switch tok := toks[len(toks)-1]; tok.char {
 		case '\n':
-			return &ppIfndefDirective{Name: name, Toks: toks}
+			return &ppIfndefDirective{name: name, toks: toks}
 		default:
 			if s.ctx.cfg.RejectIfndefExtraTokens {
 				s.err(&tok, "extra tokens after #ifndef")
 			}
-			return &ppIfndefDirective{Name: name, Toks: s.scanLineToEOL(toks)}
+			return &ppIfndefDirective{name: name, toks: s.scanLineToEOL(toks)}
 		}
 	case '\n':
 		s.err(tok, "expected identifier")
-		return &ppIfndefDirective{Name: name, Toks: toks}
+		return &ppIfndefDirective{name: name, toks: toks}
 	default:
 		s.err(tok, "expected identifier")
-		return &ppIfndefDirective{Name: name, Toks: s.scanLineToEOL(toks)}
+		return &ppIfndefDirective{name: name, toks: s.scanLineToEOL(toks)}
 	}
 }
 
@@ -721,19 +721,19 @@ func (s *scanner) parseIfdef(toks []token3) *ppIfdefDirective {
 		toks = s.scanToNonBlankToken(toks)
 		switch tok := toks[len(toks)-1]; tok.char {
 		case '\n':
-			return &ppIfdefDirective{Name: name, Toks: toks}
+			return &ppIfdefDirective{name: name, toks: toks}
 		default:
 			if s.ctx.cfg.RejectIfdefExtraTokens {
 				s.err(&tok, "extra tokens after #ifdef")
 			}
-			return &ppIfdefDirective{Name: name, Toks: s.scanLineToEOL(toks)}
+			return &ppIfdefDirective{name: name, toks: s.scanLineToEOL(toks)}
 		}
 	case '\n':
 		s.err(tok, "expected identifier")
-		return &ppIfdefDirective{Name: name, Toks: toks}
+		return &ppIfdefDirective{name: name, toks: toks}
 	default:
 		s.err(tok, "expected identifier")
-		return &ppIfdefDirective{Name: name, Toks: s.scanLineToEOL(toks)}
+		return &ppIfdefDirective{name: name, toks: s.scanLineToEOL(toks)}
 	}
 }
 
@@ -744,7 +744,7 @@ func (s *scanner) parseIf(toks []token3) *ppIfDirective {
 	switch tok := toks[len(toks)-1]; tok.char {
 	case '\n':
 		s.err(tok, "expected expression")
-		return &ppIfDirective{Toks: toks}
+		return &ppIfDirective{toks: toks}
 	default:
 		toks = s.scanLineToEOL(toks)
 		expr := toks[n:]
@@ -752,7 +752,7 @@ func (s *scanner) parseIf(toks []token3) *ppIfDirective {
 			expr = expr[1:]
 		}
 		expr = expr[:len(expr)-1] // sans '\n'
-		return &ppIfDirective{Toks: toks, Expr: expr}
+		return &ppIfDirective{toks: toks, expr: expr}
 	}
 }
 
@@ -812,7 +812,7 @@ func (s *scanner) parseDefine(toks []token3) ppLine {
 		toks = s.scanToNonBlankToken(toks)
 		switch tok := toks[len(toks)-1]; tok.char {
 		case '\n':
-			return &ppDefineObjectMacroDirective{Name: name, Toks: toks}
+			return &ppDefineObjectMacroDirective{name: name, toks: toks}
 		case '(':
 			if toks[n].char == ' ' {
 				return s.parseDefineObjectMacro(n, name, toks)
@@ -824,10 +824,10 @@ func (s *scanner) parseDefine(toks []token3) ppLine {
 		}
 	case '\n':
 		s.err(tok, "expected identifier")
-		return &ppDefineObjectMacroDirective{Toks: toks}
+		return &ppDefineObjectMacroDirective{toks: toks}
 	default:
 		s.err(tok, "expected identifier")
-		return &ppDefineObjectMacroDirective{Toks: s.scanLineToEOL(toks)}
+		return &ppDefineObjectMacroDirective{toks: s.scanLineToEOL(toks)}
 	}
 }
 
@@ -873,7 +873,7 @@ again:
 			// ok
 		case '\n':
 			s.err(tok, "unexpected new-line")
-			return &ppDefineFunctionMacroDirective{Toks: toks}
+			return &ppDefineFunctionMacroDirective{toks: toks}
 		case IDENTIFIER:
 			s.err(tok, "expected comma")
 			goto more
@@ -901,7 +901,7 @@ again:
 		if s.ctx.cfg.RejectFunctionMacroEmptyReplacementList {
 			s.err(tok, "expected replacement list")
 		}
-		return &ppDefineFunctionMacroDirective{Name: name, IdentifierList: list, Toks: toks, Variadic: variadic, NamedVariadic: namedVariadic}
+		return &ppDefineFunctionMacroDirective{name: name, identifierList: list, toks: toks, variadic: variadic, namedVariadic: namedVariadic}
 	default:
 		toks = s.scanLineToEOL(toks)
 		repl := toks[n:] // sans #define identifier
@@ -909,7 +909,7 @@ again:
 			repl = repl[1:]
 		}
 		repl = repl[:len(repl)-1] // sans '\n'
-		return &ppDefineFunctionMacroDirective{Name: name, IdentifierList: list, Toks: toks, ReplacementList: repl, Variadic: variadic, NamedVariadic: namedVariadic}
+		return &ppDefineFunctionMacroDirective{name: name, identifierList: list, toks: toks, replacementList: repl, variadic: variadic, namedVariadic: namedVariadic}
 	}
 }
 
@@ -932,7 +932,7 @@ func (s *scanner) parseDefineObjectMacro(n int, name token3, toks []token3) *ppD
 		repl = repl[1:]
 	}
 	repl = repl[:len(repl)-1] // sans '\n'
-	return &ppDefineObjectMacroDirective{Name: name, Toks: toks, ReplacementList: repl}
+	return &ppDefineObjectMacroDirective{name: name, toks: toks, replacementList: repl}
 }
 
 // Return {}, {x} or {' ', x}

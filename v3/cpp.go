@@ -1824,7 +1824,7 @@ func (c *cpp) isNonZero(val interface{}) bool {
 }
 
 type ppLine interface {
-	toks() []token3
+	getToks() []token3
 }
 
 type ppIfGroupDirective interface {
@@ -1832,50 +1832,50 @@ type ppIfGroupDirective interface {
 }
 
 type ppElifDirective struct {
-	Toks []token3
-	Expr []token3
+	toks []token3
+	expr []token3
 }
 
-func (n *ppElifDirective) toks() []token3 { return n.Toks }
+func (n *ppElifDirective) getToks() []token3 { return n.toks }
 
 type ppElseDirective struct {
-	Toks []token3
+	toks []token3
 }
 
-func (n *ppElseDirective) toks() []token3 { return n.Toks }
+func (n *ppElseDirective) getToks() []token3 { return n.toks }
 
 type ppEndifDirective struct {
-	Toks []token3
+	toks []token3
 }
 
-func (n *ppEndifDirective) toks() []token3 { return n.Toks }
+func (n *ppEndifDirective) getToks() []token3 { return n.toks }
 
 type ppEmptyDirective struct {
-	Toks []token3
+	toks []token3
 }
 
-func (n *ppEmptyDirective) toks() []token3 { return n.Toks }
+func (n *ppEmptyDirective) getToks() []token3 { return n.toks }
 
 func (n *ppEmptyDirective) translationPhase4(c *cpp) {
 	// nop
 }
 
 type ppIncludeDirective struct {
-	Arg  []token3
-	Toks []token3
+	arg  []token3
+	toks []token3
 
-	IncludeNext bool // false: #include, true: #include_next
+	includeNext bool // false: #include, true: #include_next
 }
 
-func (n *ppIncludeDirective) toks() []token3 { return n.Toks }
+func (n *ppIncludeDirective) getToks() []token3 { return n.toks }
 
 func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 	if c.ctx.cfg.ignoreIncludes {
 		return
 	}
 
-	args := make([]cppToken, len(n.Arg))
-	for i, v := range n.Arg {
+	args := make([]cppToken, len(n.arg))
+	for i, v := range n.arg {
 		args[i] = cppToken{token4{token3: v}, nil}
 	}
 	for len(args) != 0 && args[0].char == ' ' {
@@ -1887,7 +1887,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 	}
 	nm := strings.TrimSpace(sb.String())
 	if nm == "" {
-		c.err(n.Toks[0], "invalid empty include argument")
+		c.err(n.toks[0], "invalid empty include argument")
 		return
 	}
 
@@ -1899,7 +1899,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 		c.expand(&cppReader{buf: args}, &w, false)
 		nm = strings.TrimSpace(cppToksStr(w.toks, ""))
 	}
-	toks := n.Toks
+	toks := n.toks
 	for toks[0].char == ' ' {
 		toks = toks[1:]
 	}
@@ -1947,7 +1947,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 
 	nm = filepath.FromSlash(nm[1 : x+1])
 	dir := filepath.Dir(c.file.Name())
-	if n.IncludeNext {
+	if n.includeNext {
 		nmDir, _ := filepath.Split(nm)
 		for i, v := range paths {
 			if w, err := filepath.Abs(v); err == nil {
@@ -2131,59 +2131,59 @@ func (c *cpp) translationPhase4(in []source) chan *[]token4 {
 }
 
 type ppErrorDirective struct {
-	Toks []token3
-	Msg  []token3
+	toks []token3
+	msg  []token3
 }
 
-func (n *ppErrorDirective) toks() []token3 { return n.Toks }
+func (n *ppErrorDirective) getToks() []token3 { return n.toks }
 
 func (n *ppErrorDirective) translationPhase4(c *cpp) {
 	var b strings.Builder
-	for _, v := range n.Msg {
+	for _, v := range n.msg {
 		b.WriteString(v.String())
 	}
-	c.err(n.Toks[0], "%s", strings.TrimSpace(b.String()))
+	c.err(n.toks[0], "%s", strings.TrimSpace(b.String()))
 }
 
 type ppPragmaDirective struct {
-	Toks []token3
+	toks []token3
 }
 
-func (n *ppPragmaDirective) toks() []token3 { return n.Toks }
+func (n *ppPragmaDirective) getToks() []token3 { return n.toks }
 
 func (n *ppPragmaDirective) translationPhase4(c *cpp) {
 	//TODO implement ppPragmaDirective.translationPhase4
 }
 
 type ppNonDirective struct {
-	Toks []token3
+	toks []token3
 }
 
-func (n *ppNonDirective) toks() []token3 { return n.Toks }
+func (n *ppNonDirective) getToks() []token3 { return n.toks }
 
 func (n *ppNonDirective) translationPhase4(c *cpp) {
 	// nop
 }
 
 type ppTextLine struct {
-	Toks []token3
+	toks []token3
 }
 
-func (n *ppTextLine) toks() []token3 { return n.Toks }
+func (n *ppTextLine) getToks() []token3 { return n.toks }
 
-func (n *ppTextLine) translationPhase4(c *cpp) { c.send(n.Toks) }
+func (n *ppTextLine) translationPhase4(c *cpp) { c.send(n.toks) }
 
 type ppLineDirective struct {
-	Toks []token3
-	Args []token3
+	toks []token3
+	args []token3
 }
 
-func (n *ppLineDirective) toks() []token3 { return n.Toks }
+func (n *ppLineDirective) getToks() []token3 { return n.toks }
 
 func (n *ppLineDirective) translationPhase4(c *cpp) {
 	var w cppWriter
 	var toks []cppToken
-	for _, v := range n.Args {
+	for _, v := range n.args {
 		toks = append(toks, cppToken{token4: token4{fileID: c.fileID, token3: v}})
 	}
 	c.expand(&cppReader{buf: toks}, &w, true)
@@ -2204,7 +2204,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 			toks = toks[1:]
 		}
 		if len(toks) == 1 {
-			c.file.AddLineInfo(int(n.Toks[len(n.Toks)-1].pos), c.file.Name(), int(ln))
+			c.file.AddLineInfo(int(n.toks[len(n.toks)-1].pos), c.file.Name(), int(ln))
 			return
 		}
 
@@ -2213,7 +2213,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 			toks = toks[1:]
 		}
 		if len(toks) == 0 {
-			c.file.AddLineInfo(int(n.Toks[len(n.Toks)-1].pos), c.file.Name(), int(ln))
+			c.file.AddLineInfo(int(n.toks[len(n.toks)-1].pos), c.file.Name(), int(ln))
 			return
 		}
 
@@ -2221,7 +2221,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 		case STRINGLITERAL:
 			s := t.String()
 			s = s[1 : len(s)-1]
-			c.file.AddLineInfo(int(n.Toks[len(n.Toks)-1].pos), s, int(ln))
+			c.file.AddLineInfo(int(n.toks[len(n.toks)-1].pos), s, int(ln))
 			for len(toks) != 0 && toks[0].char == ' ' {
 				toks = toks[1:]
 			}
@@ -2239,16 +2239,16 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 }
 
 type ppUndefDirective struct {
-	Name token3
-	Toks []token3
+	name token3
+	toks []token3
 }
 
-func (n *ppUndefDirective) toks() []token3 { return n.Toks }
+func (n *ppUndefDirective) getToks() []token3 { return n.toks }
 
 func (n *ppUndefDirective) translationPhase4(c *cpp) {
-	nm := n.Name.value
+	nm := n.name.value
 	if _, ok := protectedMacros[nm]; ok || nm == idDefined {
-		c.err(n.Name, "cannot undefine a protected name")
+		c.err(n.name, "cannot undefine a protected name")
 		return
 	}
 
@@ -2257,126 +2257,126 @@ func (n *ppUndefDirective) translationPhase4(c *cpp) {
 }
 
 type ppIfdefDirective struct {
-	Name StringID
-	Toks []token3
+	name StringID
+	toks []token3
 }
 
-func (n *ppIfdefDirective) evalInclusionCondition(c *cpp) bool { _, ok := c.macros[n.Name]; return ok }
+func (n *ppIfdefDirective) evalInclusionCondition(c *cpp) bool { _, ok := c.macros[n.name]; return ok }
 
-func (n *ppIfdefDirective) toks() []token3 { return n.Toks }
+func (n *ppIfdefDirective) getToks() []token3 { return n.toks }
 
 type ppIfndefDirective struct {
-	Name StringID
-	Toks []token3
+	name StringID
+	toks []token3
 }
 
-func (n *ppIfndefDirective) evalInclusionCondition(c *cpp) bool { _, ok := c.macros[n.Name]; return !ok }
-func (n *ppIfndefDirective) toks() []token3                     { return n.Toks }
+func (n *ppIfndefDirective) evalInclusionCondition(c *cpp) bool { _, ok := c.macros[n.name]; return !ok }
+func (n *ppIfndefDirective) getToks() []token3                  { return n.toks }
 
 type ppIfDirective struct {
-	Toks []token3
-	Expr []token3
+	toks []token3
+	expr []token3
 }
 
-func (n *ppIfDirective) toks() []token3 { return n.Toks }
+func (n *ppIfDirective) getToks() []token3 { return n.toks }
 
 func (n *ppIfDirective) evalInclusionCondition(c *cpp) bool {
-	return c.evalInclusionCondition(n.Expr)
+	return c.evalInclusionCondition(n.expr)
 }
 
 type ppDefineObjectMacroDirective struct {
-	Name            token3
-	Toks            []token3
-	ReplacementList []token3
+	name            token3
+	toks            []token3
+	replacementList []token3
 }
 
-func (n *ppDefineObjectMacroDirective) toks() []token3 { return n.Toks }
+func (n *ppDefineObjectMacroDirective) getToks() []token3 { return n.toks }
 
 func (n *ppDefineObjectMacroDirective) translationPhase4(c *cpp) {
-	nm := n.Name.value
+	nm := n.name.value
 	m := c.macros[nm]
 	if m != nil {
 		if _, ok := protectedMacros[nm]; ok || nm == idDefined {
-			c.err(n.Name, "cannot define protected name")
+			c.err(n.name, "cannot define protected name")
 			return
 		}
 
 		if m.isFnLike {
-			c.err(n.Name, "redefinition of a function-like macro with an object-like one")
+			c.err(n.name, "redefinition of a function-like macro with an object-like one")
 		}
 
-		if !c.identicalReplacementLists(n.ReplacementList, m.repl) {
-			c.err(n.Name, "redefinition with different replacement list")
+		if !c.identicalReplacementLists(n.replacementList, m.repl) {
+			c.err(n.name, "redefinition with different replacement list")
 			return
 		}
 	}
 	// dbg("#define %s %s", n.Name, tokStr(n.ReplacementList))
-	c.macros[nm] = &macro{name: token4{token3: n.Name, fileID: c.fileID}, repl: n.ReplacementList}
+	c.macros[nm] = &macro{name: token4{token3: n.name, fileID: c.fileID}, repl: n.replacementList}
 }
 
 type ppDefineFunctionMacroDirective struct {
-	IdentifierList  []token3
-	Toks            []token3
-	ReplacementList []token3
+	identifierList  []token3
+	toks            []token3
+	replacementList []token3
 
-	Name token3
+	name token3
 
-	NamedVariadic bool // foo..., note no comma before ellipsis.
-	Variadic      bool
+	namedVariadic bool // foo..., note no comma before ellipsis.
+	variadic      bool
 }
 
-func (n *ppDefineFunctionMacroDirective) toks() []token3 { return n.Toks }
+func (n *ppDefineFunctionMacroDirective) getToks() []token3 { return n.toks }
 
 func (n *ppDefineFunctionMacroDirective) translationPhase4(c *cpp) {
-	nm := n.Name.value
+	nm := n.name.value
 	m := c.macros[nm]
 	if m != nil {
 		if _, ok := protectedMacros[nm]; ok || nm == idDefined {
-			c.err(n.Name, "cannot define protected name")
+			c.err(n.name, "cannot define protected name")
 			return
 		}
 
 		if !m.isFnLike {
-			c.err(n.Name, "redefinition of an object-like macro with a function-like one")
+			c.err(n.name, "redefinition of an object-like macro with a function-like one")
 			return
 		}
 
-		ok := len(m.fp) == len(n.IdentifierList)
+		ok := len(m.fp) == len(n.identifierList)
 		if ok {
 			for i, v := range m.fp {
-				if v != n.IdentifierList[i].value {
+				if v != n.identifierList[i].value {
 					ok = false
 					break
 				}
 			}
 		}
-		if !ok && (len(n.ReplacementList) != 0 || len(m.repl) != 0) {
-			c.err(n.Name, "redefinition with different formal parameters")
+		if !ok && (len(n.replacementList) != 0 || len(m.repl) != 0) {
+			c.err(n.name, "redefinition with different formal parameters")
 			return
 		}
 
-		if !c.identicalReplacementLists(n.ReplacementList, m.repl) {
-			c.err(n.Name, "redefinition with different replacement list")
+		if !c.identicalReplacementLists(n.replacementList, m.repl) {
+			c.err(n.name, "redefinition with different replacement list")
 			return
 		}
 
-		if m.variadic != n.Variadic {
-			c.err(n.Name, "redefinition differs in being variadic")
+		if m.variadic != n.variadic {
+			c.err(n.name, "redefinition differs in being variadic")
 			return
 		}
 	}
 	nms := map[StringID]struct{}{}
-	for _, v := range n.IdentifierList {
+	for _, v := range n.identifierList {
 		if _, ok := nms[v.value]; ok {
 			c.err(v, "duplicate identifier %s", v.value)
 		}
 	}
 	var fp []StringID
-	for _, v := range n.IdentifierList {
+	for _, v := range n.identifierList {
 		fp = append(fp, v.value)
 	}
 	// dbg("#define %s(%v) %s", n.Name, fp, tokStr(n.ReplacementList))
-	c.macros[nm] = &macro{fp: fp, isFnLike: true, name: token4{token3: n.Name, fileID: c.fileID}, repl: n.ReplacementList, variadic: n.Variadic, namedVariadic: n.NamedVariadic}
+	c.macros[nm] = &macro{fp: fp, isFnLike: true, name: token4{token3: n.name, fileID: c.fileID}, repl: n.replacementList, variadic: n.variadic, namedVariadic: n.namedVariadic}
 }
 
 // [0], 6.10.1
@@ -2389,7 +2389,7 @@ type ppElifGroup struct {
 }
 
 func (n *ppElifGroup) evalInclusionCondition(c *cpp) bool {
-	if !c.evalInclusionCondition(n.elif.Expr) {
+	if !c.evalInclusionCondition(n.elif.expr) {
 		return false
 	}
 
