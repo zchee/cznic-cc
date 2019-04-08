@@ -111,6 +111,7 @@ var (
 	oDownload = flag.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
 	oMaxFiles = flag.Int("maxFiles", maxFiles, "")
 	oRE       = flag.String("re", "", "")
+	oSkipInit = flag.Bool("skipInit", false, "")
 	oTrace    = flag.Bool("trc", false, "Print tested paths.")
 	oWalkDir  = flag.String("walkDir", "testdata", "")
 
@@ -155,6 +156,10 @@ func init() {
 
 	if testPredefGNU, testIncludes, testSysIncludes, err = HostConfig(""); err != nil {
 		log.Fatal("Cannot acquire host cpp configuration.")
+		return
+	}
+
+	if *oSkipInit {
 		return
 	}
 

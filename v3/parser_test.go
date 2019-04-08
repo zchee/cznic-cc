@@ -243,12 +243,12 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 }
 
 // ==== jnml@4670:~/src/modernc.org/cc/v3> date ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 | tee log
-// Sun Apr  7 19:29:03 CEST 2019
+// Mon Apr  8 21:40:55 CEST 2019
 // === RUN   TestDevParse
 // === RUN   TestDevParse/.c
 // === RUN   TestDevParse/.c/gnu
-// --- PASS: TestDevParse (599.56s)
-//     --- PASS: TestDevParse/.c (302.66s)
+// --- PASS: TestDevParse (605.20s)
+//     --- PASS: TestDevParse/.c (306.56s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
 //           4022/4293   93.69% gcc-8.3.0/gcc/testsuite/gcc.dg
@@ -257,8 +257,8 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 915,057, bytes 11,155,114,143, ok 25,954, 5m1.791697922s, 36,962,958 B/s, mem 2,348,531,968
-//     --- PASS: TestDevParse/.c/gnu (296.90s)
+//         files 32,433, sources 915,156, bytes 11,155,630,852, ok 25,957, 5m5.705943835s, 36,491,377 B/s, mem 2,348,715,704
+//     --- PASS: TestDevParse/.c/gnu (298.64s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
 //           4027/4293   93.80% gcc-8.3.0/gcc/testsuite/gcc.dg
@@ -267,9 +267,9 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 907,268, bytes 11,150,255,472, ok 26,105, 4m55.475385199s, 37,736,664 B/s, mem 23,623,056
+//         files 32,433, sources 907,269, bytes 11,150,232,685, ok 26,108, 4m57.129915602s, 37,526,455 B/s, mem 23,595,632
 // PASS
-// ok  	modernc.org/cc/v3	599.924s
+// ok  	modernc.org/cc/v3	605.605s
 // ==== jnml@4670:~/src/modernc.org/cc/v3>
 
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3> date |& tee log ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 |& tee -a log

@@ -244,6 +244,7 @@ func newContext(cfg *Config) *context {
 }
 
 func (c *context) err(pos token.Position, msg string, args ...interface{}) (stop bool) {
+	// dbg("FAIL "+msg, args...)
 	if c.cfg.ignoreErrors {
 		return false
 	}

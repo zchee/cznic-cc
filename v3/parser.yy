@@ -876,6 +876,6 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example int i __attribute__((a)) __attribute((b)); */
 			|	AttributeSpecifierList AttributeSpecifier
 
-			/*yy:example #pragma STDC FP_CONTRACT ON */
+			/*yy:example _Pragma("STDC FP_CONTRACT ON") */
 			PragmaSTDC:
 				"__pragma_stdc" IDENTIFIER IDENTIFIER IDENTIFIER

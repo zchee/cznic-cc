@@ -351,6 +351,7 @@ func (s *scanner) lex() {
 		s.tok.char = -1
 		s.tok.pos = int32(s.file.Pos(s.file.Size()))
 	}
+	// dbg("lex %q %q", tokName(s.tok.char), s.tok.value)
 }
 
 func (s *scanner) next() (r byte) {
@@ -555,6 +556,7 @@ func (s *scanner) nextLine() {
 }
 
 func (s *scanner) scanLine() (r ppLine) {
+again:
 	toks := s.scanToNonBlankToken(nil)
 	if len(toks) == 0 {
 		return nil
@@ -619,6 +621,49 @@ func (s *scanner) scanLine() (r ppLine) {
 		return &ppNonDirective{toks: s.scanLineToEOL(toks)}
 	case '\n':
 		return &ppTextLine{toks: toks}
+	case IDENTIFIER:
+		if tok.value == idPragmaOp {
+			toks = s.scanToNonBlankToken(toks)
+			switch tok = toks[len(toks)-1]; tok.char {
+			case '(':
+				// ok
+			default:
+				s.err(tok, "expected (")
+				return &ppTextLine{toks: toks}
+			}
+
+			var lit string
+			toks = s.scanToNonBlankToken(toks)
+			switch tok = toks[len(toks)-1]; tok.char {
+			case STRINGLITERAL:
+				lit = tok.String()
+			case LONGSTRINGLITERAL:
+				lit = tok.String()[1:]
+			default:
+				s.err(tok, "expected string literal")
+				return &ppTextLine{toks: toks}
+			}
+
+			pos := tok.pos
+			toks = s.scanToNonBlankToken(toks)
+			switch tok = toks[len(toks)-1]; tok.char {
+			case ')':
+				// ok
+			default:
+				s.err(tok, "expected )")
+				return &ppTextLine{toks: toks}
+			}
+
+			s.unget(s.lookaheadChar)
+			lit = lit[1 : len(lit)-1] // Remove leading/trailing '"'
+			lit = "#pragma " + lit + "\n"
+			for i := len(lit) - 1; i >= 0; i-- {
+				s.unget(char{pos, lit[i]})
+			}
+			goto again
+		}
+
+		fallthrough
 	default:
 		return &ppTextLine{toks: s.scanLineToEOL(toks)}
 	}

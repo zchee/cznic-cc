@@ -7723,13 +7723,13 @@ func ExamplePostfixExpression_typeCmp() {
 }
 
 func ExamplePragmaSTDC_case0() {
-	fmt.Println(exampleAST(267, "#pragma STDC FP_CONTRACT ON"))
+	fmt.Println(exampleAST(267, "_Pragma(\"STDC FP_CONTRACT ON\")"))
 	// Output:
 	// &cc.PragmaSTDC{
 	// · Token: example.c:1:9: PPPRAGMASTDC "__pragma_stdc",
 	// · Token2: example.c:1:9: IDENTIFIER "STDC",
-	// · Token3: example.c:1:14: IDENTIFIER "FP_CONTRACT",
-	// · Token4: example.c:1:26: IDENTIFIER "ON",
+	// · Token3: example.c:1:9: IDENTIFIER "FP_CONTRACT",
+	// · Token4: example.c:1:9: IDENTIFIER "ON",
 	// }
 }
 
