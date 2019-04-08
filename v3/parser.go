@@ -89,6 +89,7 @@ const (
 	OROR                   // ||
 	PPNUMBER               // .32e.
 	PPPASTE                // ##
+	PRAGMASTDC             // __pragma_stdc
 	REAL                   // __real__
 	REGISTER               // register
 	RESTRICT               // restrict
@@ -186,6 +187,7 @@ var (
 		OROR:                   dict.sid("OROR"),
 		PPNUMBER:               dict.sid("PPNUMBER"),
 		PPPASTE:                dict.sid("PPPASTE"),
+		PRAGMASTDC:             dict.sid("PPPRAGMASTDC"),
 		REAL:                   dict.sid("REAL"),
 		REGISTER:               dict.sid("REGISTER"),
 		RESTRICT:               dict.sid("RESTRICT"),
@@ -248,6 +250,7 @@ var (
 		dict.sid("__inline__"):                   INLINE,
 		dict.sid("__int128"):                     INT128,
 		dict.sid("__label__"):                    LABEL,
+		dict.sid("__pragma_stdc"):                PRAGMASTDC,
 		dict.sid("__real"):                       REAL,
 		dict.sid("__real__"):                     REAL,
 		dict.sid("__restrict"):                   RESTRICT,
@@ -3049,6 +3052,8 @@ func (p *parser) blockItem() *BlockItem {
 		}
 	case LABEL:
 		return &BlockItem{Case: BlockItemLabel, LabelDeclaration: p.labelDeclaration()}
+	case PRAGMASTDC:
+		return &BlockItem{Case: BlockItemPragma, PragmaSTDC: p.pragmaSTDC()}
 	default:
 		return &BlockItem{Case: BlockItemStmt, Statement: p.statement()}
 	}
@@ -3451,6 +3456,8 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 		return &ExternalDeclaration{Case: ExternalDeclarationEmpty, Token: p.shift()}
 	case ASM:
 		return &ExternalDeclaration{Case: ExternalDeclarationAsmStmt, AsmStatement: p.asmStatement()}
+	case PRAGMASTDC:
+		return &ExternalDeclaration{Case: ExternalDeclarationPragma, PragmaSTDC: p.pragmaSTDC()}
 	default:
 		if p.ctx.cfg.RejectMissingDeclarationSpecifiers {
 			p.err("expected declaration-specifiers")
@@ -3475,6 +3482,18 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 	default:
 		return &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
 	}
+}
+
+func (p *parser) pragmaSTDC() *PragmaSTDC {
+	if p.rune() != PRAGMASTDC {
+		p.err("expected __pragma_stdc")
+	}
+
+	t := p.shift()  // _Pragma
+	t2 := p.shift() // STDC
+	t3 := p.shift() // FOO
+	t4 := p.shift() // Bar
+	return &PragmaSTDC{Token: t, Token2: t2, Token3: t3, Token4: t4}
 }
 
 // [0], 6.9.1 Function definitions

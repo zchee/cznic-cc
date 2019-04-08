@@ -24,15 +24,23 @@ var (
 	_ tokenReader = (*cpp)(nil)
 	_ tokenWriter = (*cpp)(nil)
 
-	idComma       = dict.sid(",")
-	idDefined     = dict.sid("defined")
-	idFILE        = dict.sid("__FILE__")
-	idIntMaxWidth = dict.sid("__INTMAX_WIDTH__")
-	idLINE        = dict.sid("__LINE__")
-	idNL          = dict.sid("\n")
-	idOne         = dict.sid("1")
-	idVaArgs      = dict.sid("__VA_ARGS__")
-	idZero        = dict.sid("0")
+	idComma          = dict.sid(",")
+	idCxLimitedRange = dict.sid("CX_LIMITED_RANGE")
+	idDefault        = dict.sid("DEFAULT")
+	idDefined        = dict.sid("defined")
+	idFILE           = dict.sid("__FILE__")
+	idFPContract     = dict.sid("FP_CONTRACT")
+	idFenvAccess     = dict.sid("FENV_ACCESS")
+	idIntMaxWidth    = dict.sid("__INTMAX_WIDTH__")
+	idLINE           = dict.sid("__LINE__")
+	idNL             = dict.sid("\n")
+	idOff            = dict.sid("OFF")
+	idOn             = dict.sid("ON")
+	idOne            = dict.sid("1")
+	idPragmaSTDC     = dict.sid("__pragma_stdc")
+	idSTDC           = dict.sid("STDC")
+	idVaArgs         = dict.sid("__VA_ARGS__")
+	idZero           = dict.sid("0")
 
 	protectedMacros = hideSet{ // [0], 6.10.8, 4
 		dict.sid("__DATE__"):                 {},
@@ -2145,14 +2153,106 @@ func (n *ppErrorDirective) translationPhase4(c *cpp) {
 	c.err(n.toks[0], "%s", strings.TrimSpace(b.String()))
 }
 
+type ppPragmaOperator struct {
+	toks []token3
+	args []token3
+}
+
 type ppPragmaDirective struct {
 	toks []token3
+	args []token3
 }
 
 func (n *ppPragmaDirective) getToks() []token3 { return n.toks }
 
-func (n *ppPragmaDirective) translationPhase4(c *cpp) {
-	//TODO implement ppPragmaDirective.translationPhase4
+func (n *ppPragmaDirective) translationPhase4(c *cpp) { parsePragma(c, n.args) }
+
+func parsePragma(c *cpp, args0 []token3) {
+	if len(args0) == 0 {
+		return
+	}
+
+	if t := args0[0]; t.char == IDENTIFIER && t.value == idSTDC {
+		p := t
+		p.char = PRAGMASTDC
+		p.value = idPragmaSTDC
+		send := []token3{p}
+		args := ltrim(args0[1:])
+		if len(args) == 0 {
+			c.err(args[0], "expected argument of STDC")
+			return
+		}
+
+		if t = args[0]; t.char != IDENTIFIER {
+			c.err(t, "expected identifier")
+			return
+		}
+
+		switch t.value {
+		case idFPContract, idFenvAccess, idCxLimitedRange:
+			// ok
+		default:
+			c.err(t, "expected FP_CONTRACT or FENV_ACCESS or CX_LIMITED_RANGE")
+			return
+		}
+
+		args = ltrim(args[1:])
+		if len(args) == 0 {
+			c.err(args[0], "expected ON or OFF or DEFAULT")
+			return
+		}
+
+		if t = args[0]; t.char != IDENTIFIER {
+			c.err(t, "expected identifier")
+			return
+		}
+
+		switch t.value {
+		case idOn, idOff, idDefault:
+			c.send(append(send, args0...))
+		default:
+			c.err(t, "expected ON or OFF or DEFAULT")
+			return
+		}
+	}
+
+	if c.ctx.cfg.PragmaHandler == nil {
+		return
+	}
+
+	toks := expandArgs(c, args0)
+	if len(toks) == 0 {
+		return
+	}
+
+	var toks2 []Token
+	var sep StringID
+	for _, tok := range toks {
+		switch tok.char {
+		case ' ', '\n':
+			switch {
+			case sep != 0:
+				sep = dict.sid(sep.String() + tok.String())
+			default:
+				sep = tok.value
+			}
+		default:
+			var t Token
+			t.Rune = tok.char
+			t.Sep = sep
+			t.Value = tok.value
+			t.fileID = tok.fileID
+			t.pos = tok.pos
+			toks2 = append(toks2, t)
+			sep = 0
+		}
+	}
+	if len(toks2) == 0 {
+		return
+	}
+
+	// dbg("%v: %q", c.file.PositionFor(args0[0].Pos(), true), tokStr(toks2, "|"))
+	c.ctx.cfg.PragmaHandler(&pragma{tok: toks[0], c: c}, toks2)
 }
 
 type ppNonDirective struct {
@@ -2181,13 +2281,7 @@ type ppLineDirective struct {
 func (n *ppLineDirective) getToks() []token3 { return n.toks }
 
 func (n *ppLineDirective) translationPhase4(c *cpp) {
-	var w cppWriter
-	var toks []cppToken
-	for _, v := range n.args {
-		toks = append(toks, cppToken{token4: token4{fileID: c.fileID, token3: v}})
-	}
-	c.expand(&cppReader{buf: toks}, &w, true)
-	toks = w.toks
+	toks := expandArgs(c, n.args)
 	if len(toks) == 0 {
 		return
 	}
@@ -2236,6 +2330,16 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 		c.err(toks[0], "expected integer literal")
 		return
 	}
+}
+
+func expandArgs(c *cpp, args []token3) []cppToken {
+	var w cppWriter
+	var toks []cppToken
+	for _, v := range args {
+		toks = append(toks, cppToken{token4: token4{fileID: c.fileID, token3: v}})
+	}
+	c.expand(&cppReader{buf: toks}, &w, true)
+	return w.toks
 }
 
 type ppUndefDirective struct {

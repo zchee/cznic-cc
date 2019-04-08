@@ -84,6 +84,7 @@ package cc // import "modernc.org/cc/v3"
 	OROR			"||"
 	PPNUMBER		"preprocessing number"
 	PPPASTE			"##"
+	PRAGMASTDC		"__pragma_stdc"
 	REAL			"__real__"
 	REGISTER		"register"
 	RESTRICT		"restrict"
@@ -722,6 +723,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Label      */ |	LabelDeclaration
 			/*yy:example int f() { int g() {} }*/
 /*yy:case FuncDef    */ |	DeclarationSpecifiers Declarator CompoundStatement
+			/*yy:example int f() {\n#pragma STDC FENV_ACCESS OFF\n}*/
+/*yy:case Pragma     */ |	PragmaSTDC
 
 			/* [0], 6.8.3 Expression and null statements */
 			/*yy:example int f() { g(); }*/
@@ -781,6 +784,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case AsmStmt    */ |	AsmStatement
 			/*yy:example ; */
 /*yy:case Empty      */ |	';'
+			/*yy:example #pragma STDC CX_LIMITED_RANGE DEFAULT */
+/*yy:case Pragma     */ |	PragmaSTDC
 
 			/* [0], 6.9.1 Function definitions */
 			/*yy:example int f() {} */
@@ -870,3 +875,7 @@ package cc // import "modernc.org/cc/v3"
 				AttributeSpecifier %prec BELOW_ATTRIBUTE
 			/*yy:example int i __attribute__((a)) __attribute((b)); */
 			|	AttributeSpecifierList AttributeSpecifier
+
+			/*yy:example #pragma STDC FP_CONTRACT ON */
+			PragmaSTDC:
+				"__pragma_stdc" IDENTIFIER IDENTIFIER IDENTIFIER

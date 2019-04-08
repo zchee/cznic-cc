@@ -177,11 +177,7 @@ type scanner struct {
 	preserveWhiteSpace bool
 }
 
-func newScanner(ctx *context, r io.Reader, file *token.File) *scanner {
-	bufSize := 1 << 17 // emulate gcc
-	if n := ctx.cfg.MaxSourceLine; n > 4096 {
-		bufSize = n
-	}
+func newScanner0(ctx *context, r io.Reader, file *token.File, bufSize int) *scanner {
 	s := &scanner{
 		ctx:  ctx,
 		file: file,
@@ -191,6 +187,14 @@ func newScanner(ctx *context, r io.Reader, file *token.File) *scanner {
 		s.init()
 	}
 	return s
+}
+
+func newScanner(ctx *context, r io.Reader, file *token.File) *scanner {
+	bufSize := 1 << 17 // emulate gcc
+	if n := ctx.cfg.MaxSourceLine; n > 4096 {
+		bufSize = n
+	}
+	return newScanner0(ctx, r, file, bufSize)
 }
 
 func (s *scanner) abort() (r byte, b bool) {
@@ -607,7 +611,12 @@ func (s *scanner) scanLine() (r ppLine) {
 				return &ppErrorDirective{toks: toks, msg: msg}
 			case idPragma:
 				// pragma pp-tokens_opt new-line
-				return &ppPragmaDirective{toks: s.scanLineToEOL(toks)}
+				toks := s.scanLineToEOL(toks)
+				args := ltrim(toks)
+				args = args[1:] // Skip '#'
+				args = ltrim(args)
+				args = args[1:] // Skip "pragma"
+				return &ppPragmaDirective{toks: toks, args: ltrim(args)}
 			}
 		}
 

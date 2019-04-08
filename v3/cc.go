@@ -47,6 +47,8 @@ const (
 )
 
 var (
+	_ Pragma = (*pragma)(nil)
+
 	cache       = newPPCache()
 	dict        = newDictionary()
 	dictStrings [math.MaxUint8 + 1]string
@@ -79,6 +81,20 @@ var (
 		},
 	}
 )
+
+type Pragma interface {
+	isPragma()
+	Error(msg string, args ...interface{}) // Report error.
+}
+
+type pragma struct {
+	tok cppToken
+	c   *cpp
+}
+
+func (p *pragma) isPragma() {}
+
+func (p *pragma) Error(msg string, args ...interface{}) { p.c.err(p.tok, msg, args...) }
 
 // PrettyString returns a formatted representation of things produced by this package.
 func PrettyString(v interface{}) string {
@@ -194,6 +210,8 @@ type Config3 struct {
 //
 type Config struct {
 	Config3
+
+	PragmaHandler func(Pragma, []Token) // Called on pragmas if non nil
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 

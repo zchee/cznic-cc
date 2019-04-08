@@ -419,6 +419,7 @@ func tokStr(toks interface{}, sep string) string {
 }
 
 func exampleAST(rule int, src string) interface{} {
+	src = strings.Replace(src, "\\n", "\n", -1)
 	cfg := &Config{ignoreErrors: true}
 	ast, _ := Parse(cfg, nil, nil, []Source{{Name: "example.c", Value: src}})
 	if ast == nil {

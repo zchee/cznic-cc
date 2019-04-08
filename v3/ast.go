@@ -852,6 +852,7 @@ const (
 	BlockItemStmt
 	BlockItemLabel
 	BlockItemFuncDef
+	BlockItemPragma
 )
 
 // String implements fmt.Stringer
@@ -865,6 +866,8 @@ func (n BlockItemCase) String() string {
 		return "BlockItemLabel"
 	case BlockItemFuncDef:
 		return "BlockItemFuncDef"
+	case BlockItemPragma:
+		return "BlockItemPragma"
 	default:
 		return fmt.Sprintf("BlockItemCase(%v)", int(n))
 	}
@@ -877,6 +880,7 @@ func (n BlockItemCase) String() string {
 //	|       Statement                                           // Case BlockItemStmt
 //	|       LabelDeclaration                                    // Case BlockItemLabel
 //	|       DeclarationSpecifiers Declarator CompoundStatement  // Case BlockItemFuncDef
+//	|       PragmaSTDC                                          // Case BlockItemPragma
 type BlockItem struct {
 	Case                  BlockItemCase `PrettyPrint:"stringer,zero"`
 	CompoundStatement     *CompoundStatement
@@ -884,6 +888,7 @@ type BlockItem struct {
 	DeclarationSpecifiers *DeclarationSpecifiers
 	Declarator            *Declarator
 	LabelDeclaration      *LabelDeclaration
+	PragmaSTDC            *PragmaSTDC
 	Statement             *Statement
 }
 
@@ -911,6 +916,8 @@ func (n *BlockItem) Position() (r token.Position) {
 		return n.CompoundStatement.Position()
 	case 2:
 		return n.LabelDeclaration.Position()
+	case 4:
+		return n.PragmaSTDC.Position()
 	case 1:
 		return n.Statement.Position()
 	default:
@@ -2239,6 +2246,7 @@ const (
 	ExternalDeclarationAsm
 	ExternalDeclarationAsmStmt
 	ExternalDeclarationEmpty
+	ExternalDeclarationPragma
 )
 
 // String implements fmt.Stringer
@@ -2254,6 +2262,8 @@ func (n ExternalDeclarationCase) String() string {
 		return "ExternalDeclarationAsmStmt"
 	case ExternalDeclarationEmpty:
 		return "ExternalDeclarationEmpty"
+	case ExternalDeclarationPragma:
+		return "ExternalDeclarationPragma"
 	default:
 		return fmt.Sprintf("ExternalDeclarationCase(%v)", int(n))
 	}
@@ -2267,12 +2277,14 @@ func (n ExternalDeclarationCase) String() string {
 //	|       AsmFunctionDefinition  // Case ExternalDeclarationAsm
 //	|       AsmStatement           // Case ExternalDeclarationAsmStmt
 //	|       ';'                    // Case ExternalDeclarationEmpty
+//	|       PragmaSTDC             // Case ExternalDeclarationPragma
 type ExternalDeclaration struct {
 	AsmFunctionDefinition *AsmFunctionDefinition
 	AsmStatement          *AsmStatement
 	Case                  ExternalDeclarationCase `PrettyPrint:"stringer,zero"`
 	Declaration           *Declaration
 	FunctionDefinition    *FunctionDefinition
+	PragmaSTDC            *PragmaSTDC
 	Token                 Token
 }
 
@@ -2294,6 +2306,8 @@ func (n *ExternalDeclaration) Position() (r token.Position) {
 		return n.Declaration.Position()
 	case 0:
 		return n.FunctionDefinition.Position()
+	case 5:
+		return n.PragmaSTDC.Position()
 	case 4:
 		return n.Token.Position()
 	default:
@@ -3651,6 +3665,41 @@ func (n *PostfixExpression) Position() (r token.Position) {
 	default:
 		panic("internal error")
 	}
+}
+
+// PragmaSTDC represents data reduced by production:
+//
+//	PragmaSTDC:
+//	        "__pragma_stdc" IDENTIFIER IDENTIFIER IDENTIFIER
+type PragmaSTDC struct {
+	Token  Token
+	Token2 Token
+	Token3 Token
+	Token4 Token
+}
+
+// String implements fmt.Stringer.
+func (n *PragmaSTDC) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *PragmaSTDC) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	if p := n.Token.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token2.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token3.Position(); p.IsValid() {
+		return p
+	}
+
+	return n.Token4.Position()
 }
 
 // PrimaryExpressionCase represents case numbers of production PrimaryExpression

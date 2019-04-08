@@ -273,12 +273,12 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 // ==== jnml@4670:~/src/modernc.org/cc/v3>
 
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3> date |& tee log ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 |& tee -a log
-// Mon Apr  8 10:10:30 CEST 2019
+// Mon Apr  8 14:57:00 CEST 2019
 // === RUN   TestDevParse
 // === RUN   TestDevParse/.c
 // === RUN   TestDevParse/.c/gnu
-// --- PASS: TestDevParse (642.80s)
-//     --- PASS: TestDevParse/.c (319.31s)
+// --- PASS: TestDevParse (632.27s)
+//     --- PASS: TestDevParse/.c (311.54s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
 //           4022/4293   93.69% gcc-8.3.0/gcc/testsuite/gcc.dg
@@ -287,8 +287,8 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 915,091, bytes 11,159,040,865, ok 25,954, 5m18.605486629s, 35,024,634 B/s, mem 2,348,724,304
-//     --- PASS: TestDevParse/.c/gnu (323.50s)
+//         files 32,433, sources 915,174, bytes 11,159,432,835, ok 25,950, 5m10.47635062s, 35,942,939 B/s, mem 2,348,939,648
+//     --- PASS: TestDevParse/.c/gnu (320.73s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
 //           4027/4293   93.80% gcc-8.3.0/gcc/testsuite/gcc.dg
@@ -297,9 +297,9 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 907,294, bytes 11,153,746,582, ok 26,105, 5m21.616850745s, 34,680,230 B/s, mem 23,677,696
+//         files 32,433, sources 907,298, bytes 11,154,135,915, ok 26,101, 5m19.08031156s, 34,957,142 B/s, mem 23,608,352
 // PASS
-// ok  	modernc.org/cc/v3	643.301s
+// ok  	modernc.org/cc/v3	632.733s
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3>
 
 func TestDevParse(t *testing.T) {
