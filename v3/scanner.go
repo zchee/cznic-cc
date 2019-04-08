@@ -43,6 +43,7 @@ var (
 	idIncludeNext = dict.sid("include_next")
 	idLine        = dict.sid("line")
 	idPragma      = dict.sid("pragma")
+	idPragmaOp    = dict.sid("_Pragma")
 	idSpace       = dict.sid(" ")
 	idUndef       = dict.sid("undef")
 
@@ -610,13 +611,7 @@ func (s *scanner) scanLine() (r ppLine) {
 				}
 				return &ppErrorDirective{toks: toks, msg: msg}
 			case idPragma:
-				// pragma pp-tokens_opt new-line
-				toks := s.scanLineToEOL(toks)
-				args := ltrim(toks)
-				args = args[1:] // Skip '#'
-				args = ltrim(args)
-				args = args[1:] // Skip "pragma"
-				return &ppPragmaDirective{toks: toks, args: ltrim(args)}
+				return s.parsePragma(toks)
 			}
 		}
 
@@ -627,6 +622,15 @@ func (s *scanner) scanLine() (r ppLine) {
 	default:
 		return &ppTextLine{toks: s.scanLineToEOL(toks)}
 	}
+}
+
+func (s *scanner) parsePragma(toks []token3) *ppPragmaDirective {
+	toks = s.scanToNonBlankToken(toks)
+	n := len(toks)
+	if toks[n-1].char != '\n' {
+		toks = s.scanLineToEOL(toks)
+	}
+	return &ppPragmaDirective{toks: toks, args: toks[n-1:]}
 }
 
 // # line pp-tokens new-line

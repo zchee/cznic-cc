@@ -2153,11 +2153,6 @@ func (n *ppErrorDirective) translationPhase4(c *cpp) {
 	c.err(n.toks[0], "%s", strings.TrimSpace(b.String()))
 }
 
-type ppPragmaOperator struct {
-	toks []token3
-	args []token3
-}
-
 type ppPragmaDirective struct {
 	toks []token3
 	args []token3
@@ -2168,7 +2163,7 @@ func (n *ppPragmaDirective) getToks() []token3 { return n.toks }
 func (n *ppPragmaDirective) translationPhase4(c *cpp) { parsePragma(c, n.args) }
 
 func parsePragma(c *cpp, args0 []token3) {
-	if len(args0) == 0 {
+	if len(args0) == 1 { // \n
 		return
 	}
 
@@ -2220,7 +2215,7 @@ func parsePragma(c *cpp, args0 []token3) {
 		return
 	}
 
-	toks := expandArgs(c, args0)
+	toks := expandArgs(c, args0[:len(args0)-1])
 	if len(toks) == 0 {
 		return
 	}
