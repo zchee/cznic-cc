@@ -291,6 +291,7 @@ func (c *cpp) cppToks(toks []token3) (r []cppToken) {
 	r = make([]cppToken, len(toks))
 	for i, v := range toks {
 		r[i].token4.token3 = v
+		r[i].token4.fileID = c.fileID
 	}
 	return r
 }
@@ -339,11 +340,95 @@ func (c *cpp) read() (cppToken, bool) {
 func (c *cpp) write(tok cppToken) {
 	*c.outBuf = append(*c.outBuf, tok.token4)
 	if tok.char == '\n' {
+		for i, tok := range *c.outBuf {
+			if tok.char != ' ' {
+				if tok.char == IDENTIFIER && tok.value == idPragmaOp {
+					toks := (*c.outBuf)[i:]
+					b := token4Pool.Get().(*[]token4)
+					*b = (*b)[:0]
+					c.outBuf = b
+					c.pragmaOp(toks)
+					return
+				}
+
+				break
+			}
+		}
 		c.out <- c.outBuf
 		b := token4Pool.Get().(*[]token4)
 		*b = (*b)[:0]
 		c.outBuf = b
 	}
+}
+
+func (c *cpp) pragmaOp(toks []token4) {
+	var a []string
+loop:
+	for {
+		tok := toks[0]
+		toks = toks[1:] // Skip "_Pragma"
+		toks = ltrim4(toks)
+		if len(toks) == 0 || toks[0].char != '(' {
+			c.err(tok, "expected (")
+			break loop
+		}
+
+		tok = toks[0]
+		toks = toks[1:] // Skip '('
+		toks = ltrim4(toks)
+		if len(toks) == 0 || (toks[0].char != STRINGLITERAL && toks[0].char != LONGSTRINGLITERAL) {
+			c.err(toks[0], "expected string literal")
+			break loop
+		}
+
+		tok = toks[0]
+		a = append(a, tok.String())
+		toks = toks[1:] // Skip string literal
+		toks = ltrim4(toks)
+		if len(toks) == 0 || toks[0].char != ')' {
+			c.err(toks[0], "expected )")
+			break loop
+		}
+
+		toks = toks[1:] // Skip ')'
+		toks = ltrim4(toks)
+		if len(toks) == 0 {
+			break loop
+		}
+
+		switch tok := toks[0]; {
+		case tok.char == '\n':
+			break loop
+		case tok.char == IDENTIFIER && tok.value == idPragmaOp:
+			// ok
+		default:
+			c.err(tok, "expected new-line")
+			break loop
+		}
+	}
+	for i, v := range a {
+		// [0], 6.10.9, 1
+		if v[0] == 'L' {
+			v = v[1:]
+		}
+		v = v[1 : len(v)-1]
+		v = strings.ReplaceAll(v, `\"`, `"`)
+		a[i] = "#pragma " + strings.ReplaceAll(v, `\\`, `\`) + "\n"
+	}
+	src := strings.Join(a, "")
+	s := newScanner0(c.ctx, strings.NewReader(src), token.NewFile("", len(src)), 4096)
+	if ppf := s.translationPhase3(); ppf != nil {
+		ppf.translationPhase4(c)
+	}
+}
+
+func ltrim4(toks []token4) []token4 {
+	for i, v := range toks {
+		if v.char != ' ' {
+			return toks[i:]
+		}
+	}
+	return toks
 }
 
 func (c *cpp) writes(toks []cppToken) {
@@ -2096,8 +2181,6 @@ func stringConst(t cppToken) string {
 
 // -------------------------------------------------------- Translation phase 4
 
-//TODO _Pragma
-
 // [0], 5.1.1.2, 4
 //
 // Preprocessing directives are executed, macro invocations are expanded, and
@@ -2171,8 +2254,8 @@ func parsePragma(c *cpp, args0 []token3) {
 		p := t
 		p.char = PRAGMASTDC
 		p.value = idPragmaSTDC
-		send := []token3{p}
-		args := ltrim(args0[1:])
+		send := []token3{p, {char: ' ', value: idSpace, pos: t.pos}}
+		args := ltrim3(args0[1:])
 		if len(args) == 0 {
 			c.err(args[0], "expected argument of STDC")
 			return
@@ -2191,7 +2274,7 @@ func parsePragma(c *cpp, args0 []token3) {
 			return
 		}
 
-		args = ltrim(args[1:])
+		args = ltrim3(args[1:])
 		if len(args) == 0 {
 			c.err(args[0], "expected ON or OFF or DEFAULT")
 			return
@@ -2204,7 +2287,7 @@ func parsePragma(c *cpp, args0 []token3) {
 
 		switch t.value {
 		case idOn, idOff, idDefault:
-			c.send(append(send, args0...))
+			c.writes(c.cppToks(append(send, args0...)))
 		default:
 			c.err(t, "expected ON or OFF or DEFAULT")
 			return

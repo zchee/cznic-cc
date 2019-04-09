@@ -403,6 +403,13 @@ func tokStr(toks interface{}, sep string) string {
 			}
 			b.WriteString(v.String())
 		}
+	case []token4:
+		for i, v := range x {
+			if i != 0 {
+				b.WriteString(sep)
+			}
+			b.WriteString(v.String())
+		}
 	case []cppToken:
 		for i, v := range x {
 			if i != 0 {

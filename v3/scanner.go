@@ -638,7 +638,7 @@ again:
 			case STRINGLITERAL:
 				lit = tok.String()
 			case LONGSTRINGLITERAL:
-				lit = tok.String()[1:]
+				lit = tok.String()[1:] // [0], 6.9.10, 1
 			default:
 				s.err(tok, "expected string literal")
 				return &ppTextLine{toks: toks}
@@ -655,7 +655,10 @@ again:
 			}
 
 			s.unget(s.lookaheadChar)
-			lit = lit[1 : len(lit)-1] // Remove leading/trailing '"'
+			// [0], 6.9.10, 1
+			lit = lit[1 : len(lit)-1]
+			lit = strings.ReplaceAll(lit, `\"`, `"`)
+			lit = strings.ReplaceAll(lit, `\\`, `\`)
 			lit = "#pragma " + lit + "\n"
 			for i := len(lit) - 1; i >= 0; i-- {
 				s.unget(char{pos, lit[i]})
@@ -689,16 +692,16 @@ func (s *scanner) parseLine(toks []token3) *ppLineDirective {
 		toks := s.scanLineToEOL(toks)
 		r := &ppLineDirective{toks: toks}
 		toks = toks[:len(toks)-1] // sans new-line
-		toks = ltrim(toks)
+		toks = ltrim3(toks)
 		toks = toks[1:] // Skip '#'
-		toks = ltrim(toks)
+		toks = ltrim3(toks)
 		toks = toks[1:] // Skip "line"
-		r.args = ltrim(toks)
+		r.args = ltrim3(toks)
 		return r
 	}
 }
 
-func ltrim(toks []token3) []token3 {
+func ltrim3(toks []token3) []token3 {
 	for i, v := range toks {
 		if v.char != ' ' {
 			return toks[i:]
