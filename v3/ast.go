@@ -1296,6 +1296,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	        Pointer DirectDeclarator AttributeSpecifierList
 type Declarator struct {
 	IsTypedefName          bool
+	typeSpecification      TypeSpecification
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator
 	Pointer                *Pointer
@@ -4346,7 +4347,7 @@ func (n StructDeclaratorCase) String() string {
 // StructDeclarator represents data reduced by productions:
 //
 //	StructDeclarator:
-//	        Declarator                                                // Case StructDeclaratorDecl
+//	        Declarator AttributeSpecifierList                         // Case StructDeclaratorDecl
 //	|       Declarator ':' ConstantExpression AttributeSpecifierList  // Case StructDeclaratorBitField
 type StructDeclarator struct {
 	AttributeSpecifierList *AttributeSpecifierList
@@ -4367,7 +4368,11 @@ func (n *StructDeclarator) Position() (r token.Position) {
 
 	switch n.Case {
 	case 0:
-		return n.Declarator.Position()
+		if p := n.Declarator.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.AttributeSpecifierList.Position()
 	case 1:
 		if p := n.Declarator.Position(); p.IsValid() {
 			return p

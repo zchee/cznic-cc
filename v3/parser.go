@@ -444,7 +444,7 @@ func (p *parser) peek(handleTypedefname bool) rune {
 						return IDENTIFIER
 					case *Enumerator:
 						return IDENTIFIER
-					case *EnumSpecifier, *StructOrUnionSpecifier:
+					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 						// nop
 					default:
 						panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(p.tok))) //TODOOK
@@ -511,7 +511,7 @@ out:
 						if x.isVisible(seq) {
 							break out
 						}
-					case *EnumSpecifier, *StructOrUnionSpecifier:
+					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 						// nop
 					default:
 						panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(p.tok))) //TODOOK
@@ -1377,7 +1377,7 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) *Declarat
 		}
 	}
 
-	list := p.initDeclaratorList(d, ds.isTypedef())
+	list := p.initDeclaratorList(d, ds.isTypedef(), ds)
 	p.typedefNameEnabled = true
 	var t Token
 	switch p.rune() {
@@ -1451,14 +1451,14 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 //  init-declarator-list:
 // 	init-declarator
 // 	init-declarator-list , attribute-specifier-list_opt init-declarator
-func (p *parser) initDeclaratorList(d *Declarator, isTypedefName bool) (r *InitDeclaratorList) {
-	r = &InitDeclaratorList{InitDeclarator: p.initDeclarator(d, isTypedefName)}
+func (p *parser) initDeclaratorList(d *Declarator, isTypedefName bool, ds *DeclarationSpecifiers) (r *InitDeclaratorList) {
+	r = &InitDeclaratorList{InitDeclarator: p.initDeclarator(d, isTypedefName, ds)}
 	for prev := r; ; prev = prev.InitDeclaratorList {
 		switch p.rune() {
 		case ',':
 			t := p.shift()
 			attr := p.attributeSpecifierListOpt()
-			prev.InitDeclaratorList = &InitDeclaratorList{Token: t, AttributeSpecifierList: attr, InitDeclarator: p.initDeclarator(nil, isTypedefName)}
+			prev.InitDeclaratorList = &InitDeclaratorList{Token: t, AttributeSpecifierList: attr, InitDeclarator: p.initDeclarator(nil, isTypedefName, ds)}
 		default:
 			return r
 		}
@@ -1475,9 +1475,9 @@ func (p *parser) attributeSpecifierListOpt() (r *AttributeSpecifierList) {
 //  init-declarator:
 // 	declarator attribute-specifier-list_opt
 // 	declarator attribute-specifier-list_opt = initializer
-func (p *parser) initDeclarator(d *Declarator, isTypedefName bool) *InitDeclarator {
+func (p *parser) initDeclarator(d *Declarator, isTypedefName bool, ds *DeclarationSpecifiers) *InitDeclarator {
 	if d == nil {
-		d = p.declarator(true, isTypedefName, nil)
+		d = p.declarator(true, isTypedefName, nil, ds)
 	}
 	attr := p.attributeSpecifierListOpt()
 	switch p.rune() {
@@ -1742,7 +1742,7 @@ func (p *parser) structDeclaration() (r *StructDeclaration) {
 			p.err("expected struct-declarator")
 		}
 	default:
-		list = p.structDeclaratorList()
+		list = p.structDeclaratorList(sql)
 	}
 	r = &StructDeclaration{SpecifierQualifierList: sql, StructDeclaratorList: list}
 	var t Token
@@ -1812,13 +1812,13 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 //  struct-declarator-list:
 // 	struct-declarator
 // 	struct-declarator-list , struct-declarator
-func (p *parser) structDeclaratorList() (r *StructDeclaratorList) {
-	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator()}
+func (p *parser) structDeclaratorList(sql *SpecifierQualifierList) (r *StructDeclaratorList) {
+	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator(sql)}
 	for prev := r; ; prev = prev.StructDeclaratorList {
 		switch p.rune() {
 		case ',':
 			t := p.shift()
-			prev.StructDeclaratorList = &StructDeclaratorList{Token: t, StructDeclarator: p.structDeclarator()}
+			prev.StructDeclaratorList = &StructDeclaratorList{Token: t, StructDeclarator: p.structDeclarator(sql)}
 		default:
 			return r
 		}
@@ -1828,21 +1828,24 @@ func (p *parser) structDeclaratorList() (r *StructDeclaratorList) {
 //  struct-declarator:
 // 	declarator
 // 	declarator_opt : constant-expression attribute-specifier-list_opt
-func (p *parser) structDeclarator() *StructDeclarator {
+func (p *parser) structDeclarator(sql *SpecifierQualifierList) (r *StructDeclarator) {
 	var d *Declarator
 	if p.rune() != ':' {
-		d = p.declarator(true, false, nil)
+		d = p.declarator(false, false, nil, sql)
 	}
 
 	switch p.rune() {
 	case ':':
 		t := p.shift()
-		r := &StructDeclarator{Case: StructDeclaratorBitField, Declarator: d, Token: t, ConstantExpression: p.constantExpression()}
-		r.AttributeSpecifierList = p.attributeSpecifierListOpt()
-		return r
+		r = &StructDeclarator{Case: StructDeclaratorBitField, Declarator: d, Token: t, ConstantExpression: p.constantExpression()}
 	default:
-		return &StructDeclarator{Case: StructDeclaratorDecl, Declarator: d}
+		r = &StructDeclarator{Case: StructDeclaratorDecl, Declarator: d}
 	}
+	r.AttributeSpecifierList = p.attributeSpecifierListOpt()
+	if d != nil {
+		p.declScope.declare(d.Name(), r)
+	}
+	return r
 }
 
 // [0], 6.7.2.2 Enumeration specifiers
@@ -2008,11 +2011,11 @@ func (p *parser) functionSpecifier() *FunctionSpecifier {
 //
 //  declarator:
 // 	pointer_opt direct-declarator attribute-specifier-list_opt
-func (p *parser) declarator(declare, isTypedefName bool, ptr *Pointer) *Declarator {
+func (p *parser) declarator(declare, isTypedefName bool, ptr *Pointer, ts TypeSpecification) *Declarator {
 	if ptr == nil && p.rune() == '*' {
 		ptr = p.pointer()
 	}
-	r := &Declarator{IsTypedefName: isTypedefName, Pointer: ptr, DirectDeclarator: p.directDeclarator(nil)}
+	r := &Declarator{IsTypedefName: isTypedefName, Pointer: ptr, DirectDeclarator: p.directDeclarator(nil), typeSpecification: ts}
 	r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 	if declare {
 		p.declScope.declare(r.Name(), r)
@@ -2088,7 +2091,7 @@ func (p *parser) directDeclarator(d *DirectDeclarator) (r *DirectDeclarator) {
 		case '(':
 			t := p.shift()
 			attr := p.attributeSpecifierListOpt()
-			d := p.declarator(false, false, nil)
+			d := p.declarator(false, false, nil, nil)
 			var t2 Token
 			switch p.rune() {
 			case ')':
@@ -2350,7 +2353,7 @@ func (p *parser) declaratorOrAbstractDeclarator(isTypedefName bool) (r Node) {
 	}
 	switch p.rune() {
 	case IDENTIFIER:
-		return p.declarator(false, isTypedefName, ptr)
+		return p.declarator(false, isTypedefName, ptr, nil)
 	case '[':
 		return p.abstractDeclarator(ptr)
 	case '(':
@@ -3037,7 +3040,7 @@ func (p *parser) blockItem() *BlockItem {
 			return r
 		}
 
-		d := p.declarator(true, ds.isTypedef(), nil)
+		d := p.declarator(true, ds.isTypedef(), nil, ds)
 		switch p.rune() {
 		case '{':
 			if p.ctx.cfg.RejectNestedFunctionDefinitions {
@@ -3468,7 +3471,7 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 	}
 
 	p.rune()
-	d := p.declarator(true, ds.isTypedef(), nil)
+	d := p.declarator(true, ds.isTypedef(), nil, ds)
 	p.rune()
 	switch p.rune() {
 	case ',', ';', '=', ATTRIBUTE:

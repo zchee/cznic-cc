@@ -519,10 +519,12 @@ type Source struct {
 // The parser does only the minimum declarations/identifier resolving necessary
 // for correct parsing. Redeclarations are not checked.
 //
-// Declarators are inserted in the appropriate scopes.
+// Declarators (*Declarator) and StructDeclarators (*StructDeclarator) are
+// inserted in the appropriate scopes.
 //
-// Tagged struct/union specifier definitions and tagged enum specifier
-// definitions are inserted in the appropriate scopes.
+// Tagged struct/union specifier definitions (*StructOrUnionSpecifier) and
+// tagged enum specifier definitions (*EnumSpecifier) are inserted in the
+// appropriate scopes.
 func Parse(cfg *Config, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
 	return parse(newContext(cfg), includePaths, sysIncludePaths, sources)
 }

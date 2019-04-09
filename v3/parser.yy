@@ -493,7 +493,7 @@ package cc // import "modernc.org/cc/v3"
 		
 			/*yy:example struct{ int i; } */
 /*yy:case Decl       */ StructDeclarator:
-				Declarator
+				Declarator AttributeSpecifierList
 			/*yy:example struct{ int i:3; } */
 /*yy:case BitField   */ |	Declarator ':' ConstantExpression AttributeSpecifierList
 
@@ -542,7 +542,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:field	IsTypedefName	bool */
+			/*yy:field	IsTypedefName		bool */
+			/*yy:field	typeSpecification	TypeSpecification	*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE

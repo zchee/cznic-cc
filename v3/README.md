@@ -4,7 +4,7 @@ Package CC is a C99 compiler front end. Work In Progress. API unstable.
 
 The package will get a go.mod file and a proper repository tag once it becomes reasonably complete and stable.
 
-At the moment the Parse function seems to work and is nearly complete (TODO #line, #pragma and the pragma operator).
+At the moment the Parse function seems to work.
 
 The bigger missing piece is type checking.
 

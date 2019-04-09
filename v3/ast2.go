@@ -9,8 +9,14 @@ import (
 )
 
 var (
-	_ Node = (*AST)(nil)
+	_ Node              = (*AST)(nil)
+	_ TypeSpecification = (*DeclarationSpecifiers)(nil)
+	_ TypeSpecification = (*SpecifierQualifierList)(nil)
 )
+
+// TypeSpecification is either nil or one of: *DeclarationSpecifiers,
+// *SpecifierQualifierList.
+type TypeSpecification interface{ isTypeSpecification() }
 
 // LexicalScope returns the lexical scope of n.
 func (n *AttributeValue) LexicalScope() Scope { return n.lexicalScope }
@@ -50,6 +56,9 @@ func (n *Declarator) Name() StringID {
 
 	return n.DirectDeclarator.Name()
 }
+
+// TypeSpecification returns n's type specification.
+func (n *Declarator) TypeSpecification() TypeSpecification { return n.typeSpecification }
 
 // LexicalScope returns the lexical scope of n.
 func (n *Designator) LexicalScope() Scope { return n.lexicalScope }
@@ -136,6 +145,8 @@ func (n *DirectDeclarator) ParamScope() Scope {
 // LexicalScope returns the lexical scope of n.
 func (n *DirectDeclarator) LexicalScope() Scope { return n.lexicalScope }
 
+func (n *DeclarationSpecifiers) isTypeSpecification() {}
+
 func (n *DeclarationSpecifiers) isTypedef() bool {
 	for n != nil {
 		if n.StorageClassSpecifier.isTypedef() {
@@ -167,6 +178,8 @@ func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
 
 // LexicalScope returns the lexical scope of n.
 func (n *PrimaryExpression) LexicalScope() Scope { return n.lexicalScope }
+
+func (n *SpecifierQualifierList) isTypeSpecification() {}
 
 func (n *StorageClassSpecifier) isTypedef() bool {
 	return n != nil && n.Case == StorageClassSpecifierTypedef
