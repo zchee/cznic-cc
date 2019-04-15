@@ -5,36 +5,280 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
-	"modernc.org/token"
+	"fmt"
 )
 
-var (
-	_ Node              = (*AST)(nil)
-	_ TypeSpecification = (*DeclarationSpecifiers)(nil)
-	_ TypeSpecification = (*SpecifierQualifierList)(nil)
-)
-
-// TypeSpecification is either nil or one of: *DeclarationSpecifiers,
-// *SpecifierQualifierList.
-type TypeSpecification interface{ isTypeSpecification() }
-
-// LexicalScope returns the lexical scope of n.
-func (n *AttributeValue) LexicalScope() Scope { return n.lexicalScope }
+// Source is a named part of a translation unit. If Value is empty, Name is
+// interpreted as a path to file containing the source code.
+type Source struct {
+	Name  string
+	Value string
+}
 
 // AST represents a translation unit with related data.
 type AST struct {
 	Scope             Scope    // File scope.
 	TrailingSeperator StringID // White space and/or comments preceding EOF.
 	TranslationUnit   *TranslationUnit
+	cfg               *Config
 }
 
-// Position implements Node.
-func (n *AST) Position() token.Position { return n.TranslationUnit.Position() }
+// Parse preprocesses and parses a translation unit and returns an *AST or
+// error, if any.
+//
+// Search paths listed in includePaths and sysIncludePaths are used to resolve
+// #include "foo.h" and #include <foo.h> preprocessing directives respectively.
+// A special search path "@" is interpreted as 'the same directory as where the
+// file with the #include directive is'.
+//
+// The sources should typically provide, usually in this particular order:
+//
+// - predefined macros, eg.
+//
+//	#define __SIZE_TYPE__ long unsigned int
+//
+// - built-in declarations, eg.
+//
+//	int __builtin_printf(char *__format, ...);
+//
+// - command-line provided directives, eg.
+//
+//	#define FOO
+//	#define BAR 42
+//	#undef QUX
+//
+// - normal C sources, eg.
+//
+//	int main() {}
+//
+// All search and file paths should be absolute paths.
+//
+// If the preprocessed translation unit is empty, the function may return (nil,
+// nil).
+//
+// The parser does only the minimum declarations/identifier resolving necessary
+// for correct parsing. Redeclarations are not checked.
+//
+// Declarators (*Declarator) and StructDeclarators (*StructDeclarator) are
+// inserted in the appropriate scopes.
+//
+// Tagged struct/union specifier definitions (*StructOrUnionSpecifier) and
+// tagged enum specifier definitions (*EnumSpecifier) are inserted in the
+// appropriate scopes.
+func Parse(cfg *Config, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
+	return parse(newContext(cfg), includePaths, sysIncludePaths, sources)
+}
 
-// Scope returns n's scope.
-func (n *CompoundStatement) Scope() Scope { return n.scope }
+func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
+	ctx.includePaths = includePaths
+	ctx.sysIncludePaths = sysIncludePaths
+	var in []source
+	for _, v := range sources {
+		ts, err := cache.get(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+
+		in = append(in, ts)
+	}
+
+	p := newParser(ctx, make(chan *[]Token, 5000)) //DONE benchmark tuned
+	var sep StringID
+	var seq int32
+	go func() {
+		cpp := newCPP(ctx)
+
+		defer func() {
+			close(p.in)
+			ctx.intMaxWidth = cpp.intMaxWidth()
+		}()
+
+		toks := tokenPool.Get().(*[]Token)
+		*toks = (*toks)[:0]
+		for pline := range cpp.translationPhase4(in) {
+			line := *pline
+			for _, tok := range line {
+				switch tok.char {
+				case ' ', '\n':
+					switch {
+					case sep != 0:
+						sep = dict.sid(sep.String() + tok.String())
+					default:
+						sep = tok.value
+					}
+				default:
+					var t Token
+					t.Rune = tok.char
+					t.Sep = sep
+					t.Value = tok.value
+					t.fileID = tok.fileID
+					t.pos = tok.pos
+					seq++
+					t.seq = seq
+					*toks = append(*toks, t)
+					sep = 0
+				}
+			}
+			token4Pool.Put(pline)
+			var c rune
+			if n := len(*toks); n != 0 {
+				c = (*toks)[n-1].Rune
+			}
+			switch c {
+			case STRINGLITERAL, LONGSTRINGLITERAL:
+				// nop
+			default:
+				if len(*toks) != 0 {
+					p.in <- translationPhase5and6(ctx, toks)
+					toks = tokenPool.Get().(*[]Token)
+					*toks = (*toks)[:0]
+				}
+			}
+		}
+		if len(*toks) != 0 {
+			p.in <- translationPhase5and6(ctx, toks)
+		}
+	}()
+
+	tu := p.translationUnit()
+	if p.errored { // Must drain
+		go func() {
+			for range p.in {
+			}
+		}()
+	}
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	if p.errored && !ctx.cfg.ignoreErrors {
+		return nil, fmt.Errorf("%v: syntax error", p.tok.Position())
+	}
+
+	if p.scopes != 0 {
+		panic("internal error: invalid scope nesting but no error reported") //TODOOK
+	}
+
+	return &AST{
+		Scope:             p.declScope,
+		TrailingSeperator: sep,
+		TranslationUnit:   tu,
+		cfg:               ctx.cfg,
+	}, nil
+}
+
+func translationPhase5and6(ctx *context, toks *[]Token) *[]Token {
+	// [0], 5.1.1.2, 5
+	//
+	// Each source character set member and escape sequence in character
+	// constants and string literals is converted to the corresponding
+	// member of the execution character set; if there is no corresponding
+	// member, it is converted to an implementation- defined member other
+	// than the null (wide) character.
+	for i, tok := range *toks {
+		var cpt cppToken
+		switch tok.Rune {
+		case STRINGLITERAL, LONGSTRINGLITERAL:
+			cpt.char = tok.Rune
+			cpt.value = tok.Value
+			cpt.fileID = tok.fileID
+			cpt.pos = tok.pos
+			(*toks)[i].Value = dict.sid(stringConst(cpt))
+		case CHARCONST, LONGCHARCONST:
+			var cpt cppToken
+			cpt.char = tok.Rune
+			cpt.value = tok.Value
+			cpt.fileID = tok.fileID
+			cpt.pos = tok.pos
+			switch r := charConst(ctx, cpt); {
+			case r >= -255 && r < 0:
+				(*toks)[i].Value = dict.sid(string([]byte{byte(-r)}))
+			case r <= 255:
+				(*toks)[i].Value = dict.sid(string([]byte{byte(r)}))
+			default:
+				switch cpt.char {
+				case CHARCONST:
+					ctx.err(tok.Position(), "invalid character constant: %s", tok.Value)
+				default:
+					(*toks)[i].Value = dict.sid(string(r))
+				}
+			}
+		}
+	}
+	// [0], 5.1.1.2, 6
+	//
+	// Adjacent string literal tokens are concatenated.
+	w := 0
+	for i, tok := range *toks {
+		switch tok.Rune {
+		case STRINGLITERAL, LONGSTRINGLITERAL:
+			if i > 0 {
+				switch (*toks)[i-1].Rune {
+				case STRINGLITERAL, LONGSTRINGLITERAL:
+					(*toks)[i-1].Value = dict.sid((*toks)[i-1].String() + tok.String())
+					// /*x*/ "a" /*y*/ "b" -> "ab" with sep "/*x*/  /*y*/"
+					(*toks)[i-1].Sep = dict.sid((*toks)[i-1].Sep.String() + tok.Sep.String())
+					continue
+				}
+			}
+			fallthrough
+		default:
+			(*toks)[w] = tok
+			w++
+		}
+	}
+	*toks = (*toks)[:w]
+	return toks
+}
+
+// Translate parses and typechecks a translation unit  and returns an *AST or
+// error, if any.
+//
+// Please see Parse for the documentation of the parameters.
+func Translate(cfg *Config, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
+	return translate(newContext(cfg), includePaths, sysIncludePaths, sources)
+}
+
+func translate(ctx *context, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
+	ast, err := parse(ctx, includePaths, sysIncludePaths, sources)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = ast.Typecheck(); err != nil {
+		return nil, err
+	}
+
+	return ast, nil
+}
+
+// Typecheck determines types of objects and expressions and verifies types are
+// valid in the context they are used.
+func (n *AST) Typecheck() error {
+	ctx := newContext(n.cfg)
+	if err := ctx.cfg.ABI.sanityCheck(ctx, int(ctx.intMaxWidth)); err != nil {
+		return err
+	}
+
+	n.TranslationUnit.check(ctx)
+	return ctx.Err()
+}
+
+func (n *AlignmentSpecifier) align() int {
+	return 1 //TODO
+}
 
 func (n *Declarator) isVisible(at int32) bool { return n.DirectDeclarator.ends() < at }
+
+// Name returns n's declared name.
+func (n *Declarator) Name() StringID {
+	if n == nil || n.DirectDeclarator == nil {
+		return 0
+	}
+
+	return n.DirectDeclarator.Name()
+}
 
 // ParamScope returns the scope in which n's function parameters are declared
 // if the underlying type of n is a function or nil otherwise. If n is part of
@@ -48,38 +292,23 @@ func (n *Declarator) ParamScope() Scope {
 	return n.DirectDeclarator.ParamScope()
 }
 
-// Name returns n's declared name.
-func (n *Declarator) Name() StringID {
-	if n.DirectDeclarator == nil {
-		return 0
-	}
+// Type returns the type of n.
+func (n *Declarator) Type() Type { return n.typ }
 
-	return n.DirectDeclarator.Name()
-}
-
-// TypeSpecification returns n's type specification.
-func (n *Declarator) TypeSpecification() TypeSpecification { return n.typeSpecification }
-
-// LexicalScope returns the lexical scope of n.
-func (n *Designator) LexicalScope() Scope { return n.lexicalScope }
-
-// Name returns n's declared name.
-func (n *DirectDeclarator) Name() StringID {
-	for {
-		if n == nil {
-			return 0
+func (n *DeclarationSpecifiers) isTypedef() bool {
+	for n != nil {
+		if n.StorageClassSpecifier.isTypedef() {
+			return true
 		}
 
-		switch n.Case {
-		case DirectDeclaratorIdent: // IDENTIFIER
-			return n.Token.Value
-		case DirectDeclaratorDecl: // '(' Declarator ')'
-			return n.Declarator.Name()
-		default:
-			n = n.DirectDeclarator
-		}
+		n = n.DeclarationSpecifiers
 	}
+	return false
 }
+
+func (n *DeclarationSpecifiers) isTypeDescriptor() {}
+
+func (n *DirectAbstractDeclarator) TypeQualifier() Type { return n.typeQualifiers }
 
 func (n *DirectDeclarator) ends() int32 {
 	switch n.Case {
@@ -101,6 +330,26 @@ func (n *DirectDeclarator) ends() int32 {
 		return n.Token2.seq
 	default:
 		panic("internal error") //TODOOK
+	}
+}
+
+func (n *DirectDeclarator) TypeQualifier() Type { return n.typeQualifiers }
+
+// Name returns n's declared name.
+func (n *DirectDeclarator) Name() StringID {
+	for {
+		if n == nil {
+			return 0
+		}
+
+		switch n.Case {
+		case DirectDeclaratorIdent: // IDENTIFIER
+			return n.Token.Value
+		case DirectDeclaratorDecl: // '(' Declarator ')'
+			return n.Declarator.Name()
+		default:
+			n = n.DirectDeclarator
+		}
 	}
 }
 
@@ -142,55 +391,58 @@ func (n *DirectDeclarator) ParamScope() Scope {
 	}
 }
 
-// LexicalScope returns the lexical scope of n.
-func (n *DirectDeclarator) LexicalScope() Scope { return n.lexicalScope }
-
-func (n *DeclarationSpecifiers) isTypeSpecification() {}
-
-func (n *DeclarationSpecifiers) isTypedef() bool {
-	for n != nil {
-		if n.StorageClassSpecifier.isTypedef() {
-			return true
-		}
-
-		n = n.DeclarationSpecifiers
-	}
-	return false
-}
-
 func (n *Enumerator) isVisible(at int32) bool { return n.Token.seq < at }
 
-// LexicalScope returns the lexical scope of n.
-func (n *EnumSpecifier) LexicalScope() Scope { return n.lexicalScope }
+func (n *Pointer) TypeQualifier() Type { return n.typeQualifiers }
 
-// LexicalScope returns the lexical scope of n.
-func (n *IdentifierList) LexicalScope() Scope { return n.lexicalScope }
+func (n *TypeQualifiers) isTypeDescriptor() {}
 
-// LexicalScope returns the lexical scope of n.
-func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }
-
-// LexicalScope returns the lexical scope of n.
-func (n *LabeledStatement) LexicalScope() Scope { return n.lexicalScope }
-
-// ResolvedIn reports which scope the identifier of cases
-// PrimaryExpressionIdent, PrimaryExpressionEnum were resolved in, if any.
-func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
-
-// LexicalScope returns the lexical scope of n.
-func (n *PrimaryExpression) LexicalScope() Scope { return n.lexicalScope }
-
-func (n *SpecifierQualifierList) isTypeSpecification() {}
+func (n *SpecifierQualifierList) isTypeDescriptor() {}
 
 func (n *StorageClassSpecifier) isTypedef() bool {
 	return n != nil && n.Case == StorageClassSpecifierTypedef
 }
 
-// LexicalScope returns the lexical scope of n.
-func (n *StructOrUnionSpecifier) LexicalScope() Scope { return n.lexicalScope }
+// Type returns the type of n.
+func (n *TypeName) Type() Type { return n.typ }
 
-// ResolvedIn reports which scope the identifier of case
-// TypeSpecifierTypedefName was resolved in, if any.
-func (n *TypeSpecifier) ResolvedIn() Scope { return n.resolvedIn }
+// // LexicalScope returns the lexical scope of n.
+// func (n *AttributeValue) LexicalScope() Scope { return n.lexicalScope }
 
-// LexicalScope returns the lexical scope of n.
-func (n *UnaryExpression) LexicalScope() Scope { return n.lexicalScope }
+// // Scope returns n's scope.
+// func (n *CompoundStatement) Scope() Scope { return n.scope }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *Designator) LexicalScope() Scope { return n.lexicalScope }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *DirectDeclarator) LexicalScope() Scope { return n.lexicalScope }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *EnumSpecifier) LexicalScope() Scope { return n.lexicalScope }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *IdentifierList) LexicalScope() Scope { return n.lexicalScope }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *LabeledStatement) LexicalScope() Scope { return n.lexicalScope }
+
+// // ResolvedIn reports which scope the identifier of cases
+// // PrimaryExpressionIdent, PrimaryExpressionEnum were resolved in, if any.
+// func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *PrimaryExpression) LexicalScope() Scope { return n.lexicalScope }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *StructOrUnionSpecifier) LexicalScope() Scope { return n.lexicalScope }
+
+// // ResolvedIn reports which scope the identifier of case
+// // TypeSpecifierTypedefName was resolved in, if any.
+// func (n *TypeSpecifier) ResolvedIn() Scope { return n.resolvedIn }
+
+// // LexicalScope returns the lexical scope of n.
+// func (n *UnaryExpression) LexicalScope() Scope { return n.lexicalScope }

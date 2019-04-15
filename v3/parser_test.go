@@ -183,7 +183,10 @@ func TestParseSQLite(t *testing.T) {
 	t.Run("sqlite3.c/gnu", func(t *testing.T) { testParse(t, cfg, testPredefGNU, filepath.Join(root, "sqlite3.c")) })
 }
 
+var testParseAST *AST
+
 func testParse(t *testing.T, cfg *Config, predef string, files ...string) {
+	testParseAST = nil
 	sources := []Source{
 		{Name: "<predefined>", Value: predef},
 		{Name: "<built-in>", Value: parserTestBuiltin},
@@ -193,10 +196,11 @@ func testParse(t *testing.T, cfg *Config, predef string, files ...string) {
 	}
 	ctx := newContext(cfg)
 	var m0, m1 runtime.MemStats
+	var err error
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m0)
 	t0 := time.Now()
-	if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
+	if testParseAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
 		t.Error(err)
 	}
 	d := time.Since(t0)
@@ -209,13 +213,13 @@ func testParse(t *testing.T, cfg *Config, predef string, files ...string) {
 func BenchmarkParseSQLite(b *testing.B) {
 	cfg := &Config{}
 	root := filepath.Join(testWD, filepath.FromSlash(sqliteDir))
-	b.Run("shell.c", func(b *testing.B) { benchmarkParse(b, cfg, testPredef, filepath.Join(root, "shell.c")) })
-	b.Run("shell.c/gnu", func(b *testing.B) { benchmarkParse(b, cfg, testPredefGNU, filepath.Join(root, "shell.c")) })
-	b.Run("sqlite3.c", func(b *testing.B) { benchmarkParse(b, cfg, testPredef, filepath.Join(root, "sqlite3.c")) })
-	b.Run("sqlite3.c/gnu", func(b *testing.B) { benchmarkParse(b, cfg, testPredefGNU, filepath.Join(root, "sqlite3.c")) })
+	b.Run("shell.c", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredef, filepath.Join(root, "shell.c")) })
+	b.Run("shell.c/gnu", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredefGNU, filepath.Join(root, "shell.c")) })
+	b.Run("sqlite3.c", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredef, filepath.Join(root, "sqlite3.c")) })
+	b.Run("sqlite3.c/gnu", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredefGNU, filepath.Join(root, "sqlite3.c")) })
 }
 
-func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
+func benchmarkParseSQLite(b *testing.B, cfg *Config, predef string, files ...string) {
 	sources := []Source{
 		{Name: "<predefined>", Value: predef},
 		{Name: "<built-in>", Value: parserTestBuiltin},
@@ -242,64 +246,53 @@ func benchmarkParse(b *testing.B, cfg *Config, predef string, files ...string) {
 	b.SetBytes(sz)
 }
 
-// ==== jnml@4670:~/src/modernc.org/cc/v3> date ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 | tee log
-// Mon Apr  8 21:40:55 CEST 2019
+// jnml@4670:~/src/modernc.org/cc/v3$ date ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 | tee log
+// Sun Apr 14 22:57:51 CEST 2019
 // === RUN   TestDevParse
-// === RUN   TestDevParse/.c
 // === RUN   TestDevParse/.c/gnu
-// --- PASS: TestDevParse (605.20s)
-//     --- PASS: TestDevParse/.c (306.56s)
+// --- PASS: TestDevParse (304.52s)
+//     --- PASS: TestDevParse/.c/gnu (304.52s)
 //         ---- pass at least 1000 files
-//           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
-//           4022/4293   93.69% gcc-8.3.0/gcc/testsuite/gcc.dg
-//           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
-//           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
-//           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
-//           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
-//           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 915,156, bytes 11,155,630,852, ok 25,957, 5m5.705943835s, 36,491,377 B/s, mem 2,348,715,704
-//     --- PASS: TestDevParse/.c/gnu (298.64s)
-//         ---- pass at least 1000 files
-//           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
+//           5678/5713   99.39% gcc-8.3.0/gcc/testsuite/gcc.target/i386
 //           4027/4293   93.80% gcc-8.3.0/gcc/testsuite/gcc.dg
 //           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
-//           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
+//           1558/1564   99.62% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
+//           1076/1094   98.35% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
-//           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,433, sources 907,269, bytes 11,150,232,685, ok 26,108, 4m57.129915602s, 37,526,455 B/s, mem 23,595,632
+//         files 32,435, sources 932,447, bytes 11,434,304,333, ok 26,123, 5m3.674664225s, 37,653,138 B/s, mem 2,350,780,288
 // PASS
-// ok  	modernc.org/cc/v3	605.605s
-// ==== jnml@4670:~/src/modernc.org/cc/v3>
+// ok  	modernc.org/cc/v3	304.923s
+// jnml@4670:~/src/modernc.org/cc/v3$
 
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3> date |& tee log ; go test -timeout 24h -v -dev -run DevParse -maxFiles -1 |& tee -a log
-// Tue Apr  9 13:08:46 CEST 2019
+// Wed Apr 10 10:01:57 CEST 2019
 // === RUN   TestDevParse
 // === RUN   TestDevParse/.c
 // === RUN   TestDevParse/.c/gnu
-// --- PASS: TestDevParse (632.94s)
-//     --- PASS: TestDevParse/.c (312.03s)
+// --- PASS: TestDevParse (638.45s)
+//     --- PASS: TestDevParse/.c (316.75s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
-//           4024/4293   93.73% gcc-8.3.0/gcc/testsuite/gcc.dg
+//           4025/4293   93.76% gcc-8.3.0/gcc/testsuite/gcc.dg
 //           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
 //           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,435, sources 916,522, bytes 11,159,251,650, ok 25,971, 5m11.031791325s, 35,878,170 B/s, mem 2,348,938,968
-//     --- PASS: TestDevParse/.c/gnu (320.91s)
+//         files 32,435, sources 916,514, bytes 11,159,198,946, ok 25,972, 5m15.837032153s, 35,332,142 B/s, mem 2,348,981,880
+//     --- PASS: TestDevParse/.c/gnu (321.70s)
 //         ---- pass at least 1000 files
 //           5684/5713   99.49% gcc-8.3.0/gcc/testsuite/gcc.target/i386
-//           4029/4293   93.85% gcc-8.3.0/gcc/testsuite/gcc.dg
+//           4030/4293   93.87% gcc-8.3.0/gcc/testsuite/gcc.dg
 //           1759/1759  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/compile
 //           1560/1564   99.74% gcc-8.3.0/gcc/testsuite/gcc.dg/tree-ssa
 //           1475/1475  100.00% gcc-8.3.0/gcc/testsuite/gcc.c-torture/execute
 //           1041/1041  100.00% gcc-8.3.0/gcc/testsuite/gcc.dg/vect
 //           1040/1094   95.06% gcc-8.3.0/gcc/testsuite/gcc.dg/torture
-//         files 32,435, sources 908,724, bytes 11,154,285,077, ok 26,122, 5m19.362909527s, 34,926,676 B/s, mem 23,609,264
+//         files 32,435, sources 908,733, bytes 11,154,082,341, ok 26,123, 5m19.950910638s, 34,861,855 B/s, mem 23,569,920
 // PASS
-// ok  	modernc.org/cc/v3	633.409s
+// ok  	modernc.org/cc/v3	638.916s
 // ==== jnml@e5-1650:~/src/modernc.org/cc/v3>
 
 func TestDevParse(t *testing.T) {
@@ -313,9 +306,6 @@ func TestDevParse(t *testing.T) {
 		return
 	}
 
-	t.Run(".c", func(t *testing.T) {
-		testDevParse(t, testPredef, func(s string) bool { return filepath.Ext(s) == ".c" }, 1000)
-	})
 	t.Run(".c/gnu", func(t *testing.T) {
 		testDevParse(t, testPredefGNU, func(s string) bool { return filepath.Ext(s) == ".c" }, 1000)
 	})
@@ -410,7 +400,6 @@ func BenchmarkDevParse(b *testing.B) {
 		return
 	}
 
-	b.Run(".c", func(b *testing.B) { benchmarkDevParse(b, testPredef) })
 	b.Run(".c/gnu", func(b *testing.B) { benchmarkDevParse(b, testPredefGNU) })
 }
 
@@ -484,7 +473,9 @@ func TestParseGCC(t *testing.T) {
 		"gcc/testsuite/gcc.c-torture/compile",
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
-		t.Run(v, func(t *testing.T) { ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v))) })
+		t.Run(v, func(t *testing.T) {
+			ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)))
+		})
 		t.Run(v+"/gnu", func(t *testing.T) {
 			ok += testParseDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)))
 		})
@@ -536,10 +527,12 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 		}()
 
 		if *oTrace {
-			fmt.Fprintln(os.Stderr, path)
+			fmt.Fprintln(os.Stderr, files, path)
 		}
 		if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-			t.Error(err)
+			if predef == testPredefGNU {
+				t.Error(err)
+			}
 			return nil
 		}
 
@@ -553,7 +546,7 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 	runtime.ReadMemStats(&m1)
 	t.Logf("files %v, sources %v, bytes %v, ok %v, %v, %v B/s, mem %v",
 		h(files), h(psources), h(bytes), h(ok), d, h(float64(time.Second)*float64(bytes)/float64(d)), h(m1.Alloc-m0.Alloc))
-	if files != ok {
+	if files != ok && predef == testPredefGNU {
 		t.Errorf("files %v, bytes %v, ok %v", files, bytes, ok)
 	}
 	return ok
@@ -572,7 +565,9 @@ func BenchmarkParseGCC(b *testing.B) {
 		"gcc/testsuite/gcc.c-torture/compile",
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
-		b.Run(v, func(b *testing.B) { benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v))) })
+		b.Run(v, func(b *testing.B) {
+			benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)))
+		})
 		b.Run(v+"/gnu", func(b *testing.B) {
 			benchmarkParseDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)))
 		})
@@ -605,7 +600,9 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string) {
 			}
 			ctx := newContext(cfg)
 			if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-				b.Error(err)
+				if predef == testPredefGNU {
+					b.Error(err)
+				}
 			}
 			bytes += ctx.tuSize
 			return nil

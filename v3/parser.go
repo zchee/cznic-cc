@@ -60,6 +60,10 @@ const (
 	FLOAT                  // float
 	FLOAT128               // _Float128
 	FLOAT16                // __fp16
+	FLOAT32                // _Float32
+	FLOAT32X               // _Float32x
+	FLOAT64                // _Float64
+	FLOAT64X               // _Float64x
 	FLOAT80                // __float80
 	FLOATCONST             // 1.23
 	FOR                    // for
@@ -157,6 +161,10 @@ var (
 		EXTERN:                 dict.sid("EXTERN"),
 		FLOAT128:               dict.sid("FLOAT128"),
 		FLOAT16:                dict.sid("FLOAT16"),
+		FLOAT32:                dict.sid("FLOAT32"),
+		FLOAT32X:               dict.sid("FLOAT32X"),
+		FLOAT64:                dict.sid("FLOAT64"),
+		FLOAT64X:               dict.sid("FLOAT64X"),
 		FLOAT80:                dict.sid("FLOAT80"),
 		FLOAT:                  dict.sid("FLOAT"),
 		FLOATCONST:             dict.sid("FLOATCONST"),
@@ -215,87 +223,97 @@ var (
 		XORASSIGN:              dict.sid("XORASSIGN"),
 	}
 
-	keywords = map[StringID]rune{ // [0], 6.4.1
+	keywords = map[StringID]rune{
+
+		// [0], 6.4.1
+		dict.sid("auto"):     AUTO,
+		dict.sid("break"):    BREAK,
+		dict.sid("case"):     CASE,
+		dict.sid("char"):     CHAR,
+		dict.sid("const"):    CONST,
+		dict.sid("continue"): CONTINUE,
+		dict.sid("default"):  DEFAULT,
+		dict.sid("do"):       DO,
+		dict.sid("double"):   DOUBLE,
+		dict.sid("else"):     ELSE,
+		dict.sid("enum"):     ENUM,
+		dict.sid("extern"):   EXTERN,
+		dict.sid("float"):    FLOAT,
+		dict.sid("for"):      FOR,
+		dict.sid("goto"):     GOTO,
+		dict.sid("if"):       IF,
+		dict.sid("inline"):   INLINE,
+		dict.sid("int"):      INT,
+		dict.sid("long"):     LONG,
+		dict.sid("register"): REGISTER,
+		dict.sid("restrict"): RESTRICT,
+		dict.sid("return"):   RETURN,
+		dict.sid("short"):    SHORT,
+		dict.sid("signed"):   SIGNED,
+		dict.sid("sizeof"):   SIZEOF,
+		dict.sid("static"):   STATIC,
+		dict.sid("struct"):   STRUCT,
+		dict.sid("switch"):   SWITCH,
+		dict.sid("typedef"):  TYPEDEF,
+		dict.sid("union"):    UNION,
+		dict.sid("unsigned"): UNSIGNED,
+		dict.sid("void"):     VOID,
+		dict.sid("volatile"): VOLATILE,
+		dict.sid("while"):    WHILE,
+
+		dict.sid("_Alignas"):      ALIGNAS,
+		dict.sid("_Alignof"):      ALIGNOF,
+		dict.sid("_Atomic"):       ATOMIC,
+		dict.sid("_Bool"):         BOOL,
+		dict.sid("_Complex"):      COMPLEX,
+		dict.sid("_Noreturn"):     NORETURN,
+		dict.sid("_Thread_local"): THREADLOCAL,
+		dict.sid("__alignof"):     ALIGNOF,
+		dict.sid("__alignof__"):   ALIGNOF,
+		dict.sid("__asm"):         ASM,
+		dict.sid("__asm__"):       ASM,
+		dict.sid("__complex"):     COMPLEX,
+		dict.sid("__complex__"):   COMPLEX,
+		dict.sid("__const"):       CONST,
+		dict.sid("__inline"):      INLINE,
+		dict.sid("__inline__"):    INLINE,
+		dict.sid("__pragma_stdc"): PRAGMASTDC,
+		dict.sid("__restrict"):    RESTRICT,
+		dict.sid("__restrict__"):  RESTRICT,
+		dict.sid("__thread"):      THREADLOCAL,
+		dict.sid("__volatile"):    VOLATILE,
+		dict.sid("__volatile__"):  VOLATILE,
+		dict.sid("asm"):           ASM,
+	}
+
+	gccKeywords = map[StringID]rune{
 		dict.sid("_Accum"):                       ACCUM,
-		dict.sid("_Alignas"):                     ALIGNAS,
-		dict.sid("_Alignof"):                     ALIGNOF,
-		dict.sid("_Atomic"):                      ATOMIC,
-		dict.sid("_Bool"):                        BOOL,
-		dict.sid("_Complex"):                     COMPLEX,
 		dict.sid("_Decimal128"):                  DECIMAL128,
 		dict.sid("_Decimal32"):                   DECIMAL32,
 		dict.sid("_Decimal64"):                   DECIMAL64,
 		dict.sid("_Float128"):                    FLOAT128,
 		dict.sid("_Float16"):                     FLOAT16,
+		dict.sid("_Float32"):                     FLOAT32,
+		dict.sid("_Float32x"):                    FLOAT32X,
+		dict.sid("_Float64"):                     FLOAT64,
+		dict.sid("_Float64x"):                    FLOAT64X,
 		dict.sid("_Fract"):                       FRACT,
-		dict.sid("_Noreturn"):                    NORETURN,
 		dict.sid("_Sat"):                         SAT,
-		dict.sid("_Thread_local"):                THREADLOCAL,
-		dict.sid("__alignof"):                    ALIGNOF,
-		dict.sid("__alignof__"):                  ALIGNOF,
-		dict.sid("__asm"):                        ASM,
-		dict.sid("__asm__"):                      ASM,
 		dict.sid("__attribute"):                  ATTRIBUTE,
 		dict.sid("__attribute__"):                ATTRIBUTE,
 		dict.sid("__builtin_types_compatible_p"): BUILTINTYPESCOMPATIBLE,
-		dict.sid("__complex"):                    COMPLEX,
-		dict.sid("__complex__"):                  COMPLEX,
-		dict.sid("__const"):                      CONST,
 		dict.sid("__float128"):                   FLOAT128,
 		dict.sid("__float80"):                    FLOAT80,
 		dict.sid("__fp16"):                       FLOAT16,
 		dict.sid("__imag"):                       IMAG,
 		dict.sid("__imag__"):                     IMAG,
-		dict.sid("__inline"):                     INLINE,
-		dict.sid("__inline__"):                   INLINE,
 		dict.sid("__int128"):                     INT128,
 		dict.sid("__label__"):                    LABEL,
-		dict.sid("__pragma_stdc"):                PRAGMASTDC,
 		dict.sid("__real"):                       REAL,
 		dict.sid("__real__"):                     REAL,
-		dict.sid("__restrict"):                   RESTRICT,
-		dict.sid("__restrict__"):                 RESTRICT,
-		dict.sid("__thread"):                     THREADLOCAL,
 		dict.sid("__typeof"):                     TYPEOF,
 		dict.sid("__typeof__"):                   TYPEOF,
-		dict.sid("__volatile"):                   VOLATILE,
-		dict.sid("__volatile__"):                 VOLATILE,
-		dict.sid("asm"):                          ASM,
-		dict.sid("auto"):                         AUTO,
-		dict.sid("break"):                        BREAK,
-		dict.sid("case"):                         CASE,
-		dict.sid("char"):                         CHAR,
-		dict.sid("const"):                        CONST,
-		dict.sid("continue"):                     CONTINUE,
-		dict.sid("default"):                      DEFAULT,
-		dict.sid("do"):                           DO,
-		dict.sid("double"):                       DOUBLE,
-		dict.sid("else"):                         ELSE,
-		dict.sid("enum"):                         ENUM,
-		dict.sid("extern"):                       EXTERN,
-		dict.sid("float"):                        FLOAT,
-		dict.sid("for"):                          FOR,
-		dict.sid("goto"):                         GOTO,
-		dict.sid("if"):                           IF,
-		dict.sid("inline"):                       INLINE,
-		dict.sid("int"):                          INT,
-		dict.sid("long"):                         LONG,
-		dict.sid("register"):                     REGISTER,
-		dict.sid("restrict"):                     RESTRICT,
-		dict.sid("return"):                       RETURN,
-		dict.sid("short"):                        SHORT,
-		dict.sid("signed"):                       SIGNED,
-		dict.sid("sizeof"):                       SIZEOF,
-		dict.sid("static"):                       STATIC,
-		dict.sid("struct"):                       STRUCT,
-		dict.sid("switch"):                       SWITCH,
-		dict.sid("typedef"):                      TYPEDEF,
 		dict.sid("typeof"):                       TYPEOF,
-		dict.sid("union"):                        UNION,
-		dict.sid("unsigned"):                     UNSIGNED,
-		dict.sid("void"):                         VOID,
-		dict.sid("volatile"):                     VOLATILE,
-		dict.sid("while"):                        WHILE,
 	}
 )
 
@@ -304,6 +322,9 @@ func init() {
 		if _, ok := tokNames[r]; !ok {
 			panic(fmt.Sprintf("internal error: missing tokNames[%+q[", r)) //TODOOK
 		}
+	}
+	for k, v := range keywords {
+		gccKeywords[k] = v
 	}
 }
 
@@ -422,11 +443,12 @@ func (p *parser) peek(handleTypedefname bool) rune {
 
 		p.inBuf = *p.inBufp
 		// dbg("parser receives: %q", tokStr(p.inBuf, "|"))
+		// fmt.Println(tokStr(p.inBuf, " ")) //TODO-
 	}
 	tok := p.inBuf[0]
 	r := tok.Rune
 	if r == IDENTIFIER {
-		if x, ok := keywords[p.inBuf[0].Value]; ok && !p.ignoreKeywords {
+		if x, ok := p.ctx.keywords[p.inBuf[0].Value]; ok && !p.ignoreKeywords {
 			return x
 		}
 
@@ -477,6 +499,7 @@ func (p *parser) next() {
 
 		p.inBuf = *p.inBufp
 		// dbg("parser receives: %q", tokStr(p.inBuf, "|"))
+		// fmt.Println(tokStr(p.inBuf, " ")) //TODO-
 	}
 	p.tok = p.inBuf[0]
 	p.inBuf = p.inBuf[1:]
@@ -485,7 +508,7 @@ out:
 	switch p.tok.Rune {
 	case IDENTIFIER:
 		nm := p.tok.Value
-		if x, ok := keywords[nm]; ok && !p.ignoreKeywords {
+		if x, ok := p.ctx.keywords[nm]; ok && !p.ignoreKeywords {
 			p.tok.Rune = x
 			break
 		}
@@ -559,6 +582,7 @@ out:
 					}
 				case *Declarator:
 					if x.IsTypedefName {
+						// dbg("", PrettyString(p.tok))
 						panic("internal error") //TODOOK
 					}
 
@@ -566,7 +590,7 @@ out:
 						resolvedIn = s
 						break out
 					}
-				case *EnumSpecifier, *StructOrUnionSpecifier:
+				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 					// nop
 				default:
 					panic("internal error") //TODOOK
@@ -699,7 +723,7 @@ out:
 			return &PostfixExpression{Case: PostfixExpressionTypeCmp, Token: t, Token2: t2, TypeName: typ, Token3: t3, TypeName2: typ2, Token4: t4}
 		case '(':
 			switch p.peek(true) {
-			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 				ATTRIBUTE, CONST, RESTRICT, VOLATILE:
 				p.typedefNameEnabled = true
 				t = p.shift()
@@ -874,7 +898,7 @@ func (p *parser) unaryExpression(typ *TypeName) *UnaryExpression {
 		switch p.rune() {
 		case '(':
 			switch p.peek(true) {
-			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 				ATTRIBUTE, CONST, RESTRICT, VOLATILE:
 				p.typedefNameEnabled = true
 				t2 = p.shift()
@@ -912,7 +936,7 @@ func (p *parser) unaryExpression(typ *TypeName) *UnaryExpression {
 		switch p.rune() {
 		case '(':
 			switch p.peek(true) {
-			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 				ATTRIBUTE, CONST, RESTRICT, VOLATILE,
 				ALIGNAS:
 				t2 = p.shift()
@@ -954,7 +978,7 @@ func (p *parser) castExpression() *CastExpression {
 	switch p.rune() {
 	case '(':
 		switch p.peek(true) {
-		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 			ATTRIBUTE, CONST, RESTRICT, VOLATILE:
 			p.typedefNameEnabled = true
 			t = p.shift()
@@ -1377,7 +1401,7 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) *Declarat
 		}
 	}
 
-	list := p.initDeclaratorList(d, ds.isTypedef(), ds)
+	list := p.initDeclaratorList(d, ds.isTypedef())
 	p.typedefNameEnabled = true
 	var t Token
 	switch p.rune() {
@@ -1400,7 +1424,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL:
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
-	case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
+	case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
 	case CONST, RESTRICT, VOLATILE:
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
@@ -1425,7 +1449,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 		switch p.rune() {
 		case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL:
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
-		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
+		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
 		case CONST, RESTRICT, VOLATILE:
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
@@ -1451,14 +1475,14 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 //  init-declarator-list:
 // 	init-declarator
 // 	init-declarator-list , attribute-specifier-list_opt init-declarator
-func (p *parser) initDeclaratorList(d *Declarator, isTypedefName bool, ds *DeclarationSpecifiers) (r *InitDeclaratorList) {
-	r = &InitDeclaratorList{InitDeclarator: p.initDeclarator(d, isTypedefName, ds)}
+func (p *parser) initDeclaratorList(d *Declarator, isTypedefName bool) (r *InitDeclaratorList) {
+	r = &InitDeclaratorList{InitDeclarator: p.initDeclarator(d, isTypedefName)}
 	for prev := r; ; prev = prev.InitDeclaratorList {
 		switch p.rune() {
 		case ',':
 			t := p.shift()
 			attr := p.attributeSpecifierListOpt()
-			prev.InitDeclaratorList = &InitDeclaratorList{Token: t, AttributeSpecifierList: attr, InitDeclarator: p.initDeclarator(nil, isTypedefName, ds)}
+			prev.InitDeclaratorList = &InitDeclaratorList{Token: t, AttributeSpecifierList: attr, InitDeclarator: p.initDeclarator(nil, isTypedefName)}
 		default:
 			return r
 		}
@@ -1475,9 +1499,9 @@ func (p *parser) attributeSpecifierListOpt() (r *AttributeSpecifierList) {
 //  init-declarator:
 // 	declarator attribute-specifier-list_opt
 // 	declarator attribute-specifier-list_opt = initializer
-func (p *parser) initDeclarator(d *Declarator, isTypedefName bool, ds *DeclarationSpecifiers) *InitDeclarator {
+func (p *parser) initDeclarator(d *Declarator, isTypedefName bool) *InitDeclarator {
 	if d == nil {
-		d = p.declarator(true, isTypedefName, nil, ds)
+		d = p.declarator(true, isTypedefName, nil)
 	}
 	attr := p.attributeSpecifierListOpt()
 	switch p.rune() {
@@ -1546,6 +1570,7 @@ func (p *parser) storageClassSpecifier() *StorageClassSpecifier {
 //	_Frac
 //	_Sat
 //	_Accum
+// 	_Float32
 func (p *parser) typeSpecifier() *TypeSpecifier {
 	var kind TypeSpecifierCase
 	switch p.rune() {
@@ -1567,6 +1592,14 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		kind = TypeSpecifierFloat16
 	case FLOAT80:
 		kind = TypeSpecifierFloat80
+	case FLOAT32:
+		kind = TypeSpecifierFloat32
+	case FLOAT32X:
+		kind = TypeSpecifierFloat32x
+	case FLOAT64:
+		kind = TypeSpecifierFloat64
+	case FLOAT64X:
+		kind = TypeSpecifierFloat64x
 	case FLOAT128:
 		kind = TypeSpecifierFloat128
 	case DECIMAL32:
@@ -1607,7 +1640,7 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 			p.err("expected (")
 		}
 		switch p.rune() {
-		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 			ATTRIBUTE, CONST, RESTRICT, VOLATILE,
 			ALIGNAS:
 			typ := p.typeName()
@@ -1664,6 +1697,7 @@ func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
 
 		fallthrough
 	case '{':
+		maxAlign := p.ctx.maxAlign
 		p.openScope()
 		p.typedefNameEnabled = true
 		p.resolveScope = p.declScope.Parent()
@@ -1684,7 +1718,7 @@ func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
 		default:
 			p.err("expected }")
 		}
-		r := &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attr, Token2: t2, StructDeclarationList: list, Token3: t3, lexicalScope: p.declScope}
+		r := &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attr, Token2: t2, StructDeclarationList: list, Token3: t3, lexicalScope: p.declScope, maxAlign: maxAlign}
 		if t.Value != 0 {
 			p.declScope.declare(t.Value, r)
 		}
@@ -1721,7 +1755,7 @@ func (p *parser) structDeclarationList() (r *StructDeclarationList) {
 	r = &StructDeclarationList{StructDeclaration: p.structDeclaration()}
 	for prev := r; ; prev = prev.StructDeclarationList {
 		switch p.rune() {
-		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 			ATTRIBUTE, CONST, RESTRICT, VOLATILE,
 			ALIGNAS:
 			prev.StructDeclarationList = &StructDeclarationList{StructDeclaration: p.structDeclaration()}
@@ -1742,7 +1776,7 @@ func (p *parser) structDeclaration() (r *StructDeclaration) {
 			p.err("expected struct-declarator")
 		}
 	default:
-		list = p.structDeclaratorList(sql)
+		list = p.structDeclaratorList()
 	}
 	r = &StructDeclaration{SpecifierQualifierList: sql, StructDeclaratorList: list}
 	var t Token
@@ -1767,7 +1801,7 @@ func (p *parser) structDeclaration() (r *StructDeclaration) {
 // 	alignment-specifier-qualifier-list_opt
 func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 	switch p.rune() {
-	case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
+	case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
 		r = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeSpecifier: p.typeSpecifier()}
 	case CONST, RESTRICT, VOLATILE:
 		r = &SpecifierQualifierList{Case: SpecifierQualifierListTypeQual, TypeQualifier: p.typeQualifier()}
@@ -1788,7 +1822,7 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 	}
 	for prev := r; ; prev = prev.SpecifierQualifierList {
 		switch p.rune() {
-		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
+		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
 			prev.SpecifierQualifierList = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeSpecifier: p.typeSpecifier()}
 		case CONST, RESTRICT, VOLATILE:
 			prev.SpecifierQualifierList = &SpecifierQualifierList{Case: SpecifierQualifierListTypeQual, TypeQualifier: p.typeQualifier()}
@@ -1812,13 +1846,13 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 //  struct-declarator-list:
 // 	struct-declarator
 // 	struct-declarator-list , struct-declarator
-func (p *parser) structDeclaratorList(sql *SpecifierQualifierList) (r *StructDeclaratorList) {
-	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator(sql)}
+func (p *parser) structDeclaratorList() (r *StructDeclaratorList) {
+	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator()}
 	for prev := r; ; prev = prev.StructDeclaratorList {
 		switch p.rune() {
 		case ',':
 			t := p.shift()
-			prev.StructDeclaratorList = &StructDeclaratorList{Token: t, StructDeclarator: p.structDeclarator(sql)}
+			prev.StructDeclaratorList = &StructDeclaratorList{Token: t, StructDeclarator: p.structDeclarator()}
 		default:
 			return r
 		}
@@ -1828,20 +1862,20 @@ func (p *parser) structDeclaratorList(sql *SpecifierQualifierList) (r *StructDec
 //  struct-declarator:
 // 	declarator
 // 	declarator_opt : constant-expression attribute-specifier-list_opt
-func (p *parser) structDeclarator(sql *SpecifierQualifierList) (r *StructDeclarator) {
+func (p *parser) structDeclarator() (r *StructDeclarator) {
 	var d *Declarator
 	if p.rune() != ':' {
-		d = p.declarator(false, false, nil, sql)
+		d = p.declarator(false, false, nil)
 	}
 
 	switch p.rune() {
 	case ':':
 		t := p.shift()
 		r = &StructDeclarator{Case: StructDeclaratorBitField, Declarator: d, Token: t, ConstantExpression: p.constantExpression()}
+		r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 	default:
 		r = &StructDeclarator{Case: StructDeclaratorDecl, Declarator: d}
 	}
-	r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 	if d != nil {
 		p.declScope.declare(d.Name(), r)
 	}
@@ -2011,11 +2045,11 @@ func (p *parser) functionSpecifier() *FunctionSpecifier {
 //
 //  declarator:
 // 	pointer_opt direct-declarator attribute-specifier-list_opt
-func (p *parser) declarator(declare, isTypedefName bool, ptr *Pointer, ts TypeSpecification) *Declarator {
+func (p *parser) declarator(declare, isTypedefName bool, ptr *Pointer) *Declarator {
 	if ptr == nil && p.rune() == '*' {
 		ptr = p.pointer()
 	}
-	r := &Declarator{IsTypedefName: isTypedefName, Pointer: ptr, DirectDeclarator: p.directDeclarator(nil), typeSpecification: ts}
+	r := &Declarator{IsTypedefName: isTypedefName, Pointer: ptr, DirectDeclarator: p.directDeclarator(nil)}
 	r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 	if declare {
 		p.declScope.declare(r.Name(), r)
@@ -2043,7 +2077,7 @@ func (p *parser) alignmentSpecifier() *AlignmentSpecifier {
 		p.err("expected (")
 	}
 	switch p.rune() {
-	case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+	case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 		ATTRIBUTE, CONST, RESTRICT, VOLATILE,
 		ALIGNAS:
 		typ := p.typeName()
@@ -2091,7 +2125,7 @@ func (p *parser) directDeclarator(d *DirectDeclarator) (r *DirectDeclarator) {
 		case '(':
 			t := p.shift()
 			attr := p.attributeSpecifierListOpt()
-			d := p.declarator(false, false, nil, nil)
+			d := p.declarator(false, false, nil)
 			var t2 Token
 			switch p.rune() {
 			case ')':
@@ -2353,13 +2387,13 @@ func (p *parser) declaratorOrAbstractDeclarator(isTypedefName bool) (r Node) {
 	}
 	switch p.rune() {
 	case IDENTIFIER:
-		return p.declarator(false, isTypedefName, ptr, nil)
+		return p.declarator(false, isTypedefName, ptr)
 	case '[':
 		return p.abstractDeclarator(ptr)
 	case '(':
 		switch p.peek(true) {
 		case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
-			VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+			VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 			CONST, RESTRICT, VOLATILE,
 			INLINE, NORETURN, ATTRIBUTE,
 			ALIGNAS:
@@ -2584,7 +2618,7 @@ func (p *parser) directAbstractDeclarator(d *DirectAbstractDeclarator) (r *Direc
 			case ')':
 				t := p.shift()
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: t, Token2: p.shift()}
-			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+			case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 				ATTRIBUTE, CONST, RESTRICT, VOLATILE,
 				ALIGNAS:
 				p.openScope()
@@ -3028,7 +3062,7 @@ func (p *parser) blockItem() *BlockItem {
 	switch p.rune() {
 	case
 		TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
-		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 		CONST, RESTRICT, VOLATILE,
 		ALIGNAS,
 		INLINE, NORETURN, ATTRIBUTE:
@@ -3040,7 +3074,7 @@ func (p *parser) blockItem() *BlockItem {
 			return r
 		}
 
-		d := p.declarator(true, ds.isTypedef(), nil, ds)
+		d := p.declarator(true, ds.isTypedef(), nil)
 		switch p.rune() {
 		case '{':
 			if p.ctx.cfg.RejectNestedFunctionDefinitions {
@@ -3276,7 +3310,7 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 		var d *Declaration
 		switch p.rune() {
 		case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
-			VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+			VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 			CONST, RESTRICT, VOLATILE,
 			ALIGNAS,
 			INLINE, NORETURN, ATTRIBUTE:
@@ -3445,7 +3479,7 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 	var ds *DeclarationSpecifiers
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
-		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 		CONST, RESTRICT, VOLATILE,
 		INLINE, NORETURN, ATTRIBUTE,
 		ALIGNAS:
@@ -3471,7 +3505,7 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 	}
 
 	p.rune()
-	d := p.declarator(true, ds.isTypedef(), nil, ds)
+	d := p.declarator(true, ds.isTypedef(), nil)
 	p.rune()
 	switch p.rune() {
 	case ',', ';', '=', ATTRIBUTE:
@@ -3517,7 +3551,7 @@ func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *F
 func (p *parser) declarationList() (r *DeclarationList) {
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
-		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 		CONST, RESTRICT, VOLATILE,
 		ALIGNAS,
 		INLINE, NORETURN, ATTRIBUTE:
@@ -3530,7 +3564,7 @@ func (p *parser) declarationList() (r *DeclarationList) {
 	for prev := r; ; prev = prev.DeclarationList {
 		switch p.rune() {
 		case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
-			VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
+			VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 			CONST, RESTRICT, VOLATILE,
 			ALIGNAS,
 			INLINE, NORETURN, ATTRIBUTE:

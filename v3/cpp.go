@@ -31,6 +31,7 @@ var (
 	idFILE           = dict.sid("__FILE__")
 	idFPContract     = dict.sid("FP_CONTRACT")
 	idFenvAccess     = dict.sid("FENV_ACCESS")
+	idGNUC           = dict.sid("__GNUC__")
 	idIntMaxWidth    = dict.sid("__INTMAX_WIDTH__")
 	idLINE           = dict.sid("__LINE__")
 	idNL             = dict.sid("\n")
@@ -940,8 +941,7 @@ func (c *cpp) scanToNonBlankToken(toks *[]cppToken, r tokenReader, w tokenWriter
 func (c *cpp) evalInclusionCondition(expr []token3) (r bool) {
 	if !c.intmaxChecked {
 		if m := c.macros[idIntMaxWidth]; m != nil && len(m.repl) != 0 {
-			val := c.eval(m.repl)
-			if val != nil && val != int64(64) {
+			if val := c.intMaxWidth(); val != 0 && val != 64 {
 				c.err(m.name, "%s is %v, but only 64 is supported", idIntMaxWidth, val)
 			}
 		}
@@ -950,6 +950,22 @@ func (c *cpp) evalInclusionCondition(expr []token3) (r bool) {
 
 	val := c.eval(expr)
 	return val != nil && c.isNonZero(val)
+}
+
+func (c *cpp) intMaxWidth() int64 {
+	if m := c.macros[idIntMaxWidth]; m != nil && len(m.repl) != 0 {
+		switch x := c.eval(m.repl).(type) {
+		case nil:
+			return 0
+		case int64:
+			return x
+		case uint64:
+			return int64(x)
+		default:
+			panic("iternal error") //TODOOK
+		}
+	}
+	return 0
 }
 
 func (c *cpp) eval(expr []token3) interface{} {
@@ -2492,8 +2508,13 @@ func (n *ppDefineObjectMacroDirective) translationPhase4(c *cpp) {
 			return
 		}
 	}
-	// dbg("#define %s %s", n.Name, tokStr(n.ReplacementList))
+	// dbg("#define %s %s // %v", n.name, tokStr(n.replacementList, " "), c.file.PositionFor(n.name.Pos(), true))
 	c.macros[nm] = &macro{name: token4{token3: n.name, fileID: c.fileID}, repl: n.replacementList}
+	if nm != idGNUC {
+		return
+	}
+
+	c.ctx.keywords = gccKeywords
 }
 
 type ppDefineFunctionMacroDirective struct {
@@ -2557,7 +2578,7 @@ func (n *ppDefineFunctionMacroDirective) translationPhase4(c *cpp) {
 	for _, v := range n.identifierList {
 		fp = append(fp, v.value)
 	}
-	// dbg("#define %s(%v) %s", n.Name, fp, tokStr(n.ReplacementList))
+	// dbg("#define %s %s // %v", n.name, tokStr(n.replacementList, " "), c.file.PositionFor(n.name.Pos(), true))
 	c.macros[nm] = &macro{fp: fp, isFnLike: true, name: token4{token3: n.name, fileID: c.fileID}, repl: n.replacementList, variadic: n.variadic, namedVariadic: n.namedVariadic}
 }
 

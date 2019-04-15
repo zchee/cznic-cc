@@ -5,11 +5,11 @@
 .PHONY:	all bench clean cover cpu editor internalError later mem nuke todo edit devbench
 
 grep=--include=*.go --include=*.l --include=*.y --include=*.yy
-ngrep='TODOOK\|lexer\.go\|ast.go\|trigraphs\.go\|.*_string\.go\|testdata\/gcc'
+ngrep='TODOOK\|lexer\.go\|ast.go\|trigraphs\.go\|.*_string\.go\|stringer\.go\|testdata\/gcc'
 
 all: lexer.go
 	date
-	go version |& tee log
+	go version 2>&1 | tee log
 	./unconvert.sh
 	gofmt -l -s -w *.go
 	go test -i
@@ -29,16 +29,16 @@ all: lexer.go
 	pcregrep -nM 'FAIL|false|<nil>|:\n}' ast_test.go || true
 	grep -n 'FAIL\|PASS' log 
 	go version
-	date |& tee -a log
+	date 2>&1 | tee -a log
 
 devbench:
-	date |& tee log-devbench
-	go test -timeout 24h -dev -run @ -bench . |& tee -a log-devbench
+	date 2>&1 | tee log-devbench
+	go test -timeout 24h -dev -run @ -bench . 2>&1 | tee -a log-devbench
 	grep -n 'FAIL\|SKIP' log-devbench || true
 
 bench:
-	date |& tee log-bench
-	go test -timeout 24h -v -run '^[^E]' -bench . |& tee -a log-bench
+	date 2>&1 | tee log-bench
+	go test -timeout 24h -v -run '^[^E]' -bench . 2>&1 | tee -a log-bench
 	grep -n 'FAIL\|SKIP' log-bench || true
 
 clean:
@@ -62,7 +62,7 @@ editor: lexer.go
 	go test -short 2>&1 | tee log
 	go install
 
-ast.go lexer.go: lexer.l parser.yy
+ast.go lexer.go stringer.go: lexer.l parser.yy enum.go
 	go generate
 
 later:

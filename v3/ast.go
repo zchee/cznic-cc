@@ -1296,7 +1296,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	        Pointer DirectDeclarator AttributeSpecifierList
 type Declarator struct {
 	IsTypedefName          bool
-	typeSpecification      TypeSpecification
+	typ                    Type
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator
 	Pointer                *Pointer
@@ -1482,6 +1482,7 @@ func (n DirectAbstractDeclaratorCase) String() string {
 //	|       DirectAbstractDeclarator '(' ParameterTypeList ')'                             // Case DirectAbstractDeclaratorFunc
 type DirectAbstractDeclarator struct {
 	paramScope               Scope
+	typeQualifiers           *baseType
 	AbstractDeclarator       *AbstractDeclarator
 	AssignmentExpression     *AssignmentExpression
 	Case                     DirectAbstractDeclaratorCase `PrettyPrint:"stringer,zero"`
@@ -1661,6 +1662,7 @@ func (n DirectDeclaratorCase) String() string {
 type DirectDeclarator struct {
 	lexicalScope           Scope
 	paramScope             Scope
+	typeQualifiers         *baseType
 	Asm                    *Asm
 	AssignmentExpression   *AssignmentExpression
 	AttributeSpecifierList *AttributeSpecifierList
@@ -3452,6 +3454,7 @@ func (n PointerCase) String() string {
 //	        '*' TypeQualifiers          // Case PointerTypeQual
 //	|       '*' TypeQualifiers Pointer  // Case PointerPtr
 type Pointer struct {
+	typeQualifiers *baseType
 	Case           PointerCase `PrettyPrint:"stringer,zero"`
 	Pointer        *Pointer
 	Token          Token
@@ -4347,7 +4350,7 @@ func (n StructDeclaratorCase) String() string {
 // StructDeclarator represents data reduced by productions:
 //
 //	StructDeclarator:
-//	        Declarator AttributeSpecifierList                         // Case StructDeclaratorDecl
+//	        Declarator                                                // Case StructDeclaratorDecl
 //	|       Declarator ':' ConstantExpression AttributeSpecifierList  // Case StructDeclaratorBitField
 type StructDeclarator struct {
 	AttributeSpecifierList *AttributeSpecifierList
@@ -4368,11 +4371,7 @@ func (n *StructDeclarator) Position() (r token.Position) {
 
 	switch n.Case {
 	case 0:
-		if p := n.Declarator.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.AttributeSpecifierList.Position()
+		return n.Declarator.Position()
 	case 1:
 		if p := n.Declarator.Position(); p.IsValid() {
 			return p
@@ -4486,6 +4485,7 @@ func (n StructOrUnionSpecifierCase) String() string {
 //	|       StructOrUnion AttributeSpecifierList IDENTIFIER                                // Case StructOrUnionSpecifierTag
 type StructOrUnionSpecifier struct {
 	lexicalScope           Scope
+	maxAlign               int
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
 	StructDeclarationList  *StructDeclarationList
@@ -4569,6 +4569,7 @@ func (n *TranslationUnit) Position() (r token.Position) {
 //	TypeName:
 //	        SpecifierQualifierList AbstractDeclarator
 type TypeName struct {
+	typ                    Type
 	AbstractDeclarator     *AbstractDeclarator
 	SpecifierQualifierList *SpecifierQualifierList
 }
@@ -4740,6 +4741,10 @@ const (
 	TypeSpecifierFract
 	TypeSpecifierSat
 	TypeSpecifierAccum
+	TypeSpecifierFloat32
+	TypeSpecifierFloat64
+	TypeSpecifierFloat32x
+	TypeSpecifierFloat64x
 )
 
 // String implements fmt.Stringer
@@ -4799,6 +4804,14 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierSat"
 	case TypeSpecifierAccum:
 		return "TypeSpecifierAccum"
+	case TypeSpecifierFloat32:
+		return "TypeSpecifierFloat32"
+	case TypeSpecifierFloat64:
+		return "TypeSpecifierFloat64"
+	case TypeSpecifierFloat32x:
+		return "TypeSpecifierFloat32x"
+	case TypeSpecifierFloat64x:
+		return "TypeSpecifierFloat64x"
 	default:
 		return fmt.Sprintf("TypeSpecifierCase(%v)", int(n))
 	}
@@ -4834,6 +4847,10 @@ func (n TypeSpecifierCase) String() string {
 //	|       "_Fract"                     // Case TypeSpecifierFract
 //	|       "_Sat"                       // Case TypeSpecifierSat
 //	|       "_Accum"                     // Case TypeSpecifierAccum
+//	|       "_Float32"                   // Case TypeSpecifierFloat32
+//	|       "_Float64"                   // Case TypeSpecifierFloat64
+//	|       "_Float32x"                  // Case TypeSpecifierFloat32x
+//	|       "_Float64x"                  // Case TypeSpecifierFloat64x
 type TypeSpecifier struct {
 	resolvedIn             Scope // Case TypedefName
 	AtomicTypeSpecifier    *AtomicTypeSpecifier
@@ -4863,7 +4880,7 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 		return n.EnumSpecifier.Position()
 	case 18:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 24, 25, 26:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 24, 25, 26, 27, 28, 29, 30:
 		return n.Token.Position()
 	case 21:
 		if p := n.Token.Position(); p.IsValid() {

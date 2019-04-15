@@ -60,6 +60,10 @@ package cc // import "modernc.org/cc/v3"
 	FLOAT			"float"
 	FLOAT128		"_Float128"
 	FLOAT16			"__fp16"
+	FLOAT32			"_Float32"
+	FLOAT32X		"_Float32x"
+	FLOAT64			"_Float64"
+	FLOAT64x		"_Float64x"
 	FLOAT80			"__float80"
 	FOR			"for"
 	FRACT			"_Fract"
@@ -450,9 +454,18 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Sat        */ |	"_Sat"
 			/*yy:example _Accum i; */
 /*yy:case Accum      */ |	"_Accum"
+			/*yy:example _Float32 i; */
+/*yy:case Float32    */ |	"_Float32"
+			/*yy:example _Float64 i; */
+/*yy:case Float64    */ |	"_Float64"
+			/*yy:example _Float32x i; */
+/*yy:case Float32x    */ |	"_Float32x"
+			/*yy:example _Float64x i; */
+/*yy:case Float64x    */ |	"_Float64x"
 
 			/* [0], 6.7.2.1 Structure and union specifiers */
 			/*yy:field	lexicalScope	Scope	*/
+			/*yy:field	maxAlign	int	*/
 			/*yy:example struct s { int i; }; */
 /*yy:case Def        */ StructOrUnionSpecifier:
 				StructOrUnion AttributeSpecifierList IDENTIFIER '{' StructDeclarationList '}'
@@ -493,7 +506,7 @@ package cc // import "modernc.org/cc/v3"
 		
 			/*yy:example struct{ int i; } */
 /*yy:case Decl       */ StructDeclarator:
-				Declarator AttributeSpecifierList
+				Declarator
 			/*yy:example struct{ int i:3; } */
 /*yy:case BitField   */ |	Declarator ':' ConstantExpression AttributeSpecifierList
 
@@ -542,8 +555,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:field	IsTypedefName		bool */
-			/*yy:field	typeSpecification	TypeSpecification	*/
+			/*yy:field	IsTypedefName	bool */
+			/*yy:field	typ		Type */
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE
@@ -557,6 +570,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/*yy:field	lexicalScope	Scope	*/
 			/*yy:field	paramScope	Scope */
+			/*yy:field	typeQualifiers	*baseType */
 			/*yy:example int i; */
 /*yy:case Ident      */ DirectDeclarator:
 				IDENTIFIER Asm
@@ -575,6 +589,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example int f(a); */
 /*yy:case FuncIdent  */ |	DirectDeclarator '(' IdentifierList ')'
 
+			/*yy:field	typeQualifiers	*baseType*/
 			/*yy:example int *p; */
 /*yy:case TypeQual   */ Pointer:
 				'*' TypeQualifiers
@@ -617,6 +632,7 @@ package cc // import "modernc.org/cc/v3"
 			|	IdentifierList ',' IDENTIFIER
 
 			/* [0], 6.7.6 Type names */
+			/*yy:field	typ	Type	*/
 			/*yy:example int i = (int)x; */
 			TypeName:
 				SpecifierQualifierList AbstractDeclarator
@@ -628,6 +644,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Decl       */ |	Pointer DirectAbstractDeclarator
 
 			/*yy:field	paramScope	Scope */
+			/*yy:field	typeQualifiers	*baseType */
 			/*yy:example void f(int()); */
 /*yy:case Decl       */ DirectAbstractDeclarator:
 				'(' AbstractDeclarator ')'

@@ -9,6 +9,9 @@
 
 //go:generate rm -f ast.go
 //go:generate yy -o /dev/null -position -astImport "\"fmt\"\n\n\"modernc.org/token\"" -prettyString PrettyString -kind Case -noListKind -noPrivateHelpers -forceOptPos parser.yy
+
+//go:generate stringer -output stringer.go -linecomment -type=Kind
+
 //go:generate sh -c "go test -run ^Example |fe"
 
 // Package cc is a C99 compiler front end.
@@ -53,6 +56,7 @@ var (
 	dict        = newDictionary()
 	dictStrings [math.MaxUint8 + 1]string
 	isTesting   bool
+	noPos       token.Position
 
 	token4Pool = sync.Pool{New: func() interface{} { r := make([]token4, 0); return &r }} //DONE benchmrk tuned capacity
 	tokenPool  = sync.Pool{New: func() interface{} { r := make([]Token, 0); return &r }}  //DONE benchmrk tuned capacity
@@ -82,9 +86,13 @@ var (
 	}
 )
 
+// Pragma defines behavior of the object passed to Config.PragmaHandler.
 type Pragma interface {
-	isPragma()
 	Error(msg string, args ...interface{}) // Report error.
+	MaxAligment() int                      // Returns the current maximum alignment. May return zero.
+	MaxInitialAligment() int               // Support #pragma pack(). Returns the maximum alignment in effect at start. May return zero.
+	SetAlignment(n int)                    // Support #pragma pack(n)
+	isPragma()
 }
 
 type pragma struct {
@@ -95,6 +103,12 @@ type pragma struct {
 func (p *pragma) isPragma() {}
 
 func (p *pragma) Error(msg string, args ...interface{}) { p.c.err(p.tok, msg, args...) }
+
+func (p *pragma) MaxAligment() int { return p.c.ctx.maxAlign }
+
+func (p *pragma) MaxInitialAligment() int { return p.c.ctx.maxAlign0 }
+
+func (p *pragma) SetAlignment(n int) { p.c.ctx.maxAlign = n } //TODO check sanity, report errors.
 
 // PrettyString returns a formatted representation of things produced by this package.
 func PrettyString(v interface{}) string {
@@ -208,10 +222,12 @@ type Config3 struct {
 // Config amend behavior of translation phase 4 and above. Instances of Config
 // are not mutated by this package and it's safe to share/reuse them.
 //
+// The *Config passed to Parse or Translate should not be mutated afterwards.
 type Config struct {
 	Config3
+	ABI ABI
 
-	PragmaHandler func(Pragma, []Token) // Called on pragmas if non nil
+	PragmaHandler func(Pragma, []Token) // Called on pragmas, other than #pragma STDC ..., if non nil
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
@@ -225,11 +241,18 @@ type context struct {
 	cfg *Config
 	goscanner.ErrorList
 	includePaths    []string
-	maxErrors       int
+	intMaxWidth     int64 // Set if the preprocessor saw __INTMAX_WIDTH__.
+	keywords        map[StringID]rune
+	maxAlign        int // If non zero: maximum alignment of members of structures (other than zero-width bitfields).
+	maxAlign0       int
+	modes           []mode
 	mu              sync.Mutex
 	sysIncludePaths []string
 	tuSize          int64 // Sum of sizes of processed inputs
-	tuSources       int   // Number of processed inputs
+
+	maxErrors int
+	mode      mode
+	tuSources int // Number of processed inputs
 }
 
 func newContext(cfg *Config) *context {
@@ -238,9 +261,14 @@ func newContext(cfg *Config) *context {
 		maxErrors = 10
 	}
 	return &context{
-		maxErrors: maxErrors,
 		cfg:       cfg,
+		keywords:  keywords,
+		maxErrors: maxErrors,
 	}
+}
+
+func (c *context) errNode(n Node, msg string, args ...interface{}) (stop bool) {
+	return c.err(n.Position(), msg, args...)
 }
 
 func (c *context) err(pos token.Position, msg string, args ...interface{}) (stop bool) {
@@ -288,6 +316,14 @@ func (c *context) Err() error {
 		sort.Slice(x, func(i, j int) bool {
 			a := x[i]
 			b := x[j]
+			if !a.Pos.IsValid() && b.Pos.IsValid() {
+				return true
+			}
+
+			if a.Pos.IsValid() && !b.Pos.IsValid() {
+				return false
+			}
+
 			if a.Pos.Filename < b.Pos.Filename {
 				return true
 			}
@@ -307,10 +343,16 @@ func (c *context) Err() error {
 			return a.Pos.Column < b.Pos.Column
 		})
 		a := make([]string, 0, len(x))
+		var lpos gotoken.Position
 		for _, v := range x {
+			if v.Pos.IsValid() && lpos.IsValid() && lpos == v.Pos {
+				continue
+			}
+
 			s := v.Error()
 			if n := len(a); n == 0 || a[n-1] != s {
 				a = append(a, s)
+				lpos = v.Pos
 			}
 		}
 		return fmt.Errorf("%s", strings.Join(a, "\n"))
@@ -318,6 +360,28 @@ func (c *context) Err() error {
 		c.mu.Unlock()
 		return x
 	}
+}
+
+func (c *context) not(n Node, mode mode) {
+	if c.mode&mode != 0 {
+		switch mode {
+		case mIntConstExpr:
+			c.errNode(n, "invalid integer constant expression")
+		default:
+			panic("internal error") //TODOOK
+		}
+	}
+}
+
+func (c *context) push(mode mode) {
+	c.modes = append(c.modes, c.mode)
+	c.mode = mode
+}
+
+func (c *context) pop() {
+	n := len(c.modes)
+	c.mode = c.modes[n-1]
+	c.modes = c.modes[:n-1]
 }
 
 // HostConfig returns the system C preprocessor/compiler configuration, or an
@@ -390,70 +454,6 @@ func env(key, val string) string {
 	return val
 }
 
-func translationPhase5and6(ctx *context, toks *[]Token) *[]Token {
-	// [0], 5.1.1.2, 5
-	//
-	// Each source character set member and escape sequence in character
-	// constants and string literals is converted to the corresponding
-	// member of the execution character set; if there is no corresponding
-	// member, it is converted to an implementation- defined member other
-	// than the null (wide) character.
-	for i, tok := range *toks {
-		var cpt cppToken
-		switch tok.Rune {
-		case STRINGLITERAL, LONGSTRINGLITERAL:
-			cpt.char = tok.Rune
-			cpt.value = tok.Value
-			cpt.fileID = tok.fileID
-			cpt.pos = tok.pos
-			(*toks)[i].Value = dict.sid(stringConst(cpt))
-		case CHARCONST, LONGCHARCONST:
-			var cpt cppToken
-			cpt.char = tok.Rune
-			cpt.value = tok.Value
-			cpt.fileID = tok.fileID
-			cpt.pos = tok.pos
-			switch r := charConst(ctx, cpt); {
-			case r >= -255 && r < 0:
-				(*toks)[i].Value = dict.sid(string([]byte{byte(-r)}))
-			case r <= 255:
-				(*toks)[i].Value = dict.sid(string([]byte{byte(r)}))
-			default:
-				switch cpt.char {
-				case CHARCONST:
-					ctx.err(tok.Position(), "invalid character constant: %s", tok.Value)
-				default:
-					(*toks)[i].Value = dict.sid(string(r))
-				}
-			}
-		}
-	}
-	// [0], 5.1.1.2, 6
-	//
-	// Adjacent string literal tokens are concatenated.
-	w := 0
-	for i, tok := range *toks {
-		switch tok.Rune {
-		case STRINGLITERAL, LONGSTRINGLITERAL:
-			if i > 0 {
-				switch (*toks)[i-1].Rune {
-				case STRINGLITERAL, LONGSTRINGLITERAL:
-					(*toks)[i-1].Value = dict.sid((*toks)[i-1].String() + tok.String())
-					// /*x*/ "a" /*y*/ "b" -> "ab" with sep "/*x*/  /*y*/"
-					(*toks)[i-1].Sep = dict.sid((*toks)[i-1].Sep.String() + tok.Sep.String())
-					continue
-				}
-			}
-			fallthrough
-		default:
-			(*toks)[w] = tok
-			w++
-		}
-	}
-	*toks = (*toks)[:w]
-	return toks
-}
-
 // Token is a grammar terminal.
 type Token struct {
 	Rune   rune     // ';' or IDENTIFIER etc.
@@ -475,150 +475,4 @@ func (t *Token) Position() (r token.Position) {
 		}
 	}
 	return r
-}
-
-// Source is a named part of a translation unit. If Value is empty, Name is
-// interpreted as a path to file containing the source code.
-type Source struct {
-	Name  string
-	Value string
-}
-
-// Parse preprocesses and parses a translation unit.
-//
-// Search paths listed in includePaths and sysIncludePaths are used to resolve
-// #include "foo.h" and #include <foo.h> preprocessing directives respectively.
-// A special search path "@" is interpreted as 'the same directory as where the
-// file with the #include directive is'.
-//
-// The sources should typically provide, usually in this particular order:
-//
-// - predefined macros, eg.
-//
-//	#define __SIZE_TYPE__ long unsigned int
-//
-// - built-in declarations, eg.
-//
-//	int __builtin_printf(char *__format, ...);
-//
-// - command-line provided directives, eg.
-//
-//	#define FOO
-//	#define BAR 42
-//	#undef QUX
-//
-// - normal C sources, eg.
-//
-//	int main() {}
-//
-// All search and file paths should be absolute paths.
-//
-// If the preprocessed translation unit is empty, the function may return (nil,
-// nil).
-//
-// The parser does only the minimum declarations/identifier resolving necessary
-// for correct parsing. Redeclarations are not checked.
-//
-// Declarators (*Declarator) and StructDeclarators (*StructDeclarator) are
-// inserted in the appropriate scopes.
-//
-// Tagged struct/union specifier definitions (*StructOrUnionSpecifier) and
-// tagged enum specifier definitions (*EnumSpecifier) are inserted in the
-// appropriate scopes.
-func Parse(cfg *Config, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
-	return parse(newContext(cfg), includePaths, sysIncludePaths, sources)
-}
-
-func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
-	ctx.includePaths = includePaths
-	ctx.sysIncludePaths = sysIncludePaths
-	var in []source
-	for _, v := range sources {
-		ts, err := cache.get(ctx, v)
-		if err != nil {
-			return nil, err
-		}
-
-		in = append(in, ts)
-	}
-
-	p := newParser(ctx, make(chan *[]Token, 5000)) //DONE benchmark tuned
-	var sep StringID
-	var seq int32
-	go func() {
-		defer close(p.in)
-
-		toks := tokenPool.Get().(*[]Token)
-		*toks = (*toks)[:0]
-		cpp := newCPP(ctx)
-		for pline := range cpp.translationPhase4(in) {
-			line := *pline
-			for _, tok := range line {
-				switch tok.char {
-				case ' ', '\n':
-					switch {
-					case sep != 0:
-						sep = dict.sid(sep.String() + tok.String())
-					default:
-						sep = tok.value
-					}
-				default:
-					var t Token
-					t.Rune = tok.char
-					t.Sep = sep
-					t.Value = tok.value
-					t.fileID = tok.fileID
-					t.pos = tok.pos
-					seq++
-					t.seq = seq
-					*toks = append(*toks, t)
-					sep = 0
-				}
-			}
-			token4Pool.Put(pline)
-			var c rune
-			if n := len(*toks); n != 0 {
-				c = (*toks)[n-1].Rune
-			}
-			switch c {
-			case STRINGLITERAL, LONGSTRINGLITERAL:
-				// nop
-			default:
-				if len(*toks) != 0 {
-					p.in <- translationPhase5and6(ctx, toks)
-					toks = tokenPool.Get().(*[]Token)
-					*toks = (*toks)[:0]
-				}
-			}
-		}
-		if len(*toks) != 0 {
-			p.in <- translationPhase5and6(ctx, toks)
-		}
-	}()
-
-	tu := p.translationUnit()
-	if p.errored { // Must drain
-		go func() {
-			for range p.in {
-			}
-		}()
-	}
-
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
-	if p.errored && !ctx.cfg.ignoreErrors {
-		return nil, fmt.Errorf("%v: syntax error", p.tok.Position())
-	}
-
-	if p.scopes != 0 {
-		panic("internal error: invalid scope nesting but no error reported") //TODOOK
-	}
-
-	return &AST{
-		Scope:             p.declScope,
-		TrailingSeperator: sep,
-		TranslationUnit:   tu,
-	}, nil
 }
