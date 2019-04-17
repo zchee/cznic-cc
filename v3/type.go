@@ -16,17 +16,20 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 )
 
 var (
+	_ Type = (*arrayType)(nil)
 	_ Type = (*attributedType)(nil)
-	_ Type = (*baseType)(nil)
+	_ Type = (*pointerType)(nil)
+	_ Type = (*typeBase)(nil)
 
 	_ typeDescriptor = (*DeclarationSpecifiers)(nil)
 	_ typeDescriptor = (*SpecifierQualifierList)(nil)
 	_ typeDescriptor = (*TypeQualifiers)(nil)
 
-	noType = &baseType{}
+	noType = &typeBase{}
 )
 
 // Type is the representation of a C type.
@@ -44,6 +47,10 @@ type Type interface {
 	// Attributes returns type's attributes, if any.
 	Attributes() []*AttributeSpecifier
 
+	// Elem returns a type's element type. It panics if the type's Kind is
+	// not Array or Ptr.
+	Elem() Type
+
 	// FieldAlign returns the alignment in bytes of a value of this type
 	// when used as a field in a struct.
 	FieldAlign() int
@@ -52,8 +59,11 @@ type Type interface {
 	Kind() Kind
 
 	// Size returns the number of bytes needed to store a value of the
-	// given type.
-	//TODO Size() uintptr
+	// given type. It panics if type is incomplete.
+	Size() uintptr
+
+	// String implements fmt.Stringer.
+	String() string
 
 	// atomic reports whether type has type qualifier "_Atomic".
 	atomic() bool
@@ -66,6 +76,9 @@ type Type interface {
 
 	// hasConst reports whether type has type qualifier "const".
 	hasConst() bool
+
+	// Incomplete reports whether type is incomplete.
+	Incomplete() bool
 
 	// inline reports whether type has function specifier "inline".
 	inline() bool
@@ -83,9 +96,13 @@ type Type interface {
 	// static reports whether type has storage class specifier "static".
 	static() bool
 
+	string(*strings.Builder)
+
 	// threadLocal reports whether type has storage class specifier
 	// "_Thread_local".
 	threadLocal() bool
+
+	base() typeBase
 
 	// typedef reports whether type has storage class specifier "typedef".
 	typedef() bool
@@ -170,6 +187,31 @@ var (
 		{TypeSpecifierTypeofType}:                                         byte(typeofType), //TODO
 		{TypeSpecifierUnsigned, TypeSpecifierComplex}:                     byte(ComplexUInt),
 	}
+
+	integerTypes = [maxKind]bool{
+		Bool:      true,
+		Char:      true,
+		Enum:      true,
+		Int:       true,
+		Long:      true,
+		LongLong:  true,
+		SChar:     true,
+		Short:     true,
+		UChar:     true,
+		UInt:      true,
+		ULong:     true,
+		ULongLong: true,
+		UShort:    true,
+	}
+
+	unsignedTypes = [maxKind]bool{
+		Bool:      true,
+		UChar:     true,
+		UInt:      true,
+		ULong:     true,
+		ULongLong: true,
+		UShort:    true,
+	}
 )
 
 type typeDescriptor interface {
@@ -177,37 +219,42 @@ type typeDescriptor interface {
 	isTypeDescriptor()
 }
 
-type baseTypeFlag uint16
+type flag uint16
 
 const (
 	// function specifier
-	btfInline baseTypeFlag = 1 << iota
-	btfNoReturn
+	fInline flag = 1 << iota
+	fNoReturn
 
 	// storage class
-	btfAuto
-	btfExtern
-	btfRegister
-	btfStatic
-	btfThreadLocal
-	btfTypedef
+	fAuto
+	fExtern
+	fRegister
+	fStatic
+	fThreadLocal
+	fTypedef
 
 	// type qualifier
-	btfAtomic
-	btfConst
-	btfRestrict
-	btfVolatile
+	fAtomic
+	fConst
+	fRestrict
+	fVolatile
+
+	// other
+	fIncomplete
 )
 
-type baseType struct {
-	flags baseTypeFlag
+type typeBase struct {
+	size uintptr
+
+	flags flag
 
 	align      byte
 	fieldAlign byte
 	kind       byte
 }
 
-func (t *baseType) check(ctx *context, td typeDescriptor) Type {
+func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 	var alignmentSpecifiers []*AlignmentSpecifier
 	var attributeSpecifiers []*AttributeSpecifier
 	var typeSpecifiers []*TypeSpecifier
@@ -331,56 +378,152 @@ func (t *baseType) check(ctx *context, td typeDescriptor) Type {
 }
 
 // atomic implements Type.
-func (t *baseType) atomic() bool { return t.flags&btfAtomic != 0 }
+func (t *typeBase) atomic() bool { return t.flags&fAtomic != 0 }
 
 // Attributes implements Type.
-func (t *baseType) Attributes() (a []*AttributeSpecifier) { return nil }
+func (t *typeBase) Attributes() (a []*AttributeSpecifier) { return nil }
 
 // auto implements Type.
-func (t *baseType) auto() bool { return t.flags&btfAuto != 0 }
+func (t *typeBase) auto() bool { return t.flags&fAuto != 0 }
 
 // Align implements Type.
-func (t *baseType) Align() int { return int(t.align) }
+func (t *typeBase) Align() int { return int(t.align) }
+
+// base implements Type.
+func (t *typeBase) base() typeBase { return *t }
+
+// Elem implements Type.
+func (t *typeBase) Elem() Type { panic("Elem(): inapropriate type") }
 
 // extern implements Type.
-func (t *baseType) extern() bool { return t.flags&btfExtern != 0 }
+func (t *typeBase) extern() bool { return t.flags&fExtern != 0 }
 
 // hasConst implements Type.
-func (t *baseType) hasConst() bool { return t.flags&btfConst != 0 }
+func (t *typeBase) hasConst() bool { return t.flags&fConst != 0 }
 
 // FieldAlign implements Type.
-func (t *baseType) FieldAlign() int { return int(t.fieldAlign) }
+func (t *typeBase) FieldAlign() int { return int(t.fieldAlign) }
+
+// Incomplete implements Type.
+func (t *typeBase) Incomplete() bool { return t.flags&fIncomplete != 0 }
 
 // inline implements Type.
-func (t *baseType) inline() bool { return t.flags&btfInline != 0 }
+func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
 
 // Kind implements Type.
-func (t *baseType) Kind() Kind { return Kind(t.kind) }
+func (t *typeBase) Kind() Kind { return Kind(t.kind) }
 
 // noReturn implements Type.
-func (t *baseType) noReturn() bool { return t.flags&btfNoReturn != 0 }
+func (t *typeBase) noReturn() bool { return t.flags&fNoReturn != 0 }
 
 // register implements Type.
-func (t *baseType) register() bool { return t.flags&btfRegister != 0 }
+func (t *typeBase) register() bool { return t.flags&fRegister != 0 }
 
 // restrict implements Type.
-func (t *baseType) restrict() bool { return t.flags&btfTypedef != 0 }
+func (t *typeBase) restrict() bool { return t.flags&fRestrict != 0 }
+
+// Size implements Type.
+func (t *typeBase) Size() uintptr {
+	if t.Incomplete() {
+		panic("Size(): incomplete type") //TODOOK
+	}
+
+	if t.size == 0 {
+		//TODO panic("TODO")
+	}
+	return t.size
+}
 
 // static implements Type.
-func (t *baseType) static() bool { return t.flags&btfStatic != 0 }
+func (t *typeBase) static() bool { return t.flags&fStatic != 0 }
 
 // threadLocal implements Type.
-func (t *baseType) threadLocal() bool { return t.flags&btfThreadLocal != 0 }
+func (t *typeBase) threadLocal() bool { return t.flags&fThreadLocal != 0 }
 
 // typedef implements Type.
-func (t *baseType) typedef() bool { return t.flags&btfTypedef != 0 }
+func (t *typeBase) typedef() bool { return t.flags&fTypedef != 0 }
 
 // volatile implements Type.
-func (t *baseType) volatile() bool { return t.flags&btfVolatile != 0 }
+func (t *typeBase) volatile() bool { return t.flags&fVolatile != 0 }
+
+// String implements Type.
+func (t *typeBase) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *typeBase) string(b *strings.Builder) {
+	if t.atomic() {
+		b.WriteString("atomic ")
+	}
+	if t.auto() {
+		b.WriteString("auto ")
+	}
+	if t.extern() {
+		b.WriteString("extern ")
+	}
+	if t.hasConst() {
+		b.WriteString("const ")
+	}
+	if t.inline() {
+		b.WriteString("inline ")
+	}
+	if t.noReturn() {
+		b.WriteString("_NoReturn ")
+	}
+	if t.register() {
+		b.WriteString("register ")
+	}
+	if t.restrict() {
+		b.WriteString("restrict ")
+	}
+	if t.static() {
+		b.WriteString("static ")
+	}
+	if t.threadLocal() {
+		b.WriteString("_Thread_local ")
+	}
+	if t.typedef() {
+		b.WriteString("typedef ")
+	}
+	if t.volatile() {
+		b.WriteString("volatile ")
+	}
+	switch k := t.Kind(); k {
+	case Enum:
+		b.WriteString("enum ")
+	case Invalid:
+		// nop
+	case Struct:
+		b.WriteString("struct ")
+	case typeofExpr, typeofType, Ptr:
+		panic("internal error") // TODOOK
+	default:
+		b.WriteString(k.String())
+		b.WriteByte(' ')
+	}
+}
 
 type attributedType struct {
 	Type
 	attr []*AttributeSpecifier
+}
+
+// String implements Type.
+func (t *attributedType) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *attributedType) string(b *strings.Builder) {
+	for _, v := range t.attr {
+		panic(v.Position())
+	}
+	t.Type.string(b)
 }
 
 // Attributes implements Type.
@@ -405,57 +548,42 @@ type structType struct { //TODO implement Type
 }
 
 type pointerType struct {
-	typ            Type // T in T*
-	typeQualifiers Type
+	typeBase
 
-	align      byte
-	fieldAlign byte
+	elem           Type
+	typeQualifiers Type
 }
 
-// Align implements Type.
-func (t *pointerType) Align() int { return int(t.align) }
+// Attributes implements Type.
+func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
+
+// Elem implements Type.
+func (t *pointerType) Elem() Type { return t.elem }
+
+// String implements Type.
+func (t *pointerType) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *pointerType) string(b *strings.Builder) {
+	if t := t.typeQualifiers; t != nil {
+		t.string(b)
+	}
+	b.WriteString("pointer to ")
+	t.elem.string(b)
+}
+
+type arrayType struct {
+	typeBase
+
+	elem Type
+}
 
 // Attributes implements Type.
-func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.typ.Attributes() }
+func (t *arrayType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
 
-// FieldAlign implements Type.
-func (t *pointerType) FieldAlign() int { return int(t.fieldAlign) }
-
-// Kind implements Type.
-func (t *pointerType) Kind() Kind { return Ptr }
-
-// atomic implements Type.
-func (t *pointerType) atomic() bool { return t.typ.atomic() }
-
-// auto implements Type.
-func (t *pointerType) auto() bool { return t.typ.auto() }
-
-// extern implements Type.
-func (t *pointerType) extern() bool { return t.typ.extern() }
-
-// hasConst implements Type.
-func (t *pointerType) hasConst() bool { return t.typ.hasConst() }
-
-// inline implements Type.
-func (t *pointerType) inline() bool { return t.typ.inline() }
-
-// noReturn implements Type.
-func (t *pointerType) noReturn() bool { return t.typ.noReturn() }
-
-// register implements Type.
-func (t *pointerType) register() bool { return t.typ.register() }
-
-// restrict implements Type.
-func (t *pointerType) restrict() bool { return t.typ.restrict() }
-
-// static implements Type.
-func (t *pointerType) static() bool { return t.typ.static() }
-
-// threadLocal implements Type.
-func (t *pointerType) threadLocal() bool { return t.typ.threadLocal() }
-
-// typedef implements Type.
-func (t *pointerType) typedef() bool { return t.typ.typedef() }
-
-// volatile implements Type.
-func (t *pointerType) volatile() bool { return t.typ.volatile() }
+// Elem implements Type.
+func (t *arrayType) Elem() Type { return t.elem }

@@ -9,7 +9,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"compress/gzip"
-	"flag"
+	flags "flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -100,13 +100,13 @@ void __builtin_va_arg_impl(void* ap);
 )
 
 var (
-	oDev      = flag.Bool("dev", false, "Enable developer tests/downloads.")
-	oDownload = flag.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
-	oMaxFiles = flag.Int("maxFiles", maxFiles, "")
-	oRE       = flag.String("re", "", "")
-	oSkipInit = flag.Bool("skipInit", false, "")
-	oTrace    = flag.Bool("trc", false, "Print tested paths.")
-	oWalkDir  = flag.String("walkDir", "testdata", "")
+	oDev      = flags.Bool("dev", false, "Enable developer tests/downloads.")
+	oDownload = flags.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
+	oMaxFiles = flags.Int("maxFiles", maxFiles, "")
+	oRE       = flags.String("re", "", "")
+	oSkipInit = flags.Bool("skipInit", false, "")
+	oTrace    = flags.Bool("trc", false, "Print tested paths.")
+	oWalkDir  = flags.String("walkDir", "testdata", "")
 
 	gccDir    = filepath.FromSlash("testdata/gcc-8.3.0")
 	sqliteDir = filepath.FromSlash("testdata/sqlite-amalgamation-3270200")
@@ -133,6 +133,7 @@ var (
 
 	testABI = ABI{ //TODO adjust for arch/os, this is linux/amd64.
 		MaxPackedBitfieldWidth: 32,
+		SignedChar:             true,
 		Types: map[Kind]ABIType{
 			Bool:              {1, 1, 1},
 			Char:              {1, 1, 1},
@@ -175,9 +176,9 @@ var (
 func init() {
 	isTesting = true
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	flag.BoolVar(&panicOnParserError, "panicOnParserError", false, "Panic on parser error.") //TODOOK
+	flags.BoolVar(&panicOnParserError, "panicOnParserError", false, "Panic on parser error.") //TODOOK
 
-	flag.Parse()
+	flags.Parse()
 	var err error
 	if testWD, err = os.Getwd(); err != nil {
 		log.Fatalf("Cannot determine working dir: %v", err)

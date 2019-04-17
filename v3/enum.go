@@ -40,7 +40,7 @@ const (
 	SChar             // signed char
 	Short             // chort
 	Struct            // struct
-	TypedefName       // typedef name
+	TypedefName       // typedefname
 	UChar             // unsigned char
 	UInt              // unsigned
 	UInt128           // unsigned __int128
@@ -51,4 +51,6 @@ const (
 
 	typeofExpr
 	typeofType
+
+	maxKind
 )

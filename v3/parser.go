@@ -544,7 +544,11 @@ out:
 		}
 	case PPNUMBER:
 		switch s := p.tok.Value.String(); {
-		case strings.Contains(s, "."):
+		case strings.ContainsAny(s, ".+-ijp"):
+			p.tok.Rune = FLOATCONST
+		case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
+			p.tok.Rune = INTCONST
+		case strings.ContainsAny(s, "Ee"):
 			p.tok.Rune = FLOATCONST
 		default:
 			p.tok.Rune = INTCONST

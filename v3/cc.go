@@ -83,6 +83,12 @@ var (
 			}
 			f.Format(suffix)
 		},
+		//TODO- reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
+		//TODO- 	x := v.(*operand)
+		//TODO- 	f.Format(prefix)
+		//TODO- 	f.Format("%#v", x)
+		//TODO- 	f.Format(suffix)
+		//TODO- },
 	}
 )
 

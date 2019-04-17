@@ -98,6 +98,7 @@ func (n AdditiveExpressionCase) String() string {
 //	|       AdditiveExpression '+' MultiplicativeExpression  // Case AdditiveExpressionAdd
 //	|       AdditiveExpression '-' MultiplicativeExpression  // Case AdditiveExpressionSub
 type AdditiveExpression struct {
+	Operand                  Operand
 	AdditiveExpression       *AdditiveExpression
 	Case                     AdditiveExpressionCase `PrettyPrint:"stringer,zero"`
 	MultiplicativeExpression *MultiplicativeExpression
@@ -236,6 +237,7 @@ func (n AndExpressionCase) String() string {
 //	        EqualityExpression                    // Case AndExpressionEq
 //	|       AndExpression '&' EqualityExpression  // Case AndExpressionAnd
 type AndExpression struct {
+	Operand            Operand
 	AndExpression      *AndExpression
 	Case               AndExpressionCase `PrettyPrint:"stringer,zero"`
 	EqualityExpression *EqualityExpression
@@ -618,6 +620,7 @@ func (n AssignmentExpressionCase) String() string {
 //	|       UnaryExpression "^=" AssignmentExpression   // Case AssignmentExpressionXor
 //	|       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
 type AssignmentExpression struct {
+	Operand               Operand
 	AssignmentExpression  *AssignmentExpression
 	Case                  AssignmentExpressionCase `PrettyPrint:"stringer,zero"`
 	ConditionalExpression *ConditionalExpression
@@ -974,6 +977,7 @@ func (n CastExpressionCase) String() string {
 //	        UnaryExpression                  // Case CastExpressionUnary
 //	|       '(' TypeName ')' CastExpression  // Case CastExpressionCast
 type CastExpression struct {
+	Operand         Operand
 	Case            CastExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression  *CastExpression
 	Token           Token
@@ -1071,6 +1075,7 @@ func (n ConditionalExpressionCase) String() string {
 //	        LogicalOrExpression                                           // Case ConditionalExpressionLOr
 //	|       LogicalOrExpression '?' Expression ':' ConditionalExpression  // Case ConditionalExpressionCond
 type ConditionalExpression struct {
+	Operand               Operand
 	Case                  ConditionalExpressionCase `PrettyPrint:"stringer,zero"`
 	ConditionalExpression *ConditionalExpression
 	Expression            *Expression
@@ -1119,6 +1124,7 @@ func (n *ConditionalExpression) Position() (r token.Position) {
 //	ConstantExpression:
 //	        ConditionalExpression
 type ConstantExpression struct {
+	Operand               Operand
 	ConditionalExpression *ConditionalExpression
 }
 
@@ -1482,7 +1488,7 @@ func (n DirectAbstractDeclaratorCase) String() string {
 //	|       DirectAbstractDeclarator '(' ParameterTypeList ')'                             // Case DirectAbstractDeclaratorFunc
 type DirectAbstractDeclarator struct {
 	paramScope               Scope
-	typeQualifiers           *baseType
+	typeQualifiers           *typeBase
 	AbstractDeclarator       *AbstractDeclarator
 	AssignmentExpression     *AssignmentExpression
 	Case                     DirectAbstractDeclaratorCase `PrettyPrint:"stringer,zero"`
@@ -1662,7 +1668,7 @@ func (n DirectDeclaratorCase) String() string {
 type DirectDeclarator struct {
 	lexicalScope           Scope
 	paramScope             Scope
-	typeQualifiers         *baseType
+	typeQualifiers         *typeBase
 	Asm                    *Asm
 	AssignmentExpression   *AssignmentExpression
 	AttributeSpecifierList *AttributeSpecifierList
@@ -2033,6 +2039,7 @@ func (n EqualityExpressionCase) String() string {
 //	|       EqualityExpression "==" RelationalExpression  // Case EqualityExpressionEq
 //	|       EqualityExpression "!=" RelationalExpression  // Case EqualityExpressionNeq
 type EqualityExpression struct {
+	Operand              Operand
 	Case                 EqualityExpressionCase `PrettyPrint:"stringer,zero"`
 	EqualityExpression   *EqualityExpression
 	RelationalExpression *RelationalExpression
@@ -2093,6 +2100,7 @@ func (n ExclusiveOrExpressionCase) String() string {
 //	        AndExpression                            // Case ExclusiveOrExpressionAnd
 //	|       ExclusiveOrExpression '^' AndExpression  // Case ExclusiveOrExpressionXor
 type ExclusiveOrExpression struct {
+	Operand               Operand
 	AndExpression         *AndExpression
 	Case                  ExclusiveOrExpressionCase `PrettyPrint:"stringer,zero"`
 	ExclusiveOrExpression *ExclusiveOrExpression
@@ -2153,6 +2161,7 @@ func (n ExpressionCase) String() string {
 //	        AssignmentExpression                 // Case ExpressionAssign
 //	|       Expression ',' AssignmentExpression  // Case ExpressionComma
 type Expression struct {
+	Operand              Operand
 	AssignmentExpression *AssignmentExpression
 	Case                 ExpressionCase `PrettyPrint:"stringer,zero"`
 	Expression           *Expression
@@ -2447,6 +2456,7 @@ func (n InclusiveOrExpressionCase) String() string {
 //	        ExclusiveOrExpression                            // Case InclusiveOrExpressionXor
 //	|       InclusiveOrExpression '|' ExclusiveOrExpression  // Case InclusiveOrExpressionOr
 type InclusiveOrExpression struct {
+	Operand               Operand
 	Case                  InclusiveOrExpressionCase `PrettyPrint:"stringer,zero"`
 	ExclusiveOrExpression *ExclusiveOrExpression
 	InclusiveOrExpression *InclusiveOrExpression
@@ -3118,6 +3128,7 @@ func (n LogicalAndExpressionCase) String() string {
 //	        InclusiveOrExpression                            // Case LogicalAndExpressionOr
 //	|       LogicalAndExpression "&&" InclusiveOrExpression  // Case LogicalAndExpressionLAnd
 type LogicalAndExpression struct {
+	Operand               Operand
 	Case                  LogicalAndExpressionCase `PrettyPrint:"stringer,zero"`
 	InclusiveOrExpression *InclusiveOrExpression
 	LogicalAndExpression  *LogicalAndExpression
@@ -3178,6 +3189,7 @@ func (n LogicalOrExpressionCase) String() string {
 //	        LogicalAndExpression                           // Case LogicalOrExpressionLAnd
 //	|       LogicalOrExpression "||" LogicalAndExpression  // Case LogicalOrExpressionLOr
 type LogicalOrExpression struct {
+	Operand              Operand
 	Case                 LogicalOrExpressionCase `PrettyPrint:"stringer,zero"`
 	LogicalAndExpression *LogicalAndExpression
 	LogicalOrExpression  *LogicalOrExpression
@@ -3246,6 +3258,7 @@ func (n MultiplicativeExpressionCase) String() string {
 //	|       MultiplicativeExpression '/' CastExpression  // Case MultiplicativeExpressionDiv
 //	|       MultiplicativeExpression '%' CastExpression  // Case MultiplicativeExpressionMod
 type MultiplicativeExpression struct {
+	Operand                  Operand
 	Case                     MultiplicativeExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression           *CastExpression
 	MultiplicativeExpression *MultiplicativeExpression
@@ -3454,7 +3467,7 @@ func (n PointerCase) String() string {
 //	        '*' TypeQualifiers          // Case PointerTypeQual
 //	|       '*' TypeQualifiers Pointer  // Case PointerPtr
 type Pointer struct {
-	typeQualifiers *baseType
+	typeQualifiers *typeBase
 	Case           PointerCase `PrettyPrint:"stringer,zero"`
 	Pointer        *Pointer
 	Token          Token
@@ -3547,6 +3560,7 @@ func (n PostfixExpressionCase) String() string {
 //	|       '(' TypeName ')' '{' InitializerList ',' '}'                  // Case PostfixExpressionComplit
 //	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'  // Case PostfixExpressionTypeCmp
 type PostfixExpression struct {
+	Operand                Operand
 	ArgumentExpressionList *ArgumentExpressionList
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
 	Expression             *Expression
@@ -3765,6 +3779,7 @@ func (n PrimaryExpressionCase) String() string {
 //	|       '(' Expression ')'         // Case PrimaryExpressionExpr
 //	|       '(' CompoundStatement ')'  // Case PrimaryExpressionStmt
 type PrimaryExpression struct {
+	Operand           Operand
 	lexicalScope      Scope
 	resolvedIn        Scope
 	Case              PrimaryExpressionCase `PrettyPrint:"stringer,zero"`
@@ -3850,6 +3865,7 @@ func (n RelationalExpressionCase) String() string {
 //	|       RelationalExpression "<=" ShiftExpression  // Case RelationalExpressionLeq
 //	|       RelationalExpression ">=" ShiftExpression  // Case RelationalExpressionGeq
 type RelationalExpression struct {
+	Operand              Operand
 	Case                 RelationalExpressionCase `PrettyPrint:"stringer,zero"`
 	RelationalExpression *RelationalExpression
 	ShiftExpression      *ShiftExpression
@@ -4014,6 +4030,7 @@ func (n ShiftExpressionCase) String() string {
 //	|       ShiftExpression "<<" AdditiveExpression  // Case ShiftExpressionLsh
 //	|       ShiftExpression ">>" AdditiveExpression  // Case ShiftExpressionRsh
 type ShiftExpression struct {
+	Operand            Operand
 	AdditiveExpression *AdditiveExpression
 	Case               ShiftExpressionCase `PrettyPrint:"stringer,zero"`
 	ShiftExpression    *ShiftExpression
@@ -4998,6 +5015,7 @@ func (n UnaryExpressionCase) String() string {
 //	|       "__imag__" UnaryExpression   // Case UnaryExpressionImag
 //	|       "__real__" UnaryExpression   // Case UnaryExpressionReal
 type UnaryExpression struct {
+	Operand           Operand
 	lexicalScope      Scope
 	Case              UnaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression    *CastExpression

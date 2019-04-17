@@ -50,6 +50,8 @@ type ABIType struct {
 type ABI struct {
 	MaxPackedBitfieldWidth int // In bits.
 	Types                  map[Kind]ABIType
+
+	SignedChar bool
 }
 
 func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
@@ -94,11 +96,17 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 				return ctx.Err()
 			}
 		}
+
+		if integerTypes[k] && v.Size > 8 {
+			if ctx.err(noPos, "invalid ABI type %s size: %v, must be <= 8", k, v.Size) {
+				return ctx.Err()
+			}
+		}
 	}
 	return ctx.Err()
 }
 
-func (a *ABI) alignKind(ctx *context, n Node, k Kind) int {
+func (a *ABI) align(ctx *context, n Node, k Kind) int {
 	x, ok := a.Types[k]
 	if !ok {
 		ctx.errNode(n, "ABI is missing an ABIType for kind %s", k)
@@ -108,7 +116,7 @@ func (a *ABI) alignKind(ctx *context, n Node, k Kind) int {
 	return x.Align
 }
 
-func (a *ABI) fieldAlignKind(ctx *context, n Node, k Kind) int {
+func (a *ABI) fieldAlign(ctx *context, n Node, k Kind) int {
 	x, ok := a.Types[k]
 	if !ok {
 		ctx.errNode(n, "ABI is missing an ABIType for kind %s", k)
@@ -116,4 +124,31 @@ func (a *ABI) fieldAlignKind(ctx *context, n Node, k Kind) int {
 	}
 
 	return x.FieldAlign
+}
+
+func (a *ABI) isSigned(k Kind) bool {
+	if !a.isInt(k) {
+		panic("internal error") //TODOOK
+	}
+
+	return !unsignedTypes[k] || k == Char && a.SignedChar
+}
+
+func (a *ABI) isInt(k Kind) bool { return integerTypes[k] }
+
+func (a *ABI) size(k Kind) int {
+	if x, ok := a.Types[k]; ok {
+		return int(x.Size)
+	}
+
+	panic("internal error") //TODOOK
+}
+
+func (a *ABI) typ(ctx *context, n Node, k Kind) Type { //TODO singletons within ABI instance
+	return &typeBase{
+		align:      byte(a.align(ctx, n, k)),
+		fieldAlign: byte(a.fieldAlign(ctx, n, k)),
+		kind:       byte(k),
+		size:       uintptr(a.size(k)),
+	}
 }
