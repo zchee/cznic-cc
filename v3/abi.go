@@ -61,6 +61,12 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 	if a.MaxPackedBitfieldWidth < 0 || a.MaxPackedBitfieldWidth > intMaxWidth {
 		ctx.err(noPos, "invalid ABI.MaxPackedBitfieldWidth value: %v", a.MaxPackedBitfieldWidth)
 	}
+	if _, ok := a.Types[Void]; !ok {
+		if ctx.err(noPos, "ABI is missing %s", Void) {
+			return ctx.Err()
+		}
+	}
+
 	for _, k := range []Kind{
 		Bool,
 		Char,

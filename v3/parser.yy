@@ -655,6 +655,7 @@ package cc // import "modernc.org/cc/v3"
 			TypeName:
 				SpecifierQualifierList AbstractDeclarator
 
+			/*yy:field	typ	Type	*/
 			/*yy:example void f(int*); */
 /*yy:case Ptr        */ AbstractDeclarator:
 				Pointer

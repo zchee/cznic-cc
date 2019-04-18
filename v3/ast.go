@@ -39,6 +39,7 @@ func (n AbstractDeclaratorCase) String() string {
 //	        Pointer                           // Case AbstractDeclaratorPtr
 //	|       Pointer DirectAbstractDeclarator  // Case AbstractDeclaratorDecl
 type AbstractDeclarator struct {
+	typ                      Type
 	Case                     AbstractDeclaratorCase `PrettyPrint:"stringer,zero"`
 	DirectAbstractDeclarator *DirectAbstractDeclarator
 	Pointer                  *Pointer

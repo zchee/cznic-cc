@@ -20,6 +20,7 @@ import (
 )
 
 var (
+	_ Type = (*aliasType)(nil)
 	_ Type = (*arrayType)(nil)
 	_ Type = (*attributedType)(nil)
 	_ Type = (*pointerType)(nil)
@@ -30,6 +31,72 @@ var (
 	_ typeDescriptor = (*TypeQualifiers)(nil)
 
 	noType = &typeBase{}
+
+	// [0]6.3.1.1-1
+	//
+	// Every integer type has an integer conversion rank defined as
+	// follows:
+	intConvRank = [maxKind]int{
+		Bool:      1,
+		Char:      2,
+		SChar:     2,
+		UChar:     2,
+		Short:     3,
+		UShort:    3,
+		Int:       4,
+		UInt:      4,
+		Long:      5,
+		ULong:     5,
+		LongLong:  6,
+		ULongLong: 6,
+	}
+
+	integerTypes = [maxKind]bool{
+		Bool:      true,
+		Char:      true,
+		Enum:      true,
+		Int:       true,
+		Long:      true,
+		LongLong:  true,
+		SChar:     true,
+		Short:     true,
+		UChar:     true,
+		UInt:      true,
+		ULong:     true,
+		ULongLong: true,
+		UShort:    true,
+	}
+
+	unsignedTypes = [maxKind]bool{
+		Bool:      true,
+		UChar:     true,
+		UInt:      true,
+		ULong:     true,
+		ULongLong: true,
+		UShort:    true,
+	}
+
+	isArithmeticType = [maxKind]bool{
+		Bool:              true,
+		Char:              true,
+		ComplexDouble:     true,
+		ComplexFloat:      true,
+		ComplexLongDouble: true,
+		Double:            true,
+		Enum:              true,
+		Float:             true,
+		Int:               true,
+		Long:              true,
+		LongDouble:        true,
+		LongLong:          true,
+		SChar:             true,
+		Short:             true,
+		UChar:             true,
+		UInt:              true,
+		ULong:             true,
+		ULongLong:         true,
+		UShort:            true,
+	}
 )
 
 // Type is the representation of a C type.
@@ -83,6 +150,8 @@ type Type interface {
 	// inline reports whether type has function specifier "inline".
 	inline() bool
 
+	isInt() bool
+
 	// noReturn reports whether type has function specifier "_NoReturn".
 	noReturn() bool
 
@@ -106,6 +175,8 @@ type Type interface {
 
 	// typedef reports whether type has storage class specifier "typedef".
 	typedef() bool
+
+	underlyingType() Type
 
 	// volatile reports whether type has type qualifier "volatile".
 	volatile() bool
@@ -186,31 +257,6 @@ var (
 		{TypeSpecifierTypeofExpr}:                                         byte(typeofExpr), //TODO
 		{TypeSpecifierTypeofType}:                                         byte(typeofType), //TODO
 		{TypeSpecifierUnsigned, TypeSpecifierComplex}:                     byte(ComplexUInt),
-	}
-
-	integerTypes = [maxKind]bool{
-		Bool:      true,
-		Char:      true,
-		Enum:      true,
-		Int:       true,
-		Long:      true,
-		LongLong:  true,
-		SChar:     true,
-		Short:     true,
-		UChar:     true,
-		UInt:      true,
-		ULong:     true,
-		ULongLong: true,
-		UShort:    true,
-	}
-
-	unsignedTypes = [maxKind]bool{
-		Bool:      true,
-		UChar:     true,
-		UInt:      true,
-		ULong:     true,
-		ULongLong: true,
-		UShort:    true,
 	}
 )
 
@@ -343,7 +389,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 		ctx.err(alignmentSpecifiers[1].Position(), "multiple alignment specifiers")
 	}
 
-	switch t.Kind() {
+	switch k := t.Kind(); k {
 	case TypedefName:
 		//TODO
 	case typeofExpr:
@@ -357,11 +403,13 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 	case Enum:
 		//TODO
 	default:
-		if t.align != 0 {
-			break
-		}
+		abi := ctx.cfg.ABI
+		if v, ok := abi.Types[k]; ok {
+			t.size = uintptr(abi.size(k))
+			if t.align != 0 {
+				break
+			}
 
-		if v, ok := ctx.cfg.ABI.Types[t.Kind()]; ok {
 			t.align = byte(v.Align)
 			t.fieldAlign = byte(v.FieldAlign)
 			break
@@ -410,6 +458,9 @@ func (t *typeBase) Incomplete() bool { return t.flags&fIncomplete != 0 }
 // inline implements Type.
 func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
 
+// isInt implements Type.
+func (t *typeBase) isInt() bool { return integerTypes[t.kind] }
+
 // Kind implements Type.
 func (t *typeBase) Kind() Kind { return Kind(t.kind) }
 
@@ -442,6 +493,9 @@ func (t *typeBase) threadLocal() bool { return t.flags&fThreadLocal != 0 }
 
 // typedef implements Type.
 func (t *typeBase) typedef() bool { return t.flags&fTypedef != 0 }
+
+// underlyingType implements Type.
+func (t *typeBase) underlyingType() Type { return t }
 
 // volatile implements Type.
 func (t *typeBase) volatile() bool { return t.flags&fVolatile != 0 }
@@ -587,3 +641,25 @@ func (t *arrayType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attri
 
 // Elem implements Type.
 func (t *arrayType) Elem() Type { return t.elem }
+
+type aliasType struct {
+	nm StringID
+	Type
+}
+
+// String implements Type.
+func (t *aliasType) String() string { return t.nm.String() }
+
+// string implements Type.
+func (t *aliasType) string(b *strings.Builder) {
+	b.WriteString(t.nm.String())
+	b.WriteByte(' ')
+}
+
+func (t *aliasType) underlyingType() Type {
+	if t.Type == nil {
+		return nil
+	}
+
+	return t.Type.underlyingType()
+}

@@ -58,6 +58,8 @@ var (
 	isTesting   bool
 	noPos       token.Position
 
+	idSizeT = dict.sid("size_t")
+
 	token4Pool = sync.Pool{New: func() interface{} { r := make([]token4, 0); return &r }} //DONE benchmrk tuned capacity
 	tokenPool  = sync.Pool{New: func() interface{} { r := make([]Token, 0); return &r }}  //DONE benchmrk tuned capacity
 
@@ -83,12 +85,12 @@ var (
 			}
 			f.Format(suffix)
 		},
-		//TODO- reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
-		//TODO- 	x := v.(*operand)
-		//TODO- 	f.Format(prefix)
-		//TODO- 	f.Format("%#v", x)
-		//TODO- 	f.Format(suffix)
-		//TODO- },
+		reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
+			x := v.(*operand)
+			f.Format(prefix)
+			f.Format("%v, %v", x.typ, x.value)
+			f.Format(suffix)
+		},
 	}
 )
 
@@ -188,6 +190,29 @@ func (s *Scope) Parent() Scope {
 		}).Scope
 	}
 
+	return nil
+}
+
+func (s *Scope) typedef(nm StringID, tok Token) Type {
+	seq := tok.seq
+	for s := *s; s != nil; s = s.Parent() {
+		for _, v := range s[nm] {
+			switch x := v.(type) {
+			case *Declarator:
+				if x.isVisible(seq) && x.IsTypedefName {
+					return x.Type()
+				}
+
+				return nil
+			case *Enumerator:
+				return nil
+			case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+				// nop
+			default:
+				panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(tok))) //TODOOK
+			}
+		}
+	}
 	return nil
 }
 

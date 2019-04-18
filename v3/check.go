@@ -256,9 +256,16 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		if ctx.mode&mIntConstExpr != 0 {
 			ctx.mode |= mIntConstExprAnyCast
 		}
-		n.TypeName.check(ctx)
+		t := n.TypeName.check(ctx)
 		ctx.pop()
-		//TODO
+		if t != nil {
+			if st := n.lexicalScope.typedef(idSizeT, n.Token3); st != nil {
+				n.Operand = &operand{
+					typ:   &aliasType{nm: idSizeT, Type: st},
+					value: UInt64Value(st.Size()),
+				}
+			}
+		}
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
 		ctx.not(n, mIntConstExpr)
 		//TODO
@@ -285,13 +292,16 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *TypeName) check(ctx *context) {
+func (n *TypeName) check(ctx *context) Type {
 	if n == nil {
-		return
+		return nil
 	}
 
-	typ := n.SpecifierQualifierList.check(ctx)
-	n.typ = n.AbstractDeclarator.check(ctx, typ)
+	n.typ = n.SpecifierQualifierList.check(ctx)
+	if n.AbstractDeclarator != nil {
+		n.typ = n.AbstractDeclarator.check(ctx, n.typ)
+	}
+	return n.typ
 }
 
 func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
@@ -301,45 +311,62 @@ func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
 
 	switch n.Case {
 	case AbstractDeclaratorPtr: // Pointer
-		n.Pointer.check(ctx)
-		return nil //TODO
+		n.typ = n.ptr(ctx, typ)
 	case AbstractDeclaratorDecl: // Pointer DirectAbstractDeclarator
-		n.Pointer.check(ctx)
-		n.DirectAbstractDeclarator.check(ctx)
-		return nil //TODO
+		typ = n.ptr(ctx, typ)
+		n.typ = n.DirectAbstractDeclarator.check(ctx, typ)
 	default:
 		panic("internal error") //TODOOK
 	}
+	return n.typ
 }
 
-func (n *DirectAbstractDeclarator) check(ctx *context) {
+func (n *AbstractDeclarator) ptr(ctx *context, typ Type) Type {
+	if n.Pointer == nil || typ == nil {
+		return typ
+	}
+
+	base := typ.base()
+	base.align = byte(ctx.cfg.ABI.align(ctx, n.Pointer, Ptr))
+	base.fieldAlign = byte(ctx.cfg.ABI.fieldAlign(ctx, n.Pointer, Ptr))
+	base.kind = byte(Ptr)
+	base.size = uintptr(ctx.cfg.ABI.size(Ptr))
+	return &pointerType{
+		elem:           typ,
+		typeBase:       base,
+		typeQualifiers: n.Pointer.check(ctx),
+	}
+}
+
+func (n *DirectAbstractDeclarator) check(ctx *context, typ Type) Type {
 	if n == nil {
-		return
+		return nil
 	}
 
 	switch n.Case {
 	case DirectAbstractDeclaratorDecl: // '(' AbstractDeclarator ')'
 		n.AbstractDeclarator.check(ctx, nil)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		n.DirectAbstractDeclarator.check(ctx)
+		n.DirectAbstractDeclarator.check(ctx, typ)
 		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
 		n.AssignmentExpression.check(ctx)
 	case DirectAbstractDeclaratorStaticArr: // DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
-		n.DirectAbstractDeclarator.check(ctx)
+		n.DirectAbstractDeclarator.check(ctx, typ)
 		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
 		n.AssignmentExpression.check(ctx)
 	case DirectAbstractDeclaratorArrStatic: // DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
-		n.DirectAbstractDeclarator.check(ctx)
+		n.DirectAbstractDeclarator.check(ctx, typ)
 		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
 		n.AssignmentExpression.check(ctx)
 	case DirectAbstractDeclaratorArrStar: // DirectAbstractDeclarator '[' '*' ']'
-		n.DirectAbstractDeclarator.check(ctx)
+		n.DirectAbstractDeclarator.check(ctx, typ)
 	case DirectAbstractDeclaratorFunc: // DirectAbstractDeclarator '(' ParameterTypeList ')'
-		n.DirectAbstractDeclarator.check(ctx)
+		n.DirectAbstractDeclarator.check(ctx, typ)
 		n.ParameterTypeList.check(ctx)
 	default:
 		panic("internal error") //TODOOK
 	}
+	return noType //TODO-
 }
 
 func (n *ParameterTypeList) check(ctx *context) {
@@ -654,7 +681,7 @@ func (n *CastExpression) check(ctx *context) Operand {
 	case CastExpressionUnary: // UnaryExpression
 		n.Operand = n.UnaryExpression.check(ctx)
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
-		n.TypeName.check(ctx)
+		t := n.TypeName.check(ctx)
 		ctx.push(ctx.mode)
 		if m := ctx.mode; m&mIntConstExpr != 0 && m&mIntConstExprAnyCast == 0 {
 			if t := n.TypeName.Type(); t != nil && t.Kind() != Int {
@@ -662,9 +689,13 @@ func (n *CastExpression) check(ctx *context) Operand {
 			}
 			ctx.mode |= mIntConstExprFloat
 		}
-		n.CastExpression.check(ctx)
+		op := n.CastExpression.check(ctx)
 		ctx.pop()
-		//TODO
+		if t == nil || op == nil {
+			break
+		}
+
+		n.Operand = op.convertTo(ctx, n, t)
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -720,7 +751,7 @@ func (n *Expression) check(ctx *context) Operand {
 
 	switch n.Case {
 	case ExpressionAssign: // AssignmentExpression
-		n.AssignmentExpression.check(ctx)
+		n.Operand = n.AssignmentExpression.check(ctx)
 	case ExpressionComma: // Expression ',' AssignmentExpression
 		n.Expression.check(ctx)
 		n.AssignmentExpression.check(ctx)
@@ -759,7 +790,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		ctx.not(n, mIntConstExpr)
 		//TODO
 	case PrimaryExpressionExpr: // '(' Expression ')'
-		n.Expression.check(ctx)
+		n.Operand = n.Expression.check(ctx)
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
 		ctx.not(n, mIntConstExpr)
 		n.CompoundStatement.check(ctx)
@@ -1039,11 +1070,33 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionMul: // MultiplicativeExpression
 		n.Operand = n.MultiplicativeExpression.check(ctx)
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
-		n.AdditiveExpression.check(ctx)
-		n.MultiplicativeExpression.check(ctx)
+		a := n.AdditiveExpression.check(ctx)
+		b := n.MultiplicativeExpression.check(ctx)
+		if a == nil || b == nil {
+			break
+		}
+
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		if a.Value() == nil || b.Value() == nil {
+			n.Operand = &operand{typ: a.Type()}
+			break
+		}
+
+		n.Operand = &operand{typ: a.Type(), value: a.Value().add(b.Value())}
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
-		n.AdditiveExpression.check(ctx)
-		n.MultiplicativeExpression.check(ctx)
+		a := n.AdditiveExpression.check(ctx)
+		b := n.MultiplicativeExpression.check(ctx)
+		if a == nil || b == nil {
+			break
+		}
+
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		if a.Value() == nil || b.Value() == nil {
+			n.Operand = &operand{typ: a.Type()}
+			break
+		}
+
+		n.Operand = &operand{typ: a.Type(), value: a.Value().sub(b.Value())}
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -1059,14 +1112,56 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	case MultiplicativeExpressionCast: // CastExpression
 		n.Operand = n.CastExpression.check(ctx)
 	case MultiplicativeExpressionMul: // MultiplicativeExpression '*' CastExpression
-		n.MultiplicativeExpression.check(ctx)
-		n.CastExpression.check(ctx)
+		a := n.MultiplicativeExpression.check(ctx)
+		b := n.CastExpression.check(ctx)
+		if a == nil || b == nil {
+			break
+		}
+
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		if a.Value() == nil || b.Value() == nil {
+			n.Operand = &operand{typ: a.Type()}
+			break
+		}
+
+		n.Operand = &operand{typ: a.Type(), value: a.Value().mul(b.Value())}
 	case MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
-		n.MultiplicativeExpression.check(ctx)
-		n.CastExpression.check(ctx)
+		a := n.MultiplicativeExpression.check(ctx)
+		b := n.CastExpression.check(ctx)
+		if a == nil || b == nil {
+			break
+		}
+
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		if a.Value() == nil || b.Value() == nil {
+			n.Operand = &operand{typ: a.Type()}
+			break
+		}
+
+		n.Operand = &operand{typ: a.Type(), value: a.Value().div(b.Value())}
 	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
-		n.MultiplicativeExpression.check(ctx)
-		n.CastExpression.check(ctx)
+		a := n.MultiplicativeExpression.check(ctx)
+		b := n.CastExpression.check(ctx)
+		if a == nil || b == nil {
+			break
+		}
+
+		if a.Type() == nil || b.Type() == nil {
+			break
+		}
+
+		if !a.Type().isInt() || !b.Type().isInt() {
+			ctx.errNode(&n.Token, "the operands of the %% operator shall have integer type.") // [0] 6.5.5, 2
+			break
+		}
+
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		if a.Value() == nil || b.Value() == nil {
+			n.Operand = &operand{typ: a.Type()}
+			break
+		}
+
+		n.Operand = &operand{typ: a.Type(), value: a.Value().mod(b.Value())}
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -1083,7 +1178,7 @@ func (n *Declarator) check(ctx *context, typ Type) Type {
 		base.align = byte(ctx.cfg.ABI.align(ctx, n.Pointer, Ptr))
 		base.fieldAlign = byte(ctx.cfg.ABI.fieldAlign(ctx, n.Pointer, Ptr))
 		base.kind = byte(Ptr)
-		//TODO base.size =
+		base.size = uintptr(ctx.cfg.ABI.size(Ptr))
 		typ = &pointerType{
 			elem:           typ,
 			typeBase:       base,
@@ -1109,15 +1204,14 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		return typ
 	case DirectDeclaratorDecl: // '(' AttributeSpecifierList Declarator ')'
 		n.AttributeSpecifierList.check(ctx)
-		n.Declarator.check(ctx, typ)
-		return n.Declarator.Type()
+		return n.Declarator.check(ctx, typ)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
 		n.DirectDeclarator.check(ctx, typ)
 		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		if e := n.AssignmentExpression; n != nil {
+		if e := n.AssignmentExpression; e != nil {
 			if op := e.check(ctx); op == nil {
-				//TODO- dbg("\n%s", PrettyString(e))
-				//TODO panic(n.Position())
+				// dbg("\n%s", PrettyString(e))
+				// panic(n.Position())
 			}
 		}
 		//TODO type

@@ -169,6 +169,7 @@ var (
 			ULong:             {8, 8, 8},
 			ULongLong:         {8, 8, 8},
 			UShort:            {2, 2, 2},
+			Void:              {0, 0, 0},
 		},
 	}
 )
