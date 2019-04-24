@@ -119,6 +119,7 @@ func (o *operand) isIntegerType() bool {
 // conversions:
 func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Operand) {
 	if !a.isArithmeticType() || !b.isArithmeticType() {
+		// dbg("", PrettyString(n))
 		panic("internal error") //TODOOK
 	}
 
@@ -160,6 +161,8 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// Otherwise, the integer promotions are performed on both operands.
 	a = a.integerPromotion(ctx, n)
 	b = b.integerPromotion(ctx, n)
+	at = a.Type().underlyingType()
+	bt = b.Type().underlyingType()
 
 	// Then the following rules are applied to the promoted operands:
 
@@ -187,21 +190,39 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// greater or equal to the rank of the type of the other operand, then
 	// the operand with signed integer type is converted to the type of the
 	// operand with unsigned integer type.
+	var signed Type
 	switch {
 	case abi.isSigned(at.Kind()): // b is unsigned
+		signed = a.Type()
 		if intConvRank[bt.Kind()] >= intConvRank[at.Kind()] {
 			return a.convertTo(ctx, n, b.Type()), b
 		}
 	case abi.isSigned(bt.Kind()): // a is unsigned
+		signed = b.Type()
 		if intConvRank[at.Kind()] >= intConvRank[bt.Kind()] {
 			return a, b.convertTo(ctx, n, a.Type())
 		}
 
 	}
 
-	// dbg("", PrettyString(a))
-	// dbg("", PrettyString(b))
-	panic("TODO")
+	// Otherwise, both operands are converted to the unsigned integer type
+	// corresponding to the type of the operand with signed integer type.
+	var typ Type
+	switch signed.underlyingType().Kind() {
+	case Int:
+		//TODO if a.IsEnumConst || b.IsEnumConst {
+		//TODO 	return a, b
+		//TODO }
+
+		typ = abi.typ(ctx, n, UInt)
+	case Long:
+		typ = abi.typ(ctx, n, ULong)
+	case LongLong:
+		typ = abi.typ(ctx, n, ULongLong)
+	default:
+		panic("internal error") //TODOOK
+	}
+	return a.convertTo(ctx, n, typ), b.convertTo(ctx, n, typ)
 }
 
 // [0]6.3.1.1-2
@@ -247,75 +268,52 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 		return nil
 	}
 
-	if o.Value() == nil {
+	abi := ctx.cfg.ABI
+	k0 := o.Type().underlyingType().Kind()
+	if o.Value() == nil || !abi.isInt(k0) {
 		return &operand{typ: t}
 	}
 
 	k := t.underlyingType().Kind()
-	abi := ctx.cfg.ABI
 	if k == Void {
 		return &operand{typ: abi.typ(ctx, n, Void)} //TODO ABI singleton
 	}
 
-	k0 := o.Type().underlyingType().Kind()
-	if abi.isInt(k0) {
-		if abi.isInt(k) {
-			var i64 int64
-			switch x := o.Value().(type) {
-			case Int64Value:
-				i64 = int64(x)
-			case UInt64Value:
-				i64 = int64(x)
-			default:
-				panic("internal error") //TODOOK
-			}
-			var v Value
-			switch {
-			case abi.isSigned(k):
-				v = Int64Value(i64)
-			default:
-				v = UInt64Value(i64)
-			}
-			return (&operand{typ: t, value: v}).normalize(ctx)
-		}
-
-		if k == Ptr {
-			// [0]6.3.2.3
-			if o.Value().isZero() {
-				// 3. An integer constant expression with the
-				// value 0, or such an expression cast to type
-				// void *, is called a null pointer constant.
-				// If a null pointer constant is converted to a
-				// pointer type, the resulting pointer, called
-				// a null pointer, is guaranteed to compare
-				// unequal to a pointer to any object or
-				// function.
-				return &operand{typ: t, value: UInt64Value(0)}
-			}
-
-			return nil //TODO-
-			panic("TODO")
-			//TODO return Operand{typ: t, value: &v}.normalize(m)
-		}
-
-		switch val := o.Value().(type) {
-		case UInt64Value:
-			return nil //TODO-
-			panic("TODO")
+	if abi.isInt(k) {
+		var i64 int64
+		switch x := o.Value().(type) {
 		case Int64Value:
-			switch k {
-			case Double:
-				return (&operand{typ: t, value: Float64Value(float64(val))}).normalize(ctx)
-			default:
-				//TODO panic("internal error") //TODOOK
-				return nil //TODO-
-			}
+			i64 = int64(x)
+		case UInt64Value:
+			i64 = int64(x)
 		default:
 			panic("internal error") //TODOOK
 		}
+		var v Value
+		switch {
+		case abi.isSigned(k):
+			v = Int64Value(i64)
+		default:
+			v = UInt64Value(i64)
+		}
+		return (&operand{typ: t, value: v}).normalize(ctx)
 	}
-	return nil //TODO-
-	panic("TODO")
+
+	if k == Ptr {
+		// [0]6.3.2.3
+		if o.Value().isZero() {
+			// 3. An integer constant expression with the
+			// value 0, or such an expression cast to type
+			// void *, is called a null pointer constant.
+			// If a null pointer constant is converted to a
+			// pointer type, the resulting pointer, called
+			// a null pointer, is guaranteed to compare
+			// unequal to a pointer to any object or
+			// function.
+			return &operand{typ: t, value: UInt64Value(0)}
+		}
+	}
+	return nil
 }
 
 func (o *operand) normalize(ctx *context) Operand {

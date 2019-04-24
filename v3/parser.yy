@@ -484,6 +484,7 @@ package cc // import "modernc.org/cc/v3"
 			/* [0], 6.7.2.1 Structure and union specifiers */
 			/*yy:field	lexicalScope	Scope	*/
 			/*yy:field	maxAlign	int	*/
+			/*yy:field	typ		Type */
 			/*yy:example struct s { int i; }; */
 /*yy:case Def        */ StructOrUnionSpecifier:
 				StructOrUnion AttributeSpecifierList IDENTIFIER '{' StructDeclarationList '}'
@@ -530,6 +531,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.7.2.2 Enumeration specifiers */
 			/*yy:field	lexicalScope	Scope	*/
+			/*yy:field	typ		Type */
 			/*yy:example enum e {a}; */
 /*yy:case Def        */ EnumSpecifier:
 				"enum" AttributeSpecifierList IDENTIFIER '{' EnumeratorList ',' '}'

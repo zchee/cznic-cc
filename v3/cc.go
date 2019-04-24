@@ -89,6 +89,9 @@ var (
 			x := v.(*operand)
 			f.Format(prefix)
 			f.Format("%v, %v", x.typ, x.value)
+			if x.typ != nil {
+				f.Format(", size %v", x.typ.Size())
+			}
 			f.Format(suffix)
 		},
 	}
@@ -193,17 +196,33 @@ func (s *Scope) Parent() Scope {
 	return nil
 }
 
-func (s *Scope) typedef(nm StringID, tok Token) Type {
+func (s *Scope) typedef(nm StringID, tok Token) *Declarator {
+	if d := s.declarator(nm, tok); d != nil && d.IsTypedefName {
+		return d
+	}
+
+	return nil
+}
+
+func (s *Scope) identifier(nm StringID, tok Token) *Declarator {
+	if d := s.declarator(nm, tok); d != nil && !d.IsTypedefName {
+		return d
+	}
+
+	return nil
+}
+
+func (s *Scope) declarator(nm StringID, tok Token) *Declarator {
 	seq := tok.seq
 	for s := *s; s != nil; s = s.Parent() {
 		for _, v := range s[nm] {
 			switch x := v.(type) {
 			case *Declarator:
-				if x.isVisible(seq) && x.IsTypedefName {
-					return x.Type()
+				if !x.isVisible(seq) {
+					continue
 				}
 
-				return nil
+				return x
 			case *Enumerator:
 				return nil
 			case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:

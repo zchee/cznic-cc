@@ -20,10 +20,14 @@ import (
 )
 
 var (
+	_ Field = (*field)(nil)
+
 	_ Type = (*aliasType)(nil)
 	_ Type = (*arrayType)(nil)
 	_ Type = (*attributedType)(nil)
 	_ Type = (*pointerType)(nil)
+	_ Type = (*structType)(nil)
+	_ Type = (*taggedType)(nil)
 	_ Type = (*typeBase)(nil)
 
 	_ typeDescriptor = (*DeclarationSpecifiers)(nil)
@@ -99,6 +103,11 @@ var (
 	}
 )
 
+type Field interface {
+	//TODO
+	Type() Type // Field type.
+}
+
 // Type is the representation of a C type.
 //
 // Not all methods apply to all kinds of types. Restrictions, if any, are noted
@@ -106,6 +115,7 @@ var (
 // kind of type before calling kind-specific methods. Calling a method
 // inappropriate to the kind of type causes a run-time panic.
 type Type interface {
+	//TODO bits()
 
 	// Align returns the alignment in bytes of a value of this type when
 	// allocated in memory.
@@ -122,8 +132,16 @@ type Type interface {
 	// when used as a field in a struct.
 	FieldAlign() int
 
+	// FieldByName returns the struct field with the given name and a
+	// boolean indicating if the field was found.
+	FieldByName(name StringID) (Field, bool)
+
 	// Kind returns the specific kind of this type.
 	Kind() Kind
+
+	// Len returns an array type's length.  It panics if the type's Kind is
+	// not Array.
+	Len() uintptr
 
 	// Size returns the number of bytes needed to store a value of the
 	// given type. It panics if type is incomplete.
@@ -152,6 +170,8 @@ type Type interface {
 
 	isInt() bool
 
+	isSigned() bool
+
 	// noReturn reports whether type has function specifier "_NoReturn".
 	noReturn() bool
 
@@ -161,6 +181,8 @@ type Type interface {
 
 	// restrict reports whether type has type qualifier "restrict".
 	restrict() bool
+
+	setLen(uintptr)
 
 	// static reports whether type has storage class specifier "static".
 	static() bool
@@ -228,7 +250,7 @@ var (
 		{TypeSpecifierShort, TypeSpecifierUnsigned}:                   byte(UShort),
 		{TypeSpecifierShort}:                                          byte(Short),
 		{TypeSpecifierSigned}:                                         byte(Int),
-		{TypeSpecifierStruct}:                                         byte(Struct),
+		{TypeSpecifierStruct}:                                         byte(Struct),      //TODO
 		{TypeSpecifierTypedefName}:                                    byte(TypedefName), //TODO
 		{TypeSpecifierUnsigned}:                                       byte(UInt),
 		{TypeSpecifierVoid}:                                           byte(Void),
@@ -390,13 +412,13 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 	}
 
 	switch k := t.Kind(); k {
-	case TypedefName:
-		//TODO
 	case typeofExpr:
 		//TODO
 	case typeofType:
 		//TODO
 	case Struct:
+		//TODO
+	case Union:
 		//TODO
 	case Void:
 		// nop
@@ -415,14 +437,25 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 			break
 		}
 
-		ctx.err(td.Position(), "missing model item for %s", t.Kind())
+		//TODO ctx.err(td.Position(), "missing model item for %s", t.Kind())
+	}
+
+	typ := Type(t)
+	switch k := t.Kind(); k {
+	case TypedefName:
+		ts := typeSpecifiers[0]
+		tok := ts.Token
+		nm := tok.Value
+		d := ts.resolvedIn.typedef(nm, tok)
+		typ = &aliasType{nm: nm, Type: d.Type()}
+	case Struct, Union:
+		typ = typeSpecifiers[0].StructOrUnionSpecifier.typ
 	}
 
 	if len(attributeSpecifiers) != 0 {
-		return &attributedType{Type: t, attr: attributeSpecifiers}
+		typ = &attributedType{Type: typ, attr: attributeSpecifiers}
 	}
-
-	return t
+	return typ
 }
 
 // atomic implements Type.
@@ -441,7 +474,7 @@ func (t *typeBase) Align() int { return int(t.align) }
 func (t *typeBase) base() typeBase { return *t }
 
 // Elem implements Type.
-func (t *typeBase) Elem() Type { panic("Elem(): inapropriate type") }
+func (t *typeBase) Elem() Type { panic(fmt.Errorf("%s: Elem of invalid type", t.Kind())) }
 
 // extern implements Type.
 func (t *typeBase) extern() bool { return t.flags&fExtern != 0 }
@@ -452,6 +485,11 @@ func (t *typeBase) hasConst() bool { return t.flags&fConst != 0 }
 // FieldAlign implements Type.
 func (t *typeBase) FieldAlign() int { return int(t.fieldAlign) }
 
+// FieldByName implements Type.
+func (t *typeBase) FieldByName(StringID) (Field, bool) {
+	panic(fmt.Errorf("%s: FieldByName of invalid type", t.Kind()))
+}
+
 // Incomplete implements Type.
 func (t *typeBase) Incomplete() bool { return t.flags&fIncomplete != 0 }
 
@@ -461,8 +499,20 @@ func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
 // isInt implements Type.
 func (t *typeBase) isInt() bool { return integerTypes[t.kind] }
 
+// isSigned implements Type.
+func (t *typeBase) isSigned() bool {
+	if !integerTypes[t.kind] {
+		panic(fmt.Errorf("%s: isSigned of non-integer type", t.Kind()))
+	}
+
+	return !unsignedTypes[t.kind]
+}
+
 // Kind implements Type.
 func (t *typeBase) Kind() Kind { return Kind(t.kind) }
+
+// Len implements Type.
+func (t *typeBase) Len() uintptr { panic(fmt.Errorf("%s: Len of non-array type", t.Kind())) }
 
 // noReturn implements Type.
 func (t *typeBase) noReturn() bool { return t.flags&fNoReturn != 0 }
@@ -484,6 +534,9 @@ func (t *typeBase) Size() uintptr {
 	}
 	return t.size
 }
+
+// setLen implements Type.
+func (t *typeBase) setLen(uintptr) { panic(fmt.Errorf("%s: setLen of non-array type", t.Kind())) }
 
 // static implements Type.
 func (t *typeBase) static() bool { return t.flags&fStatic != 0 }
@@ -552,6 +605,8 @@ func (t *typeBase) string(b *strings.Builder) {
 		// nop
 	case Struct:
 		b.WriteString("struct ")
+	case Union:
+		b.WriteString("union ")
 	case typeofExpr, typeofType, Ptr:
 		panic("internal error") // TODOOK
 	default:
@@ -583,24 +638,6 @@ func (t *attributedType) string(b *strings.Builder) {
 // Attributes implements Type.
 func (t *attributedType) Attributes() []*AttributeSpecifier { return t.attr }
 
-type field struct {
-	offset uintptr // In bytes from start of the struct.
-	typ    Type
-
-	name StringID // Can be zero.
-
-	isBitField bool // Following fields are valid only if this field is true.
-
-	bitOffset byte // In bits from bit 0 within the field.
-	bits      byte // Width of the bit field. Valid only when isBitField is true.
-	mask      byte // bits: 3, bitOffset: 2 -> 0x1c.
-}
-
-type structType struct { //TODO implement Type
-	fields []field
-	tag    StringID
-}
-
 type pointerType struct {
 	typeBase
 
@@ -613,6 +650,9 @@ func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.elem.Att
 
 // Elem implements Type.
 func (t *pointerType) Elem() Type { return t.elem }
+
+// underlyingType implements Type.
+func (t *pointerType) underlyingType() Type { return t }
 
 // String implements Type.
 func (t *pointerType) String() string {
@@ -627,13 +667,30 @@ func (t *pointerType) string(b *strings.Builder) {
 		t.string(b)
 	}
 	b.WriteString("pointer to ")
-	t.elem.string(b)
+	t.Elem().string(b)
 }
 
 type arrayType struct {
 	typeBase
 
-	elem Type
+	elem   Type
+	length uintptr
+}
+
+// String implements Type.
+func (t *arrayType) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *arrayType) string(b *strings.Builder) {
+	b.WriteString("array of ")
+	if t.Len() != 0 {
+		fmt.Fprintf(b, "%d ", t.Len())
+	}
+	t.Elem().string(b)
 }
 
 // Attributes implements Type.
@@ -641,6 +698,20 @@ func (t *arrayType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attri
 
 // Elem implements Type.
 func (t *arrayType) Elem() Type { return t.elem }
+
+// Len implements Type.
+func (t *arrayType) Len() uintptr { return t.length }
+
+// setLen implements Type.
+func (t *arrayType) setLen(n uintptr) {
+	t.length = n
+	if t.Elem() != nil {
+		t.size = t.length * t.Elem().Size()
+	}
+}
+
+// underlyingType implements Type.
+func (t *arrayType) underlyingType() Type { return t }
 
 type aliasType struct {
 	nm StringID
@@ -656,10 +727,172 @@ func (t *aliasType) string(b *strings.Builder) {
 	b.WriteByte(' ')
 }
 
+// setLen implements Type.
+func (t *aliasType) setLen(n uintptr) {
+	if t.Type != nil {
+		t.Type.setLen(n)
+	}
+}
+
+// isInt implements Type.
+func (t *aliasType) isInt() bool {
+	if t.Type == nil {
+		return false
+	}
+
+	return t.Type.underlyingType().isInt()
+}
+
+// isSigned implements Type.
+func (t *aliasType) isSigned() bool {
+	if t.Type == nil {
+		return false
+	}
+
+	return t.Type.underlyingType().isSigned()
+}
+
+// Size implements Type.
+func (t *aliasType) Size() uintptr {
+	if t.Type == nil {
+		return 0
+	}
+
+	return t.Type.underlyingType().Size()
+}
+
 func (t *aliasType) underlyingType() Type {
 	if t.Type == nil {
 		return nil
 	}
 
 	return t.Type.underlyingType()
+}
+
+type field struct {
+	offset uintptr // In bytes from start of the struct.
+	typ    Type
+
+	name StringID // Can be zero.
+
+	isBitField bool // Following fields are valid only if this field is true.
+
+	bitOffset byte // In bits from bit 0 within the field.
+	bits      byte // Width of the bit field. Valid only when isBitField is true.
+	mask      byte // bits: 3, bitOffset: 2 -> 0x1c.
+}
+
+func (f *field) Type() Type { return f.typ }
+
+func (f *field) string(b *strings.Builder) {
+	b.WriteString(f.name.String())
+	if f.isBitField {
+		fmt.Fprintf(b, ":%d", f.bits)
+	}
+	b.WriteByte(' ')
+	f.typ.string(b)
+}
+
+type structType struct { //TODO implement Type
+	typeBase
+
+	attr   []*AttributeSpecifier
+	fields []*field
+	m      map[StringID]*field
+
+	tag StringID
+}
+
+func (t *structType) check(ctx *context) *structType {
+	if t == nil {
+		return nil
+	}
+
+	return ctx.cfg.ABI.layout(ctx, t)
+}
+
+func (t *structType) underlyingType() Type { return t }
+
+// String implements Type.
+func (t *structType) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *structType) string(b *strings.Builder) {
+	b.WriteString(t.Kind().String())
+	b.WriteByte(' ')
+	for _, v := range t.attr {
+		panic("TODO")
+		_ = v
+	}
+	if t.tag != 0 {
+		b.WriteString(t.tag.String())
+		b.WriteByte(' ')
+	}
+	b.WriteByte('{')
+	for _, v := range t.fields {
+		v.string(b)
+		b.WriteString("; ")
+	}
+	b.WriteByte('}')
+}
+
+// FieldByName implements Type.
+func (t *structType) FieldByName(name StringID) (Field, bool) {
+	f, ok := t.m[name]
+	return f, ok
+}
+
+type taggedType struct {
+	resolutionScope Scope
+
+	tag StringID
+
+	typeBase
+}
+
+// String implements Type.
+func (t *taggedType) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *taggedType) string(b *strings.Builder) {
+	t.typeBase.string(b)
+	b.WriteString(t.tag.String())
+	b.WriteByte(' ')
+}
+
+func (t *taggedType) underlyingType() Type {
+	k := t.Kind()
+	for s := t.resolutionScope; s != nil; s = s.Parent() {
+		for _, v := range s[t.tag] {
+			switch x := v.(type) {
+			case *Declarator, *StructDeclarator:
+			case *EnumSpecifier:
+				if k == Enum {
+					return x.Type()
+				}
+			case *StructOrUnionSpecifier:
+				switch k {
+				case Struct:
+					if t := x.Type(); t.Kind() == Struct {
+						return t
+					}
+				case Union:
+					if t := x.Type(); t.Kind() == Union {
+						return t
+					}
+				}
+			default:
+				panic("internal error") //TODOOK
+			}
+		}
+	}
+	return nil
 }

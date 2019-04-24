@@ -8,6 +8,7 @@ package cc // import "modernc.org/cc/v3"
 const (
 	Invalid Kind = iota
 
+	Array             // T[]
 	Bool              // _Bool
 	Char              // char
 	ComplexChar       // complex char
@@ -47,6 +48,7 @@ const (
 	ULong             // unsigned long
 	ULongLong         // unsigned long long
 	UShort            // unsigned short
+	Union             // union
 	Void              // void
 
 	typeofExpr

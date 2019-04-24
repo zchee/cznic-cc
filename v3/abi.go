@@ -32,6 +32,37 @@
 //	1ffffff
 //	3ff01ffffff
 //	$
+//
+// ----------------------------------------------------------------------------
+//
+//	#include <stdio.h>
+//
+//	union {
+//		int f0:2, f1:3, f2:20, f3:10, f4;
+//	} x;
+//
+//	int main() {
+//		long long unsigned *p = (void*)&x;
+//		printf("%llx\n", *p);
+//		x.f0 = -1;
+//		printf("%llx\n", *p);
+//		x.f1 = -1;
+//		printf("%llx\n", *p);
+//		x.f2 = -1;
+//		printf("%llx\n", *p);
+//		x.f3 = -1;
+//		printf("%llx\n", *p);
+//	}
+//
+// linux/amd64: all fields, including bitfields start at offset 0, bit offset 0.
+//
+//	$ ./a.out
+//	0
+//	3
+//	7
+//	fffff
+//	fffff
+//	$
 
 package cc // import "modernc.org/cc/v3"
 
@@ -157,4 +188,13 @@ func (a *ABI) typ(ctx *context, n Node, k Kind) Type { //TODO singletons within 
 		kind:       byte(k),
 		size:       uintptr(a.size(k)),
 	}
+}
+
+func (a *ABI) layout(ctx *context, t *structType) *structType {
+	if t == nil {
+		return nil
+	}
+
+	//TODO
+	return t
 }

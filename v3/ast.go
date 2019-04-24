@@ -1855,6 +1855,7 @@ func (n EnumSpecifierCase) String() string {
 //	|       "enum" AttributeSpecifierList IDENTIFIER                             // Case EnumSpecifierTag
 type EnumSpecifier struct {
 	lexicalScope           Scope
+	typ                    Type
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   EnumSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumeratorList         *EnumeratorList
@@ -4504,6 +4505,7 @@ func (n StructOrUnionSpecifierCase) String() string {
 type StructOrUnionSpecifier struct {
 	lexicalScope           Scope
 	maxAlign               int
+	typ                    Type
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
 	StructDeclarationList  *StructDeclarationList

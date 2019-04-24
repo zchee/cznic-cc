@@ -459,7 +459,11 @@ func (p *parser) peek(handleTypedefname bool) rune {
 				for _, v := range s[nm] {
 					switch x := v.(type) {
 					case *Declarator:
-						if x.isVisible(seq) && x.IsTypedefName && p.peek(false) != ':' {
+						if !x.isVisible(seq) {
+							continue
+						}
+
+						if x.IsTypedefName && p.peek(false) != ':' {
 							return TYPEDEFNAME
 						}
 
@@ -522,8 +526,12 @@ out:
 					// dbg("%v: %T", nm, v)
 					switch x := v.(type) {
 					case *Declarator:
+						if !x.isVisible(seq) {
+							continue
+						}
+
 						// dbg("", x.isVisible(pos), x.IsTypedefName)
-						if x.isVisible(seq) && x.IsTypedefName && p.peek(false) != ':' {
+						if x.IsTypedefName && p.peek(false) != ':' {
 							p.tok.Rune = TYPEDEFNAME
 							p.resolvedIn = s
 						}
@@ -585,15 +593,17 @@ out:
 						break out
 					}
 				case *Declarator:
+					if !x.isVisible(seq) {
+						continue
+					}
+
 					if x.IsTypedefName {
 						// dbg("", PrettyString(p.tok))
 						panic("internal error") //TODOOK
 					}
 
-					if x.isVisible(seq) {
-						resolvedIn = s
-						break out
-					}
+					resolvedIn = s
+					break out
 				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 					// nop
 				default:

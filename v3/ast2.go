@@ -393,6 +393,8 @@ func (n *DirectDeclarator) ParamScope() Scope {
 
 func (n *Enumerator) isVisible(at int32) bool { return n.Token.seq < at }
 
+func (n *EnumSpecifier) Type() Type { return n.typ }
+
 func (n *Pointer) TypeQualifier() Type { return n.typeQualifiers }
 
 func (n *TypeQualifiers) isTypeDescriptor() {}
@@ -402,6 +404,8 @@ func (n *SpecifierQualifierList) isTypeDescriptor() {}
 func (n *StorageClassSpecifier) isTypedef() bool {
 	return n != nil && n.Case == StorageClassSpecifierTypedef
 }
+
+func (n *StructOrUnionSpecifier) Type() Type { return n.typ }
 
 // Type returns the type of n.
 func (n *TypeName) Type() Type { return n.typ }
