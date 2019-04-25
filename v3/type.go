@@ -114,6 +114,9 @@ type Field interface {
 // in the documentation for each method. Use the Kind method to find out the
 // kind of type before calling kind-specific methods. Calling a method
 // inappropriate to the kind of type causes a run-time panic.
+//
+// Calling a method on a type of kind Invalid yields an undefined result, but
+// does not panic.
 type Type interface {
 	//TODO bits()
 
@@ -474,7 +477,13 @@ func (t *typeBase) Align() int { return int(t.align) }
 func (t *typeBase) base() typeBase { return *t }
 
 // Elem implements Type.
-func (t *typeBase) Elem() Type { panic(fmt.Errorf("%s: Elem of invalid type", t.Kind())) }
+func (t *typeBase) Elem() Type {
+	if t.Kind() == Invalid {
+		return t
+	}
+
+	panic(fmt.Errorf("%s: Elem of invalid type", t.Kind()))
+}
 
 // extern implements Type.
 func (t *typeBase) extern() bool { return t.flags&fExtern != 0 }
@@ -487,6 +496,10 @@ func (t *typeBase) FieldAlign() int { return int(t.fieldAlign) }
 
 // FieldByName implements Type.
 func (t *typeBase) FieldByName(StringID) (Field, bool) {
+	if t.Kind() == Invalid {
+		return nil, false
+	}
+
 	panic(fmt.Errorf("%s: FieldByName of invalid type", t.Kind()))
 }
 

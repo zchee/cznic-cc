@@ -773,22 +773,18 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		// dbg("==== %v: %v %v", n.Position(), n.Case, t)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		op := n.PostfixExpression.check(ctx)
-		// dbg("==== %v: %v %v:", n.Position(), n.Case, n.Token.Position())
 		n.Expression.check(ctx)
 		if op == nil {
-			// dbg("op is nil")
 			break
 		}
 
 		typ := op.Type()
-		// dbg("typ %v", typ)
 		if typ == nil {
 			break
 		}
 
 		t := typ.underlyingType()
-		if k := t.Kind(); k != Array && k != Ptr {
-			// dbg("", n.Position(), typ, t, k)
+		if k := t.Kind(); k != Array && k != Ptr && k != Invalid {
 			break //TODO-
 			panic("TODO")
 		}
@@ -822,8 +818,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 
 		t := typ.underlyingType()
-		if k := t.Kind(); k != Ptr && k != Array {
-			// dbg("%v: %v %v", n.Position(), t.Kind(), t)
+		if k := t.Kind(); k != Ptr && k != Array && k != Invalid {
 			break //TODO-
 			panic("TODO")
 		}
@@ -838,7 +833,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			break
 		}
 
-		if k := st.Kind(); k != Struct && k != Union {
+		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
 			panic("TODO")
 		}
 
