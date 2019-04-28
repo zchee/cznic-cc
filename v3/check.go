@@ -188,7 +188,7 @@ func (n *Designator) check(ctx *context) uintptr {
 		switch op.Value().(type) {
 		// TODO
 		case nil:
-			panic(PrettyString(n))
+			//TODO panic(PrettyString(n))
 		}
 	case DesignatorField: // '.' IDENTIFIER
 		//TODO
@@ -202,9 +202,10 @@ func (n *Designator) check(ctx *context) uintptr {
 
 func (n *AssignmentExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
 		n.Operand = n.ConditionalExpression.check(ctx)
@@ -249,9 +250,10 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 
 func (n *UnaryExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case UnaryExpressionPostfix: // PostfixExpression
 		n.Operand = n.PostfixExpression.check(ctx)
@@ -336,7 +338,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 
 func (n *TypeName) check(ctx *context) Type {
 	if n == nil {
-		return nil
+		return noType
 	}
 
 	n.typ = n.SpecifierQualifierList.check(ctx)
@@ -348,9 +350,10 @@ func (n *TypeName) check(ctx *context) Type {
 
 func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
 	if n == nil {
-		return nil
+		return noType
 	}
 
+	n.typ = noType //TODO-
 	switch n.Case {
 	case AbstractDeclaratorPtr: // Pointer
 		n.typ = n.Pointer.check(ctx, typ)
@@ -618,7 +621,7 @@ func (n *Enumerator) check(ctx *context) {
 
 func (n *ConstantExpression) check(ctx *context, mode mode) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
 	ctx.push(mode)
@@ -730,9 +733,10 @@ func (n *StructOrUnion) check(ctx *context) Kind {
 
 func (n *CastExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case CastExpressionUnary: // UnaryExpression
 		n.Operand = n.UnaryExpression.check(ctx)
@@ -760,9 +764,10 @@ func (n *CastExpression) check(ctx *context) Operand {
 
 func (n *PostfixExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case PostfixExpressionPrimary: // PrimaryExpression
 		n.Operand = n.PrimaryExpression.check(ctx)
@@ -774,32 +779,13 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		op := n.PostfixExpression.check(ctx)
 		n.Expression.check(ctx)
-		if op == nil {
-			break
-		}
-
-		typ := op.Type()
-		if typ == nil {
-			break
-		}
-
-		t := typ.underlyingType()
+		t := op.Type().underlyingType()
 		if k := t.Kind(); k != Array && k != Ptr && k != Invalid {
-			break //TODO-
-			panic("TODO")
-		}
-
-		e := t.Elem()
-		if e == nil {
+			//TODO report error
 			break
 		}
 
-		e = e.underlyingType()
-		if e == nil {
-			break
-		}
-
-		n.Operand = &operand{typ: e}
+		n.Operand = &operand{typ: t.Elem().underlyingType()}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		n.PostfixExpression.check(ctx)
 		n.ArgumentExpressionList.check(ctx)
@@ -867,9 +853,10 @@ func (n *ArgumentExpressionList) check(ctx *context) {
 
 func (n *Expression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ExpressionAssign: // AssignmentExpression
 		n.Operand = n.AssignmentExpression.check(ctx)
@@ -884,9 +871,10 @@ func (n *Expression) check(ctx *context) Operand {
 
 func (n *PrimaryExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
 		ctx.not(n, mIntConstExpr)
@@ -1018,9 +1006,10 @@ func intConst(ctx *context, n Node, s string, val uint64, list ...Kind) Operand 
 
 func (n *ConditionalExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ConditionalExpressionLOr: // LogicalOrExpression
 		n.Operand = n.LogicalOrExpression.check(ctx)
@@ -1036,9 +1025,10 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 
 func (n *LogicalOrExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case LogicalOrExpressionLAnd: // LogicalAndExpression
 		n.Operand = n.LogicalAndExpression.check(ctx)
@@ -1053,9 +1043,10 @@ func (n *LogicalOrExpression) check(ctx *context) Operand {
 
 func (n *LogicalAndExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case LogicalAndExpressionOr: // InclusiveOrExpression
 		n.Operand = n.InclusiveOrExpression.check(ctx)
@@ -1070,9 +1061,10 @@ func (n *LogicalAndExpression) check(ctx *context) Operand {
 
 func (n *InclusiveOrExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case InclusiveOrExpressionXor: // ExclusiveOrExpression
 		n.Operand = n.ExclusiveOrExpression.check(ctx)
@@ -1087,9 +1079,10 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 
 func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ExclusiveOrExpressionAnd: // AndExpression
 		n.Operand = n.AndExpression.check(ctx)
@@ -1104,9 +1097,10 @@ func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 
 func (n *AndExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case AndExpressionEq: // EqualityExpression
 		n.Operand = n.EqualityExpression.check(ctx)
@@ -1121,9 +1115,10 @@ func (n *AndExpression) check(ctx *context) Operand {
 
 func (n *EqualityExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case EqualityExpressionRel: // RelationalExpression
 		n.Operand = n.RelationalExpression.check(ctx)
@@ -1141,9 +1136,10 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 
 func (n *RelationalExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case RelationalExpressionShift: // ShiftExpression
 		n.Operand = n.ShiftExpression.check(ctx)
@@ -1167,9 +1163,10 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 
 func (n *ShiftExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ShiftExpressionAdd: // AdditiveExpression
 		n.Operand = n.AdditiveExpression.check(ctx)
@@ -1187,9 +1184,10 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 
 func (n *AdditiveExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case AdditiveExpressionMul: // MultiplicativeExpression
 		n.Operand = n.MultiplicativeExpression.check(ctx)
@@ -1229,9 +1227,10 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 
 func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	if n == nil {
-		return nil
+		return noOperand
 	}
 
+	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case MultiplicativeExpressionCast: // CastExpression
 		n.Operand = n.CastExpression.check(ctx)

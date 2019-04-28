@@ -907,5 +907,5 @@ func (t *taggedType) underlyingType() Type {
 			}
 		}
 	}
-	return nil
+	return noType
 }

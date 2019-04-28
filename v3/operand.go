@@ -14,6 +14,8 @@ var (
 	_ Value = UInt64Value(0)
 
 	_ Operand = (*operand)(nil)
+
+	noOperand = &operand{typ: noType}
 )
 
 type Operand interface {
@@ -265,7 +267,7 @@ func (o *operand) integerPromotion(ctx *context, n Node) Operand {
 
 func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 	if o.Type() == nil {
-		return nil
+		return &operand{typ: t}
 	}
 
 	abi := ctx.cfg.ABI
@@ -313,7 +315,7 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 			return &operand{typ: t, value: UInt64Value(0)}
 		}
 	}
-	return nil
+	return &operand{typ: t}
 }
 
 func (o *operand) normalize(ctx *context) Operand {
