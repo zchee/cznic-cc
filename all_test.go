@@ -3277,3 +3277,20 @@ func TestIssue93(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func ExampleCharTypes() {
+	ast, err := Parse(
+		"", []string{"testdata/chartypes.c"}, newTestModel(),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(ast.Declarations.Identifiers[dict.SID("c")].Node.(*DirectDeclarator).declarator.Type)
+	fmt.Println(ast.Declarations.Identifiers[dict.SID("d")].Node.(*DirectDeclarator).declarator.Type)
+	fmt.Println(ast.Declarations.Identifiers[dict.SID("e")].Node.(*DirectDeclarator).declarator.Type)
+	// Output:
+	// char
+	// signed char
+	// unsigned char
+}

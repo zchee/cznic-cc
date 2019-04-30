@@ -495,7 +495,7 @@ var (
 		tsEncode(tsShort):                           Short,             // short
 		tsEncode(tsShort, tsInt):                    Short,             // short int
 		tsEncode(tsSigned):                          Int,               // signed
-		tsEncode(tsSigned, tsChar):                  Char,              // signed char
+		tsEncode(tsSigned, tsChar):                  SChar,             // signed char
 		tsEncode(tsSigned, tsInt):                   Int,               // signed int
 		tsEncode(tsSigned, tsLong):                  Long,              // signed long
 		tsEncode(tsSigned, tsLong, tsInt):           Long,              // signed long int
