@@ -1732,7 +1732,7 @@ func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
 		default:
 			p.err("expected }")
 		}
-		r := &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attr, Token2: t2, StructDeclarationList: list, Token3: t3, lexicalScope: p.declScope, maxAlign: maxAlign}
+		r := &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attr, Token: t, Token2: t2, StructDeclarationList: list, Token3: t3, lexicalScope: p.declScope, maxAlign: maxAlign}
 		if t.Value != 0 {
 			p.declScope.declare(t.Value, r)
 		}

@@ -32,6 +32,7 @@ const (
 	Float32x          // _Float32x
 	Float64           // _Float64
 	Float64x          // _Float64x
+	Function          // function
 	Int               // int
 	Int128            // __int128
 	Long              // long
@@ -39,7 +40,7 @@ const (
 	LongLong          // long long
 	Ptr               // pointer
 	SChar             // signed char
-	Short             // chort
+	Short             // short
 	Struct            // struct
 	TypedefName       // typedefname
 	UChar             // unsigned char

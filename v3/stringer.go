@@ -33,32 +33,33 @@ func _() {
 	_ = x[Float32x-22]
 	_ = x[Float64-23]
 	_ = x[Float64x-24]
-	_ = x[Int-25]
-	_ = x[Int128-26]
-	_ = x[Long-27]
-	_ = x[LongDouble-28]
-	_ = x[LongLong-29]
-	_ = x[Ptr-30]
-	_ = x[SChar-31]
-	_ = x[Short-32]
-	_ = x[Struct-33]
-	_ = x[TypedefName-34]
-	_ = x[UChar-35]
-	_ = x[UInt-36]
-	_ = x[UInt128-37]
-	_ = x[ULong-38]
-	_ = x[ULongLong-39]
-	_ = x[UShort-40]
-	_ = x[Union-41]
-	_ = x[Void-42]
-	_ = x[typeofExpr-43]
-	_ = x[typeofType-44]
-	_ = x[maxKind-45]
+	_ = x[Function-25]
+	_ = x[Int-26]
+	_ = x[Int128-27]
+	_ = x[Long-28]
+	_ = x[LongDouble-29]
+	_ = x[LongLong-30]
+	_ = x[Ptr-31]
+	_ = x[SChar-32]
+	_ = x[Short-33]
+	_ = x[Struct-34]
+	_ = x[TypedefName-35]
+	_ = x[UChar-36]
+	_ = x[UInt-37]
+	_ = x[UInt128-38]
+	_ = x[ULong-39]
+	_ = x[ULongLong-40]
+	_ = x[UShort-41]
+	_ = x[Union-42]
+	_ = x[Void-43]
+	_ = x[typeofExpr-44]
+	_ = x[typeofType-45]
+	_ = x[maxKind-46]
 }
 
-const _Kind_name = "InvalidT[]_Boolcharcomplex charcomplex doublecomplex floatcomplex intcomplex longcomplex long doublecomplex long longcomplex shortcomplex unsignedcomplex shor_Decimal128_Decimal32_Decimal64doubleenumfloat_Float128_Float32_Float32x_Float64_Float64xint__int128longlong doublelong longpointersigned charchortstructtypedefnameunsigned charunsignedunsigned __int128unsigned longunsigned long longunsigned shortunionvoidtypeofExprtypeofTypemaxKind"
+const _Kind_name = "InvalidT[]_Boolcharcomplex charcomplex doublecomplex floatcomplex intcomplex longcomplex long doublecomplex long longcomplex shortcomplex unsignedcomplex shor_Decimal128_Decimal32_Decimal64doubleenumfloat_Float128_Float32_Float32x_Float64_Float64xfunctionint__int128longlong doublelong longpointersigned charshortstructtypedefnameunsigned charunsignedunsigned __int128unsigned longunsigned long longunsigned shortunionvoidtypeofExprtypeofTypemaxKind"
 
-var _Kind_index = [...]uint16{0, 7, 10, 15, 19, 31, 45, 58, 69, 81, 100, 117, 130, 146, 158, 169, 179, 189, 195, 199, 204, 213, 221, 230, 238, 247, 250, 258, 262, 273, 282, 289, 300, 305, 311, 322, 335, 343, 360, 373, 391, 405, 410, 414, 424, 434, 441}
+var _Kind_index = [...]uint16{0, 7, 10, 15, 19, 31, 45, 58, 69, 81, 100, 117, 130, 146, 158, 169, 179, 189, 195, 199, 204, 213, 221, 230, 238, 247, 255, 258, 266, 270, 281, 290, 297, 308, 313, 319, 330, 343, 351, 368, 381, 399, 413, 418, 422, 432, 442, 449}
 
 func (i Kind) String() string {
 	if i >= Kind(len(_Kind_index)-1) {

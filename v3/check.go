@@ -110,13 +110,9 @@ func (n *InitDeclarator) check(ctx *context, typ Type) {
 		typ := n.Declarator.check(ctx, typ)
 		n.AttributeSpecifierList.check(ctx)
 		length := n.Initializer.check(ctx)
-		if typ == nil {
-			break
-		}
-
 		if t := typ.underlyingType(); t.Kind() == Array && t.Len() == 0 {
 			if length == 0 {
-				//TODO panic(PrettyString(n))
+				//TODO report error
 			}
 			typ.setLen(length)
 			break
@@ -180,15 +176,10 @@ func (n *Designator) check(ctx *context) uintptr {
 	switch n.Case {
 	case DesignatorIndex: // '[' ConstantExpression ']'
 		op := n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
-		if op == nil {
-			//TODO panic(PrettyString(n)) //TODO
-			break
-		}
-
 		switch op.Value().(type) {
 		// TODO
 		case nil:
-			//TODO panic(PrettyString(n))
+			//TODO report error
 		}
 	case DesignatorField: // '.' IDENTIFIER
 		//TODO
@@ -205,7 +196,13 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		return noOperand
 	}
 
+	//TODO check for "modifiable lvalue" in left operand
 	n.Operand = noOperand //TODO-
+	lop := n.UnaryExpression.check(ctx)
+	if lop != noOperand && !lop.IsLValue() {
+		panic("TODO") // report error
+	}
+
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
 		n.Operand = n.ConditionalExpression.check(ctx)
@@ -263,7 +260,48 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.UnaryExpression.check(ctx)
 	case UnaryExpressionAddrof: // '&' CastExpression
 		ctx.not(n, mIntConstExpr)
-		n.CastExpression.check(ctx)
+		op := n.CastExpression.addr(ctx)
+		// [0], 6.5.3.2
+		//
+		// The operand of the unary & operator shall be either a
+		// function designator, the result of a [] or unary * operator,
+		// or an lvalue that designates an object that is not a
+		// bit-field and is not declared with the register
+		// storage-class specifier.
+		t := op.Type()
+		//TODO check for func designator, see above
+		if _, ok := t.(*bitFieldType); ok { //TODO func isBitField(t Type) bool
+			panic(n.Position().String())
+			//TODO report error
+			break
+		}
+
+		if t.register() {
+			panic(n.Position().String())
+			//TODO report error
+			break
+		}
+
+		switch t.Kind() {
+		case Ptr:
+			if v := op.Value(); v != nil {
+				n.Operand = &operand{typ: t, value: v}
+				break
+			}
+
+			fallthrough
+		default:
+			if op != noOperand && !op.IsLValue() {
+				if n.CastExpression.Case == CastExpressionUnary && n.CastExpression.UnaryExpression.Case == UnaryExpressionDeref {
+					n.Operand = &operand{typ: mkPtr(ctx, n, t)}
+					break
+				}
+
+				panic(n.Position()) // report error
+			}
+
+			n.Operand = &operand{typ: mkPtr(ctx, n, t)}
+		}
 	case UnaryExpressionDeref: // '*' CastExpression
 		ctx.not(n, mIntConstExpr)
 		n.CastExpression.check(ctx)
@@ -283,16 +321,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
 		ctx.pop()
-		if op == nil || op.Type() == nil {
-			break
-		}
-
-		if d := n.lexicalScope.typedef(idSizeT, n.Token); d != nil {
-			n.Operand = &operand{
-				typ:   &aliasType{nm: idSizeT, Type: d.Type()},
-				value: UInt64Value(op.Type().underlyingType().Size()),
-			}
-		}
+		n.Operand = sizeT(ctx, n.lexicalScope, n.Token, op.Type())
 	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
 		ctx.push(ctx.mode)
 		if ctx.mode&mIntConstExpr != 0 {
@@ -300,16 +329,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		}
 		t := n.TypeName.check(ctx)
 		ctx.pop()
-		if t == nil {
-			break
-		}
-
-		if d := n.lexicalScope.typedef(idSizeT, n.Token3); d != nil {
-			n.Operand = &operand{
-				typ:   &aliasType{nm: idSizeT, Type: d.Type()},
-				value: UInt64Value(d.Type().underlyingType().Size()),
-			}
-		}
+		n.Operand = sizeT(ctx, n.lexicalScope, n.Token, t)
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
 		ctx.not(n, mIntConstExpr)
 		//TODO
@@ -334,6 +354,454 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		panic("internal error") //TODOOK
 	}
 	return n.Operand
+}
+
+func (n *CastExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case CastExpressionUnary: // UnaryExpression
+		n.Operand = n.UnaryExpression.addr(ctx)
+	case CastExpressionCast: // '(' TypeName ')' CastExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *UnaryExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case UnaryExpressionPostfix: // PostfixExpression
+		n.Operand = n.PostfixExpression.addr(ctx)
+	case UnaryExpressionInc: // "++" UnaryExpression
+		panic(n.Position().String())
+	case UnaryExpressionDec: // "--" UnaryExpression
+		panic(n.Position().String())
+	case UnaryExpressionAddrof: // '&' CastExpression
+		panic(n.Position().String())
+	case UnaryExpressionDeref: // '*' CastExpression
+		n.Operand = n.CastExpression.check(ctx)
+	case UnaryExpressionPlus: // '+' CastExpression
+		panic(n.Position().String())
+	case UnaryExpressionMinus: // '-' CastExpression
+		panic(n.Position().String())
+	case UnaryExpressionCpl: // '~' CastExpression
+		panic(n.Position().String())
+	case UnaryExpressionNot: // '!' CastExpression
+		panic(n.Position().String())
+	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
+		panic(n.Position().String())
+	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
+		panic(n.Position().String())
+	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
+		panic(n.Position().String())
+	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
+		panic(n.Position().String())
+	case UnaryExpressionAlignofType: // "_Alignof" '(' TypeName ')'
+		panic(n.Position().String())
+	case UnaryExpressionImag: // "__imag__" UnaryExpression
+		panic(n.Position().String())
+	case UnaryExpressionReal: // "__real__" UnaryExpression
+		//TODO
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *PostfixExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case PostfixExpressionPrimary: // PrimaryExpression
+		n.Operand = n.PrimaryExpression.addr(ctx)
+	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
+		n.check(ctx)
+		if n.Operand.Value() != nil {
+			panic("TODO")
+		}
+	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
+		panic(n.Position().String())
+	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
+		return n.check(ctx)
+	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
+		op := n.PostfixExpression.check(ctx)
+		t := op.Type().underlyingType()
+		if k := t.Kind(); k != Ptr && k != Array && k != Invalid {
+			//TODO report error
+			break
+		}
+
+		st := t.Elem()
+		st = st.underlyingType()
+		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
+			//TODO report error
+			break
+		}
+
+		f, ok := st.FieldByName(n.Token2.Value)
+		if !ok {
+			//TODO report error
+			break
+		}
+
+		r := &lvalue{operand{typ: f.Type()}}
+		switch x := op.Value().(type) {
+		case nil:
+			// nop
+		case Uint64Value:
+			r.value = x + Uint64Value(f.Offset())
+		default:
+			panic(n.Position().String())
+		}
+		n.Operand = r
+	case PostfixExpressionInc: // PostfixExpression "++"
+		panic(n.Position().String())
+	case PostfixExpressionDec: // PostfixExpression "--"
+		panic(n.Position().String())
+	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
+		//TODO
+	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *PrimaryExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case PrimaryExpressionIdent: // IDENTIFIER
+		n.check(ctx)
+	case PrimaryExpressionInt: // INTCONST
+		panic(n.Position().String())
+	case PrimaryExpressionFloat: // FLOATCONST
+		panic(n.Position().String())
+	case PrimaryExpressionEnum: // ENUMCONST
+		panic(n.Position().String())
+	case PrimaryExpressionChar: // CHARCONST
+		panic(n.Position().String())
+	case PrimaryExpressionLChar: // LONGCHARCONST
+		panic(n.Position().String())
+	case PrimaryExpressionString: // STRINGLITERAL
+		panic(n.Position().String())
+	case PrimaryExpressionLString: // LONGSTRINGLITERAL
+		panic(n.Position().String())
+	case PrimaryExpressionExpr: // '(' Expression ')'
+		n.Operand = n.Expression.addr(ctx)
+	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *Expression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case ExpressionAssign: // AssignmentExpression
+		n.Operand = n.AssignmentExpression.addr(ctx)
+	case ExpressionComma: // Expression ',' AssignmentExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *AssignmentExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case AssignmentExpressionCond: // ConditionalExpression
+		n.Operand = n.ConditionalExpression.addr(ctx)
+	case AssignmentExpressionAssign: // UnaryExpression '=' AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionMul: // UnaryExpression "*=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionDiv: // UnaryExpression "/=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionMod: // UnaryExpression "%=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionAdd: // UnaryExpression "+=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionSub: // UnaryExpression "-=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionLsh: // UnaryExpression "<<=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionRsh: // UnaryExpression ">>=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionAnd: // UnaryExpression "&=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionXor: // UnaryExpression "^=" AssignmentExpression
+		panic(n.Position().String())
+	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *ConditionalExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case ConditionalExpressionLOr: // LogicalOrExpression
+		n.Operand = n.LogicalOrExpression.addr(ctx)
+	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *LogicalOrExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case LogicalOrExpressionLAnd: // LogicalAndExpression
+		n.Operand = n.LogicalAndExpression.addr(ctx)
+	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *LogicalAndExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case LogicalAndExpressionOr: // InclusiveOrExpression
+		n.Operand = n.InclusiveOrExpression.addr(ctx)
+	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *InclusiveOrExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case InclusiveOrExpressionXor: // ExclusiveOrExpression
+		n.Operand = n.ExclusiveOrExpression.addr(ctx)
+	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *ExclusiveOrExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case ExclusiveOrExpressionAnd: // AndExpression
+		n.Operand = n.AndExpression.addr(ctx)
+	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *AndExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case AndExpressionEq: // EqualityExpression
+		n.Operand = n.EqualityExpression.addr(ctx)
+	case AndExpressionAnd: // AndExpression '&' EqualityExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *EqualityExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case EqualityExpressionRel: // RelationalExpression
+		n.Operand = n.RelationalExpression.addr(ctx)
+	case EqualityExpressionEq: // EqualityExpression "==" RelationalExpression
+		panic(n.Position().String())
+	case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *RelationalExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case RelationalExpressionShift: // ShiftExpression
+		n.Operand = n.ShiftExpression.addr(ctx)
+	case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
+		panic(n.Position().String())
+	case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
+		panic(n.Position().String())
+	case RelationalExpressionLeq: // RelationalExpression "<=" ShiftExpression
+		panic(n.Position().String())
+	case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *ShiftExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case ShiftExpressionAdd: // AdditiveExpression
+		n.Operand = n.AdditiveExpression.addr(ctx)
+	case ShiftExpressionLsh: // ShiftExpression "<<" AdditiveExpression
+		panic(n.Position().String())
+	case ShiftExpressionRsh: // ShiftExpression ">>" AdditiveExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *AdditiveExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case AdditiveExpressionMul: // MultiplicativeExpression
+		n.Operand = n.MultiplicativeExpression.addr(ctx)
+	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
+		panic(n.Position().String())
+	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *MultiplicativeExpression) addr(ctx *context) Operand {
+	if n == nil {
+		return noOperand
+	}
+
+	n.Operand = noOperand //TODO-
+	switch n.Case {
+	case MultiplicativeExpressionCast: // CastExpression
+		n.Operand = n.CastExpression.addr(ctx)
+	case MultiplicativeExpressionMul: // MultiplicativeExpression '*' CastExpression
+		panic(n.Position().String())
+	case MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
+		panic(n.Position().String())
+	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
+		panic(n.Position().String())
+	default:
+		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func sizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of context?
+	if t.Incomplete() {
+		//TODO report error
+		return noOperand
+	}
+
+	if d := s.typedef(idSizeT, tok); d != nil {
+		return &operand{
+			typ:   &aliasType{nm: idSizeT, Type: d.Type()},
+			value: Uint64Value(t.Size()),
+		}
+	}
+
+	st := ctx.sizeT
+	rank := maxRank
+	if st == nil {
+		abi := ctx.cfg.ABI
+		for v, ok := range isIntegerType {
+			if !ok || abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
+				continue
+			}
+
+			st = abi.typ(ctx, &tok, Kind(v))
+			rank = intConvRank[v]
+		}
+		if st == nil {
+			panic("internal error") //TODOOK
+		}
+		ctx.sizeT = st
+	}
+	return &operand{typ: st, value: Uint64Value(t.Size())}
 }
 
 func (n *TypeName) check(ctx *context) Type {
@@ -368,26 +836,20 @@ func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
 
 func (n *DirectAbstractDeclarator) check(ctx *context, typ Type) Type {
 	if n == nil {
-		return nil
+		return noType
 	}
 
 	switch n.Case {
 	case DirectAbstractDeclaratorDecl: // '(' AbstractDeclarator ')'
 		n.AbstractDeclarator.check(ctx, nil)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		n.DirectAbstractDeclarator.check(ctx, typ)
-		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		n.AssignmentExpression.check(ctx)
+		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, true)
 	case DirectAbstractDeclaratorStaticArr: // DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
-		n.DirectAbstractDeclarator.check(ctx, typ)
-		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		n.AssignmentExpression.check(ctx)
+		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, false)
 	case DirectAbstractDeclaratorArrStatic: // DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
-		n.DirectAbstractDeclarator.check(ctx, typ)
-		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		n.AssignmentExpression.check(ctx)
+		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, false)
 	case DirectAbstractDeclaratorArrStar: // DirectAbstractDeclarator '[' '*' ']'
-		n.DirectAbstractDeclarator.check(ctx, typ)
+		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, false)
 	case DirectAbstractDeclaratorFunc: // DirectAbstractDeclarator '(' ParameterTypeList ')'
 		n.DirectAbstractDeclarator.check(ctx, typ)
 		n.ParameterTypeList.check(ctx)
@@ -450,20 +912,11 @@ func (n *Pointer) check(ctx *context, typ Type) (t Type) {
 	default:
 		panic("internal error") //TODOOK
 	}
-	base := typ.base()
-	base.align = byte(ctx.cfg.ABI.align(ctx, n.Pointer, Ptr))
-	base.fieldAlign = byte(ctx.cfg.ABI.fieldAlign(ctx, n.Pointer, Ptr))
-	base.kind = byte(Ptr)
-	base.size = uintptr(ctx.cfg.ABI.size(Ptr))
-	var tq Type
+	r := mkPtr(ctx, n, typ)
 	if n.typeQualifiers != nil {
-		tq = n.typeQualifiers.check(ctx, (*DeclarationSpecifiers)(nil))
+		r.typeQualifiers = n.typeQualifiers.check(ctx, (*DeclarationSpecifiers)(nil))
 	}
-	return &pointerType{
-		elem:           typ,
-		typeBase:       base,
-		typeQualifiers: tq,
-	}
+	return r
 }
 
 func (n *TypeQualifiers) check(ctx *context, typ **typeBase) {
@@ -632,7 +1085,7 @@ func (n *ConstantExpression) check(ctx *context, mode mode) Operand {
 
 func (n *StructOrUnionSpecifier) check(ctx *context) Type {
 	if n == nil {
-		return nil
+		return noType
 	}
 
 	switch n.Case {
@@ -706,9 +1159,29 @@ func (n *StructDeclarator) check(ctx *context, typ Type) *field {
 		sf.typ = n.Declarator.check(ctx, typ)
 		sf.name = n.Declarator.Name()
 	case StructDeclaratorBitField: // Declarator ':' ConstantExpression AttributeSpecifierList
-		sf.typ = n.Declarator.check(ctx, typ)
+		sf.isBitField = true
+		sf.typ = &bitFieldType{Type: n.Declarator.check(ctx, typ)}
 		sf.name = n.Declarator.Name()
-		n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
+		if op := n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr); op.Type().isIntegerType() {
+			switch x := op.Value().(type) {
+			case Int64Value:
+				if x < 0 || x > 64 {
+					panic("TODO")
+				}
+				sf.bitFieldWidth = byte(x)
+			case Uint64Value:
+				if x > 64 {
+					panic("TODO")
+				}
+				sf.bitFieldWidth = byte(x)
+			default:
+				//dbg("%T", x)
+				panic(PrettyString(op))
+			}
+		} else {
+			//dbg("", n.ConstantExpression)
+			panic(n.Declarator.Position())
+		}
 		n.AttributeSpecifierList.check(ctx)
 	default:
 		panic("internal error") //TODOOK
@@ -751,10 +1224,6 @@ func (n *CastExpression) check(ctx *context) Operand {
 		}
 		op := n.CastExpression.check(ctx)
 		ctx.pop()
-		if t == nil || op == nil {
-			break
-		}
-
 		n.Operand = op.convertTo(ctx, n, t)
 	default:
 		panic("internal error") //TODOOK
@@ -785,7 +1254,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = &operand{typ: t.Elem().underlyingType()}
+		n.Operand = &lvalue{operand{typ: t.Elem().underlyingType()}}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		n.PostfixExpression.check(ctx)
 		n.ArgumentExpressionList.check(ctx)
@@ -794,41 +1263,26 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		//TODO
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
-		if op == nil {
-			break
-		}
-
-		typ := op.Type()
-		if typ == nil {
-			break
-		}
-
-		t := typ.underlyingType()
+		t := op.Type().underlyingType()
 		if k := t.Kind(); k != Ptr && k != Array && k != Invalid {
-			break //TODO-
-			panic("TODO")
+			//TODO report error
+			break
 		}
 
 		st := t.Elem()
-		if st == nil {
-			break
-		}
-
 		st = st.underlyingType()
-		if st == nil {
-			break
-		}
-
 		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
-			panic("TODO")
+			//TODO report error
+			break
 		}
 
 		f, ok := st.FieldByName(n.Token2.Value)
 		if !ok {
+			//TODO report error
 			break
 		}
 
-		n.Operand = &operand{typ: f.Type()}
+		n.Operand = &lvalue{operand{typ: f.Type()}}
 	case PostfixExpressionInc: // PostfixExpression "++"
 		n.PostfixExpression.check(ctx)
 	case PostfixExpressionDec: // PostfixExpression "--"
@@ -879,9 +1333,17 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 	case PrimaryExpressionIdent: // IDENTIFIER
 		ctx.not(n, mIntConstExpr)
 		if d := n.resolvedIn.identifier(n.Token.Value, n.Token); d != nil {
-			n.Operand = &operand{typ: d.Type()}
+			switch t := d.Type(); t.Kind() {
+			case Function:
+				n.Operand = &operand{typ: t}
+			default:
+				n.Operand = &lvalue{operand{typ: t}}
+			}
 			//dbg("", n.Position(), PrettyString(n.Operand))
+			break
 		}
+
+		//TODO report err
 	case PrimaryExpressionInt: // INTCONST
 		n.Operand = n.intConst(ctx)
 	case PrimaryExpressionFloat: // FLOATCONST
@@ -976,13 +1438,13 @@ func intConst(ctx *context, n Node, s string, val uint64, list ...Kind) Operand 
 	b := bits.Len64(val)
 	for _, k := range list {
 		sign := 0
-		if abi.isSigned(k) {
+		if abi.isSignedInteger(k) {
 			sign = 1
 		}
 		if abi.size(k)*8 >= b+sign {
 			switch {
 			case sign == 0:
-				return &operand{typ: abi.typ(ctx, n, k), value: UInt64Value(val)}
+				return &operand{typ: abi.typ(ctx, n, k), value: Uint64Value(val)}
 			default:
 				return &operand{typ: abi.typ(ctx, n, k), value: Int64Value(val)}
 			}
@@ -992,10 +1454,10 @@ func intConst(ctx *context, n Node, s string, val uint64, list ...Kind) Operand 
 	k := list[len(list)-1]
 	if abi.size(k)*8 == b {
 		switch {
-		case abi.isSigned(k):
+		case abi.isSignedInteger(k):
 			return &operand{typ: abi.typ(ctx, n, k), value: Int64Value(val)}
 		default:
-			return &operand{typ: abi.typ(ctx, n, k), value: UInt64Value(val)}
+			return &operand{typ: abi.typ(ctx, n, k), value: Uint64Value(val)}
 		}
 	}
 
@@ -1194,7 +1656,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
-		if a == nil || b == nil || !a.Type().isInt() || !b.Type().isInt() {
+		if !a.Type().isArithmeticType() || !b.Type().isArithmeticType() {
 			break
 		}
 
@@ -1208,7 +1670,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
-		if a == nil || b == nil || !a.Type().isInt() || !b.Type().isInt() {
+		if !a.Type().isArithmeticType() || !b.Type().isArithmeticType() {
 			break
 		}
 
@@ -1237,7 +1699,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	case MultiplicativeExpressionMul: // MultiplicativeExpression '*' CastExpression
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
-		if a == nil || b == nil || !a.Type().isInt() || !b.Type().isInt() {
+		if !a.Type().isArithmeticType() || !b.Type().isArithmeticType() {
 			break
 		}
 
@@ -1251,7 +1713,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	case MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
-		if a == nil || b == nil || !a.Type().isInt() || !b.Type().isInt() {
+		if !a.Type().isArithmeticType() || !b.Type().isArithmeticType() {
 			break
 		}
 
@@ -1265,15 +1727,11 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
-		if a == nil || b == nil || !a.Type().isInt() || !b.Type().isInt() {
+		if !a.Type().isArithmeticType() || !b.Type().isArithmeticType() {
 			break
 		}
 
-		if a.Type() == nil || b.Type() == nil {
-			break
-		}
-
-		if !a.Type().isInt() || !b.Type().isInt() {
+		if !a.Type().isIntegerType() || !b.Type().isIntegerType() {
 			ctx.errNode(&n.Token, "the operands of the %% operator shall have integer type.") // [0] 6.5.5, 2
 			break
 		}
@@ -1315,40 +1773,13 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		n.AttributeSpecifierList.check(ctx)
 		return n.Declarator.check(ctx, typ)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		typ = n.DirectDeclarator.check(ctx, typ)
-		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		var length uintptr
-		if e := n.AssignmentExpression; e != nil {
-			if op := e.check(ctx); op != nil && op.Type().isInt() && op.Value() != nil {
-				switch {
-				case op.Type().isSigned():
-					length = uintptr(op.Value().(Int64Value))
-				default:
-					length = uintptr(op.Value().(UInt64Value))
-				}
-			} else {
-				// dbg("\n%s", PrettyString(e))
-				// panic(n.Position())
-			}
-		}
-		b := typ.base()
-		b.kind = byte(Array)
-		b.size *= length
-		return &arrayType{typeBase: b, elem: typ, length: length}
+		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, true)
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
-		n.DirectDeclarator.check(ctx, typ)
-		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		n.AssignmentExpression.check(ctx)
-		//TODO type
+		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, false)
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
-		n.DirectDeclarator.check(ctx, typ)
-		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		n.AssignmentExpression.check(ctx)
-		//TODO type
+		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, false)
 	case DirectDeclaratorStar: // DirectDeclarator '[' TypeQualifiers '*' ']'
-		n.DirectDeclarator.check(ctx, typ)
-		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
-		//TODO type
+		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, false)
 	case DirectDeclaratorFuncParam: // DirectDeclarator '(' ParameterTypeList ')'
 		n.DirectDeclarator.check(ctx, typ)
 		n.ParameterTypeList.check(ctx)
@@ -1361,6 +1792,45 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		panic("internal error") //TODOOK
 	}
 	return noType //TODO-
+}
+
+func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, exprIsOptional bool) Type { //TODO pass and use typeQualifiers
+	b := typ.base()
+	b.kind = byte(Array)
+	switch {
+	case expr != nil:
+		op := expr.check(ctx)
+		if op.Type().Kind() == Invalid {
+			return noType
+		}
+
+		if !op.Type().isIntegerType() {
+			panic("TODO")
+		}
+
+		var length uintptr
+		var vla bool
+		switch x := op.Value().(type) {
+		case nil:
+			vla = true
+		case Int64Value:
+			length = uintptr(x)
+		case Uint64Value:
+			length = uintptr(x)
+		}
+		switch {
+		case vla:
+			b.size = ctx.cfg.ABI.Types[Ptr].Size
+		default:
+			b.size *= length
+		}
+		return &arrayType{typeBase: b, elem: typ, length: length, vla: vla}
+	case !exprIsOptional:
+		panic("TODO")
+	default:
+		b.flags |= fIncomplete
+		return &arrayType{typeBase: b, elem: typ}
+	}
 }
 
 func (n *IdentifierList) check(ctx *context) {

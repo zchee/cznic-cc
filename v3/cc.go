@@ -88,7 +88,7 @@ var (
 		reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
 			x := v.(*operand)
 			f.Format(prefix)
-			f.Format("%v, %v", x.typ, x.value)
+			f.Format("%v, %[2]T(%[2]v)", x.typ, x.value)
 			if x.typ != nil {
 				f.Format(", size %v", x.typ.Size())
 			}
@@ -297,6 +297,7 @@ type context struct {
 	maxAlign0       int
 	modes           []mode
 	mu              sync.Mutex
+	sizeT           Type
 	sysIncludePaths []string
 	tuSize          int64 // Sum of sizes of processed inputs
 

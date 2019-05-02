@@ -9781,6 +9781,7 @@ func ExampleStructOrUnionSpecifier_def() {
 	// · · Case: StructOrUnionStruct,
 	// · · Token: example.c:1:1: STRUCT "struct",
 	// · },
+	// · Token: example.c:1:8: IDENTIFIER "s",
 	// · Token2: example.c:1:10: '{' "{",
 	// · Token3: example.c:1:19: '}' "}",
 	// }

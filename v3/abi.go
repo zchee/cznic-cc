@@ -134,7 +134,7 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 			}
 		}
 
-		if integerTypes[k] && v.Size > 8 {
+		if isIntegerType[k] && v.Size > 8 {
 			if ctx.err(noPos, "invalid ABI type %s size: %v, must be <= 8", k, v.Size) {
 				return ctx.Err()
 			}
@@ -163,15 +163,20 @@ func (a *ABI) fieldAlign(ctx *context, n Node, k Kind) int {
 	return x.FieldAlign
 }
 
-func (a *ABI) isSigned(k Kind) bool {
-	if !a.isInt(k) {
+func (a *ABI) isSignedInteger(k Kind) bool {
+	if !isIntegerType[k] {
 		panic("internal error") //TODOOK
 	}
 
-	return !unsignedTypes[k] || k == Char && a.SignedChar
+	switch k {
+	case Bool, UChar, UInt, ULong, ULongLong, UShort:
+		return false
+	case Char:
+		return a.SignedChar
+	default:
+		return true
+	}
 }
-
-func (a *ABI) isInt(k Kind) bool { return integerTypes[k] }
 
 func (a *ABI) size(k Kind) int {
 	if x, ok := a.Types[k]; ok {
@@ -182,12 +187,25 @@ func (a *ABI) size(k Kind) int {
 }
 
 func (a *ABI) typ(ctx *context, n Node, k Kind) Type { //TODO singletons within ABI instance
+	var f flag
+	if isIntegerType[k] && a.isSignedInteger(k) {
+		f = fSigned
+	}
 	return &typeBase{
 		align:      byte(a.align(ctx, n, k)),
 		fieldAlign: byte(a.fieldAlign(ctx, n, k)),
+		flags:      f,
 		kind:       byte(k),
 		size:       uintptr(a.size(k)),
 	}
+}
+
+func roundup(n, to int64) int64 {
+	if r := n % to; r != 0 {
+		return n + to - r
+	}
+
+	return n
 }
 
 func (a *ABI) layout(ctx *context, t *structType) *structType {
@@ -195,6 +213,93 @@ func (a *ABI) layout(ctx *context, t *structType) *structType {
 		return nil
 	}
 
-	//TODO
+	var off int64 // bit offset
+	var align, fieldAlign int
+
+	switch {
+	case t.Kind() == Union:
+		for i, f := range t.fields {
+			ft := f.Type()
+			if ft.Kind() == Array && ft.Incomplete() && i == len(t.fields)-1 {
+				continue
+				//TODO
+			}
+
+			sz := ft.Size()
+			if sz == 0 {
+				return t //TODO-
+				panic("TODO")
+			}
+			al := ft.FieldAlign()
+			if al == 0 {
+				panic("TODO")
+			}
+
+			switch {
+			case f.isBitField:
+				return t //TODO-
+				panic("TODO")
+			default:
+				if al > align {
+					align = al
+				}
+				if fal := ft.FieldAlign(); fal > fieldAlign {
+					fieldAlign = fal
+				}
+				if n := 8 * int64(sz); n > off {
+					off = n
+				}
+			}
+		}
+		if align == 0 { //TODO ok?
+			align = 1
+		}
+		t.align = byte(align)
+		t.fieldAlign = byte(fieldAlign)
+		off = roundup(off, int64(align))
+		t.size = uintptr(off >> 3)
+	default:
+		for i, f := range t.fields {
+			ft := f.Type()
+			if ft.Kind() == Array && ft.Incomplete() && i == len(t.fields)-1 {
+				continue
+				//TODO
+			}
+
+			sz := ft.Size()
+			if sz == 0 {
+				return t //TODO-
+				panic("TODO")
+			}
+			al := ft.FieldAlign()
+			if al == 0 {
+				panic("TODO")
+			}
+
+			switch {
+			case f.isBitField:
+				return t //TODO-
+				panic("TODO")
+			default:
+				if al > align {
+					align = al
+				}
+				if fal := ft.FieldAlign(); fal > fieldAlign {
+					fieldAlign = fal
+				}
+				off = roundup(off, 8*int64(al))
+				f.offset = uintptr(off) >> 3
+				off += 8 * int64(sz)
+			}
+		}
+		if align == 0 { //TODO ok?
+			align = 1
+		}
+		t.align = byte(align)
+		t.fieldAlign = byte(fieldAlign)
+		off = roundup(off, int64(align))
+		t.size = uintptr(off >> 3)
+	}
+	//dbg("%v sz %v", t, t.Size())
 	return t
 }

@@ -11,20 +11,20 @@ import (
 var (
 	_ Value = Float64Value(0)
 	_ Value = Int64Value(0)
-	_ Value = UInt64Value(0)
+	_ Value = Uint64Value(0)
 
+	_ Operand = (*lvalue)(nil)
 	_ Operand = (*operand)(nil)
 
 	noOperand = &operand{typ: noType}
 )
 
 type Operand interface {
+	IsLValue() bool
 	Type() Type
 	Value() Value
 	convertTo(*context, Node, Type) Operand
 	integerPromotion(*context, Node) Operand
-	isArithmeticType() bool
-	isIntegerType() bool
 	normalize(*context) Operand
 }
 
@@ -60,27 +60,27 @@ func (v Int64Value) mod(b Value) Value {
 	return v % b.(Int64Value)
 }
 
-type UInt64Value uint64
+type Uint64Value uint64
 
-func (v UInt64Value) add(b Value) Value { return v + b.(UInt64Value) }
-func (v UInt64Value) isZero() bool      { return v == 0 }
-func (v UInt64Value) mul(b Value) Value { return v * b.(UInt64Value) }
-func (v UInt64Value) sub(b Value) Value { return v - b.(UInt64Value) }
+func (v Uint64Value) add(b Value) Value { return v + b.(Uint64Value) }
+func (v Uint64Value) isZero() bool      { return v == 0 }
+func (v Uint64Value) mul(b Value) Value { return v * b.(Uint64Value) }
+func (v Uint64Value) sub(b Value) Value { return v - b.(Uint64Value) }
 
-func (v UInt64Value) div(b Value) Value {
+func (v Uint64Value) div(b Value) Value {
 	if b.isZero() {
 		return nil
 	}
 
-	return v / b.(UInt64Value)
+	return v / b.(Uint64Value)
 }
 
-func (v UInt64Value) mod(b Value) Value {
+func (v Uint64Value) mod(b Value) Value {
 	if b.isZero() {
 		return nil
 	}
 
-	return v % b.(UInt64Value)
+	return v % b.(Uint64Value)
 }
 
 type Float64Value float64
@@ -92,21 +92,22 @@ func (v Float64Value) mod(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) mul(b Value) Value { return v * b.(Float64Value) }
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
 
+type lvalue struct {
+	operand
+}
+
+func (o *lvalue) IsLValue() bool { return true }
+
 type operand struct {
 	typ   Type
 	value Value
+
+	//TODO isLvalue bool or wrapper type
 }
 
-func (o *operand) Type() Type   { return o.typ }
-func (o *operand) Value() Value { return o.value }
-
-func (o *operand) isArithmeticType() bool {
-	return o.Type() != nil && isArithmeticType[o.Type().underlyingType().Kind()]
-}
-
-func (o *operand) isIntegerType() bool {
-	return o.Type() != nil && integerTypes[o.Type().underlyingType().Kind()]
-}
+func (o *operand) Type() Type     { return o.typ }
+func (o *operand) Value() Value   { return o.value }
+func (o *operand) IsLValue() bool { return false }
 
 // [0]6.3.1.8
 //
@@ -120,8 +121,11 @@ func (o *operand) isIntegerType() bool {
 // same, and complex otherwise. This pattern is called the usual arithmetic
 // conversions:
 func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Operand) {
-	if !a.isArithmeticType() || !b.isArithmeticType() {
-		// dbg("", PrettyString(n))
+	if a.Type().Kind() == Invalid || b.Type().Kind() == Invalid {
+		return noOperand, noOperand
+	}
+
+	if !a.Type().isArithmeticType() || !b.Type().isArithmeticType() {
 		panic("internal error") //TODOOK
 	}
 
@@ -138,25 +142,37 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// First, if the corresponding real type of either operand is long
 	// double, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is long double.
+	if at.Kind() == ComplexLongDouble || bt.Kind() == ComplexLongDouble {
+		return noOperand, noOperand //TODO
+	}
+
 	if at.Kind() == LongDouble || bt.Kind() == LongDouble {
-		panic("TODO")
+		return noOperand, noOperand //TODO
 	}
 
 	// Otherwise, if the corresponding real type of either operand is
 	// double, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is double.
+	if at.Kind() == ComplexDouble || bt.Kind() == ComplexDouble {
+		return noOperand, noOperand //TODO
+	}
+
 	if at.Kind() == Double || bt.Kind() == Double {
-		panic("TODO")
+		return noOperand, noOperand //TODO
 	}
 
 	// Otherwise, if the corresponding real type of either operand is
 	// float, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is float.
-	if at.Kind() == Float || bt.Kind() == Float {
-		panic("TODO")
+	if at.Kind() == ComplexFloat || bt.Kind() == ComplexFloat {
+		return noOperand, noOperand //TODO
 	}
 
-	if !a.isIntegerType() || !b.isIntegerType() {
+	if at.Kind() == Float || bt.Kind() == Float {
+		return noOperand, noOperand //TODO
+	}
+
+	if !a.Type().isIntegerType() || !b.Type().isIntegerType() {
 		panic("internal error") //TODOOK
 	}
 
@@ -179,7 +195,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// conversion rank is converted to the type of the operand with greater
 	// rank.
 	abi := ctx.cfg.ABI
-	if abi.isSigned(at.Kind()) == abi.isSigned(bt.Kind()) {
+	if abi.isSignedInteger(at.Kind()) == abi.isSignedInteger(bt.Kind()) {
 		t := a.Type()
 		if intConvRank[bt.Kind()] > intConvRank[at.Kind()] {
 			t = b.Type()
@@ -194,12 +210,12 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// operand with unsigned integer type.
 	var signed Type
 	switch {
-	case abi.isSigned(at.Kind()): // b is unsigned
+	case abi.isSignedInteger(at.Kind()): // b is unsigned
 		signed = a.Type()
 		if intConvRank[bt.Kind()] >= intConvRank[at.Kind()] {
 			return a.convertTo(ctx, n, b.Type()), b
 		}
-	case abi.isSigned(bt.Kind()): // a is unsigned
+	case abi.isSignedInteger(bt.Kind()): // a is unsigned
 		signed = b.Type()
 		if intConvRank[at.Kind()] >= intConvRank[bt.Kind()] {
 			return a, b.convertTo(ctx, n, a.Type())
@@ -272,7 +288,7 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 
 	abi := ctx.cfg.ABI
 	k0 := o.Type().underlyingType().Kind()
-	if o.Value() == nil || !abi.isInt(k0) {
+	if o.Value() == nil {
 		return &operand{typ: t}
 	}
 
@@ -281,22 +297,26 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 		return &operand{typ: abi.typ(ctx, n, Void)} //TODO ABI singleton
 	}
 
-	if abi.isInt(k) {
+	if !isIntegerType[k0] && k0 != Ptr {
+		return &operand{typ: t}
+	}
+
+	if isIntegerType[k] {
 		var i64 int64
 		switch x := o.Value().(type) {
 		case Int64Value:
 			i64 = int64(x)
-		case UInt64Value:
+		case Uint64Value:
 			i64 = int64(x)
 		default:
 			panic("internal error") //TODOOK
 		}
 		var v Value
 		switch {
-		case abi.isSigned(k):
+		case abi.isSignedInteger(k):
 			v = Int64Value(i64)
 		default:
-			v = UInt64Value(i64)
+			v = Uint64Value(i64)
 		}
 		return (&operand{typ: t, value: v}).normalize(ctx)
 	}
@@ -312,7 +332,7 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 			// a null pointer, is guaranteed to compare
 			// unequal to a pointer to any object or
 			// function.
-			return &operand{typ: t, value: UInt64Value(0)}
+			return &operand{typ: t, value: Uint64Value(0)}
 		}
 	}
 	return &operand{typ: t}
@@ -334,7 +354,7 @@ func convertInt64(n int64, t Type, ctx *context) int64 {
 	if k == Enum {
 		panic("TODO")
 	}
-	signed := abi.isSigned(k)
+	signed := abi.isSignedInteger(k)
 	switch sz := abi.size(k); sz {
 	case 1:
 		switch {

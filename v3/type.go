@@ -25,6 +25,7 @@ var (
 	_ Type = (*aliasType)(nil)
 	_ Type = (*arrayType)(nil)
 	_ Type = (*attributedType)(nil)
+	_ Type = (*bitFieldType)(nil)
 	_ Type = (*pointerType)(nil)
 	_ Type = (*structType)(nil)
 	_ Type = (*taggedType)(nil)
@@ -54,8 +55,12 @@ var (
 		LongLong:  6,
 		ULongLong: 6,
 	}
+)
 
-	integerTypes = [maxKind]bool{
+const maxRank = 6
+
+var (
+	isIntegerType = [maxKind]bool{
 		Bool:      true,
 		Char:      true,
 		Enum:      true,
@@ -64,15 +69,6 @@ var (
 		LongLong:  true,
 		SChar:     true,
 		Short:     true,
-		UChar:     true,
-		UInt:      true,
-		ULong:     true,
-		ULongLong: true,
-		UShort:    true,
-	}
-
-	unsignedTypes = [maxKind]bool{
-		Bool:      true,
 		UChar:     true,
 		UInt:      true,
 		ULong:     true,
@@ -103,9 +99,11 @@ var (
 	}
 )
 
+// A Field describes a single field in a struct/union.
 type Field interface {
 	//TODO
-	Type() Type // Field type.
+	Offset() uintptr // In bytes from the beginning of the struct/union.
+	Type() Type      // Field type.
 }
 
 // Type is the representation of a C type.
@@ -128,7 +126,7 @@ type Type interface {
 	Attributes() []*AttributeSpecifier
 
 	// Elem returns a type's element type. It panics if the type's Kind is
-	// not Array or Ptr.
+	// valid but not Array or Ptr.
 	Elem() Type
 
 	// FieldAlign returns the alignment in bytes of a value of this type
@@ -139,15 +137,19 @@ type Type interface {
 	// boolean indicating if the field was found.
 	FieldByName(name StringID) (Field, bool)
 
+	// IsVLA reports whether array is a variable length array. It panics if
+	// the type's Kind is valid but not Array.
+	IsVLA() bool
+
 	// Kind returns the specific kind of this type.
 	Kind() Kind
 
 	// Len returns an array type's length.  It panics if the type's Kind is
-	// not Array.
+	// valid but not Array.
 	Len() uintptr
 
 	// Size returns the number of bytes needed to store a value of the
-	// given type. It panics if type is incomplete.
+	// given type. It panics if type is valid but incomplete.
 	Size() uintptr
 
 	// String implements fmt.Stringer.
@@ -171,7 +173,9 @@ type Type interface {
 	// inline reports whether type has function specifier "inline".
 	inline() bool
 
-	isInt() bool
+	isArithmeticType() bool
+
+	isIntegerType() bool
 
 	isSigned() bool
 
@@ -313,6 +317,8 @@ const (
 
 	// other
 	fIncomplete
+	fSigned // Valid only for integer types.
+	fBitField
 )
 
 type typeBase struct {
@@ -429,6 +435,9 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 		//TODO
 	default:
 		abi := ctx.cfg.ABI
+		if isIntegerType[k] && abi.isSignedInteger(k) {
+			t.flags |= fSigned
+		}
 		if v, ok := abi.Types[k]; ok {
 			t.size = uintptr(abi.size(k))
 			if t.align != 0 {
@@ -509,16 +518,28 @@ func (t *typeBase) Incomplete() bool { return t.flags&fIncomplete != 0 }
 // inline implements Type.
 func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
 
-// isInt implements Type.
-func (t *typeBase) isInt() bool { return integerTypes[t.kind] }
+// isIntegerType implements Type.
+func (t *typeBase) isIntegerType() bool { return isIntegerType[t.kind] }
+
+// isArithmeticType implements Type.
+func (t *typeBase) isArithmeticType() bool { return isArithmeticType[t.Kind()] }
 
 // isSigned implements Type.
 func (t *typeBase) isSigned() bool {
-	if !integerTypes[t.kind] {
+	if !isIntegerType[t.kind] {
 		panic(fmt.Errorf("%s: isSigned of non-integer type", t.Kind()))
 	}
 
-	return !unsignedTypes[t.kind]
+	return t.flags&fSigned != 0
+}
+
+// IsVLA implements Type.
+func (t *typeBase) IsVLA() bool {
+	if t.Kind() == Invalid {
+		return false
+	}
+
+	panic(fmt.Errorf("%s: IsVLA of invalid type", t.Kind()))
 }
 
 // Kind implements Type.
@@ -549,7 +570,13 @@ func (t *typeBase) Size() uintptr {
 }
 
 // setLen implements Type.
-func (t *typeBase) setLen(uintptr) { panic(fmt.Errorf("%s: setLen of non-array type", t.Kind())) }
+func (t *typeBase) setLen(uintptr) {
+	if t.Kind() == Invalid {
+		return
+	}
+
+	panic(fmt.Errorf("%s: setLen of non-array type", t.Kind()))
+}
 
 // static implements Type.
 func (t *typeBase) static() bool { return t.flags&fStatic != 0 }
@@ -688,7 +715,12 @@ type arrayType struct {
 
 	elem   Type
 	length uintptr
+
+	vla bool
 }
+
+// IsVLA implements Type.
+func (t *arrayType) IsVLA() bool { return t.vla }
 
 // String implements Type.
 func (t *arrayType) String() string {
@@ -717,6 +749,7 @@ func (t *arrayType) Len() uintptr { return t.length }
 
 // setLen implements Type.
 func (t *arrayType) setLen(n uintptr) {
+	t.typeBase.flags &^= fIncomplete
 	t.length = n
 	if t.Elem() != nil {
 		t.size = t.length * t.Elem().Size()
@@ -748,13 +781,16 @@ func (t *aliasType) setLen(n uintptr) {
 }
 
 // isInt implements Type.
-func (t *aliasType) isInt() bool {
+func (t *aliasType) isIntegerType() bool {
 	if t.Type == nil {
 		return false
 	}
 
-	return t.Type.underlyingType().isInt()
+	return t.Type.underlyingType().isIntegerType()
 }
+
+// isArithmeticType implements Type.
+func (t *aliasType) isArithmeticType() bool { return isArithmeticType[t.underlyingType().Kind()] }
 
 // isSigned implements Type.
 func (t *aliasType) isSigned() bool {
@@ -783,24 +819,25 @@ func (t *aliasType) underlyingType() Type {
 }
 
 type field struct {
-	offset uintptr // In bytes from start of the struct.
-	typ    Type
+	bitFieldMask uintptr // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
+	offset       uintptr // In bytes from start of the struct.
+	typ          Type
 
 	name StringID // Can be zero.
 
 	isBitField bool // Following fields are valid only if this field is true.
 
-	bitOffset byte // In bits from bit 0 within the field.
-	bits      byte // Width of the bit field. Valid only when isBitField is true.
-	mask      byte // bits: 3, bitOffset: 2 -> 0x1c.
+	bitFieldOffset byte // In bits from bit 0 within the field. Valid only when isBitField is true.
+	bitFieldWidth  byte // Width of the bit field in bits. Valid only when isBitField is true.
 }
 
-func (f *field) Type() Type { return f.typ }
+func (f *field) Offset() uintptr { return f.offset }
+func (f *field) Type() Type      { return f.typ }
 
 func (f *field) string(b *strings.Builder) {
 	b.WriteString(f.name.String())
 	if f.isBitField {
-		fmt.Fprintf(b, ":%d", f.bits)
+		fmt.Fprintf(b, ":%d", f.bitFieldWidth)
 	}
 	b.WriteByte(' ')
 	f.typ.string(b)
@@ -861,6 +898,7 @@ func (t *structType) FieldByName(name StringID) (Field, bool) {
 
 type taggedType struct {
 	resolutionScope Scope
+	typ             Type
 
 	tag StringID
 
@@ -882,6 +920,10 @@ func (t *taggedType) string(b *strings.Builder) {
 }
 
 func (t *taggedType) underlyingType() Type {
+	if t.typ != nil {
+		return t.typ
+	}
+
 	k := t.Kind()
 	for s := t.resolutionScope; s != nil; s = s.Parent() {
 		for _, v := range s[t.tag] {
@@ -889,17 +931,20 @@ func (t *taggedType) underlyingType() Type {
 			case *Declarator, *StructDeclarator:
 			case *EnumSpecifier:
 				if k == Enum {
-					return x.Type()
+					t.typ = x.Type()
+					return t.typ
 				}
 			case *StructOrUnionSpecifier:
 				switch k {
 				case Struct:
-					if t := x.Type(); t.Kind() == Struct {
-						return t
+					if typ := x.Type(); typ.Kind() == Struct {
+						t.typ = typ
+						return typ
 					}
 				case Union:
-					if t := x.Type(); t.Kind() == Union {
-						return t
+					if typ := x.Type(); typ.Kind() == Union {
+						t.typ = typ
+						return typ
 					}
 				}
 			default:
@@ -907,5 +952,31 @@ func (t *taggedType) underlyingType() Type {
 			}
 		}
 	}
+	t.typ = noType
 	return noType
+}
+
+// Size implements Type.
+func (t *taggedType) Size() uintptr { return t.underlyingType().Size() }
+
+// Align implements Type.
+func (t *taggedType) Align() int { return t.underlyingType().Align() }
+
+// FieldAlign implements Type.
+func (t *taggedType) FieldAlign() int { return t.underlyingType().FieldAlign() }
+
+func mkPtr(ctx *context, n Node, t Type) *pointerType {
+	base := t.base()
+	base.align = byte(ctx.cfg.ABI.align(ctx, n, Ptr))
+	base.fieldAlign = byte(ctx.cfg.ABI.fieldAlign(ctx, n, Ptr))
+	base.kind = byte(Ptr)
+	base.size = uintptr(ctx.cfg.ABI.size(Ptr))
+	return &pointerType{
+		elem:     t,
+		typeBase: base,
+	}
+}
+
+type bitFieldType struct {
+	Type
 }

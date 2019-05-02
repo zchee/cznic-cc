@@ -78,7 +78,7 @@ const (
 #define __SI__
 #define __builtin_add_overflow(...) 0
 #define __builtin_mul_overflow(...) 0
-#define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->m))
+#define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
 #define __builtin_sub_overflow(...) 0
 #define __builtin_va_arg(ap, type) (type)__builtin_va_arg_impl(ap)
 #define __builtin_va_end(ap)
