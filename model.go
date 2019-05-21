@@ -200,6 +200,13 @@ func (m *Model) typ(k Kind) Type {
 		return m.DoubleComplexType
 	case LongDoubleComplex:
 		return m.LongDoubleComplexType
+	case Enum:
+		switch {
+		case m.tweaks.enableWideEnumValues:
+			return m.LongLongType
+		default:
+			return m.IntType
+		}
 	default:
 		panic(k)
 	}

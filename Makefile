@@ -28,7 +28,7 @@ cpu:
 	go tool pprof --lines cpu.test cpu.out
 
 edit:
-	gvim -p Makefile trigraphs.l scanner.l parser.yy all_test.go ast2.go cc.go cpp.go encoding.go etc.go lexer.go model.go
+	gvim -p Makefile trigraphs.l scanner.l parser.yy all_test.go ast2.go cc.go cpp.go encoding.go etc.go lexer.go model.go &
 
 editor: parser.go scanner.go trigraphs.go
 	rm -f log-*.c log-*.h
