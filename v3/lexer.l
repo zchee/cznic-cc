@@ -25,7 +25,7 @@ hex-quad			{hexadecimal-digit}{hexadecimal-digit}{hexadecimal-digit}{hexadecimal
 hexadecimal-digit		[0-9a-fA-F]
 hexadecimal-escape-sequence	\\x{hexadecimal-digit}+
 identifier			{identifier-nondigit}({identifier-nondigit}|{digit}|"$")*
-identifier-nondigit		{nondigit}|{universal-character-name}
+identifier-nondigit		{nondigit}|"$"|{universal-character-name}
 line-comment			"//"[^\n\x80]*
 nondigit			[_a-zA-Z\x81]
 octal-digit			[0-7]

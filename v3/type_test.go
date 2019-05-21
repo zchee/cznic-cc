@@ -154,9 +154,6 @@ func TestTranslateGCC(t *testing.T) {
 
 func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
-		// TCC
-		//"70_floating_point_literals.c": {},
-
 		// GCC/exec
 		"pr80692.c": {}, // Decimal64 literals
 	}

@@ -241,6 +241,7 @@ type cpp struct {
 	inBuf        []token3
 	includeLevel int
 	lineMacro    macro
+	macroStack   map[StringID][]*macro
 	macros       map[StringID]*macro
 	out          chan *[]token4
 	outBuf       *[]token4
@@ -260,9 +261,10 @@ func newCPP(ctx *context) *cpp {
 	b := token4Pool.Get().(*[]token4)
 	*b = (*b)[:0]
 	r := &cpp{
-		ctx:    ctx,
-		macros: map[StringID]*macro{},
-		outBuf: b,
+		ctx:        ctx,
+		macroStack: map[StringID][]*macro{},
+		macros:     map[StringID]*macro{},
+		outBuf:     b,
 	}
 	r.counterMacro = macro{repl: []token3{{char: PPNUMBER}}}
 	r.fileMacro = macro{repl: []token3{{char: STRINGLITERAL}}}
@@ -2272,7 +2274,7 @@ func stringConst(t cppToken) string {
 				}
 				i += n
 			default:
-				buf.WriteByte(byte(r))
+				buf.WriteRune(r)
 				i++
 			}
 		}
@@ -2400,7 +2402,10 @@ func parsePragma(c *cpp, args0 []token3) {
 		return
 	}
 
-	toks := expandArgs(c, args0[:len(args0)-1])
+	var toks []cppToken
+	for _, v := range args0[:len(args0)-1] {
+		toks = append(toks, cppToken{token4: token4{fileID: c.fileID, token3: v}})
+	}
 	if len(toks) == 0 {
 		return
 	}

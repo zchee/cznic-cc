@@ -505,13 +505,11 @@ func TestParseGCC(t *testing.T) {
 
 func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
-		"76_dollars_in_identifiers.c": {},
-		"82_attribs_position.c":       {},
-		"90_struct-init.c":            {},
-		"94_generic.c":                {},
-		"95_bitfields.c":              {},
-		"95_bitfields_ms.c":           {},
-		"99_fastcall.c":               {},
+		"90_struct-init.c":  {},
+		"94_generic.c":      {},
+		"95_bitfields.c":    {},
+		"95_bitfields_ms.c": {},
+		"99_fastcall.c":     {},
 	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {

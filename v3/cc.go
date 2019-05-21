@@ -123,16 +123,15 @@ type Pragma interface {
 	Error(msg string, args ...interface{}) // Report error.
 	MaxAligment() int                      // Returns the current maximum alignment. May return zero.
 	MaxInitialAligment() int               // Support #pragma pack(). Returns the maximum alignment in effect at start. May return zero.
-	SetAlignment(n int)                    // Support #pragma pack(n)
-	isPragma()
+	PopMacro(string)
+	PushMacro(string)
+	SetAlignment(n int) // Support #pragma pack(n)
 }
 
 type pragma struct {
 	tok cppToken
 	c   *cpp
 }
-
-func (p *pragma) isPragma() {}
 
 func (p *pragma) Error(msg string, args ...interface{}) { p.c.err(p.tok, msg, args...) }
 
@@ -141,6 +140,25 @@ func (p *pragma) MaxAligment() int { return p.c.ctx.maxAlign }
 func (p *pragma) MaxInitialAligment() int { return p.c.ctx.maxAlign0 }
 
 func (p *pragma) SetAlignment(n int) { p.c.ctx.maxAlign = n } //TODO check sanity, report errors.
+
+func (p *pragma) PushMacro(nm string) {
+	id := dict.sid(nm)
+	if p.c.macroStack == nil {
+		p.c.macroStack = map[StringID][]*macro{}
+	}
+	if m := p.c.macros[id]; m != nil {
+		p.c.macroStack[id] = append(p.c.macroStack[id], p.c.macros[id])
+	}
+}
+
+func (p *pragma) PopMacro(nm string) {
+	id := dict.sid(nm)
+	a := p.c.macroStack[id]
+	if n := len(a); n != 0 {
+		p.c.macros[id] = a[n-1]
+		p.c.macroStack[id] = a[:n-1]
+	}
+}
 
 // PrettyString returns a formatted representation of things produced by this package.
 func PrettyString(v interface{}) string {
@@ -335,8 +353,9 @@ type Config struct {
 }
 
 type context struct {
-	cases []*LabeledStatement // switch
-	cfg   *Config
+	cases   []*LabeledStatement // switch
+	cfg     *Config
+	checkFn *FunctionDefinition
 	goscanner.ErrorList
 	includePaths    []string
 	intMaxWidth     int64 // Set if the preprocessor saw __INTMAX_WIDTH__.
@@ -569,6 +588,15 @@ type Token struct {
 	pos    int32
 	seq    int32
 }
+
+// Seq returns t's sequential number.
+//
+// Comparing positions as in 'before', 'after' is complicated as tokens in a
+// translation unit usually come from more than one source file. Macro
+// expansion further complicates that. The solution is to sequentially
+// numbering the tokens as they are finally seen by the parser, so the usual
+// artithmetic '<', '>' operators can be used for that purpose.
+func (t Token) Seq() int { return int(t.seq) }
 
 // String implements fmt.Stringer.
 func (t Token) String() string { return t.Value.String() }

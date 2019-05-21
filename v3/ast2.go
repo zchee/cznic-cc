@@ -305,6 +305,15 @@ func (n *Declarator) Declarator() *Declarator { return n }
 func (n *Declarator) IsStatic() bool          { return n.td.static() }
 func (n *Declarator) isVisible(at int32) bool { return n.DirectDeclarator.ends() < at }
 
+// NameTok returns n's declaring name token.
+func (n *Declarator) NameTok() (r Token) {
+	if n == nil || n.DirectDeclarator == nil {
+		return r
+	}
+
+	return n.DirectDeclarator.NameTok()
+}
+
 // Name returns n's declared name.
 func (n *Declarator) Name() StringID {
 	if n == nil || n.DirectDeclarator == nil {
@@ -376,6 +385,24 @@ func (n *DirectDeclarator) ends() int32 {
 }
 
 func (n *DirectDeclarator) TypeQualifier() Type { return n.typeQualifiers }
+
+// NameTok returns n's declarin name token.
+func (n *DirectDeclarator) NameTok() (r Token) {
+	for {
+		if n == nil {
+			return r
+		}
+
+		switch n.Case {
+		case DirectDeclaratorIdent: // IDENTIFIER
+			return n.Token
+		case DirectDeclaratorDecl: // '(' Declarator ')'
+			return n.Declarator.NameTok()
+		default:
+			n = n.DirectDeclarator
+		}
+	}
+}
 
 // Name returns n's declared name.
 func (n *DirectDeclarator) Name() StringID {

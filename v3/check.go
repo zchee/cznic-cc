@@ -105,6 +105,9 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		return
 	}
 
+	if ctx.checkFn != nil {
+		ctx.checkFn.InitDeclarators = append(ctx.checkFn.InitDeclarators, n)
+	}
 	switch n.Case {
 	case InitDeclaratorDecl: // Declarator AttributeSpecifierList
 		n.Declarator.check(ctx, td, typ, tld)
@@ -2553,10 +2556,17 @@ func (n *FunctionDefinition) check(ctx *context) {
 		return
 	}
 
+	ctx.checkFn = n
 	typ := n.DeclarationSpecifiers.check(ctx)
 	n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true) //TODO- (why - ?)
 	n.DeclarationList.check(ctx)
 	n.CompoundStatement.check(ctx)
+	ctx.checkFn = nil
+	for k := range n.Gotos {
+		if _, ok := n.Labels[k]; !ok {
+			//TODO report undefined label
+		}
+	}
 }
 
 func (n *CompoundStatement) check(ctx *context) {
@@ -2636,9 +2646,13 @@ func (n *JumpStatement) check(ctx *context) {
 
 	switch n.Case {
 	case JumpStatementGoto: // "goto" IDENTIFIER ';'
-		//TODO
+		if ctx.checkFn.Gotos == nil {
+			ctx.checkFn.Gotos = map[StringID]*JumpStatement{}
+		}
+		ctx.checkFn.Gotos[n.Token2.Value] = n
 	case JumpStatementGotoExpr: // "goto" '*' Expression ';'
 		n.Expression.check(ctx)
+		//TODO
 	case JumpStatementContinue: // "continue" ';'
 		if ctx.continues <= 0 {
 			panic(n.Position().String())
@@ -2748,6 +2762,13 @@ func (n *LabeledStatement) check(ctx *context) {
 
 	switch n.Case {
 	case LabeledStatementLabel: // IDENTIFIER ':' AttributeSpecifierList Statement
+		if ctx.checkFn.Labels == nil {
+			ctx.checkFn.Labels = map[StringID]*LabeledStatement{}
+		}
+		if _, ok := ctx.checkFn.Labels[n.Token.Value]; ok {
+			//TODO report redeclared
+		}
+		ctx.checkFn.Labels[n.Token.Value] = n
 		n.AttributeSpecifierList.check(ctx)
 		n.Statement.check(ctx)
 	case LabeledStatementCaseLabel: // "case" ConstantExpression ':' Statement

@@ -90,6 +90,11 @@ const (
 #define __func__ NULL //TODO
 #define __sync_synchronize(...)
 #define __word__
+
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
+
 __UINT16_TYPE__ __builtin_bswap16 (__UINT16_TYPE__ x);
 __UINT32_TYPE__ __builtin_bswap32 (__UINT32_TYPE__ x);
 __UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
