@@ -281,9 +281,12 @@ var (
 		dict.sid("__restrict"):    RESTRICT,
 		dict.sid("__restrict__"):  RESTRICT,
 		dict.sid("__thread"):      THREADLOCAL,
+		dict.sid("__typeof"):      TYPEOF,
+		dict.sid("__typeof__"):    TYPEOF,
 		dict.sid("__volatile"):    VOLATILE,
 		dict.sid("__volatile__"):  VOLATILE,
 		dict.sid("asm"):           ASM,
+		dict.sid("typeof"):        TYPEOF,
 	}
 
 	gccKeywords = map[StringID]rune{
@@ -311,9 +314,6 @@ var (
 		dict.sid("__label__"):                    LABEL,
 		dict.sid("__real"):                       REAL,
 		dict.sid("__real__"):                     REAL,
-		dict.sid("__typeof"):                     TYPEOF,
-		dict.sid("__typeof__"):                   TYPEOF,
-		dict.sid("typeof"):                       TYPEOF,
 	}
 )
 
@@ -552,7 +552,7 @@ out:
 		}
 	case PPNUMBER:
 		switch s := p.tok.Value.String(); {
-		case strings.ContainsAny(s, ".+-ijp"):
+		case strings.ContainsAny(s, ".+-ijpIJP"):
 			p.tok.Rune = FLOATCONST
 		case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
 			p.tok.Rune = INTCONST
@@ -892,9 +892,11 @@ func (p *parser) unaryExpression(typ *TypeName) *UnaryExpression {
 	var t, t2, t3 Token
 	switch p.rune() {
 	case INC:
-		kind = UnaryExpressionInc
+		t = p.shift()
+		return &UnaryExpression{Case: UnaryExpressionInc, Token: t, UnaryExpression: p.unaryExpression(nil), lexicalScope: p.declScope}
 	case DEC:
-		kind = UnaryExpressionDec
+		t = p.shift()
+		return &UnaryExpression{Case: UnaryExpressionDec, Token: t, UnaryExpression: p.unaryExpression(nil), lexicalScope: p.declScope}
 	case '&':
 		kind = UnaryExpressionAddrof
 	case '*':
@@ -1064,7 +1066,7 @@ func (p *parser) additiveExpression() (r *AdditiveExpression) {
 		}
 
 		t := p.shift()
-		r = &AdditiveExpression{Case: kind, AdditiveExpression: r, Token: t, MultiplicativeExpression: p.multiplicativeExpression()}
+		r = &AdditiveExpression{Case: kind, AdditiveExpression: r, Token: t, MultiplicativeExpression: p.multiplicativeExpression(), lexicalScope: p.declScope}
 	}
 }
 

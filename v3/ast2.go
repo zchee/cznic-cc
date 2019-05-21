@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"fmt"
+	"os"
 )
 
 // Source is a named part of a translation unit. If Value is empty, Name is
@@ -15,9 +16,26 @@ type Source struct {
 	Value string
 }
 
+func (n *AbstractDeclarator) Declarator() *Declarator { return nil }
+func (n *AbstractDeclarator) IsStatic() bool          { panic("TODO") } //TODO return n.Type().static() }
+func (n *AbstractDeclarator) Name() StringID          { return 0 }
+func (n *AbstractDeclarator) Type() Type              { return n.typ }
+
+// Promote returns the type the operands of the binary operation are promoted to.
+func (n *AssignmentExpression) Promote() Type { return n.promote }
+
+type StructInfo struct {
+	Size uintptr
+
+	Align int
+}
+
 // AST represents a translation unit with related data.
 type AST struct {
-	Scope             Scope    // File scope.
+	Scope Scope // File scope.
+	// Alignment and size of every struct/union defined in the translation
+	// unit. Valid only after Translate.
+	Structs           map[StructInfo]struct{}
 	TrailingSeperator StringID // White space and/or comments preceding EOF.
 	TranslationUnit   *TranslationUnit
 	cfg               *Config
@@ -70,6 +88,19 @@ func Parse(cfg *Config, includePaths, sysIncludePaths []string, sources []Source
 }
 
 func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
+	if debugWorkingDir || ctx.cfg.DebugWorkingDir {
+		switch wd, err := os.Getwd(); err {
+		case nil:
+			fmt.Fprintf(os.Stderr, "OS working dir: %s\n", wd)
+		default:
+			fmt.Fprintf(os.Stderr, "OS working dir: error %s\n", err)
+		}
+		fmt.Fprintf(os.Stderr, "Config.WorkingDir: %s\n", ctx.cfg.WorkingDir)
+	}
+	if debugIncludePaths || ctx.cfg.DebugIncludePaths {
+		fmt.Fprintf(os.Stderr, "include paths: %v\n", includePaths)
+		fmt.Fprintf(os.Stderr, "system include paths: %v\n", sysIncludePaths)
+	}
 	ctx.includePaths = includePaths
 	ctx.sysIncludePaths = sysIncludePaths
 	var in []source
@@ -262,6 +293,7 @@ func (n *AST) Typecheck() error {
 	}
 
 	n.TranslationUnit.check(ctx)
+	n.Structs = ctx.structs
 	return ctx.Err()
 }
 
@@ -269,6 +301,8 @@ func (n *AlignmentSpecifier) align() int {
 	return 1 //TODO
 }
 
+func (n *Declarator) Declarator() *Declarator { return n }
+func (n *Declarator) IsStatic() bool          { return n.td.static() }
 func (n *Declarator) isVisible(at int32) bool { return n.DirectDeclarator.ends() < at }
 
 // Name returns n's declared name.
@@ -295,7 +329,17 @@ func (n *Declarator) ParamScope() Scope {
 // Type returns the type of n.
 func (n *Declarator) Type() Type { return n.typ }
 
-func (n *DeclarationSpecifiers) isTypedef() bool {
+// IsExtern reports whether n was declared with storage class specifier 'extern'.
+func (n *Declarator) IsExtern() bool { return n.td.extern() }
+
+func (n *DeclarationSpecifiers) auto() bool        { return n != nil && n.class&fAuto != 0 }
+func (n *DeclarationSpecifiers) extern() bool      { return n != nil && n.class&fExtern != 0 }
+func (n *DeclarationSpecifiers) register() bool    { return n != nil && n.class&fRegister != 0 }
+func (n *DeclarationSpecifiers) static() bool      { return n != nil && n.class&fStatic != 0 }
+func (n *DeclarationSpecifiers) threadLocal() bool { return n != nil && n.class&fThreadLocal != 0 }
+func (n *DeclarationSpecifiers) typedef() bool     { return n != nil && n.class&fTypedef != 0 }
+
+func (n *DeclarationSpecifiers) isTypedef() bool { //TODO set the class field in parser
 	for n != nil {
 		if n.StorageClassSpecifier.isTypedef() {
 			return true
@@ -305,8 +349,6 @@ func (n *DeclarationSpecifiers) isTypedef() bool {
 	}
 	return false
 }
-
-func (n *DeclarationSpecifiers) isTypeDescriptor() {}
 
 func (n *DirectAbstractDeclarator) TypeQualifier() Type { return n.typeQualifiers }
 
@@ -395,11 +437,23 @@ func (n *Enumerator) isVisible(at int32) bool { return n.Token.seq < at }
 
 func (n *EnumSpecifier) Type() Type { return n.typ }
 
+// Promote returns the type the operands of the binary operation are promoted to.
+func (n *EqualityExpression) Promote() Type { return n.promote }
+
 func (n *Pointer) TypeQualifier() Type { return n.typeQualifiers }
 
-func (n *TypeQualifiers) isTypeDescriptor() {}
+// ResolvedIn reports which scope the identifier of cases
+// PrimaryExpressionIdent, PrimaryExpressionEnum were resolved in, if any.
+func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
 
-func (n *SpecifierQualifierList) isTypeDescriptor() {}
+// Promote returns the type the operands of the binary operation are promoted to.
+func (n *RelationalExpression) Promote() Type { return n.promote }
+
+// Cases returns the cases a switch statement consist of.
+func (n *SelectionStatement) Cases() []*LabeledStatement { return n.cases }
+
+// Promote returns the type the shift count operand is promoted to.
+func (n *ShiftExpression) Promote() Type { return n.promote }
 
 func (n *StorageClassSpecifier) isTypedef() bool {
 	return n != nil && n.Case == StorageClassSpecifierTypedef
@@ -433,10 +487,6 @@ func (n *TypeName) Type() Type { return n.typ }
 
 // // LexicalScope returns the lexical scope of n.
 // func (n *LabeledStatement) LexicalScope() Scope { return n.lexicalScope }
-
-// // ResolvedIn reports which scope the identifier of cases
-// // PrimaryExpressionIdent, PrimaryExpressionEnum were resolved in, if any.
-// func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
 
 // // LexicalScope returns the lexical scope of n.
 // func (n *PrimaryExpression) LexicalScope() Scope { return n.lexicalScope }

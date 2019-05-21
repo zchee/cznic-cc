@@ -152,6 +152,8 @@ package cc // import "modernc.org/cc/v3"
 
 		        /* [0], 6.5.2 Postfix operators */
 			/*yy:field	Operand		Operand	*/
+			/*yy:field	Arguments	[]Type	// Case Call */
+			/*yy:field	Field		Field	// Case Select, PSelect */
 			/*yy:example int i = x; */
 /*yy:case Primary    */ PostfixExpression:
 				PrimaryExpression
@@ -236,6 +238,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Mod        */ |	MultiplicativeExpression '%' CastExpression
 
 			/* [0], 6.5.6 Additive operators */
+			/*yy:field	lexicalScope	Scope	*/
 			/*yy:field	Operand		Operand	*/
 			/*yy:example int i = x; */
 /*yy:case Mul        */ AdditiveExpression:
@@ -247,6 +250,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.7 Bitwise shift operators */
 			/*yy:field	Operand		Operand	*/
+			/*yy:field	promote		Type	// shift count promoted type */
 			/*yy:example int i = x; */
 /*yy:case Add        */ ShiftExpression:
 				AdditiveExpression
@@ -257,6 +261,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.8 Relational operators */
 			/*yy:field	Operand		Operand	*/
+			/*yy:field	promote		Type	*/
 			/*yy:example int i = x; */
 /*yy:case Shift      */ RelationalExpression:
 				ShiftExpression        
@@ -271,6 +276,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.9 Equality operators */
 			/*yy:field	Operand		Operand	*/
+			/*yy:field	promote		Type	*/
 			/*yy:example int i = x; */
 /*yy:case Rel        */ EqualityExpression:
 				RelationalExpression
@@ -329,6 +335,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.16 Assignment operators */
 			/*yy:field	Operand		Operand	*/
+			/*yy:field	promote		Type	*/
 			/*yy:example int i = x; } */
 /*yy:case Cond       */ AssignmentExpression:
 				ConditionalExpression
@@ -374,6 +381,7 @@ package cc // import "modernc.org/cc/v3"
 			Declaration:
 				DeclarationSpecifiers InitDeclaratorList ';'
 
+			/*yy:field	class	storageClass	*/
 			/*yy:example static int i; */
 /*yy:case Storage    */ DeclarationSpecifiers:
 				StorageClassSpecifier DeclarationSpecifiers
@@ -417,6 +425,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.7.2 Type specifiers */
 			/*yy:field	resolvedIn	Scope	// Case TypedefName */
+			/*yy:field	typ		Type */
 			/*yy:example void i(); */
 /*yy:case Void       */ TypeSpecifier:
 				"void"
@@ -507,6 +516,7 @@ package cc // import "modernc.org/cc/v3"
 			StructDeclaration:
 				SpecifierQualifierList StructDeclaratorList ';'
 		
+			/*yy:field	noStorageClass */
 			/*yy:example struct {int i;};*/
 /*yy:case TypeSpec   */ SpecifierQualifierList:
 				TypeSpecifier SpecifierQualifierList
@@ -544,8 +554,9 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example enum e {a, b}; */
 			|	EnumeratorList ',' Enumerator
 
-			/*yy:example enum e {a}; */
 			/*yy:field	lexicalScope	Scope	*/
+			/*yy:field	Operand		Operand	*/
+			/*yy:example enum e {a}; */
 /*yy:case Ident      */ Enumerator:
 				IDENTIFIER AttributeSpecifierList
 			/*yy:example enum e {a = 42}; */
@@ -576,7 +587,9 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.7.5 Declarators */
 			/*yy:field	IsTypedefName	bool */
+			/*yy:field	Linkage		Linkage */
 			/*yy:field	typ		Type */
+			/*yy:field	td		typeDescriptor */
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE
@@ -616,6 +629,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example int **p; */
 /*yy:case Ptr        */ |	'*' TypeQualifiers Pointer
 
+			/*yy:field	noStorageClass */
 			/*yy:example int * const i; */
 /*yy:case TypeQual   */ TypeQualifiers:
 				TypeQualifier
@@ -771,6 +785,7 @@ package cc // import "modernc.org/cc/v3"
 				Expression AttributeSpecifierList ';'
 
 			/* [0], 6.8.4 Selection statements */
+			/*yy:field	cases	[]*LabeledStatement	*/
 			/*yy:example int f() { if(x) y(); } */
 /*yy:case If         */ SelectionStatement:
 				"if" '(' Expression ')' Statement %prec BELOW_ELSE

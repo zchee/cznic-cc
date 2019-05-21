@@ -10415,20 +10415,17 @@ func ExampleUnaryExpression_inc() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionInc,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · · },
+	// · Token: example.c:1:9: INC "++",
+	// · UnaryExpression: &cc.UnaryExpression{
+	// · · Case: UnaryExpressionPostfix,
+	// · · PostfixExpression: &cc.PostfixExpression{
+	// · · · Case: PostfixExpressionPrimary,
+	// · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:11: IDENTIFIER "x",
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example.c:1:9: INC "++",
 	// }
 }
 
@@ -10437,20 +10434,17 @@ func ExampleUnaryExpression_dec() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionDec,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · · },
+	// · Token: example.c:1:9: DEC "--",
+	// · UnaryExpression: &cc.UnaryExpression{
+	// · · Case: UnaryExpressionPostfix,
+	// · · PostfixExpression: &cc.PostfixExpression{
+	// · · · Case: PostfixExpressionPrimary,
+	// · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:11: IDENTIFIER "x",
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example.c:1:9: DEC "--",
 	// }
 }
 

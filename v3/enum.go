@@ -57,3 +57,10 @@ const (
 
 	maxKind
 )
+
+// Values of Linkage
+const (
+	None Linkage = iota
+	Internal
+	External
+)

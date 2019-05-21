@@ -5,6 +5,7 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,7 +25,7 @@ func TestCPPExpand(t *testing.T) {
 		re = regexp.MustCompile(s)
 	}
 
-	cfg := &Config{fakeIncludes: true}
+	cfg := &Config{fakeIncludes: true, PreprocessOnly: true}
 	if err := filepath.Walk(filepath.Join(testWD, filepath.FromSlash("testdata/cpp-expand/")), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -90,6 +91,142 @@ func TestCPPExpand(t *testing.T) {
 				if x != y {
 					t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
 				}
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTCCExpand(t *testing.T) {
+	blacklist := map[string]struct{}{}
+	mustFail := map[string]string{
+		"16.c": "redefinition",
+	}
+	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
+	if _, err := os.Stat(root); err != nil {
+		t.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
+	}
+
+	var re *regexp.Regexp
+	if s := *oRE; s != "" {
+		re = regexp.MustCompile(s)
+	}
+
+	cfg := &Config{fakeIncludes: true, PreprocessOnly: true}
+	files := 0
+	if err := filepath.Walk(filepath.Join(root, filepath.FromSlash("tests/pp")), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || (!strings.HasSuffix(path, ".c") && !strings.HasSuffix(path, ".S")) {
+			return nil
+		}
+
+		if re != nil && !re.MatchString(path) {
+			return nil
+		}
+
+		if _, ok := blacklist[filepath.Base(path)]; ok {
+			return nil
+		}
+
+		files++
+		if *oTrace {
+			fmt.Fprintln(os.Stderr, files, path)
+		}
+
+		ctx := newContext(cfg)
+		cf, err := cache.getFile(ctx, path)
+		if err != nil {
+			return err
+		}
+
+		cpp := newCPP(ctx)
+		var b strings.Builder
+		expParth := path[:len(path)-len(filepath.Ext(path))] + ".expect"
+		for line := range cpp.translationPhase4([]source{cf}) {
+			for _, tok := range *line {
+				b.WriteString(tok.String())
+			}
+			token4Pool.Put(line)
+		}
+
+		if err := ctx.Err(); err != nil {
+			if re := mustFail[filepath.Base(path)]; re != "" {
+				if regexp.MustCompile(re).MatchString(err.Error()) {
+					return nil
+				}
+			}
+
+			t.Error(err)
+		}
+		exp, err := ioutil.ReadFile(expParth)
+		if err != nil {
+			t.Error(err)
+		}
+
+		g, e := b.String(), string(exp)
+		a := strings.Split(g, "\n")
+		w := 0
+		for _, v := range a {
+			if strings.TrimSpace(v) == "" {
+				continue
+			}
+
+			a[w] = v
+			w++
+		}
+		g = strings.Join(a[:w], "\n")
+		switch filepath.Base(path) {
+		case "02.c", "05.c":
+			g = strings.ReplaceAll(g, " ", "")
+			e = strings.ReplaceAll(e, " ", "")
+		}
+		//dbg("\ngot:\n%s\nexp:\n%s", g, e)
+		if g != e {
+			ok := true
+			a := strings.Split(g, "\n")
+			b := strings.Split(e, "\n")
+			n := len(a)
+			if len(b) > n {
+				n = len(b)
+			}
+			for i := 0; i < n; i++ {
+				var x, y string
+				if i < len(a) {
+					x = a[i]
+				}
+				if i < len(b) {
+					y = b[i]
+				}
+				x = strings.TrimSpace(x)
+				y = strings.TrimSpace(y)
+				for n := len(x); ; {
+					x = strings.ReplaceAll(x, "  ", " ")
+					if len(x) == n {
+						break
+					}
+
+					n = len(x)
+				}
+				for n := len(y); ; {
+					y = strings.ReplaceAll(y, "  ", " ")
+					if len(y) == n {
+						break
+					}
+
+					n = len(y)
+				}
+				if x != y {
+					ok = false
+					t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
+				}
+			}
+			if !ok {
+				t.Errorf("\ngot:\n%s\nexp:\n%s", g, e)
 			}
 		}
 		return nil

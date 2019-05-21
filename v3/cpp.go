@@ -24,10 +24,12 @@ var (
 	_ tokenReader = (*cpp)(nil)
 	_ tokenWriter = (*cpp)(nil)
 
+	idCOUNTER        = dict.sid("__COUNTER__")
 	idComma          = dict.sid(",")
 	idCxLimitedRange = dict.sid("CX_LIMITED_RANGE")
 	idDefault        = dict.sid("DEFAULT")
 	idDefined        = dict.sid("defined")
+	idEmptyString    = dict.sid(`""`)
 	idFILE           = dict.sid("__FILE__")
 	idFPContract     = dict.sid("FP_CONTRACT")
 	idFenvAccess     = dict.sid("FENV_ACCESS")
@@ -53,6 +55,7 @@ var (
 		dict.sid("__STDC_VERSION__"):         {},
 		dict.sid("__STDC__"):                 {},
 		dict.sid("__TIME__"):                 {},
+		idCOUNTER:                            {},
 		idFILE:                               {},
 		idLINE:                               {},
 	}
@@ -189,58 +192,32 @@ type macro struct {
 	variadic      bool
 }
 
-func (m *macro) param(ap [][]cppToken, nm StringID, out *[]cppToken) bool {
+func (m *macro) isNamedVariadicParam(nm StringID) bool {
+	return m.namedVariadic && nm == m.fp[len(m.fp)-1]
+}
+
+func (m *macro) param2(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]cppToken, argIndex *int) bool {
 	*out = nil
-	if nm == idVaArgs || m.namedVariadic && nm == m.fp[len(m.fp)-1] {
+	if nm == idVaArgs || m.isNamedVariadicParam(nm) {
 		if !m.variadic {
 			return false
 		}
 
-		i := len(m.fp)
-		if m.namedVariadic {
-			i--
-		}
-		if i < len(ap) {
-			var o []cppToken
-			sel := ap[i:]
-			for i, v := range sel {
-				switch {
-				case i == 0:
-					switch {
-					case len(v) != 0 && v[0].char == ' ':
-						o = append(o, v[1:]...)
-					default:
-						o = append(o, v...)
-					}
-				default:
-					o = append(o, v...)
-				}
-				if i != len(sel)-1 {
-					var t cppToken
-					t.char = ','
-					t.value = idComma
-					o = append(o, t)
-				}
-			}
-			switch {
-			case len(o) != 0 && o[0].char == ' ':
-				*out = o[1:]
-			default:
-				*out = o
-			}
-		}
+		*out = append([]cppToken(nil), varArgs...)
 		return true
 	}
 
 	for i, v := range m.fp {
 		if v == nm {
-			switch {
-			case i >= len(ap):
-				// nop
-			case len(ap[i]) != 0 && ap[i][0].char == ' ':
-				*out = ap[i][1:]
-			default:
-				*out = ap[i]
+			if i < len(ap) {
+				a := ap[i]
+				for len(a) != 0 && a[0].char == ' ' {
+					a = a[1:]
+				}
+				*out = a
+			}
+			if argIndex != nil {
+				*argIndex = i
 			}
 			return true
 		}
@@ -248,9 +225,15 @@ func (m *macro) param(ap [][]cppToken, nm StringID, out *[]cppToken) bool {
 	return false
 }
 
+func (m *macro) param(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]cppToken) bool {
+	return m.param2(varArgs, ap, nm, out, nil)
+}
+
 // --------------------------------------------------------------- Preprocessor
 
 type cpp struct {
+	counter      int
+	counterMacro macro
 	ctx          *context
 	file         *token.File
 	fileMacro    macro
@@ -266,6 +249,8 @@ type cpp struct {
 
 	fileID int32
 
+	last rune
+
 	intmaxChecked bool
 	nonFirstRead  bool
 	seenEOF       bool
@@ -279,11 +264,13 @@ func newCPP(ctx *context) *cpp {
 		macros: map[StringID]*macro{},
 		outBuf: b,
 	}
+	r.counterMacro = macro{repl: []token3{{char: PPNUMBER}}}
 	r.fileMacro = macro{repl: []token3{{char: STRINGLITERAL}}}
 	r.lineMacro = macro{repl: []token3{{char: PPNUMBER}}}
 	r.macros = map[StringID]*macro{
-		idFILE: &r.fileMacro,
-		idLINE: &r.lineMacro,
+		idCOUNTER: &r.counterMacro,
+		idFILE:    &r.fileMacro,
+		idLINE:    &r.lineMacro,
 	}
 	return r
 }
@@ -339,6 +326,31 @@ func (c *cpp) read() (cppToken, bool) {
 }
 
 func (c *cpp) write(tok cppToken) {
+	if tok.char == ' ' && c.last == ' ' {
+		return
+	}
+
+	if c.ctx.cfg.PreprocessOnly {
+		switch {
+		case
+			//TODO cover ALL the bad combinations
+			c.last == '+' && tok.char == '+',
+			c.last == '+' && tok.char == INC,
+			c.last == '-' && tok.char == '-',
+			c.last == '-' && tok.char == DEC,
+			c.last == IDENTIFIER && tok.char == IDENTIFIER,
+			c.last == PPNUMBER && tok.char == '+', //TODO not when ends in a digit
+			c.last == PPNUMBER && tok.char == '-': //TODO not when ends in a digit
+
+			sp := tok
+			sp.char = ' '
+			sp.value = idSpace
+			*c.outBuf = append(*c.outBuf, sp.token4)
+		}
+	}
+
+	//dbg("%T.write %q", c, tok)
+	c.last = tok.char
 	*c.outBuf = append(*c.outBuf, tok.token4)
 	if tok.char == '\n' {
 		for i, tok := range *c.outBuf {
@@ -424,10 +436,8 @@ loop:
 }
 
 func ltrim4(toks []token4) []token4 {
-	for i, v := range toks {
-		if v.char != ' ' {
-			return toks[i:]
-		}
+	for len(toks) != 0 && toks[0].char == ' ' {
+		toks = toks[1:]
 	}
 	return toks
 }
@@ -464,6 +474,7 @@ func (c *cpp) writes(toks []cppToken) {
 // 	return T^HS • expand(TS’);
 // }
 func (c *cpp) expand(ts tokenReader, w tokenWriter, expandDefined bool) {
+	// dbg("==== expand enter")
 start:
 	tok, ok := ts.read()
 	tok.fileID = c.fileID
@@ -471,9 +482,11 @@ start:
 	if !ok {
 		// ---------------------------------------------------------- A
 		// return {};
+		// dbg("---- expand A")
 		return
 	}
 
+	// dbg("expand start %q", tok)
 	if tok.char == IDENTIFIER {
 		nm := tok.value
 		if nm == idDefined && expandDefined {
@@ -489,6 +502,8 @@ start:
 		if tok.has(nm) {
 			// -------------------------------------------------- B
 			// return T^HS • expand(TS’);
+			// dbg("---- expand B")
+			// dbg("expand write %q", tok)
 			w.write(tok)
 			goto start
 		}
@@ -502,16 +517,21 @@ start:
 			// replacement token sequence for the macro, two empty
 			// sets, the union of the macro’s hide set and the
 			// macro itself, and an empty set.
-			if nm == idLINE {
+			switch nm {
+			case idLINE:
 				c.lineMacro.repl[0].value = dict.sid(fmt.Sprint(tok.Position().Line))
+			case idCOUNTER:
+				c.counterMacro.repl[0].value = dict.sid(fmt.Sprint(c.counter))
+				c.counter++
 			}
 			// -------------------------------------------------- C
 			// return expand(subst(ts(T), {}, {}, HS \cup {T}, {}) • TS’ );
+			// dbg("---- expand C")
 			hs := hideSet{nm: {}}
 			for k, v := range tok.hs {
 				hs[k] = v
 			}
-			toks := c.subst(m, c.cppToks(m.repl), nil, nil, hs, nil, expandDefined)
+			toks := c.subst(m, c.cppToks(m.repl), nil, nil, nil, hs, nil, expandDefined)
 			for i := range toks {
 				toks[i].pos = tok.pos
 			}
@@ -523,14 +543,19 @@ start:
 			// -------------------------------------------------- D
 			// check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 			// return expand(subst(ts(T), fp(T), actuals,(HS \cap HS’) \cup {T }, {}) • TS’’);
+			// dbg("---- expand D")
 			hs := tok.hs
+			var skip []cppToken
 		again:
 			t2, ok := ts.read()
 			if !ok {
+				// dbg("expand write %q", tok)
 				w.write(tok)
+				ts.ungets(skip)
 				goto start
 			}
 
+			skip = append(skip, t2)
 			switch t2.char {
 			case '\n', ' ':
 				goto again
@@ -538,11 +563,11 @@ start:
 				// ok
 			default:
 				w.write(tok)
-				ts.unget(t2)
+				ts.ungets(skip)
 				goto start
 			}
 
-			ap, hs2 := c.actuals(m, ts)
+			varArgs, ap, hs2 := c.actuals(m, ts)
 			switch {
 			case len(hs2) == 0:
 				hs2 = hideSet{nm: {}}
@@ -556,7 +581,7 @@ start:
 				nhs[nm] = struct{}{}
 				hs2 = nhs
 			}
-			toks := c.subst(m, c.cppToks(m.repl), m.fp, ap, hs2, nil, expandDefined)
+			toks := c.subst(m, c.cppToks(m.repl), m.fp, varArgs, ap, hs2, nil, expandDefined)
 			for i := range toks {
 				toks[i].pos = tok.pos
 			}
@@ -568,40 +593,73 @@ start:
 	// ------------------------------------------------------------------ E
 	// note TS must be T^HS • TS’
 	// return T^HS • expand(TS’);
+	// dbg("---- expand E")
+	// dbg("expand write %q", tok)
 	w.write(tok)
 	goto start
 }
 
-func (c *cpp) actuals(m *macro, r tokenReader) (out [][]cppToken, hs hideSet) {
+func (c *cpp) actuals(m *macro, r tokenReader) (varArgs []cppToken, ap [][]cppToken, hs hideSet) {
 	var lvl, n int
+	varx := len(m.fp)
+	if m.namedVariadic {
+		varx--
+	}
+	var last rune
 	for {
 		t, ok := r.read()
 		if !ok {
 			c.err(t, "unexpected EOF")
-			return nil, nil
+			return nil, nil, nil
 		}
 
+		// 6.10.3, 10
+		//
+		// Within the sequence of preprocessing tokens making up an
+		// invocation of a function-like macro, new-line is considered
+		// a normal white-space character.
+		if t.char == '\n' {
+			t.char = ' '
+			t.value = idSpace
+		}
+		if t.char == ' ' && last == ' ' {
+			continue
+		}
+
+		last = t.char
 		switch t.char {
 		case ',':
 			if lvl == 0 {
+				if n >= varx && (len(varArgs) != 0 || !isWhite(t.char)) {
+					varArgs = append(varArgs, t)
+				}
 				n++
 				continue
 			}
 		case ')':
 			if lvl == 0 {
-				for len(out) < len(m.fp) {
-					out = append(out, nil)
+				for len(ap) < len(m.fp) {
+					ap = append(ap, nil)
 				}
-				return out, t.hs
+				for i, v := range ap {
+					ap[i] = c.trim(v)
+				}
+				// for i, v := range ap {
+				// 	dbg("%T.actuals %v/%v %q", c, i, len(ap), tokStr(v, "|"))
+				// }
+				return c.trim(varArgs), ap, t.hs
 			}
 			lvl--
 		case '(':
 			lvl++
 		}
-		for len(out) <= n {
-			out = append(out, []cppToken{})
+		if n >= varx && (len(varArgs) != 0 || !isWhite(t.char)) {
+			varArgs = append(varArgs, t)
 		}
-		out[n] = append(out[n], t)
+		for len(ap) <= n {
+			ap = append(ap, []cppToken{})
+		}
+		ap[n] = append(ap[n], t)
 	}
 }
 
@@ -668,7 +726,7 @@ func (c *cpp) actuals(m *macro, r tokenReader) (out [][]cppToken, hs hideSet) {
 // requires trickier handling because the operation has a bunch of
 // combinations. After the entire input sequence is finished, the updated hide
 // set is applied to the output sequence, and that is the result of subst.
-func (c *cpp) subst(m *macro, is []cppToken, fp []StringID, ap [][]cppToken, hs hideSet, os []cppToken, expandDefined bool) (r []cppToken) {
+func (c *cpp) subst(m *macro, is []cppToken, fp []StringID, varArgs []cppToken, ap [][]cppToken, hs hideSet, os []cppToken, expandDefined bool) (r []cppToken) {
 	// var a []string
 	// for _, v := range ap {
 	// 	a = append(a, fmt.Sprintf("%q", cppToksStr(v, "|")))
@@ -679,6 +737,7 @@ start:
 	if len(is) == 0 {
 		// ---------------------------------------------------------- A
 		// return hsadd(HS, OS);
+		// dbg("---- A")
 		// dbg("subst returns %q", cppToksStr(os, "|"))
 		return c.hsAdd(hs, os)
 	}
@@ -686,113 +745,99 @@ start:
 	tok := is[0]
 	var arg []cppToken
 	if tok.char == '#' {
-		var nm cppToken
-		n := 0
-		switch {
-		case len(is) > 1 && is[1].char == IDENTIFIER:
-			nm = is[1]
-			n = 2
-		case len(is) > 2 && is[1].char == ' ' && is[2].char == IDENTIFIER:
-			nm = is[2]
-			n = 3
-		}
-		if n != 0 && m.param(ap, nm.value, &arg) {
+		if len(is) > 1 && is[1].char == IDENTIFIER && m.param(varArgs, ap, is[1].value, &arg) {
 			// -------------------------------------------------- B
 			// return subst(IS’, FP, AP, HS, OS • stringize(select(i, AP)));
+			// dbg("---- subst B")
 			os = append(os, c.stringize(arg))
-			is = is[n:]
+			is = is[2:]
 			goto start
 		}
 	}
 
 	if tok.char == PPPASTE {
-		var nm cppToken
-		n := 0
-		switch {
-		case len(is) > 1 && is[1].char == IDENTIFIER:
-			nm = is[1]
-			n = 2
-		case len(is) > 2 && is[1].char == ' ' && is[2].char == IDENTIFIER:
-			nm = is[2]
-			n = 3
-		}
-		if n != 0 && m.param(ap, nm.value, &arg) {
+		if len(is) > 1 && is[1].char == IDENTIFIER && m.param(varArgs, ap, is[1].value, &arg) {
 			// -------------------------------------------------- C
+			// dbg("---- subst C")
 			if len(arg) == 0 {
 				// TODO "only if actuals can be empty"
 				// ------------------------------------------ D
 				// return subst(IS’, FP, AP, HS, OS);
-				is = is[n:]
+				// dbg("---- D")
+				if c := len(os); c != 0 && os[c-1].char == ',' {
+					os = os[:c-1]
+				}
+				is = is[2:]
 				goto start
 			}
 
 			// -------------------------------------------------- E
 			// return subst(IS’, FP, AP, HS, glue(OS, select(i, AP)));
+			// dbg("---- subst E")
 			os = c.glue(os, arg)
-			is = is[n:]
+			is = is[2:]
 			goto start
 		}
 
-		n = 0
-		switch {
-		case len(is) > 1 && is[1].char != ' ':
-			n = 1
-		case len(is) > 2 && is[1].char == ' ':
-			n = 2
-		}
-
-		if n != 0 {
+		if len(is) > 1 {
 			// -------------------------------------------------- F
 			// return subst(IS’, FP, AP, HS, glue(OS, T^HS’));
-			os = c.glue(os, is[n:n+1])
-			is = is[n+1:]
+			// dbg("---- subst F")
+			os = c.glue(os, is[1:2])
+			is = is[2:]
 			goto start
 		}
 	}
 
-	if tok.char == IDENTIFIER &&
-		((len(is) > 1 && is[1].char == PPPASTE) || (len(is) > 2 && is[1].char == ' ' && is[2].char == PPPASTE)) &&
-		m.param(ap, tok.value, &arg) {
+	if tok.char == IDENTIFIER && (len(is) > 1 && is[1].char == PPPASTE) && m.param(varArgs, ap, tok.value, &arg) {
 		// ---------------------------------------------------------- G
+		// dbg("---- subst G")
 		if len(arg) == 0 {
 			// TODO "only if actuals can be empty"
 			// -------------------------------------------------- H
-			is2 := is[1:]                            // skip T
-			if len(is2) != 0 && is2[0].char == ' ' { // skip ' '
-				is2 = is2[1:]
-			}
-			is2 = is2[1:]                            // skip ##
-			if len(is2) != 0 && is2[0].char == ' ' { // skip ' '
-				is2 = is2[1:]
-			}
-			if len(is) > 0 && is[0].char == IDENTIFIER && m.param(ap, is2[0].value, &arg) {
+			// dbg("---- subst H")
+			is = is[2:] // skip T##
+			if len(is) > 0 && is[0].char == IDENTIFIER && m.param(varArgs, ap, is[0].value, &arg) {
 				// -------------------------------------------------- I
 				// return subst(IS’’, FP, AP, HS, OS • select(j, AP));
+				// dbg("---- subst I")
 				os = append(os, arg...)
-				is = is2[1:]
+				is = is[1:]
 				goto start
 			} else {
 				// -------------------------------------------------- J
 				// return subst(IS’, FP, AP, HS, OS);
-				is = is2
+				// dbg("---- subst J")
 				goto start
 			}
 		}
 
 		// ---------------------------------------------------------- K
 		// return subst(##^HS’ • IS’, FP, AP, HS, OS • select(i, AP));
+		// dbg("---- subst K")
 		os = append(os, arg...)
 		is = is[1:]
 		goto start
 	}
 
-	if tok.char == IDENTIFIER && m.param(ap, tok.value, &arg) {
+	ax := -1
+	if tok.char == IDENTIFIER && m.param2(varArgs, ap, tok.value, &arg, &ax) {
 		// ------------------------------------------ L
 		// return subst(IS’, FP, AP, HS, OS • expand(select(i, AP)));
+		// dbg("---- subst L")
+		// if toks, ok := cache[tok.value]; ok {
+		// 	os = append(os, toks...)
+		// 	is = is[1:]
+		// 	goto start
+		// }
+
 		sel := cppReader{buf: arg}
 		var w cppWriter
 		c.expand(&sel, &w, expandDefined)
 		os = append(os, w.toks...)
+		if ax >= 0 {
+			ap[ax] = w.toks
+		}
 		is = is[1:]
 		goto start
 	}
@@ -800,9 +845,8 @@ start:
 	// ------------------------------------------------------------------ M
 	// note IS must be T^HS’ • IS’
 	// return subst(IS’, FP, AP, HS, OS • T^HS’);
-	if len(is) < 2 || tok.char != ' ' || is[1].char != PPPASTE {
-		os = append(os, tok)
-	}
+	// dbg("---- subst M")
+	os = append(os, tok)
 	is = is[1:]
 	goto start
 }
@@ -820,10 +864,6 @@ func (c *cpp) glue(ls, rs []cppToken) (out []cppToken) {
 	}
 
 	l := ls[len(ls)-1]
-	if l.char == ',' { // testsuite/gcc.target/avr/torture/isr-01-simple.c
-		return append(ls, rs...)
-	}
-
 	ls = ls[:len(ls)-1]
 	r := rs[0]
 	rs = rs[1:]
@@ -836,30 +876,76 @@ func (c *cpp) glue(ls, rs []cppToken) (out []cppToken) {
 // containing the concatenated spellings of the tokens.
 //
 // [1] pg. 3
-func (c *cpp) stringize(s []cppToken) (r cppToken) {
-	var a []string
-	for i, v := range s {
-		if v.char == ' ' && i < len(s)-2 && s[i+1].char == '\n' || v.char == '\n' {
-			continue
+func (c *cpp) stringize(s0 []cppToken) (r cppToken) {
+	// 6.10.3.2
+	//
+	// Each occurrence of white space between the argument’s preprocessing
+	// tokens becomes a single space character in the character string
+	// literal.
+	s := make([]cppToken, 0, len(s0))
+	var last rune
+	for i := range s0 {
+		t := s0[i]
+		if isWhite(t.char) {
+			t.char = ' '
+			t.value = idSpace
+			if last == ' ' {
+				continue
+			}
 		}
 
+		last = t.char
+		s = append(s, t)
+	}
+
+	// White space before the first preprocessing token and after the last
+	// preprocessing token composing the argument is deleted.
+	s = c.trim(s)
+
+	// The character string literal corresponding to an empty argument is
+	// ""
+	if len(s) == 0 {
+		r.hs = nil
+		r.char = STRINGLITERAL
+		r.value = idEmptyString
+		return r
+	}
+
+	var a []string
+	// Otherwise, the original spelling of each preprocessing token in the
+	// argument is retained in the character string literal, except for
+	// special handling for producing the spelling of string literals and
+	// character constants: a \ character is inserted before each " and \
+	// character of a character constant or string literal (including the
+	// delimiting " characters), except that it is implementation-defined
+	// whether a \ character is inserted before the \ character beginning a
+	// universal character name.
+	for _, v := range s {
 		s := v.String()
 		switch v.char {
-		case CHARCONST:
-			s = strings.Replace(s, `\`, `\\`, -1)
-		case STRINGLITERAL:
-			s = strings.Replace(s, `\`, `\\`, -1)
-			s = `\"` + s[1:len(s)-1] + `\"`
+		case CHARCONST, STRINGLITERAL:
+			s = strings.ReplaceAll(s, `\`, `\\`)
+			s = strings.ReplaceAll(s, `"`, `\"`)
+		case LONGCHARCONST, LONGSTRINGLITERAL:
+			panic("TODO")
 		}
 		a = append(a, s)
 	}
-	if len(s) != 0 {
-		r = s[0]
-	}
+	r = s[0]
 	r.hs = nil
 	r.char = STRINGLITERAL
 	r.value = dict.sid(`"` + strings.Join(a, "") + `"`)
 	return r
+}
+
+func (c *cpp) trim(toks []cppToken) []cppToken {
+	for len(toks) != 0 && isWhite(toks[0].char) {
+		toks = toks[1:]
+	}
+	for len(toks) != 0 && isWhite(toks[len(toks)-1].char) {
+		toks = toks[:len(toks)-1]
+	}
+	return toks
 }
 
 func (c *cpp) hsAdd(hs hideSet, toks []cppToken) []cppToken {

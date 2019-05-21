@@ -99,6 +99,7 @@ func (n AdditiveExpressionCase) String() string {
 //	|       AdditiveExpression '+' MultiplicativeExpression  // Case AdditiveExpressionAdd
 //	|       AdditiveExpression '-' MultiplicativeExpression  // Case AdditiveExpressionSub
 type AdditiveExpression struct {
+	lexicalScope             Scope
 	Operand                  Operand
 	AdditiveExpression       *AdditiveExpression
 	Case                     AdditiveExpressionCase `PrettyPrint:"stringer,zero"`
@@ -622,6 +623,7 @@ func (n AssignmentExpressionCase) String() string {
 //	|       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
 type AssignmentExpression struct {
 	Operand               Operand
+	promote               Type
 	AssignmentExpression  *AssignmentExpression
 	Case                  AssignmentExpressionCase `PrettyPrint:"stringer,zero"`
 	ConditionalExpression *ConditionalExpression
@@ -1236,6 +1238,7 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       AlignmentSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAlignSpec
 //	|       AttributeSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAttribute
 type DeclarationSpecifiers struct {
+	class                 storageClass
 	AlignmentSpecifier    *AlignmentSpecifier
 	AttributeSpecifier    *AttributeSpecifier
 	Case                  DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
@@ -1303,7 +1306,9 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	        Pointer DirectDeclarator AttributeSpecifierList
 type Declarator struct {
 	IsTypedefName          bool
+	Linkage                Linkage
 	typ                    Type
+	td                     typeDescriptor
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator
 	Pointer                *Pointer
@@ -1945,6 +1950,7 @@ func (n EnumeratorCase) String() string {
 //	|       IDENTIFIER AttributeSpecifierList '=' ConstantExpression  // Case EnumeratorExpr
 type Enumerator struct {
 	lexicalScope           Scope
+	Operand                Operand
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   EnumeratorCase `PrettyPrint:"stringer,zero"`
 	ConstantExpression     *ConstantExpression
@@ -2042,6 +2048,7 @@ func (n EqualityExpressionCase) String() string {
 //	|       EqualityExpression "!=" RelationalExpression  // Case EqualityExpressionNeq
 type EqualityExpression struct {
 	Operand              Operand
+	promote              Type
 	Case                 EqualityExpressionCase `PrettyPrint:"stringer,zero"`
 	EqualityExpression   *EqualityExpression
 	RelationalExpression *RelationalExpression
@@ -3563,6 +3570,8 @@ func (n PostfixExpressionCase) String() string {
 //	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'  // Case PostfixExpressionTypeCmp
 type PostfixExpression struct {
 	Operand                Operand
+	Arguments              []Type // Case Call
+	Field                  Field  // Case Select, PSelect
 	ArgumentExpressionList *ArgumentExpressionList
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
 	Expression             *Expression
@@ -3868,6 +3877,7 @@ func (n RelationalExpressionCase) String() string {
 //	|       RelationalExpression ">=" ShiftExpression  // Case RelationalExpressionGeq
 type RelationalExpression struct {
 	Operand              Operand
+	promote              Type
 	Case                 RelationalExpressionCase `PrettyPrint:"stringer,zero"`
 	RelationalExpression *RelationalExpression
 	ShiftExpression      *ShiftExpression
@@ -3932,6 +3942,7 @@ func (n SelectionStatementCase) String() string {
 //	|       "if" '(' Expression ')' Statement "else" Statement  // Case SelectionStatementIfElse
 //	|       "switch" '(' Expression ')' Statement               // Case SelectionStatementSwitch
 type SelectionStatement struct {
+	cases      []*LabeledStatement
 	Case       SelectionStatementCase `PrettyPrint:"stringer,zero"`
 	Expression *Expression
 	Statement  *Statement
@@ -4033,6 +4044,7 @@ func (n ShiftExpressionCase) String() string {
 //	|       ShiftExpression ">>" AdditiveExpression  // Case ShiftExpressionRsh
 type ShiftExpression struct {
 	Operand            Operand
+	promote            Type // shift count promoted type
 	AdditiveExpression *AdditiveExpression
 	Case               ShiftExpressionCase `PrettyPrint:"stringer,zero"`
 	ShiftExpression    *ShiftExpression
@@ -4101,6 +4113,7 @@ func (n SpecifierQualifierListCase) String() string {
 //	|       AlignmentSpecifier SpecifierQualifierList  // Case SpecifierQualifierListAlignSpec
 //	|       AttributeSpecifier SpecifierQualifierList  // Case SpecifierQualifierListAttribute
 type SpecifierQualifierList struct {
+	noStorageClass
 	AlignmentSpecifier     *AlignmentSpecifier
 	AttributeSpecifier     *AttributeSpecifier
 	Case                   SpecifierQualifierListCase `PrettyPrint:"stringer,zero"`
@@ -4692,6 +4705,7 @@ func (n TypeQualifiersCase) String() string {
 //	|       TypeQualifiers TypeQualifier       // Case 2
 //	|       TypeQualifiers AttributeSpecifier  // Case 3
 type TypeQualifiers struct {
+	noStorageClass
 	AttributeSpecifier *AttributeSpecifier
 	Case               TypeQualifiersCase `PrettyPrint:"stringer,zero"`
 	TypeQualifier      *TypeQualifier
@@ -4873,6 +4887,7 @@ func (n TypeSpecifierCase) String() string {
 //	|       "_Float64x"                  // Case TypeSpecifierFloat64x
 type TypeSpecifier struct {
 	resolvedIn             Scope // Case TypedefName
+	typ                    Type
 	AtomicTypeSpecifier    *AtomicTypeSpecifier
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier

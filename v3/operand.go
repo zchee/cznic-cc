@@ -5,22 +5,30 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
+	"fmt"
 	"math"
 )
 
 var (
+	_ Value = Complex128Value(0)
+	_ Value = Float32Value(0)
 	_ Value = Float64Value(0)
 	_ Value = Int64Value(0)
+	_ Value = StringValue(0)
 	_ Value = Uint64Value(0)
 
+	_ Operand = (*funcDesignator)(nil)
 	_ Operand = (*lvalue)(nil)
 	_ Operand = (*operand)(nil)
+	_ Operand = noOperand
 
 	noOperand = &operand{typ: noType}
 )
 
 type Operand interface {
+	Declarator() *Declarator
 	IsLValue() bool
+	IsZero() bool
 	Type() Type
 	Value() Value
 	convertTo(*context, Node, Type) Operand
@@ -30,19 +38,42 @@ type Operand interface {
 
 type Value interface {
 	add(b Value) Value
+	and(b Value) Value
 	div(b Value) Value
 	isZero() bool
 	mod(b Value) Value
 	mul(b Value) Value
+	neg() Value
+	or(b Value) Value
 	sub(b Value) Value
+	xor(b Value) Value
+	//TODO all comparisons
+	//TODO shift
 }
+
+type StringValue StringID
+
+func (v StringValue) add(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) and(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) div(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) isZero() bool      { return v == 0 }
+func (v StringValue) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) mul(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) neg() Value        { panic("internal error") } //TODOOK
+func (v StringValue) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v StringValue) sub(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) xor(b Value) Value { panic("internal error") } //TODOOK
 
 type Int64Value int64
 
 func (v Int64Value) add(b Value) Value { return v + b.(Int64Value) }
+func (v Int64Value) and(b Value) Value { return v & b.(Int64Value) }
 func (v Int64Value) isZero() bool      { return v == 0 }
 func (v Int64Value) mul(b Value) Value { return v * b.(Int64Value) }
+func (v Int64Value) neg() Value        { return -v }
+func (v Int64Value) or(b Value) Value  { return v | b.(Int64Value) }
 func (v Int64Value) sub(b Value) Value { return v - b.(Int64Value) }
+func (v Int64Value) xor(b Value) Value { return v ^ b.(Int64Value) }
 
 func (v Int64Value) div(b Value) Value {
 	if b.isZero() {
@@ -63,9 +94,13 @@ func (v Int64Value) mod(b Value) Value {
 type Uint64Value uint64
 
 func (v Uint64Value) add(b Value) Value { return v + b.(Uint64Value) }
+func (v Uint64Value) and(b Value) Value { return v & b.(Uint64Value) }
 func (v Uint64Value) isZero() bool      { return v == 0 }
 func (v Uint64Value) mul(b Value) Value { return v * b.(Uint64Value) }
+func (v Uint64Value) neg() Value        { return -v }
+func (v Uint64Value) or(b Value) Value  { return v | b.(Uint64Value) }
 func (v Uint64Value) sub(b Value) Value { return v - b.(Uint64Value) }
+func (v Uint64Value) xor(b Value) Value { return v ^ b.(Uint64Value) }
 
 func (v Uint64Value) div(b Value) Value {
 	if b.isZero() {
@@ -83,20 +118,60 @@ func (v Uint64Value) mod(b Value) Value {
 	return v % b.(Uint64Value)
 }
 
+type Float32Value float32
+
+func (v Float32Value) add(b Value) Value { return v + b.(Float32Value) }
+func (v Float32Value) and(b Value) Value { panic("internal error") } //TODOOK
+func (v Float32Value) div(b Value) Value { return v / b.(Float32Value) }
+func (v Float32Value) isZero() bool      { return v == 0 }
+func (v Float32Value) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v Float32Value) mul(b Value) Value { return v * b.(Float32Value) }
+func (v Float32Value) neg() Value        { return -v }
+func (v Float32Value) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v Float32Value) sub(b Value) Value { return v - b.(Float32Value) }
+func (v Float32Value) xor(b Value) Value { panic("internal error") } //TODOOK
+
 type Float64Value float64
 
 func (v Float64Value) add(b Value) Value { return v + b.(Float64Value) }
+func (v Float64Value) and(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) div(b Value) Value { return v / b.(Float64Value) }
 func (v Float64Value) isZero() bool      { return v == 0 }
 func (v Float64Value) mod(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) mul(b Value) Value { return v * b.(Float64Value) }
+func (v Float64Value) neg() Value        { return -v }
+func (v Float64Value) or(b Value) Value  { panic("internal error") } //TODOOK
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
+func (v Float64Value) xor(b Value) Value { panic("internal error") } //TODOOK
+
+type Complex128Value complex128
+
+func (v Complex128Value) add(b Value) Value { return v + b.(Complex128Value) }
+func (v Complex128Value) and(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex128Value) div(b Value) Value { return v / b.(Complex128Value) }
+func (v Complex128Value) isZero() bool      { return v == 0 }
+func (v Complex128Value) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex128Value) mul(b Value) Value { return v * b.(Complex128Value) }
+func (v Complex128Value) neg() Value        { return -v }
+func (v Complex128Value) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v Complex128Value) sub(b Value) Value { return v - b.(Complex128Value) }
+func (v Complex128Value) xor(b Value) Value { panic("internal error") } //TODOOK
 
 type lvalue struct {
-	operand
+	Operand
+	declarator *Declarator
 }
 
-func (o *lvalue) IsLValue() bool { return true }
+func (o *lvalue) Declarator() *Declarator { return o.declarator }
+func (o *lvalue) IsLValue() bool          { return true }
+
+type funcDesignator struct {
+	Operand
+	declarator *Declarator
+}
+
+func (o *funcDesignator) Declarator() *Declarator { return o.declarator }
+func (o *funcDesignator) IsLValue() bool          { return false }
 
 type operand struct {
 	typ   Type
@@ -105,9 +180,11 @@ type operand struct {
 	//TODO isLvalue bool or wrapper type
 }
 
-func (o *operand) Type() Type     { return o.typ }
-func (o *operand) Value() Value   { return o.value }
-func (o *operand) IsLValue() bool { return false }
+func (o *operand) Declarator() *Declarator { return nil }
+func (o *operand) IsLValue() bool          { return false }
+func (o *operand) IsZero() bool            { return o.value != nil && o.value.isZero() }
+func (o *operand) Type() Type              { return o.typ }
+func (o *operand) Value() Value            { return o.value }
 
 // [0]6.3.1.8
 //
@@ -125,7 +202,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 		return noOperand, noOperand
 	}
 
-	if !a.Type().isArithmeticType() || !b.Type().isArithmeticType() {
+	if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
 		panic("internal error") //TODOOK
 	}
 
@@ -158,7 +235,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	}
 
 	if at.Kind() == Double || bt.Kind() == Double {
-		return noOperand, noOperand //TODO
+		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Double)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Double))
 	}
 
 	// Otherwise, if the corresponding real type of either operand is
@@ -169,10 +246,10 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	}
 
 	if at.Kind() == Float || bt.Kind() == Float {
-		return noOperand, noOperand //TODO
+		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Float)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Float))
 	}
 
-	if !a.Type().isIntegerType() || !b.Type().isIntegerType() {
+	if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 		panic("internal error") //TODOOK
 	}
 
@@ -232,11 +309,11 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 		//TODO 	return a, b
 		//TODO }
 
-		typ = abi.typ(ctx, n, UInt)
+		typ = abi.Type(UInt)
 	case Long:
-		typ = abi.typ(ctx, n, ULong)
+		typ = abi.Type(ULong)
 	case LongLong:
-		typ = abi.typ(ctx, n, ULongLong)
+		typ = abi.Type(ULongLong)
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -275,7 +352,7 @@ func (o *operand) integerPromotion(ctx *context, n Node) Operand {
 		Short,
 		UChar,
 		UShort:
-		return o.convertTo(ctx, n, ctx.cfg.ABI.typ(ctx, n, Int))
+		return o.convertTo(ctx, n, ctx.cfg.ABI.Type(Int))
 	default:
 		return o
 	}
@@ -294,22 +371,26 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 
 	k := t.underlyingType().Kind()
 	if k == Void {
-		return &operand{typ: abi.typ(ctx, n, Void)} //TODO ABI singleton
+		return &operand{typ: abi.Type(Void)} //TODO ABI singleton
 	}
 
-	if !isIntegerType[k0] && k0 != Ptr {
+	if !integerTypes[k0] && k0 != Ptr {
 		return &operand{typ: t}
 	}
 
-	if isIntegerType[k] {
+	if integerTypes[k] {
 		var i64 int64
 		switch x := o.Value().(type) {
 		case Int64Value:
 			i64 = int64(x)
 		case Uint64Value:
 			i64 = int64(x)
+		case StringValue:
+			if x != 0 {
+				panic("internal error") //TODOOK
+			}
 		default:
-			panic("internal error") //TODOOK
+			panic(fmt.Sprintf("%v: internal error: %T %v", n.Position(), x, x)) //TODOOK
 		}
 		var v Value
 		switch {
@@ -352,7 +433,7 @@ func convertInt64(n int64, t Type, ctx *context) int64 {
 	abi := ctx.cfg.ABI
 	k := t.underlyingType().Kind()
 	if k == Enum {
-		panic("TODO")
+		//TODO
 	}
 	signed := abi.isSignedInteger(k)
 	switch sz := abi.size(k); sz {

@@ -19,6 +19,8 @@ import (
 	"strings"
 )
 
+const maxRank = 6
+
 var (
 	_ Field = (*field)(nil)
 
@@ -26,16 +28,25 @@ var (
 	_ Type = (*arrayType)(nil)
 	_ Type = (*attributedType)(nil)
 	_ Type = (*bitFieldType)(nil)
+	_ Type = (*functionType)(nil)
 	_ Type = (*pointerType)(nil)
 	_ Type = (*structType)(nil)
 	_ Type = (*taggedType)(nil)
 	_ Type = (*typeBase)(nil)
+	_ Type = noType
+
+	noType = &typeBase{}
 
 	_ typeDescriptor = (*DeclarationSpecifiers)(nil)
 	_ typeDescriptor = (*SpecifierQualifierList)(nil)
 	_ typeDescriptor = (*TypeQualifiers)(nil)
+	_ typeDescriptor = noTypeDescriptor
 
-	noType = &typeBase{}
+	noTypeDescriptor = &DeclarationSpecifiers{}
+
+	_ Object = (*AbstractDeclarator)(nil)
+	_ Object = (*Declarator)(nil)
+	_ Object = (*abstractObject)(nil)
 
 	// [0]6.3.1.1-1
 	//
@@ -55,12 +66,8 @@ var (
 		LongLong:  6,
 		ULongLong: 6,
 	}
-)
 
-const maxRank = 6
-
-var (
-	isIntegerType = [maxKind]bool{
+	integerTypes = [maxKind]bool{
 		Bool:      true,
 		Char:      true,
 		Enum:      true,
@@ -76,7 +83,7 @@ var (
 		UShort:    true,
 	}
 
-	isArithmeticType = [maxKind]bool{
+	arithmeticTypes = [maxKind]bool{
 		Bool:              true,
 		Char:              true,
 		ComplexDouble:     true,
@@ -97,14 +104,35 @@ var (
 		ULongLong:         true,
 		UShort:            true,
 	}
+
+	realTypes = [maxKind]bool{
+		Bool:       true,
+		Char:       true,
+		Double:     true,
+		Enum:       true,
+		Float:      true,
+		Int:        true,
+		Long:       true,
+		LongDouble: true,
+		LongLong:   true,
+		SChar:      true,
+		Short:      true,
+		UChar:      true,
+		UInt:       true,
+		ULong:      true,
+		ULongLong:  true,
+		UShort:     true,
+	}
 )
 
-// A Field describes a single field in a struct/union.
-type Field interface {
-	//TODO
-	Offset() uintptr // In bytes from the beginning of the struct/union.
-	Type() Type      // Field type.
-}
+type noStorageClass struct{}
+
+func (noStorageClass) auto() bool        { return false }
+func (noStorageClass) extern() bool      { return false }
+func (noStorageClass) register() bool    { return false }
+func (noStorageClass) static() bool      { return false }
+func (noStorageClass) threadLocal() bool { return false }
+func (noStorageClass) typedef() bool     { return false }
 
 // Type is the representation of a C type.
 //
@@ -117,6 +145,10 @@ type Field interface {
 // does not panic.
 type Type interface {
 	//TODO bits()
+
+	// Alias returns the type this type aliases. Non typedef types return
+	// themselves.
+	Alias() Type
 
 	// Align returns the alignment in bytes of a value of this type when
 	// allocated in memory.
@@ -133,9 +165,36 @@ type Type interface {
 	// when used as a field in a struct.
 	FieldAlign() int
 
+	// FieldByIndex returns the nested field corresponding to the index
+	// sequence. It is equivalent to calling Field successively for each
+	// index i.  It panics if the type's Kind is valid but not Struct.
+	FieldByIndex(index []int) Field
+
 	// FieldByName returns the struct field with the given name and a
 	// boolean indicating if the field was found.
 	FieldByName(name StringID) (Field, bool)
+
+	// Incomplete reports whether type is incomplete.
+	Incomplete() bool
+
+	// IsArithmeticType report whether a type is an arithmetic type.
+	IsArithmeticType() bool
+
+	// IsBitFieldType report whether a type is for a bit field.
+	IsBitFieldType() bool //TODO-
+
+	// IsIntegerType report whether a type is an integer type.
+	IsIntegerType() bool
+
+	// IsRealType report whether a type is a real type.
+	IsRealType() bool
+
+	// IsScalarType report whether a type is a scalar type.
+	IsScalarType() bool
+
+	// IsVariadic reports whether a function type is variadic. It panics if
+	// the type's Kind is valid but not Function.
+	IsVariadic() bool
 
 	// IsVLA reports whether array is a variable length array. It panics if
 	// the type's Kind is valid but not Array.
@@ -148,6 +207,18 @@ type Type interface {
 	// valid but not Array.
 	Len() uintptr
 
+	// NumField returns a struct type's field count.  It panics if the
+	// type's Kind is valid but not Struct.
+	NumField() int
+
+	// Parameters returns the parameters of a function type. It panics if
+	// the type's Kind is valid but not Function.
+	Parameters() []Object
+
+	// Result returns the result type of a function type. It panics if the
+	// type's Kind is valid but not Function.
+	Result() Type
+
 	// Size returns the number of bytes needed to store a value of the
 	// given type. It panics if type is valid but incomplete.
 	Size() uintptr
@@ -158,57 +229,55 @@ type Type interface {
 	// atomic reports whether type has type qualifier "_Atomic".
 	atomic() bool
 
-	// auto reports whether type has storage class specifier "auto".
-	auto() bool
-
-	// extern reports whether type has storage class specifier "extern".
-	extern() bool
-
 	// hasConst reports whether type has type qualifier "const".
 	hasConst() bool
-
-	// Incomplete reports whether type is incomplete.
-	Incomplete() bool
 
 	// inline reports whether type has function specifier "inline".
 	inline() bool
 
-	isArithmeticType() bool
-
-	isIntegerType() bool
-
-	isSigned() bool
+	IsSignedType() bool
 
 	// noReturn reports whether type has function specifier "_NoReturn".
 	noReturn() bool
-
-	// register reports whether type has storage class specifier
-	// "register".
-	register() bool
 
 	// restrict reports whether type has type qualifier "restrict".
 	restrict() bool
 
 	setLen(uintptr)
 
-	// static reports whether type has storage class specifier "static".
-	static() bool
-
 	string(*strings.Builder)
 
-	// threadLocal reports whether type has storage class specifier
-	// "_Thread_local".
-	threadLocal() bool
-
 	base() typeBase
-
-	// typedef reports whether type has storage class specifier "typedef".
-	typedef() bool
 
 	underlyingType() Type
 
 	// volatile reports whether type has type qualifier "volatile".
 	volatile() bool
+}
+
+type Object interface {
+	Declarator() *Declarator
+	IsStatic() bool
+	Name() StringID
+	Type() Type
+}
+
+type abstractObject struct {
+	typ Type
+}
+
+func (o *abstractObject) Declarator() *Declarator { return nil }
+func (o *abstractObject) IsStatic() bool          { panic("TODO") } //TODO return o.Type().static() }
+func (o *abstractObject) Name() StringID          { return 0 }
+func (o *abstractObject) Type() Type              { return o.typ }
+
+// A Field describes a single field in a struct/union.
+type Field interface {
+	//TODO
+	IsBitField() bool
+	Offset() uintptr // In bytes from the beginning of the struct/union.
+	Padding() int
+	Type() Type // Field type.
 }
 
 // A Kind represents the specific kind of type that a Type represents. The zero Kind is not a valid kind.
@@ -291,23 +360,31 @@ var (
 
 type typeDescriptor interface {
 	Node
-	isTypeDescriptor()
+	auto() bool
+	extern() bool
+	register() bool
+	static() bool
+	threadLocal() bool
+	typedef() bool
 }
 
-type flag uint16
+type storageClass byte
 
 const (
-	// function specifier
-	fInline flag = 1 << iota
-	fNoReturn
-
-	// storage class
-	fAuto
+	fAuto storageClass = 1 << iota
 	fExtern
 	fRegister
 	fStatic
 	fThreadLocal
 	fTypedef
+)
+
+type flag uint16
+
+const (
+	// function specifier
+	fInline flag = 1 << iota //TODO should go elsewhere
+	fNoReturn
 
 	// type qualifier
 	fAtomic
@@ -399,12 +476,14 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 		k[0] = TypeSpecifierInt //TODO configuration flag
 	}
 	var ok bool
-	if t.kind, ok = validTypeSpecifiers[k]; !ok {
-		// panic(fmt.Sprintf("%v: %v", td.Position(), k[:len(typeSpecifiers)]))
-		ctx.err(td.Position(), "invalid type specifiers combination")
-		k[0] = TypeSpecifierInt
-		return t
+	if t.Kind() == Invalid {
+		if t.kind, ok = validTypeSpecifiers[k]; !ok {
+			// panic(fmt.Sprintf("%v: %v", td.Position(), k[:len(typeSpecifiers)]))
+			ctx.err(td.Position(), "invalid type specifiers combination")
+			k[0] = TypeSpecifierInt
+			return t
 
+		}
 	}
 	switch len(alignmentSpecifiers) {
 	case 0:
@@ -420,6 +499,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 		ctx.err(alignmentSpecifiers[1].Position(), "multiple alignment specifiers")
 	}
 
+	abi := ctx.cfg.ABI
 	switch k := t.Kind(); k {
 	case typeofExpr:
 		//TODO
@@ -432,10 +512,13 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 	case Void:
 		// nop
 	case Enum:
-		//TODO
+		if v, ok := abi.Types[Int]; ok {
+			t.size = uintptr(abi.size(Int))
+			t.align = byte(v.Align)
+			t.fieldAlign = byte(v.FieldAlign)
+		}
 	default:
-		abi := ctx.cfg.ABI
-		if isIntegerType[k] && abi.isSignedInteger(k) {
+		if integerTypes[k] && abi.isSignedInteger(k) {
 			t.flags |= fSigned
 		}
 		if v, ok := abi.Types[k]; ok {
@@ -459,9 +542,11 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 		tok := ts.Token
 		nm := tok.Value
 		d := ts.resolvedIn.typedef(nm, tok)
-		typ = &aliasType{nm: nm, Type: d.Type()}
+		typ = &aliasType{nm: nm, typ: d.Type()}
 	case Struct, Union:
 		typ = typeSpecifiers[0].StructOrUnionSpecifier.typ
+	case typeofExpr, typeofType:
+		typ = typeSpecifiers[0].typ
 	}
 
 	if len(attributeSpecifiers) != 0 {
@@ -476,8 +561,8 @@ func (t *typeBase) atomic() bool { return t.flags&fAtomic != 0 }
 // Attributes implements Type.
 func (t *typeBase) Attributes() (a []*AttributeSpecifier) { return nil }
 
-// auto implements Type.
-func (t *typeBase) auto() bool { return t.flags&fAuto != 0 }
+// Alias implements Type.
+func (t *typeBase) Alias() Type { return t }
 
 // Align implements Type.
 func (t *typeBase) Align() int { return int(t.align) }
@@ -494,14 +579,29 @@ func (t *typeBase) Elem() Type {
 	panic(fmt.Errorf("%s: Elem of invalid type", t.Kind()))
 }
 
-// extern implements Type.
-func (t *typeBase) extern() bool { return t.flags&fExtern != 0 }
-
 // hasConst implements Type.
 func (t *typeBase) hasConst() bool { return t.flags&fConst != 0 }
 
 // FieldAlign implements Type.
 func (t *typeBase) FieldAlign() int { return int(t.fieldAlign) }
+
+// FieldByIndex implements Type.
+func (t *typeBase) FieldByIndex([]int) Field {
+	if t.Kind() == Invalid {
+		return nil
+	}
+
+	panic(fmt.Errorf("%s: FieldByIndex of invalid type", t.Kind()))
+}
+
+// NumField implements Type.
+func (t *typeBase) NumField() int {
+	if t.Kind() == Invalid {
+		return 0
+	}
+
+	panic(fmt.Errorf("%s: NumField of invalid type", t.Kind()))
+}
 
 // FieldByName implements Type.
 func (t *typeBase) FieldByName(StringID) (Field, bool) {
@@ -518,19 +618,37 @@ func (t *typeBase) Incomplete() bool { return t.flags&fIncomplete != 0 }
 // inline implements Type.
 func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
 
-// isIntegerType implements Type.
-func (t *typeBase) isIntegerType() bool { return isIntegerType[t.kind] }
+// IsIntegerType implements Type.
+func (t *typeBase) IsIntegerType() bool { return integerTypes[t.kind] }
 
-// isArithmeticType implements Type.
-func (t *typeBase) isArithmeticType() bool { return isArithmeticType[t.Kind()] }
+// IsArithmeticType implements Type.
+func (t *typeBase) IsArithmeticType() bool { return arithmeticTypes[t.Kind()] }
 
-// isSigned implements Type.
-func (t *typeBase) isSigned() bool {
-	if !isIntegerType[t.kind] {
-		panic(fmt.Errorf("%s: isSigned of non-integer type", t.Kind()))
+// IsBitFieldType implements Type.
+func (t *typeBase) IsBitFieldType() bool { return false }
+
+// IsRealType implements Type.
+func (t *typeBase) IsRealType() bool { return realTypes[t.Kind()] }
+
+// IsScalarType implements Type.
+func (t *typeBase) IsScalarType() bool { return t.IsArithmeticType() || t.Kind() == Ptr }
+
+// IsSignedType implements Type.
+func (t *typeBase) IsSignedType() bool {
+	if !integerTypes[t.kind] {
+		panic(fmt.Errorf("%s: IsSignedType of non-integer type", t.Kind()))
 	}
 
 	return t.flags&fSigned != 0
+}
+
+// IsVariadic implements Type.
+func (t *typeBase) IsVariadic() bool {
+	if t.Kind() == Invalid {
+		return false
+	}
+
+	panic(fmt.Errorf("%s: IsVariadic of invalid type", t.Kind()))
 }
 
 // IsVLA implements Type.
@@ -551,11 +669,26 @@ func (t *typeBase) Len() uintptr { panic(fmt.Errorf("%s: Len of non-array type",
 // noReturn implements Type.
 func (t *typeBase) noReturn() bool { return t.flags&fNoReturn != 0 }
 
-// register implements Type.
-func (t *typeBase) register() bool { return t.flags&fRegister != 0 }
-
 // restrict implements Type.
 func (t *typeBase) restrict() bool { return t.flags&fRestrict != 0 }
+
+// Parameters implements Type.
+func (t *typeBase) Parameters() []Object {
+	if t.Kind() == Invalid {
+		return nil
+	}
+
+	panic(fmt.Errorf("%s: Parameters of invalid type", t.Kind()))
+}
+
+// Result implements Type.
+func (t *typeBase) Result() Type {
+	if t.Kind() == Invalid {
+		return noType
+	}
+
+	panic(fmt.Errorf("%s: Result of invalid type", t.Kind()))
+}
 
 // Size implements Type.
 func (t *typeBase) Size() uintptr {
@@ -578,15 +711,6 @@ func (t *typeBase) setLen(uintptr) {
 	panic(fmt.Errorf("%s: setLen of non-array type", t.Kind()))
 }
 
-// static implements Type.
-func (t *typeBase) static() bool { return t.flags&fStatic != 0 }
-
-// threadLocal implements Type.
-func (t *typeBase) threadLocal() bool { return t.flags&fThreadLocal != 0 }
-
-// typedef implements Type.
-func (t *typeBase) typedef() bool { return t.flags&fTypedef != 0 }
-
 // underlyingType implements Type.
 func (t *typeBase) underlyingType() Type { return t }
 
@@ -602,56 +726,52 @@ func (t *typeBase) String() string {
 
 // string implements Type.
 func (t *typeBase) string(b *strings.Builder) {
+	spc := ""
 	if t.atomic() {
-		b.WriteString("atomic ")
-	}
-	if t.auto() {
-		b.WriteString("auto ")
-	}
-	if t.extern() {
-		b.WriteString("extern ")
+		b.WriteString("atomic")
+		spc = " "
 	}
 	if t.hasConst() {
-		b.WriteString("const ")
+		b.WriteString(spc)
+		b.WriteString("const")
+		spc = " "
 	}
 	if t.inline() {
-		b.WriteString("inline ")
+		b.WriteString(spc)
+		b.WriteString("inline")
+		spc = " "
 	}
 	if t.noReturn() {
-		b.WriteString("_NoReturn ")
-	}
-	if t.register() {
-		b.WriteString("register ")
+		b.WriteString(spc)
+		b.WriteString("_NoReturn")
+		spc = " "
 	}
 	if t.restrict() {
-		b.WriteString("restrict ")
-	}
-	if t.static() {
-		b.WriteString("static ")
-	}
-	if t.threadLocal() {
-		b.WriteString("_Thread_local ")
-	}
-	if t.typedef() {
-		b.WriteString("typedef ")
+		b.WriteString(spc)
+		b.WriteString("restrict")
+		spc = " "
 	}
 	if t.volatile() {
-		b.WriteString("volatile ")
+		b.WriteString(spc)
+		b.WriteString("volatile")
+		spc = " "
 	}
+	b.WriteString(spc)
 	switch k := t.Kind(); k {
 	case Enum:
-		b.WriteString("enum ")
+		b.WriteString("enum")
 	case Invalid:
 		// nop
 	case Struct:
-		b.WriteString("struct ")
+		b.WriteString("struct")
 	case Union:
-		b.WriteString("union ")
-	case typeofExpr, typeofType, Ptr:
-		panic("internal error") // TODOOK
+		b.WriteString("union")
+	case Ptr:
+		b.WriteString("pointer")
+	case typeofExpr, typeofType:
+		panic("internal error: " + k.String()) // TODOOK
 	default:
 		b.WriteString(k.String())
-		b.WriteByte(' ')
 	}
 }
 
@@ -659,6 +779,9 @@ type attributedType struct {
 	Type
 	attr []*AttributeSpecifier
 }
+
+// Alias implements Type.
+func (t *attributedType) Alias() Type { return t }
 
 // String implements Type.
 func (t *attributedType) String() string {
@@ -684,6 +807,9 @@ type pointerType struct {
 	elem           Type
 	typeQualifiers Type
 }
+
+// Alias implements Type.
+func (t *pointerType) Alias() Type { return t }
 
 // Attributes implements Type.
 func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
@@ -713,11 +839,15 @@ func (t *pointerType) string(b *strings.Builder) {
 type arrayType struct {
 	typeBase
 
+	expr   *AssignmentExpression
 	elem   Type
 	length uintptr
 
 	vla bool
 }
+
+// Alias implements Type.
+func (t *arrayType) Alias() Type { return t }
 
 // IsVLA implements Type.
 func (t *arrayType) IsVLA() bool { return t.vla }
@@ -760,63 +890,107 @@ func (t *arrayType) setLen(n uintptr) {
 func (t *arrayType) underlyingType() Type { return t }
 
 type aliasType struct {
-	nm StringID
-	Type
+	nm  StringID
+	typ Type
 }
+
+// Alias implements Type.
+func (t *aliasType) Alias() Type { return t.typ }
+
+// Align implements Type.
+func (t *aliasType) Align() int { return t.typ.Align() }
+
+// Attributes implements Type.
+func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
+
+// Elem implements Type.
+func (t *aliasType) Elem() Type { return t.typ.Elem() }
+
+// FieldAlign implements Type.
+func (t *aliasType) FieldAlign() int { return t.typ.FieldAlign() }
+
+// NumField implements Type.
+func (t *aliasType) NumField() int { return t.typ.NumField() }
+
+// FieldByIndex implements Type.
+func (t *aliasType) FieldByIndex(i []int) Field { return t.typ.FieldByIndex(i) }
+
+// FieldByName implements Type.
+func (t *aliasType) FieldByName(s StringID) (Field, bool) { return t.typ.FieldByName(s) }
+
+// Incomplete implements Type.
+func (t *aliasType) Incomplete() bool { return t.typ.Incomplete() }
+
+// IsArithmeticType implements Type.
+func (t *aliasType) IsArithmeticType() bool { return t.typ.IsArithmeticType() }
+
+// IsBitFieldType implements Type.
+func (t *aliasType) IsBitFieldType() bool { return t.typ.IsBitFieldType() }
+
+// IsIntegerType implements Type.
+func (t *aliasType) IsIntegerType() bool { return t.typ.IsIntegerType() }
+
+// IsRealType implements Type.
+func (t *aliasType) IsRealType() bool { return t.typ.IsRealType() }
+
+// IsScalarType implements Type.
+func (t *aliasType) IsScalarType() bool { return t.typ.IsScalarType() }
+
+// IsVLA implements Type.
+func (t *aliasType) IsVLA() bool { return t.typ.IsVLA() }
+
+// IsVariadic implements Type.
+func (t *aliasType) IsVariadic() bool { return t.typ.IsVariadic() }
+
+// Kind implements Type.
+func (t *aliasType) Kind() Kind { return t.typ.Kind() }
+
+// Len implements Type.
+func (t *aliasType) Len() uintptr { return t.typ.Len() }
+
+// Parameters implements Type.
+func (t *aliasType) Parameters() []Object { return t.typ.Parameters() }
+
+// Result implements Type.
+func (t *aliasType) Result() Type { return t.typ.Result() }
+
+// Size implements Type.
+func (t *aliasType) Size() uintptr { return t.typ.Size() }
 
 // String implements Type.
 func (t *aliasType) String() string { return t.nm.String() }
 
-// string implements Type.
-func (t *aliasType) string(b *strings.Builder) {
-	b.WriteString(t.nm.String())
-	b.WriteByte(' ')
-}
+// atomic implements Type.
+func (t *aliasType) atomic() bool { return t.typ.atomic() }
+
+// base implements Type.
+func (t *aliasType) base() typeBase { return t.typ.base() }
+
+// hasConst implements Type.
+func (t *aliasType) hasConst() bool { return t.typ.hasConst() }
+
+// inline implements Type.
+func (t *aliasType) inline() bool { return t.typ.inline() }
+
+// IsSignedType implements Type.
+func (t *aliasType) IsSignedType() bool { return t.typ.IsSignedType() }
+
+// noReturn implements Type.
+func (t *aliasType) noReturn() bool { return t.typ.noReturn() }
+
+// restrict implements Type.
+func (t *aliasType) restrict() bool { return t.typ.restrict() }
 
 // setLen implements Type.
-func (t *aliasType) setLen(n uintptr) {
-	if t.Type != nil {
-		t.Type.setLen(n)
-	}
-}
+func (t *aliasType) setLen(n uintptr) { t.typ.setLen(n) }
 
-// isInt implements Type.
-func (t *aliasType) isIntegerType() bool {
-	if t.Type == nil {
-		return false
-	}
+// string implements Type.
+func (t *aliasType) string(b *strings.Builder) { b.WriteString(t.nm.String()) }
 
-	return t.Type.underlyingType().isIntegerType()
-}
+func (t *aliasType) underlyingType() Type { return t.typ.underlyingType() }
 
-// isArithmeticType implements Type.
-func (t *aliasType) isArithmeticType() bool { return isArithmeticType[t.underlyingType().Kind()] }
-
-// isSigned implements Type.
-func (t *aliasType) isSigned() bool {
-	if t.Type == nil {
-		return false
-	}
-
-	return t.Type.underlyingType().isSigned()
-}
-
-// Size implements Type.
-func (t *aliasType) Size() uintptr {
-	if t.Type == nil {
-		return 0
-	}
-
-	return t.Type.underlyingType().Size()
-}
-
-func (t *aliasType) underlyingType() Type {
-	if t.Type == nil {
-		return nil
-	}
-
-	return t.Type.underlyingType()
-}
+// volatile implements Type.
+func (t *aliasType) volatile() bool { return t.typ.volatile() }
 
 type field struct {
 	bitFieldMask uintptr // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
@@ -825,14 +999,17 @@ type field struct {
 
 	name StringID // Can be zero.
 
-	isBitField bool // Following fields are valid only if this field is true.
+	isBitField bool
 
 	bitFieldOffset byte // In bits from bit 0 within the field. Valid only when isBitField is true.
 	bitFieldWidth  byte // Width of the bit field in bits. Valid only when isBitField is true.
+	pad            byte
 }
 
-func (f *field) Offset() uintptr { return f.offset }
-func (f *field) Type() Type      { return f.typ }
+func (f *field) IsBitField() bool { return f.isBitField }
+func (f *field) Offset() uintptr  { return f.offset }
+func (f *field) Padding() int     { return int(f.pad) } // N/A for bitfields
+func (f *field) Type() Type       { return f.typ }
 
 func (f *field) string(b *strings.Builder) {
 	b.WriteString(f.name.String())
@@ -844,7 +1021,7 @@ func (f *field) string(b *strings.Builder) {
 }
 
 type structType struct { //TODO implement Type
-	typeBase
+	*typeBase
 
 	attr   []*AttributeSpecifier
 	fields []*field
@@ -853,12 +1030,15 @@ type structType struct { //TODO implement Type
 	tag StringID
 }
 
-func (t *structType) check(ctx *context) *structType {
+// Alias implements Type.
+func (t *structType) Alias() Type { return t }
+
+func (t *structType) check(ctx *context, n Node) *structType {
 	if t == nil {
 		return nil
 	}
 
-	return ctx.cfg.ABI.layout(ctx, t)
+	return ctx.cfg.ABI.layout(ctx, n, t)
 }
 
 func (t *structType) underlyingType() Type { return t }
@@ -890,20 +1070,33 @@ func (t *structType) string(b *strings.Builder) {
 	b.WriteByte('}')
 }
 
+// FieldByIndex implements Type.
+func (t *structType) FieldByIndex(i []int) Field {
+	if len(i) > 1 {
+		panic("TODO")
+	}
+
+	return t.fields[i[0]]
+}
+
 // FieldByName implements Type.
 func (t *structType) FieldByName(name StringID) (Field, bool) {
 	f, ok := t.m[name]
 	return f, ok
 }
 
+func (t *structType) NumField() int { return len(t.fields) }
+
 type taggedType struct {
+	*typeBase
 	resolutionScope Scope
 	typ             Type
 
 	tag StringID
-
-	typeBase
 }
+
+// Alias implements Type.
+func (t *taggedType) Alias() Type { return t }
 
 // String implements Type.
 func (t *taggedType) String() string {
@@ -915,8 +1108,8 @@ func (t *taggedType) String() string {
 // string implements Type.
 func (t *taggedType) string(b *strings.Builder) {
 	t.typeBase.string(b)
-	b.WriteString(t.tag.String())
 	b.WriteByte(' ')
+	b.WriteString(t.tag.String())
 }
 
 func (t *taggedType) underlyingType() Type {
@@ -957,7 +1150,9 @@ func (t *taggedType) underlyingType() Type {
 }
 
 // Size implements Type.
-func (t *taggedType) Size() uintptr { return t.underlyingType().Size() }
+func (t *taggedType) Size() uintptr {
+	return t.underlyingType().Size()
+}
 
 // Align implements Type.
 func (t *taggedType) Align() int { return t.underlyingType().Align() }
@@ -965,10 +1160,57 @@ func (t *taggedType) Align() int { return t.underlyingType().Align() }
 // FieldAlign implements Type.
 func (t *taggedType) FieldAlign() int { return t.underlyingType().FieldAlign() }
 
+type functionType struct {
+	typeBase
+	params []Object // *Declarator or *AbstractDeclarator
+
+	result Type
+
+	variadic bool
+}
+
+// Alias implements Type.
+func (t *functionType) Alias() Type { return t }
+
+// String implements Type.
+func (t *functionType) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *functionType) string(b *strings.Builder) {
+	b.WriteString("function(")
+	for i, v := range t.params {
+		v.Type().string(b)
+		if i < len(t.params)-1 {
+			b.WriteString(", ")
+		}
+	}
+	if t.variadic {
+		b.WriteString(", ...")
+	}
+	b.WriteString(")")
+	if t.result != nil && t.result.Kind() != Void {
+		b.WriteString(" returning ")
+		t.result.string(b)
+	}
+}
+
+// Parameters implements Type.
+func (t *functionType) Parameters() []Object { return t.params }
+
+// Result implements Type.
+func (t *functionType) Result() Type { return t.result }
+
+// IsVariadic implements Type.
+func (t *functionType) IsVariadic() bool { return t.variadic }
+
 func mkPtr(ctx *context, n Node, t Type) *pointerType {
 	base := t.base()
-	base.align = byte(ctx.cfg.ABI.align(ctx, n, Ptr))
-	base.fieldAlign = byte(ctx.cfg.ABI.fieldAlign(ctx, n, Ptr))
+	base.align = byte(ctx.cfg.ABI.align(Ptr))
+	base.fieldAlign = byte(ctx.cfg.ABI.fieldAlign(Ptr))
 	base.kind = byte(Ptr)
 	base.size = uintptr(ctx.cfg.ABI.size(Ptr))
 	return &pointerType{
@@ -979,4 +1221,28 @@ func mkPtr(ctx *context, n Node, t Type) *pointerType {
 
 type bitFieldType struct {
 	Type
+}
+
+// Alias implements Type.
+func (t *bitFieldType) Alias() Type { return t }
+
+// IsBitFieldType implements Type.
+func (t *bitFieldType) IsBitFieldType() bool { return true } //TODO-
+
+func defaultArgumentPromotion(ctx *context, n Node, op Operand) Operand {
+	t := op.Type()
+	if arithmeticTypes[t.Kind()] {
+		if t.IsIntegerType() {
+			return op.integerPromotion(ctx, n)
+		}
+
+		switch t.Kind() {
+		case Float:
+			return op.convertTo(ctx, n, ctx.cfg.ABI.Type(Double))
+		}
+	}
+	if t.Kind() == Array {
+		return op.convertTo(ctx, n, mkPtr(ctx, n, t.Elem()))
+	}
+	return op
 }

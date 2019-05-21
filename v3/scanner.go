@@ -702,10 +702,8 @@ func (s *scanner) parseLine(toks []token3) *ppLineDirective {
 }
 
 func ltrim3(toks []token3) []token3 {
-	for i, v := range toks {
-		if v.char != ' ' {
-			return toks[i:]
-		}
+	for len(toks) != 0 && toks[0].char == ' ' {
+		toks = toks[1:]
 	}
 	return toks
 }
@@ -965,13 +963,56 @@ again:
 		return &ppDefineFunctionMacroDirective{name: name, identifierList: list, toks: toks, variadic: variadic, namedVariadic: namedVariadic}
 	default:
 		toks = s.scanLineToEOL(toks)
-		repl := toks[n:] // sans #define identifier
-		if repl[0].char == ' ' {
-			repl = repl[1:]
-		}
+		repl := toks[n:]          // sans #define identifier
 		repl = repl[:len(repl)-1] // sans '\n'
+		// 6.10.3, 7
+		//
+		// Any white-space characters preceding or following the
+		// replacement list of preprocessing tokens are not considered
+		// part of the replacement list for either form of macro.
+		repl = trim3(repl)
+		repl = normalizeHashes(repl)
 		return &ppDefineFunctionMacroDirective{name: name, identifierList: list, toks: toks, replacementList: repl, variadic: variadic, namedVariadic: namedVariadic}
 	}
+}
+
+func isWhite(char rune) bool {
+	switch char {
+	case ' ', '\t', '\n', '\v', '\f':
+		return true
+	}
+	return false
+}
+
+func trim3(toks []token3) []token3 {
+	for len(toks) != 0 && isWhite(toks[0].char) {
+		toks = toks[1:]
+	}
+	for len(toks) != 0 && isWhite(toks[len(toks)-1].char) {
+		toks = toks[:len(toks)-1]
+	}
+	return toks
+}
+
+func normalizeHashes(toks []token3) []token3 {
+	w := 0
+	var last rune
+	for _, v := range toks {
+		switch {
+		case v.char == PPPASTE:
+			if isWhite(last) {
+				w--
+			}
+		case isWhite(v.char):
+			if last == '#' || last == PPPASTE {
+				continue
+			}
+		}
+		last = v.char
+		toks[w] = v
+		w++
+	}
+	return toks[:w]
 }
 
 func (s *scanner) parseDDD(toks []token3) ([]token3, bool) {
@@ -988,11 +1029,15 @@ func (s *scanner) parseDDD(toks []token3) ([]token3, bool) {
 // # define identifier replacement-list new-line
 func (s *scanner) parseDefineObjectMacro(n int, name token3, toks []token3) *ppDefineObjectMacroDirective {
 	toks = s.scanLineToEOL(toks)
-	repl := toks[n:] // sans #define identifier
-	if repl[0].char == ' ' {
-		repl = repl[1:]
-	}
+	repl := toks[n:]          // sans #define identifier
 	repl = repl[:len(repl)-1] // sans '\n'
+	// 6.10.3, 7
+	//
+	// Any white-space characters preceding or following the replacement
+	// list of preprocessing tokens are not considered part of the
+	// replacement list for either form of macro.
+	repl = trim3(repl)
+	repl = normalizeHashes(repl)
 	return &ppDefineObjectMacroDirective{name: name, toks: toks, replacementList: repl}
 }
 

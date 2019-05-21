@@ -3,6 +3,8 @@
 // license that can be found in the LICENSE file.
 
 //TODO testCC
+//TODO https://todo.sr.ht/~mcf/cc-issues/34
+//TODO http://mcpp.sourceforge.net/ "Provides a validation suite to test C/C++ preprocessor's conformance and quality comprehensively."
 
 //go:generate rm -f lexer.go
 //go:generate golex -o lexer.go lexer.l
@@ -10,11 +12,11 @@
 //go:generate rm -f ast.go
 //go:generate yy -o /dev/null -position -astImport "\"fmt\"\n\n\"modernc.org/token\"" -prettyString PrettyString -kind Case -noListKind -noPrivateHelpers -forceOptPos parser.yy
 
-//go:generate stringer -output stringer.go -linecomment -type=Kind
+//go:generate stringer -output stringer.go -linecomment -type=Kind,Linkage
 
 //go:generate sh -c "go test -run ^Example |fe"
 
-// Package cc is a C99 compiler front end.
+// Package cc is a C99 compiler front end. Work in progress.
 //
 // Links
 //
@@ -55,10 +57,14 @@ var (
 	cache       = newPPCache()
 	dict        = newDictionary()
 	dictStrings [math.MaxUint8 + 1]string
-	isTesting   bool
 	noPos       token.Position
 
-	idSizeT = dict.sid("size_t")
+	debugIncludePaths bool
+	debugWorkingDir   bool
+	isTesting         bool
+
+	idSSizeT = dict.sid("ssize_t")
+	idSizeT  = dict.sid("size_t")
 
 	token4Pool = sync.Pool{New: func() interface{} { r := make([]token4, 0); return &r }} //DONE benchmrk tuned capacity
 	tokenPool  = sync.Pool{New: func() interface{} { r := make([]Token, 0); return &r }}  //DONE benchmrk tuned capacity
@@ -85,17 +91,32 @@ var (
 			}
 			f.Format(suffix)
 		},
-		reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
-			x := v.(*operand)
+		//TODO- reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
+		//TODO- 	x := v.(*operand)
+		//TODO- 	f.Format(prefix)
+		//TODO- 	f.Format("%v, %[2]T(%[2]v)", x.typ, x.value)
+		//TODO- 	if x.typ != nil {
+		//TODO- 		f.Format(", size %v", x.typ.Size())
+		//TODO- 	}
+		//TODO- 	if x.Declarator() != nil {
+		//TODO- 		f.Format(", declarator %s", x.Declarator().Name())
+		//TODO- 	}
+		//TODO- 	f.Format(suffix)
+		//TODO- },
+		reflect.TypeOf(Operand(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
+			x := v.(Operand)
 			f.Format(prefix)
-			f.Format("%v, %[2]T(%[2]v)", x.typ, x.value)
-			if x.typ != nil {
-				f.Format(", size %v", x.typ.Size())
+			f.Format("%v, %[2]T(%[2]v)", x.Type(), x.Value())
+			f.Format(", size %v", x.Type().Size())
+			if x.Declarator() != nil {
+				f.Format(", declarator %s", x.Declarator().Name())
 			}
 			f.Format(suffix)
 		},
 	}
 )
+
+type Linkage int
 
 // Pragma defines behavior of the object passed to Config.PragmaHandler.
 type Pragma interface {
@@ -181,12 +202,12 @@ func (s *Scope) declare(nm StringID, n Node) {
 }
 
 // Parent returns s's outer scope, if any.
-func (s *Scope) Parent() Scope {
-	if *s == nil {
+func (s Scope) Parent() Scope {
+	if s == nil {
 		return nil
 	}
 
-	if x, ok := (*s)[scopeParent]; ok {
+	if x, ok := s[scopeParent]; ok {
 		return x[0].(struct {
 			noder
 			Scope
@@ -225,6 +246,29 @@ func (s *Scope) declarator(nm StringID, tok Token) *Declarator {
 				return x
 			case *Enumerator:
 				return nil
+			case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+				// nop
+			default:
+				panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(tok))) //TODOOK
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Scope) enumerator(nm StringID, tok Token) *Enumerator {
+	seq := tok.seq
+	for s := *s; s != nil; s = s.Parent() {
+		for _, v := range s[nm] {
+			switch x := v.(type) {
+			case *Declarator:
+				if !x.isVisible(seq) {
+					continue
+				}
+
+				return nil
+			case *Enumerator:
+				return x
 			case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 				// nop
 			default:
@@ -281,6 +325,9 @@ type Config struct {
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
+	DebugIncludePaths          bool
+	DebugWorkingDir            bool
+	PreprocessOnly             bool
 	fakeIncludes               bool // Testing only.
 	ignoreErrors               bool // Testing only.
 	ignoreIncludes             bool // Testing only.
@@ -288,7 +335,8 @@ type Config struct {
 }
 
 type context struct {
-	cfg *Config
+	cases []*LabeledStatement // switch
+	cfg   *Config
 	goscanner.ErrorList
 	includePaths    []string
 	intMaxWidth     int64 // Set if the preprocessor saw __INTMAX_WIDTH__.
@@ -298,11 +346,16 @@ type context struct {
 	modes           []mode
 	mu              sync.Mutex
 	sizeT           Type
+	ssizeT          Type
+	structs         map[StructInfo]struct{}
 	sysIncludePaths []string
 	tuSize          int64 // Sum of sizes of processed inputs
 
+	breaks    int
+	continues int
 	maxErrors int
 	mode      mode
+	switches  int
 	tuSources int // Number of processed inputs
 }
 
@@ -315,6 +368,7 @@ func newContext(cfg *Config) *context {
 		cfg:       cfg,
 		keywords:  keywords,
 		maxErrors: maxErrors,
+		structs:   map[StructInfo]struct{}{},
 	}
 }
 
@@ -324,6 +378,7 @@ func (c *context) errNode(n Node, msg string, args ...interface{}) (stop bool) {
 
 func (c *context) err(pos token.Position, msg string, args ...interface{}) (stop bool) {
 	// dbg("FAIL "+msg, args...)
+	//fmt.Printf("FAIL "+msg+"\n", args...)
 	if c.cfg.ignoreErrors {
 		return false
 	}
@@ -526,4 +581,41 @@ func (t *Token) Position() (r token.Position) {
 		}
 	}
 	return r
+}
+
+func tokStr(toks interface{}, sep string) string {
+	var b strings.Builder
+	switch x := toks.(type) {
+	case []token3:
+		for i, v := range x {
+			if i != 0 {
+				b.WriteString(sep)
+			}
+			b.WriteString(v.String())
+		}
+	case []token4:
+		for i, v := range x {
+			if i != 0 {
+				b.WriteString(sep)
+			}
+			b.WriteString(v.String())
+		}
+	case []cppToken:
+		for i, v := range x {
+			if i != 0 {
+				b.WriteString(sep)
+			}
+			b.WriteString(v.String())
+		}
+	case []Token:
+		for i, v := range x {
+			if i != 0 {
+				b.WriteString(sep)
+			}
+			b.WriteString(v.String())
+		}
+	default:
+		panic(fmt.Errorf("%T", x)) //TODOOK
+	}
+	return b.String()
 }

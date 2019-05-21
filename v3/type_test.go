@@ -92,9 +92,35 @@ func benchmarkTranslateSQLite(b *testing.B, cfg *Config, predef string, files ..
 }
 
 var (
-	benchmarkTranslateGCCAST *AST
-	testTranslateGCCAST      *AST
+	benchmarkTranslateAST *AST
+	testTranslateAST      *AST
 )
+
+func TestTranslateTCC(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short")
+		return
+	}
+
+	cfg := &Config{
+		ABI:                        testABI,
+		ignoreUndefinedIdentifiers: true,
+	}
+	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
+	if _, err := os.Stat(root); err != nil {
+		t.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
+	}
+
+	ok := 0
+	const dir = "tests/tests2"
+	t.Run(dir, func(t *testing.T) {
+		ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false, false)
+	})
+	t.Run(dir+"/gnu", func(t *testing.T) {
+		ok += testTranslateDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false, false)
+	})
+	t.Logf("ok %v", h(ok))
+}
 
 func TestTranslateGCC(t *testing.T) {
 	if testing.Short() {
@@ -117,16 +143,23 @@ func TestTranslateGCC(t *testing.T) {
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
 		t.Run(v, func(t *testing.T) {
-			ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)))
+			ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true, false)
 		})
 		t.Run(v+"/gnu", func(t *testing.T) {
-			ok += testTranslateDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)))
+			ok += testTranslateDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true, true)
 		})
 	}
 	t.Logf("ok %v", h(ok))
 }
 
-func testTranslateDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
+func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
+	blacklist := map[string]struct{}{ //TODO-
+		// TCC
+		//"70_floating_point_literals.c": {},
+
+		// GCC/exec
+		"pr80692.c": {}, // Decimal64 literals
+	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
 		re = regexp.MustCompile(s)
@@ -135,7 +168,7 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 	var files, psources int
 	var bytes int64
 	var m0, m1 runtime.MemStats
-	testTranslateGCCAST = nil
+	testTranslateAST = nil
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m0)
 	t0 := time.Now()
@@ -148,7 +181,11 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 			return skipDir(path)
 		}
 
-		if filepath.Ext(path) != ".c" && filepath.Ext(path) != ".h" || info.Mode()&os.ModeType != 0 {
+		if filepath.Ext(path) != ".c" && (!hfiles || filepath.Ext(path) != ".h") || info.Mode()&os.ModeType != 0 {
+			return nil
+		}
+
+		if _, ok := blacklist[filepath.Base(path)]; ok {
 			return nil
 		}
 
@@ -173,14 +210,14 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, files, path)
 		}
-		if testTranslateGCCAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-			if predef == testPredefGNU {
+		if testTranslateAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
+			if must {
 				t.Error(err)
 			}
 			return nil
 		}
 
-		if err = testTranslateGCCAST.Typecheck(); err != nil {
+		if err = testTranslateAST.Typecheck(); err != nil {
 			t.Error(err)
 			return nil
 		}
@@ -195,10 +232,29 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 	runtime.ReadMemStats(&m1)
 	t.Logf("files %v, sources %v, bytes %v, ok %v, %v, %v B/s, mem %v",
 		h(files), h(psources), h(bytes), h(ok), d, h(float64(time.Second)*float64(bytes)/float64(d)), h(m1.Alloc-m0.Alloc))
-	if files != ok && predef == testPredefGNU {
+	if files != ok && must {
 		t.Errorf("files %v, bytes %v, ok %v", files, bytes, ok)
 	}
 	return ok
+}
+
+func BenchmarkTranslateTCC(b *testing.B) {
+	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
+	if _, err := os.Stat(root); err != nil {
+		b.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
+	}
+
+	cfg := &Config{
+		ABI:                        testABI,
+		ignoreUndefinedIdentifiers: true,
+	}
+	const dir = "tests/tests2"
+	b.Run(dir, func(b *testing.B) {
+		benchmarkTranslateDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false)
+	})
+	b.Run(dir+"/gnu", func(b *testing.B) {
+		benchmarkTranslateDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false)
+	})
 }
 
 func BenchmarkTranslateGCC(b *testing.B) {
@@ -216,12 +272,20 @@ func BenchmarkTranslateGCC(b *testing.B) {
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
 		b.Run(v+"/gnu", func(b *testing.B) {
-			benchmarkTranslateDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)))
+			benchmarkTranslateDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true)
 		})
 	}
 }
 
-func benchmarkTranslateDir(b *testing.B, cfg *Config, predef, dir string) {
+func benchmarkTranslateDir(b *testing.B, cfg *Config, predef, dir string, must bool) {
+	blacklist := map[string]struct{}{ //TODO-
+		// TCC
+		"13_integer_literals.c":        {},
+		"70_floating_point_literals.c": {},
+
+		// GCC/exec
+		"pr80692.c": {}, // Decimal64 literals
+	}
 	var bytes int64
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -240,21 +304,27 @@ func benchmarkTranslateDir(b *testing.B, cfg *Config, predef, dir string) {
 				return nil
 			}
 
+			if _, ok := blacklist[filepath.Base(path)]; ok {
+				return nil
+			}
+
 			sources := []Source{
 				{Name: "<predefined>", Value: predef},
 				{Name: "<built-in>", Value: parserTestBuiltin},
 				{Name: path},
 			}
 			ctx := newContext(cfg)
-			if benchmarkTranslateGCCAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-				if predef == testPredefGNU {
+			if benchmarkTranslateAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
+				if must {
 					b.Error(err)
 				}
 				return nil
 			}
 
-			if err = benchmarkTranslateGCCAST.Typecheck(); err != nil {
-				b.Error(err)
+			if err = benchmarkTranslateAST.Typecheck(); err != nil {
+				if must {
+					b.Error(err)
+				}
 				return nil
 			}
 			bytes += ctx.tuSize

@@ -8,6 +8,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"bufio"
+	"compress/bzip2"
 	"compress/gzip"
 	flags "flag"
 	"fmt"
@@ -108,16 +109,18 @@ var (
 	oTrace    = flags.Bool("trc", false, "Print tested paths.")
 	oWalkDir  = flags.String("walkDir", "testdata", "")
 
-	gccDir    = filepath.FromSlash("testdata/gcc-8.3.0")
+	gccDir    = filepath.FromSlash("testdata/gcc-9.1.0")
 	sqliteDir = filepath.FromSlash("testdata/sqlite-amalgamation-3270200")
+	tccDir    = filepath.FromSlash("testdata/tcc-0.9.27")
 
 	downloads = []struct {
 		dir, url string
 		sz       int
 		dev      bool
 	}{
-		{gccDir, "http://mirrors-usa.go-parts.com/gcc/releases/gcc-8.3.0/gcc-8.3.0.tar.gz", 114000, true},
+		{gccDir, "http://mirrors-usa.go-parts.com/gcc/releases/gcc-9.1.0/gcc-9.1.0.tar.gz", 118000, true},
 		{sqliteDir, "https://www.sqlite.org/2019/sqlite-amalgamation-3270200.zip", 2200, false},
+		{tccDir, "http://download.savannah.gnu.org/releases/tinycc/tcc-0.9.27.tar.bz2", 620, false},
 	}
 
 	testBuiltinSource   *cachedPPFile
@@ -149,6 +152,7 @@ var (
 			ComplexUShort:     {4, 2, 2},
 			Decimal64:         {8, 8, 8},
 			Double:            {8, 8, 8},
+			Enum:              {4, 4, 4},
 			Float128:          {16, 8, 8},
 			Float32:           {4, 4, 4},
 			Float32x:          {4, 4, 4},
@@ -178,6 +182,8 @@ func init() {
 	isTesting = true
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	flags.BoolVar(&panicOnParserError, "panicOnParserError", false, "Panic on parser error.") //TODOOK
+	flags.BoolVar(&debugWorkingDir, "dbgWorkingDir", false, "")
+	flags.BoolVar(&debugIncludePaths, "dbgIncludePaths", false, "")
 
 	flags.Parse()
 	var err error
@@ -307,6 +313,46 @@ func download() {
 			}
 
 			switch {
+			case strings.HasSuffix(base, ".tar.bz2"):
+				b2r := bzip2.NewReader(bufio.NewReader(f))
+				tr := tar.NewReader(b2r)
+				for {
+					hdr, err := tr.Next()
+					if err != nil {
+						if err != io.EOF {
+							return err
+						}
+
+						return nil
+					}
+
+					switch hdr.Typeflag {
+					case tar.TypeDir:
+						if err = os.MkdirAll(filepath.Join(root, hdr.Name), 0770); err != nil {
+							return err
+						}
+					case tar.TypeReg, tar.TypeRegA:
+						f, err := os.OpenFile(filepath.Join(root, hdr.Name), os.O_CREATE|os.O_WRONLY, os.FileMode(hdr.Mode))
+						if err != nil {
+							return err
+						}
+
+						w := bufio.NewWriter(f)
+						if _, err = io.Copy(w, tr); err != nil {
+							return err
+						}
+
+						if err := w.Flush(); err != nil {
+							return err
+						}
+
+						if err := f.Close(); err != nil {
+							return err
+						}
+					default:
+						return fmt.Errorf("unexpected tar header typeflag %#02x", hdr.Typeflag)
+					}
+				}
 			case strings.HasSuffix(base, ".tar.gz"):
 				gr, err := gzip.NewReader(bufio.NewReader(f))
 				if err != nil {
@@ -428,43 +474,6 @@ func shift(tok Token) string {
 	return fmt.Sprintf("# %v: %v", caller.Name(), PrettyString(tok))
 }
 
-func tokStr(toks interface{}, sep string) string {
-	var b strings.Builder
-	switch x := toks.(type) {
-	case []token3:
-		for i, v := range x {
-			if i != 0 {
-				b.WriteString(sep)
-			}
-			b.WriteString(v.String())
-		}
-	case []token4:
-		for i, v := range x {
-			if i != 0 {
-				b.WriteString(sep)
-			}
-			b.WriteString(v.String())
-		}
-	case []cppToken:
-		for i, v := range x {
-			if i != 0 {
-				b.WriteString(sep)
-			}
-			b.WriteString(v.String())
-		}
-	case []Token:
-		for i, v := range x {
-			if i != 0 {
-				b.WriteString(sep)
-			}
-			b.WriteString(v.String())
-		}
-	default:
-		panic(fmt.Errorf("%T", x)) //TODOOK
-	}
-	return b.String()
-}
-
 func exampleAST(rule int, src string) interface{} {
 	src = strings.Replace(src, "\\n", "\n", -1)
 	cfg := &Config{ignoreErrors: true}
@@ -475,7 +484,6 @@ func exampleAST(rule int, src string) interface{} {
 		return "FAIL"
 	}
 
-	// dbg("", PrettyString(ast.TranslationUnit))
 	pc, _, _, _ := runtime.Caller(1)
 	typ := runtime.FuncForPC(pc - 1).Name()
 	i := strings.LastIndexByte(typ, '.')

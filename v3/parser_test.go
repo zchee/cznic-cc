@@ -454,6 +454,26 @@ func benchmarkDevParse(b *testing.B, predef string) {
 	b.SetBytes(bytes)
 }
 
+func TestParseTCC(t *testing.T) {
+	cfg := &Config{
+		ignoreUndefinedIdentifiers: true,
+	}
+	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
+	if _, err := os.Stat(root); err != nil {
+		t.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
+	}
+
+	ok := 0
+	const dir = "tests/tests2"
+	t.Run(dir, func(t *testing.T) {
+		ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false, true)
+	})
+	t.Run(dir+"/gnu", func(t *testing.T) {
+		ok += testParseDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false, true)
+	})
+	t.Logf("ok %v", h(ok))
+}
+
 func TestParseGCC(t *testing.T) {
 	if testing.Short() {
 		t.Skip("-short")
@@ -474,16 +494,25 @@ func TestParseGCC(t *testing.T) {
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
 		t.Run(v, func(t *testing.T) {
-			ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)))
+			ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true, false)
 		})
 		t.Run(v+"/gnu", func(t *testing.T) {
-			ok += testParseDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)))
+			ok += testParseDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true, true)
 		})
 	}
 	t.Logf("ok %v", h(ok))
 }
 
-func testParseDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
+func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
+	blacklist := map[string]struct{}{ //TODO-
+		"76_dollars_in_identifiers.c": {},
+		"82_attribs_position.c":       {},
+		"90_struct-init.c":            {},
+		"94_generic.c":                {},
+		"95_bitfields.c":              {},
+		"95_bitfields_ms.c":           {},
+		"99_fastcall.c":               {},
+	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
 		re = regexp.MustCompile(s)
@@ -504,13 +533,17 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 			return skipDir(path)
 		}
 
-		if filepath.Ext(path) != ".c" && filepath.Ext(path) != ".h" || info.Mode()&os.ModeType != 0 {
+		if filepath.Ext(path) != ".c" && (!hfiles || filepath.Ext(path) != ".h") || info.Mode()&os.ModeType != 0 {
+			return nil
+		}
+
+		if _, ok := blacklist[filepath.Base(path)]; ok {
 			return nil
 		}
 
 		files++
-
 		if re != nil && !re.MatchString(path) {
+			ok++
 			return nil
 		}
 
@@ -530,7 +563,7 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 			fmt.Fprintln(os.Stderr, files, path)
 		}
 		if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-			if predef == testPredefGNU {
+			if must {
 				t.Error(err)
 			}
 			return nil
@@ -546,10 +579,28 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string) (ok int) {
 	runtime.ReadMemStats(&m1)
 	t.Logf("files %v, sources %v, bytes %v, ok %v, %v, %v B/s, mem %v",
 		h(files), h(psources), h(bytes), h(ok), d, h(float64(time.Second)*float64(bytes)/float64(d)), h(m1.Alloc-m0.Alloc))
-	if files != ok && predef == testPredefGNU {
+	if files != ok && must {
 		t.Errorf("files %v, bytes %v, ok %v", files, bytes, ok)
 	}
 	return ok
+}
+
+func BenchmarkParseTCC(b *testing.B) {
+	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
+	if _, err := os.Stat(root); err != nil {
+		b.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
+	}
+
+	cfg := &Config{
+		ignoreUndefinedIdentifiers: true,
+	}
+	const dir = "tests/tests2"
+	b.Run(dir, func(b *testing.B) {
+		benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false)
+	})
+	b.Run(dir+"/gnu", func(b *testing.B) {
+		benchmarkParseDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false)
+	})
 }
 
 func BenchmarkParseGCC(b *testing.B) {
@@ -566,15 +617,15 @@ func BenchmarkParseGCC(b *testing.B) {
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
 		b.Run(v, func(b *testing.B) {
-			benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)))
+			benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), false)
 		})
 		b.Run(v+"/gnu", func(b *testing.B) {
-			benchmarkParseDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)))
+			benchmarkParseDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true)
 		})
 	}
 }
 
-func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string) {
+func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string, must bool) {
 	var bytes int64
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -600,7 +651,7 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string) {
 			}
 			ctx := newContext(cfg)
 			if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-				if predef == testPredefGNU {
+				if must {
 					b.Error(err)
 				}
 			}
