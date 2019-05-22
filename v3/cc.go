@@ -65,6 +65,7 @@ var (
 
 	idSSizeT = dict.sid("ssize_t")
 	idSizeT  = dict.sid("size_t")
+	idWCharT = dict.sid("wchar_t")
 
 	token4Pool = sync.Pool{New: func() interface{} { r := make([]token4, 0); return &r }} //DONE benchmrk tuned capacity
 	tokenPool  = sync.Pool{New: func() interface{} { r := make([]Token, 0); return &r }}  //DONE benchmrk tuned capacity
@@ -369,6 +370,7 @@ type context struct {
 	structs         map[StructInfo]struct{}
 	sysIncludePaths []string
 	tuSize          int64 // Sum of sizes of processed inputs
+	wcharT          Type
 
 	breaks    int
 	continues int

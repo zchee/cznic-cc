@@ -16,6 +16,7 @@ var (
 	_ Value = Int64Value(0)
 	_ Value = StringValue(0)
 	_ Value = Uint64Value(0)
+	_ Value = WideStringValue(0)
 
 	_ Operand = (*funcDesignator)(nil)
 	_ Operand = (*lvalue)(nil)
@@ -50,6 +51,19 @@ type Value interface {
 	//TODO all comparisons
 	//TODO shift
 }
+
+type WideStringValue StringID
+
+func (v WideStringValue) add(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) and(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) div(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) isZero() bool      { return v == 0 }
+func (v WideStringValue) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) mul(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) neg() Value        { panic("internal error") } //TODOOK
+func (v WideStringValue) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v WideStringValue) sub(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) xor(b Value) Value { panic("internal error") } //TODOOK
 
 type StringValue StringID
 

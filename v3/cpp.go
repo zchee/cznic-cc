@@ -2257,7 +2257,26 @@ func stringConst(t cppToken) string {
 	switch t.char {
 	case LONGSTRINGLITERAL:
 		s = s[1:] // Remove leading 'L'.
-		fallthrough
+		var buf []rune
+		s = s[1 : len(s)-1] // Remove outer "s.
+		runes := []rune(s)
+		for i := 0; i < len(runes); {
+			switch r := runes[i]; {
+			case r == '\\':
+				r, n := decodeEscapeSequence(runes[i:])
+				switch {
+				case r < 0:
+					buf = append(buf, -r)
+				default:
+					buf = append(buf, r)
+				}
+				i += n
+			default:
+				buf = append(buf, r)
+				i++
+			}
+		}
+		return string(buf)
 	case STRINGLITERAL:
 		var buf bytes.Buffer
 		s = s[1 : len(s)-1] // Remove outer "s.

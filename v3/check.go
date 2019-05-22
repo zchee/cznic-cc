@@ -137,8 +137,15 @@ func (n *Initializer) check(ctx *context) uintptr {
 
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		n.AssignmentExpression.check(ctx)
-		return 0 //TODO handle string literal
+		switch op := n.AssignmentExpression.check(ctx); x := op.Value().(type) {
+		case StringValue:
+			s := StringID(x).String()
+			return uintptr(len(s)) + 1
+		case WideStringValue:
+			s := []rune(StringID(x).String())
+			return uintptr(len(s)) + 1
+		}
+		return 0
 	case InitializerInitList: // '{' InitializerList ',' '}'
 		return n.InitializerList.check(ctx)
 	default:
@@ -868,6 +875,32 @@ func (n *MultiplicativeExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
+func wcharT(ctx *context, s Scope, tok Token) Type { //TODO method of context?
+	if d := s.typedef(idSSizeT, tok); d != nil {
+		return &aliasType{nm: idWCharT, typ: d.Type()}
+	}
+
+	wt := ctx.wcharT
+	if wt == nil {
+		abi := ctx.cfg.ABI
+		need := 4 //TODO Linux only
+		rank := maxRank
+		for v, ok := range integerTypes {
+			if !ok || abi.size(Kind(v)) < need || abi.SignedChar != abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
+				continue
+			}
+
+			wt = abi.Type(Kind(v))
+			rank = intConvRank[v]
+		}
+		if wt == nil {
+			panic("internal error") //TODOOK
+		}
+		ctx.wcharT = wt
+	}
+	return wt
+}
+
 func ssizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of context?
 	if t != nil && t.Incomplete() {
 		//TODO report error
@@ -886,11 +919,12 @@ func ssizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of
 	}
 
 	st := ctx.ssizeT
-	rank := maxRank
 	if st == nil {
 		abi := ctx.cfg.ABI
+		need := abi.size(Ptr)
+		rank := maxRank
 		for v, ok := range integerTypes {
-			if !ok || !abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
+			if !ok || abi.size(Kind(v)) < need || !abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
 				continue
 			}
 
@@ -919,11 +953,12 @@ func sizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of 
 	}
 
 	st := ctx.sizeT
-	rank := maxRank
 	if st == nil {
 		abi := ctx.cfg.ABI
+		need := abi.size(Ptr)
+		rank := maxRank
 		for v, ok := range integerTypes {
-			if !ok || abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
+			if !ok || abi.size(Kind(v)) < need || abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
 				continue
 			}
 
@@ -1598,10 +1633,11 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		//TODO
 	case PrimaryExpressionString: // STRINGLITERAL
 		ctx.not(n, mIntConstExpr)
-		n.Operand = &operand{typ: mkPtr(ctx, n, &typeBase{kind: byte(Char)}), value: StringValue(n.Token.Value)} //TODO ABI singleton
+		n.Operand = &operand{typ: mkPtr(ctx, n, &typeBase{kind: byte(Char)}), value: StringValue(n.Token.Value)} //TODO ABI singleton pchar
 	case PrimaryExpressionLString: // LONGSTRINGLITERAL
 		ctx.not(n, mIntConstExpr)
-		//TODO
+		t := wcharT(ctx, n.lexicalScope, n.Token)
+		n.Operand = &operand{typ: mkPtr(ctx, n, t), value: WideStringValue(n.Token.Value)} //TODO ABI singleton pwchar
 	case PrimaryExpressionExpr: // '(' Expression ')'
 		n.Operand = n.Expression.check(ctx)
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
@@ -2127,8 +2163,18 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
+		if a.Type().Kind() == Ptr && b.Type().IsScalarType() {
+			n.Operand = &operand{typ: a.Type()}
+			break
+		}
+
+		if b.Type().Kind() == Ptr && a.Type().IsScalarType() {
+			n.Operand = &operand{typ: b.Type()}
+			break
+		}
+
 		if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
-			//TODO ptr and int sum
+			//TODO report error
 			break
 		}
 
@@ -2142,8 +2188,13 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
-		if a.Type().Kind() == Ptr && b.Type().IsScalarType() {
+		if a.Type().Kind() == Ptr && b.Type().Kind() == Ptr {
 			n.Operand = ssizeT(ctx, n.lexicalScope, n.Token, nil)
+			break
+		}
+
+		if a.Type().Kind() == Ptr && b.Type().IsScalarType() {
+			n.Operand = &operand{typ: a.Type()}
 			break
 		}
 
@@ -2242,13 +2293,13 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 
 	// 6.2.2 Linkages of identifiers
 
+	typ = n.typ
 	switch {
 	case tld && td.static():
 		// 3: If the declaration of a file scope identifier for an object or a
 		// function contains the storage-class specifier static, the identifier
 		// has internal linkage.
 		n.Linkage = Internal
-
 	case td.extern():
 		//TODO
 		//
@@ -2272,8 +2323,8 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 		// extern.
 		n.Linkage = External
 	}
-	//TODO- fmt.Printf("%v: %q typ %v, kind %v, hasStorageSpecifiers %v, linkage %v\n", n.Position(), n.Name(), n.Type(), n.Type().Kind(), hasStorageSpecifiers, n.Linkage) //TODO-
-	//TODO- fmt.Printf("typedef %v, extern %v, static %v, auto %v, register %v, threadLocal %v\n", td.typedef(), td.extern(), td.static(), td.auto(), td.register(), td.threadLocal())
+	// fmt.Printf("%v: %q typ %v, kind %v, hasStorageSpecifiers %v, linkage %v\n", n.Position(), n.Name(), n.Type(), n.Type().Kind(), hasStorageSpecifiers, n.Linkage) //TODO-
+	// fmt.Printf("typedef %v, extern %v, static %v, auto %v, register %v, threadLocal %v\n", td.typedef(), td.extern(), td.static(), td.auto(), td.register(), td.threadLocal())
 	return n.typ
 }
 
