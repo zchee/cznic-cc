@@ -345,9 +345,14 @@ type parser struct {
 	in           chan *[]Token
 	inBuf        []Token
 	inBufp       *[]Token
+	prev         Token
 	resolveScope Scope
 	resolvedIn   Scope // Typedef name
 	scopes       int
+	sepLen       int
+	seps         []StringID
+	strcatLen    int
+	strcats      []StringID
 	switches     int
 
 	tok Token
@@ -489,6 +494,7 @@ func (p *parser) next() {
 		return
 	}
 
+more:
 	if len(p.inBuf) == 0 {
 		if p.inBufp != nil {
 			tokenPool.Put(p.inBufp)
@@ -506,7 +512,46 @@ func (p *parser) next() {
 		// fmt.Println(tokStr(p.inBuf, " ")) //TODO-
 	}
 	p.tok = p.inBuf[0]
-	p.inBuf = p.inBuf[1:]
+	switch p.tok.Rune {
+	case STRINGLITERAL, LONGSTRINGLITERAL:
+		switch p.prev.Rune {
+		case STRINGLITERAL, LONGSTRINGLITERAL:
+			p.strcatLen += len(p.tok.Value.String())
+			p.strcats = append(p.strcats, p.tok.Value)
+			p.sepLen += len(p.tok.Sep.String())
+			p.seps = append(p.seps, p.tok.Sep)
+			p.inBuf = p.inBuf[1:]
+			goto more
+		default:
+			p.strcatLen = len(p.tok.Value.String())
+			p.strcats = []StringID{p.tok.Value}
+			p.sepLen = len(p.tok.Sep.String())
+			p.seps = []StringID{p.tok.Sep}
+			p.prev = p.tok
+			p.inBuf = p.inBuf[1:]
+			goto more
+		}
+	default:
+		switch p.prev.Rune {
+		case STRINGLITERAL, LONGSTRINGLITERAL:
+			p.tok = p.prev
+			var b strings.Builder
+			b.Grow(p.strcatLen)
+			for _, v := range p.strcats {
+				b.WriteString(v.String())
+			}
+			p.tok.Value = dict.sid(b.String())
+			b.Reset()
+			b.Grow(p.sepLen)
+			for _, v := range p.seps {
+				b.WriteString(v.String())
+			}
+			p.tok.Sep = dict.sid(b.String())
+			p.prev.Rune = 0
+		default:
+			p.inBuf = p.inBuf[1:]
+		}
+	}
 	p.resolvedIn = nil
 out:
 	switch p.tok.Rune {

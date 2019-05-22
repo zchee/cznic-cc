@@ -160,14 +160,14 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 				// nop
 			default:
 				if len(*toks) != 0 {
-					p.in <- translationPhase5and6(ctx, toks)
+					p.in <- translationPhase5(ctx, toks)
 					toks = tokenPool.Get().(*[]Token)
 					*toks = (*toks)[:0]
 				}
 			}
 		}
 		if len(*toks) != 0 {
-			p.in <- translationPhase5and6(ctx, toks)
+			p.in <- translationPhase5(ctx, toks)
 		}
 	}()
 
@@ -199,7 +199,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 	}, nil
 }
 
-func translationPhase5and6(ctx *context, toks *[]Token) *[]Token {
+func translationPhase5(ctx *context, toks *[]Token) *[]Token {
 	// [0], 5.1.1.2, 5
 	//
 	// Each source character set member and escape sequence in character
@@ -237,29 +237,6 @@ func translationPhase5and6(ctx *context, toks *[]Token) *[]Token {
 			}
 		}
 	}
-	// [0], 5.1.1.2, 6
-	//
-	// Adjacent string literal tokens are concatenated.
-	w := 0
-	for i, tok := range *toks {
-		switch tok.Rune {
-		case STRINGLITERAL, LONGSTRINGLITERAL:
-			if i > 0 {
-				switch (*toks)[i-1].Rune {
-				case STRINGLITERAL, LONGSTRINGLITERAL:
-					(*toks)[i-1].Value = dict.sid((*toks)[i-1].String() + tok.String())
-					// /*x*/ "a" /*y*/ "b" -> "ab" with sep "/*x*/  /*y*/"
-					(*toks)[i-1].Sep = dict.sid((*toks)[i-1].Sep.String() + tok.Sep.String())
-					continue
-				}
-			}
-			fallthrough
-		default:
-			(*toks)[w] = tok
-			w++
-		}
-	}
-	*toks = (*toks)[:w]
 	return toks
 }
 

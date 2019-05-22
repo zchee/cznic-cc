@@ -126,7 +126,7 @@ func TestParseJhjourdan(t *testing.T) {
 	mustFail := map[string]struct{}{
 		"dangling_else_misleading.fail.c": {},
 		"atomic_parenthesis.c":            {}, // See [3], 3.5, pg. 20.
-		//TODO Typechecking needed to actually fail "bitfield_declaration_ambiguity.fail.c":  {},
+		//TODO Type checking needed to actually fail "bitfield_declaration_ambiguity.fail.c":  {},
 	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
@@ -705,5 +705,14 @@ func ExampleDirectDeclarator_line2() {
 	// &cc.DirectDeclarator{
 	// · Case: DirectDeclaratorIdent,
 	// · Token: foo.c:1234:5: IDENTIFIER "i",
+	// }
+}
+
+func ExamplePrimaryExpression_stringLiteral() {
+	fmt.Println(exampleAST(0, "char s[] = \"a\"\n\"b\"\n\"c\";"))
+	// Output:
+	// &cc.PrimaryExpression{
+	// · Case: PrimaryExpressionString,
+	// · Token: example.c:1:12: STRINGLITERAL "abc",
 	// }
 }
