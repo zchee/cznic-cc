@@ -586,6 +586,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
+			/*yy:field	AddressTaken	bool */
 			/*yy:field	IsTypedefName	bool */
 			/*yy:field	Linkage		Linkage */
 			/*yy:field	typ		Type */

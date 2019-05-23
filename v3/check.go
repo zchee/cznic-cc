@@ -116,7 +116,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		typ := n.Declarator.check(ctx, td, typ, tld)
 		n.AttributeSpecifierList.check(ctx)
 		length := n.Initializer.check(ctx)
-		if t := typ.underlyingType(); t.Kind() == Array && t.Len() == 0 {
+		if typ.Kind() == Array && typ.Len() == 0 {
 			if length == 0 {
 				//TODO report error
 			}
@@ -375,7 +375,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionDeref: // '*' CastExpression
 		ctx.not(n, mIntConstExpr)
 		op := n.CastExpression.check(ctx)
-		if op.Type().Kind() != Ptr {
+		if op.Type().Decay().Kind() != Ptr {
 			//TODO report error
 			break
 		}
@@ -407,8 +407,12 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		}
 		n.Operand = op
 	case UnaryExpressionCpl: // '~' CastExpression
-		n.CastExpression.check(ctx)
-		//TODO
+		op := n.CastExpression.check(ctx)
+		if !op.Type().IsIntegerType() {
+			//TODO report error
+			break
+		}
+		n.Operand = &operand{typ: op.integerPromotion(ctx, n).Type()}
 	case UnaryExpressionNot: // '!' CastExpression
 		n.CastExpression.check(ctx)
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
@@ -533,14 +537,13 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 		return n.check(ctx)
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
-		t := op.Type().underlyingType()
-		if k := t.Kind(); k != Ptr && k != Array && k != Invalid {
+		t := op.Type()
+		if k := t.Decay().Kind(); k != Ptr && k != Invalid {
 			//TODO report error
 			break
 		}
 
 		st := t.Elem()
-		st = st.underlyingType()
 		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
 			//TODO report error
 			break
@@ -568,7 +571,14 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	case PostfixExpressionDec: // PostfixExpression "--"
 		panic(n.Position().String())
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
-		//TODO
+		t := n.TypeName.check(ctx)
+		n.InitializerList.check(ctx)
+		if t.Kind() == Array && t.Incomplete() {
+			panic("TODO")
+			break
+		}
+
+		n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, t)}}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		panic(n.Position().String())
 	default:
@@ -591,6 +601,7 @@ func (n *PrimaryExpression) addr(ctx *context) Operand {
 			case Function:
 				// nop
 			default:
+				d.AddressTaken = true
 				n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, d.Type())}, declarator: d}
 			}
 		}
@@ -1448,20 +1459,20 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		op := n.PostfixExpression.check(ctx)
 		n.Expression.check(ctx)
-		t := op.Type().underlyingType()
-		if k := t.Kind(); k != Array && k != Ptr && k != Invalid {
+		t := op.Type()
+		if k := t.Decay().Kind(); k != Ptr && k != Invalid {
 			//TODO report error
 			break
 		}
 
-		n.Operand = &lvalue{Operand: &operand{typ: t.Elem().underlyingType()}}
+		n.Operand = &lvalue{Operand: &operand{typ: t.Elem()}}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		op := n.PostfixExpression.check(ctx)
 		args := n.ArgumentExpressionList.check(ctx)
 		n.Operand = n.checkCall(ctx, n, op.Type(), args)
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
-		st := op.Type().underlyingType()
+		st := op.Type()
 		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
 			//TODO report error
 			break
@@ -1478,14 +1489,13 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		//TODO
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
-		t := op.Type().underlyingType()
-		if k := t.Kind(); k != Ptr && k != Array && k != Invalid {
+		t := op.Type()
+		if k := t.Decay().Kind(); k != Ptr && k != Invalid {
 			//TODO report error
 			break
 		}
 
 		st := t.Elem()
-		st = st.underlyingType()
 		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
 			//TODO report error
 			break
@@ -1504,9 +1514,12 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionDec: // PostfixExpression "--"
 		n.Operand = &operand{typ: n.PostfixExpression.check(ctx).Type()}
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
-		n.TypeName.check(ctx)
-		n.InitializerList.check(ctx)
-		//TODO
+		t := n.TypeName.check(ctx)
+		len := n.InitializerList.check(ctx)
+		if t.Kind() == Array && t.Incomplete() {
+			t.setLen(len)
+		}
+		n.Operand = &lvalue{Operand: &operand{typ: t}}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		n.TypeName.check(ctx)
 		n.TypeName2.check(ctx)
@@ -1550,18 +1563,28 @@ func (n *PostfixExpression) checkCall(ctx *context, nd Node, f Type, args []Oper
 		switch {
 		case i < len(params):
 			//TODO check assignability
-			switch {
-			case arg.Type().Kind() == Array:
-				n.Arguments = append(n.Arguments, mkPtr(ctx, n, arg.Type().Elem()))
-			default:
-				n.Arguments = append(n.Arguments, params[i].Type())
-			}
+			n.Arguments = append(n.Arguments, params[i].Type().Decay())
 		default:
 			n.Arguments = append(n.Arguments, defaultArgumentPromotion(ctx, nd, arg).Type())
 		}
 	}
 	//fmt.Printf("==== %v: %p %v %v\n", n.Position(), n, len(args), len(n.Arguments))
 	return r
+}
+
+func defaultArgumentPromotion(ctx *context, n Node, op Operand) Operand {
+	t := op.Type().Decay()
+	if arithmeticTypes[t.Kind()] {
+		if t.IsIntegerType() {
+			return op.integerPromotion(ctx, n)
+		}
+
+		switch t.Kind() {
+		case Float:
+			return op.convertTo(ctx, n, ctx.cfg.ABI.Type(Double))
+		}
+	}
+	return op
 }
 
 func (n *ArgumentExpressionList) check(ctx *context) (r []Operand) {
@@ -1630,7 +1653,8 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		s := []rune(n.Token.Value.String())
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int), value: Int64Value(s[0])}
 	case PrimaryExpressionLChar: // LONGCHARCONST
-		//TODO
+		s := []rune(n.Token.Value.String())
+		n.Operand = &operand{typ: wcharT(ctx, n.lexicalScope, n.Token), value: Int64Value(s[0])}
 	case PrimaryExpressionString: // STRINGLITERAL
 		ctx.not(n, mIntConstExpr)
 		n.Operand = &operand{typ: mkPtr(ctx, n, &typeBase{kind: byte(Char)}), value: StringValue(n.Token.Value)} //TODO ABI singleton pchar
@@ -1848,8 +1872,8 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a := flat(ctx, n, n.Expression.check(ctx))
-		b := flat(ctx, n, n.ConditionalExpression.check(ctx))
+		a := n.Expression.check(ctx)
+		b := n.ConditionalExpression.check(ctx)
 		// One of the following shall hold for the second and third
 		// operands:
 		//TODO — both operands have the same structure or union type;
@@ -1888,14 +1912,6 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 		panic("internal error") //TODOOK
 	}
 	return n.Operand
-}
-
-func flat(ctx *context, n Node, op Operand) Operand {
-	if op.Type().Kind() != Array {
-		return op
-	}
-
-	return &operand{typ: mkPtr(ctx, n, op.Type().Elem())}
 }
 
 func (n *LogicalOrExpression) check(ctx *context) Operand {
@@ -2042,8 +2058,8 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
 		lo := n.EqualityExpression.check(ctx)
 		ro := n.RelationalExpression.check(ctx)
-		lt := lo.Type()
-		rt := ro.Type()
+		lt := lo.Type().Decay()
+		rt := ro.Type().Decay()
 		switch {
 		case lt.IsArithmeticType() && rt.IsArithmeticType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
@@ -2052,12 +2068,6 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 			n.promote = lt
 			//TODO
 		case (lt.Kind() == Ptr || lt.IsIntegerType()) && rt.Kind() == Ptr:
-			n.promote = rt
-			//TODO
-		case lt.Kind() == Ptr && rt.Kind() == Array:
-			n.promote = lt
-			//TODO
-		case lt.Kind() == Array && rt.Kind() == Ptr:
 			n.promote = rt
 			//TODO
 		default:
@@ -2097,8 +2107,8 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
 		lo := n.RelationalExpression.Operand
 		ro := n.ShiftExpression.Operand
-		lt := lo.Type()
-		rt := ro.Type()
+		lt := lo.Type().Decay()
+		rt := ro.Type().Decay()
 		switch {
 		case lt.IsRealType() && rt.IsRealType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
@@ -2163,13 +2173,13 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
-		if a.Type().Kind() == Ptr && b.Type().IsScalarType() {
-			n.Operand = &operand{typ: a.Type()}
+		if t := a.Type().Decay(); t.Kind() == Ptr && b.Type().IsScalarType() {
+			n.Operand = &operand{typ: t}
 			break
 		}
 
-		if b.Type().Kind() == Ptr && a.Type().IsScalarType() {
-			n.Operand = &operand{typ: b.Type()}
+		if t := b.Type().Decay(); t.Kind() == Ptr && a.Type().IsScalarType() {
+			n.Operand = &operand{typ: t}
 			break
 		}
 
@@ -2188,13 +2198,13 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
-		if a.Type().Kind() == Ptr && b.Type().Kind() == Ptr {
+		if a.Type().Decay().Kind() == Ptr && b.Type().Decay().Kind() == Ptr {
 			n.Operand = ssizeT(ctx, n.lexicalScope, n.Token, nil)
 			break
 		}
 
-		if a.Type().Kind() == Ptr && b.Type().IsScalarType() {
-			n.Operand = &operand{typ: a.Type()}
+		if t := a.Type().Decay(); t.Kind() == Ptr && b.Type().IsScalarType() {
+			n.Operand = &operand{typ: t}
 			break
 		}
 
@@ -2341,13 +2351,13 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		n.AttributeSpecifierList.check(ctx)
 		return n.Declarator.check(ctx, noTypeDescriptor, typ, false)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, true)
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, true))
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
-		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, false)
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false))
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
-		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, false)
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false))
 	case DirectDeclaratorStar: // DirectDeclarator '[' TypeQualifiers '*' ']'
-		return checkArray(ctx, n, n.DirectDeclarator.check(ctx, typ), n.AssignmentExpression, false)
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, nil, true))
 	case DirectDeclaratorFuncParam: // DirectDeclarator '(' ParameterTypeList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ}
 		n.ParameterTypeList.check(ctx, ft)
@@ -2401,12 +2411,12 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 
 			b.size = length * typ.Size()
 		}
-		return &arrayType{typeBase: b, elem: typ, length: length, vla: vla}
+		return &arrayType{typeBase: b, decay: mkPtr(ctx, n, typ), elem: typ, length: length, vla: vla}
 	case !exprIsOptional:
 		panic("TODO")
 	default:
 		b.flags |= fIncomplete
-		return &arrayType{typeBase: b, elem: typ}
+		return &arrayType{typeBase: b, decay: mkPtr(ctx, n, typ), elem: typ}
 	}
 }
 

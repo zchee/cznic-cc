@@ -227,8 +227,8 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	a = a.normalize(ctx)
 	b = b.normalize(ctx)
 
-	at := a.Type().underlyingType()
-	bt := b.Type().underlyingType()
+	at := a.Type()
+	bt := b.Type()
 
 	// First, if the corresponding real type of either operand is long
 	// double, the other operand is converted, without change of type
@@ -270,8 +270,8 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// Otherwise, the integer promotions are performed on both operands.
 	a = a.integerPromotion(ctx, n)
 	b = b.integerPromotion(ctx, n)
-	at = a.Type().underlyingType()
-	bt = b.Type().underlyingType()
+	at = a.Type()
+	bt = b.Type()
 
 	// Then the following rules are applied to the promoted operands:
 
@@ -317,7 +317,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// Otherwise, both operands are converted to the unsigned integer type
 	// corresponding to the type of the operand with signed integer type.
 	var typ Type
-	switch signed.underlyingType().Kind() {
+	switch signed.Kind() {
 	case Int:
 		//TODO if a.IsEnumConst || b.IsEnumConst {
 		//TODO 	return a, b
@@ -359,7 +359,7 @@ func (o *operand) integerPromotion(ctx *context, n Node) Operand {
 		return o
 	}
 
-	switch t.underlyingType().Kind() {
+	switch t.Kind() {
 	case
 		Char,
 		SChar,
@@ -378,12 +378,12 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 	}
 
 	abi := ctx.cfg.ABI
-	k0 := o.Type().underlyingType().Kind()
+	k0 := o.Type().Kind()
 	if o.Value() == nil {
 		return &operand{typ: t}
 	}
 
-	k := t.underlyingType().Kind()
+	k := t.Kind()
 	if k == Void {
 		return &operand{typ: abi.Type(Void)} //TODO ABI singleton
 	}
@@ -445,7 +445,7 @@ func (o *operand) normalize(ctx *context) Operand {
 
 func convertInt64(n int64, t Type, ctx *context) int64 {
 	abi := ctx.cfg.ABI
-	k := t.underlyingType().Kind()
+	k := t.Kind()
 	if k == Enum {
 		//TODO
 	}

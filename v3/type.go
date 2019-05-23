@@ -157,6 +157,10 @@ type Type interface {
 	// Attributes returns type's attributes, if any.
 	Attributes() []*AttributeSpecifier
 
+	// Decay returns itself for non array types and the pointer to array
+	// element otherwise.
+	Decay() Type
+
 	// Elem returns a type's element type. It panics if the type's Kind is
 	// valid but not Array or Ptr.
 	Elem() Type
@@ -570,6 +574,15 @@ func (t *typeBase) Align() int { return int(t.align) }
 // base implements Type.
 func (t *typeBase) base() typeBase { return *t }
 
+// Decay implements Type.
+func (t *typeBase) Decay() Type {
+	if t.Kind() != Array {
+		return t
+	}
+
+	panic(fmt.Errorf("%s: Decay of invalid type", t.Kind()))
+}
+
 // Elem implements Type.
 func (t *typeBase) Elem() Type {
 	if t.Kind() == Invalid {
@@ -814,6 +827,9 @@ func (t *pointerType) Alias() Type { return t }
 // Attributes implements Type.
 func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
 
+// Decay implements Type.
+func (t *pointerType) Decay() Type { return t }
+
 // Elem implements Type.
 func (t *pointerType) Elem() Type { return t.elem }
 
@@ -840,6 +856,7 @@ type arrayType struct {
 	typeBase
 
 	expr   *AssignmentExpression
+	decay  Type
 	elem   Type
 	length uintptr
 
@@ -870,6 +887,9 @@ func (t *arrayType) string(b *strings.Builder) {
 
 // Attributes implements Type.
 func (t *arrayType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
+
+// Decay implements Type.
+func (t *arrayType) Decay() Type { return t.decay }
 
 // Elem implements Type.
 func (t *arrayType) Elem() Type { return t.elem }
@@ -902,6 +922,9 @@ func (t *aliasType) Align() int { return t.typ.Align() }
 
 // Attributes implements Type.
 func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
+
+// Decay implements Type.
+func (t *aliasType) Decay() Type { return t.typ.Decay() }
 
 // Elem implements Type.
 func (t *aliasType) Elem() Type { return t.typ.Elem() }
@@ -1041,6 +1064,9 @@ func (t *structType) check(ctx *context, n Node) *structType {
 	return ctx.cfg.ABI.layout(ctx, n, t)
 }
 
+// Decay implements Type.
+func (t *structType) Decay() Type { return t }
+
 func (t *structType) underlyingType() Type { return t }
 
 // String implements Type.
@@ -1104,6 +1130,15 @@ func (t *taggedType) String() string {
 	t.string(&b)
 	return strings.TrimSpace(b.String())
 }
+
+// NumField implements Type.
+func (t *taggedType) NumField() int { return t.underlyingType().NumField() }
+
+// FieldByIndex implements Type.
+func (t *taggedType) FieldByIndex(i []int) Field { return t.underlyingType().FieldByIndex(i) }
+
+// FieldByName implements Type.
+func (t *taggedType) FieldByName(s StringID) (Field, bool) { return t.underlyingType().FieldByName(s) }
 
 // string implements Type.
 func (t *taggedType) string(b *strings.Builder) {
@@ -1172,6 +1207,9 @@ type functionType struct {
 // Alias implements Type.
 func (t *functionType) Alias() Type { return t }
 
+// Decay implements Type.
+func (t *functionType) Decay() Type { return t }
+
 // String implements Type.
 func (t *functionType) String() string {
 	var b strings.Builder
@@ -1228,21 +1266,3 @@ func (t *bitFieldType) Alias() Type { return t }
 
 // IsBitFieldType implements Type.
 func (t *bitFieldType) IsBitFieldType() bool { return true } //TODO-
-
-func defaultArgumentPromotion(ctx *context, n Node, op Operand) Operand {
-	t := op.Type()
-	if arithmeticTypes[t.Kind()] {
-		if t.IsIntegerType() {
-			return op.integerPromotion(ctx, n)
-		}
-
-		switch t.Kind() {
-		case Float:
-			return op.convertTo(ctx, n, ctx.cfg.ABI.Type(Double))
-		}
-	}
-	if t.Kind() == Array {
-		return op.convertTo(ctx, n, mkPtr(ctx, n, t.Elem()))
-	}
-	return op
-}
