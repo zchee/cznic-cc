@@ -15,6 +15,10 @@ import (
 
 type mode = int
 
+var (
+	idClosure = dict.sid("0closure") // Must be invalid indentifier.
+)
+
 const (
 	// [2], 6.6 Constant expressions, 6
 	//
@@ -1629,7 +1633,22 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 			default:
 				n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
 			}
-			break
+			if ctx.closure == nil {
+				return n.Operand
+			}
+
+			for s := n.lexicalScope; s != nil; s = s.Parent() {
+				if _, ok := s[idClosure]; !ok {
+					continue
+				}
+
+				if ctx.closure == nil {
+					ctx.closure = map[StringID]struct{}{}
+				}
+				ctx.closure[d.Name()] = struct{}{}
+				return n.Operand
+			}
+			return n.Operand
 		}
 
 		//TODO report err
@@ -2657,9 +2676,20 @@ func (n *BlockItem) check(ctx *context) {
 	case BlockItemLabel: // LabelDeclaration
 		n.LabelDeclaration.check(ctx)
 	case BlockItemFuncDef: // DeclarationSpecifiers Declarator CompoundStatement
-		typ := n.DeclarationSpecifiers.check(ctx)
-		n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, false) //TODO what's the linkage of nested fns?
-		n.CompoundStatement.check(ctx)
+		ctxClosure := ctx.closure
+		ctx.closure = nil
+		ctxCheckFn := ctx.checkFn
+		n.fn = &FunctionDefinition{
+			DeclarationSpecifiers: n.DeclarationSpecifiers,
+			Declarator:            n.Declarator,
+			CompoundStatement:     n.CompoundStatement,
+		}
+		ctx.checkFn = n.fn
+		n.CompoundStatement.scope.declare(idClosure, n)
+		ctx.checkFn.check(ctx)
+		delete(n.CompoundStatement.scope, idClosure)
+		ctx.checkFn = ctxCheckFn
+		ctx.closure = ctxClosure
 	case BlockItemPragma: // PragmaSTDC
 		n.PragmaSTDC.check(ctx)
 	default:

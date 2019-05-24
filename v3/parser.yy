@@ -768,6 +768,8 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example int f() { int i; double j; }*/
 			|	BlockItemList BlockItem
 
+			/*yy:field	fn *FunctionDefinition		// Case FuncDef */
+			/*yy:field	closure map[StringID]struct{}	// Case FuncDef */
 			/*yy:example int f() { int i; }*/
 /*yy:case Decl       */ BlockItem:
 				Declaration

@@ -278,6 +278,13 @@ func (n *AlignmentSpecifier) align() int {
 	return 1 //TODO
 }
 
+// Closure reports the variables closed over by a nested function (case
+// BlockItemFuncDef).
+func (n *BlockItem) Closure() map[StringID]struct{} { return n.closure }
+
+// FunctionDefinition returns the nested function (case BlockItemFuncDef).
+func (n *BlockItem) FunctionDefinition() *FunctionDefinition { return n.fn }
+
 func (n *Declarator) Declarator() *Declarator { return n }
 func (n *Declarator) IsStatic() bool          { return n.td.static() }
 func (n *Declarator) isVisible(at int32) bool { return n.DirectDeclarator.ends() < at }

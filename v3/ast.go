@@ -888,7 +888,9 @@ func (n BlockItemCase) String() string {
 //	|       DeclarationSpecifiers Declarator CompoundStatement  // Case BlockItemFuncDef
 //	|       PragmaSTDC                                          // Case BlockItemPragma
 type BlockItem struct {
-	Case                  BlockItemCase `PrettyPrint:"stringer,zero"`
+	fn                    *FunctionDefinition   // Case FuncDef
+	closure               map[StringID]struct{} // Case FuncDef
+	Case                  BlockItemCase         `PrettyPrint:"stringer,zero"`
 	CompoundStatement     *CompoundStatement
 	Declaration           *Declaration
 	DeclarationSpecifiers *DeclarationSpecifiers

@@ -357,6 +357,7 @@ type context struct {
 	cases   []*LabeledStatement // switch
 	cfg     *Config
 	checkFn *FunctionDefinition
+	closure map[StringID]struct{}
 	goscanner.ErrorList
 	includePaths    []string
 	intMaxWidth     int64 // Set if the preprocessor saw __INTMAX_WIDTH__.
