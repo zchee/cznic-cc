@@ -1307,10 +1307,12 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	Declarator:
 //	        Pointer DirectDeclarator AttributeSpecifierList
 type Declarator struct {
-	AddressTaken           bool
-	IsTypedefName          bool
 	Linkage                Linkage
 	typ                    Type
+	Read                   int
+	Write                  int
+	AddressTaken           bool
+	IsTypedefName          bool
 	td                     typeDescriptor
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator

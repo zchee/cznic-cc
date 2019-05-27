@@ -165,6 +165,10 @@ type Type interface {
 	// valid but not Array or Ptr.
 	Elem() Type
 
+	// BitField returns the associated Field of a type. It panics if the
+	// type IsBitFieldType returns false.
+	BitField() Field
+
 	// FieldAlign returns the alignment in bytes of a value of this type
 	// when used as a field in a struct.
 	FieldAlign() int
@@ -573,6 +577,15 @@ func (t *typeBase) Alias() Type { return t }
 // Align implements Type.
 func (t *typeBase) Align() int { return int(t.align) }
 
+// BitField implements Type.
+func (t *typeBase) BitField() Field {
+	if t.Kind() == Invalid {
+		return nil
+	}
+
+	panic(fmt.Errorf("%s: BitField of invalid type", t.Kind()))
+}
+
 // base implements Type.
 func (t *typeBase) base() typeBase { return *t }
 
@@ -925,6 +938,9 @@ func (t *aliasType) Align() int { return t.typ.Align() }
 // Attributes implements Type.
 func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
 
+// BitField implements Type.
+func (t *aliasType) BitField() Field { return t.typ.BitField() }
+
 // Decay implements Type.
 func (t *aliasType) Decay() Type { return t.typ.Decay() }
 
@@ -1265,6 +1281,7 @@ func mkPtr(ctx *context, n Node, t Type) *pointerType {
 
 type bitFieldType struct {
 	Type
+	field *field
 }
 
 // Alias implements Type.
@@ -1272,3 +1289,6 @@ func (t *bitFieldType) Alias() Type { return t }
 
 // IsBitFieldType implements Type.
 func (t *bitFieldType) IsBitFieldType() bool { return true } //TODO-
+
+// BitField implements Type.
+func (t *bitFieldType) BitField() Field { return t.field }

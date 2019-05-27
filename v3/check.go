@@ -225,6 +225,9 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.Operand = n.ConditionalExpression.check(ctx)
 	case AssignmentExpressionAssign: // UnaryExpression '=' AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Write++
+		}
 		if !l.IsLValue() {
 			//TODO panic(n.Position().String()) // report error
 			break
@@ -235,6 +238,10 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.Operand = l.(*lvalue).Operand
 	case AssignmentExpressionMul: // UnaryExpression "*=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		if !l.IsLValue() {
 			//TODO panic(n.Position().String()) // report error
 			break
@@ -249,6 +256,10 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionDiv: // UnaryExpression "/=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		if !l.IsLValue() {
 			//TODO panic(n.Position().String()) // report error
 			break
@@ -263,9 +274,18 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionMod: // UnaryExpression "%=" AssignmentExpression
 		n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		n.AssignmentExpression.check(ctx)
+		//TODO
 	case AssignmentExpressionAdd: // UnaryExpression "+=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		if !l.IsLValue() {
 			//TODO panic(n.Position().String()) // report error
 			break
@@ -281,6 +301,10 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionSub: // UnaryExpression "-=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		if !l.IsLValue() {
 			//TODO panic(n.Position().String()) // report error
 			break
@@ -296,19 +320,44 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionLsh: // UnaryExpression "<<=" AssignmentExpression
 		n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		n.AssignmentExpression.check(ctx)
+		//TODO
 	case AssignmentExpressionRsh: // UnaryExpression ">>=" AssignmentExpression
 		n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		n.AssignmentExpression.check(ctx)
+		//TODO
 	case AssignmentExpressionAnd: // UnaryExpression "&=" AssignmentExpression
 		n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		n.AssignmentExpression.check(ctx)
+		//TODO
 	case AssignmentExpressionXor: // UnaryExpression "^=" AssignmentExpression
 		n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		n.AssignmentExpression.check(ctx)
+		//TODO
 	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
 		n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
 		n.AssignmentExpression.check(ctx)
+		//TODO
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -325,9 +374,19 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionPostfix: // PostfixExpression
 		n.Operand = n.PostfixExpression.check(ctx)
 	case UnaryExpressionInc: // "++" UnaryExpression
-		n.Operand = &operand{typ: n.UnaryExpression.check(ctx).Type()}
+		op := n.UnaryExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
+		n.Operand = &operand{typ: op.Type()}
 	case UnaryExpressionDec: // "--" UnaryExpression
-		n.Operand = &operand{typ: n.UnaryExpression.check(ctx).Type()}
+		op := n.UnaryExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
+		n.Operand = &operand{typ: op.Type()}
 	case UnaryExpressionAddrof: // '&' CastExpression
 		ctx.not(n, mIntConstExpr)
 		op := n.CastExpression.addr(ctx)
@@ -891,7 +950,7 @@ func (n *MultiplicativeExpression) addr(ctx *context) Operand {
 }
 
 func wcharT(ctx *context, s Scope, tok Token) Type { //TODO method of context?
-	if d := s.typedef(idSSizeT, tok); d != nil {
+	if d := s.typedef(idWCharT, tok); d != nil {
 		return &aliasType{nm: idWCharT, typ: d.Type()}
 	}
 
@@ -1375,7 +1434,7 @@ func (n *StructDeclarator) check(ctx *context, td typeDescriptor, typ Type) *fie
 		sf.name = n.Declarator.Name()
 	case StructDeclaratorBitField: // Declarator ':' ConstantExpression AttributeSpecifierList
 		sf.isBitField = true
-		sf.typ = &bitFieldType{Type: n.Declarator.check(ctx, td, typ, false)}
+		sf.typ = &bitFieldType{Type: n.Declarator.check(ctx, td, typ, false), field: sf}
 		sf.name = n.Declarator.Name()
 		if op := n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr); op.Type().IsIntegerType() {
 			switch x := op.Value().(type) {
@@ -1514,9 +1573,19 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.Field = f
 		n.Operand = &lvalue{Operand: &operand{typ: f.Type()}}
 	case PostfixExpressionInc: // PostfixExpression "++"
-		n.Operand = &operand{typ: n.PostfixExpression.check(ctx).Type()}
+		op := n.PostfixExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
+		n.Operand = &operand{typ: op.Type()}
 	case PostfixExpressionDec: // PostfixExpression "--"
-		n.Operand = &operand{typ: n.PostfixExpression.check(ctx).Type()}
+		op := n.PostfixExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.Read++
+			d.Write++
+		}
+		n.Operand = &operand{typ: op.Type()}
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
 		t := n.TypeName.check(ctx)
 		len := n.InitializerList.check(ctx)
@@ -1631,6 +1700,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 			case Function:
 				n.Operand = &funcDesignator{Operand: &operand{typ: t}, declarator: d}
 			default:
+				d.Read++
 				n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
 			}
 			if ctx.closure == nil {

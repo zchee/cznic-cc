@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	//TODO- "fmt" //TODO-
+	"encoding/binary"
 	"math"
 )
 
@@ -80,6 +81,7 @@ type ABIType struct {
 
 // ABI describes selected parts of the Application Binary Interface.
 type ABI struct {
+	ByteOrder              binary.ByteOrder
 	MaxPackedBitfieldWidth int // In bits.
 	Types                  map[Kind]ABIType
 	types                  map[Kind]Type
@@ -92,7 +94,9 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 		intMaxWidth = 64
 	}
 	if a.MaxPackedBitfieldWidth < 0 || a.MaxPackedBitfieldWidth > intMaxWidth {
-		ctx.err(noPos, "invalid ABI.MaxPackedBitfieldWidth value: %v", a.MaxPackedBitfieldWidth)
+		if ctx.err(noPos, "ABI is missing %s", Void) {
+			return ctx.Err()
+		}
 	}
 	if _, ok := a.Types[Void]; !ok {
 		if ctx.err(noPos, "ABI is missing %s", Void) {
