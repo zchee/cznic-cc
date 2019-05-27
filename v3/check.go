@@ -1548,8 +1548,20 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 
 		n.Field = f
-		n.Operand = &lvalue{Operand: &operand{typ: f.Type()}}
-		//TODO
+		ft := f.Type()
+		if f.IsBitField() {
+			switch w := f.BitFieldWidth(); {
+			case ft.IsSignedType():
+				if w < 32 {
+					ft = ctx.cfg.ABI.Type(Int)
+				}
+			default:
+				if w < 31 {
+					ft = ctx.cfg.ABI.Type(Int)
+				}
+			}
+		}
+		n.Operand = &lvalue{Operand: &operand{typ: ft}}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		t := op.Type()
@@ -1571,7 +1583,20 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 
 		n.Field = f
-		n.Operand = &lvalue{Operand: &operand{typ: f.Type()}}
+		ft := f.Type()
+		if f.IsBitField() {
+			switch w := f.BitFieldWidth(); {
+			case ft.IsSignedType():
+				if w < 32 {
+					ft = ctx.cfg.ABI.Type(Int)
+				}
+			default:
+				if w < 31 {
+					ft = ctx.cfg.ABI.Type(Int)
+				}
+			}
+		}
+		n.Operand = &lvalue{Operand: &operand{typ: ft}}
 	case PostfixExpressionInc: // PostfixExpression "++"
 		op := n.PostfixExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
