@@ -2382,11 +2382,8 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		n.ParameterTypeList.check(ctx, ft)
 		return n.DirectDeclarator.check(ctx, ft)
 	case DirectDeclaratorFuncIdent: // DirectDeclarator '(' IdentifierList ')'
-		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ}
-		n.IdentifierList.check(ctx)
-		//TODO
+		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ, paramList: n.IdentifierList.check(ctx)}
 		return n.DirectDeclarator.check(ctx, ft)
-		//TODO type
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -2439,10 +2436,15 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 	}
 }
 
-func (n *IdentifierList) check(ctx *context) {
+func (n *IdentifierList) check(ctx *context) (r []StringID) {
 	for ; n != nil; n = n.IdentifierList {
-		//TODO
+		tok := n.Token2.Value
+		if tok == 0 {
+			tok = n.Token.Value
+		}
+		r = append(r, tok)
 	}
+	return r
 }
 
 func (n *Asm) check(ctx *context) {
@@ -2631,6 +2633,7 @@ func (n *StorageClassSpecifier) check(ctx *context, ds *DeclarationSpecifiers) {
 	ctx.errNode(n, "at most, one storage-class specifier may be given in the declaration specifiers in a declaration")
 }
 
+// DeclarationSpecifiers Declarator DeclarationList CompoundStatement
 func (n *FunctionDefinition) check(ctx *context) {
 	if n == nil {
 		return
@@ -2638,8 +2641,8 @@ func (n *FunctionDefinition) check(ctx *context) {
 
 	ctx.checkFn = n
 	typ := n.DeclarationSpecifiers.check(ctx)
-	n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true) //TODO- (why - ?)
-	n.DeclarationList.check(ctx)
+	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true) //TODO- (why - ?)
+	n.DeclarationList.checkFn(ctx, typ)
 	n.CompoundStatement.check(ctx)
 	ctx.checkFn = nil
 	for k := range n.Gotos {
@@ -2647,6 +2650,66 @@ func (n *FunctionDefinition) check(ctx *context) {
 			//TODO report undefined label
 		}
 	}
+}
+
+func (n *DeclarationList) checkFn(ctx *context, typ Type) {
+	if n == nil {
+		return
+	}
+
+	n.check(ctx)
+	ft, ok := typ.(*functionType)
+	if !ok {
+		return
+	}
+
+	if ft.params != nil {
+		//TODO report error
+		return
+	}
+	if len(ft.paramList) == 0 {
+		//TODO report error
+		return
+	}
+
+	m := make(map[StringID]int, len(ft.paramList))
+	for i, v := range ft.paramList {
+		if _, ok := m[v]; ok {
+			//TODO report error
+			return
+		}
+
+		m[v] = i
+	}
+	params := make([]Object, len(m))
+	i := 0
+	for ; n != nil; n = n.DeclarationList {
+		for n := n.Declaration.InitDeclaratorList; n != nil; n = n.InitDeclaratorList {
+			n := n.InitDeclarator
+			switch n.Case {
+			case InitDeclaratorDecl: // Declarator AttributeSpecifierList
+				nm := n.Declarator.Name()
+				switch x, ok := m[nm]; {
+				case ok:
+					params[x] = n.Declarator
+					i++
+				default:
+					//TODO report error
+				}
+			case InitDeclaratorInit: // Declarator AttributeSpecifierList '=' Initializer
+				//TODO report error
+				return
+			default:
+				panic("internal error") //TODOOK
+			}
+		}
+	}
+	if i != len(m) {
+		//TODO report error
+		return
+	}
+
+	ft.params = params
 }
 
 func (n *CompoundStatement) check(ctx *context) {

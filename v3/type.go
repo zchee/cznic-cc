@@ -277,8 +277,10 @@ func (o *abstractObject) Type() Type              { return o.typ }
 
 // A Field describes a single field in a struct/union.
 type Field interface {
-	//TODO
+	BitFieldOffset() int
+	BitFieldWidth() int
 	IsBitField() bool
+	Mask() uint64
 	Offset() uintptr // In bytes from the beginning of the struct/union.
 	Padding() int
 	Type() Type // Field type.
@@ -1016,7 +1018,7 @@ func (t *aliasType) underlyingType() Type { return t.typ.underlyingType() }
 func (t *aliasType) volatile() bool { return t.typ.volatile() }
 
 type field struct {
-	bitFieldMask uintptr // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
+	bitFieldMask uint64  // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
 	offset       uintptr // In bytes from start of the struct.
 	typ          Type
 
@@ -1029,10 +1031,13 @@ type field struct {
 	pad            byte
 }
 
-func (f *field) IsBitField() bool { return f.isBitField }
-func (f *field) Offset() uintptr  { return f.offset }
-func (f *field) Padding() int     { return int(f.pad) } // N/A for bitfields
-func (f *field) Type() Type       { return f.typ }
+func (f *field) BitFieldOffset() int { return int(f.bitFieldOffset) }
+func (f *field) BitFieldWidth() int  { return int(f.bitFieldWidth) }
+func (f *field) IsBitField() bool    { return f.isBitField }
+func (f *field) Mask() uint64        { return f.bitFieldMask }
+func (f *field) Offset() uintptr     { return f.offset }
+func (f *field) Padding() int        { return int(f.pad) } // N/A for bitfields
+func (f *field) Type() Type          { return f.typ }
 
 func (f *field) string(b *strings.Builder) {
 	b.WriteString(f.name.String())
@@ -1197,7 +1202,8 @@ func (t *taggedType) FieldAlign() int { return t.underlyingType().FieldAlign() }
 
 type functionType struct {
 	typeBase
-	params []Object // *Declarator or *AbstractDeclarator
+	params    []Object // *Declarator or *AbstractDeclarator
+	paramList []StringID
 
 	result Type
 
