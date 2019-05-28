@@ -42,14 +42,15 @@ type Value interface {
 	and(b Value) Value
 	div(b Value) Value
 	isZero() bool
+	lsh(b Value) Value
 	mod(b Value) Value
 	mul(b Value) Value
 	neg() Value
 	or(b Value) Value
+	rsh(b Value) Value
 	sub(b Value) Value
 	xor(b Value) Value
 	//TODO all comparisons
-	//TODO shift
 }
 
 type WideStringValue StringID
@@ -58,10 +59,12 @@ func (v WideStringValue) add(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) and(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) div(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) isZero() bool      { return v == 0 }
+func (v WideStringValue) lsh(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) mod(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) mul(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) neg() Value        { panic("internal error") } //TODOOK
 func (v WideStringValue) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v WideStringValue) rsh(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) sub(b Value) Value { panic("internal error") } //TODOOK
 func (v WideStringValue) xor(b Value) Value { panic("internal error") } //TODOOK
 
@@ -71,10 +74,12 @@ func (v StringValue) add(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) and(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) div(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) isZero() bool      { return v == 0 }
+func (v StringValue) lsh(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) mod(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) mul(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) neg() Value        { panic("internal error") } //TODOOK
 func (v StringValue) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v StringValue) rsh(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) sub(b Value) Value { panic("internal error") } //TODOOK
 func (v StringValue) xor(b Value) Value { panic("internal error") } //TODOOK
 
@@ -95,6 +100,28 @@ func (v Int64Value) div(b Value) Value {
 	}
 
 	return v / b.(Int64Value)
+}
+
+func (v Int64Value) lsh(b Value) Value {
+	switch y := b.(type) {
+	case Int64Value:
+		return v << uint64(y)
+	case Uint64Value:
+		return v << y
+	default:
+		panic("internal error") //TODOOK
+	}
+}
+
+func (v Int64Value) rsh(b Value) Value {
+	switch y := b.(type) {
+	case Int64Value:
+		return v >> uint64(y)
+	case Uint64Value:
+		return v >> y
+	default:
+		panic("internal error") //TODOOK
+	}
 }
 
 func (v Int64Value) mod(b Value) Value {
@@ -124,6 +151,28 @@ func (v Uint64Value) div(b Value) Value {
 	return v / b.(Uint64Value)
 }
 
+func (v Uint64Value) lsh(b Value) Value {
+	switch y := b.(type) {
+	case Int64Value:
+		return v << uint64(y)
+	case Uint64Value:
+		return v << y
+	default:
+		panic("internal error") //TODOOK
+	}
+}
+
+func (v Uint64Value) rsh(b Value) Value {
+	switch y := b.(type) {
+	case Int64Value:
+		return v >> uint64(y)
+	case Uint64Value:
+		return v >> y
+	default:
+		panic("internal error") //TODOOK
+	}
+}
+
 func (v Uint64Value) mod(b Value) Value {
 	if b.isZero() {
 		return nil
@@ -138,10 +187,12 @@ func (v Float32Value) add(b Value) Value { return v + b.(Float32Value) }
 func (v Float32Value) and(b Value) Value { panic("internal error") } //TODOOK
 func (v Float32Value) div(b Value) Value { return v / b.(Float32Value) }
 func (v Float32Value) isZero() bool      { return v == 0 }
+func (v Float32Value) lsh(b Value) Value { panic("internal error") } //TODOOK
 func (v Float32Value) mod(b Value) Value { panic("internal error") } //TODOOK
 func (v Float32Value) mul(b Value) Value { return v * b.(Float32Value) }
 func (v Float32Value) neg() Value        { return -v }
 func (v Float32Value) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v Float32Value) rsh(b Value) Value { panic("internal error") } //TODOOK
 func (v Float32Value) sub(b Value) Value { return v - b.(Float32Value) }
 func (v Float32Value) xor(b Value) Value { panic("internal error") } //TODOOK
 
@@ -151,10 +202,12 @@ func (v Float64Value) add(b Value) Value { return v + b.(Float64Value) }
 func (v Float64Value) and(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) div(b Value) Value { return v / b.(Float64Value) }
 func (v Float64Value) isZero() bool      { return v == 0 }
+func (v Float64Value) lsh(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) mod(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) mul(b Value) Value { return v * b.(Float64Value) }
 func (v Float64Value) neg() Value        { return -v }
 func (v Float64Value) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v Float64Value) rsh(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
 func (v Float64Value) xor(b Value) Value { panic("internal error") } //TODOOK
 
@@ -164,10 +217,12 @@ func (v Complex128Value) add(b Value) Value { return v + b.(Complex128Value) }
 func (v Complex128Value) and(b Value) Value { panic("internal error") } //TODOOK
 func (v Complex128Value) div(b Value) Value { return v / b.(Complex128Value) }
 func (v Complex128Value) isZero() bool      { return v == 0 }
+func (v Complex128Value) lsh(b Value) Value { panic("internal error") } //TODOOK
 func (v Complex128Value) mod(b Value) Value { panic("internal error") } //TODOOK
 func (v Complex128Value) mul(b Value) Value { return v * b.(Complex128Value) }
 func (v Complex128Value) neg() Value        { return -v }
 func (v Complex128Value) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v Complex128Value) rsh(b Value) Value { panic("internal error") } //TODOOK
 func (v Complex128Value) sub(b Value) Value { return v - b.(Complex128Value) }
 func (v Complex128Value) xor(b Value) Value { panic("internal error") } //TODOOK
 

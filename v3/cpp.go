@@ -1914,7 +1914,7 @@ func charConst(ctx *context, tok cppToken) rune {
 // simple-sequence		\\['\x22?\\abfnrtv]
 // octal-escape-sequence	\\{octal-digit}{octal-digit}?{octal-digit}?
 // hexadecimal-escape-sequence	\\x{hexadecimal-digit}+
-func decodeEscapeSequence(runes []rune) (rune, int) {
+func decodeEscapeSequence(runes []rune) (rune, int) { //TODO-
 	if runes[0] != '\\' {
 		panic("internal error") //TODOOK
 	}
@@ -2257,34 +2257,13 @@ func stringConst(t cppToken) string {
 	switch t.char {
 	case LONGSTRINGLITERAL:
 		s = s[1:] // Remove leading 'L'.
-		var buf []rune
-		s = s[1 : len(s)-1] // Remove outer "s.
-		runes := []rune(s)
-		for i := 0; i < len(runes); {
-			switch r := runes[i]; {
-			case r == '\\':
-				r, n := decodeEscapeSequence(runes[i:])
-				switch {
-				case r < 0:
-					buf = append(buf, -r)
-				default:
-					buf = append(buf, r)
-				}
-				i += n
-			default:
-				buf = append(buf, r)
-				i++
-			}
-		}
-		return string(buf)
+		fallthrough
 	case STRINGLITERAL:
 		var buf bytes.Buffer
-		s = s[1 : len(s)-1] // Remove outer "s.
-		runes := []rune(s)
-		for i := 0; i < len(runes); {
-			switch r := runes[i]; {
-			case r == '\\':
-				r, n := decodeEscapeSequence(runes[i:])
+		for i := 1; i < len(s)-1; {
+			switch c := s[i]; c {
+			case '\\':
+				r, n := decodeEscapeSequence([]rune(s[i:])) //TODO get rid of the conversion
 				switch {
 				case r < 0:
 					buf.WriteByte(byte(-r))
@@ -2293,7 +2272,7 @@ func stringConst(t cppToken) string {
 				}
 				i += n
 			default:
-				buf.WriteRune(r)
+				buf.WriteByte(c)
 				i++
 			}
 		}

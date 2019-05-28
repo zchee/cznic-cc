@@ -131,8 +131,8 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 			continue
 		}
 
-		if k != Void && (v.Size == 0 || v.Align == 0 || v.FieldAlign == 0 ||
-			v.Align > math.MaxUint8 || v.FieldAlign > math.MaxUint8) {
+		if (k != Void && v.Size == 0) || v.Align == 0 || v.FieldAlign == 0 ||
+			v.Align > math.MaxUint8 || v.FieldAlign > math.MaxUint8 {
 			if ctx.err(noPos, "invalid ABI type %s: %+v", k, v) {
 				return ctx.Err()
 			}
@@ -278,7 +278,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 					panic(n.Position().String()) //TODO
 				}
 
-				down := off &^ (8 * (int64(al) - 1))
+				down := off &^ (8*int64(al) - 1)
 				bitoff := off - down
 				downMax := off &^ (int64(a.MaxPackedBitfieldWidth) - 1)
 				switch {
@@ -309,7 +309,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		t.fieldAlign = byte(fieldAlign)
 		off0 := off
 		off = roundup(off, 8*int64(align))
-		if f != nil {
+		if f != nil && !f.IsBitField() {
 			f.pad = byte(off-off0) >> 3
 		}
 		t.size = uintptr(off >> 3)

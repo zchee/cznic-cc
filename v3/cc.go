@@ -354,31 +354,31 @@ type Config struct {
 }
 
 type context struct {
-	cases   []*LabeledStatement // switch
-	cfg     *Config
-	checkFn *FunctionDefinition
-	closure map[StringID]struct{}
+	breaks    int
+	cases     []*LabeledStatement // switch
+	cfg       *Config
+	checkFn   *FunctionDefinition
+	closure   map[StringID]struct{}
+	continues int
 	goscanner.ErrorList
 	includePaths    []string
+	intBits         int
 	intMaxWidth     int64 // Set if the preprocessor saw __INTMAX_WIDTH__.
 	keywords        map[StringID]rune
 	maxAlign        int // If non zero: maximum alignment of members of structures (other than zero-width bitfields).
 	maxAlign0       int
+	maxErrors       int
+	mode            mode
 	modes           []mode
 	mu              sync.Mutex
 	sizeT           Type
 	ssizeT          Type
 	structs         map[StructInfo]struct{}
+	switches        int
 	sysIncludePaths []string
 	tuSize          int64 // Sum of sizes of processed inputs
+	tuSources       int   // Number of processed inputs
 	wcharT          Type
-
-	breaks    int
-	continues int
-	maxErrors int
-	mode      mode
-	switches  int
-	tuSources int // Number of processed inputs
 }
 
 func newContext(cfg *Config) *context {

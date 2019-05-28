@@ -269,6 +269,7 @@ func (n *AST) Typecheck() error {
 		return err
 	}
 
+	ctx.intBits = int(ctx.cfg.ABI.Types[Int].Size) * 8
 	n.TranslationUnit.check(ctx)
 	n.Structs = ctx.structs
 	return ctx.Err()

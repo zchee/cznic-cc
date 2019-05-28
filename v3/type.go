@@ -285,6 +285,7 @@ type Field interface {
 	BitFieldWidth() int
 	IsBitField() bool
 	Mask() uint64
+	Name() StringID  // Can be zero.
 	Offset() uintptr // In bytes from the beginning of the struct/union.
 	Padding() int
 	Type() Type // Field type.
@@ -519,8 +520,6 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 		//TODO
 	case Union:
 		//TODO
-	case Void:
-		// nop
 	case Enum:
 		if v, ok := abi.Types[Int]; ok {
 			t.size = uintptr(abi.size(Int))
@@ -1051,6 +1050,7 @@ func (f *field) BitFieldOffset() int { return int(f.bitFieldOffset) }
 func (f *field) BitFieldWidth() int  { return int(f.bitFieldWidth) }
 func (f *field) IsBitField() bool    { return f.isBitField }
 func (f *field) Mask() uint64        { return f.bitFieldMask }
+func (f *field) Name() StringID      { return f.name }
 func (f *field) Offset() uintptr     { return f.offset }
 func (f *field) Padding() int        { return int(f.pad) } // N/A for bitfields
 func (f *field) Type() Type          { return f.typ }
@@ -1288,7 +1288,7 @@ type bitFieldType struct {
 func (t *bitFieldType) Alias() Type { return t }
 
 // IsBitFieldType implements Type.
-func (t *bitFieldType) IsBitFieldType() bool { return true } //TODO-
+func (t *bitFieldType) IsBitFieldType() bool { return true }
 
 // BitField implements Type.
 func (t *bitFieldType) BitField() Field { return t.field }
