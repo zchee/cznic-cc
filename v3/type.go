@@ -1145,6 +1145,9 @@ type taggedType struct {
 // Alias implements Type.
 func (t *taggedType) Alias() Type { return t }
 
+// Decay implements Type.
+func (t *taggedType) Decay() Type { return t }
+
 // String implements Type.
 func (t *taggedType) String() string {
 	var b strings.Builder

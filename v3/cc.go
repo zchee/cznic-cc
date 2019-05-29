@@ -344,6 +344,7 @@ type Config struct {
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
+	AllowLateBinding           bool // Accept void f() { g(); } void g() {}
 	DebugIncludePaths          bool
 	DebugWorkingDir            bool
 	PreprocessOnly             bool

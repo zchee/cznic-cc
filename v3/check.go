@@ -37,8 +37,38 @@ const (
 )
 
 func (n *TranslationUnit) check(ctx *context) {
-	for ; n != nil; n = n.TranslationUnit {
+	for n := n; n != nil; n = n.TranslationUnit {
 		n.ExternalDeclaration.check(ctx)
+	}
+	for ; n != nil; n = n.TranslationUnit {
+		n.ExternalDeclaration.checkFnBodies(ctx)
+	}
+}
+
+func (n *ExternalDeclaration) checkFnBodies(ctx *context) {
+	if n == nil {
+		return
+	}
+
+	switch n.Case {
+	case ExternalDeclarationFuncDef: // FunctionDefinition
+		n.FunctionDefinition.checkBody(ctx)
+	}
+}
+
+// DeclarationSpecifiers Declarator DeclarationList CompoundStatement
+func (n *FunctionDefinition) checkBody(ctx *context) {
+	if n == nil {
+		return
+	}
+
+	ctx.checkFn = n
+	n.CompoundStatement.check(ctx)
+	ctx.checkFn = nil
+	for k := range n.Gotos {
+		if _, ok := n.Labels[k]; !ok {
+			//TODO report undefined label
+		}
 	}
 }
 
@@ -49,7 +79,7 @@ func (n *ExternalDeclaration) check(ctx *context) {
 
 	switch n.Case {
 	case ExternalDeclarationFuncDef: // FunctionDefinition
-		n.FunctionDefinition.check(ctx)
+		n.FunctionDefinition.checkDeclarator(ctx)
 	case ExternalDeclarationDecl: // Declaration
 		n.Declaration.check(ctx, true)
 	case ExternalDeclarationAsm: // AsmFunctionDefinition
@@ -248,7 +278,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		}
 
 		r := n.AssignmentExpression.check(ctx)
-		_ = r //TODO check assignability
+		//TODO check assignability
 		if l.Type().IsArithmeticType() {
 			op, _ := usualArithmeticConversions(ctx, n, l, r)
 			n.promote = op.Type()
@@ -266,20 +296,30 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		}
 
 		r := n.AssignmentExpression.check(ctx)
-		_ = r //TODO check assignability
+		//TODO check assignability
 		if l.Type().IsArithmeticType() {
 			op, _ := usualArithmeticConversions(ctx, n, l, r)
 			n.promote = op.Type()
 		}
 		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionMod: // UnaryExpression "%=" AssignmentExpression
-		n.UnaryExpression.check(ctx)
+		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Read++
 			d.Write++
 		}
-		n.AssignmentExpression.check(ctx)
-		//TODO
+		if !l.IsLValue() {
+			//TODO panic(n.Position().String()) // report error
+			break
+		}
+
+		r := n.AssignmentExpression.check(ctx)
+		//TODO check assignability
+		if l.Type().IsArithmeticType() {
+			op, _ := usualArithmeticConversions(ctx, n, l, r)
+			n.promote = op.Type()
+		}
+		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionAdd: // UnaryExpression "+=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
@@ -292,7 +332,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		}
 
 		r := n.AssignmentExpression.check(ctx)
-		_ = r //TODO check assignability
+		//TODO check assignability
 		n.promote = n.UnaryExpression.Operand.Type()
 		if l.Type().IsArithmeticType() {
 			op, _ := usualArithmeticConversions(ctx, n, l, r)
@@ -311,7 +351,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		}
 
 		r := n.AssignmentExpression.check(ctx)
-		_ = r //TODO check assignability
+		//TODO check assignability
 		n.promote = n.UnaryExpression.Operand.Type()
 		if l.Type().IsArithmeticType() {
 			op, _ := usualArithmeticConversions(ctx, n, l, r)
@@ -659,7 +699,14 @@ func (n *PrimaryExpression) addr(ctx *context) Operand {
 				d.AddressTaken = true
 				n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, d.Type())}, declarator: d}
 			}
+			return n.Operand
 		}
+		if !ctx.cfg.AllowLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
+			ctx.errNode(n, "undefined: %s", n.Token.Value)
+			return noOperand
+		}
+
+		//TODO
 	case PrimaryExpressionInt: // INTCONST
 		panic(n.Position().String())
 	case PrimaryExpressionFloat: // FLOATCONST
@@ -1660,7 +1707,6 @@ func (n *PostfixExpression) checkCall(ctx *context, nd Node, f Type, args []Oper
 			n.Arguments = append(n.Arguments, defaultArgumentPromotion(ctx, nd, arg).Type())
 		}
 	}
-	//fmt.Printf("==== %v: %p %v %v\n", n.Position(), n, len(args), len(n.Arguments))
 	return r
 }
 
@@ -1714,33 +1760,69 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
 		ctx.not(n, mIntConstExpr)
-		if d := n.resolvedIn.identifier(n.Token.Value, n.Token); d != nil {
-			switch t := d.Type(); t.Kind() {
-			case Function:
-				n.Operand = &funcDesignator{Operand: &operand{typ: t}, declarator: d}
-			default:
-				d.Read++
-				n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
-			}
-			if ctx.closure == nil {
-				return n.Operand
+		var d *Declarator
+		if n.resolvedIn == nil {
+			if !ctx.cfg.AllowLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
+				ctx.errNode(n, "undefined: %s", n.Token.Value)
+				return noOperand
 			}
 
+			nm := n.Token.Value
+		out:
 			for s := n.lexicalScope; s != nil; s = s.Parent() {
-				if _, ok := s[idClosure]; !ok {
-					continue
-				}
+				for _, v := range s[nm] {
+					switch x := v.(type) {
+					case *Enumerator:
+						break out
+					case *Declarator:
+						if x.IsTypedefName {
+							break out
+						}
 
-				if ctx.closure == nil {
-					ctx.closure = map[StringID]struct{}{}
+						n.resolvedIn = s
+						d = x
+						break out
+					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+						// nop
+					default:
+						panic("internal error") //TODOOK
+					}
 				}
-				ctx.closure[d.Name()] = struct{}{}
-				return n.Operand
 			}
+		}
+		if d == nil {
+			d = n.resolvedIn.identifier(n.Token.Value, n.Token)
+		}
+		if d == nil {
+			if !ctx.cfg.ignoreUndefinedIdentifiers {
+				ctx.errNode(n, "undefined: %s", n.Token.Value)
+			}
+			return noOperand
+		}
+
+		switch t := d.Type(); t.Kind() {
+		case Function:
+			n.Operand = &funcDesignator{Operand: &operand{typ: t}, declarator: d}
+		default:
+			d.Read++
+			n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
+		}
+		if ctx.closure == nil {
 			return n.Operand
 		}
 
-		//TODO report err
+		for s := n.lexicalScope; s != nil; s = s.Parent() {
+			if _, ok := s[idClosure]; !ok {
+				continue
+			}
+
+			if ctx.closure == nil {
+				ctx.closure = map[StringID]struct{}{}
+			}
+			ctx.closure[d.Name()] = struct{}{}
+			return n.Operand
+		}
+		return n.Operand
 	case PrimaryExpressionInt: // INTCONST
 		n.Operand = n.intConst(ctx)
 	case PrimaryExpressionFloat: // FLOATCONST
@@ -1774,7 +1856,10 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		n.Operand = n.Expression.check(ctx)
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
 		ctx.not(n, mIntConstExpr)
-		n.CompoundStatement.check(ctx)
+		n.Operand = n.CompoundStatement.check(ctx)
+		if n.Operand == noOperand {
+			n.Operand = &operand{typ: ctx.cfg.ABI.Type(Void)}
+		}
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -1982,6 +2067,10 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 
 		a := n.Expression.check(ctx)
 		b := n.ConditionalExpression.check(ctx)
+		if a.Type().Kind() == Invalid && b.Type().Kind() == Invalid {
+			return noOperand
+		}
+
 		// One of the following shall hold for the second and third
 		// operands:
 		//TODO — both operands have the same structure or union type;
@@ -1998,20 +2087,26 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 			op, _ := usualArithmeticConversions(ctx, n, a, b)
 			n.Operand = &operand{typ: op.Type()}
 		// — both operands are pointers to qualified or unqualified versions of compatible types;
-		case a.Type().Kind() == Ptr && b.Type().Kind() == Ptr:
-			switch {
-			case a.Type().Kind() == b.Type().Kind():
-				n.Operand = &operand{typ: n.Expression.Operand.Type()}
-			default:
-				panic(fmt.Errorf("%v: internal error: %v, %v", n.Token2.Position(), a.Type(), b.Type())) //TODOOK
-			}
+		case a.Type().Decay().Kind() == Ptr && b.Type().Decay().Kind() == Ptr:
+			//TODO check compatible
+			n.Operand = &operand{typ: n.Expression.Operand.Type()}
 		// — both operands have void type;
 		case a.Type().Kind() == Void && b.Type().Kind() == Void:
 			n.Operand = &operand{typ: a.Type()}
-			// — one operand is a pointer and the other is a null pointer constant;
-		case a.Type().Kind() == Ptr && b.IsZero():
+		// — one operand is a pointer and the other is a null pointer constant;
+		case (a.Type().Kind() == Ptr || a.Type().Kind() == Function) && b.IsZero():
 			n.Operand = &operand{typ: a.Type()}
-		case b.Type().Kind() == Ptr && a.IsZero():
+		case (b.Type().Kind() == Ptr || b.Type().Kind() == Function) && a.IsZero():
+			n.Operand = &operand{typ: b.Type()}
+		case a.Type().Kind() == Ptr && a.Type().Elem().Kind() == Function && b.Type().Kind() == Function:
+			//TODO check compatible
+			n.Operand = &operand{typ: a.Type()}
+		case b.Type().Kind() == Ptr && b.Type().Elem().Kind() == Function && a.Type().Kind() == Function:
+			//TODO check compatible
+			n.Operand = &operand{typ: b.Type()}
+		case a.Type().Kind() != Invalid:
+			n.Operand = &operand{typ: a.Type()}
+		case b.Type().Kind() != Invalid:
 			n.Operand = &operand{typ: b.Type()}
 		default:
 			//TODO panic(fmt.Errorf("%v: internal error: %v, %v", n.Token2.Position(), a.Type(), b.Type())) //TODOOK
@@ -2452,7 +2547,7 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 		n.Linkage = External
 	}
 	// fmt.Printf("%v: %q typ %v, kind %v, hasStorageSpecifiers %v, linkage %v\n", n.Position(), n.Name(), n.Type(), n.Type().Kind(), hasStorageSpecifiers, n.Linkage) //TODO-
-	// fmt.Printf("typedef %v, extern %v, static %v, auto %v, register %v, threadLocal %v\n", td.typedef(), td.extern(), td.static(), td.auto(), td.register(), td.threadLocal())
+	// fmt.Printf("typedef %v, extern %v, static %v, auto %v, register %v, threadLocal %v\n", td.typedef(), td.extern(), td.static(), td.auto(), td.register(), td.threadLocal()) //TODO-
 	return n.typ
 }
 
@@ -2733,7 +2828,7 @@ func (n *StorageClassSpecifier) check(ctx *context, ds *DeclarationSpecifiers) {
 }
 
 // DeclarationSpecifiers Declarator DeclarationList CompoundStatement
-func (n *FunctionDefinition) check(ctx *context) {
+func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 	if n == nil {
 		return
 	}
@@ -2742,13 +2837,7 @@ func (n *FunctionDefinition) check(ctx *context) {
 	typ := n.DeclarationSpecifiers.check(ctx)
 	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true) //TODO- (why - ?)
 	n.DeclarationList.checkFn(ctx, typ)
-	n.CompoundStatement.check(ctx)
 	ctx.checkFn = nil
-	for k := range n.Gotos {
-		if _, ok := n.Labels[k]; !ok {
-			//TODO report undefined label
-		}
-	}
 }
 
 func (n *DeclarationList) checkFn(ctx *context, typ Type) {
@@ -2811,30 +2900,31 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 	ft.params = params
 }
 
-func (n *CompoundStatement) check(ctx *context) {
+func (n *CompoundStatement) check(ctx *context) Operand {
 	if n == nil {
-		return
+		return noOperand
 	}
 
-	n.BlockItemList.check(ctx)
+	return n.BlockItemList.check(ctx)
 }
 
-func (n *BlockItemList) check(ctx *context) {
+func (n *BlockItemList) check(ctx *context) (r Operand) {
 	for ; n != nil; n = n.BlockItemList {
-		n.BlockItem.check(ctx)
+		r = n.BlockItem.check(ctx)
 	}
+	return r
 }
 
-func (n *BlockItem) check(ctx *context) {
+func (n *BlockItem) check(ctx *context) Operand {
 	if n == nil {
-		return
+		return noOperand
 	}
 
 	switch n.Case {
 	case BlockItemDecl: // Declaration
 		n.Declaration.check(ctx, false)
 	case BlockItemStmt: // Statement
-		n.Statement.check(ctx)
+		return n.Statement.check(ctx)
 	case BlockItemLabel: // LabelDeclaration
 		n.LabelDeclaration.check(ctx)
 	case BlockItemFuncDef: // DeclarationSpecifiers Declarator CompoundStatement
@@ -2848,7 +2938,8 @@ func (n *BlockItem) check(ctx *context) {
 		}
 		ctx.checkFn = n.fn
 		n.CompoundStatement.scope.declare(idClosure, n)
-		ctx.checkFn.check(ctx)
+		ctx.checkFn.checkDeclarator(ctx)
+		ctx.checkFn.checkBody(ctx)
 		delete(n.CompoundStatement.scope, idClosure)
 		ctx.checkFn = ctxCheckFn
 		ctx.closure = ctxClosure
@@ -2857,6 +2948,7 @@ func (n *BlockItem) check(ctx *context) {
 	default:
 		panic("internal error") //TODOOK
 	}
+	return noOperand
 }
 
 func (n *LabelDeclaration) check(ctx *context) {
@@ -2867,9 +2959,9 @@ func (n *LabelDeclaration) check(ctx *context) {
 	n.IdentifierList.check(ctx)
 }
 
-func (n *Statement) check(ctx *context) {
+func (n *Statement) check(ctx *context) Operand {
 	if n == nil {
-		return
+		return noOperand
 	}
 
 	switch n.Case {
@@ -2878,7 +2970,7 @@ func (n *Statement) check(ctx *context) {
 	case StatementCompound: // CompoundStatement
 		n.CompoundStatement.check(ctx)
 	case StatementExpr: // ExpressionStatement
-		n.ExpressionStatement.check(ctx)
+		return n.ExpressionStatement.check(ctx)
 	case StatementSelection: // SelectionStatement
 		n.SelectionStatement.check(ctx)
 	case StatementIteration: // IterationStatement
@@ -2890,6 +2982,7 @@ func (n *Statement) check(ctx *context) {
 	default:
 		panic("internal error") //TODOOK
 	}
+	return noOperand
 }
 
 func (n *JumpStatement) check(ctx *context) {
@@ -2999,13 +3092,13 @@ func (n *SelectionStatement) check(ctx *context) {
 	}
 }
 
-func (n *ExpressionStatement) check(ctx *context) {
+func (n *ExpressionStatement) check(ctx *context) Operand {
 	if n == nil {
-		return
+		return noOperand
 	}
 
-	n.Expression.check(ctx)
 	n.AttributeSpecifierList.check(ctx)
+	return n.Expression.check(ctx)
 }
 
 func (n *LabeledStatement) check(ctx *context) {

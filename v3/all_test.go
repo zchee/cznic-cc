@@ -78,6 +78,7 @@ const (
 #define __QI__
 #define __SI__
 #define __builtin_add_overflow(...) 0
+#define __builtin_expect(exp, c) exp
 #define __builtin_mul_overflow(...) 0
 #define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
 #define __builtin_sub_overflow(...) 0

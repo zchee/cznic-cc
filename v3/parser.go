@@ -657,7 +657,7 @@ out:
 			}
 		}
 
-		if !p.ctx.cfg.ignoreUndefinedIdentifiers {
+		if !p.ctx.cfg.ignoreUndefinedIdentifiers && !p.ctx.cfg.AllowLateBinding {
 			p.err0(false, "undefined: %s", nm)
 		}
 	case INTCONST:
