@@ -359,45 +359,108 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		}
 		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionLsh: // UnaryExpression "<<=" AssignmentExpression
-		n.UnaryExpression.check(ctx)
+		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Read++
 			d.Write++
 		}
-		n.AssignmentExpression.check(ctx)
-		//TODO
+		if !l.IsLValue() {
+			//TODO panic(n.Position().String()) // report error
+			break
+		}
+
+		r := n.AssignmentExpression.check(ctx)
+		//TODO check assignability
+		if !l.Type().IsIntegerType() || !r.Type().IsIntegerType() {
+			//TODO report error
+			break
+		}
+
+		n.promote = r.integerPromotion(ctx, n).Type()
+		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionRsh: // UnaryExpression ">>=" AssignmentExpression
-		n.UnaryExpression.check(ctx)
+		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Read++
 			d.Write++
 		}
-		n.AssignmentExpression.check(ctx)
-		//TODO
+		if !l.IsLValue() {
+			//TODO panic(n.Position().String()) // report error
+			break
+		}
+
+		r := n.AssignmentExpression.check(ctx)
+		//TODO check assignability
+		if !l.Type().IsIntegerType() || !r.Type().IsIntegerType() {
+			//TODO report error
+			break
+		}
+
+		n.promote = r.integerPromotion(ctx, n).Type()
+		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionAnd: // UnaryExpression "&=" AssignmentExpression
-		n.UnaryExpression.check(ctx)
+		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Read++
 			d.Write++
 		}
-		n.AssignmentExpression.check(ctx)
-		//TODO
+		if !l.IsLValue() {
+			//TODO panic(n.Position().String()) // report error
+			break
+		}
+
+		r := n.AssignmentExpression.check(ctx)
+		//TODO check assignability
+		if !l.Type().IsIntegerType() || !r.Type().IsIntegerType() {
+			//TODO report error
+			break
+		}
+
+		op, _ := usualArithmeticConversions(ctx, n, l, r)
+		n.promote = op.Type()
+		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionXor: // UnaryExpression "^=" AssignmentExpression
-		n.UnaryExpression.check(ctx)
+		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Read++
 			d.Write++
 		}
-		n.AssignmentExpression.check(ctx)
-		//TODO
+		if !l.IsLValue() {
+			//TODO panic(n.Position().String()) // report error
+			break
+		}
+
+		r := n.AssignmentExpression.check(ctx)
+		//TODO check assignability
+		if !l.Type().IsIntegerType() || !r.Type().IsIntegerType() {
+			//TODO report error
+			break
+		}
+
+		op, _ := usualArithmeticConversions(ctx, n, l, r)
+		n.promote = op.Type()
+		n.Operand = &operand{typ: l.Type()}
 	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
-		n.UnaryExpression.check(ctx)
+		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Read++
 			d.Write++
 		}
-		n.AssignmentExpression.check(ctx)
-		//TODO
+		if !l.IsLValue() {
+			//TODO panic(n.Position().String()) // report error
+			break
+		}
+
+		r := n.AssignmentExpression.check(ctx)
+		//TODO check assignability
+		if !l.Type().IsIntegerType() || !r.Type().IsIntegerType() {
+			//TODO report error
+			break
+		}
+
+		op, _ := usualArithmeticConversions(ctx, n, l, r)
+		n.promote = op.Type()
+		n.Operand = &operand{typ: l.Type()}
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -449,7 +512,8 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			break
 		}
 
-		if d := n.CastExpression.Operand.Declarator(); d != nil && d.td.register() {
+		d := n.CastExpression.Operand.Declarator()
+		if d != nil && d.td.register() {
 			panic(n.Position().String())
 			//TODO report error
 			break
@@ -471,6 +535,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 				}
 
 				panic(n.Position()) // report error
+			}
+
+			if d != nil {
+				n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, t)}, declarator: d}
+				break
 			}
 
 			n.Operand = &operand{typ: mkPtr(ctx, n, t)}

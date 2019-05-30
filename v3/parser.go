@@ -3494,7 +3494,7 @@ func (p *parser) jumpStatement() *JumpStatement {
 		case ';':
 			t2 = p.shift()
 		default:
-			p.err("expectec ;")
+			p.err("expected ;")
 		}
 		return &JumpStatement{Case: JumpStatementReturn, Token: t, Expression: e, Token2: t2, lexicalScope: p.declScope}
 	default:
