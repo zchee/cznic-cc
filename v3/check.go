@@ -2905,8 +2905,8 @@ func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 	ctx.checkFn = n
 	typ := n.DeclarationSpecifiers.check(ctx)
 	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true) //TODO- (why - ?)
-	n.DeclarationList.checkFn(ctx, typ)
 	ctx.checkFn = nil
+	n.DeclarationList.checkFn(ctx, typ)
 }
 
 func (n *DeclarationList) checkFn(ctx *context, typ Type) {
