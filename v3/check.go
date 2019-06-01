@@ -530,7 +530,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		default:
 			if op != noOperand && !op.IsLValue() {
 				if n.CastExpression.Case == CastExpressionUnary && n.CastExpression.UnaryExpression.Case == UnaryExpressionDeref {
-					n.Operand = &operand{typ: mkPtr(ctx, n, t)}
+					n.Operand = &operand{typ: ctx.cfg.ABI.Ptr(n, t)}
 					break
 				}
 
@@ -538,11 +538,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			}
 
 			if d != nil {
-				n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, t)}, declarator: d}
+				n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, t)}, declarator: d}
 				break
 			}
 
-			n.Operand = &operand{typ: mkPtr(ctx, n, t)}
+			n.Operand = &operand{typ: ctx.cfg.ABI.Ptr(n, t)}
 		}
 	case UnaryExpressionDeref: // '*' CastExpression
 		ctx.not(n, mIntConstExpr)
@@ -714,7 +714,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 		case Array:
 			n.Operand = op
 		default:
-			n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, op.Type())}}
+			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
 		}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		panic(n.Position().String())
@@ -723,13 +723,13 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 		if op.Type().IsBitFieldType() {
 			panic("TODO") //TODO report error
 		}
-		n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, op.Type())}}
+		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.check(ctx)
 		if op.Type().IsBitFieldType() {
 			panic("TODO") //TODO report error
 		}
-		n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, op.Type())}}
+		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
 	case PostfixExpressionInc: // PostfixExpression "++"
 		panic(n.Position().String())
 	case PostfixExpressionDec: // PostfixExpression "--"
@@ -742,7 +742,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, t)}}
+		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, t)}}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		panic(n.Position().String())
 	default:
@@ -766,7 +766,7 @@ func (n *PrimaryExpression) addr(ctx *context) Operand {
 				// nop
 			default:
 				d.AddressTaken = true
-				n.Operand = &lvalue{Operand: &operand{typ: mkPtr(ctx, n, d.Type())}, declarator: d}
+				n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, d.Type())}, declarator: d}
 			}
 			return n.Operand
 		}
@@ -1275,7 +1275,7 @@ func (n *Pointer) check(ctx *context, typ Type) (t Type) {
 	default:
 		panic("internal error") //TODOOK
 	}
-	r := mkPtr(ctx, n, typ)
+	r := ctx.cfg.ABI.Ptr(n, typ).(*pointerType)
 	if n.typeQualifiers != nil {
 		r.typeQualifiers = n.typeQualifiers.check(ctx, (*DeclarationSpecifiers)(nil))
 	}
@@ -1916,11 +1916,11 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: wcharT(ctx, n.lexicalScope, n.Token), value: Int64Value(s[0])}
 	case PrimaryExpressionString: // STRINGLITERAL
 		ctx.not(n, mIntConstExpr)
-		n.Operand = &operand{typ: mkPtr(ctx, n, ctx.cfg.ABI.Type(Char)), value: StringValue(n.Token.Value)} //TODO ABI singleton pchar
+		n.Operand = &operand{typ: ctx.cfg.ABI.Ptr(n, ctx.cfg.ABI.Type(Char)), value: StringValue(n.Token.Value)} //TODO ABI singleton pchar
 	case PrimaryExpressionLString: // LONGSTRINGLITERAL
 		ctx.not(n, mIntConstExpr)
 		t := wcharT(ctx, n.lexicalScope, n.Token)
-		n.Operand = &operand{typ: mkPtr(ctx, n, t), value: WideStringValue(n.Token.Value)} //TODO ABI singleton pwchar
+		n.Operand = &operand{typ: ctx.cfg.ABI.Ptr(n, t), value: WideStringValue(n.Token.Value)} //TODO ABI singleton pwchar
 	case PrimaryExpressionExpr: // '(' Expression ')'
 		n.Operand = n.Expression.check(ctx)
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
@@ -2690,12 +2690,12 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 
 			b.size = length * typ.Size()
 		}
-		return &arrayType{typeBase: b, decay: mkPtr(ctx, n, typ), elem: typ, length: length, vla: vla}
+		return &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ, length: length, vla: vla}
 	case !exprIsOptional:
 		panic("TODO")
 	default:
 		b.flags |= fIncomplete
-		return &arrayType{typeBase: b, decay: mkPtr(ctx, n, typ), elem: typ}
+		return &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ}
 	}
 }
 

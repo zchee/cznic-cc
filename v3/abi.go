@@ -318,3 +318,15 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 	//dbg("%v sz %v", t, t.Size())
 	return t
 }
+
+func (a *ABI) Ptr(n Node, t Type) Type {
+	base := t.base()
+	base.align = byte(a.align(Ptr))
+	base.fieldAlign = byte(a.fieldAlign(Ptr))
+	base.kind = byte(Ptr)
+	base.size = uintptr(a.size(Ptr))
+	return &pointerType{
+		elem:     t,
+		typeBase: base,
+	}
+}

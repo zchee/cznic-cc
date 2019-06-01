@@ -1270,18 +1270,6 @@ func (t *functionType) Result() Type { return t.result }
 // IsVariadic implements Type.
 func (t *functionType) IsVariadic() bool { return t.variadic }
 
-func mkPtr(ctx *context, n Node, t Type) *pointerType {
-	base := t.base()
-	base.align = byte(ctx.cfg.ABI.align(Ptr))
-	base.fieldAlign = byte(ctx.cfg.ABI.fieldAlign(Ptr))
-	base.kind = byte(Ptr)
-	base.size = uintptr(ctx.cfg.ABI.size(Ptr))
-	return &pointerType{
-		elem:     t,
-		typeBase: base,
-	}
-}
-
 type bitFieldType struct {
 	Type
 	field *field
