@@ -1916,7 +1916,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: wcharT(ctx, n.lexicalScope, n.Token), value: Int64Value(s[0])}
 	case PrimaryExpressionString: // STRINGLITERAL
 		ctx.not(n, mIntConstExpr)
-		n.Operand = &operand{typ: mkPtr(ctx, n, &typeBase{kind: byte(Char)}), value: StringValue(n.Token.Value)} //TODO ABI singleton pchar
+		n.Operand = &operand{typ: mkPtr(ctx, n, ctx.cfg.ABI.Type(Char)), value: StringValue(n.Token.Value)} //TODO ABI singleton pchar
 	case PrimaryExpressionLString: // LONGSTRINGLITERAL
 		ctx.not(n, mIntConstExpr)
 		t := wcharT(ctx, n.lexicalScope, n.Token)

@@ -342,6 +342,7 @@ func tokName(r rune) string {
 type parser struct {
 	ctx          *context
 	declScope    Scope
+	fileScope    Scope
 	in           chan *[]Token
 	inBuf        []Token
 	inBufp       *[]Token
@@ -368,6 +369,7 @@ func newParser(ctx *context, in chan *[]Token) *parser {
 	return &parser{
 		ctx:          ctx,
 		declScope:    s,
+		fileScope:    s,
 		in:           in,
 		resolveScope: s,
 	}
@@ -1781,7 +1783,7 @@ func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
 		}
 		r := &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attr, Token: t, Token2: t2, StructDeclarationList: list, Token3: t3, lexicalScope: p.declScope, maxAlign: maxAlign}
 		if t.Value != 0 {
-			p.declScope.declare(t.Value, r)
+			p.fileScope.declare(t.Value, r)
 		}
 		return r
 	default:
@@ -1986,7 +1988,7 @@ func (p *parser) enumSpecifier() *EnumSpecifier {
 	}
 	r := &EnumSpecifier{Case: EnumSpecifierDef, AttributeSpecifierList: attr, Token: t, Token2: t2, Token3: t3, EnumeratorList: list, Token4: t4, Token5: t5, lexicalScope: p.declScope}
 	if t2.Value != 0 {
-		p.declScope.declare(t.Value, r)
+		p.fileScope.declare(t.Value, r)
 	}
 	return r
 }
