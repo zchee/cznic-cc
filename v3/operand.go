@@ -354,6 +354,23 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// greater or equal to the rank of the type of the other operand, then
 	// the operand with signed integer type is converted to the type of the
 	// operand with unsigned integer type.
+	switch {
+	case a.Type().IsSignedType(): // b is unsigned
+		if intConvRank[bt.Kind()] >= intConvRank[a.Type().Kind()] {
+			return a.convertTo(ctx, n, b.Type()), b
+		}
+	case b.Type().IsSignedType(): // a is unsigned
+		if intConvRank[at.Kind()] >= intConvRank[b.Type().Kind()] {
+			return a, b.convertTo(ctx, n, a.Type())
+		}
+	default:
+		panic(fmt.Errorf("TODO %v %v", a, b))
+	}
+
+	// Otherwise, if the type of the operand with signed integer type can
+	// represent all of the values of the type of the operand with unsigned
+	// integer type, then the operand with unsigned integer type is
+	// converted to the type of the operand with signed integer type.
 	var signed Type
 	switch {
 	case abi.isSignedInteger(at.Kind()): // b is unsigned

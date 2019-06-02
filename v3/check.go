@@ -492,7 +492,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: op.Type()}
 	case UnaryExpressionAddrof: // '&' CastExpression
 		ctx.not(n, mIntConstExpr)
-		op := n.CastExpression.addr(ctx)
+		op := n.CastExpression.check(ctx)
 		// [0], 6.5.3.2
 		//
 		// The operand of the unary & operator shall be either a
@@ -2978,6 +2978,7 @@ func (n *CompoundStatement) check(ctx *context) Operand {
 }
 
 func (n *BlockItemList) check(ctx *context) (r Operand) {
+	r = noOperand
 	for ; n != nil; n = n.BlockItemList {
 		r = n.BlockItem.check(ctx)
 	}
