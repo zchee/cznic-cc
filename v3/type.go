@@ -288,6 +288,7 @@ type Field interface {
 	Name() StringID  // Can be zero.
 	Offset() uintptr // In bytes from the beginning of the struct/union.
 	Padding() int
+	Promote() Type
 	Type() Type // Field type.
 }
 
@@ -1035,6 +1036,7 @@ func (t *aliasType) volatile() bool { return t.typ.volatile() }
 type field struct {
 	bitFieldMask uint64  // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
 	offset       uintptr // In bytes from start of the struct.
+	promote      Type
 	typ          Type
 
 	name StringID // Can be zero.
@@ -1053,6 +1055,7 @@ func (f *field) Mask() uint64        { return f.bitFieldMask }
 func (f *field) Name() StringID      { return f.name }
 func (f *field) Offset() uintptr     { return f.offset }
 func (f *field) Padding() int        { return int(f.pad) } // N/A for bitfields
+func (f *field) Promote() Type       { return f.promote }
 func (f *field) Type() Type          { return f.typ }
 
 func (f *field) string(b *strings.Builder) {

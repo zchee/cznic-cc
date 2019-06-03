@@ -413,7 +413,21 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 // are called the integer promotions. All other types are unchanged by the
 // integer promotions.
 func (o *operand) integerPromotion(ctx *context, n Node) Operand {
-	//TODO
+	t := o.Type()
+	if t2 := integerPromotion(ctx, t); t2.Kind() != t.Kind() {
+		return o.convertTo(ctx, n, t2)
+	}
+
+	return o
+}
+
+// [0]6.3.1.1-2
+//
+// If an int can represent all values of the original type, the value is
+// converted to an int; otherwise, it is converted to an unsigned int. These
+// are called the integer promotions. All other types are unchanged by the
+// integer promotions.
+func integerPromotion(ctx *context, t Type) Type {
 	// github.com/gcc-mirror/gcc/gcc/testsuite/gcc.c-torture/execute/bf-sign-2.c
 	//
 	// This test checks promotion of bitfields.  Bitfields
@@ -425,22 +439,29 @@ func (o *operand) integerPromotion(ctx *context, n Node) Operand {
 	// in an unsigned int, otherwise we don't promote them
 	// (ANSI/ISO does not specify the behavior of bitfields
 	// larger than an unsigned int).
-
-	t := o.Type()
-	if t == nil {
-		return o
+	if t.IsBitFieldType() {
+		f := t.BitField()
+		intBits := int(ctx.cfg.ABI.Types[Int].Size) * 8
+		switch {
+		case t.IsSignedType():
+			if f.BitFieldWidth() < intBits-1 {
+				return ctx.cfg.ABI.Type(Int)
+			}
+		default:
+			if f.BitFieldOffset() < intBits {
+				return ctx.cfg.ABI.Type(Int)
+			}
+		}
+		return t
 	}
 
 	switch t.Kind() {
-	case
-		Char,
-		SChar,
-		Short,
-		UChar,
-		UShort:
-		return o.convertTo(ctx, n, ctx.cfg.ABI.Type(Int))
+	case Invalid:
+		return t
+	case Char, SChar, UChar, Short, UShort:
+		return ctx.cfg.ABI.Type(Int)
 	default:
-		return o
+		return t
 	}
 }
 
@@ -505,11 +526,24 @@ func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
 	return &operand{typ: t}
 }
 
-func (o *operand) normalize(ctx *context) Operand {
+func (o *operand) normalize(ctx *context) (r Operand) {
 	switch x := o.Value().(type) {
 	case Int64Value:
 		if v := convertInt64(int64(x), o.Type(), ctx); v != int64(x) {
 			return &operand{o.Type(), Int64Value(v)}
+		}
+	case Uint64Value:
+		v := uint64(x)
+		switch o.Type().Size() {
+		case 1:
+			v &= math.MaxUint8
+		case 2:
+			v &= math.MaxUint16
+		case 4:
+			v &= math.MaxUint32
+		}
+		if v != uint64(x) {
+			return &operand{o.Type(), Uint64Value(v)}
 		}
 	}
 	return o

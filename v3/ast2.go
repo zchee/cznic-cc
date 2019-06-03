@@ -288,7 +288,7 @@ func (n *BlockItem) FunctionDefinition() *FunctionDefinition { return n.fn }
 
 func (n *Declarator) Declarator() *Declarator { return n }
 func (n *Declarator) IsStatic() bool          { return n.td.static() }
-func (n *Declarator) isVisible(at int32) bool { return n.DirectDeclarator.ends() < at }
+func (n *Declarator) isVisible(at int32) bool { return at == 0 || n.DirectDeclarator.ends() < at }
 
 // NameTok returns n's declaring name token.
 func (n *Declarator) NameTok() (r Token) {

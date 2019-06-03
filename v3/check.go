@@ -377,7 +377,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		}
 
 		n.promote = r.integerPromotion(ctx, n).Type()
-		n.Operand = &operand{typ: l.Type()}
+		n.Operand = (&operand{typ: l.Type()}).integerPromotion(ctx, n)
 	case AssignmentExpressionRsh: // UnaryExpression ">>=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
@@ -397,7 +397,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		}
 
 		n.promote = r.integerPromotion(ctx, n).Type()
-		n.Operand = &operand{typ: l.Type()}
+		n.Operand = (&operand{typ: l.Type()}).integerPromotion(ctx, n)
 	case AssignmentExpressionAnd: // UnaryExpression "&=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
@@ -1654,19 +1654,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.Field = f
 		ft := f.Type()
 		if f.IsBitField() {
-			if !ft.IsBitFieldType() { //TODO-
-				panic("internal error") //TODOOK
-			}
-			switch w := f.BitFieldWidth(); {
-			case ft.IsSignedType():
-				if w < ctx.intBits {
-					ft = &bitFieldType{Type: ctx.cfg.ABI.Type(Int), field: f.(*field)}
-				}
-			default:
-				if w < ctx.intBits-1 {
-					ft = &bitFieldType{Type: ctx.cfg.ABI.Type(Int), field: f.(*field)}
-				}
-			}
+			ft = &bitFieldType{Type: ft, field: f.(*field)}
 		}
 		n.Operand = &lvalue{Operand: &operand{typ: ft}}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
@@ -1692,19 +1680,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.Field = f
 		ft := f.Type()
 		if f.IsBitField() {
-			if !ft.IsBitFieldType() { //TODO-
-				panic("internal error") //TODOOK
-			}
-			switch w := f.BitFieldWidth(); {
-			case ft.IsSignedType():
-				if w < ctx.intBits {
-					ft = &bitFieldType{Type: ctx.cfg.ABI.Type(Int), field: f.(*field)}
-				}
-			default:
-				if w < ctx.intBits-1 {
-					ft = &bitFieldType{Type: ctx.cfg.ABI.Type(Int), field: f.(*field)}
-				}
-			}
+			ft = &bitFieldType{Type: ft, field: f.(*field)}
 		}
 		n.Operand = &lvalue{Operand: &operand{typ: ft}}
 	case PostfixExpressionInc: // PostfixExpression "++"
@@ -1828,70 +1804,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
-		ctx.not(n, mIntConstExpr)
-		var d *Declarator
-		if n.resolvedIn == nil {
-			if !ctx.cfg.AllowLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
-				ctx.errNode(n, "undefined: %s", n.Token.Value)
-				return noOperand
-			}
-
-			nm := n.Token.Value
-		out:
-			for s := n.lexicalScope; s != nil; s = s.Parent() {
-				for _, v := range s[nm] {
-					switch x := v.(type) {
-					case *Enumerator:
-						break out
-					case *Declarator:
-						if x.IsTypedefName {
-							break out
-						}
-
-						n.resolvedIn = s
-						d = x
-						break out
-					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
-						// nop
-					default:
-						panic("internal error") //TODOOK
-					}
-				}
-			}
-		}
-		if d == nil {
-			d = n.resolvedIn.identifier(n.Token.Value, n.Token)
-		}
-		if d == nil {
-			if !ctx.cfg.ignoreUndefinedIdentifiers {
-				ctx.errNode(n, "undefined: %s", n.Token.Value)
-			}
-			return noOperand
-		}
-
-		switch t := d.Type(); t.Kind() {
-		case Function:
-			n.Operand = &funcDesignator{Operand: &operand{typ: t}, declarator: d}
-		default:
-			d.Read++
-			n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
-		}
-		if ctx.closure == nil {
-			return n.Operand
-		}
-
-		for s := n.lexicalScope; s != nil; s = s.Parent() {
-			if _, ok := s[idClosure]; !ok {
-				continue
-			}
-
-			if ctx.closure == nil {
-				ctx.closure = map[StringID]struct{}{}
-			}
-			ctx.closure[d.Name()] = struct{}{}
-			return n.Operand
-		}
-		return n.Operand
+		return n.checkIdentifier(ctx)
 	case PrimaryExpressionInt: // INTCONST
 		n.Operand = n.intConst(ctx)
 	case PrimaryExpressionFloat: // FLOATCONST
@@ -1931,6 +1844,95 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		}
 	default:
 		panic("internal error") //TODOOK
+	}
+	return n.Operand
+}
+
+func (n *PrimaryExpression) checkIdentifier(ctx *context) Operand {
+	ctx.not(n, mIntConstExpr)
+	var d *Declarator
+	if n.resolvedIn == nil {
+		if !ctx.cfg.AllowLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
+			ctx.errNode(n, "undefined: %s", n.Token.Value)
+			return noOperand
+		}
+
+		nm := n.Token.Value
+	out:
+		for s := n.lexicalScope; s != nil; s = s.Parent() { //TODO use s.declarator()
+			for _, v := range s[nm] {
+				switch x := v.(type) {
+				case *Enumerator:
+					break out
+				case *Declarator:
+					if x.IsTypedefName {
+						break out
+					}
+
+					n.resolvedIn = s
+					d = x
+					break out
+				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+					// nop
+				default:
+					panic("internal error") //TODOOK
+				}
+			}
+		}
+	}
+	if d == nil {
+		d = n.resolvedIn.identifier(n.Token.Value, n.Token) //TODO use .declarator()
+	}
+	if d == nil {
+		if !ctx.cfg.ignoreUndefinedIdentifiers {
+			ctx.errNode(n, "undefined: %s", n.Token.Value)
+		}
+		return noOperand
+	}
+
+	switch d.Linkage {
+	case Internal:
+		if d.IsStatic() {
+			break
+		}
+
+		fallthrough
+	case External:
+		s := n.resolvedIn
+		if s.Parent() == nil {
+			break
+		}
+
+		for s.Parent() != nil {
+			s = s.Parent()
+		}
+
+		if d2 := s.declarator(n.Token.Value, Token{}); d2 != nil {
+			d = d2
+		}
+	}
+
+	switch t := d.Type(); t.Kind() {
+	case Function:
+		n.Operand = &funcDesignator{Operand: &operand{typ: t}, declarator: d}
+	default:
+		d.Read++
+		n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
+	}
+	if ctx.closure == nil {
+		return n.Operand
+	}
+
+	for s := n.lexicalScope; s != nil; s = s.Parent() {
+		if _, ok := s[idClosure]; !ok {
+			continue
+		}
+
+		if ctx.closure == nil {
+			ctx.closure = map[StringID]struct{}{}
+		}
+		ctx.closure[d.Name()] = struct{}{}
+		return n.Operand
 	}
 	return n.Operand
 }
@@ -2904,7 +2906,7 @@ func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 
 	ctx.checkFn = n
 	typ := n.DeclarationSpecifiers.check(ctx)
-	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true) //TODO- (why - ?)
+	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)
 	ctx.checkFn = nil
 	n.DeclarationList.checkFn(ctx, typ)
 }
