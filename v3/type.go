@@ -882,7 +882,7 @@ type arrayType struct {
 func (t *arrayType) Alias() Type { return t }
 
 // IsVLA implements Type.
-func (t *arrayType) IsVLA() bool { return t.vla }
+func (t *arrayType) IsVLA() bool { return t.vla || t.elem.Kind() == Array && t.Elem().IsVLA() }
 
 // String implements Type.
 func (t *arrayType) String() string {

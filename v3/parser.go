@@ -3603,7 +3603,7 @@ func (p *parser) pragmaSTDC() *PragmaSTDC {
 func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *FunctionDefinition {
 	var list *DeclarationList
 	if p.rune() != '{' {
-		list = p.declarationList()
+		list = p.declarationList(d.ParamScope())
 	}
 	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list, CompoundStatement: p.compoundStatement(d.ParamScope())}
 }
@@ -3611,7 +3611,9 @@ func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *F
 //  declaration-list:
 // 	declaration
 // 	declaration-list declaration
-func (p *parser) declarationList() (r *DeclarationList) {
+func (p *parser) declarationList(s Scope) (r *DeclarationList) {
+	p.declScope = s
+	p.resolveScope = s
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
 		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,

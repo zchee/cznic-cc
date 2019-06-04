@@ -1744,9 +1744,6 @@ func (c *cpp) primaryExpression(s *cppScanner, eval bool) interface{} {
 	case CHARCONST, LONGCHARCONST:
 		s.next()
 		r := charConst(c.ctx, tok)
-		if r < 0 {
-			r = -r
-		}
 		return int64(r)
 	case IDENTIFIER:
 		s.next()
@@ -1875,6 +1872,9 @@ func charConst(ctx *context, tok cppToken) rune {
 		switch runes[0] {
 		case '\\':
 			r, _ = decodeEscapeSequence(runes)
+			if r < 0 {
+				r = -r
+			}
 		default:
 			r = runes[0]
 		}
@@ -1896,7 +1896,7 @@ func charConst(ctx *context, tok cppToken) rune {
 				}
 				i += n
 			default:
-				buf.WriteByte(byte(r))
+				buf.WriteRune(r)
 				i++
 			}
 		}

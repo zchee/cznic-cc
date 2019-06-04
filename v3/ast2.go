@@ -223,10 +223,8 @@ func translationPhase5(ctx *context, toks *[]Token) *[]Token {
 			cpt.fileID = tok.fileID
 			cpt.pos = tok.pos
 			switch r := charConst(ctx, cpt); {
-			case r >= -255 && r < 0:
-				(*toks)[i].Value = dict.sid(string([]byte{byte(-r)}))
 			case r <= 255:
-				(*toks)[i].Value = dict.sid(string([]byte{byte(r)}))
+				(*toks)[i].Value = dict.sid(string(r))
 			default:
 				switch cpt.char {
 				case CHARCONST:
