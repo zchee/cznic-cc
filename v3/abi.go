@@ -6,7 +6,7 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"encoding/binary"
-	//TODO- "fmt" //TODO-
+	//TODO-"fmt" //TODO-
 	"math"
 )
 
@@ -210,7 +210,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 			sz := ft.Size()
 			if sz == 0 {
 				return t //TODO-
-				panic("TODO")
+				panic(n.Position().String())
 			}
 			al := ft.FieldAlign()
 			if al == 0 {
@@ -253,10 +253,15 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 			}
 
 			sz := ft.Size()
+			if sz == 0 && ft.Kind() == Array && ft.Len() == 0 && i == len(t.fields)-1 {
+				sz = ft.Elem().Size()
+			}
+
 			if sz == 0 {
 				return t //TODO-
 				panic("TODO")
 			}
+
 			al := ft.FieldAlign()
 			if al == 0 {
 				return t //TODO-
@@ -278,6 +283,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				}
 
 				if f.bitFieldWidth == 0 {
+					return t                     //TODO-
 					panic(n.Position().String()) //TODO
 				}
 

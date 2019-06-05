@@ -92,18 +92,18 @@ var (
 			}
 			f.Format(suffix)
 		},
-		//TODO- reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
-		//TODO- 	x := v.(*operand)
-		//TODO- 	f.Format(prefix)
-		//TODO- 	f.Format("%v, %[2]T(%[2]v)", x.typ, x.value)
-		//TODO- 	if x.typ != nil {
-		//TODO- 		f.Format(", size %v", x.typ.Size())
-		//TODO- 	}
-		//TODO- 	if x.Declarator() != nil {
-		//TODO- 		f.Format(", declarator %s", x.Declarator().Name())
-		//TODO- 	}
-		//TODO- 	f.Format(suffix)
-		//TODO- },
+		reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
+			x := v.(*operand)
+			f.Format(prefix)
+			f.Format("%v, %[2]T(%[2]v) %v", x.typ, x.value, x.Type())
+			if x.typ != nil {
+				f.Format(", size %v", x.typ.Size())
+			}
+			if x.Declarator() != nil {
+				f.Format(", declarator %s", x.Declarator().Name())
+			}
+			f.Format(suffix)
+		},
 		reflect.TypeOf(Operand(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
 			x := v.(Operand)
 			f.Format(prefix)

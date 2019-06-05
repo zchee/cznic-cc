@@ -1110,16 +1110,18 @@ func (n *StructDeclarator) check(ctx *context, td typeDescriptor, typ Type) *fie
 		return nil
 	}
 
+	if n.Declarator != nil {
+		typ = n.Declarator.check(ctx, td, typ, false)
+	}
 	sf := &field{
 		typ: typ,
 	}
 	switch n.Case {
 	case StructDeclaratorDecl: // Declarator
-		sf.typ = n.Declarator.check(ctx, td, typ, false)
 		sf.name = n.Declarator.Name()
 	case StructDeclaratorBitField: // Declarator ':' ConstantExpression AttributeSpecifierList
 		sf.isBitField = true
-		sf.typ = &bitFieldType{Type: n.Declarator.check(ctx, td, typ, false), field: sf}
+		sf.typ = &bitFieldType{Type: typ, field: sf}
 		sf.name = n.Declarator.Name()
 		if op := n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr); op.Type().IsIntegerType() {
 			switch x := op.Value().(type) {
@@ -1733,6 +1735,18 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 
 		a := n.Expression.check(ctx)
 		b := n.ConditionalExpression.check(ctx)
+
+		var val Value
+		if op.Value() != nil && a.Value() != nil && b.Value() != nil {
+			switch {
+			case op.IsZero():
+				val = b.Value()
+			default:
+				val = a.Value()
+			}
+			//fmt.Printf("%v: %v\n", n.Position(), val) //TODO-
+		}
+
 		if a.Type().Kind() == Invalid && b.Type().Kind() == Invalid {
 			return noOperand
 		}
@@ -1751,31 +1765,32 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 			// they applied to those two operands,
 			// is the type of the result.
 			op, _ := usualArithmeticConversions(ctx, n, a, b)
-			n.Operand = &operand{typ: op.Type()}
+			n.Operand = &operand{typ: op.Type(), value: val}
 		// — both operands are pointers to qualified or unqualified versions of compatible types;
 		case a.Type().Decay().Kind() == Ptr && b.Type().Decay().Kind() == Ptr:
 			//TODO check compatible
-			n.Operand = &operand{typ: n.Expression.Operand.Type()}
+			n.Operand = &operand{typ: n.Expression.Operand.Type(), value: val}
 		// — both operands have void type;
 		case a.Type().Kind() == Void && b.Type().Kind() == Void:
-			n.Operand = &operand{typ: a.Type()}
+			n.Operand = &operand{typ: a.Type(), value: val}
 		// — one operand is a pointer and the other is a null pointer constant;
 		case (a.Type().Kind() == Ptr || a.Type().Kind() == Function) && b.IsZero():
-			n.Operand = &operand{typ: a.Type()}
+			n.Operand = &operand{typ: a.Type(), value: val}
 		case (b.Type().Kind() == Ptr || b.Type().Kind() == Function) && a.IsZero():
-			n.Operand = &operand{typ: b.Type()}
+			n.Operand = &operand{typ: b.Type(), value: val}
 		case a.Type().Kind() == Ptr && a.Type().Elem().Kind() == Function && b.Type().Kind() == Function:
 			//TODO check compatible
-			n.Operand = &operand{typ: a.Type()}
+			n.Operand = &operand{typ: a.Type(), value: val}
 		case b.Type().Kind() == Ptr && b.Type().Elem().Kind() == Function && a.Type().Kind() == Function:
 			//TODO check compatible
-			n.Operand = &operand{typ: b.Type()}
+			n.Operand = &operand{typ: b.Type(), value: val}
 		case a.Type().Kind() != Invalid:
-			n.Operand = &operand{typ: a.Type()}
+			n.Operand = &operand{typ: a.Type(), value: val}
 		case b.Type().Kind() != Invalid:
-			n.Operand = &operand{typ: b.Type()}
+			n.Operand = &operand{typ: b.Type(), value: val}
 		default:
 			//TODO panic(fmt.Errorf("%v: internal error: %v, %v", n.Token2.Position(), a.Type(), b.Type())) //TODOOK
+			return noOperand
 		}
 	default:
 		panic("internal error") //TODOOK
@@ -1919,16 +1934,17 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case EqualityExpressionRel: // RelationalExpression
 		n.Operand = n.RelationalExpression.check(ctx)
-		return n.Operand
 	case
 		EqualityExpressionEq,  // EqualityExpression "==" RelationalExpression
 		EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
 
-		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
+		op := &operand{typ: ctx.cfg.ABI.Type(Int)}
+		n.Operand = op
 		lo := n.EqualityExpression.check(ctx)
 		ro := n.RelationalExpression.check(ctx)
 		lt := lo.Type().Decay()
 		rt := ro.Type().Decay()
+		n.promote = noType
 		switch {
 		case lt.IsArithmeticType() && rt.IsArithmeticType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
@@ -1942,10 +1958,24 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 		default:
 			//TODO report error
 		}
-		return n.Operand
+		if n.promote.Kind() == Invalid {
+			break
+		}
+
+		lo = lo.convertTo(ctx, n, n.promote)
+		ro = ro.convertTo(ctx, n, n.promote)
+		if a, b := lo.Value(), ro.Value(); a != nil && b != nil {
+			switch n.Case {
+			case EqualityExpressionEq: // EqualityExpression "==" RelationalExpression
+				op.value = a.eq(b)
+			case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
+				op.value = a.neq(b)
+			}
+		}
 	default:
 		panic("internal error") //TODOOK
 	}
+	return n.Operand
 }
 
 func (n *RelationalExpression) check(ctx *context) Operand {
@@ -1957,27 +1987,19 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case RelationalExpressionShift: // ShiftExpression
 		n.Operand = n.ShiftExpression.check(ctx)
-	case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
-		n.RelationalExpression.check(ctx)
-		n.ShiftExpression.check(ctx)
-	case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
-		n.RelationalExpression.check(ctx)
-		n.ShiftExpression.check(ctx)
-	case RelationalExpressionLeq: // RelationalExpression "<=" ShiftExpression
-		n.RelationalExpression.check(ctx)
-		n.ShiftExpression.check(ctx)
-	case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
-		n.RelationalExpression.check(ctx)
-		n.ShiftExpression.check(ctx)
-	default:
-		panic("internal error") //TODOOK
-	}
-	if n.RelationalExpression != nil {
-		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
-		lo := n.RelationalExpression.Operand
-		ro := n.ShiftExpression.Operand
+	case
+		RelationalExpressionLt,  // RelationalExpression '<' ShiftExpression
+		RelationalExpressionGt,  // RelationalExpression '>' ShiftExpression
+		RelationalExpressionLeq, // RelationalExpression "<=" ShiftExpression
+		RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
+
+		op := &operand{typ: ctx.cfg.ABI.Type(Int)}
+		n.Operand = op
+		lo := n.RelationalExpression.check(ctx)
+		ro := n.ShiftExpression.check(ctx)
 		lt := lo.Type().Decay()
 		rt := ro.Type().Decay()
+		n.promote = noType
 		switch {
 		case lt.IsRealType() && rt.IsRealType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
@@ -1991,6 +2013,26 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		default:
 			//TODO report error
 		}
+		if n.promote.Kind() == Invalid {
+			break
+		}
+
+		lo = lo.convertTo(ctx, n, n.promote)
+		ro = ro.convertTo(ctx, n, n.promote)
+		if a, b := lo.Value(), ro.Value(); a != nil && b != nil {
+			switch n.Case {
+			case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
+				op.value = a.lt(b)
+			case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
+				op.value = a.gt(b)
+			case RelationalExpressionLeq: // RelationalExpression "<=" ShiftExpression
+				op.value = a.le(b)
+			case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
+				op.value = a.ge(b)
+			}
+		}
+	default:
+		panic("internal error") //TODOOK
 	}
 	return n.Operand
 }
