@@ -554,7 +554,8 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = &lvalue{Operand: &operand{typ: op.Type().Elem(), value: op.Value()}}
+		//TODO- n.Operand = &lvalue{Operand: &operand{typ: op.Type().Elem(), value: op.Value()}}
+		n.Operand = &lvalue{Operand: &operand{typ: op.Type().Elem()}}
 	case UnaryExpressionPlus: // '+' CastExpression
 		op := n.CastExpression.check(ctx)
 		if !op.Type().IsArithmeticType() {
@@ -1601,14 +1602,14 @@ loop2:
 	case "", "l":
 		switch {
 		case cplx != "":
-			return &operand{typ: ctx.cfg.ABI.Type(Double), value: Complex128Value(complex(0, v))}
+			return &operand{typ: ctx.cfg.ABI.Type(ComplexDouble), value: Complex128Value(complex(0, v))}
 		default:
 			return &operand{typ: ctx.cfg.ABI.Type(Double), value: Float64Value(v)}
 		}
 	case "f":
 		switch {
 		case cplx != "":
-			return &operand{typ: ctx.cfg.ABI.Type(Double), value: Complex128Value(complex(0, float32(v)))}
+			return &operand{typ: ctx.cfg.ABI.Type(ComplexFloat), value: Complex64Value(complex(0, float32(v)))}
 		default:
 			return &operand{typ: ctx.cfg.ABI.Type(Float), value: Float32Value(float32(v))}
 		}

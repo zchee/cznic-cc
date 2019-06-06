@@ -11,6 +11,7 @@ import (
 
 var (
 	_ Value = Complex128Value(0)
+	_ Value = Complex64Value(0)
 	_ Value = Float32Value(0)
 	_ Value = Float64Value(0)
 	_ Value = Int64Value(0)
@@ -32,7 +33,9 @@ type Operand interface {
 	IsZero() bool
 	Type() Type
 	Value() Value
+	convertFromInt(*context, Node, Type) Operand
 	convertTo(*context, Node, Type) Operand
+	convertToInt(*context, Node, Type) Operand
 	integerPromotion(*context, Node) Operand
 	normalize(*context) Operand
 }
@@ -276,6 +279,27 @@ func (v Float64Value) rsh(b Value) Value { panic("internal error") } //TODOOK
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
 func (v Float64Value) xor(b Value) Value { panic("internal error") } //TODOOK
 
+type Complex64Value complex128
+
+func (v Complex64Value) add(b Value) Value { return v + b.(Complex64Value) }
+func (v Complex64Value) and(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) div(b Value) Value { return v / b.(Complex64Value) }
+func (v Complex64Value) eq(b Value) Value  { return boolValue(v == b.(Complex64Value)) }
+func (v Complex64Value) ge(b Value) Value  { panic("internal error") } //TODOOK }
+func (v Complex64Value) gt(b Value) Value  { panic("internal error") } //TODOOK }
+func (v Complex64Value) isZero() bool      { return v == 0 }
+func (v Complex64Value) le(b Value) Value  { panic("internal error") } //TODOOK }
+func (v Complex64Value) lsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) lt(b Value) Value  { panic("internal error") } //TODOOK }
+func (v Complex64Value) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) mul(b Value) Value { return v * b.(Complex64Value) }
+func (v Complex64Value) neg() Value        { return -v }
+func (v Complex64Value) neq(b Value) Value { return boolValue(v != b.(Complex64Value)) }
+func (v Complex64Value) or(b Value) Value  { panic("internal error") } //TODOOK
+func (v Complex64Value) rsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) sub(b Value) Value { return v - b.(Complex64Value) }
+func (v Complex64Value) xor(b Value) Value { panic("internal error") } //TODOOK
+
 type Complex128Value complex128
 
 func (v Complex128Value) add(b Value) Value { return v + b.(Complex128Value) }
@@ -305,6 +329,10 @@ type lvalue struct {
 func (o *lvalue) Declarator() *Declarator { return o.declarator }
 func (o *lvalue) IsLValue() bool          { return true }
 
+func (o *lvalue) convertTo(ctx *context, n Node, to Type) (r Operand) {
+	return &lvalue{Operand: o.Operand.convertTo(ctx, n, to), declarator: o.declarator}
+}
+
 type funcDesignator struct {
 	Operand
 	declarator *Declarator
@@ -312,6 +340,10 @@ type funcDesignator struct {
 
 func (o *funcDesignator) Declarator() *Declarator { return o.declarator }
 func (o *funcDesignator) IsLValue() bool          { return false }
+
+func (o *funcDesignator) convertTo(ctx *context, n Node, to Type) (r Operand) {
+	return &lvalue{Operand: o.Operand.convertTo(ctx, n, to), declarator: o.declarator}
+}
 
 type operand struct {
 	typ   Type
@@ -360,18 +392,18 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// double, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is long double.
 	if at.Kind() == ComplexLongDouble || bt.Kind() == ComplexLongDouble {
-		return noOperand, noOperand //TODO
+		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble))
 	}
 
 	if at.Kind() == LongDouble || bt.Kind() == LongDouble {
-		return noOperand, noOperand //TODO
+		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble))
 	}
 
 	// Otherwise, if the corresponding real type of either operand is
 	// double, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is double.
 	if at.Kind() == ComplexDouble || bt.Kind() == ComplexDouble {
-		return noOperand, noOperand //TODO
+		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble))
 	}
 
 	if at.Kind() == Double || bt.Kind() == Double {
@@ -382,7 +414,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// float, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is float.
 	if at.Kind() == ComplexFloat || bt.Kind() == ComplexFloat {
-		return noOperand, noOperand //TODO
+		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat))
 	}
 
 	if at.Kind() == Float || bt.Kind() == Float {
@@ -536,100 +568,246 @@ func integerPromotion(ctx *context, t Type) Type {
 	}
 }
 
-func (o *operand) convertTo(ctx *context, n Node, t Type) (r Operand) {
-	if o.Type() == nil {
-		return &operand{typ: t}
+func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
+	if o.Type().Kind() == Invalid {
+		return o
 	}
 
-	abi := ctx.cfg.ABI
-	k0 := o.Type().Kind()
-	if o.Value() == nil {
-		return &operand{typ: t}
+	v := o.Value()
+	if v == nil {
+		return &operand{typ: to}
 	}
 
-	k := t.Kind()
-	if k == Void {
-		return &operand{typ: t} //TODO ABI singleton
+	if o.Type().Kind() == to.Kind() {
+		return (&operand{typ: to, value: v}).normalize(ctx)
+	}
+
+	if o.Type().IsIntegerType() {
+		return o.convertFromInt(ctx, n, to)
+	}
+
+	if to.IsIntegerType() {
+		return o.convertToInt(ctx, n, to)
 	}
 
 	switch o.Type().Kind() {
-	case Double:
-		switch t.Kind() {
-		case Double:
-			return o
-		default:
-			//TODO
+	case Array:
+		switch to.Kind() {
+		case Ptr:
+			return &operand{typ: to}
 		}
-	default:
-		//TODO
+	case ComplexFloat:
+		v := v.(Complex64Value)
+		switch to.Kind() {
+		case ComplexDouble, ComplexLongDouble:
+			return (&operand{typ: to, value: Complex128Value(v)}).normalize(ctx)
+		case Float:
+			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx)
+		case Double:
+			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx)
+		}
+	case ComplexDouble:
+		v := v.(Complex128Value)
+		switch to.Kind() {
+		case ComplexFloat:
+			return (&operand{typ: to, value: Complex64Value(v)}).normalize(ctx)
+		case ComplexLongDouble:
+			return (&operand{typ: to, value: v}).normalize(ctx)
+		case Float:
+			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx)
+		case Double:
+			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx)
+		}
+	case Float:
+		v := v.(Float32Value)
+		switch to.Kind() {
+		case ComplexFloat:
+			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx)
+		case ComplexDouble, ComplexLongDouble:
+			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx)
+		case Double:
+			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx)
+		}
+	case Double:
+		v := v.(Float64Value)
+		switch to.Kind() {
+		case ComplexFloat:
+			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx)
+		case ComplexDouble, ComplexLongDouble:
+			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx)
+		case LongDouble:
+			return (&operand{typ: to, value: v}).normalize(ctx)
+		case Float:
+			return (&operand{typ: to, value: Float32Value(v)}).normalize(ctx)
+		}
 	}
+	panic("TODO")
+}
 
-	if !integerTypes[k0] && k0 != Ptr {
-		return &operand{typ: t}
-	}
-
-	if integerTypes[k] {
-		var i64 int64
+func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
+	v := o.Value()
+	switch o.Type().Kind() {
+	case Float:
+		v := v.(Float32Value)
+		switch {
+		case to.IsSignedType():
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
+		default:
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+		}
+	case Double:
+		v := v.(Float64Value)
+		switch {
+		case to.IsSignedType():
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
+		default:
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+		}
+	case Ptr:
+		var v uint64
 		switch x := o.Value().(type) {
 		case Int64Value:
-			i64 = int64(x)
+			v = uint64(x)
 		case Uint64Value:
-			i64 = int64(x)
-		case StringValue:
-			if x != 0 {
-				panic("internal error") //TODOOK
-			}
+			v = uint64(x)
 		default:
-			panic(fmt.Sprintf("%v: internal error: %T %v", n.Position(), x, x)) //TODOOK
+			panic("TODO")
 		}
-		var v Value
 		switch {
-		case abi.isSignedInteger(k):
-			v = Int64Value(i64)
+		case to.IsSignedType():
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
 		default:
-			v = Uint64Value(i64)
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
 		}
-		return (&operand{typ: t, value: v}).normalize(ctx)
+	case Array:
+		return &operand{typ: to}
+	}
+	panic("TODO")
+}
+
+func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
+	var v uint64
+	switch x := o.Value().(type) {
+	case Int64Value:
+		v = uint64(x)
+	case Uint64Value:
+		v = uint64(x)
+	default:
+		panic("TODO")
 	}
 
-	if k == Ptr {
-		// [0]6.3.2.3
-		if o.Value().isZero() {
-			// 3. An integer constant expression with the
-			// value 0, or such an expression cast to type
-			// void *, is called a null pointer constant.
-			// If a null pointer constant is converted to a
-			// pointer type, the resulting pointer, called
-			// a null pointer, is guaranteed to compare
-			// unequal to a pointer to any object or
-			// function.
-			return &operand{typ: t, value: Uint64Value(0)}
+	if to.IsIntegerType() {
+		switch {
+		case to.IsSignedType():
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
+		default:
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
 		}
 	}
-	return &operand{typ: t}
+
+	switch to.Kind() {
+	case ComplexFloat:
+		switch {
+		case o.Type().IsSignedType():
+			return (&operand{typ: to, value: Complex64Value(complex(float64(int64(v)), 0))}).normalize(ctx)
+		default:
+			return (&operand{typ: to, value: Complex64Value(complex(float64(v), 0))}).normalize(ctx)
+		}
+	case ComplexDouble, ComplexLongDouble:
+		switch {
+		case o.Type().IsSignedType():
+			return (&operand{typ: to, value: Complex128Value(complex(float64(int64(v)), 0))}).normalize(ctx)
+		default:
+			return (&operand{typ: to, value: Complex128Value(complex(float64(v), 0))}).normalize(ctx)
+		}
+	case Float:
+		switch {
+		case o.Type().IsSignedType():
+			return (&operand{typ: to, value: Float32Value(float64(int64(v)))}).normalize(ctx)
+		default:
+			return (&operand{typ: to, value: Float32Value(float64(v))}).normalize(ctx)
+		}
+	case Double, LongDouble:
+		switch {
+		case o.Type().IsSignedType():
+			return (&operand{typ: to, value: Float64Value(int64(v))}).normalize(ctx)
+		default:
+			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx)
+		}
+	case Ptr:
+		return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+	case Struct, Union, Void, Int128, UInt128:
+		return &operand{typ: to}
+	}
+	panic("TODO")
 }
 
 func (o *operand) normalize(ctx *context) (r Operand) {
-	switch x := o.Value().(type) {
-	case Int64Value:
-		if v := convertInt64(int64(x), o.Type(), ctx); v != int64(x) {
-			return &operand{o.Type(), Int64Value(v)}
+	if o.Type().IsIntegerType() {
+		switch x := o.Value().(type) {
+		case Int64Value:
+			if v := convertInt64(int64(x), o.Type(), ctx); v != int64(x) { //TODO ???
+				return &operand{o.Type(), Int64Value(v)}
+			}
+		case Uint64Value:
+			v := uint64(x)
+			switch o.Type().Size() {
+			case 1:
+				v &= math.MaxUint8
+			case 2:
+				v &= math.MaxUint16
+			case 4:
+				v &= math.MaxUint32
+			}
+			if v != uint64(x) {
+				return &operand{o.Type(), Uint64Value(v)}
+			}
+		case nil:
+			// ok
+		default:
+			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
 		}
-	case Uint64Value:
-		v := uint64(x)
-		switch o.Type().Size() {
-		case 1:
-			v &= math.MaxUint8
-		case 2:
-			v &= math.MaxUint16
-		case 4:
-			v &= math.MaxUint32
+		return o
+	}
+
+	switch o.Type().Kind() {
+	case ComplexFloat:
+		switch x := o.Value().(type) {
+		case Complex64Value, nil:
+			return o
+		default:
+			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
 		}
-		if v != uint64(x) {
-			return &operand{o.Type(), Uint64Value(v)}
+	case ComplexDouble, ComplexLongDouble:
+		switch x := o.Value().(type) {
+		case Complex128Value, nil:
+			return o
+		default:
+			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+		}
+	case Float:
+		switch x := o.Value().(type) {
+		case Float32Value, nil:
+			return o
+		default:
+			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+		}
+	case Double, LongDouble:
+		switch x := o.Value().(type) {
+		case Float64Value, nil:
+			return o
+		default:
+			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+		}
+	case Ptr:
+		switch x := o.Value().(type) {
+		case Int64Value, Uint64Value, nil:
+			return o
+		default:
+			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
 		}
 	}
-	return o
+	panic("TODO")
 }
 
 func convertInt64(n int64, t Type, ctx *context) int64 {

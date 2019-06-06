@@ -95,7 +95,7 @@ var (
 		reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
 			x := v.(*operand)
 			f.Format(prefix)
-			f.Format("%v, %[2]T(%[2]v) %v", x.typ, x.value, x.Type())
+			f.Format("%v, %[2]T(%[2]v)", x.typ, x.value)
 			if x.typ != nil {
 				f.Format(", size %v", x.typ.Size())
 			}

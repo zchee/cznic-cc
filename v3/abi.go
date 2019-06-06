@@ -103,6 +103,7 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 	for _, k := range []Kind{
 		Bool,
 		Char,
+		ComplexDouble,
 		ComplexFloat,
 		ComplexLongDouble,
 		Double,
