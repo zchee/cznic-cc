@@ -215,6 +215,10 @@ type Type interface {
 	// valid but not Array.
 	Len() uintptr
 
+	// LenExpr returns an array type's length expression.  It panics if the
+	// type's Kind is valid but not Array or the array is not a VLA.
+	LenExpr() *AssignmentExpression
+
 	// NumField returns a struct type's field count.  It panics if the
 	// type's Kind is valid but not Struct.
 	NumField() int
@@ -391,7 +395,7 @@ const (
 	fTypedef
 )
 
-type flag uint16
+type flag uint8
 
 const (
 	// function specifier
@@ -407,7 +411,6 @@ const (
 	// other
 	fIncomplete
 	fSigned // Valid only for integer types.
-	fBitField
 )
 
 type typeBase struct {
@@ -694,6 +697,11 @@ func (t *typeBase) Kind() Kind { return Kind(t.kind) }
 // Len implements Type.
 func (t *typeBase) Len() uintptr { panic(fmt.Errorf("%s: Len of non-array type", t.Kind())) }
 
+// LenExpr implements Type.
+func (t *typeBase) LenExpr() *AssignmentExpression {
+	panic(fmt.Errorf("%s: LenExpr of non-array type", t.Kind()))
+}
+
 // noReturn implements Type.
 func (t *typeBase) noReturn() bool { return t.flags&fNoReturn != 0 }
 
@@ -912,6 +920,15 @@ func (t *arrayType) Elem() Type { return t.elem }
 // Len implements Type.
 func (t *arrayType) Len() uintptr { return t.length }
 
+// LenExpr implements Type.
+func (t *arrayType) LenExpr() *AssignmentExpression {
+	if !t.vla {
+		panic(fmt.Errorf("%s: LenExpr of non variable length array", t.Kind()))
+	}
+
+	return t.expr
+}
+
 // setLen implements Type.
 func (t *arrayType) setLen(n uintptr) {
 	t.typeBase.flags &^= fIncomplete
@@ -988,6 +1005,9 @@ func (t *aliasType) Kind() Kind { return t.typ.Kind() }
 
 // Len implements Type.
 func (t *aliasType) Len() uintptr { return t.typ.Len() }
+
+// LenExpr implements Type.
+func (t *aliasType) LenExpr() *AssignmentExpression { return t.typ.LenExpr() }
 
 // Parameters implements Type.
 func (t *aliasType) Parameters() []Object { return t.typ.Parameters() }

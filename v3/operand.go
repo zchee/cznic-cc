@@ -551,7 +551,7 @@ func integerPromotion(ctx *context, t Type) Type {
 				return ctx.cfg.ABI.Type(Int)
 			}
 		default:
-			if f.BitFieldOffset() < intBits {
+			if f.BitFieldWidth() < intBits {
 				return ctx.cfg.ABI.Type(Int)
 			}
 		}

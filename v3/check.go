@@ -2310,9 +2310,11 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 
 		var length uintptr
 		var vla bool
+		var vlaExpr *AssignmentExpression
 		switch x := op.Value().(type) {
 		case nil:
 			vla = true
+			vlaExpr = expr
 		case Int64Value:
 			length = uintptr(x)
 		case Uint64Value:
@@ -2329,7 +2331,7 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 
 			b.size = length * typ.Size()
 		}
-		return &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ, length: length, vla: vla}
+		return &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ, length: length, vla: vla, expr: vlaExpr}
 	case !exprIsOptional:
 		panic("TODO")
 	default:
