@@ -644,23 +644,77 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
 	panic("TODO")
 }
 
+type signedSaturationLimit struct {
+	fmin, fmax float64
+	min, max   int64
+}
+
+type unsignedSaturationLimit struct {
+	fmax float64
+	max  uint64
+}
+
+var (
+	signedSaturationLimits = [...]signedSaturationLimit{
+		1: {math.Nextafter(math.MinInt8, 0), math.Nextafter(math.MaxInt8, 0), math.MinInt8, math.MaxInt8},
+		2: {math.Nextafter(math.MinInt16, 0), math.Nextafter(math.MaxInt16, 0), math.MinInt16, math.MaxInt16},
+		4: {math.Nextafter(math.MinInt32, 0), math.Nextafter(math.MaxInt32, 0), math.MinInt32, math.MaxInt32},
+		8: {math.Nextafter(math.MinInt64, 0), math.Nextafter(math.MaxInt64, 0), math.MinInt32, math.MaxInt64},
+	}
+
+	unsignedSaturationLimits = [...]unsignedSaturationLimit{
+		1: {math.Nextafter(math.MaxUint8, 0), math.MaxUint8},
+		2: {math.Nextafter(math.MaxUint16, 0), math.MaxUint16},
+		4: {math.Nextafter(math.MaxUint32, 0), math.MaxUint32},
+		8: {math.Nextafter(math.MaxUint64, 0), math.MaxUint64},
+	}
+)
+
 func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 	v := o.Value()
 	switch o.Type().Kind() {
 	case Float:
-		v := v.(Float32Value)
+		v := float64(v.(Float32Value))
 		switch {
 		case to.IsSignedType():
+			limits := &signedSaturationLimits[to.Size()]
+			if v > limits.fmax {
+				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx)
+			}
+
+			if v < limits.fmin {
+				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx)
+			}
+
 			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
 		default:
+			limits := &unsignedSaturationLimits[to.Size()]
+			if v > limits.fmax {
+				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx)
+			}
+
 			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
 		}
-	case Double:
-		v := v.(Float64Value)
+	case Double, LongDouble:
+		v := float64(v.(Float64Value))
 		switch {
 		case to.IsSignedType():
+			limits := &signedSaturationLimits[to.Size()]
+			if v > limits.fmax {
+				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx)
+			}
+
+			if v < limits.fmin {
+				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx)
+			}
+
 			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
 		default:
+			limits := &unsignedSaturationLimits[to.Size()]
+			if v > limits.fmax {
+				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx)
+			}
+
 			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
 		}
 	case Ptr:

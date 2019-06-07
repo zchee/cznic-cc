@@ -1373,8 +1373,7 @@ func (n *Expression) check(ctx *context) Operand {
 		n.Operand = n.AssignmentExpression.check(ctx)
 	case ExpressionComma: // Expression ',' AssignmentExpression
 		n.Expression.check(ctx)
-		n.AssignmentExpression.check(ctx)
-		//TODO
+		n.Operand = n.AssignmentExpression.check(ctx)
 	default:
 		panic("internal error") //TODOOK
 	}
