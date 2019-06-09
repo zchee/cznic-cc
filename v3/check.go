@@ -520,32 +520,6 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		}
 
 		n.Operand = op
-		//TODO- t := op.Type()
-		//TODO- switch t.Kind() {
-		//TODO- case Ptr:
-		//TODO- 	if v := op.Value(); v != nil {
-		//TODO- 		n.Operand = &operand{typ: t, value: v}
-		//TODO- 		break
-		//TODO- 	}
-
-		//TODO- 	fallthrough
-		//TODO- default:
-		//TODO- 	if op != noOperand && !op.IsLValue() {
-		//TODO- 		if n.CastExpression.Case == CastExpressionUnary && n.CastExpression.UnaryExpression.Case == UnaryExpressionDeref {
-		//TODO- 			n.Operand = &operand{typ: ctx.cfg.ABI.Ptr(n, t)}
-		//TODO- 			break
-		//TODO- 		}
-
-		//TODO- 		panic(n.Position()) // report error
-		//TODO- 	}
-
-		//TODO- 	if d != nil {
-		//TODO- 		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, t)}, declarator: d}
-		//TODO- 		break
-		//TODO- 	}
-
-		//TODO- 	n.Operand = &operand{typ: ctx.cfg.ABI.Ptr(n, t)}
-		//TODO- }
 	case UnaryExpressionDeref: // '*' CastExpression
 		ctx.not(n, mIntConstExpr)
 		op := n.CastExpression.check(ctx)
@@ -1856,6 +1830,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		typ := ctx.cfg.ABI.Type(Char)
 		b := typ.base()
 		b.align = byte(typ.Align())
+		b.fieldAlign = byte(typ.FieldAlign())
 		b.kind = byte(Array)
 		sz := uintptr(len(n.Token.Value.String())) + 1 //TODO set sz in cpp
 		arr := &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ, length: sz}
@@ -1866,6 +1841,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		typ := wcharT(ctx, n.lexicalScope, n.Token)
 		b := typ.base()
 		b.align = byte(typ.Align())
+		b.fieldAlign = byte(typ.FieldAlign())
 		b.kind = byte(Array)
 		sz := uintptr(len([]rune(n.Token.Value.String()))) + 1 //TODO set sz in cpp
 		arr := &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ, length: sz}
@@ -2385,20 +2361,24 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 		lt := lo.Type().Decay()
 		rt := ro.Type().Decay()
 		n.promote = noType
+		ok := false
 		switch {
 		case lt.IsArithmeticType() && rt.IsArithmeticType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
 			n.promote = op.Type()
+			ok = true
 		case lt.Kind() == Ptr && (rt.Kind() == Ptr || rt.IsIntegerType()):
 			n.promote = lt
 			//TODO
 		case (lt.Kind() == Ptr || lt.IsIntegerType()) && rt.Kind() == Ptr:
 			n.promote = rt
 			//TODO
+		case lt.Kind() == Function || rt.Kind() == Function:
+			n.promote = ctx.cfg.ABI.Type(Ptr)
 		default:
 			//TODO report error
 		}
-		if n.promote.Kind() == Invalid {
+		if n.promote.Kind() == Invalid || !ok {
 			break
 		}
 
@@ -2440,10 +2420,12 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		lt := lo.Type().Decay()
 		rt := ro.Type().Decay()
 		n.promote = noType
+		ok := false
 		switch {
 		case lt.IsRealType() && rt.IsRealType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
 			n.promote = op.Type()
+			ok = true
 		case lt.Kind() == Ptr && (rt.Kind() == Ptr || rt.IsIntegerType()):
 			n.promote = lt
 			//TODO
@@ -2453,7 +2435,7 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		default:
 			//TODO report error
 		}
-		if n.promote.Kind() == Invalid {
+		if n.promote.Kind() == Invalid || !ok {
 			break
 		}
 
@@ -2735,6 +2717,7 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, exprIsOptional bool) Type { //TODO pass and use typeQualifiers
 	b := typ.base()
 	b.align = byte(typ.Align())
+	b.fieldAlign = byte(typ.FieldAlign())
 	b.kind = byte(Array)
 	switch {
 	case expr != nil:

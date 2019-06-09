@@ -594,7 +594,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
 	case Array:
 		switch to.Kind() {
 		case Ptr:
-			return &operand{typ: to}
+			return &operand{typ: to, value: v}
 		}
 	case ComplexFloat:
 		v := v.(Complex64Value)
