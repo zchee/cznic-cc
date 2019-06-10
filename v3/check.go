@@ -2224,9 +2224,18 @@ func (n *LogicalOrExpression) check(ctx *context) Operand {
 	case LogicalOrExpressionLAnd: // LogicalAndExpression
 		n.Operand = n.LogicalAndExpression.check(ctx)
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
-		n.LogicalOrExpression.check(ctx)
-		n.LogicalAndExpression.check(ctx)
-		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
+		lop := n.LogicalOrExpression.check(ctx)
+		rop := n.LogicalAndExpression.check(ctx)
+		var v Value
+		if lop.Value() != nil && rop.Value() != nil {
+			switch {
+			case n.LogicalOrExpression.Operand.IsNonZero() || n.LogicalAndExpression.Operand.IsNonZero():
+				v = Int64Value(1)
+			default:
+				v = Int64Value(0)
+			}
+		}
+		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int), value: v}
 	default:
 		panic("internal error") //TODOOK
 	}
@@ -2243,9 +2252,18 @@ func (n *LogicalAndExpression) check(ctx *context) Operand {
 	case LogicalAndExpressionOr: // InclusiveOrExpression
 		n.Operand = n.InclusiveOrExpression.check(ctx)
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
-		n.LogicalAndExpression.check(ctx)
-		n.InclusiveOrExpression.check(ctx)
-		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
+		lop := n.LogicalAndExpression.check(ctx)
+		rop := n.InclusiveOrExpression.check(ctx)
+		var v Value
+		if lop.Value() != nil && rop.Value() != nil {
+			switch {
+			case n.LogicalAndExpression.Operand.IsNonZero() && n.InclusiveOrExpression.Operand.IsNonZero():
+				v = Int64Value(1)
+			default:
+				v = Int64Value(0)
+			}
+		}
+		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int), value: v}
 	default:
 		panic("internal error") //TODOOK
 	}
