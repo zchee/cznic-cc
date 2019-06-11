@@ -6,8 +6,8 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"encoding/binary"
-	//TODO-"fmt" //TODO-
 	"math"
+	//TODO-"fmt" //TODO-
 )
 
 // Bit field allocation
@@ -340,6 +340,7 @@ func (a *ABI) Ptr(n Node, t Type) Type {
 	base.fieldAlign = byte(a.fieldAlign(Ptr))
 	base.kind = byte(Ptr)
 	base.size = uintptr(a.size(Ptr))
+	base.flags &^= fIncomplete
 	return &pointerType{
 		elem:     t,
 		typeBase: base,

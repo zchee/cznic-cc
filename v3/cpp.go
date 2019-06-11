@@ -2143,48 +2143,53 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 	}
 
 	nm = filepath.FromSlash(nm[1 : x+1])
-	dir := filepath.Dir(c.file.Name())
-	if n.includeNext {
-		nmDir, _ := filepath.Split(nm)
-		for i, v := range paths {
-			if w, err := filepath.Abs(v); err == nil {
-				v = w
-			}
-			v = filepath.Join(v, nmDir)
-			if v == dir {
-				paths = paths[i+1:]
-				break
-			}
-		}
-	}
 	var path string
-	for _, v := range paths {
-		if v == "@" {
-			v = dir
-		}
-
-		var p string
-		switch {
-		case strings.HasPrefix(nm, "./"):
-			wd := c.ctx.cfg.WorkingDir
-			if wd == "" {
-				var err error
-				if wd, err = os.Getwd(); err != nil {
-					c.err(toks[0], "cannot determine working dir: %v", err)
-					return
+	switch {
+	case filepath.IsAbs(nm):
+		path = nm
+	default:
+		dir := filepath.Dir(c.file.Name())
+		if n.includeNext {
+			nmDir, _ := filepath.Split(nm)
+			for i, v := range paths {
+				if w, err := filepath.Abs(v); err == nil {
+					v = w
+				}
+				v = filepath.Join(v, nmDir)
+				if v == dir {
+					paths = paths[i+1:]
+					break
 				}
 			}
-			p = filepath.Join(wd, nm)
-		default:
-			p = filepath.Join(v, nm)
 		}
-		fi, err := os.Stat(p)
-		if err != nil || fi.IsDir() {
-			continue
-		}
+		for _, v := range paths {
+			if v == "@" {
+				v = dir
+			}
 
-		path = p
-		break
+			var p string
+			switch {
+			case strings.HasPrefix(nm, "./"):
+				wd := c.ctx.cfg.WorkingDir
+				if wd == "" {
+					var err error
+					if wd, err = os.Getwd(); err != nil {
+						c.err(toks[0], "cannot determine working dir: %v", err)
+						return
+					}
+				}
+				p = filepath.Join(wd, nm)
+			default:
+				p = filepath.Join(v, nm)
+			}
+			fi, err := os.Stat(p)
+			if err != nil || fi.IsDir() {
+				continue
+			}
+
+			path = p
+			break
+		}
 	}
 
 	if path == "" {
