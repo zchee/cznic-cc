@@ -289,19 +289,20 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				}
 
 				down := off &^ (8*int64(al) - 1)
+				f.offset = uintptr(down >> 3)
 				bitoff := off - down
 				downMax := off &^ (int64(a.MaxPackedBitfieldWidth) - 1)
 				//fmt.Printf("off %#x down %#x bitoff %v, downMax %#x\n", off, down, bitoff, downMax) //TODO-
 				switch {
 				case int(off-downMax)+int(f.bitFieldWidth) > a.MaxPackedBitfieldWidth:
 					off = roundup(off, 8*int64(al))
-					f.offset = uintptr(off) >> 3
+					//TODO- f.offset = uintptr(off) >> 3
 					f.bitFieldOffset = 0
 					f.bitFieldMask = 1<<f.bitFieldWidth - 1
 					off += int64(f.bitFieldWidth)
 					//fmt.Printf("ovf: bits %d .off %#x .boff %v off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
 				default:
-					f.offset = uintptr(off) >> 3
+					//TODO- f.offset = uintptr(off) >> 3
 					f.bitFieldOffset = byte(bitoff)
 					f.bitFieldMask = (1<<f.bitFieldWidth - 1) << byte(bitoff)
 					off += int64(f.bitFieldWidth)
