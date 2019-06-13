@@ -10,68 +10,6 @@ import (
 	//TODO-"fmt" //TODO-
 )
 
-// Bit field allocation
-//
-//	#include <stdio.h>
-//
-//	struct {
-//		int f0:2, f1:3, f2:20, f3:10, f4;
-//	} x;
-//
-//	int main() {
-//		long long unsigned *p = (void*)&x;
-//		printf("%llx\n", *p);
-//		x.f0 = -1;
-//		printf("%llx\n", *p);
-//		x.f1 = -1;
-//		printf("%llx\n", *p);
-//		x.f2 = -1;
-//		printf("%llx\n", *p);
-//		x.f3 = -1;
-//		printf("%llx\n", *p);
-//	}
-//
-// linux/amd64: from bit 0 upwards, MaxPackedBitfieldWidth 32.
-//
-//	$ ./a.out
-//	0
-//	3
-//	1f
-//	1ffffff
-//	3ff01ffffff
-//	$
-//
-// ----------------------------------------------------------------------------
-//
-//	#include <stdio.h>
-//
-//	union {
-//		int f0:2, f1:3, f2:20, f3:10, f4;
-//	} x;
-//
-//	int main() {
-//		long long unsigned *p = (void*)&x;
-//		printf("%llx\n", *p);
-//		x.f0 = -1;
-//		printf("%llx\n", *p);
-//		x.f1 = -1;
-//		printf("%llx\n", *p);
-//		x.f2 = -1;
-//		printf("%llx\n", *p);
-//		x.f3 = -1;
-//		printf("%llx\n", *p);
-//	}
-//
-// linux/amd64: all fields, including bitfields start at offset 0, bit offset 0.
-//
-//	$ ./a.out
-//	0
-//	3
-//	7
-//	fffff
-//	fffff
-//	$
-
 // ABIType describes properties of a non-aggregate type.
 type ABIType struct {
 	Size       uintptr
@@ -81,10 +19,9 @@ type ABIType struct {
 
 // ABI describes selected parts of the Application Binary Interface.
 type ABI struct {
-	ByteOrder              binary.ByteOrder
-	MaxPackedBitfieldWidth int // In bits.
-	Types                  map[Kind]ABIType
-	types                  map[Kind]Type
+	ByteOrder binary.ByteOrder
+	Types     map[Kind]ABIType
+	types     map[Kind]Type
 
 	SignedChar bool
 }
@@ -92,11 +29,6 @@ type ABI struct {
 func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 	if intMaxWidth == 0 {
 		intMaxWidth = 64
-	}
-	if a.MaxPackedBitfieldWidth < 0 || a.MaxPackedBitfieldWidth > intMaxWidth {
-		if ctx.err(noPos, "invalid ABI.MaxPackedBitfieldWidth value: %v", a.MaxPackedBitfieldWidth) {
-			return ctx.Err()
-		}
 	}
 
 	a.types = map[Kind]Type{}
@@ -258,6 +190,8 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				sz = ft.Elem().Size()
 			}
 
+			maxPackedBitfieldWidth := 8 * int(sz)
+
 			if sz == 0 {
 				return t //TODO-
 				panic("TODO")
@@ -276,7 +210,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				fieldAlign = fal
 			}
 
-			//fmt.Printf("field # %d %v, isBitField %v\n", i, f.Name(), f.isBitField) //TODO-
+			// fmt.Printf("field # %d %v, isBitField %v\n", i, f.Name(), f.isBitField) //TODO-
 			switch {
 			case f.isBitField:
 				if al == 0 {
@@ -289,26 +223,27 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				}
 
 				down := off &^ (8*int64(al) - 1)
-				f.offset = uintptr(down >> 3)
 				bitoff := off - down
-				downMax := off &^ (int64(a.MaxPackedBitfieldWidth) - 1)
-				//fmt.Printf("off %#x down %#x bitoff %v, downMax %#x\n", off, down, bitoff, downMax) //TODO-
+				downMax := off &^ (int64(maxPackedBitfieldWidth) - 1)
+				// fmt.Printf("off %#x down %#x bitoff %v, downMax %#x\n", off, down, bitoff, downMax) //TODO-
 				switch {
-				case int(off-downMax)+int(f.bitFieldWidth) > a.MaxPackedBitfieldWidth:
+				case int(off-downMax)+int(f.bitFieldWidth) > maxPackedBitfieldWidth:
 					off = roundup(off, 8*int64(al))
+					f.offset = uintptr(off >> 3)
 					//TODO- f.offset = uintptr(off) >> 3
 					f.bitFieldOffset = 0
 					f.bitFieldMask = 1<<f.bitFieldWidth - 1
 					off += int64(f.bitFieldWidth)
-					//fmt.Printf("ovf: bits %d .off %#x .boff %v off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
+					// fmt.Printf("ovf: bits %d .off %#x .boff %v new off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
 				default:
 					//TODO- f.offset = uintptr(off) >> 3
+					f.offset = uintptr(down >> 3)
 					f.bitFieldOffset = byte(bitoff)
 					f.bitFieldMask = (1<<f.bitFieldWidth - 1) << byte(bitoff)
 					off += int64(f.bitFieldWidth)
-					//fmt.Printf("sum: bits %d .off %#x .boff %v off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
+					// fmt.Printf("sum: bits %d .off %#x .boff %v new off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
 				}
-				//fmt.Printf("\n") //TODO-
+				// fmt.Printf("\n") //TODO-
 			default:
 				off0 := off
 				off = roundup(off, 8*int64(al))

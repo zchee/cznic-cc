@@ -141,8 +141,7 @@ var (
 	testWD              string
 
 	testABI = ABI{ //TODO adjust for arch/os, this is linux/amd64.
-		MaxPackedBitfieldWidth: 32,
-		SignedChar:             true,
+		SignedChar: true,
 		Types: map[Kind]ABIType{
 			Bool:              {1, 1, 1},
 			Char:              {1, 1, 1},
