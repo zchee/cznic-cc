@@ -7,7 +7,7 @@ package cc // import "modernc.org/cc/v3"
 import (
 	"encoding/binary"
 	"math"
-	//TODO-"fmt" //TODO-
+	//TODO- "fmt" //TODO-
 )
 
 // ABIType describes properties of a non-aggregate type.
@@ -126,58 +126,45 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 	}
 
 	//TODO- defer func() { //TODO-
-	//TODO- 	fmt.Printf("%s, %v\n", t, t.Size())
+	//TODO- 	fmt.Printf("%s, size %v, align %v, falign %v\n", t, t.Size(), t.Align(), t.FieldAlign())
 	//TODO- }()
 	var off int64 // bit offset
-	var align, fieldAlign int
+	align := 1
 
 	switch {
 	case t.Kind() == Union:
-		for i, f := range t.fields {
+		for _, f := range t.fields {
 			ft := f.Type()
-			if ft.Kind() == Array && ft.Incomplete() && i == len(t.fields)-1 {
-				continue
-				//TODO flexible array member
-			}
-
 			sz := ft.Size()
-			if sz == 0 {
-				return t //TODO-
-				panic(n.Position().String())
-			}
 			al := ft.FieldAlign()
 			if al == 0 {
-				panic("TODO")
+				al = 1
+			}
+			if al > align {
+				align = al
 			}
 
 			switch {
 			case f.isBitField:
-				return t //TODO-
-				panic("TODO")
+				if n := int64(f.bitFieldWidth); n > off {
+					off = n
+				}
 			default:
-				if al > align {
-					align = al
-				}
-				if fal := ft.FieldAlign(); fal > fieldAlign {
-					fieldAlign = fal
-				}
 				if n := 8 * int64(sz); n > off {
 					off = n
 				}
 			}
 			f.promote = integerPromotion(ctx, ft)
 		}
-		if align == 0 { //TODO ok?
-			align = 1
-		}
 		t.align = byte(align)
-		t.fieldAlign = byte(fieldAlign)
+		t.fieldAlign = byte(align)
 		off = roundup(off, int64(align))
 		t.size = uintptr(off >> 3)
 		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
 	default:
 		var i int
 		var f *field
+		lzero := false
 		for i, f = range t.fields {
 			ft := f.Type()
 			if ft.Kind() == Array && ft.Incomplete() && i == len(t.fields)-1 {
@@ -190,53 +177,35 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				sz = ft.Elem().Size()
 			}
 
-			maxPackedBitfieldWidth := 8 * int(sz)
-
-			if sz == 0 {
-				return t //TODO-
-				panic("TODO")
-			}
+			bitSize := 8 * int(sz)
 
 			al := ft.FieldAlign()
 			if al == 0 {
-				return t //TODO-
-				panic(n.Position().String())
+				al = 1
 			}
-
 			if al > align {
 				align = al
-			}
-			if fal := ft.FieldAlign(); fal > fieldAlign {
-				fieldAlign = fal
 			}
 
 			// fmt.Printf("field # %d %v, isBitField %v\n", i, f.Name(), f.isBitField) //TODO-
 			switch {
 			case f.isBitField:
-				if al == 0 {
-					panic(n.Position().String())
-				}
-
-				if f.bitFieldWidth == 0 {
-					return t                     //TODO-
-					panic(n.Position().String()) //TODO
-				}
-
 				down := off &^ (8*int64(al) - 1)
 				bitoff := off - down
-				downMax := off &^ (int64(maxPackedBitfieldWidth) - 1)
+				downMax := off &^ (int64(bitSize) - 1)
 				// fmt.Printf("off %#x down %#x bitoff %v, downMax %#x\n", off, down, bitoff, downMax) //TODO-
 				switch {
-				case int(off-downMax)+int(f.bitFieldWidth) > maxPackedBitfieldWidth:
+				case lzero || int(off-downMax)+int(f.bitFieldWidth) > bitSize:
 					off = roundup(off, 8*int64(al))
 					f.offset = uintptr(off >> 3)
-					//TODO- f.offset = uintptr(off) >> 3
 					f.bitFieldOffset = 0
 					f.bitFieldMask = 1<<f.bitFieldWidth - 1
 					off += int64(f.bitFieldWidth)
 					// fmt.Printf("ovf: bits %d .off %#x .boff %v new off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
+					if f.bitFieldWidth == 0 {
+						continue
+					}
 				default:
-					//TODO- f.offset = uintptr(off) >> 3
 					f.offset = uintptr(down >> 3)
 					f.bitFieldOffset = byte(bitoff)
 					f.bitFieldMask = (1<<f.bitFieldWidth - 1) << byte(bitoff)
@@ -252,12 +221,10 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				off += 8 * int64(sz)
 			}
 			f.promote = integerPromotion(ctx, ft)
-		}
-		if align == 0 { //TODO ok?
-			align = 1
+			lzero = false
 		}
 		t.align = byte(align)
-		t.fieldAlign = byte(fieldAlign)
+		t.fieldAlign = byte(align)
 		off0 := off
 		off = roundup(off, 8*int64(align))
 		if f != nil && !f.IsBitField() {
@@ -266,7 +233,6 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		t.size = uintptr(off >> 3)
 		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
 	}
-	//dbg("%v sz %v", t, t.Size())
 	return t
 }
 
