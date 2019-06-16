@@ -735,6 +735,9 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	case PostfixExpressionDec: // PostfixExpression "--"
 		panic(n.Position().String())
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
+		if f := ctx.checkFn; f != nil {
+			f.CompositeLiterals = append(f.CompositeLiterals, n)
+		}
 		t := n.TypeName.check(ctx)
 		n.InitializerList.check(ctx)
 		if t.Kind() == Array && t.Incomplete() {
@@ -1697,6 +1700,9 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 		n.Operand = &operand{typ: op.Type()}
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
+		if f := ctx.checkFn; f != nil {
+			f.CompositeLiterals = append(f.CompositeLiterals, n)
+		}
 		t := n.TypeName.check(ctx)
 		len := n.InitializerList.check(ctx)
 		if t.Kind() == Array && t.Incomplete() {
@@ -2665,6 +2671,11 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 	// 6.2.2 Linkages of identifiers
 
 	typ = n.typ
+	if typ.Kind() == Array && typ.IsVLA() {
+		if f := ctx.checkFn; f != nil {
+			f.VLAs = append(f.VLAs, n)
+		}
+	}
 	switch {
 	case tld && td.static():
 		// 3: If the declaration of a file scope identifier for an object or a
@@ -2745,7 +2756,7 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 		}
 
 		if !op.Type().IsIntegerType() {
-			//TODO repor err
+			//TODO report err
 			return noType
 		}
 

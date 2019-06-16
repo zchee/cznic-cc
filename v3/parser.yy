@@ -847,9 +847,11 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Pragma     */ |	PragmaSTDC
 
 			/* [0], 6.9.1 Function definitions */
-			/*yy:field	Gotos	map[StringID]*JumpStatement	*/
-			/*yy:field	InitDeclarators	[]*InitDeclarator	*/
-			/*yy:field	Labels	map[StringID]*LabeledStatement	*/
+			/*yy:field	CompositeLiterals	[]*PostfixExpression		*/
+			/*yy:field	Gotos			map[StringID]*JumpStatement	*/
+			/*yy:field	InitDeclarators		[]*InitDeclarator		*/
+			/*yy:field	Labels			map[StringID]*LabeledStatement	*/
+			/*yy:field	VLAs			[]*Declarator			*/
 			/*yy:example int f() {} */
 			FunctionDefinition:
 				DeclarationSpecifiers Declarator DeclarationList CompoundStatement
