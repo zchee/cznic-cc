@@ -442,7 +442,7 @@ func download() {
 				}
 				return nil
 			}
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
@@ -460,7 +460,7 @@ func h(v interface{}) string {
 	case float64:
 		return humanize.CommafWithDigits(x, 0)
 	default:
-		panic(fmt.Errorf("%T", x)) //TODOOK
+		panic(internalErrorf("%T", x))
 	}
 }
 

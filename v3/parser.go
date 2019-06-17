@@ -320,7 +320,7 @@ var (
 func init() {
 	for r := rune(0xe001); r < lastTok; r++ {
 		if _, ok := tokNames[r]; !ok {
-			panic(fmt.Sprintf("internal error: missing tokNames[%+q[", r)) //TODOOK
+			panic(internalError())
 		}
 	}
 	for k, v := range keywords {
@@ -480,7 +480,7 @@ func (p *parser) peek(handleTypedefname bool) rune {
 					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 						// nop
 					default:
-						panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(p.tok))) //TODOOK
+						panic(internalError())
 					}
 				}
 			}
@@ -589,10 +589,10 @@ out:
 						if x.isVisible(seq) {
 							break out
 						}
-					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator, *LabeledStatement:
 						// nop
 					default:
-						panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(p.tok))) //TODOOK
+						panic(internalError())
 					}
 				}
 			}
@@ -646,7 +646,7 @@ out:
 
 					if x.IsTypedefName {
 						// dbg("", PrettyString(p.tok))
-						panic("internal error") //TODOOK
+						panic(internalError())
 					}
 
 					resolvedIn = s
@@ -654,12 +654,12 @@ out:
 				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 					// nop
 				default:
-					panic("internal error") //TODOOK
+					panic(internalError())
 				}
 			}
 		}
 
-		if !p.ctx.cfg.ignoreUndefinedIdentifiers && !p.ctx.cfg.AllowLateBinding {
+		if !p.ctx.cfg.ignoreUndefinedIdentifiers && p.ctx.cfg.RejectLateBinding {
 			p.err0(false, "undefined: %s", nm)
 		}
 	case INTCONST:
@@ -1464,7 +1464,7 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) *Declarat
 		}
 	}
 
-	list := p.initDeclaratorList(d, ds.isTypedef())
+	list := p.initDeclaratorList(d, ds.typedef())
 	p.typedefNameEnabled = true
 	var t Token
 	switch p.rune() {
@@ -1487,6 +1487,9 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL:
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
+		if r.StorageClassSpecifier.Case == StorageClassSpecifierTypedef {
+			r.class = fTypedef
+		}
 	case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
 	case CONST, RESTRICT, VOLATILE:
@@ -1508,10 +1511,14 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 		p.err("expected declaration-specifiers")
 		return nil
 	}
+	r0 := r
 	for prev := r; ; prev = prev.DeclarationSpecifiers {
 		switch p.rune() {
 		case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL:
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
+			if prev.DeclarationSpecifiers.StorageClassSpecifier.Case == StorageClassSpecifierTypedef {
+				r0.class |= fTypedef
+			}
 		case VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF:
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
 		case CONST, RESTRICT, VOLATILE:
@@ -2430,7 +2437,7 @@ func (p *parser) parameterDeclaration() *ParameterDeclaration {
 		r := &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds}
 		return r
 	default:
-		switch x := p.declaratorOrAbstractDeclarator(ds.isTypedef()).(type) {
+		switch x := p.declaratorOrAbstractDeclarator(ds.typedef()).(type) {
 		case *AbstractDeclarator:
 			return &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds, AbstractDeclarator: x}
 		case *Declarator:
@@ -2438,7 +2445,7 @@ func (p *parser) parameterDeclaration() *ParameterDeclaration {
 			attr := p.attributeSpecifierListOpt()
 			return &ParameterDeclaration{Case: ParameterDeclarationDecl, DeclarationSpecifiers: ds, Declarator: x, AttributeSpecifierList: attr}
 		default:
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 	}
 }
@@ -2531,7 +2538,7 @@ func (p *parser) declaratorOrAbstractDeclarator(isTypedefName bool) (r Node) {
 				),
 			}
 		default:
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 	case ')', ',':
 		return p.abstractDeclarator(ptr)
@@ -2715,7 +2722,7 @@ func (p *parser) directAbstractDeclarator(d *DirectAbstractDeclarator) (r *Direc
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorDecl, Token: t, AbstractDeclarator: d, Token2: t2, paramScope: paramScope}
 			}
 		default:
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 	}
 
@@ -3012,8 +3019,11 @@ func (p *parser) labeledStatement() *LabeledStatement {
 			p.err("expected :")
 			return nil
 		}
+
 		attr := p.attributeSpecifierListOpt()
-		return &LabeledStatement{Case: LabeledStatementLabel, Token: t, Token2: t2, AttributeSpecifierList: attr, Statement: p.statement(), lexicalScope: p.declScope}
+		r := &LabeledStatement{Case: LabeledStatementLabel, Token: t, Token2: t2, AttributeSpecifierList: attr, Statement: p.statement(), lexicalScope: p.declScope}
+		p.declScope.declare(t.Value, r)
+		return r
 	case CASE:
 		if p.switches == 0 {
 			p.err("case label not within a switch statement")
@@ -3137,7 +3147,7 @@ func (p *parser) blockItem() *BlockItem {
 			return r
 		}
 
-		d := p.declarator(true, ds.isTypedef(), nil)
+		d := p.declarator(true, ds.typedef(), nil)
 		switch p.rune() {
 		case '{':
 			if p.ctx.cfg.RejectNestedFunctionDefinitions {
@@ -3568,7 +3578,7 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 	}
 
 	p.rune()
-	d := p.declarator(true, ds.isTypedef(), nil)
+	d := p.declarator(true, ds.typedef(), nil)
 	p.rune()
 	switch p.rune() {
 	case ',', ';', '=', ATTRIBUTE:

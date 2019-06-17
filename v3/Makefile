@@ -5,7 +5,7 @@
 .PHONY:	all bench clean cover cpu editor internalError later mem nuke todo edit devbench
 
 grep=--include=*.go --include=*.l --include=*.y --include=*.yy
-ngrep='TODOOK\|lexer\.go\|ast.go\|trigraphs\.go\|.*_string\.go\|stringer\.go\|testdata\/gcc'
+ngrep='internalError\|TODOOK\|lexer\.go\|ast.go\|trigraphs\.go\|.*_string\.go\|stringer\.go\|testdata\/gcc'
 
 all: lexer.go
 	date

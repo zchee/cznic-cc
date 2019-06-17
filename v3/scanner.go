@@ -250,7 +250,7 @@ func (s *scanner) errLine(x interface{}, msg string, args ...interface{}) {
 	case ppLine:
 		toks = x.getToks()
 	default:
-		panic(fmt.Sprintf("internal error %T", x)) //TODOOK
+		panic(internalError())
 	}
 	var b strings.Builder
 	for _, v := range toks {
@@ -324,7 +324,7 @@ func (s *scanner) lex() {
 			case 'U':
 				n = 4
 			default:
-				panic("internal error") //TODOOK
+				panic(internalError())
 			}
 			i++ // Skip 'u' or 'U'
 			l := len(s.bytesBuf)
@@ -333,7 +333,7 @@ func (s *scanner) lex() {
 			}
 			r, err := strconv.ParseUint(string(s.bytesBuf[l:l+n]), 16, 32)
 			if err != nil {
-				panic("internal error") //TODOOK
+				panic(internalError())
 			}
 
 			n2 := utf8.EncodeRune(s.bytesBuf[l:], rune(r))
@@ -1151,7 +1151,7 @@ func (c *ppCache) getFile(ctx *context, name string) (*cachedPPFile, error) {
 	size := int(fi.Size())
 	if !filepath.IsAbs(name) { // Never cache relative paths
 		if isTesting {
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 
 		f, err := os.Open(name)

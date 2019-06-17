@@ -1050,7 +1050,7 @@ func (c *cpp) intMaxWidth() int64 {
 		case uint64:
 			return int64(x)
 		default:
-			panic("iternal error") //TODOOK
+			panic(internalError())
 		}
 	}
 	return 0
@@ -1163,7 +1163,7 @@ func (c *cpp) isZero(val interface{}) bool {
 	case uint64:
 		return x == 0
 	}
-	panic("internal error") //TODOOK
+	panic(internalError())
 }
 
 // [0], 6.5.12 Bitwise inclusive OR operator
@@ -1907,7 +1907,7 @@ func charConst(ctx *context, tok cppToken) rune {
 		}
 		return runes[0]
 	}
-	panic("internal error") //TODOOK
+	panic(internalError())
 }
 
 // escape-sequence		{simple-sequence}|{octal-escape-sequence}|{hexadecimal-escape-sequence}|{universal-character-name}
@@ -1916,7 +1916,7 @@ func charConst(ctx *context, tok cppToken) rune {
 // hexadecimal-escape-sequence	\\x{hexadecimal-digit}+
 func decodeEscapeSequence(runes []rune) (rune, int) { //TODO-
 	if runes[0] != '\\' {
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 
 	if len(runes) < 2 {
@@ -1959,7 +1959,7 @@ func decodeEscapeSequence(runes []rune) (rune, int) { //TODO-
 	}
 
 	if r < '0' || r > '7' {
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 
 	v, n := 0, 1
@@ -1979,7 +1979,7 @@ loop:
 // universal-character-name	\\u{hex-quad}|\\U{hex-quad}{hex-quad}
 func decodeUCN(runes []rune) (rune, int) {
 	if runes[0] != '\\' {
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	runes = runes[1:]
 	switch runes[0] {
@@ -1988,7 +1988,7 @@ func decodeUCN(runes []rune) (rune, int) {
 	case 'U':
 		return rune(decodeHexQuad(runes[1:])<<16 | decodeHexQuad(runes[5:])), 10
 	}
-	panic("internal error") //TODOOK
+	panic(internalError())
 }
 
 // hex-quad	{hexadecimal-digit}{hexadecimal-digit}{hexadecimal-digit}{hexadecimal-digit}
@@ -2017,7 +2017,7 @@ func (c *cpp) isNonZero(val interface{}) bool {
 	case uint64:
 		return x != 0
 	}
-	panic("internal error") //TODOOK
+	panic(internalError())
 }
 
 type ppLine interface {
@@ -2283,7 +2283,7 @@ func stringConst(t cppToken) string {
 		}
 		return buf.String()
 	}
-	panic("internal error") //TODOOK
+	panic(internalError())
 }
 
 // -------------------------------------------------------- Translation phase 4

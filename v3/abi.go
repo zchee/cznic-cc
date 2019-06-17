@@ -7,7 +7,6 @@ package cc // import "modernc.org/cc/v3"
 import (
 	"encoding/binary"
 	"math"
-	//TODO- "fmt" //TODO-
 )
 
 // ABIType describes properties of a non-aggregate type.
@@ -99,7 +98,7 @@ func (a *ABI) size(k Kind) int       { return int(a.Types[k].Size) }
 
 func (a *ABI) isSignedInteger(k Kind) bool {
 	if !integerTypes[k] {
-		panic("internal error") //TODOOK
+		internalError()
 	}
 
 	switch k {
@@ -125,9 +124,6 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		return nil
 	}
 
-	//TODO- defer func() { //TODO-
-	//TODO- 	fmt.Printf("%s, size %v, align %v, falign %v\n", t, t.Size(), t.Align(), t.FieldAlign())
-	//TODO- }()
 	var off int64 // bit offset
 	align := 1
 
@@ -167,18 +163,19 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		lzero := false
 		for i, f = range t.fields {
 			ft := f.Type()
-			if ft.Kind() == Array && ft.Incomplete() && i == len(t.fields)-1 {
-				continue
-				//TODO flexible array member
-			}
+			var sz uintptr
+			switch {
+			case ft.Kind() == Array && i == len(t.fields)-1:
+				if ft.Incomplete() || ft.Len() == 0 {
+					break
+				}
 
-			sz := ft.Size()
-			if sz == 0 && ft.Kind() == Array && ft.Len() == 0 && i == len(t.fields)-1 {
-				sz = ft.Elem().Size()
+				fallthrough
+			default:
+				sz = ft.Size()
 			}
 
 			bitSize := 8 * int(sz)
-
 			al := ft.FieldAlign()
 			if al == 0 {
 				al = 1
@@ -187,13 +184,11 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				align = al
 			}
 
-			// fmt.Printf("field # %d %v, isBitField %v\n", i, f.Name(), f.isBitField) //TODO-
 			switch {
 			case f.isBitField:
 				down := off &^ (8*int64(al) - 1)
 				bitoff := off - down
 				downMax := off &^ (int64(bitSize) - 1)
-				// fmt.Printf("off %#x down %#x bitoff %v, downMax %#x\n", off, down, bitoff, downMax) //TODO-
 				switch {
 				case lzero || int(off-downMax)+int(f.bitFieldWidth) > bitSize:
 					off = roundup(off, 8*int64(al))
@@ -201,7 +196,6 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 					f.bitFieldOffset = 0
 					f.bitFieldMask = 1<<f.bitFieldWidth - 1
 					off += int64(f.bitFieldWidth)
-					// fmt.Printf("ovf: bits %d .off %#x .boff %v new off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
 					if f.bitFieldWidth == 0 {
 						continue
 					}
@@ -210,9 +204,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 					f.bitFieldOffset = byte(bitoff)
 					f.bitFieldMask = (1<<f.bitFieldWidth - 1) << byte(bitoff)
 					off += int64(f.bitFieldWidth)
-					// fmt.Printf("sum: bits %d .off %#x .boff %v new off %#x\n", f.bitFieldWidth, f.offset, f.bitFieldOffset, off) //TODO-
 				}
-				// fmt.Printf("\n") //TODO-
 			default:
 				off0 := off
 				off = roundup(off, 8*int64(al))

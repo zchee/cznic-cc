@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//TODO testCC
 //TODO https://todo.sr.ht/~mcf/cc-issues/34
 //TODO http://mcpp.sourceforge.net/ "Provides a validation suite to test C/C++ preprocessor's conformance and quality comprehensively."
 
@@ -92,28 +91,6 @@ var (
 			}
 			f.Format(suffix)
 		},
-		reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
-			x := v.(*operand)
-			f.Format(prefix)
-			f.Format("%v, %[2]T(%[2]v)", x.typ, x.value)
-			if x.typ != nil {
-				f.Format(", size %v", x.typ.Size())
-			}
-			if x.Declarator() != nil {
-				f.Format(", declarator %s", x.Declarator().Name())
-			}
-			f.Format(suffix)
-		},
-		reflect.TypeOf(Operand(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) { //TODO-
-			x := v.(Operand)
-			f.Format(prefix)
-			f.Format("%v, %[2]T(%[2]v)", x.Type(), x.Value())
-			f.Format(", size %v", x.Type().Size())
-			if x.Declarator() != nil {
-				f.Format(", declarator %s", x.Declarator().Name())
-			}
-			f.Format(suffix)
-		},
 	}
 )
 
@@ -140,7 +117,14 @@ func (p *pragma) MaxAligment() int { return p.c.ctx.maxAlign }
 
 func (p *pragma) MaxInitialAligment() int { return p.c.ctx.maxAlign0 }
 
-func (p *pragma) SetAlignment(n int) { p.c.ctx.maxAlign = n } //TODO check sanity, report errors.
+func (p *pragma) SetAlignment(n int) {
+	if n <= 0 {
+		p.Error("%T.SetAlignment(%d): invalid argument", p, n)
+		return
+	}
+
+	p.c.ctx.maxAlign = n
+}
 
 func (p *pragma) PushMacro(nm string) {
 	id := dict.sid(nm)
@@ -189,7 +173,7 @@ type Node interface {
 
 type noder struct{}
 
-func (noder) Position() token.Position { panic("internal error") } //TODOOK
+func (noder) Position() token.Position { panic(internalError()) }
 
 // Scope maps identifiers to definitions.
 type Scope map[StringID][]Node
@@ -268,7 +252,7 @@ func (s *Scope) declarator(nm StringID, tok Token) *Declarator {
 			case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 				// nop
 			default:
-				panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(tok))) //TODOOK
+				panic(internalError())
 			}
 		}
 	}
@@ -291,7 +275,7 @@ func (s *Scope) enumerator(nm StringID, tok Token) *Enumerator {
 			case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
 				// nop
 			default:
-				panic(fmt.Sprintf("internal error: %T %v", x, PrettyString(tok))) //TODOOK
+				panic(internalError())
 			}
 		}
 	}
@@ -305,13 +289,7 @@ type Config3 struct {
 	MaxSourceLine int // Zero: Scanner will use default buffer. Non zero: Scanner will use max(default buffer size, MaxSourceLine).
 
 	PreserveWhiteSpace                      bool // Including also comments.
-	RejectAnonymousFields                   bool // Pedantic: do not silently accept "struct{int;}".
-	RejectCaseRange                         bool // Pedantic: do not silently accept "case 'a'...'z':".
 	RejectElseExtraTokens                   bool // Pedantic: do not silently accept "#else foo".
-	RejectEmptyCompositeLiterals            bool // Pedantic: do not silently accept "foo = (T){}".
-	RejectEmptyDeclarations                 bool // Pedantic: do not silently accept "int foo(){};".
-	RejectEmptyInitializerList              bool // Pedantic: do not silently accept "foo f = {};".
-	RejectEmptyStructs                      bool // Pedantic: do not silently accept "struct foo {};".
 	RejectEndifExtraTokens                  bool // Pedantic: do not silently accept "#endif foo".
 	RejectFinalBackslash                    bool // Pedantic: do not silently accept "foo\\\n".
 	RejectFunctionMacroEmptyReplacementList bool // Pedantic: do not silently accept "#define foo(bar)\n".
@@ -319,16 +297,8 @@ type Config3 struct {
 	RejectIfndefExtraTokens                 bool // Pedantic: do not silently accept "#ifndef foo bar".
 	RejectIncludeNext                       bool // Pedantic: do not silently accept "#include_next".
 	RejectInvalidVariadicMacros             bool // Pedantic: do not silently accept "#define foo(bar...)". Standard allows only #define foo(bar, ...)
-	RejectLabelValues                       bool // Pedantic: do not silently accept "foo: bar(); void *ptr = &&foo;" or "goto *ptr".
 	RejectLineExtraTokens                   bool // Pedantic: do not silently accept "#line 1234 \"foo.c\" bar".
-	RejectMissingConditionalExpr            bool // Pedantic: do not silently accept "foo = bar ? : baz;".
-	RejectMissingDeclarationSpecifiers      bool // Pedantic: do not silently accept "main() {}".
 	RejectMissingFinalNewline               bool // Pedantic: do not silently accept "foo\nbar".
-	RejectMissingFinalStructFieldSemicolon  bool // Pedantic: do not silently accept "struct{int i; int j}".
-	RejectNestedFunctionDefinitions         bool // Pedantic: do not silently accept nested function definitons.
-	RejectParamSemicolon                    bool // Pedantic: do not silently accept "int f(int a; int b)".
-	RejectStatementExpressions              bool // Pedantic: do not silently accept "i = ({foo();})".
-	RejectTypeof                            bool // Pedantic: do not silently accept "typeof foo" or "typeof(bar*)".
 	RejectUndefExtraTokens                  bool // Pedantic: do not silently accept "#undef foo bar".
 }
 
@@ -344,14 +314,28 @@ type Config struct {
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
-	AllowLateBinding           bool // Accept void f() { g(); } void g() {}
-	DebugIncludePaths          bool
-	DebugWorkingDir            bool
-	PreprocessOnly             bool
-	fakeIncludes               bool // Testing only.
-	ignoreErrors               bool // Testing only.
-	ignoreIncludes             bool // Testing only.
-	ignoreUndefinedIdentifiers bool // Testing only.
+	DebugIncludePaths                      bool // Output to stderr.
+	DebugWorkingDir                        bool // Output to stderr.
+	PreprocessOnly                         bool
+	RejectAnonymousFields                  bool // Pedantic: do not silently accept "struct{int;}".
+	RejectCaseRange                        bool // Pedantic: do not silently accept "case 'a'...'z':".
+	RejectEmptyCompositeLiterals           bool // Pedantic: do not silently accept "foo = (T){}".
+	RejectEmptyDeclarations                bool // Pedantic: do not silently accept "int foo(){};".
+	RejectEmptyInitializerList             bool // Pedantic: do not silently accept "foo f = {};".
+	RejectEmptyStructs                     bool // Pedantic: do not silently accept "struct foo {};".
+	RejectLabelValues                      bool // Pedantic: do not silently accept "foo: bar(); void *ptr = &&foo;" or "goto *ptr".
+	RejectLateBinding                      bool // Pedantic: do not silently accept void f() { g(); } void g() {}
+	RejectMissingConditionalExpr           bool // Pedantic: do not silently accept "foo = bar ? : baz;".
+	RejectMissingDeclarationSpecifiers     bool // Pedantic: do not silently accept "main() {}".
+	RejectMissingFinalStructFieldSemicolon bool // Pedantic: do not silently accept "struct{int i; int j}".
+	RejectNestedFunctionDefinitions        bool // Pedantic: do not silently accept nested function definitons.
+	RejectParamSemicolon                   bool // Pedantic: do not silently accept "int f(int a; int b)".
+	RejectStatementExpressions             bool // Pedantic: do not silently accept "i = ({foo();})".
+	RejectTypeof                           bool // Pedantic: do not silently accept "typeof foo" or "typeof(bar*)".
+	fakeIncludes                           bool // Testing only.
+	ignoreErrors                           bool // Testing only.
+	ignoreIncludes                         bool // Testing only.
+	ignoreUndefinedIdentifiers             bool // Testing only.
 }
 
 type context struct {
@@ -497,7 +481,7 @@ func (c *context) not(n Node, mode mode) {
 		case mIntConstExpr:
 			c.errNode(n, "invalid integer constant expression")
 		default:
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 	}
 }
@@ -647,7 +631,10 @@ func tokStr(toks interface{}, sep string) string {
 			b.WriteString(v.String())
 		}
 	default:
-		panic(fmt.Errorf("%T", x)) //TODOOK
+		panic(internalError())
 	}
 	return b.String()
 }
+
+func internalError() int                               { return internalErrorf("") }
+func internalErrorf(s string, args ...interface{}) int { panic(fmt.Errorf(s, args...)) }

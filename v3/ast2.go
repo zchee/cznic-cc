@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -17,7 +18,7 @@ type Source struct {
 }
 
 func (n *AbstractDeclarator) Declarator() *Declarator { return nil }
-func (n *AbstractDeclarator) IsStatic() bool          { panic("TODO") } //TODO return n.Type().static() }
+func (n *AbstractDeclarator) IsStatic() bool          { return false }
 func (n *AbstractDeclarator) Name() StringID          { return 0 }
 func (n *AbstractDeclarator) Type() Type              { return n.typ }
 
@@ -83,6 +84,8 @@ type AST struct {
 // Tagged struct/union specifier definitions (*StructOrUnionSpecifier) and
 // tagged enum specifier definitions (*EnumSpecifier) are inserted in the
 // appropriate scopes.
+//
+// Labels (*LabeledStatement) are inserted in the appropriate scopes.
 func Parse(cfg *Config, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
 	return parse(newContext(cfg), includePaths, sysIncludePaths, sources)
 }
@@ -188,7 +191,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 	}
 
 	if p.scopes != 0 {
-		panic("internal error: invalid scope nesting but no error reported") //TODOOK
+		panic(internalErrorf("invalid scope nesting but no error reported"))
 	}
 
 	return &AST{
@@ -238,6 +241,95 @@ func translationPhase5(ctx *context, toks *[]Token) *[]Token {
 	return toks
 }
 
+// Preprocess preprocesses a translation unit and outputs the result to w.
+//
+// Please see Parse for the documentation of the other parameters.
+func Preprocess(cfg *Config, includePaths, sysIncludePaths []string, sources []Source, w io.Writer) error {
+	ctx := newContext(cfg)
+	if debugWorkingDir || ctx.cfg.DebugWorkingDir {
+		switch wd, err := os.Getwd(); err {
+		case nil:
+			fmt.Fprintf(os.Stderr, "OS working dir: %s\n", wd)
+		default:
+			fmt.Fprintf(os.Stderr, "OS working dir: error %s\n", err)
+		}
+		fmt.Fprintf(os.Stderr, "Config.WorkingDir: %s\n", ctx.cfg.WorkingDir)
+	}
+	if debugIncludePaths || ctx.cfg.DebugIncludePaths {
+		fmt.Fprintf(os.Stderr, "include paths: %v\n", includePaths)
+		fmt.Fprintf(os.Stderr, "system include paths: %v\n", sysIncludePaths)
+	}
+	ctx.includePaths = includePaths
+	ctx.sysIncludePaths = sysIncludePaths
+	var in []source
+	for _, v := range sources {
+		ts, err := cache.get(ctx, v)
+		if err != nil {
+			return err
+		}
+
+		in = append(in, ts)
+	}
+
+	var sep StringID
+	cpp := newCPP(ctx)
+	toks := tokenPool.Get().(*[]Token)
+	*toks = (*toks)[:0]
+	for pline := range cpp.translationPhase4(in) {
+		line := *pline
+		for _, tok := range line {
+			switch tok.char {
+			case ' ', '\n':
+				switch {
+				case sep != 0:
+					sep = dict.sid(sep.String() + tok.String())
+				default:
+					sep = tok.value
+				}
+			default:
+				var t Token
+				t.Rune = tok.char
+				t.Sep = sep
+				t.Value = tok.value
+				t.fileID = tok.fileID
+				t.pos = tok.pos
+				*toks = append(*toks, t)
+				sep = 0
+			}
+		}
+		token4Pool.Put(pline)
+		var c rune
+		if n := len(*toks); n != 0 {
+			c = (*toks)[n-1].Rune
+		}
+		switch c {
+		case STRINGLITERAL, LONGSTRINGLITERAL:
+			// nop
+		default:
+			if len(*toks) != 0 {
+				for _, v := range *translationPhase5(ctx, toks) {
+					if _, err := fmt.Fprintf(w, "%s%s", v.Sep, v); err != nil {
+						return err
+					}
+				}
+				toks = tokenPool.Get().(*[]Token)
+				*toks = (*toks)[:0]
+			}
+		}
+	}
+	if len(*toks) != 0 {
+		for _, v := range *translationPhase5(ctx, toks) {
+			if _, err := fmt.Fprintf(w, "%s%s", v.Sep, v); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	return ctx.Err()
+}
+
 // Translate parses and typechecks a translation unit  and returns an *AST or
 // error, if any.
 //
@@ -274,7 +366,14 @@ func (n *AST) Typecheck() error {
 }
 
 func (n *AlignmentSpecifier) align() int {
-	return 1 //TODO
+	switch n.Case {
+	case AlignmentSpecifierAlignasType: // "_Alignas" '(' TypeName ')'
+		return n.TypeName.Type().Align()
+	case AlignmentSpecifierAlignasExpr: // "_Alignas" '(' ConstantExpression ')'
+		return n.ConstantExpression.Operand.Type().Align()
+	default:
+		panic(internalError())
+	}
 }
 
 // Closure reports the variables closed over by a nested function (case
@@ -296,6 +395,9 @@ func (n *Declarator) NameTok() (r Token) {
 
 	return n.DirectDeclarator.NameTok()
 }
+
+// LexicalScope returns the lexical scope of n.
+func (n *Declarator) LexicalScope() Scope { return n.DirectDeclarator.lexicalScope }
 
 // Name returns n's declared name.
 func (n *Declarator) Name() StringID {
@@ -331,17 +433,6 @@ func (n *DeclarationSpecifiers) static() bool      { return n != nil && n.class&
 func (n *DeclarationSpecifiers) threadLocal() bool { return n != nil && n.class&fThreadLocal != 0 }
 func (n *DeclarationSpecifiers) typedef() bool     { return n != nil && n.class&fTypedef != 0 }
 
-func (n *DeclarationSpecifiers) isTypedef() bool { //TODO set the class field in parser
-	for n != nil {
-		if n.StorageClassSpecifier.isTypedef() {
-			return true
-		}
-
-		n = n.DeclarationSpecifiers
-	}
-	return false
-}
-
 func (n *DirectAbstractDeclarator) TypeQualifier() Type { return n.typeQualifiers }
 
 func (n *DirectDeclarator) ends() int32 {
@@ -363,7 +454,7 @@ func (n *DirectDeclarator) ends() int32 {
 	case DirectDeclaratorFuncIdent: // DirectDeclarator '(' IdentifierList ')'
 		return n.Token2.seq
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -439,7 +530,7 @@ func (n *DirectDeclarator) ParamScope() Scope {
 
 		return n.paramScope
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -449,6 +540,12 @@ func (n *EnumSpecifier) Type() Type { return n.typ }
 
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *EqualityExpression) Promote() Type { return n.promote }
+
+// LexicalScope returns the lexical scope of n.
+func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }
+
+// LexicalScope returns the lexical scope of n.
+func (n *LabeledStatement) LexicalScope() Scope { return n.lexicalScope }
 
 func (n *Pointer) TypeQualifier() Type { return n.typeQualifiers }
 
@@ -491,12 +588,6 @@ func (n *TypeName) Type() Type { return n.typ }
 
 // // LexicalScope returns the lexical scope of n.
 // func (n *IdentifierList) LexicalScope() Scope { return n.lexicalScope }
-
-// // LexicalScope returns the lexical scope of n.
-// func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }
-
-// // LexicalScope returns the lexical scope of n.
-// func (n *LabeledStatement) LexicalScope() Scope { return n.lexicalScope }
 
 // // LexicalScope returns the lexical scope of n.
 // func (n *PrimaryExpression) LexicalScope() Scope { return n.lexicalScope }

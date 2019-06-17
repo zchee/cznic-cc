@@ -68,7 +68,7 @@ func (t *token3) str(file *token.File) string {
 
 func toks(v ...interface{}) (r []token3) {
 	if len(v)%3 != 0 {
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 
 	var t token3

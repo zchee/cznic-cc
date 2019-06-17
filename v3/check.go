@@ -5,7 +5,6 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
-	"fmt" //TODO-
 	"math"
 	"math/big"
 	"math/bits"
@@ -65,9 +64,9 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 	ctx.checkFn = n
 	n.CompoundStatement.check(ctx)
 	ctx.checkFn = nil
-	for k := range n.Gotos {
+	for k, v := range n.Gotos {
 		if _, ok := n.Labels[k]; !ok {
-			//TODO report undefined label
+			ctx.errNode(v, "label %s undefined", k)
 		}
 	}
 }
@@ -91,7 +90,7 @@ func (n *ExternalDeclaration) check(ctx *context) {
 	case ExternalDeclarationPragma: // PragmaSTDC
 		n.PragmaSTDC.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -134,7 +133,7 @@ func (n *InitDeclaratorList) check(ctx *context, td typeDescriptor, typ Type, tl
 	}
 }
 
-func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) { //TODO- tld?
+func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) {
 	if n == nil {
 		return
 	}
@@ -151,16 +150,10 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.AttributeSpecifierList.check(ctx)
 		length := n.Initializer.check(ctx)
 		if typ.Kind() == Array && typ.Len() == 0 {
-			if length == 0 {
-				//TODO report error
-			}
 			typ.setLen(length)
-			break
 		}
-
-		//TODO check length
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -183,7 +176,7 @@ func (n *Initializer) check(ctx *context) uintptr {
 	case InitializerInitList: // '{' InitializerList ',' '}'
 		return n.InitializerList.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -226,14 +219,14 @@ func (n *Designator) check(ctx *context) uintptr {
 		switch op.Value().(type) {
 		// TODO
 		case nil:
-			//TODO report error
+			ctx.errNode(n.ConstantExpression, "expected constant expression")
 		}
 	case DesignatorField: // '.' IDENTIFIER
 		//TODO
 	case DesignatorField2: // IDENTIFIER ':'
 		//TODO
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return 0
 }
@@ -244,12 +237,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	}
 
 	//TODO check for "modifiable lvalue" in left operand
-	n.Operand = noOperand //TODO-
-	lop := n.UnaryExpression.check(ctx)
-	if lop != noOperand && !lop.IsLValue() {
-		panic("TODO") // report error
-	}
-
+	n.Operand = noOperand
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
 		n.Operand = n.ConditionalExpression.check(ctx)
@@ -259,7 +247,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 			d.Write++
 		}
 		if !l.IsLValue() {
-			//TODO panic(n.Position().String()) // report error
+			//TODO ctx.errNode(n.UnaryExpression, "expected lvalue")
 			break
 		}
 
@@ -462,7 +450,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.promote = op.Type()
 		n.Operand = &operand{typ: l.Type()}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -609,7 +597,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		ctx.not(n, mIntConstExpr)
 		n.UnaryExpression.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -625,7 +613,7 @@ func (n *CastExpression) addr(ctx *context) Operand {
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -670,7 +658,7 @@ func (n *UnaryExpression) addr(ctx *context) Operand {
 	case UnaryExpressionReal: // "__real__" UnaryExpression
 		n.Operand = n.UnaryExpression.addr(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -749,7 +737,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -773,7 +761,7 @@ func (n *PrimaryExpression) addr(ctx *context) Operand {
 			}
 			return n.Operand
 		}
-		if !ctx.cfg.AllowLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
+		if ctx.cfg.RejectLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
 			ctx.errNode(n, "undefined: %s", n.Token.Value)
 			return noOperand
 		}
@@ -798,7 +786,7 @@ func (n *PrimaryExpression) addr(ctx *context) Operand {
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -814,7 +802,7 @@ func (n *Expression) addr(ctx *context) Operand {
 	case ExpressionComma: // Expression ',' AssignmentExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -850,7 +838,7 @@ func (n *AssignmentExpression) addr(ctx *context) Operand {
 	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -866,7 +854,7 @@ func (n *ConditionalExpression) addr(ctx *context) Operand {
 	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -883,7 +871,7 @@ func (n *LogicalOrExpression) addr(ctx *context) Operand {
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -900,7 +888,7 @@ func (n *LogicalAndExpression) addr(ctx *context) Operand {
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -917,7 +905,7 @@ func (n *InclusiveOrExpression) addr(ctx *context) Operand {
 	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -934,7 +922,7 @@ func (n *ExclusiveOrExpression) addr(ctx *context) Operand {
 	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -951,7 +939,7 @@ func (n *AndExpression) addr(ctx *context) Operand {
 	case AndExpressionAnd: // AndExpression '&' EqualityExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -970,7 +958,7 @@ func (n *EqualityExpression) addr(ctx *context) Operand {
 	case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -993,7 +981,7 @@ func (n *RelationalExpression) addr(ctx *context) Operand {
 	case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1012,7 +1000,7 @@ func (n *ShiftExpression) addr(ctx *context) Operand {
 	case ShiftExpressionRsh: // ShiftExpression ">>" AdditiveExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1031,7 +1019,7 @@ func (n *AdditiveExpression) addr(ctx *context) Operand {
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1052,7 +1040,7 @@ func (n *MultiplicativeExpression) addr(ctx *context) Operand {
 	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
 		panic(n.Position().String())
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1076,7 +1064,7 @@ func wcharT(ctx *context, s Scope, tok Token) Type { //TODO method of context?
 			rank = intConvRank[v]
 		}
 		if wt == nil {
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 		ctx.wcharT = wt
 	}
@@ -1114,7 +1102,7 @@ func ssizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of
 			rank = intConvRank[v]
 		}
 		if st == nil {
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 		ctx.ssizeT = st
 	}
@@ -1143,7 +1131,7 @@ func sizeT(ctx *context, s Scope, tok Token, v uint64) Operand { //TODO method o
 			rank = intConvRank[v]
 		}
 		if st == nil {
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 		ctx.sizeT = st
 	}
@@ -1175,7 +1163,7 @@ func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
 		typ = n.Pointer.check(ctx, typ)
 		n.typ = n.DirectAbstractDeclarator.check(ctx, typ)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.typ
 }
@@ -1201,7 +1189,7 @@ func (n *DirectAbstractDeclarator) check(ctx *context, typ Type) Type {
 		n.ParameterTypeList.check(ctx, ft)
 		return n.DirectAbstractDeclarator.check(ctx, ft)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return noType //TODO-
 }
@@ -1218,7 +1206,7 @@ func (n *ParameterTypeList) check(ctx *context, ft *functionType) {
 		ft.variadic = true
 		n.ParameterList.check(ctx, ft)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -1257,7 +1245,7 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) Object {
 		n.AbstractDeclarator.check(ctx, typ)
 		return n.AbstractDeclarator
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -1273,7 +1261,7 @@ func (n *Pointer) check(ctx *context, typ Type) (t Type) {
 		n.TypeQualifiers.check(ctx, &n.typeQualifiers)
 		typ = n.Pointer.check(ctx, typ)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	r := ctx.cfg.ABI.Ptr(n, typ).(*pointerType)
 	if n.typeQualifiers != nil {
@@ -1293,7 +1281,7 @@ func (n *TypeQualifiers) check(ctx *context, typ **typeBase) {
 		case TypeQualifiersAttribute: // AttributeSpecifier
 			n.AttributeSpecifier.check(ctx)
 		default:
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 	}
 }
@@ -1313,7 +1301,7 @@ func (n *TypeQualifier) check(ctx *context, typ *typeBase) {
 	case TypeQualifierAtomic: // "_Atomic"
 		typ.flags |= fAtomic
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -1331,7 +1319,7 @@ func (n *SpecifierQualifierList) check(ctx *context) Type {
 		case SpecifierQualifierListAttribute: // AttributeSpecifier SpecifierQualifierList
 			n.AttributeSpecifier.check(ctx)
 		default:
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 	}
 	return typ.check(ctx, n0)
@@ -1386,7 +1374,7 @@ func (n *TypeSpecifier) check(ctx *context, typ *typeBase) {
 		TypeSpecifierAccum: // "_Accum"
 		// nop
 	default:
-		panic("TODO") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -1410,7 +1398,7 @@ func (n *EnumSpecifier) check(ctx *context) {
 	case EnumSpecifierTag: // "enum" AttributeSpecifierList IDENTIFIER
 		n.AttributeSpecifierList.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -1442,10 +1430,10 @@ func (n *Enumerator) check(ctx *context, v *int64) {
 		case nil:
 			//TODO report error
 		default:
-			panic(fmt.Sprintf("%v: %T(%v)", n.Position().String(), x, x))
+			panic(internalError())
 		}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -1495,7 +1483,7 @@ func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase) Type {
 			n.typ = &attributedType{n.typ, attr}
 		}
 	default:
-		panic("interanal error") //TODOOK
+		panic(internalError())
 	}
 	return n.typ
 }
@@ -1563,7 +1551,7 @@ func (n *StructDeclarator) check(ctx *context, td typeDescriptor, typ Type) *fie
 		}
 		n.AttributeSpecifierList.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return sf
 }
@@ -1579,7 +1567,7 @@ func (n *StructOrUnion) check(ctx *context) Kind {
 	case StructOrUnionUnion: // "union"
 		return Union
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -1605,7 +1593,7 @@ func (n *CastExpression) check(ctx *context) Operand {
 		ctx.pop()
 		n.Operand = op.convertTo(ctx, n, t)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1714,7 +1702,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.TypeName2.check(ctx)
 		//TODO
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1795,7 +1783,7 @@ func (n *Expression) check(ctx *context) Operand {
 		n.Expression.check(ctx)
 		n.Operand = n.AssignmentExpression.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1862,7 +1850,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 			n.Operand = &operand{typ: ctx.cfg.ABI.Type(Void)}
 		}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -1871,7 +1859,7 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context) Operand {
 	ctx.not(n, mIntConstExpr)
 	var d *Declarator
 	if n.resolvedIn == nil {
-		if !ctx.cfg.AllowLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
+		if ctx.cfg.RejectLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
 			ctx.errNode(n, "undefined: %s", n.Token.Value)
 			return noOperand
 		}
@@ -1891,10 +1879,10 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context) Operand {
 					n.resolvedIn = s
 					d = x
 					break out
-				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator, *LabeledStatement:
 					// nop
 				default:
-					panic("internal error") //TODOOK
+					panic(internalError())
 				}
 			}
 		}
@@ -2166,7 +2154,6 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 			default:
 				val = a.Value()
 			}
-			//fmt.Printf("%v: %v\n", n.Position(), val) //TODO-
 		}
 
 		if a.Type().Kind() == Invalid && b.Type().Kind() == Invalid {
@@ -2211,11 +2198,10 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 		case b.Type().Kind() != Invalid:
 			n.Operand = &operand{typ: b.Type(), value: val}
 		default:
-			//TODO panic(fmt.Errorf("%v: internal error: %v, %v", n.Token2.Position(), a.Type(), b.Type())) //TODOOK
-			return noOperand
+			panic(internalError())
 		}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2243,7 +2229,7 @@ func (n *LogicalOrExpression) check(ctx *context) Operand {
 		}
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int), value: v}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2271,7 +2257,7 @@ func (n *LogicalAndExpression) check(ctx *context) Operand {
 		}
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int), value: v}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2301,7 +2287,7 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 
 		n.Operand = &operand{typ: a.Type(), value: a.Value().or(b.Value())}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2331,7 +2317,7 @@ func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 
 		n.Operand = &operand{typ: a.Type(), value: a.Value().xor(b.Value())}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2361,7 +2347,7 @@ func (n *AndExpression) check(ctx *context) Operand {
 
 		n.Operand = &operand{typ: a.Type(), value: a.Value().and(b.Value())}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2417,7 +2403,7 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 			}
 		}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2478,7 +2464,7 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 			}
 		}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2523,7 +2509,7 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 
 		n.Operand = &operand{typ: a.Type(), value: a.Value().rsh(b.Value())}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2588,7 +2574,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 
 		n.Operand = &operand{typ: a.Type(), value: a.Value().sub(b.Value())}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2650,7 +2636,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 
 		n.Operand = &operand{typ: a.Type(), value: a.Value().mod(b.Value())}
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return n.Operand
 }
@@ -2705,8 +2691,6 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 		// extern.
 		n.Linkage = External
 	}
-	// fmt.Printf("%v: %q typ %v, kind %v, hasStorageSpecifiers %v, linkage %v\n", n.Position(), n.Name(), n.Type(), n.Type().Kind(), hasStorageSpecifiers, n.Linkage) //TODO-
-	// fmt.Printf("typedef %v, extern %v, static %v, auto %v, register %v, threadLocal %v\n", td.typedef(), td.extern(), td.static(), td.auto(), td.register(), td.threadLocal()) //TODO-
 	return n.typ
 }
 
@@ -2738,7 +2722,7 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ, paramList: n.IdentifierList.check(ctx)}
 		return n.DirectDeclarator.check(ctx, ft)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return noType //TODO-
 }
@@ -2852,7 +2836,7 @@ func (n *AsmQualifier) check(ctx *context) {
 	case AsmQualifierGoto: // "goto"
 		//TODO
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -2889,7 +2873,7 @@ func (n *AttributeValue) check(ctx *context) {
 	case AttributeValueExpr: // IDENTIFIER '(' ExpressionList ')'
 		n.ExpressionList.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -2917,7 +2901,7 @@ func (n *DeclarationSpecifiers) check(ctx *context) Type {
 		case DeclarationSpecifiersAttribute: // AttributeSpecifier DeclarationSpecifiers
 			n.AttributeSpecifier.check(ctx)
 		default:
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 	}
 	return typ.check(ctx, n0)
@@ -2934,7 +2918,7 @@ func (n *AlignmentSpecifier) check(ctx *context) {
 	case AlignmentSpecifierAlignasExpr: // "_Alignas" '(' ConstantExpression ')'
 		n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -2949,7 +2933,7 @@ func (n *FunctionSpecifier) check(ctx *context, typ *typeBase) {
 	case FunctionSpecifierNoreturn: // "_Noreturn"
 		typ.flags |= fNoReturn
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -2972,7 +2956,7 @@ func (n *StorageClassSpecifier) check(ctx *context, ds *DeclarationSpecifiers) {
 	case StorageClassSpecifierThreadLocal: // "_Thread_local"
 		ds.class |= fThreadLocal
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	c := bits.OnesCount(uint(ds.class & (fTypedef | fExtern | fStatic | fAuto | fRegister | fThreadLocal)))
 	if c == 1 {
@@ -3050,13 +3034,17 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 				//TODO report error
 				return
 			default:
-				panic("internal error") //TODOOK
+				panic(internalError())
 			}
 		}
 	}
-	if i != len(m) {
-		//TODO report error
+	switch {
+	case i > len(m):
+		ctx.errNode(n, "expected %d declarations, got %d", len(m), i)
 		return
+	case i < len(m):
+		//TODO synthetize missing declarator
+		return //TODO-
 	}
 
 	ft.params = params
@@ -3109,7 +3097,7 @@ func (n *BlockItem) check(ctx *context) Operand {
 	case BlockItemPragma: // PragmaSTDC
 		n.PragmaSTDC.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return noOperand
 }
@@ -3143,7 +3131,7 @@ func (n *Statement) check(ctx *context) Operand {
 	case StatementAsm: // AsmStatement
 		n.AsmStatement.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return noOperand
 }
@@ -3175,7 +3163,7 @@ func (n *JumpStatement) check(ctx *context) {
 	case JumpStatementReturn: // "return" Expression ';'
 		n.Expression.check(ctx)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -3218,7 +3206,7 @@ func (n *IterationStatement) check(ctx *context) {
 		ctx.breaks--
 		ctx.continues--
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -3251,7 +3239,7 @@ func (n *SelectionStatement) check(ctx *context) {
 		n.cases = ctx.cases
 		ctx.cases = cs
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -3323,7 +3311,7 @@ func (n *LabeledStatement) check(ctx *context) {
 		n.Statement.check(ctx)
 		ctx.cases = append(ctx.cases, n)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 

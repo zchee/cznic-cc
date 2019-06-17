@@ -67,19 +67,19 @@ type WideStringValue StringID
 
 func (v WideStringValue) eq(b Value) Value  { return boolValue(v == b.(WideStringValue)) }
 func (v WideStringValue) neq(b Value) Value { return boolValue(v != b.(WideStringValue)) }
-func (v WideStringValue) add(b Value) Value { panic("internal error") } //TODOOK
-func (v WideStringValue) and(b Value) Value { panic("internal error") } //TODOOK
-func (v WideStringValue) div(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) add(b Value) Value { panic(internalError()) }
+func (v WideStringValue) and(b Value) Value { panic(internalError()) }
+func (v WideStringValue) div(b Value) Value { panic(internalError()) }
 func (v WideStringValue) isNonZero() bool   { return true }
 func (v WideStringValue) isZero() bool      { return false }
-func (v WideStringValue) lsh(b Value) Value { panic("internal error") } //TODOOK
-func (v WideStringValue) mod(b Value) Value { panic("internal error") } //TODOOK
-func (v WideStringValue) mul(b Value) Value { panic("internal error") } //TODOOK
-func (v WideStringValue) neg() Value        { panic("internal error") } //TODOOK
-func (v WideStringValue) or(b Value) Value  { panic("internal error") } //TODOOK
-func (v WideStringValue) rsh(b Value) Value { panic("internal error") } //TODOOK
-func (v WideStringValue) sub(b Value) Value { panic("internal error") } //TODOOK
-func (v WideStringValue) xor(b Value) Value { panic("internal error") } //TODOOK
+func (v WideStringValue) lsh(b Value) Value { panic(internalError()) }
+func (v WideStringValue) mod(b Value) Value { panic(internalError()) }
+func (v WideStringValue) mul(b Value) Value { panic(internalError()) }
+func (v WideStringValue) neg() Value        { panic(internalError()) }
+func (v WideStringValue) or(b Value) Value  { panic(internalError()) }
+func (v WideStringValue) rsh(b Value) Value { panic(internalError()) }
+func (v WideStringValue) sub(b Value) Value { panic(internalError()) }
+func (v WideStringValue) xor(b Value) Value { panic(internalError()) }
 
 func (v WideStringValue) le(b Value) Value {
 	return boolValue(StringID(v).String() <= StringID(b.(WideStringValue)).String())
@@ -101,19 +101,19 @@ type StringValue StringID
 
 func (v StringValue) eq(b Value) Value  { return boolValue(v == b.(StringValue)) }
 func (v StringValue) neq(b Value) Value { return boolValue(v != b.(StringValue)) }
-func (v StringValue) add(b Value) Value { panic("internal error") } //TODOOK
-func (v StringValue) and(b Value) Value { panic("internal error") } //TODOOK
-func (v StringValue) div(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) add(b Value) Value { panic(internalError()) }
+func (v StringValue) and(b Value) Value { panic(internalError()) }
+func (v StringValue) div(b Value) Value { panic(internalError()) }
 func (v StringValue) isNonZero() bool   { return true }
 func (v StringValue) isZero() bool      { return false }
-func (v StringValue) lsh(b Value) Value { panic("internal error") } //TODOOK
-func (v StringValue) mod(b Value) Value { panic("internal error") } //TODOOK
-func (v StringValue) mul(b Value) Value { panic("internal error") } //TODOOK
-func (v StringValue) neg() Value        { panic("internal error") } //TODOOK
-func (v StringValue) or(b Value) Value  { panic("internal error") } //TODOOK
-func (v StringValue) rsh(b Value) Value { panic("internal error") } //TODOOK
-func (v StringValue) sub(b Value) Value { panic("internal error") } //TODOOK
-func (v StringValue) xor(b Value) Value { panic("internal error") } //TODOOK
+func (v StringValue) lsh(b Value) Value { panic(internalError()) }
+func (v StringValue) mod(b Value) Value { panic(internalError()) }
+func (v StringValue) mul(b Value) Value { panic(internalError()) }
+func (v StringValue) neg() Value        { panic(internalError()) }
+func (v StringValue) or(b Value) Value  { panic(internalError()) }
+func (v StringValue) rsh(b Value) Value { panic(internalError()) }
+func (v StringValue) sub(b Value) Value { panic(internalError()) }
+func (v StringValue) xor(b Value) Value { panic(internalError()) }
 
 func (v StringValue) le(b Value) Value {
 	return boolValue(StringID(v).String() <= StringID(b.(StringValue)).String())
@@ -164,7 +164,7 @@ func (v Int64Value) lsh(b Value) Value {
 	case Uint64Value:
 		return v << y
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -175,7 +175,7 @@ func (v Int64Value) rsh(b Value) Value {
 	case Uint64Value:
 		return v >> y
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -220,7 +220,7 @@ func (v Uint64Value) lsh(b Value) Value {
 	case Uint64Value:
 		return v << y
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -231,7 +231,7 @@ func (v Uint64Value) rsh(b Value) Value {
 	case Uint64Value:
 		return v >> y
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 
@@ -246,7 +246,7 @@ func (v Uint64Value) mod(b Value) Value {
 type Float32Value float32
 
 func (v Float32Value) add(b Value) Value { return v + b.(Float32Value) }
-func (v Float32Value) and(b Value) Value { panic("internal error") } //TODOOK
+func (v Float32Value) and(b Value) Value { panic(internalError()) }
 func (v Float32Value) div(b Value) Value { return v / b.(Float32Value) }
 func (v Float32Value) eq(b Value) Value  { return boolValue(v == b.(Float32Value)) }
 func (v Float32Value) ge(b Value) Value  { return boolValue(v >= b.(Float32Value)) }
@@ -254,21 +254,21 @@ func (v Float32Value) gt(b Value) Value  { return boolValue(v > b.(Float32Value)
 func (v Float32Value) isNonZero() bool   { return v != 0 }
 func (v Float32Value) isZero() bool      { return v == 0 }
 func (v Float32Value) le(b Value) Value  { return boolValue(v <= b.(Float32Value)) }
-func (v Float32Value) lsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Float32Value) lsh(b Value) Value { panic(internalError()) }
 func (v Float32Value) lt(b Value) Value  { return boolValue(v < b.(Float32Value)) }
-func (v Float32Value) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v Float32Value) mod(b Value) Value { panic(internalError()) }
 func (v Float32Value) mul(b Value) Value { return v * b.(Float32Value) }
 func (v Float32Value) neg() Value        { return -v }
 func (v Float32Value) neq(b Value) Value { return boolValue(v != b.(Float32Value)) }
-func (v Float32Value) or(b Value) Value  { panic("internal error") } //TODOOK
-func (v Float32Value) rsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Float32Value) or(b Value) Value  { panic(internalError()) }
+func (v Float32Value) rsh(b Value) Value { panic(internalError()) }
 func (v Float32Value) sub(b Value) Value { return v - b.(Float32Value) }
-func (v Float32Value) xor(b Value) Value { panic("internal error") } //TODOOK
+func (v Float32Value) xor(b Value) Value { panic(internalError()) }
 
 type Float64Value float64
 
 func (v Float64Value) add(b Value) Value { return v + b.(Float64Value) }
-func (v Float64Value) and(b Value) Value { panic("internal error") } //TODOOK
+func (v Float64Value) and(b Value) Value { panic(internalError()) }
 func (v Float64Value) div(b Value) Value { return v / b.(Float64Value) }
 func (v Float64Value) eq(b Value) Value  { return boolValue(v == b.(Float64Value)) }
 func (v Float64Value) ge(b Value) Value  { return boolValue(v >= b.(Float64Value)) }
@@ -276,60 +276,60 @@ func (v Float64Value) gt(b Value) Value  { return boolValue(v > b.(Float64Value)
 func (v Float64Value) isNonZero() bool   { return v != 0 }
 func (v Float64Value) isZero() bool      { return v == 0 }
 func (v Float64Value) le(b Value) Value  { return boolValue(v <= b.(Float64Value)) }
-func (v Float64Value) lsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Float64Value) lsh(b Value) Value { panic(internalError()) }
 func (v Float64Value) lt(b Value) Value  { return boolValue(v < b.(Float64Value)) }
-func (v Float64Value) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v Float64Value) mod(b Value) Value { panic(internalError()) }
 func (v Float64Value) mul(b Value) Value { return v * b.(Float64Value) }
 func (v Float64Value) neg() Value        { return -v }
 func (v Float64Value) neq(b Value) Value { return boolValue(v != b.(Float64Value)) }
-func (v Float64Value) or(b Value) Value  { panic("internal error") } //TODOOK
-func (v Float64Value) rsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Float64Value) or(b Value) Value  { panic(internalError()) }
+func (v Float64Value) rsh(b Value) Value { panic(internalError()) }
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
-func (v Float64Value) xor(b Value) Value { panic("internal error") } //TODOOK
+func (v Float64Value) xor(b Value) Value { panic(internalError()) }
 
 type Complex64Value complex128
 
 func (v Complex64Value) add(b Value) Value { return v + b.(Complex64Value) }
-func (v Complex64Value) and(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) and(b Value) Value { panic(internalError()) }
 func (v Complex64Value) div(b Value) Value { return v / b.(Complex64Value) }
 func (v Complex64Value) eq(b Value) Value  { return boolValue(v == b.(Complex64Value)) }
-func (v Complex64Value) ge(b Value) Value  { panic("internal error") } //TODOOK }
-func (v Complex64Value) gt(b Value) Value  { panic("internal error") } //TODOOK }
+func (v Complex64Value) ge(b Value) Value  { panic(internalError()) }
+func (v Complex64Value) gt(b Value) Value  { panic(internalError()) }
 func (v Complex64Value) isNonZero() bool   { return v != 0 }
 func (v Complex64Value) isZero() bool      { return v == 0 }
-func (v Complex64Value) le(b Value) Value  { panic("internal error") } //TODOOK }
-func (v Complex64Value) lsh(b Value) Value { panic("internal error") } //TODOOK
-func (v Complex64Value) lt(b Value) Value  { panic("internal error") } //TODOOK }
-func (v Complex64Value) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) le(b Value) Value  { panic(internalError()) }
+func (v Complex64Value) lsh(b Value) Value { panic(internalError()) }
+func (v Complex64Value) lt(b Value) Value  { panic(internalError()) }
+func (v Complex64Value) mod(b Value) Value { panic(internalError()) }
 func (v Complex64Value) mul(b Value) Value { return v * b.(Complex64Value) }
 func (v Complex64Value) neg() Value        { return -v }
 func (v Complex64Value) neq(b Value) Value { return boolValue(v != b.(Complex64Value)) }
-func (v Complex64Value) or(b Value) Value  { panic("internal error") } //TODOOK
-func (v Complex64Value) rsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) or(b Value) Value  { panic(internalError()) }
+func (v Complex64Value) rsh(b Value) Value { panic(internalError()) }
 func (v Complex64Value) sub(b Value) Value { return v - b.(Complex64Value) }
-func (v Complex64Value) xor(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex64Value) xor(b Value) Value { panic(internalError()) }
 
 type Complex128Value complex128
 
 func (v Complex128Value) add(b Value) Value { return v + b.(Complex128Value) }
-func (v Complex128Value) and(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex128Value) and(b Value) Value { panic(internalError()) }
 func (v Complex128Value) div(b Value) Value { return v / b.(Complex128Value) }
 func (v Complex128Value) eq(b Value) Value  { return boolValue(v == b.(Complex128Value)) }
-func (v Complex128Value) ge(b Value) Value  { panic("internal error") } //TODOOK }
-func (v Complex128Value) gt(b Value) Value  { panic("internal error") } //TODOOK }
+func (v Complex128Value) ge(b Value) Value  { panic(internalError()) }
+func (v Complex128Value) gt(b Value) Value  { panic(internalError()) }
 func (v Complex128Value) isNonZero() bool   { return v != 0 }
 func (v Complex128Value) isZero() bool      { return v == 0 }
-func (v Complex128Value) le(b Value) Value  { panic("internal error") } //TODOOK }
-func (v Complex128Value) lsh(b Value) Value { panic("internal error") } //TODOOK
-func (v Complex128Value) lt(b Value) Value  { panic("internal error") } //TODOOK }
-func (v Complex128Value) mod(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex128Value) le(b Value) Value  { panic(internalError()) }
+func (v Complex128Value) lsh(b Value) Value { panic(internalError()) }
+func (v Complex128Value) lt(b Value) Value  { panic(internalError()) }
+func (v Complex128Value) mod(b Value) Value { panic(internalError()) }
 func (v Complex128Value) mul(b Value) Value { return v * b.(Complex128Value) }
 func (v Complex128Value) neg() Value        { return -v }
 func (v Complex128Value) neq(b Value) Value { return boolValue(v != b.(Complex128Value)) }
-func (v Complex128Value) or(b Value) Value  { panic("internal error") } //TODOOK
-func (v Complex128Value) rsh(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex128Value) or(b Value) Value  { panic(internalError()) }
+func (v Complex128Value) rsh(b Value) Value { panic(internalError()) }
 func (v Complex128Value) sub(b Value) Value { return v - b.(Complex128Value) }
-func (v Complex128Value) xor(b Value) Value { panic("internal error") } //TODOOK
+func (v Complex128Value) xor(b Value) Value { panic(internalError()) }
 
 type lvalue struct {
 	Operand
@@ -386,7 +386,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	}
 
 	if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 
 	if a.Type() == nil || b.Type() == nil {
@@ -433,7 +433,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	}
 
 	if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 
 	// Otherwise, the integer promotions are performed on both operands.
@@ -515,7 +515,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	case LongLong:
 		typ = abi.Type(ULongLong)
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 	return a.convertTo(ctx, n, typ), b.convertTo(ctx, n, typ)
 }
@@ -830,49 +830,49 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 		case nil:
 			// ok
 		default:
-			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+			panic(internalError())
 		}
 		return o
 	}
 
 	switch o.Type().Kind() {
 	case ComplexFloat:
-		switch x := o.Value().(type) {
+		switch o.Value().(type) {
 		case Complex64Value, nil:
 			return o
 		default:
-			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+			panic(internalError())
 		}
 	case ComplexDouble, ComplexLongDouble:
-		switch x := o.Value().(type) {
+		switch o.Value().(type) {
 		case Complex128Value, nil:
 			return o
 		default:
-			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+			panic(internalError())
 		}
 	case Float:
-		switch x := o.Value().(type) {
+		switch o.Value().(type) {
 		case Float32Value, nil:
 			return o
 		default:
-			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+			panic(internalError())
 		}
 	case Double, LongDouble:
-		switch x := o.Value().(type) {
+		switch o.Value().(type) {
 		case Float64Value, nil:
 			return o
 		default:
-			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+			panic(internalError())
 		}
 	case Ptr:
-		switch x := o.Value().(type) {
+		switch o.Value().(type) {
 		case Int64Value, Uint64Value, nil:
 			return o
 		default:
-			panic(fmt.Errorf("internal error: %T", x)) //TODOOK
+			panic(internalError())
 		}
 	}
-	panic("TODO")
+	panic(internalError())
 }
 
 func convertInt64(n int64, t Type, ctx *context) int64 {
@@ -922,7 +922,7 @@ func convertInt64(n int64, t Type, ctx *context) int64 {
 	case 8:
 		return n
 	default:
-		panic("internal error") //TODOOK
+		panic(internalError())
 	}
 }
 

@@ -447,7 +447,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 			case DeclarationSpecifiersAttribute: // AttributeSpecifier DeclarationSpecifiers
 				attributeSpecifiers = append(attributeSpecifiers, n.AttributeSpecifier)
 			default:
-				panic("internal error") //TODOOK
+				panic(internalError())
 			}
 		}
 	case *SpecifierQualifierList:
@@ -462,7 +462,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 			case SpecifierQualifierListAttribute: // AttributeSpecifier SpecifierQualifierList
 				attributeSpecifiers = append(attributeSpecifiers, n.AttributeSpecifier)
 			default:
-				panic("internal error") //TODOOK
+				panic(internalError())
 			}
 		}
 	case *TypeQualifiers:
@@ -472,7 +472,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 			}
 		}
 	default:
-		panic(fmt.Sprintf("internal error: %v: %T", n.Position(), n)) //TODOOK
+		panic(internalError())
 	}
 
 	if len(typeSpecifiers) > maxTypeSpecifiers {
@@ -506,7 +506,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 	case 1:
 		align := alignmentSpecifiers[0].align()
 		if align > math.MaxUint8 {
-			panic("internal error") //TODOOK
+			panic(internalError())
 		}
 		t.align = byte(align)
 		t.fieldAlign = t.align
@@ -729,7 +729,7 @@ func (t *typeBase) Result() Type {
 // Size implements Type.
 func (t *typeBase) Size() uintptr {
 	if t.Incomplete() {
-		panic("Size(): incomplete type") //TODOOK
+		panic(internalError())
 	}
 
 	if t.size == 0 {
@@ -805,7 +805,7 @@ func (t *typeBase) string(b *strings.Builder) {
 	case Ptr:
 		b.WriteString("pointer")
 	case typeofExpr, typeofType:
-		panic("internal error: " + k.String()) // TODOOK
+		panic(internalError())
 	default:
 		b.WriteString(k.String())
 	}
@@ -1223,7 +1223,7 @@ func (t *taggedType) underlyingType() Type {
 					}
 				}
 			default:
-				panic("internal error") //TODOOK
+				panic(internalError())
 			}
 		}
 	}
