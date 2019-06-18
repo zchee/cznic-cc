@@ -138,8 +138,8 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		return
 	}
 
-	if ctx.checkFn != nil {
-		ctx.checkFn.InitDeclarators = append(ctx.checkFn.InitDeclarators, n)
+	if f := ctx.checkFn; f != nil {
+		f.InitDeclarators = append(f.InitDeclarators, n)
 	}
 	switch n.Case {
 	case InitDeclaratorDecl: // Declarator AttributeSpecifierList
@@ -1175,6 +1175,16 @@ func (n *DirectAbstractDeclarator) check(ctx *context, typ Type) Type {
 
 	switch n.Case {
 	case DirectAbstractDeclaratorDecl: // '(' AbstractDeclarator ')'
+		if n.AbstractDeclarator == nil {
+			// [0], 6.7.6, 128)
+			//
+			// As indicated by the syntax, empty parentheses in a
+			// type name are interpreted as ‘‘function with no
+			// parameter specification’’, rather than redundant
+			// parentheses around the omitted identifier.
+			panic(internalError()) //TODO
+		}
+
 		return n.AbstractDeclarator.check(ctx, typ)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
 		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, true)

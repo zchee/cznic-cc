@@ -30,7 +30,7 @@ const (
 	ANDAND                 // &&
 	ANDASSIGN              // &=
 	ARROW                  // ->
-	ASM                    // asm
+	ASM                    // __asm__
 	ATOMIC                 // _Atomic
 	ATTRIBUTE              // __attribute__
 	AUTO                   // auto
@@ -285,7 +285,6 @@ var (
 		dict.sid("__typeof__"):    TYPEOF,
 		dict.sid("__volatile"):    VOLATILE,
 		dict.sid("__volatile__"):  VOLATILE,
-		dict.sid("asm"):           ASM,
 		dict.sid("typeof"):        TYPEOF,
 	}
 
@@ -640,13 +639,8 @@ out:
 						break out
 					}
 				case *Declarator:
-					if !x.isVisible(seq) {
+					if x.IsTypedefName || !x.isVisible(seq) {
 						continue
-					}
-
-					if x.IsTypedefName {
-						// dbg("", PrettyString(p.tok))
-						panic(internalError())
 					}
 
 					resolvedIn = s
@@ -2033,13 +2027,13 @@ func (p *parser) enumerator() (r *Enumerator) {
 	attr := p.attributeSpecifierListOpt()
 	if p.rune() != '=' {
 		r = &Enumerator{Case: EnumeratorIdent, Token: t, AttributeSpecifierList: attr, lexicalScope: p.declScope}
-		p.declScope.declare(t.Value, r)
+		p.fileScope.declare(t.Value, r)
 		return r
 	}
 
 	t2 := p.shift()
 	r = &Enumerator{Case: EnumeratorExpr, Token: t, AttributeSpecifierList: attr, Token2: t2, ConstantExpression: p.constantExpression(), lexicalScope: p.declScope}
-	p.declScope.declare(t.Value, r)
+	p.fileScope.declare(t.Value, r)
 	return r
 }
 

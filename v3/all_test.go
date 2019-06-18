@@ -91,6 +91,7 @@ const (
 #define __func__ NULL //TODO
 #define __sync_synchronize(...)
 #define __word__
+#define asm __asm__
 
 #ifndef __GNUC__
 #define __attribute__(x)

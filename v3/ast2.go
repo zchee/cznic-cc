@@ -81,9 +81,11 @@ type AST struct {
 // Declarators (*Declarator) and StructDeclarators (*StructDeclarator) are
 // inserted in the appropriate scopes.
 //
-// Tagged struct/union specifier definitions (*StructOrUnionSpecifier) and
-// tagged enum specifier definitions (*EnumSpecifier) are inserted in the
-// appropriate scopes.
+// Tagged struct/union specifier definitions (*StructOrUnionSpecifier) are
+// inserted in the appropriate scopes.
+//
+// Tagged enum specifier definitions (*EnumSpecifier) and enumeration constants
+// (*Enumerator) are inserted in the appropriate scopes.
 //
 // Labels (*LabeledStatement) are inserted in the appropriate scopes.
 func Parse(cfg *Config, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
@@ -308,7 +310,7 @@ func Preprocess(cfg *Config, includePaths, sysIncludePaths []string, sources []S
 		default:
 			if len(*toks) != 0 {
 				for _, v := range *translationPhase5(ctx, toks) {
-					if _, err := fmt.Fprintf(w, "%s%s", v.Sep, v); err != nil {
+					if err := wTok(w, v); err != nil {
 						return err
 					}
 				}
@@ -319,7 +321,7 @@ func Preprocess(cfg *Config, includePaths, sysIncludePaths []string, sources []S
 	}
 	if len(*toks) != 0 {
 		for _, v := range *translationPhase5(ctx, toks) {
-			if _, err := fmt.Fprintf(w, "%s%s", v.Sep, v); err != nil {
+			if err := wTok(w, v); err != nil {
 				return err
 			}
 		}
@@ -329,6 +331,58 @@ func Preprocess(cfg *Config, includePaths, sysIncludePaths []string, sources []S
 	}
 	return ctx.Err()
 }
+
+func wTok(w io.Writer, tok Token) (err error) {
+	switch tok.Rune {
+	case STRINGLITERAL, LONGSTRINGLITERAL:
+		_, err = fmt.Fprintf(w, `%s"%s"`, tok.Sep, cQuotedString(tok.String()))
+	case CHARCONST, LONGCHARCONST:
+		_, err = fmt.Fprintf(w, `%s'%s'`, tok.Sep, cQuotedString(tok.String()))
+	default:
+		_, err = fmt.Fprintf(w, "%s%s", tok.Sep, tok)
+	}
+	return err
+}
+
+func cQuotedString(s string) []byte {
+	var b []byte
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch c {
+		case '\b':
+			b = append(b, '\\', 'b')
+			continue
+		case '\f':
+			b = append(b, '\\', 'f')
+			continue
+		case '\n':
+			b = append(b, '\\', 'n')
+			continue
+		case '\r':
+			b = append(b, '\\', 'r')
+			continue
+		case '\t':
+			b = append(b, '\\', 't')
+			continue
+		case '\\':
+			b = append(b, '\\', '\\')
+			continue
+		case '"':
+			b = append(b, '\\', '"')
+			continue
+		}
+
+		switch {
+		case c < ' ' || c >= 0x7f:
+			b = append(b, '\\', octal(c>>6), octal(c>>3), octal(c))
+		default:
+			b = append(b, c)
+		}
+	}
+	return b
+}
+
+func octal(b byte) byte { return '0' + b&7 }
 
 // Translate parses and typechecks a translation unit  and returns an *AST or
 // error, if any.

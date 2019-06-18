@@ -299,7 +299,7 @@ func (n *ArgumentExpressionList) Position() (r token.Position) {
 // Asm represents data reduced by production:
 //
 //	Asm:
-//	        "asm" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
+//	        "__asm__" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
 type Asm struct {
 	AsmArgList       *AsmArgList
 	AsmQualifierList *AsmQualifierList
