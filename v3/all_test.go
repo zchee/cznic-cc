@@ -498,11 +498,11 @@ func exampleAST(rule int, src string) interface{} {
 	typ = typ[:i]
 	var node Node
 	depth := mathutil.MaxInt
-	walkExample(typ, ast.TranslationUnit, 0, &node, &depth)
+	findNode(typ, ast.TranslationUnit, 0, &node, &depth)
 	return node
 }
 
-func walkExample(typ string, n Node, depth int, out *Node, pdepth *int) {
+func findNode(typ string, n Node, depth int, out *Node, pdepth *int) {
 	if depth >= *pdepth {
 		return
 	}
@@ -531,7 +531,7 @@ func walkExample(typ string, n Node, depth int, out *Node, pdepth *int) {
 		}
 
 		if x, ok := elem.FieldByIndex([]int{i}).Interface().(Node); ok {
-			walkExample(typ, x, depth+1, out, pdepth)
+			findNode(typ, x, depth+1, out, pdepth)
 		}
 	}
 }

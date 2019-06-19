@@ -17,11 +17,6 @@ type Source struct {
 	Value string
 }
 
-func (n *AbstractDeclarator) Declarator() *Declarator { return nil }
-func (n *AbstractDeclarator) IsStatic() bool          { return false }
-func (n *AbstractDeclarator) Name() StringID          { return 0 }
-func (n *AbstractDeclarator) Type() Type              { return n.typ }
-
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *AssignmentExpression) Promote() Type { return n.promote }
 
@@ -437,7 +432,6 @@ func (n *BlockItem) Closure() map[StringID]struct{} { return n.closure }
 // FunctionDefinition returns the nested function (case BlockItemFuncDef).
 func (n *BlockItem) FunctionDefinition() *FunctionDefinition { return n.fn }
 
-func (n *Declarator) Declarator() *Declarator { return n }
 func (n *Declarator) IsStatic() bool          { return n.td.static() }
 func (n *Declarator) isVisible(at int32) bool { return at == 0 || n.DirectDeclarator.ends() < at }
 
@@ -600,6 +594,8 @@ func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }
 
 // LexicalScope returns the lexical scope of n.
 func (n *LabeledStatement) LexicalScope() Scope { return n.lexicalScope }
+
+func (n *ParameterDeclaration) Type() Type { return n.typ }
 
 func (n *Pointer) TypeQualifier() Type { return n.typeQualifiers }
 

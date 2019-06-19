@@ -28,7 +28,7 @@ func ExampleAbstractDeclarator_decl() {
 	// &cc.AbstractDeclarator{
 	// · Case: AbstractDeclaratorDecl,
 	// · DirectAbstractDeclarator: &cc.DirectAbstractDeclarator{
-	// · · Case: DirectAbstractDeclaratorDecl,
+	// · · Case: DirectAbstractDeclaratorFunc,
 	// · · Token: example.c:1:11: '(' "(",
 	// · · Token2: example.c:1:12: ')' ")",
 	// · },
@@ -3165,7 +3165,7 @@ func ExampleDirectAbstractDeclarator_decl() {
 	fmt.Println(exampleAST(189, "void f(int());"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
-	// · Case: DirectAbstractDeclaratorDecl,
+	// · Case: DirectAbstractDeclaratorFunc,
 	// · Token: example.c:1:11: '(' "(",
 	// · Token2: example.c:1:12: ')' ")",
 	// }

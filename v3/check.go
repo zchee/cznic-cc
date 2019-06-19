@@ -35,6 +35,15 @@ const (
 	mIntConstExprAnyCast // As mIntConstExpr plus accept any cast.
 )
 
+type Parameter struct {
+	d   *Declarator
+	typ Type
+}
+
+func (p *Parameter) Declarator() *Declarator { return p.d }
+func (p *Parameter) Name() StringID          { return p.d.Name() }
+func (p *Parameter) Type() Type              { return p.typ }
+
 func (n *TranslationUnit) check(ctx *context) {
 	for n := n; n != nil; n = n.TranslationUnit {
 		n.ExternalDeclaration.check(ctx)
@@ -1152,7 +1161,7 @@ func (n *TypeName) check(ctx *context) Type {
 
 func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
 	if n == nil {
-		return noType
+		return typ
 	}
 
 	n.typ = noType //TODO-
@@ -1170,7 +1179,7 @@ func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
 
 func (n *DirectAbstractDeclarator) check(ctx *context, typ Type) Type {
 	if n == nil {
-		return noType
+		return typ
 	}
 
 	switch n.Case {
@@ -1187,13 +1196,13 @@ func (n *DirectAbstractDeclarator) check(ctx *context, typ Type) Type {
 
 		return n.AbstractDeclarator.check(ctx, typ)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, true)
+		return n.DirectAbstractDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, true, false))
 	case DirectAbstractDeclaratorStaticArr: // DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
-		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, false)
+		return n.DirectAbstractDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false, false))
 	case DirectAbstractDeclaratorArrStatic: // DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
-		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, false)
+		return n.DirectAbstractDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false, false))
 	case DirectAbstractDeclaratorArrStar: // DirectAbstractDeclarator '[' '*' ']'
-		return checkArray(ctx, n, n.DirectAbstractDeclarator.check(ctx, typ), n.AssignmentExpression, false)
+		return n.DirectAbstractDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, nil, true, true))
 	case DirectAbstractDeclaratorFunc: // DirectAbstractDeclarator '(' ParameterTypeList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ}
 		n.ParameterTypeList.check(ctx, ft)
@@ -1222,15 +1231,12 @@ func (n *ParameterTypeList) check(ctx *context, ft *functionType) {
 
 func (n *ParameterList) check(ctx *context, ft *functionType) {
 	for ; n != nil; n = n.ParameterList {
-		d := n.ParameterDeclaration.check(ctx, ft)
-		if d == (*AbstractDeclarator)(nil) { //TODO-
-			panic(n.Position().String())
-		}
-		ft.params = append(ft.params, d)
+		p := n.ParameterDeclaration.check(ctx, ft)
+		ft.params = append(ft.params, p)
 	}
 }
 
-func (n *ParameterDeclaration) check(ctx *context, ft *functionType) Object {
+func (n *ParameterDeclaration) check(ctx *context, ft *functionType) *Parameter {
 	if n == nil {
 		return nil
 	}
@@ -1238,22 +1244,20 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) Object {
 	switch n.Case {
 	case ParameterDeclarationDecl: // DeclarationSpecifiers Declarator AttributeSpecifierList
 		typ := n.DeclarationSpecifiers.check(ctx)
-		if n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, false).Kind() == Void {
+		if n.typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, false); n.typ.Kind() == Void {
 			panic(n.Position().String())
 		}
 		if n.AttributeSpecifierList != nil {
 			panic(n.Position().String())
 		}
 		n.AttributeSpecifierList.check(ctx)
-		return n.Declarator
+		return &Parameter{d: n.Declarator, typ: n.Declarator.Type()}
 	case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclarator
-		typ := n.DeclarationSpecifiers.check(ctx)
-		if n.AbstractDeclarator == nil {
-			return &abstractObject{typ}
+		n.typ = n.DeclarationSpecifiers.check(ctx)
+		if n.AbstractDeclarator != nil {
+			n.typ = n.AbstractDeclarator.check(ctx, n.typ)
 		}
-
-		n.AbstractDeclarator.check(ctx, typ)
-		return n.AbstractDeclarator
+		return &Parameter{typ: n.typ}
 	default:
 		panic(internalError())
 	}
@@ -1275,7 +1279,7 @@ func (n *Pointer) check(ctx *context, typ Type) (t Type) {
 	}
 	r := ctx.cfg.ABI.Ptr(n, typ).(*pointerType)
 	if n.typeQualifiers != nil {
-		r.typeQualifiers = n.typeQualifiers.check(ctx, (*DeclarationSpecifiers)(nil))
+		r.typeQualifiers = n.typeQualifiers.check(ctx, (*DeclarationSpecifiers)(nil), false)
 	}
 	return r
 }
@@ -1332,7 +1336,7 @@ func (n *SpecifierQualifierList) check(ctx *context) Type {
 			panic(internalError())
 		}
 	}
-	return typ.check(ctx, n0)
+	return typ.check(ctx, n0, true)
 }
 
 func (n *TypeSpecifier) check(ctx *context, typ *typeBase) {
@@ -2717,13 +2721,13 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		n.AttributeSpecifierList.check(ctx)
 		return n.Declarator.check(ctx, noTypeDescriptor, typ, false)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, true))
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, true, false))
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
-		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false))
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false, false))
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
-		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false))
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, n.AssignmentExpression, false, false))
 	case DirectDeclaratorStar: // DirectDeclarator '[' TypeQualifiers '*' ']'
-		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, nil, true))
+		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, nil, true, true))
 	case DirectDeclaratorFuncParam: // DirectDeclarator '(' ParameterTypeList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ}
 		n.ParameterTypeList.check(ctx, ft)
@@ -2737,12 +2741,14 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 	return noType //TODO-
 }
 
-func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, exprIsOptional bool) Type { //TODO pass and use typeQualifiers
+func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, exprIsOptional, noExpr bool) Type { //TODO pass and use typeQualifiers
 	b := typ.base()
 	b.align = byte(typ.Align())
 	b.fieldAlign = byte(typ.FieldAlign())
 	b.kind = byte(Array)
 	switch {
+	case expr != nil && noExpr:
+		panic(internalError())
 	case expr != nil:
 		op := expr.check(ctx)
 		if op.Type().Kind() == Invalid {
@@ -2778,12 +2784,13 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 			b.size = length * typ.Size()
 		}
 		return &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ, length: length, vla: vla, expr: vlaExpr}
+	case noExpr:
+		// nop
 	case !exprIsOptional:
-		panic("TODO")
-	default:
-		b.flags |= fIncomplete
-		return &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ}
+		panic(internalError())
 	}
+	b.flags |= fIncomplete
+	return &arrayType{typeBase: b, decay: ctx.cfg.ABI.Ptr(n, typ), elem: typ}
 }
 
 func (n *IdentifierList) check(ctx *context) (r []StringID) {
@@ -2914,7 +2921,7 @@ func (n *DeclarationSpecifiers) check(ctx *context) Type {
 			panic(internalError())
 		}
 	}
-	return typ.check(ctx, n0)
+	return typ.check(ctx, n0, true)
 }
 
 func (n *AlignmentSpecifier) check(ctx *context) {
@@ -3025,7 +3032,7 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 
 		m[v] = i
 	}
-	params := make([]Object, len(m))
+	params := make([]*Parameter, len(m))
 	i := 0
 	for ; n != nil; n = n.DeclarationList {
 		for n := n.Declaration.InitDeclaratorList; n != nil; n = n.InitDeclaratorList {
@@ -3035,7 +3042,7 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 				nm := n.Declarator.Name()
 				switch x, ok := m[nm]; {
 				case ok:
-					params[x] = n.Declarator
+					params[x] = &Parameter{d: n.Declarator, typ: n.Declarator.Type()}
 					i++
 				default:
 					//TODO report error

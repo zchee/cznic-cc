@@ -655,6 +655,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example int f(int i, int j) {} */
 			|	ParameterList ',' ParameterDeclaration
 
+			/*yy:field	typ	Type	*/
 			/*yy:example int f(int i) {} */
 /*yy:case Decl       */ ParameterDeclaration:
 				DeclarationSpecifiers Declarator AttributeSpecifierList

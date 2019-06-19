@@ -3338,6 +3338,7 @@ func (n ParameterDeclarationCase) String() string {
 //	        DeclarationSpecifiers Declarator AttributeSpecifierList  // Case ParameterDeclarationDecl
 //	|       DeclarationSpecifiers AbstractDeclarator                 // Case ParameterDeclarationAbstract
 type ParameterDeclaration struct {
+	typ                    Type
 	AbstractDeclarator     *AbstractDeclarator
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   ParameterDeclarationCase `PrettyPrint:"stringer,zero"`

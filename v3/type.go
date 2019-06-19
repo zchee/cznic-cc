@@ -44,10 +44,6 @@ var (
 
 	noTypeDescriptor = &DeclarationSpecifiers{}
 
-	_ Object = (*AbstractDeclarator)(nil)
-	_ Object = (*Declarator)(nil)
-	_ Object = (*abstractObject)(nil)
-
 	// [0]6.3.1.1-1
 	//
 	// Every integer type has an integer conversion rank defined as
@@ -225,7 +221,7 @@ type Type interface {
 
 	// Parameters returns the parameters of a function type. It panics if
 	// the type's Kind is valid but not Function.
-	Parameters() []Object
+	Parameters() []*Parameter
 
 	// Result returns the result type of a function type. It panics if the
 	// type's Kind is valid but not Function.
@@ -266,22 +262,6 @@ type Type interface {
 	// volatile reports whether type has type qualifier "volatile".
 	volatile() bool
 }
-
-type Object interface {
-	Declarator() *Declarator
-	IsStatic() bool
-	Name() StringID
-	Type() Type
-}
-
-type abstractObject struct {
-	typ Type
-}
-
-func (o *abstractObject) Declarator() *Declarator { return nil }
-func (o *abstractObject) IsStatic() bool          { panic("TODO") } //TODO return o.Type().static() }
-func (o *abstractObject) Name() StringID          { return 0 }
-func (o *abstractObject) Type() Type              { return o.typ }
 
 // A Field describes a single field in a struct/union.
 type Field interface {
@@ -423,14 +403,14 @@ type typeBase struct {
 	kind       byte
 }
 
-func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
+func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type {
 	var alignmentSpecifiers []*AlignmentSpecifier
 	var attributeSpecifiers []*AttributeSpecifier
 	var typeSpecifiers []*TypeSpecifier
 	switch n := td.(type) {
-	case nil:
-		t.kind = byte(TypeSpecifierInt)
-		return t //TODO configuration flag
+	//TODO- case nil:
+	//TODO- 	t.kind = byte(TypeSpecifierInt)
+	//TODO- 	return t //TODO configuration flag
 	case *DeclarationSpecifiers:
 		for ; n != nil; n = n.DeclarationSpecifiers {
 			switch n.Case {
@@ -487,17 +467,20 @@ func (t *typeBase) check(ctx *context, td typeDescriptor) Type {
 	for i, v := range typeSpecifiers {
 		k[i] = v.Case
 	}
-	if len(typeSpecifiers) == 0 {
-		k[0] = TypeSpecifierInt //TODO configuration flag
-	}
-	var ok bool
-	if t.Kind() == Invalid {
-		if t.kind, ok = validTypeSpecifiers[k]; !ok {
-			// panic(fmt.Sprintf("%v: %v", td.Position(), k[:len(typeSpecifiers)]))
-			ctx.err(td.Position(), "invalid type specifiers combination")
-			k[0] = TypeSpecifierInt
-			return t
+	switch {
+	case len(typeSpecifiers) == 0:
+		if !defaultInt {
+			break
+		}
 
+		k[0] = TypeSpecifierInt
+		fallthrough
+	default:
+		var ok bool
+		if t.kind, ok = validTypeSpecifiers[k]; !ok {
+			panic(fmt.Errorf("%v: %q", td.Position(), k[:len(typeSpecifiers)]))
+			ctx.err(td.Position(), "invalid type specifiers combination")
+			return t
 		}
 	}
 	switch len(alignmentSpecifiers) {
@@ -709,7 +692,7 @@ func (t *typeBase) noReturn() bool { return t.flags&fNoReturn != 0 }
 func (t *typeBase) restrict() bool { return t.flags&fRestrict != 0 }
 
 // Parameters implements Type.
-func (t *typeBase) Parameters() []Object {
+func (t *typeBase) Parameters() []*Parameter {
 	if t.Kind() == Invalid {
 		return nil
 	}
@@ -1010,7 +993,7 @@ func (t *aliasType) Len() uintptr { return t.typ.Len() }
 func (t *aliasType) LenExpr() *AssignmentExpression { return t.typ.LenExpr() }
 
 // Parameters implements Type.
-func (t *aliasType) Parameters() []Object { return t.typ.Parameters() }
+func (t *aliasType) Parameters() []*Parameter { return t.typ.Parameters() }
 
 // Result implements Type.
 func (t *aliasType) Result() Type { return t.typ.Result() }
@@ -1244,7 +1227,7 @@ func (t *taggedType) FieldAlign() int { return t.underlyingType().FieldAlign() }
 
 type functionType struct {
 	typeBase
-	params    []Object // *Declarator or *AbstractDeclarator
+	params    []*Parameter
 	paramList []StringID
 
 	result Type
@@ -1285,7 +1268,7 @@ func (t *functionType) string(b *strings.Builder) {
 }
 
 // Parameters implements Type.
-func (t *functionType) Parameters() []Object { return t.params }
+func (t *functionType) Parameters() []*Parameter { return t.params }
 
 // Result implements Type.
 func (t *functionType) Result() Type { return t.result }

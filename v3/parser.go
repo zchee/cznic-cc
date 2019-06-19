@@ -1691,9 +1691,13 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 	case TYPEDEFNAME:
 		kind = TypeSpecifierTypedefName
 	case STRUCT, UNION:
-		return &TypeSpecifier{Case: TypeSpecifierStruct, StructOrUnionSpecifier: p.structOrUnionSpecifier()}
+		r := &TypeSpecifier{Case: TypeSpecifierStruct, StructOrUnionSpecifier: p.structOrUnionSpecifier()}
+		p.typedefNameEnabled = false
+		return r
 	case ENUM:
-		return &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier()}
+		r := &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier()}
+		p.typedefNameEnabled = false
+		return r
 	case TYPEOF:
 		var t, t2, t3 Token
 		t = p.shift()
@@ -2456,6 +2460,20 @@ func (p *parser) declaratorOrAbstractDeclarator(isTypedefName bool) (r Node) {
 		return p.abstractDeclarator(ptr)
 	case '(':
 		switch p.peek(true) {
+		case ')':
+			t := p.shift()
+			t2 := p.shift()
+			return &AbstractDeclarator{
+				Case:    AbstractDeclaratorDecl,
+				Pointer: ptr,
+				DirectAbstractDeclarator: p.directAbstractDeclarator(
+					&DirectAbstractDeclarator{
+						Case:   DirectAbstractDeclaratorFunc,
+						Token:  t,
+						Token2: t2,
+					},
+				),
+			}
 		case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
 			VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 			CONST, RESTRICT, VOLATILE,

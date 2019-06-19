@@ -14,6 +14,8 @@ import (
 	"sort"
 	"testing"
 	"time"
+
+	"modernc.org/mathutil"
 )
 
 func TestTranslateSQLite(t *testing.T) {
@@ -540,4 +542,118 @@ func benchmarkDevTranslate(b *testing.B, predef string) {
 		}
 	}
 	b.SetBytes(bytes)
+}
+
+func TestAbstractDeclarator(t *testing.T) {
+	for i, test := range []struct{ src, typ string }{
+		{"int i = sizeof(int);", "int"},                                                                                            // [0], 6.7.6, 3, (a)
+		{"int i = sizeof(int*);", "pointer to int"},                                                                                // [0], 6.7.6, 3, (b)
+		{"int i = sizeof(int*[3]);", "array of 3 pointer to int"},                                                                  // [0], 6.7.6, 3, (c)
+		{"int i = sizeof(int(*)[3]);", "pointer to array of 3 int"},                                                                // [0], 6.7.6, 3, (d)
+		{"int i = sizeof(int(*)[*]);", "pointer to array of int"},                                                                  // [0], 6.7.6, 3, (e)
+		{"int i = sizeof(int *());", "function() returning pointer to int"},                                                        // [0], 6.7.6, 3, (f)
+		{"int i = sizeof(int (*)(void));", "pointer to function(void) returning int"},                                              // [0], 6.7.6, 3, (g)
+		{"int i = sizeof(int (*[])(unsigned int, ...));", "array of pointer to function(unsigned, ...) returning int"},             // [0], 6.7.6, 3, (h)
+		{"int i = sizeof(int (*const [])(unsigned int, ...));", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
+	} {
+		letter := string('a' + i)
+		cfg := &Config{ABI: testABI}
+		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		if err != nil {
+			t.Errorf("(%v): %v", letter, err)
+			continue
+		}
+
+		var node Node
+		depth := mathutil.MaxInt
+		findNode("TypeName", ast.TranslationUnit, 0, &node, &depth)
+		if node == nil {
+			t.Errorf("(%v): %q, TypeName node not found", letter, test.src)
+			continue
+		}
+
+		g, e := node.(*TypeName).Type().String(), test.typ
+		if *oTrace {
+			t.Logf("(%v): %q, %q", letter, test.src, g)
+		}
+		if g != e {
+			t.Errorf("(%v): %q, got %q, expected %q", letter, test.src, g, e)
+		}
+	}
+}
+
+func TestAbstractDeclarator2(t *testing.T) {
+	for i, test := range []struct{ src, typ string }{
+		{"void f(int);", "int"},                                                                                            // [0], 6.7.6, 3, (a)
+		{"void f(int*);", "pointer to int"},                                                                                // [0], 6.7.6, 3, (b)
+		{"void f(int*[3]);", "array of 3 pointer to int"},                                                                  // [0], 6.7.6, 3, (c)
+		{"void f(int(*)[3]);", "pointer to array of 3 int"},                                                                // [0], 6.7.6, 3, (d)
+		{"void f(int(*)[*]);", "pointer to array of int"},                                                                  // [0], 6.7.6, 3, (e)
+		{"void f(int *());", "function() returning pointer to int"},                                                        // [0], 6.7.6, 3, (f)
+		{"void f(int (*)(void));", "pointer to function(void) returning int"},                                              // [0], 6.7.6, 3, (g)
+		{"void f(int (*[])(unsigned int, ...));", "array of pointer to function(unsigned, ...) returning int"},             // [0], 6.7.6, 3, (h)
+		{"void f(int (*const [])(unsigned int, ...));", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
+	} {
+		letter := string('a' + i)
+		cfg := &Config{ABI: testABI}
+		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		if err != nil {
+			t.Errorf("(%v): %v", letter, err)
+			continue
+		}
+
+		var node Node
+		depth := mathutil.MaxInt
+		findNode("ParameterDeclaration", ast.TranslationUnit, 0, &node, &depth)
+		if node == nil {
+			t.Errorf("(%v): %q, ParameterDeclaration node not found", letter, test.src)
+			continue
+		}
+
+		g, e := node.(*ParameterDeclaration).Type().String(), test.typ
+		if *oTrace {
+			t.Logf("(%v): %q, %q", letter, test.src, g)
+		}
+		if g != e {
+			t.Errorf("(%v): %q, got %q, expected %q", letter, test.src, g, e)
+		}
+	}
+}
+
+func TestDeclarator(t *testing.T) {
+	for i, test := range []struct{ src, typ string }{
+		{"int x;", "int"},                                                                                           // [0], 6.7.6, 3, (a)
+		{"int *x;", "pointer to int"},                                                                               // [0], 6.7.6, 3, (b)
+		{"int *x[3];", "array of 3 pointer to int"},                                                                 // [0], 6.7.6, 3, (c)
+		{"int (*x)[3];", "pointer to array of 3 int"},                                                               // [0], 6.7.6, 3, (d)
+		{"int (*x)[*];", "pointer to array of int"},                                                                 // [0], 6.7.6, 3, (e)
+		{"int *x();", "function() returning pointer to int"},                                                        // [0], 6.7.6, 3, (f)
+		{"int (*x)(void);", "pointer to function(void) returning int"},                                              // [0], 6.7.6, 3, (g)
+		{"int (*x[])(unsigned int, ...);", "array of pointer to function(unsigned, ...) returning int"},             // [0], 6.7.6, 3, (h)
+		{"int (*const x[])(unsigned int, ...);", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
+	} {
+		letter := string('a' + i)
+		cfg := &Config{ABI: testABI}
+		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		if err != nil {
+			t.Errorf("(%v): %v", letter, err)
+			continue
+		}
+
+		var node Node
+		depth := mathutil.MaxInt
+		findNode("Declarator", ast.TranslationUnit, 0, &node, &depth)
+		if node == nil {
+			t.Errorf("(%v): %q, Declarator node not found", letter, test.src)
+			continue
+		}
+
+		g, e := node.(*Declarator).Type().String(), test.typ
+		if *oTrace {
+			t.Logf("(%v): %q, %q", letter, test.src, g)
+		}
+		if g != e {
+			t.Errorf("(%v): %q, got %q, expected %q", letter, test.src, g, e)
+		}
+	}
 }
