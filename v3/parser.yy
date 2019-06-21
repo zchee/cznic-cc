@@ -699,6 +699,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Func       */ |	DirectAbstractDeclarator '(' ParameterTypeList ')'
 
 			/* [0], 6.7.8 Initialization */
+			/*yy:field	Offset	uintptr	// case Expr */
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:
 				AssignmentExpression

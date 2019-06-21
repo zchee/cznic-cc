@@ -157,7 +157,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	case InitDeclaratorInit: // Declarator AttributeSpecifierList '=' Initializer
 		typ := n.Declarator.check(ctx, td, typ, tld)
 		n.AttributeSpecifierList.check(ctx)
-		length := n.Initializer.check(ctx)
+		length := n.Initializer.check(ctx, typ, 0)
 		if typ.Kind() == Array && typ.Len() == 0 {
 			typ.setLen(length)
 		}
@@ -166,35 +166,91 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	}
 }
 
-func (n *Initializer) check(ctx *context) uintptr {
+func (n *Initializer) check(ctx *context, t Type, off uintptr) (r uintptr) {
 	if n == nil {
 		return 0
 	}
 
+	n.Offset = off
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		switch op := n.AssignmentExpression.check(ctx); x := op.Value().(type) {
-		case StringValue:
-			s := StringID(x).String()
-			return uintptr(len(s)) + 1
+		n.AssignmentExpression.check(ctx)
+		switch x := n.AssignmentExpression.Operand.Value().(type) { //TODO-
+		//TODO- case StringValue:
+		//TODO- 	s := StringID(x).String()
+		//TODO- 	r = uintptr(len(s)) + 1
 		case WideStringValue:
 			s := []rune(StringID(x).String())
-			return uintptr(len(s)) + 1
+			r = uintptr(len(s)) + 1
 		}
-		return 0
-	case InitializerInitList: // '{' InitializerList ',' '}'
-		return n.InitializerList.check(ctx)
+	case InitializerInitList: // '{' InitializerList ',' '}' //TODO-
+		r = n.InitializerList.check(ctx, t, off) //TODO
 	default:
 		panic(internalError())
 	}
+
+	// [0], 6.7.8 Initialization
+	//
+	// 11 - The initializer for a scalar shall be a single expression,
+	// optionally enclosed in braces. The initial value of the object is
+	// that of the expression (after conversion); the same type constraints
+	// and conversions as for simple assignment apply, taking the type of
+	// the scalar to be the unqualified version of its declared type.
+	if t.IsScalarType() {
+		switch n.Case {
+		case InitializerExpr: // AssignmentExpression
+			// ok
+		case InitializerInitList: // '{' InitializerList ',' '}'
+			//TODO report err
+		default:
+			panic(internalError())
+		}
+		return 0
+	}
+
+	// 12 - The rest of this subclause deals with initializers for objects
+	// that have aggregate or union type.
+	if t.Kind() == Array {
+		// 14 - An array of character type may be initialized by a
+		// character string literal, optionally enclosed in braces.
+		// Successive characters of the character string literal
+		// (including the terminating null character if there is room
+		// or if the array is of unknown size) initialize the elements
+		// of the array.
+		if k := t.Elem().Kind(); k == Char || k == SChar || k == UChar {
+			switch n.Case {
+			case InitializerExpr: // AssignmentExpression
+				switch x := n.AssignmentExpression.Operand.Value().(type) {
+				case StringValue:
+					return uintptr(len(StringID(x).String())) + 1
+				}
+			case InitializerInitList: // '{' InitializerList ',' '}'
+				l := n.InitializerList
+				if l == nil || l.Initializer.Case != InitializerExpr {
+					break
+				}
+
+				switch l.Initializer.AssignmentExpression.Operand.Value().(type) {
+				case StringValue:
+					panic(internalErrorf("%v: TODO", n.Position()))
+					return r
+				}
+			default:
+				panic(internalError())
+			}
+		}
+		//TODO panic(internalErrorf("%v: TODO", n.Position()))
+	}
+
+	return r
 }
 
-func (n *InitializerList) check(ctx *context) (r uintptr) {
+func (n *InitializerList) check(ctx *context, t Type, off uintptr) (r uintptr) {
 	for ; n != nil; n = n.InitializerList {
-		if x := n.Designation.check(ctx); x != 0 {
+		if x := n.Designation.check(ctx); x != 0 { //TODO wrong
 			r = x
 		}
-		n.Initializer.check(ctx)
+		n.Initializer.check(ctx, t, 0) //TODO wrong
 		r++
 	}
 	return r
@@ -736,10 +792,9 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
 		t := n.TypeName.check(ctx)
-		n.InitializerList.check(ctx)
+		len := n.InitializerList.check(ctx, t, 0)
 		if t.Kind() == Array && t.Incomplete() {
-			panic("TODO")
-			break
+			t.setLen(len)
 		}
 
 		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, t)}}
@@ -1706,7 +1761,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
 		t := n.TypeName.check(ctx)
-		len := n.InitializerList.check(ctx)
+		len := n.InitializerList.check(ctx, t, 0)
 		if t.Kind() == Array && t.Incomplete() {
 			t.setLen(len)
 		}
