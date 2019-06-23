@@ -589,6 +589,20 @@ func (n *EnumSpecifier) Type() Type { return n.typ }
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *EqualityExpression) Promote() Type { return n.promote }
 
+// IsConst reports whether n is constant.
+func (n *Initializer) IsConst() bool { return n == nil || n.isConst }
+
+// List returns n as a flattened list of all items that are case
+// InitializerExpr.
+func (n *Initializer) List() []*Initializer { return n.list }
+
+// IsConst reports whether n is constant.
+func (n *InitializerList) IsConst() bool { return n == nil || n.isConst }
+
+// List returns n as a flattened list of all items that are case
+// InitializerExpr.
+func (n *InitializerList) List() []*Initializer { return n.list }
+
 // LexicalScope returns the lexical scope of n.
 func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }
 
@@ -611,10 +625,6 @@ func (n *SelectionStatement) Cases() []*LabeledStatement { return n.cases }
 
 // Promote returns the type the shift count operand is promoted to.
 func (n *ShiftExpression) Promote() Type { return n.promote }
-
-func (n *StorageClassSpecifier) isTypedef() bool {
-	return n != nil && n.Case == StorageClassSpecifierTypedef
-}
 
 func (n *StructOrUnionSpecifier) Type() Type { return n.typ }
 

@@ -1322,62 +1322,62 @@ func (p *parser) conditionalExpression() (r *ConditionalExpression) {
 func (p *parser) assignmentExpression() (r *AssignmentExpression) {
 	ce := p.conditionalExpression()
 	if ce == nil || ce.Case != ConditionalExpressionLOr {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	loe := ce.LogicalOrExpression
 	if loe == nil || loe.Case != LogicalOrExpressionLAnd {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	lae := loe.LogicalAndExpression
 	if lae == nil || lae.Case != LogicalAndExpressionOr {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	ioe := lae.InclusiveOrExpression
 	if ioe == nil || ioe.Case != InclusiveOrExpressionXor {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	eoe := ioe.ExclusiveOrExpression
 	if eoe == nil || eoe.Case != ExclusiveOrExpressionAnd {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	ae := eoe.AndExpression
 	if ae == nil || ae.Case != AndExpressionEq {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	ee := ae.EqualityExpression
 	if ee == nil || ee.Case != EqualityExpressionRel {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	re := ee.RelationalExpression
 	if re == nil || re.Case != RelationalExpressionShift {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	se := re.ShiftExpression
 	if se == nil || se.Case != ShiftExpressionAdd {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	adde := se.AdditiveExpression
 	if adde == nil || adde.Case != AdditiveExpressionMul {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	me := adde.MultiplicativeExpression
 	if me == nil || me.Case != MultiplicativeExpressionCast {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	cast := me.CastExpression
 	if cast == nil || cast.Case != CastExpressionUnary {
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	var kind AssignmentExpressionCase
@@ -1405,11 +1405,11 @@ func (p *parser) assignmentExpression() (r *AssignmentExpression) {
 	case ORASSIGN:
 		kind = AssignmentExpressionOr
 	default:
-		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce}
+		return &AssignmentExpression{Case: AssignmentExpressionCond, ConditionalExpression: ce, lexicalScope: p.declScope}
 	}
 
 	t := p.shift()
-	return &AssignmentExpression{Case: kind, UnaryExpression: cast.UnaryExpression, Token: t, AssignmentExpression: p.assignmentExpression()}
+	return &AssignmentExpression{Case: kind, UnaryExpression: cast.UnaryExpression, Token: t, AssignmentExpression: p.assignmentExpression(), lexicalScope: p.declScope}
 }
 
 // [0], 6.5.17 Comma operator

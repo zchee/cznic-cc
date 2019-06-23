@@ -335,6 +335,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.16 Assignment operators */
 			/*yy:field	Operand		Operand	*/
+			/*yy:field	lexicalScope	Scope	*/
 			/*yy:field	promote		Type	*/
 			/*yy:example int i = x; } */
 /*yy:case Cond       */ AssignmentExpression:
@@ -699,6 +700,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Func       */ |	DirectAbstractDeclarator '(' ParameterTypeList ')'
 
 			/* [0], 6.7.8 Initialization */
+			/*yy:field	list	[]*Initializer */
+			/*yy:field	isConst	bool */
 			/*yy:field	Offset	uintptr	// case Expr */
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:
@@ -706,6 +709,8 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example int i[] = { x }; */
 /*yy:case InitList   */ |	'{' InitializerList ',' '}'
 
+			/*yy:field	list	[]*Initializer */
+			/*yy:field	isConst	bool */
 			/*yy:example int i[] = { [10] = x }; */
 			InitializerList:
 				Designation Initializer

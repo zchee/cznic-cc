@@ -623,6 +623,7 @@ func (n AssignmentExpressionCase) String() string {
 //	|       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
 type AssignmentExpression struct {
 	Operand               Operand
+	lexicalScope          Scope
 	promote               Type
 	AssignmentExpression  *AssignmentExpression
 	Case                  AssignmentExpressionCase `PrettyPrint:"stringer,zero"`
@@ -2629,6 +2630,8 @@ func (n InitializerCase) String() string {
 //	        AssignmentExpression         // Case InitializerExpr
 //	|       '{' InitializerList ',' '}'  // Case InitializerInitList
 type Initializer struct {
+	list                 []*Initializer
+	isConst              bool
 	Offset               uintptr // case Expr
 	AssignmentExpression *AssignmentExpression
 	Case                 InitializerCase `PrettyPrint:"stringer,zero"`
@@ -2675,6 +2678,8 @@ func (n *Initializer) Position() (r token.Position) {
 //	        Designation Initializer
 //	|       InitializerList ',' Designation Initializer
 type InitializerList struct {
+	list            []*Initializer
+	isConst         bool
 	Designation     *Designation
 	Initializer     *Initializer
 	InitializerList *InitializerList

@@ -157,7 +157,8 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	case InitDeclaratorInit: // Declarator AttributeSpecifierList '=' Initializer
 		typ := n.Declarator.check(ctx, td, typ, tld)
 		n.AttributeSpecifierList.check(ctx)
-		length := n.Initializer.check(ctx, typ, 0)
+		n.Initializer.isConst = true
+		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, 0)
 		if typ.Kind() == Array && typ.Len() == 0 {
 			typ.setLen(length)
 		}
@@ -166,7 +167,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	}
 }
 
-func (n *Initializer) check(ctx *context, t Type, off uintptr) (r uintptr) {
+func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (r uintptr) {
 	if n == nil {
 		return 0
 	}
@@ -174,17 +175,12 @@ func (n *Initializer) check(ctx *context, t Type, off uintptr) (r uintptr) {
 	n.Offset = off
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		n.AssignmentExpression.check(ctx)
-		switch x := n.AssignmentExpression.Operand.Value().(type) { //TODO-
-		//TODO- case StringValue:
-		//TODO- 	s := StringID(x).String()
-		//TODO- 	r = uintptr(len(s)) + 1
-		case WideStringValue:
-			s := []rune(StringID(x).String())
-			r = uintptr(len(s)) + 1
+		if n.AssignmentExpression.check(ctx).Value() == nil && n.AssignmentExpression.Operand.Declarator() == nil {
+			*isConst = false
 		}
-	case InitializerInitList: // '{' InitializerList ',' '}' //TODO-
-		r = n.InitializerList.check(ctx, t, off) //TODO
+		*list = append(*list, n)
+	case InitializerInitList: // '{' InitializerList ',' '}'
+		// nop
 	default:
 		panic(internalError())
 	}
@@ -197,14 +193,6 @@ func (n *Initializer) check(ctx *context, t Type, off uintptr) (r uintptr) {
 	// and conversions as for simple assignment apply, taking the type of
 	// the scalar to be the unqualified version of its declared type.
 	if t.IsScalarType() {
-		switch n.Case {
-		case InitializerExpr: // AssignmentExpression
-			// ok
-		case InitializerInitList: // '{' InitializerList ',' '}'
-			//TODO report err
-		default:
-			panic(internalError())
-		}
 		return 0
 	}
 
@@ -230,75 +218,191 @@ func (n *Initializer) check(ctx *context, t Type, off uintptr) (r uintptr) {
 					break
 				}
 
-				switch l.Initializer.AssignmentExpression.Operand.Value().(type) {
+				switch l.Initializer.AssignmentExpression.check(ctx).Value().(type) {
 				case StringValue:
 					panic(internalErrorf("%v: TODO", n.Position()))
 					return r
 				}
-			default:
-				panic(internalError())
 			}
 		}
-		//TODO panic(internalErrorf("%v: TODO", n.Position()))
-	}
 
-	return r
-}
+		// 15 - An array with element type compatible with wchar_t may
+		// be initialized by a wide string literal, optionally enclosed
+		// in braces. Successive wide characters of the wide string
+		// literal (including the terminating null wide character if
+		// there is room or if the array is of unknown size) initialize
+		// the elements of the array.
+		if k := t.Elem().Kind(); ctx.wcharT != nil && k == ctx.wcharT.Kind() {
+			switch n.Case {
+			case InitializerExpr: // AssignmentExpression
+				switch x := n.AssignmentExpression.Operand.Value().(type) {
+				case WideStringValue:
+					return uintptr(len([]rune(StringID(x).String()))) + 1
+				}
+			case InitializerInitList: // '{' InitializerList ',' '}'
+				l := n.InitializerList
+				if l == nil || l.Initializer.Case != InitializerExpr {
+					break
+				}
 
-func (n *InitializerList) check(ctx *context, t Type, off uintptr) (r uintptr) {
-	for ; n != nil; n = n.InitializerList {
-		if x := n.Designation.check(ctx); x != 0 { //TODO wrong
-			r = x
+				switch l.Initializer.AssignmentExpression.check(ctx).Value().(type) {
+				case WideStringValue:
+					panic(internalErrorf("%v: TODO", n.Position()))
+					return
+				}
+			}
 		}
-		n.Initializer.check(ctx, t, 0) //TODO wrong
-		r++
-	}
-	return r
-}
 
-func (n *Designation) check(ctx *context) uintptr {
-	if n == nil {
-		return 0
-	}
-
-	return n.DesignatorList.check(ctx)
-}
-
-func (n *DesignatorList) check(ctx *context) (r uintptr) {
-	for ; n != nil; n = n.DesignatorList {
-		if x := n.Designator.check(ctx); x > r {
-			r = x
+		// 16 - Otherwise, the initializer for an object that has
+		// aggregate or union type shall be a brace- enclosed list of
+		// initializers for the elements or named members.
+		if n.Case != InitializerInitList {
+			panic(internalErrorf("%v: TODO", n.Position()))
 		}
-	}
-	return r
-}
 
-func (n *Designator) check(ctx *context) uintptr {
-	if n == nil {
-		return 0
+		return n.InitializerList.checkArray(ctx, list, isConst, t, off)
 	}
 
-	switch n.Case {
-	case DesignatorIndex: // '[' ConstantExpression ']'
-		op := n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
-		switch op.Value().(type) {
-		// TODO
-		case nil:
-			ctx.errNode(n.ConstantExpression, "expected constant expression")
-		}
-	case DesignatorField: // '.' IDENTIFIER
-		//TODO
-	case DesignatorField2: // IDENTIFIER ':'
-		//TODO
-	default:
-		panic(internalError())
+	// Struct or Union.
+
+	// 13 - The initializer for a structure or union object that has
+	// automatic storage duration shall be either an initializer list as
+	// described below, or a single expression that has compatible
+	// structure or union type. ...
+	if n.Case == InitializerInitList {
+		n.InitializerList.checkStruct(ctx, list, isConst, t, off)
 	}
 	return 0
+}
+
+func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (r uintptr) {
+	elem := t.Elem()
+	esz := elem.Size()
+	length := t.Len()
+	var i uintptr
+	for ; n != nil; n = n.InitializerList {
+		if n.Designation != nil {
+			i, t2, off2 := n.Designation.checkArray(ctx, t)
+			n.Initializer.check(ctx, list, isConst, t2, off+off2)
+			i++
+			if i > r {
+				r = i
+			}
+			continue
+		}
+
+		if length != 0 && i >= length {
+			panic(internalErrorf("%v: TODO", n.Position()))
+		}
+
+		n.Initializer.check(ctx, list, isConst, elem, off+i*esz)
+		i++
+		if i > r {
+			r = i
+		}
+	}
+	return r
+}
+
+func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, off uintptr) {
+	first := true
+	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
+		d := n.Designator
+		switch d.Case {
+		case DesignatorIndex: // '[' ConstantExpression ']'
+			switch x := d.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr).Value().(type) {
+			case Int64Value:
+				if first {
+					ix = uintptr(x)
+				}
+				elem = t.Elem()
+				off += ix * elem.Size()
+				t = elem
+			default:
+				panic(internalErrorf("%v: TODO", n.Position()))
+			}
+		default:
+			panic(internalError())
+		}
+		first = false
+	}
+	return ix, elem, off
+}
+
+func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) {
+	nf := t.NumField()
+	union := t.Kind() == Union
+	var i int
+	var f Field
+	for ; n != nil; n = n.InitializerList {
+		if n.Designation != nil {
+			off2, f := n.Designation.checkStruct(t)
+			n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
+			i++
+			continue
+		}
+
+		// Skip anonymous fields. //TODO only anononymous bitfields?
+		for ; ; i++ {
+			if i >= nf {
+				panic(internalErrorf("%v: TODO", n.Position()))
+			}
+
+			if union && i != 0 {
+				panic(internalErrorf("%v: TODO", n.Position()))
+			}
+
+			f = t.FieldByIndex([]int{i})
+			if f.Name() != 0 {
+				break
+			}
+		}
+		n.Initializer.check(ctx, list, isConst, f.Type(), off+f.Offset())
+		i++
+	}
+}
+
+func (n *Designation) checkStruct(t Type) (off uintptr, r Field) {
+	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
+		if r != nil {
+			off += r.Offset()
+		}
+		d := n.Designator
+		var nm StringID
+		switch d.Case {
+		case DesignatorField: // '.' IDENTIFIER
+			nm = d.Token2.Value
+		case DesignatorField2: // IDENTIFIER ':'
+			nm = d.Token.Value
+		default:
+			panic(internalError())
+		}
+		f, ok := t.FieldByName(nm)
+		if !ok {
+			panic(internalErrorf("%v: TODO", n.Position()))
+		}
+
+		r = f
+		t = f.Type()
+	}
+	return off, r
+}
+
+func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (r uintptr) {
+	n2 := &Initializer{
+		Case:            InitializerInitList,
+		InitializerList: n,
+	}
+	return n2.check(ctx, list, isConst, t, off)
 }
 
 func (n *AssignmentExpression) check(ctx *context) Operand {
 	if n == nil {
 		return noOperand
+	}
+
+	if n.Operand != nil {
+		return n.Operand
 	}
 
 	//TODO check for "modifiable lvalue" in left operand
@@ -792,11 +896,13 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
 		t := n.TypeName.check(ctx)
-		len := n.InitializerList.check(ctx, t, 0)
-		if t.Kind() == Array && t.Incomplete() {
-			t.setLen(len)
+		if n.InitializerList != nil {
+			n.InitializerList.isConst = true
+			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
+			if t.Kind() == Array && t.Incomplete() {
+				t.setLen(len)
+			}
 		}
-
 		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, t)}}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		panic(n.Position().String())
@@ -1110,29 +1216,17 @@ func (n *MultiplicativeExpression) addr(ctx *context) Operand {
 }
 
 func wcharT(ctx *context, s Scope, tok Token) Type { //TODO method of context?
+	if t := ctx.wcharT; t != nil {
+		return t
+	}
+
 	if d := s.typedef(idWCharT, tok); d != nil {
-		return &aliasType{nm: idWCharT, typ: d.Type()}
+		t := &aliasType{nm: idWCharT, typ: d.Type()}
+		ctx.wcharT = t
+		return t
 	}
 
-	wt := ctx.wcharT
-	if wt == nil {
-		abi := ctx.cfg.ABI
-		need := 4 //TODO Linux only
-		rank := maxRank
-		for v, ok := range integerTypes {
-			if !ok || abi.size(Kind(v)) < need || abi.SignedChar != abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
-				continue
-			}
-
-			wt = abi.Type(Kind(v))
-			rank = intConvRank[v]
-		}
-		if wt == nil {
-			panic(internalError())
-		}
-		ctx.wcharT = wt
-	}
-	return wt
+	panic(internalError())
 }
 
 func ssizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of context?
@@ -1761,9 +1855,12 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
 		t := n.TypeName.check(ctx)
-		len := n.InitializerList.check(ctx, t, 0)
-		if t.Kind() == Array && t.Incomplete() {
-			t.setLen(len)
+		if n.InitializerList != nil {
+			n.InitializerList.isConst = true
+			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
+			if t.Kind() == Array && t.Incomplete() {
+				t.setLen(len)
+			}
 		}
 		n.Operand = &lvalue{Operand: &operand{typ: t}}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'

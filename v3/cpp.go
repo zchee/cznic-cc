@@ -25,7 +25,6 @@ var (
 	_ tokenWriter = (*cpp)(nil)
 
 	idCOUNTER        = dict.sid("__COUNTER__")
-	idComma          = dict.sid(",")
 	idCxLimitedRange = dict.sid("CX_LIMITED_RANGE")
 	idDefault        = dict.sid("DEFAULT")
 	idDefined        = dict.sid("defined")

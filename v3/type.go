@@ -715,9 +715,6 @@ func (t *typeBase) Size() uintptr {
 		panic(internalError())
 	}
 
-	if t.size == 0 {
-		//TODO panic("TODO")
-	}
 	return t.size
 }
 
