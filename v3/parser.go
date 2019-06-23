@@ -1691,7 +1691,7 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 	case TYPEDEFNAME:
 		kind = TypeSpecifierTypedefName
 	case STRUCT, UNION:
-		r := &TypeSpecifier{Case: TypeSpecifierStruct, StructOrUnionSpecifier: p.structOrUnionSpecifier()}
+		r := &TypeSpecifier{Case: TypeSpecifierStructOrUnion, StructOrUnionSpecifier: p.structOrUnionSpecifier()}
 		p.typedefNameEnabled = false
 		return r
 	case ENUM:

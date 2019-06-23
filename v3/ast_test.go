@@ -10189,11 +10189,11 @@ func ExampleTypeSpecifier_complex() {
 	// }
 }
 
-func ExampleTypeSpecifier_struct() {
+func ExampleTypeSpecifier_structOrUnion() {
 	fmt.Println(exampleAST(120, "struct s i;"))
 	// Output:
 	// &cc.TypeSpecifier{
-	// · Case: TypeSpecifierStruct,
+	// · Case: TypeSpecifierStructOrUnion,
 	// · StructOrUnionSpecifier: &cc.StructOrUnionSpecifier{
 	// · · Case: StructOrUnionSpecifierTag,
 	// · · StructOrUnion: &cc.StructOrUnion{

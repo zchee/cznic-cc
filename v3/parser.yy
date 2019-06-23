@@ -465,7 +465,8 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example _Complex i; */
 /*yy:case Complex    */ |	"_Complex"
 			/*yy:example struct s i; */
-/*yy:case Struct     */ |	StructOrUnionSpecifier
+/*yy:case StructOrUnion */
+			|	StructOrUnionSpecifier
 			/*yy:example enum e i; */
 /*yy:case Enum       */ |	EnumSpecifier
 			/*yy:example typedef const T; T i; */
@@ -700,8 +701,9 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Func       */ |	DirectAbstractDeclarator '(' ParameterTypeList ')'
 
 			/* [0], 6.7.8 Initialization */
-			/*yy:field	list	[]*Initializer */
-			/*yy:field	isConst	bool */
+			/*yy:field	list	[]*Initializer       */
+			/*yy:field	typ	Type                 */
+			/*yy:field	isConst	bool                 */
 			/*yy:field	Offset	uintptr	// case Expr */
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:

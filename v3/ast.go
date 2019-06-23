@@ -2631,6 +2631,7 @@ func (n InitializerCase) String() string {
 //	|       '{' InitializerList ',' '}'  // Case InitializerInitList
 type Initializer struct {
 	list                 []*Initializer
+	typ                  Type
 	isConst              bool
 	Offset               uintptr // case Expr
 	AssignmentExpression *AssignmentExpression
@@ -4783,7 +4784,7 @@ const (
 	TypeSpecifierUnsigned
 	TypeSpecifierBool
 	TypeSpecifierComplex
-	TypeSpecifierStruct
+	TypeSpecifierStructOrUnion
 	TypeSpecifierEnum
 	TypeSpecifierTypedefName
 	TypeSpecifierTypeofExpr
@@ -4837,8 +4838,8 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierBool"
 	case TypeSpecifierComplex:
 		return "TypeSpecifierComplex"
-	case TypeSpecifierStruct:
-		return "TypeSpecifierStruct"
+	case TypeSpecifierStructOrUnion:
+		return "TypeSpecifierStructOrUnion"
 	case TypeSpecifierEnum:
 		return "TypeSpecifierEnum"
 	case TypeSpecifierTypedefName:
@@ -4889,7 +4890,7 @@ func (n TypeSpecifierCase) String() string {
 //	|       "unsigned"                   // Case TypeSpecifierUnsigned
 //	|       "_Bool"                      // Case TypeSpecifierBool
 //	|       "_Complex"                   // Case TypeSpecifierComplex
-//	|       StructOrUnionSpecifier       // Case TypeSpecifierStruct
+//	|       StructOrUnionSpecifier       // Case TypeSpecifierStructOrUnion
 //	|       EnumSpecifier                // Case TypeSpecifierEnum
 //	|       TYPEDEFNAME                  // Case TypeSpecifierTypedefName
 //	|       "typeof" '(' Expression ')'  // Case TypeSpecifierTypeofExpr

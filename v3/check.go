@@ -172,6 +172,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 		return 0
 	}
 
+	n.typ = t
 	n.Offset = off
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
@@ -1221,7 +1222,7 @@ func wcharT(ctx *context, s Scope, tok Token) Type { //TODO method of context?
 	}
 
 	if d := s.typedef(idWCharT, tok); d != nil {
-		t := &aliasType{nm: idWCharT, typ: d.Type()}
+		t := d.Type()
 		ctx.wcharT = t
 		return t
 	}
@@ -1518,7 +1519,7 @@ func (n *TypeSpecifier) check(ctx *context, typ *typeBase) {
 		TypeSpecifierBool,       // "_Bool"
 		TypeSpecifierComplex:    // "_Complex"
 		// nop
-	case TypeSpecifierStruct: // StructOrUnionSpecifier
+	case TypeSpecifierStructOrUnion: // StructOrUnionSpecifier
 		n.StructOrUnionSpecifier.check(ctx, typ)
 	case TypeSpecifierEnum: // EnumSpecifier
 		n.EnumSpecifier.check(ctx)

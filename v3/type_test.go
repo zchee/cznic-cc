@@ -668,3 +668,36 @@ func TestDeclarator(t *testing.T) {
 		}
 	}
 }
+
+func TestDeclarator2(t *testing.T) {
+	for i, test := range []struct{ src, typ string }{
+		//{"struct { int i; } s;", "struct {i int; }"},
+		//{"union { int i; double d; } u;", "struct {i int; d double; }"},
+		//{"typedef struct { unsigned char __c[8]; double __d; } s;", "struct {__c array of 8 unsigned char; __d double; }"},
+		{"typedef union { unsigned char __c[8]; double __d; } u;", "union {__c array of 8 unsigned char; __d double; }"},
+	} {
+		letter := string('a' + i)
+		cfg := &Config{ABI: testABI}
+		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		if err != nil {
+			t.Errorf("(%v): %v", letter, err)
+			continue
+		}
+
+		var node Node
+		depth := mathutil.MaxInt
+		findNode("Declarator", ast.TranslationUnit, 0, &node, &depth)
+		if node == nil {
+			t.Errorf("(%v): %q, Declarator node not found", letter, test.src)
+			continue
+		}
+
+		g, e := node.(*Declarator).Type().String(), test.typ
+		if *oTrace {
+			t.Logf("(%v): %q, %q", letter, test.src, g)
+		}
+		if g != e {
+			t.Errorf("(%v): %q, got %q, expected %q", letter, test.src, g, e)
+		}
+	}
+}

@@ -322,7 +322,7 @@ var (
 		{TypeSpecifierShort, TypeSpecifierUnsigned}:                   byte(UShort),
 		{TypeSpecifierShort}:                                          byte(Short),
 		{TypeSpecifierSigned}:                                         byte(Int),
-		{TypeSpecifierStruct}:                                         byte(Struct),      //TODO
+		{TypeSpecifierStructOrUnion}:                                  byte(Struct),      //TODO
 		{TypeSpecifierTypedefName}:                                    byte(TypedefName), //TODO
 		{TypeSpecifierUnsigned}:                                       byte(UInt),
 		{TypeSpecifierVoid}:                                           byte(Void),
@@ -404,6 +404,7 @@ type typeBase struct {
 }
 
 func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type {
+	k0 := t.kind
 	var alignmentSpecifiers []*AlignmentSpecifier
 	var attributeSpecifiers []*AttributeSpecifier
 	var typeSpecifiers []*TypeSpecifier
@@ -504,7 +505,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 	case typeofType:
 		//TODO
 	case Struct:
-		//TODO
+		t.kind = k0
 	case Union:
 		//TODO
 	case Enum:

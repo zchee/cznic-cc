@@ -34,6 +34,7 @@ type AST struct {
 	Structs           map[StructInfo]struct{}
 	TrailingSeperator StringID // White space and/or comments preceding EOF.
 	TranslationUnit   *TranslationUnit
+	WideCharType      Type
 	cfg               *Config
 }
 
@@ -393,25 +394,31 @@ func translate(ctx *context, includePaths, sysIncludePaths []string, sources []S
 		return nil, err
 	}
 
-	if err = ast.Typecheck(); err != nil {
+	if ctx, err = ast.typecheck(); err != nil {
 		return nil, err
 	}
 
+	ast.WideCharType = ctx.wcharT
 	return ast, nil
 }
 
 // Typecheck determines types of objects and expressions and verifies types are
 // valid in the context they are used.
 func (n *AST) Typecheck() error {
+	_, err := n.typecheck()
+	return err
+}
+
+func (n *AST) typecheck() (*context, error) {
 	ctx := newContext(n.cfg)
 	if err := ctx.cfg.ABI.sanityCheck(ctx, int(ctx.intMaxWidth)); err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx.intBits = int(ctx.cfg.ABI.Types[Int].Size) * 8
 	n.TranslationUnit.check(ctx)
 	n.Structs = ctx.structs
-	return ctx.Err()
+	return ctx, ctx.Err()
 }
 
 func (n *AlignmentSpecifier) align() int {
@@ -595,6 +602,9 @@ func (n *Initializer) IsConst() bool { return n == nil || n.isConst }
 // List returns n as a flattened list of all items that are case
 // InitializerExpr.
 func (n *Initializer) List() []*Initializer { return n.list }
+
+// Type returns the type this initializer initializes.
+func (n *Initializer) Type() Type { return n.typ }
 
 // IsConst reports whether n is constant.
 func (n *InitializerList) IsConst() bool { return n == nil || n.isConst }
