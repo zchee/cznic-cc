@@ -156,6 +156,12 @@ func TestTranslateGCC(t *testing.T) {
 
 func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
+		// GCC/compile
+		"920428-4.c":                   {}, //TODO invalid declarator type
+		"920501-16.c":                  {}, //TODO invalid declarator type
+		"921017-1.c":                   {}, //TODO invalid declarator type
+		"builtin-types-compatible-p.c": {}, //TODO invalid declarator type
+
 		// GCC/exec
 		"20021118-1.c":   {}, //TODO array initializer
 		"20030305-1.c":   {}, //TODO array initializer
@@ -671,10 +677,15 @@ func TestDeclarator(t *testing.T) {
 
 func TestDeclarator2(t *testing.T) {
 	for i, test := range []struct{ src, typ string }{
-		//{"struct { int i; } s;", "struct {i int; }"},
-		//{"union { int i; double d; } u;", "struct {i int; d double; }"},
-		//{"typedef struct { unsigned char __c[8]; double __d; } s;", "struct {__c array of 8 unsigned char; __d double; }"},
-		{"typedef union { unsigned char __c[8]; double __d; } u;", "union {__c array of 8 unsigned char; __d double; }"},
+		{"struct { int i; } s;", "struct {i int; }"},                                                                       // (a)
+		{"union { int i; double d; } u;", "union {i int; d double; }"},                                                     // (b)
+		{"typedef struct { unsigned char __c[8]; double __d; } s;", "struct {__c array of 8 unsigned char; __d double; }"}, // (c)
+		{"typedef union { unsigned char __c[8]; double __d; } u;", "union {__c array of 8 unsigned char; __d double; }"},   // (d)
+		{"struct s { int i;}; typeof(struct s) x;", "struct s"},                                                            // (e)
+		{"typeof(42) x;", "int"},       // (f)
+		{"typeof(42L) x;", "long"},     // (g)
+		{"typeof(42U) x;", "unsigned"}, // (h)
+		{"typeof(42.) x;", "double"},   // (i)
 	} {
 		letter := string('a' + i)
 		cfg := &Config{ABI: testABI}

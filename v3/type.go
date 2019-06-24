@@ -178,8 +178,8 @@ type Type interface {
 	// boolean indicating if the field was found.
 	FieldByName(name StringID) (Field, bool)
 
-	// Incomplete reports whether type is incomplete.
-	Incomplete() bool
+	// IsIncomplete reports whether type is incomplete.
+	IsIncomplete() bool
 
 	// IsArithmeticType report whether a type is an arithmetic type.
 	IsArithmeticType() bool
@@ -322,7 +322,7 @@ var (
 		{TypeSpecifierShort, TypeSpecifierUnsigned}:                   byte(UShort),
 		{TypeSpecifierShort}:                                          byte(Short),
 		{TypeSpecifierSigned}:                                         byte(Int),
-		{TypeSpecifierStructOrUnion}:                                  byte(Struct),      //TODO
+		{TypeSpecifierStructOrUnion}:                                  byte(Struct),
 		{TypeSpecifierTypedefName}:                                    byte(TypedefName), //TODO
 		{TypeSpecifierUnsigned}:                                       byte(UInt),
 		{TypeSpecifierVoid}:                                           byte(Void),
@@ -479,7 +479,6 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 	default:
 		var ok bool
 		if t.kind, ok = validTypeSpecifiers[k]; !ok {
-			panic(fmt.Errorf("%v: %q", td.Position(), k[:len(typeSpecifiers)]))
 			ctx.err(td.Position(), "invalid type specifiers combination")
 			return t
 		}
@@ -500,14 +499,8 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 
 	abi := ctx.cfg.ABI
 	switch k := t.Kind(); k {
-	case typeofExpr:
-		//TODO
-	case typeofType:
-		//TODO
-	case Struct:
-		t.kind = k0
-	case Union:
-		//TODO
+	case typeofExpr, typeofType, Struct, Union:
+		// nop
 	case Enum:
 		if v, ok := abi.Types[Int]; ok {
 			t.size = uintptr(abi.size(Int))
@@ -541,6 +534,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 		d := ts.resolvedIn.typedef(nm, tok)
 		typ = &aliasType{nm: nm, typ: d.Type()}
 	case Struct, Union:
+		t.kind = k0
 		typ = typeSpecifiers[0].StructOrUnionSpecifier.typ
 	case typeofExpr, typeofType:
 		typ = typeSpecifiers[0].typ
@@ -627,8 +621,8 @@ func (t *typeBase) FieldByName(StringID) (Field, bool) {
 	panic(fmt.Errorf("%s: FieldByName of invalid type", t.Kind()))
 }
 
-// Incomplete implements Type.
-func (t *typeBase) Incomplete() bool { return t.flags&fIncomplete != 0 }
+// IsIncomplete implements Type.
+func (t *typeBase) IsIncomplete() bool { return t.flags&fIncomplete != 0 }
 
 // inline implements Type.
 func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
@@ -712,7 +706,7 @@ func (t *typeBase) Result() Type {
 
 // Size implements Type.
 func (t *typeBase) Size() uintptr {
-	if t.Incomplete() {
+	if t.IsIncomplete() {
 		panic(internalError())
 	}
 
@@ -957,8 +951,8 @@ func (t *aliasType) FieldByIndex(i []int) Field { return t.typ.FieldByIndex(i) }
 // FieldByName implements Type.
 func (t *aliasType) FieldByName(s StringID) (Field, bool) { return t.typ.FieldByName(s) }
 
-// Incomplete implements Type.
-func (t *aliasType) Incomplete() bool { return t.typ.Incomplete() }
+// IsIncomplete implements Type.
+func (t *aliasType) IsIncomplete() bool { return t.typ.IsIncomplete() }
 
 // IsArithmeticType implements Type.
 func (t *aliasType) IsArithmeticType() bool { return t.typ.IsArithmeticType() }
@@ -1151,6 +1145,12 @@ func (t *taggedType) Alias() Type { return t }
 
 // Decay implements Type.
 func (t *taggedType) Decay() Type { return t }
+
+// IsIncomplete implements Type.
+func (t *taggedType) IsIncomplete() bool {
+	u := t.underlyingType()
+	return u == noType || u.IsIncomplete()
+}
 
 // String implements Type.
 func (t *taggedType) String() string {

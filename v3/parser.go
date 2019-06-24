@@ -476,10 +476,10 @@ func (p *parser) peek(handleTypedefname bool) rune {
 						return IDENTIFIER
 					case *Enumerator:
 						return IDENTIFIER
-					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+					case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator, *LabeledStatement:
 						// nop
 					default:
-						panic(internalError())
+						panic(internalErrorf("%T", x))
 					}
 				}
 			}
@@ -645,7 +645,7 @@ out:
 
 					resolvedIn = s
 					break out
-				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator, *LabeledStatement:
 					// nop
 				default:
 					panic(internalError())

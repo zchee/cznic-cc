@@ -20,6 +20,110 @@ type Source struct {
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *AssignmentExpression) Promote() Type { return n.promote }
 
+func (n *AssignmentExpression) isConst() bool {
+	op := n.Operand
+	if op.isConst() {
+		return true
+	}
+
+	return n.Case == AssignmentExpressionCond && n.ConditionalExpression.isConst()
+}
+
+func (n *ConditionalExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == ConditionalExpressionLOr && n.LogicalOrExpression.isConst()
+}
+
+func (n *LogicalOrExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == LogicalOrExpressionLAnd && n.LogicalAndExpression.isConst()
+}
+
+func (n *LogicalAndExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == LogicalAndExpressionOr && n.InclusiveOrExpression.isConst()
+}
+
+func (n *InclusiveOrExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == InclusiveOrExpressionXor && n.ExclusiveOrExpression.isConst()
+}
+
+func (n *ExclusiveOrExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == ExclusiveOrExpressionAnd && n.AndExpression.isConst()
+}
+
+func (n *AndExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == AndExpressionEq && n.EqualityExpression.isConst()
+}
+
+func (n *EqualityExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == EqualityExpressionRel && n.RelationalExpression.isConst()
+}
+
+func (n *RelationalExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == RelationalExpressionShift && n.ShiftExpression.isConst()
+}
+
+func (n *ShiftExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == ShiftExpressionAdd && n.AdditiveExpression.isConst()
+}
+
+func (n *AdditiveExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == AdditiveExpressionMul && n.MultiplicativeExpression.isConst()
+}
+
+func (n *MultiplicativeExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == MultiplicativeExpressionCast && n.CastExpression.isConst()
+}
+
+func (n *CastExpression) isConst() bool {
+	if n.Operand.isConst() {
+		return true
+	}
+
+	switch n.Case {
+	case CastExpressionUnary: // UnaryExpression
+		return n.UnaryExpression.isConst()
+	case CastExpressionCast: // '(' TypeName ')' CastExpression
+		return n.CastExpression.isConst()
+	default:
+		panic(internalError())
+	}
+}
+
+func (n *UnaryExpression) isConst() bool {
+	return n.Operand.isConst() || n.Case == UnaryExpressionPostfix && n.PostfixExpression.isConst()
+}
+
+func (n *PostfixExpression) isConst() bool {
+	if n.Operand.isConst() {
+		return true
+	}
+
+	switch n.Case {
+	case PostfixExpressionPrimary: // PrimaryExpression
+		return n.PrimaryExpression.isConst()
+	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
+		return n.InitializerList.IsConst()
+	default:
+		return false
+	}
+}
+
+func (n *PrimaryExpression) isConst() bool {
+	if n.Operand.isConst() {
+		return true
+	}
+
+	switch n.Case {
+	case PrimaryExpressionExpr: // '(' Expression ')'
+		return n.Expression.isConst()
+	default:
+		return false
+	}
+}
+
+func (n *Expression) isConst() bool {
+	return n.Operand.isConst() || n.Case == ExpressionAssign && n.AssignmentExpression.isConst()
+}
+
 type StructInfo struct {
 	Size uintptr
 

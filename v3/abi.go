@@ -166,7 +166,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 			var sz uintptr
 			switch {
 			case ft.Kind() == Array && i == len(t.fields)-1:
-				if ft.Incomplete() || ft.Len() == 0 {
+				if ft.IsIncomplete() || ft.Len() == 0 {
 					break
 				}
 

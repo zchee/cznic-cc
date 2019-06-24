@@ -38,6 +38,7 @@ type Operand interface {
 	convertTo(*context, Node, Type) Operand
 	convertToInt(*context, Node, Type) Operand
 	integerPromotion(*context, Node) Operand
+	isConst() bool
 	normalize(*context) Operand
 }
 
@@ -339,6 +340,15 @@ type lvalue struct {
 func (o *lvalue) Declarator() *Declarator { return o.declarator }
 func (o *lvalue) IsLValue() bool          { return true }
 
+func (o *lvalue) isConst() bool {
+	if o.Value() != nil {
+		return true
+	}
+
+	d := o.Declarator()
+	return d != nil && (d.Linkage != None || d.IsStatic())
+}
+
 func (o *lvalue) convertTo(ctx *context, n Node, to Type) (r Operand) {
 	return &lvalue{Operand: o.Operand.convertTo(ctx, n, to), declarator: o.declarator}
 }
@@ -350,6 +360,7 @@ type funcDesignator struct {
 
 func (o *funcDesignator) Declarator() *Declarator { return o.declarator }
 func (o *funcDesignator) IsLValue() bool          { return false }
+func (o *funcDesignator) isConst() bool           { return true }
 
 func (o *funcDesignator) convertTo(ctx *context, n Node, to Type) (r Operand) {
 	return &lvalue{Operand: o.Operand.convertTo(ctx, n, to), declarator: o.declarator}
@@ -368,6 +379,15 @@ func (o *operand) IsNonZero() bool         { return o.value != nil && o.value.is
 func (o *operand) IsZero() bool            { return o.value != nil && o.value.isZero() }
 func (o *operand) Type() Type              { return o.typ }
 func (o *operand) Value() Value            { return o.value }
+
+func (o *operand) isConst() bool {
+	if o.Value() != nil {
+		return true
+	}
+
+	d := o.Declarator()
+	return d != nil && (d.Linkage != None || d.IsStatic())
+}
 
 // [0]6.3.1.8
 //

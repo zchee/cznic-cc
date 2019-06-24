@@ -78,6 +78,21 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 			ctx.errNode(v, "label %s undefined", k)
 		}
 	}
+	for _, n := range n.InitDeclarators {
+		if n.Declarator.Type().IsIncomplete() && n.Declarator.Linkage != External {
+			ctx.errNode(n.Declarator, "declarator has incomplete type")
+		}
+	}
+	for _, n := range n.CompositeLiterals {
+		switch t := n.Operand.Type(); t.Kind() {
+		case Invalid:
+			ctx.errNode(n, "composite literal has invalid type")
+		default:
+			if t.IsIncomplete() {
+				ctx.errNode(n, "composite literal has incomplete type")
+			}
+		}
+	}
 }
 
 func (n *ExternalDeclaration) check(ctx *context) {
@@ -176,7 +191,8 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 	n.Offset = off
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		if n.AssignmentExpression.check(ctx).Value() == nil && n.AssignmentExpression.Operand.Declarator() == nil {
+		n.AssignmentExpression.check(ctx)
+		if !n.AssignmentExpression.isConst() {
 			*isConst = false
 		}
 		*list = append(*list, n)
@@ -727,7 +743,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
 		ctx.pop()
-		if op.Type().Incomplete() {
+		if op.Type().IsIncomplete() {
 			break
 		}
 
@@ -739,7 +755,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		}
 		t := n.TypeName.check(ctx)
 		ctx.pop()
-		if t.Incomplete() {
+		if t.IsIncomplete() {
 			break
 		}
 
@@ -900,7 +916,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
 			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
-			if t.Kind() == Array && t.Incomplete() {
+			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}
 		}
@@ -1231,7 +1247,7 @@ func wcharT(ctx *context, s Scope, tok Token) Type { //TODO method of context?
 }
 
 func ssizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of context?
-	if t != nil && t.Incomplete() {
+	if t != nil && t.IsIncomplete() {
 		//TODO report error
 		return noOperand
 	}
@@ -1859,7 +1875,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
 			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
-			if t.Kind() == Array && t.Incomplete() {
+			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}
 		}
@@ -2858,6 +2874,10 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 		// extern.
 		n.Linkage = External
 	}
+	switch {
+	case n.typ.Kind() == Invalid:
+		ctx.errNode(n, "declarator has incomplete type")
+	}
 	return n.typ
 }
 
@@ -2929,7 +2949,7 @@ func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, expr
 		case vla:
 			b.size = ctx.cfg.ABI.Types[Ptr].Size
 		default:
-			if typ.Incomplete() {
+			if typ.IsIncomplete() {
 				//TODO report error
 				return noType
 			}
