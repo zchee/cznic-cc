@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	_ Value = (*InitializerValue)(nil)
 	_ Value = Complex128Value(0)
 	_ Value = Complex64Value(0)
 	_ Value = Float32Value(0)
@@ -755,8 +756,10 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 			v = uint64(x)
 		case Uint64Value:
 			v = uint64(x)
+		case *InitializerValue:
+			return (&operand{typ: to})
 		default:
-			panic("TODO")
+			panic(internalErrorf("%v: %T", n.Position(), x))
 		}
 		switch {
 		case to.IsSignedType():
@@ -778,7 +781,8 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 	case Uint64Value:
 		v = uint64(x)
 	default:
-		panic("TODO")
+		ctx.errNode(n, "conversion to integer: invalid value")
+		return &operand{typ: to}
 	}
 
 	if to.IsIntegerType() {
@@ -847,10 +851,10 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 			if v != uint64(x) {
 				return &operand{o.Type(), Uint64Value(v)}
 			}
-		case nil:
+		case *InitializerValue, nil:
 			// ok
 		default:
-			panic(internalError())
+			panic(internalErrorf("%T %v", x, x))
 		}
 		return o
 	}
@@ -872,21 +876,21 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 		}
 	case Float:
 		switch o.Value().(type) {
-		case Float32Value, nil:
+		case Float32Value, *InitializerValue, nil:
 			return o
 		default:
 			panic(internalError())
 		}
 	case Double, LongDouble:
-		switch o.Value().(type) {
-		case Float64Value, nil:
+		switch x := o.Value().(type) {
+		case Float64Value, *InitializerValue, nil:
 			return o
 		default:
-			panic(internalError())
+			panic(internalErrorf("%T %v", x, x))
 		}
 	case Ptr:
 		switch o.Value().(type) {
-		case Int64Value, Uint64Value, nil:
+		case Int64Value, Uint64Value, *InitializerValue, nil:
 			return o
 		default:
 			panic(internalError())
@@ -952,4 +956,53 @@ func boolValue(b bool) Value {
 	}
 
 	return Int64Value(0)
+}
+
+type initializer interface {
+	List() []*Initializer
+	IsConst() bool
+}
+
+type InitializerValue struct {
+	typ         Type
+	initializer initializer
+}
+
+func (v *InitializerValue) IsConst() bool        { return v.initializer.IsConst() }
+func (v *InitializerValue) List() []*Initializer { return v.initializer.List() }
+func (v *InitializerValue) Type() Type           { return v.typ }
+func (v *InitializerValue) add(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) and(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) div(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) eq(b Value) Value     { panic(internalError()) }
+func (v *InitializerValue) ge(b Value) Value     { panic(internalError()) }
+func (v *InitializerValue) gt(b Value) Value     { panic(internalError()) }
+func (v *InitializerValue) le(b Value) Value     { panic(internalError()) }
+func (v *InitializerValue) lsh(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) lt(b Value) Value     { panic(internalError()) }
+func (v *InitializerValue) mod(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) mul(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) neg() Value           { panic(internalError()) }
+func (v *InitializerValue) neq(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) or(b Value) Value     { panic(internalError()) }
+func (v *InitializerValue) rsh(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) sub(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) xor(b Value) Value    { panic(internalError()) }
+
+func (v *InitializerValue) isNonZero() bool {
+	for _, v := range v.List() {
+		if v.AssignmentExpression.Operand.IsNonZero() {
+			return true
+		}
+	}
+	return false
+}
+
+func (v *InitializerValue) isZero() bool {
+	for _, v := range v.List() {
+		if v.AssignmentExpression.Operand.IsNonZero() {
+			return false
+		}
+	}
+	return true
 }

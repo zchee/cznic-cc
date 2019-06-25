@@ -1309,12 +1309,13 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	        Pointer DirectDeclarator AttributeSpecifierList
 type Declarator struct {
 	Linkage                Linkage
-	typ                    Type
 	Read                   int
 	Write                  int
-	AddressTaken           bool
-	IsTypedefName          bool
 	td                     typeDescriptor
+	typ                    Type
+	AddressTaken           bool
+	IsParameter            bool
+	IsTypedefName          bool
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator
 	Pointer                *Pointer
@@ -2537,6 +2538,7 @@ func (n InitDeclaratorCase) String() string {
 //	        Declarator AttributeSpecifierList                  // Case InitDeclaratorDecl
 //	|       Declarator AttributeSpecifierList '=' Initializer  // Case InitDeclaratorInit
 type InitDeclarator struct {
+	initializer            *InitializerValue
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   InitDeclaratorCase `PrettyPrint:"stringer,zero"`
 	Declarator             *Declarator

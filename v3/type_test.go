@@ -156,25 +156,60 @@ func TestTranslateGCC(t *testing.T) {
 
 func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
-		// GCC/compile
+		"20021118-1.c":                 {}, //TODO array initializer
+		"20030305-1.c":                 {}, //TODO array initializer
+		"20040726-2.c":                 {}, //TODO array initializer
+		"20050113-1.c":                 {}, //TODO __attribute__ ((vector_size (xx)))
+		"20050316-1.c":                 {}, //TODO attribute vector
+		"20050316-2.c":                 {}, //TODO attribute vector
+		"20050316-3.c":                 {}, //TODO attribute vector
+		"20050604-1.c":                 {}, //TODO attribute vector
+		"20050607-1.c":                 {}, //TODO attribute vector
 		"920428-4.c":                   {}, //TODO invalid declarator type
 		"920501-16.c":                  {}, //TODO invalid declarator type
+		"920611-2.c":                   {}, //TODO array initializer
 		"921017-1.c":                   {}, //TODO invalid declarator type
+		"930510-1.c":                   {}, //TODO array initializer
 		"builtin-types-compatible-p.c": {}, //TODO invalid declarator type
-
-		// GCC/exec
-		"20021118-1.c":   {}, //TODO array initializer
-		"20030305-1.c":   {}, //TODO array initializer
-		"20040726-2.c":   {}, //TODO array initializer
-		"920611-2.c":     {}, //TODO array initializer
-		"930510-1.c":     {}, //TODO array initializer
-		"pr43191.c":      {}, //TODO array initializer
-		"pr48517.c":      {}, //TODO array initializer
-		"pr56448.c":      {}, // Decimal64 literals
-		"pr80692.c":      {}, // Decimal64 literals
-		"pr87053.c":      {}, //TODO array initializer
-		"pr89369.c":      {}, //TODO array initializer
-		"struct-ini-1.c": {}, //TODO array initializer
+		"icfmatch.c":                   {}, //TODO __attribute__ ((vector_size (xx)))
+		"pr23135.c":                    {}, //TODO attribute vector
+		"pr33614.c":                    {}, //TODO __attribute__ ((vector_size (xx)))
+		"pr33617.c":                    {}, //TODO attribute vector
+		"pr43191.c":                    {}, //TODO array initializer
+		"pr48517.c":                    {}, //TODO array initializer
+		"pr52750.c":                    {}, //TODO attribute vector
+		"pr53410-2.c":                  {}, //TODO attribute vector
+		"pr53645-2.c":                  {}, //TODO attribute vector
+		"pr53645.c":                    {}, //TODO attribute vector
+		"pr53748.c":                    {}, //TODO attribute vector
+		"pr54713-1.c":                  {}, //TODO attribute vector
+		"pr54713-2.c":                  {}, //TODO attribute vector
+		"pr54713-3.c":                  {}, //TODO attribute vector
+		"pr56448.c":                    {}, // Decimal64 literals
+		"pr60502.c":                    {}, //TODO attribute vector
+		"pr60960.c":                    {}, //TODO attribute vector
+		"pr65427.c":                    {}, //TODO attribute vector
+		"pr70240.c":                    {}, //TODO attribute vector
+		"pr70633.c":                    {}, //TODO attribute vector
+		"pr70903.c":                    {}, //TODO attribute vector
+		"pr72824-2.c":                  {}, //TODO attribute vector
+		"pr80692.c":                    {}, // Decimal64 literals
+		"pr85331.c":                    {}, //TODO attribute vector
+		"pr87053.c":                    {}, //TODO array initializer
+		"pr89369.c":                    {}, //TODO array initializer
+		"scal-to-vec1.c":               {}, //TODO attribute vector
+		"scal-to-vec2.c":               {}, //TODO attribute vector
+		"scal-to-vec3.c":               {}, //TODO attribute vector
+		"simd-1.c":                     {}, //TODO attribute vector
+		"simd-2.c":                     {}, //TODO attribute vector
+		"simd-3.c":                     {}, //TODO attribute vector
+		"simd-4.c":                     {}, //TODO attribute vector
+		"simd-5.c":                     {}, //TODO attribute vector
+		"simd-6.c":                     {}, //TODO attribute vector
+		"struct-ini-1.c":               {}, //TODO array initializer
+		"vector-3.c":                   {}, //TODO attribute vector
+		"vector-5.c":                   {}, //TODO attribute vector
+		"vector-6.c":                   {}, //TODO attribute vector
 	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {

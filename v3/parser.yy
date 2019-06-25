@@ -403,6 +403,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example int i, j; */
 			|	InitDeclaratorList ',' AttributeSpecifierList InitDeclarator
 
+			/*yy:field	initializer	*InitializerValue */
 			/*yy:example int i; */
 /*yy:case Decl       */ InitDeclarator:
 				Declarator AttributeSpecifierList
@@ -589,12 +590,13 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.7.5 Declarators */
 			/*yy:field	Linkage		Linkage */
-			/*yy:field	typ		Type */
 			/*yy:field	Read		int */
 			/*yy:field	Write		int */
-			/*yy:field	AddressTaken	bool */
-			/*yy:field	IsTypedefName	bool */
 			/*yy:field	td		typeDescriptor */
+			/*yy:field	typ		Type */
+			/*yy:field	AddressTaken	bool */
+			/*yy:field	IsParameter	bool */
+			/*yy:field	IsTypedefName	bool */
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE

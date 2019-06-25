@@ -177,6 +177,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		if typ.Kind() == Array && typ.Len() == 0 {
 			typ.setLen(length)
 		}
+		n.initializer = &InitializerValue{typ: typ, initializer: n.Initializer}
 	default:
 		panic(internalError())
 	}
@@ -192,7 +193,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
 		n.AssignmentExpression.check(ctx)
-		if !n.AssignmentExpression.isConst() {
+		if !n.AssignmentExpression.Operand.isConst() {
 			*isConst = false
 		}
 		*list = append(*list, n)
@@ -210,6 +211,15 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 	// and conversions as for simple assignment apply, taking the type of
 	// the scalar to be the unqualified version of its declared type.
 	if t.IsScalarType() {
+		switch n.Case {
+		case InitializerInitList: // '{' InitializerList ',' '}'
+			if m := n.InitializerList.InitializerList; m != nil {
+				ctx.errNode(m, "too many items in initializer")
+				break
+			}
+
+			n.InitializerList.Initializer.check(ctx, list, isConst, t, off)
+		}
 		return 0
 	}
 
@@ -913,14 +923,18 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
 		t := n.TypeName.check(ctx)
+		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
 			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
 			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}
+			if n.InitializerList.IsConst() {
+				v = &InitializerValue{typ: ctx.cfg.ABI.Ptr(n, t), initializer: n.InitializerList}
+			}
 		}
-		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, t)}}
+		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, t), value: v}}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		panic(n.Position().String())
 	default:
@@ -1410,6 +1424,7 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) *Parameter 
 	switch n.Case {
 	case ParameterDeclarationDecl: // DeclarationSpecifiers Declarator AttributeSpecifierList
 		typ := n.DeclarationSpecifiers.check(ctx)
+		n.Declarator.IsParameter = true
 		if n.typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, false); n.typ.Kind() == Void {
 			panic(n.Position().String())
 		}
@@ -1872,14 +1887,18 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
 		t := n.TypeName.check(ctx)
+		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
 			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
 			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}
+			if n.InitializerList.IsConst() {
+				v = &InitializerValue{typ: t, initializer: n.InitializerList}
+			}
 		}
-		n.Operand = &lvalue{Operand: &operand{typ: t}}
+		n.Operand = &lvalue{Operand: &operand{typ: t, value: v}}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		n.TypeName.check(ctx)
 		n.TypeName2.check(ctx)
@@ -2845,6 +2864,7 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 			f.VLAs = append(f.VLAs, n)
 		}
 	}
+	n.Linkage = None
 	switch {
 	case tld && td.static():
 		// 3: If the declaration of a file scope identifier for an object or a
@@ -2865,7 +2885,7 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 		// linkage.
 		n.Linkage = External
 	case
-		typ.Kind() == Function && !hasStorageSpecifiers,
+		!n.IsParameter && typ.Kind() == Function && !hasStorageSpecifiers,
 		tld && !hasStorageSpecifiers:
 
 		// 5: If the declaration of an identifier for a function has no
