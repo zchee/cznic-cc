@@ -364,6 +364,8 @@ type context struct {
 	tuSize          int64 // Sum of sizes of processed inputs
 	tuSources       int   // Number of processed inputs
 	wcharT          Type
+
+	capture bool
 }
 
 func newContext(cfg *Config) *context {

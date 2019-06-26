@@ -613,7 +613,13 @@ func (n *InitializerList) IsConst() bool { return n == nil || n.isConst }
 
 // List returns n as a flattened list of all items that are case
 // InitializerExpr.
-func (n *InitializerList) List() []*Initializer { return n.list }
+func (n *InitializerList) List() []*Initializer {
+	if n == nil {
+		return nil
+	}
+
+	return n.list
+}
 
 // LexicalScope returns the lexical scope of n.
 func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }

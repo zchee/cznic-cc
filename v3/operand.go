@@ -46,6 +46,7 @@ type Operand interface {
 type Value interface {
 	add(b Value) Value
 	and(b Value) Value
+	cpl() Value
 	div(b Value) Value
 	eq(b Value) Value
 	ge(b Value) Value
@@ -67,17 +68,18 @@ type Value interface {
 
 type WideStringValue StringID
 
-func (v WideStringValue) eq(b Value) Value  { return boolValue(v == b.(WideStringValue)) }
-func (v WideStringValue) neq(b Value) Value { return boolValue(v != b.(WideStringValue)) }
 func (v WideStringValue) add(b Value) Value { panic(internalError()) }
 func (v WideStringValue) and(b Value) Value { panic(internalError()) }
+func (v WideStringValue) cpl() Value        { panic(internalError()) }
 func (v WideStringValue) div(b Value) Value { panic(internalError()) }
+func (v WideStringValue) eq(b Value) Value  { return boolValue(v == b.(WideStringValue)) }
 func (v WideStringValue) isNonZero() bool   { return true }
 func (v WideStringValue) isZero() bool      { return false }
 func (v WideStringValue) lsh(b Value) Value { panic(internalError()) }
 func (v WideStringValue) mod(b Value) Value { panic(internalError()) }
 func (v WideStringValue) mul(b Value) Value { panic(internalError()) }
 func (v WideStringValue) neg() Value        { panic(internalError()) }
+func (v WideStringValue) neq(b Value) Value { return boolValue(v != b.(WideStringValue)) }
 func (v WideStringValue) or(b Value) Value  { panic(internalError()) }
 func (v WideStringValue) rsh(b Value) Value { panic(internalError()) }
 func (v WideStringValue) sub(b Value) Value { panic(internalError()) }
@@ -101,17 +103,18 @@ func (v WideStringValue) lt(b Value) Value {
 
 type StringValue StringID
 
-func (v StringValue) eq(b Value) Value  { return boolValue(v == b.(StringValue)) }
-func (v StringValue) neq(b Value) Value { return boolValue(v != b.(StringValue)) }
 func (v StringValue) add(b Value) Value { panic(internalError()) }
 func (v StringValue) and(b Value) Value { panic(internalError()) }
+func (v StringValue) cpl() Value        { panic(internalError()) }
 func (v StringValue) div(b Value) Value { panic(internalError()) }
+func (v StringValue) eq(b Value) Value  { return boolValue(v == b.(StringValue)) }
 func (v StringValue) isNonZero() bool   { return true }
 func (v StringValue) isZero() bool      { return false }
 func (v StringValue) lsh(b Value) Value { panic(internalError()) }
 func (v StringValue) mod(b Value) Value { panic(internalError()) }
 func (v StringValue) mul(b Value) Value { panic(internalError()) }
 func (v StringValue) neg() Value        { panic(internalError()) }
+func (v StringValue) neq(b Value) Value { return boolValue(v != b.(StringValue)) }
 func (v StringValue) or(b Value) Value  { panic(internalError()) }
 func (v StringValue) rsh(b Value) Value { panic(internalError()) }
 func (v StringValue) sub(b Value) Value { panic(internalError()) }
@@ -137,6 +140,7 @@ type Int64Value int64
 
 func (v Int64Value) add(b Value) Value { return v + b.(Int64Value) }
 func (v Int64Value) and(b Value) Value { return v & b.(Int64Value) }
+func (v Int64Value) cpl() Value        { return ^v }
 func (v Int64Value) eq(b Value) Value  { return boolValue(v == b.(Int64Value)) }
 func (v Int64Value) ge(b Value) Value  { return boolValue(v >= b.(Int64Value)) }
 func (v Int64Value) gt(b Value) Value  { return boolValue(v > b.(Int64Value)) }
@@ -193,6 +197,7 @@ type Uint64Value uint64
 
 func (v Uint64Value) add(b Value) Value { return v + b.(Uint64Value) }
 func (v Uint64Value) and(b Value) Value { return v & b.(Uint64Value) }
+func (v Uint64Value) cpl() Value        { return ^v }
 func (v Uint64Value) eq(b Value) Value  { return boolValue(v == b.(Uint64Value)) }
 func (v Uint64Value) ge(b Value) Value  { return boolValue(v >= b.(Uint64Value)) }
 func (v Uint64Value) gt(b Value) Value  { return boolValue(v > b.(Uint64Value)) }
@@ -249,6 +254,7 @@ type Float32Value float32
 
 func (v Float32Value) add(b Value) Value { return v + b.(Float32Value) }
 func (v Float32Value) and(b Value) Value { panic(internalError()) }
+func (v Float32Value) cpl() Value        { panic(internalError()) }
 func (v Float32Value) div(b Value) Value { return v / b.(Float32Value) }
 func (v Float32Value) eq(b Value) Value  { return boolValue(v == b.(Float32Value)) }
 func (v Float32Value) ge(b Value) Value  { return boolValue(v >= b.(Float32Value)) }
@@ -271,6 +277,7 @@ type Float64Value float64
 
 func (v Float64Value) add(b Value) Value { return v + b.(Float64Value) }
 func (v Float64Value) and(b Value) Value { panic(internalError()) }
+func (v Float64Value) cpl() Value        { panic(internalError()) }
 func (v Float64Value) div(b Value) Value { return v / b.(Float64Value) }
 func (v Float64Value) eq(b Value) Value  { return boolValue(v == b.(Float64Value)) }
 func (v Float64Value) ge(b Value) Value  { return boolValue(v >= b.(Float64Value)) }
@@ -289,10 +296,11 @@ func (v Float64Value) rsh(b Value) Value { panic(internalError()) }
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
 func (v Float64Value) xor(b Value) Value { panic(internalError()) }
 
-type Complex64Value complex128
+type Complex64Value complex128 //TODO complex64
 
 func (v Complex64Value) add(b Value) Value { return v + b.(Complex64Value) }
 func (v Complex64Value) and(b Value) Value { panic(internalError()) }
+func (v Complex64Value) cpl() Value        { panic(internalError()) }
 func (v Complex64Value) div(b Value) Value { return v / b.(Complex64Value) }
 func (v Complex64Value) eq(b Value) Value  { return boolValue(v == b.(Complex64Value)) }
 func (v Complex64Value) ge(b Value) Value  { panic(internalError()) }
@@ -315,6 +323,7 @@ type Complex128Value complex128
 
 func (v Complex128Value) add(b Value) Value { return v + b.(Complex128Value) }
 func (v Complex128Value) and(b Value) Value { panic(internalError()) }
+func (v Complex128Value) cpl() Value        { panic(internalError()) }
 func (v Complex128Value) div(b Value) Value { return v / b.(Complex128Value) }
 func (v Complex128Value) eq(b Value) Value  { return boolValue(v == b.(Complex128Value)) }
 func (v Complex128Value) ge(b Value) Value  { panic(internalError()) }
@@ -895,8 +904,10 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 		default:
 			panic(internalError())
 		}
+	case Array, Void, Function, Struct, Union:
+		return o
 	}
-	panic(internalError())
+	panic(internalErrorf("%v, %v", o.Type(), o.Type().Kind()))
 }
 
 func convertInt64(n int64, t Type, ctx *context) int64 {
@@ -973,6 +984,7 @@ func (v *InitializerValue) List() []*Initializer { return v.initializer.List() }
 func (v *InitializerValue) Type() Type           { return v.typ }
 func (v *InitializerValue) add(b Value) Value    { panic(internalError()) }
 func (v *InitializerValue) and(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) cpl() Value           { panic(internalError()) }
 func (v *InitializerValue) div(b Value) Value    { panic(internalError()) }
 func (v *InitializerValue) eq(b Value) Value     { panic(internalError()) }
 func (v *InitializerValue) ge(b Value) Value     { panic(internalError()) }

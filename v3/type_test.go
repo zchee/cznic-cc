@@ -160,23 +160,32 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"20030305-1.c":                 {}, //TODO array initializer
 		"20040726-2.c":                 {}, //TODO array initializer
 		"20050113-1.c":                 {}, //TODO __attribute__ ((vector_size (xx)))
+		"20050122-2.c":                 {}, //TODO goto from nested function to outer function label
 		"20050316-1.c":                 {}, //TODO attribute vector
 		"20050316-2.c":                 {}, //TODO attribute vector
 		"20050316-3.c":                 {}, //TODO attribute vector
 		"20050604-1.c":                 {}, //TODO attribute vector
 		"20050607-1.c":                 {}, //TODO attribute vector
+		"920428-2.c":                   {}, //TODO goto from nested function to outer function label
 		"920428-4.c":                   {}, //TODO invalid declarator type
 		"920501-16.c":                  {}, //TODO invalid declarator type
+		"920501-7.c":                   {}, //TODO goto from nested function to outer function label
 		"920611-2.c":                   {}, //TODO array initializer
 		"921017-1.c":                   {}, //TODO invalid declarator type
 		"930510-1.c":                   {}, //TODO array initializer
 		"builtin-types-compatible-p.c": {}, //TODO invalid declarator type
+		"comp-goto-2.c":                {}, //TODO goto from nested function to outer function label
 		"icfmatch.c":                   {}, //TODO __attribute__ ((vector_size (xx)))
+		"nestfunc-5.c":                 {}, //TODO goto from nested function to outer function label
+		"nestfunc-6.c":                 {}, //TODO goto from nested function to outer function label
+		"pr21728.c":                    {}, //TODO goto from nested function to outer function label
 		"pr23135.c":                    {}, //TODO attribute vector
+		"pr24135.c":                    {}, //TODO goto from nested function to outer function label
 		"pr33614.c":                    {}, //TODO __attribute__ ((vector_size (xx)))
 		"pr33617.c":                    {}, //TODO attribute vector
 		"pr43191.c":                    {}, //TODO array initializer
 		"pr48517.c":                    {}, //TODO array initializer
+		"pr51447.c":                    {}, //TODO goto from nested function to outer function label
 		"pr52750.c":                    {}, //TODO attribute vector
 		"pr53410-2.c":                  {}, //TODO attribute vector
 		"pr53645-2.c":                  {}, //TODO attribute vector
@@ -189,11 +198,16 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr60502.c":                    {}, //TODO attribute vector
 		"pr60960.c":                    {}, //TODO attribute vector
 		"pr65427.c":                    {}, //TODO attribute vector
+		"pr70061.c":                    {}, //TODO attribute vector
 		"pr70240.c":                    {}, //TODO attribute vector
+		"pr70355.c":                    {}, //TODO attribute vector
 		"pr70633.c":                    {}, //TODO attribute vector
 		"pr70903.c":                    {}, //TODO attribute vector
+		"pr71626-1.c":                  {}, //TODO attribute vector
+		"pr71626-2.c":                  {}, //TODO attribute vector
 		"pr72824-2.c":                  {}, //TODO attribute vector
 		"pr80692.c":                    {}, // Decimal64 literals
+		"pr85169.c":                    {}, //TODO attribute vector
 		"pr85331.c":                    {}, //TODO attribute vector
 		"pr87053.c":                    {}, //TODO array initializer
 		"pr89369.c":                    {}, //TODO array initializer

@@ -105,7 +105,7 @@ __UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
 int __builtin_clzll (unsigned long long);
 int __printf__ ( const char * format, ... );
 int __scanf__ ( const char *format, ... );
-void __builtin_va_arg_impl(void* ap);
+void *__builtin_va_arg_impl(void* ap);
 `
 )
 

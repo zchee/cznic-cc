@@ -17,6 +17,8 @@ import (
 	"math"
 	"sort"
 	"strings"
+
+	"modernc.org/mathutil"
 )
 
 const maxRank = 6
@@ -1080,6 +1082,29 @@ func (t *structType) check(ctx *context, n Node) *structType {
 		return nil
 	}
 
+	// Reject ambiguous names.
+	for _, f := range t.fields {
+		if f.Name() != 0 {
+			continue
+		}
+
+		switch x := f.Type().(type) {
+		case *structType:
+			for _, f2 := range x.fields {
+				nm := f2.Name()
+				if nm == 0 {
+					continue
+				}
+
+				if _, ok := t.m[nm]; ok {
+					ctx.errNode(n, "ambiguous field name %q", nm)
+				}
+			}
+		default:
+			//TODO report err
+		}
+	}
+
 	return ctx.cfg.ABI.layout(ctx, n, t)
 }
 
@@ -1126,8 +1151,36 @@ func (t *structType) FieldByIndex(i []int) Field {
 
 // FieldByName implements Type.
 func (t *structType) FieldByName(name StringID) (Field, bool) {
-	f, ok := t.m[name]
-	return f, ok
+	best := mathutil.MaxInt
+	return t.fieldByName(name, 0, &best, 0)
+}
+
+func (t *structType) fieldByName(name StringID, lvl int, best *int, off uintptr) (Field, bool) {
+	if lvl >= *best {
+		return nil, false
+	}
+
+	if f, ok := t.m[name]; ok {
+		*best = lvl
+		if off != 0 {
+			g := *f
+			g.offset += off
+			f = &g
+		}
+		return f, ok
+	}
+
+	for _, f := range t.fields {
+		if f.Name() != 0 {
+			continue
+		}
+
+		if f, ok := f.Type().(*structType).fieldByName(name, lvl+1, best, off+f.offset); ok {
+			return f, ok
+		}
+	}
+
+	return nil, false
 }
 
 func (t *structType) NumField() int { return len(t.fields) }
