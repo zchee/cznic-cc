@@ -761,7 +761,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = sizeT(ctx, n.lexicalScope, n.Token, uint64(op.Type().Size()))
+		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(op.Type().Size())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
 		ctx.push(ctx.mode)
 		if ctx.mode&mIntConstExpr != 0 {
@@ -773,14 +773,14 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = sizeT(ctx, n.lexicalScope, n.Token, uint64(t.Size()))
+		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(t.Size())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
 		ctx.not(n, mIntConstExpr)
 		//TODO
 	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
-		n.Operand = sizeT(ctx, n.lexicalScope, n.Token, uint64(op.Type().Align()))
+		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(op.Type().Align())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 		ctx.pop()
 	case UnaryExpressionAlignofType: // "_Alignof" '(' TypeName ')'
 		ctx.push(ctx.mode)
@@ -788,7 +788,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			ctx.mode |= mIntConstExprAnyCast
 		}
 		t := n.TypeName.check(ctx)
-		n.Operand = sizeT(ctx, n.lexicalScope, n.Token, uint64(t.Align()))
+		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(t.Align())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 		ctx.pop()
 	case UnaryExpressionImag: // "__imag__" UnaryExpression
 		ctx.not(n, mIntConstExpr)
@@ -800,6 +800,18 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		panic(internalError())
 	}
 	return n.Operand
+}
+
+func sizeT(ctx *context, s Scope, tok Token) Type {
+	if t := ctx.sizeT; t != nil {
+		return t
+	}
+
+	t := ctx.stddef(idSizeT, s, tok)
+	if t.Kind() != Invalid {
+		ctx.sizeT = t
+	}
+	return t
 }
 
 func (n *CastExpression) addr(ctx *context) Operand {
@@ -1248,81 +1260,6 @@ func (n *MultiplicativeExpression) addr(ctx *context) Operand {
 		panic(internalError())
 	}
 	return n.Operand
-}
-
-func wcharT(ctx *context, s Scope, tok Token) Type { //TODO method of context?
-	if t := ctx.wcharT; t != nil {
-		return t
-	}
-
-	if d := s.typedef(idWCharT, tok); d != nil {
-		t := d.Type()
-		ctx.wcharT = t
-		return t
-	}
-
-	panic(internalError())
-}
-
-func ssizeT(ctx *context, s Scope, tok Token, t Type) Operand { //TODO method of context?
-	if t != nil && t.IsIncomplete() {
-		//TODO report error
-		return noOperand
-	}
-
-	var v Value
-	if t != nil {
-		v = Int64Value(t.Size())
-	}
-	if d := s.typedef(idSSizeT, tok); d != nil {
-		return (&operand{typ: &aliasType{nm: idSSizeT, typ: d.Type()}, value: v}).normalize(ctx)
-	}
-
-	st := ctx.ssizeT
-	if st == nil {
-		abi := ctx.cfg.ABI
-		need := abi.size(Ptr)
-		rank := maxRank
-		for v, ok := range integerTypes {
-			if !ok || abi.size(Kind(v)) < need || !abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
-				continue
-			}
-
-			st = abi.Type(Kind(v))
-			rank = intConvRank[v]
-		}
-		if st == nil {
-			panic(internalError())
-		}
-		ctx.ssizeT = st
-	}
-	return (&operand{typ: st, value: v}).normalize(ctx)
-}
-
-func sizeT(ctx *context, s Scope, tok Token, v uint64) Operand { //TODO method of context?
-	if d := s.typedef(idSizeT, tok); d != nil {
-		return (&operand{typ: &aliasType{nm: idSizeT, typ: d.Type()}, value: Uint64Value(v)}).normalize(ctx)
-	}
-
-	st := ctx.sizeT
-	if st == nil {
-		abi := ctx.cfg.ABI
-		need := abi.size(Ptr)
-		rank := maxRank
-		for v, ok := range integerTypes {
-			if !ok || abi.size(Kind(v)) < need || abi.isSignedInteger(Kind(v)) || intConvRank[v] >= rank || Kind(v) == Enum {
-				continue
-			}
-
-			st = abi.Type(Kind(v))
-			rank = intConvRank[v]
-		}
-		if st == nil {
-			panic(internalError())
-		}
-		ctx.sizeT = st
-	}
-	return (&operand{typ: st, value: Uint64Value(v)}).normalize(ctx)
 }
 
 func (n *TypeName) check(ctx *context) Type {
@@ -2073,6 +2010,18 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 	return n.Operand
 }
 
+func wcharT(ctx *context, s Scope, tok Token) Type {
+	if t := ctx.wcharT; t != nil {
+		return t
+	}
+
+	t := ctx.stddef(idWCharT, s, tok)
+	if t.Kind() != Invalid {
+		ctx.wcharT = t
+	}
+	return t
+}
+
 func (n *PrimaryExpression) checkIdentifier(ctx *context) Operand {
 	ctx.not(n, mIntConstExpr)
 	var d *Declarator
@@ -2772,7 +2721,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
 		if a.Type().Decay().Kind() == Ptr && b.Type().Decay().Kind() == Ptr {
-			n.Operand = ssizeT(ctx, n.lexicalScope, n.Token, nil)
+			n.Operand = &operand{typ: ptrdiffT(ctx, n.lexicalScope, n.Token)}
 			break
 		}
 
@@ -2797,6 +2746,18 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		panic(internalError())
 	}
 	return n.Operand
+}
+
+func ptrdiffT(ctx *context, s Scope, tok Token) Type {
+	if t := ctx.ptrdiffT; t != nil {
+		return t
+	}
+
+	t := ctx.stddef(idPtrdiffT, s, tok)
+	if t.Kind() != Invalid {
+		ctx.ptrdiffT = t
+	}
+	return t
 }
 
 func (n *MultiplicativeExpression) check(ctx *context) Operand {

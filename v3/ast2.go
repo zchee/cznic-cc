@@ -31,6 +31,8 @@ type AST struct {
 	Scope Scope // File scope.
 	// Alignment and size of every struct/union defined in the translation
 	// unit. Valid only after Translate.
+	PtrdiffType       Type
+	SizeType          Type
 	Structs           map[StructInfo]struct{}
 	TrailingSeperator StringID // White space and/or comments preceding EOF.
 	TranslationUnit   *TranslationUnit
@@ -398,6 +400,8 @@ func translate(ctx *context, includePaths, sysIncludePaths []string, sources []S
 		return nil, err
 	}
 
+	ast.PtrdiffType = ctx.ptrdiffT
+	ast.SizeType = ctx.sizeT
 	ast.WideCharType = ctx.wcharT
 	return ast, nil
 }

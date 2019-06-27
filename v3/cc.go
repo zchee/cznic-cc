@@ -62,9 +62,9 @@ var (
 	debugWorkingDir   bool
 	isTesting         bool
 
-	idSSizeT = dict.sid("ssize_t")
-	idSizeT  = dict.sid("size_t")
-	idWCharT = dict.sid("wchar_t")
+	idPtrdiffT = dict.sid("ptrdiff_t")
+	idSizeT    = dict.sid("size_t")
+	idWCharT   = dict.sid("wchar_t")
 
 	token4Pool = sync.Pool{New: func() interface{} { r := make([]token4, 0); return &r }} //DONE benchmrk tuned capacity
 	tokenPool  = sync.Pool{New: func() interface{} { r := make([]Token, 0); return &r }}  //DONE benchmrk tuned capacity
@@ -356,8 +356,8 @@ type context struct {
 	mode            mode
 	modes           []mode
 	mu              sync.Mutex
+	ptrdiffT        Type
 	sizeT           Type
-	ssizeT          Type
 	structs         map[StructInfo]struct{}
 	switches        int
 	sysIncludePaths []string
@@ -379,6 +379,17 @@ func newContext(cfg *Config) *context {
 		maxErrors: maxErrors,
 		structs:   map[StructInfo]struct{}{},
 	}
+}
+
+func (c *context) stddef(nm StringID, s Scope, tok Token) Type {
+	if d := s.typedef(nm, tok); d != nil {
+		if t := d.Type(); t != nil && t.Kind() != Invalid {
+			return t
+		}
+	}
+
+	c.errNode(&tok, "undefined: %s", nm)
+	return noType
 }
 
 func (c *context) errNode(n Node, msg string, args ...interface{}) (stop bool) {

@@ -73,6 +73,7 @@ const (
 
 	parserTestBuiltin = `
 #define __DI__
+#define __FUNCTION__ __func__
 #define __HI__
 #define __PRETTY_FUNCTION__ __func__
 #define __QI__
@@ -88,7 +89,6 @@ const (
 #define __builtin_va_start(ap, v)
 #define __declspec(...)
 #define __extension__
-#define __func__ NULL //TODO
 #define __sync_synchronize(...)
 #define __word__
 #define asm __asm__
@@ -97,6 +97,8 @@ const (
 #define __attribute__(x)
 #endif
 
+typedef __PTRDIFF_TYPE__ ptrdiff_t;
+typedef __SIZE_TYPE__ size_t;
 typedef __WCHAR_TYPE__ wchar_t;
 
 __UINT16_TYPE__ __builtin_bswap16 (__UINT16_TYPE__ x);
@@ -484,7 +486,7 @@ func shift(tok Token) string {
 
 func exampleAST(rule int, src string) interface{} {
 	src = strings.Replace(src, "\\n", "\n", -1)
-	cfg := &Config{ignoreErrors: true}
+	cfg := &Config{ignoreErrors: true, PreprocessOnly: true}
 	ctx := newContext(cfg)
 	ctx.keywords = gccKeywords
 	ast, _ := parse(ctx, nil, nil, []Source{{Name: "example.c", Value: src}})

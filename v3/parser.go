@@ -17,6 +17,15 @@ const (
 var (
 	noDeclSpecs        = &DeclarationSpecifiers{}
 	panicOnParserError bool //TODOOK
+
+	idChar      = dict.sid("char")
+	idConst     = dict.sid("const")
+	idEq        = dict.sid("=")
+	idFunc      = dict.sid("__func__")
+	idLBracket  = dict.sid("[")
+	idRBracket  = dict.sid("]")
+	idSemicolon = dict.sid(";")
+	idStatic    = dict.sid("static")
 )
 
 // Values of Token.Rune for lexemes.
@@ -431,9 +440,10 @@ func (p *parser) shift() (r Token) {
 	return r
 }
 
+func (p *parser) unget(toks ...Token) { p.inBuf = append(toks, p.inBuf...) }
+
 func (p *parser) peek(handleTypedefname bool) rune {
 	if p.closed {
-		// dbg("parser: EOF")
 		return -1
 	}
 
@@ -677,7 +687,7 @@ out:
 			if p.ctx.cfg.RejectStatementExpressions {
 				p.err0(false, "statement expressions not allowed")
 			}
-			s := p.compoundStatement(nil)
+			s := p.compoundStatement(nil, nil)
 			var t2 Token
 			switch p.rune() {
 			case ')':
@@ -2996,7 +3006,7 @@ func (p *parser) statement() *Statement {
 
 		return &Statement{Case: StatementExpr, ExpressionStatement: p.expressionStatement()}
 	case '{':
-		return &Statement{Case: StatementCompound, CompoundStatement: p.compoundStatement(nil)}
+		return &Statement{Case: StatementCompound, CompoundStatement: p.compoundStatement(nil, nil)}
 	case IF, SWITCH:
 		return &Statement{Case: StatementSelection, SelectionStatement: p.selectionStatement()}
 	case WHILE, DO, FOR:
@@ -3084,7 +3094,7 @@ func (p *parser) labeledStatement() *LabeledStatement {
 //
 //  compound-statement:
 // 	{ block-item-list_opt }
-func (p *parser) compoundStatement(s Scope) *CompoundStatement {
+func (p *parser) compoundStatement(s Scope, inject []Token) *CompoundStatement {
 	if p.rune() != '{' {
 		p.err("expected {")
 		return nil
@@ -3106,6 +3116,9 @@ func (p *parser) compoundStatement(s Scope) *CompoundStatement {
 	s = p.declScope
 	p.typedefNameEnabled = true
 	t := p.shift()
+	if len(inject) != 0 {
+		p.unget(inject...)
+	}
 	list := p.blockItemList()
 	var t2 Token
 	p.closeScope()
@@ -3165,7 +3178,7 @@ func (p *parser) blockItem() *BlockItem {
 			if p.ctx.cfg.RejectNestedFunctionDefinitions {
 				p.err0(false, "nested functions not allowed")
 			}
-			r := &BlockItem{Case: BlockItemFuncDef, DeclarationSpecifiers: ds, Declarator: d, CompoundStatement: p.compoundStatement(d.ParamScope())}
+			r := &BlockItem{Case: BlockItemFuncDef, DeclarationSpecifiers: ds, Declarator: d, CompoundStatement: p.compoundStatement(d.ParamScope(), p.fn(d.Name()))}
 			p.typedefNameEnabled = true
 			return r
 		default:
@@ -3627,7 +3640,31 @@ func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *F
 	if p.rune() != '{' {
 		list = p.declarationList(d.ParamScope())
 	}
-	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list, CompoundStatement: p.compoundStatement(d.ParamScope())}
+	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list, CompoundStatement: p.compoundStatement(d.ParamScope(), p.fn(d.Name()))}
+}
+
+func (p *parser) fn(nm StringID) (r []Token) {
+	if p.ctx.cfg.PreprocessOnly {
+		return nil
+	}
+
+	for i, v := range []Token{
+		{Rune: STATIC, Value: idStatic},
+		{Rune: CONST, Value: idConst},
+		{Rune: CHAR, Value: idChar},
+		{Rune: IDENTIFIER, Value: idFunc},
+		{Rune: '[', Value: idLBracket},
+		{Rune: ']', Value: idRBracket},
+		{Rune: '=', Value: idEq},
+		{Rune: STRINGLITERAL, Value: nm},
+		{Rune: ';', Value: idSemicolon},
+	} {
+		v.fileID = p.tok.fileID
+		v.pos = p.tok.pos
+		v.seq = p.tok.seq + int32(i) + 1
+		r = append(r, v)
+	}
+	return r
 }
 
 //  declaration-list:

@@ -837,7 +837,7 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 	case Struct, Union, Void, Int128, UInt128:
 		return &operand{typ: to}
 	}
-	panic("TODO")
+	panic(internalErrorf("%v, %v", to, to.Kind()))
 }
 
 func (o *operand) normalize(ctx *context) (r Operand) {

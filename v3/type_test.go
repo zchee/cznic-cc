@@ -624,7 +624,10 @@ func TestAbstractDeclarator(t *testing.T) {
 	} {
 		letter := string('a' + i)
 		cfg := &Config{ABI: testABI}
-		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		ast, err := Translate(cfg, nil, nil, []Source{
+			{Name: "<built-in>", Value: "typedef long long unsigned size_t;"},
+			{Name: "test", Value: test.src},
+		})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
 			continue

@@ -39,7 +39,7 @@ func TestBOM(t *testing.T) {
 }
 
 func TestStrCatSep(t *testing.T) {
-	cfg := &Config{Config3: Config3{PreserveWhiteSpace: true}}
+	cfg := &Config{Config3: Config3{PreserveWhiteSpace: true}, PreprocessOnly: true}
 	for i, v := range []struct {
 		src         string
 		lit         string
