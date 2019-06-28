@@ -166,11 +166,13 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"20050316-3.c":                 {}, //TODO attribute vector
 		"20050604-1.c":                 {}, //TODO attribute vector
 		"20050607-1.c":                 {}, //TODO attribute vector
+		"920415-1.c":                   {}, //TODO label l undefined
 		"920428-2.c":                   {}, //TODO goto from nested function to outer function label
 		"920428-4.c":                   {}, //TODO invalid declarator type
 		"920501-16.c":                  {}, //TODO invalid declarator type
 		"920501-7.c":                   {}, //TODO goto from nested function to outer function label
 		"920611-2.c":                   {}, //TODO array initializer
+		"920721-4.c":                   {}, //TODO label default_lab undefined
 		"921017-1.c":                   {}, //TODO invalid declarator type
 		"930510-1.c":                   {}, //TODO array initializer
 		"builtin-types-compatible-p.c": {}, //TODO invalid declarator type

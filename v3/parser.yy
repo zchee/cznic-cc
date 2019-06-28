@@ -859,6 +859,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.9.1 Function definitions */
 			/*yy:field	CompositeLiterals	[]*PostfixExpression		*/
+			/*yy:field	ComputedGotos		map[StringID]*UnaryExpression	*/
 			/*yy:field	Gotos			map[StringID]*JumpStatement	*/
 			/*yy:field	InitDeclarators		[]*InitDeclarator		*/
 			/*yy:field	Labels			map[StringID]*LabeledStatement	*/

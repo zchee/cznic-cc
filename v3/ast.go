@@ -2349,6 +2349,7 @@ func (n *ExternalDeclaration) Position() (r token.Position) {
 //	        DeclarationSpecifiers Declarator DeclarationList CompoundStatement
 type FunctionDefinition struct {
 	CompositeLiterals     []*PostfixExpression
+	ComputedGotos         map[StringID]*UnaryExpression
 	Gotos                 map[StringID]*JumpStatement
 	InitDeclarators       []*InitDeclarator
 	Labels                map[StringID]*LabeledStatement

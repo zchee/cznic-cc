@@ -73,6 +73,11 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 	ctx.checkFn = n
 	n.CompoundStatement.check(ctx)
 	ctx.checkFn = nil
+	for k, v := range n.ComputedGotos {
+		if _, ok := n.Labels[k]; !ok {
+			ctx.errNode(v, "label %s undefined", k)
+		}
+	}
 	for k, v := range n.Gotos {
 		if _, ok := n.Labels[k]; !ok {
 			ctx.errNode(v, "label %s undefined", k)
@@ -298,7 +303,10 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 	// structure or union type. ...
 	if n.Case == InitializerInitList {
 		n.InitializerList.checkStruct(ctx, list, isConst, t, off)
+		return 0
 	}
+
+	//TODO must handle
 	return 0
 }
 
@@ -776,7 +784,16 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(t.Size())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
 		ctx.not(n, mIntConstExpr)
-		//TODO
+		f := ctx.checkFn
+		if f == nil {
+			//TODO report error
+			break
+		}
+
+		if f.ComputedGotos == nil {
+			f.ComputedGotos = map[StringID]*UnaryExpression{}
+		}
+		f.ComputedGotos[n.Token2.Value] = n
 	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
@@ -885,13 +902,39 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	case PostfixExpressionPrimary: // PrimaryExpression
 		n.Operand = n.PrimaryExpression.addr(ctx)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
-		op := n.check(ctx)
-		switch op.Type().Kind() {
-		case Array:
-			n.Operand = op
-		default:
-			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
+		pe := n.PostfixExpression.check(ctx)
+		e := n.Expression.check(ctx)
+		t := pe.Type().Decay()
+		if t.Kind() == Invalid {
+			break
 		}
+
+		if t.Kind() == Ptr {
+			if t := e.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
+				ctx.errNode(n.Expression, "index must be integer type, have %v", e.Type())
+				break
+			}
+
+			n.Operand = n.indexAddr(ctx, pe, e)
+			break
+		}
+
+		t = e.Type().Decay()
+		if t.Kind() == Invalid {
+			break
+		}
+
+		if t.Kind() == Ptr {
+			if t := pe.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
+				ctx.errNode(n.Expression, "index must be integer type, have %v", pe.Type())
+				break
+			}
+
+			n.Operand = n.indexAddr(ctx, e, pe)
+			break
+		}
+
+		ctx.errNode(n, "invalid index expression %v[%v]", pe.Type(), e.Type())
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
@@ -904,7 +947,12 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 		case Array:
 			n.Operand = op
 		default:
-			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
+			switch d := n.PostfixExpression.Operand.Declarator(); {
+			case d != nil:
+				n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type()), offset: n.Field.Offset()}, declarator: d}
+			default:
+				n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
+			}
 		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.check(ctx)
@@ -957,6 +1005,32 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 		panic(internalError())
 	}
 	return n.Operand
+}
+
+func (n *PostfixExpression) indexAddr(ctx *context, pe, e Operand) Operand {
+	var x uintptr
+	hasx := false
+	switch v := e.Value().(type) {
+	case Int64Value:
+		x = uintptr(v)
+		hasx = true
+	case Uint64Value:
+		x = uintptr(v)
+		hasx = true
+	}
+	off := x * pe.Type().Elem().Size()
+	switch pe.Value().(type) {
+	case StringValue, WideStringValue:
+		if hasx {
+			return &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), value: pe.Value(), offset: off}}
+		}
+	}
+
+	if d := pe.Declarator(); d != nil && hasx {
+		return &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), offset: n.Operand.Offset() + off}, declarator: d}
+	}
+
+	return &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem())}}
 }
 
 func (n *PrimaryExpression) addr(ctx *context) Operand {
@@ -1742,35 +1816,39 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionPrimary: // PrimaryExpression
 		n.Operand = n.PrimaryExpression.check(ctx)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
-		n.PostfixExpression.check(ctx)
-		n.Expression.check(ctx)
-		t := n.PostfixExpression.Operand.Type().Decay()
+		pe := n.PostfixExpression.check(ctx)
+		e := n.Expression.check(ctx)
+		t := pe.Type().Decay()
 		if t.Kind() == Invalid {
 			break
 		}
 
 		if t.Kind() == Ptr {
-			if t := n.Expression.Operand.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
-				ctx.errNode(n.Expression, "index must be integer type, have %v", n.Expression.Operand.Type())
+			if t := e.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
+				ctx.errNode(n.Expression, "index must be integer type, have %v", e.Type())
+				break
 			}
-			n.Operand = &lvalue{Operand: &operand{typ: t.Elem()}}
+
+			n.Operand = n.index(ctx, pe, e)
 			break
 		}
 
-		t = n.Expression.Operand.Type().Decay()
+		t = e.Type().Decay()
 		if t.Kind() == Invalid {
 			break
 		}
 
 		if t.Kind() == Ptr {
-			if t := n.PostfixExpression.Operand.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
-				ctx.errNode(n.Expression, "index must be integer type, have %v", n.PostfixExpression.Operand.Type())
+			if t := pe.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
+				ctx.errNode(n.Expression, "index must be integer type, have %v", pe.Type())
+				break
 			}
-			n.Operand = &lvalue{Operand: &operand{typ: t.Elem()}}
+
+			n.Operand = n.index(ctx, e, pe)
 			break
 		}
 
-		ctx.errNode(n, "invalid index expression %v[%v]", n.PostfixExpression.Operand.Type(), n.Expression.Operand.Type())
+		ctx.errNode(n, "invalid index expression %v[%v]", pe.Type(), e.Type())
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		op := n.PostfixExpression.check(ctx)
 		args := n.ArgumentExpressionList.check(ctx)
@@ -1860,6 +1938,26 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		panic(internalError())
 	}
 	return n.Operand
+}
+
+func (n *PostfixExpression) index(ctx *context, pe, e Operand) Operand {
+	var x uintptr
+	hasx := false
+	switch v := e.Value().(type) {
+	case Int64Value:
+		x = uintptr(v)
+		hasx = true
+	case Uint64Value:
+		x = uintptr(v)
+		hasx = true
+	}
+	switch pe.Value().(type) {
+	case StringValue:
+		_ = x    //TODO
+		_ = hasx //TODO
+		//TODO case WideStringValue:
+	}
+	return &lvalue{Operand: &operand{typ: pe.Type().Elem()}}
 }
 
 func (n *PostfixExpression) checkCall(ctx *context, nd Node, f Type, args []Operand) (r Operand) {

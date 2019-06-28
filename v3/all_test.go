@@ -97,13 +97,30 @@ const (
 #define __attribute__(x)
 #endif
 
+#ifdef __PTRDIFF_TYPE__
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
-typedef __SIZE_TYPE__ size_t;
-typedef __WCHAR_TYPE__ wchar_t;
+#endif
 
+#ifdef __SIZE_TYPE__
+typedef __SIZE_TYPE__ size_t;
+#endif
+
+#ifdef __WCHAR_TYPE__
+typedef __WCHAR_TYPE__ wchar_t;
+#endif
+
+#ifdef __UINT16_TYPE__
 __UINT16_TYPE__ __builtin_bswap16 (__UINT16_TYPE__ x);
+#endif
+
+#ifdef __UINT32_TYPE__
 __UINT32_TYPE__ __builtin_bswap32 (__UINT32_TYPE__ x);
+#endif
+
+#ifdef __UINT64_TYPE__
 __UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
+#endif
+
 int __builtin_clzll (unsigned long long);
 int __printf__ ( const char * format, ... );
 int __scanf__ ( const char *format, ... );

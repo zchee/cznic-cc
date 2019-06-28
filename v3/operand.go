@@ -33,6 +33,7 @@ type Operand interface {
 	IsLValue() bool
 	IsNonZero() bool
 	IsZero() bool
+	Offset() uintptr // Valid only for non nil Declarator() value
 	Type() Type
 	Value() Value
 	convertFromInt(*context, Node, Type) Operand
@@ -377,13 +378,13 @@ func (o *funcDesignator) convertTo(ctx *context, n Node, to Type) (r Operand) {
 }
 
 type operand struct {
-	typ   Type
-	value Value
-
-	//TODO isLvalue bool or wrapper type
+	typ    Type
+	value  Value
+	offset uintptr
 }
 
 func (o *operand) Declarator() *Declarator { return nil }
+func (o *operand) Offset() uintptr         { return o.offset }
 func (o *operand) IsLValue() bool          { return false }
 func (o *operand) IsNonZero() bool         { return o.value != nil && o.value.isNonZero() }
 func (o *operand) IsZero() bool            { return o.value != nil && o.value.isZero() }
@@ -845,7 +846,7 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 		switch x := o.Value().(type) {
 		case Int64Value:
 			if v := convertInt64(int64(x), o.Type(), ctx); v != int64(x) { //TODO ???
-				return &operand{o.Type(), Int64Value(v)}
+				return &operand{o.Type(), Int64Value(v), 0}
 			}
 		case Uint64Value:
 			v := uint64(x)
@@ -858,7 +859,7 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 				v &= math.MaxUint32
 			}
 			if v != uint64(x) {
-				return &operand{o.Type(), Uint64Value(v)}
+				return &operand{o.Type(), Uint64Value(v), 0}
 			}
 		case *InitializerValue, nil:
 			// ok
@@ -899,7 +900,7 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 		}
 	case Ptr:
 		switch o.Value().(type) {
-		case Int64Value, Uint64Value, *InitializerValue, nil:
+		case Int64Value, Uint64Value, *InitializerValue, StringValue, WideStringValue, nil:
 			return o
 		default:
 			panic(internalError())
