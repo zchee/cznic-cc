@@ -21,8 +21,6 @@ import (
 	"modernc.org/mathutil"
 )
 
-const maxRank = 6
-
 var (
 	_ Field = (*field)(nil)
 
@@ -65,28 +63,52 @@ var (
 		ULongLong: 6,
 	}
 
+	complexIntegerTypes = [maxKind]bool{
+		ComplexChar:     true,
+		ComplexInt:      true,
+		ComplexLong:     true,
+		ComplexLongLong: true,
+		ComplexShort:    true,
+		ComplexUInt:     true,
+		ComplexUShort:   true,
+	}
+
 	integerTypes = [maxKind]bool{
-		Bool:      true,
-		Char:      true,
-		Enum:      true,
-		Int:       true,
-		Long:      true,
-		LongLong:  true,
-		SChar:     true,
-		Short:     true,
-		UChar:     true,
-		UInt:      true,
-		ULong:     true,
-		ULongLong: true,
-		UShort:    true,
+		Bool:            true,
+		Char:            true,
+		ComplexChar:     true,
+		ComplexInt:      true,
+		ComplexLong:     true,
+		ComplexLongLong: true,
+		ComplexShort:    true,
+		ComplexUInt:     true,
+		ComplexUShort:   true,
+		Enum:            true,
+		Int:             true,
+		Long:            true,
+		LongLong:        true,
+		SChar:           true,
+		Short:           true,
+		UChar:           true,
+		UInt:            true,
+		ULong:           true,
+		ULongLong:       true,
+		UShort:          true,
 	}
 
 	arithmeticTypes = [maxKind]bool{
 		Bool:              true,
 		Char:              true,
+		ComplexChar:       true,
 		ComplexDouble:     true,
 		ComplexFloat:      true,
+		ComplexInt:        true,
+		ComplexLong:       true,
 		ComplexLongDouble: true,
+		ComplexLongLong:   true,
+		ComplexShort:      true,
+		ComplexUInt:       true,
+		ComplexUShort:     true,
 		Double:            true,
 		Enum:              true,
 		Float:             true,
@@ -407,14 +429,13 @@ type typeBase struct {
 
 func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type {
 	k0 := t.kind
+	var nd Node
 	var alignmentSpecifiers []*AlignmentSpecifier
 	var attributeSpecifiers []*AttributeSpecifier
 	var typeSpecifiers []*TypeSpecifier
 	switch n := td.(type) {
-	//TODO- case nil:
-	//TODO- 	t.kind = byte(TypeSpecifierInt)
-	//TODO- 	return t //TODO configuration flag
 	case *DeclarationSpecifiers:
+		nd = n
 		for ; n != nil; n = n.DeclarationSpecifiers {
 			switch n.Case {
 			case DeclarationSpecifiersStorage: // StorageClassSpecifier DeclarationSpecifiers
@@ -434,6 +455,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 			}
 		}
 	case *SpecifierQualifierList:
+		nd = n
 		for ; n != nil; n = n.SpecifierQualifierList {
 			switch n.Case {
 			case SpecifierQualifierListTypeSpec: // TypeSpecifier SpecifierQualifierList
@@ -449,6 +471,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 			}
 		}
 	case *TypeQualifiers:
+		nd = n
 		for ; n != nil; n = n.TypeQualifiers {
 			if n.Case == TypeQualifiersAttribute {
 				attributeSpecifiers = append(attributeSpecifiers, n.AttributeSpecifier)
@@ -497,6 +520,11 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 		t.fieldAlign = t.align
 	default:
 		ctx.err(alignmentSpecifiers[1].Position(), "multiple alignment specifiers")
+	}
+
+	if complexIntegerTypes[t.kind] {
+		ctx.errNode(nd, "unsupported type: %s", t)
+		return noType
 	}
 
 	abi := ctx.cfg.ABI

@@ -439,6 +439,20 @@ func (c *context) Err() error {
 	case goscanner.ErrorList:
 		x = append(goscanner.ErrorList(nil), x...)
 		c.mu.Unlock()
+		var lpos gotoken.Position
+		w := 0
+		for _, v := range x {
+			if lpos.Filename != "" {
+				if v.Pos.Filename == lpos.Filename && v.Pos.Line == lpos.Line {
+					continue
+				}
+			}
+
+			x[w] = v
+			w++
+			lpos = v.Pos
+		}
+		x = x[:w]
 		sort.Slice(x, func(i, j int) bool {
 			a := x[i]
 			b := x[j]
@@ -469,17 +483,8 @@ func (c *context) Err() error {
 			return a.Pos.Column < b.Pos.Column
 		})
 		a := make([]string, 0, len(x))
-		var lpos gotoken.Position
 		for _, v := range x {
-			if v.Pos.IsValid() && lpos.IsValid() && lpos == v.Pos {
-				continue
-			}
-
-			s := v.Error()
-			if n := len(a); n == 0 || a[n-1] != s {
-				a = append(a, s)
-				lpos = v.Pos
-			}
+			a = append(a, v.Error())
 		}
 		return fmt.Errorf("%s", strings.Join(a, "\n"))
 	default:

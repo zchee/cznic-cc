@@ -218,7 +218,7 @@ func translationPhase5(ctx *context, toks *[]Token) *[]Token {
 			cpt.value = tok.Value
 			cpt.fileID = tok.fileID
 			cpt.pos = tok.pos
-			(*toks)[i].Value = dict.sid(stringConst(cpt))
+			(*toks)[i].Value = dict.sid(stringConst(ctx, cpt))
 		case CHARCONST, LONGCHARCONST:
 			var cpt cppToken
 			cpt.char = tok.Rune

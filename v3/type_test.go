@@ -156,10 +156,15 @@ func TestTranslateGCC(t *testing.T) {
 
 func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
+		"20000804-1.c":                 {}, //TODO 1: unsupported type: complex long long
 		"20021118-1.c":                 {}, //TODO array initializer
 		"20030305-1.c":                 {}, //TODO array initializer
+		"20030903-1.c":                 {}, //TODO 41: unsupported type: complex int
 		"20040726-2.c":                 {}, //TODO array initializer
+		"20041124-1.c":                 {}, //TODO 12: unsupported type: complex short
+		"20041201-1.c":                 {}, //TODO 18: unsupported type: complex char
 		"20050113-1.c":                 {}, //TODO __attribute__ ((vector_size (xx)))
+		"20050121-1.c":                 {}, //TODO 1: unsupported type: complex char
 		"20050122-2.c":                 {}, //TODO goto from nested function to outer function label
 		"20050316-1.c":                 {}, //TODO attribute vector
 		"20050316-2.c":                 {}, //TODO attribute vector
@@ -177,14 +182,24 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"930510-1.c":                   {}, //TODO array initializer
 		"builtin-types-compatible-p.c": {}, //TODO invalid declarator type
 		"comp-goto-2.c":                {}, //TODO goto from nested function to outer function label
+		"complex-1.c":                  {}, //TODO 9: unsupported type: complex int
+		"complex-5.c":                  {}, //TODO 9: unsupported type: complex int
+		"complex-6.c":                  {}, //TODO 3: unsupported type: complex int
 		"icfmatch.c":                   {}, //TODO __attribute__ ((vector_size (xx)))
 		"nestfunc-5.c":                 {}, //TODO goto from nested function to outer function label
 		"nestfunc-6.c":                 {}, //TODO goto from nested function to outer function label
 		"pr21728.c":                    {}, //TODO goto from nested function to outer function label
 		"pr23135.c":                    {}, //TODO attribute vector
 		"pr24135.c":                    {}, //TODO goto from nested function to outer function label
+		"pr27889.c":                    {}, //TODO 1: unsupported type: complex int
 		"pr33614.c":                    {}, //TODO __attribute__ ((vector_size (xx)))
 		"pr33617.c":                    {}, //TODO attribute vector
+		"pr35431.c":                    {}, //TODO 3: unsupported type: complex int
+		"pr38151.c":                    {}, //TODO 3: unsupported type: complex int
+		"pr41987.c":                    {}, //TODO 3: unsupported type: complex char
+		"pr42196-1.c":                  {}, //TODO 3: unsupported type: complex int
+		"pr42196-2.c":                  {}, //TODO 3: unsupported type: complex int
+		"pr42196-3.c":                  {}, //TODO 3: unsupported type: complex int
 		"pr43191.c":                    {}, //TODO array initializer
 		"pr48517.c":                    {}, //TODO array initializer
 		"pr51447.c":                    {}, //TODO goto from nested function to outer function label
@@ -197,6 +212,7 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr54713-2.c":                  {}, //TODO attribute vector
 		"pr54713-3.c":                  {}, //TODO attribute vector
 		"pr56448.c":                    {}, // Decimal64 literals
+		"pr56837.c":                    {}, //TODO 1: unsupported type: complex int
 		"pr60502.c":                    {}, //TODO attribute vector
 		"pr60960.c":                    {}, //TODO attribute vector
 		"pr65427.c":                    {}, //TODO attribute vector
@@ -211,6 +227,8 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr80692.c":                    {}, // Decimal64 literals
 		"pr85169.c":                    {}, //TODO attribute vector
 		"pr85331.c":                    {}, //TODO attribute vector
+		"pr86122.c":                    {}, //TODO 1: unsupported type: complex int
+		"pr86123.c":                    {}, //TODO 6: unsupported type: complex unsigned
 		"pr87053.c":                    {}, //TODO array initializer
 		"pr89369.c":                    {}, //TODO array initializer
 		"scal-to-vec1.c":               {}, //TODO attribute vector

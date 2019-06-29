@@ -41,7 +41,7 @@ type Operand interface {
 	convertToInt(*context, Node, Type) Operand
 	integerPromotion(*context, Node) Operand
 	isConst() bool
-	normalize(*context) Operand
+	normalize(*context, Node) Operand
 }
 
 type Value interface {
@@ -424,8 +424,11 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 		return a, b
 	}
 
-	a = a.normalize(ctx)
-	b = b.normalize(ctx)
+	a = a.normalize(ctx, n)
+	b = b.normalize(ctx, n)
+	if a == noOperand || b == noOperand {
+		return noOperand, noOperand
+	}
 
 	at := a.Type()
 	bt := b.Type()
@@ -621,7 +624,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
 	}
 
 	if o.Type().Kind() == to.Kind() {
-		return (&operand{typ: to, value: v}).normalize(ctx)
+		return (&operand{typ: to, value: v}).normalize(ctx, n)
 	}
 
 	if o.Type().IsIntegerType() {
@@ -642,45 +645,45 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
 		v := v.(Complex64Value)
 		switch to.Kind() {
 		case ComplexDouble, ComplexLongDouble:
-			return (&operand{typ: to, value: Complex128Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Complex128Value(v)}).normalize(ctx, n)
 		case Float:
-			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx)
+			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx, n)
 		case Double:
-			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx)
+			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx, n)
 		}
 	case ComplexDouble:
 		v := v.(Complex128Value)
 		switch to.Kind() {
 		case ComplexFloat:
-			return (&operand{typ: to, value: Complex64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Complex64Value(v)}).normalize(ctx, n)
 		case ComplexLongDouble:
-			return (&operand{typ: to, value: v}).normalize(ctx)
+			return (&operand{typ: to, value: v}).normalize(ctx, n)
 		case Float:
-			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx)
+			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx, n)
 		case Double:
-			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx)
+			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx, n)
 		}
 	case Float:
 		v := v.(Float32Value)
 		switch to.Kind() {
 		case ComplexFloat:
-			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx, n)
 		case ComplexDouble, ComplexLongDouble:
-			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx, n)
 		case Double:
-			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx, n)
 		}
 	case Double:
 		v := v.(Float64Value)
 		switch to.Kind() {
 		case ComplexFloat:
-			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx, n)
 		case ComplexDouble, ComplexLongDouble:
-			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx, n)
 		case LongDouble:
-			return (&operand{typ: to, value: v}).normalize(ctx)
+			return (&operand{typ: to, value: v}).normalize(ctx, n)
 		case Float:
-			return (&operand{typ: to, value: Float32Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Float32Value(v)}).normalize(ctx, n)
 		}
 	}
 	panic("TODO")
@@ -721,21 +724,21 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 		case to.IsSignedType():
 			limits := &signedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx)
+				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx, n)
 			}
 
 			if v < limits.fmin {
-				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx)
+				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
 			limits := &unsignedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx)
+				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	case Double, LongDouble:
 		v := float64(v.(Float64Value))
@@ -743,21 +746,21 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 		case to.IsSignedType():
 			limits := &signedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx)
+				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx, n)
 			}
 
 			if v < limits.fmin {
-				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx)
+				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
 			limits := &unsignedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx)
+				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	case Ptr:
 		var v uint64
@@ -773,9 +776,9 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 		}
 		switch {
 		case to.IsSignedType():
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	case Array:
 		return &operand{typ: to}
@@ -798,9 +801,9 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 	if to.IsIntegerType() {
 		switch {
 		case to.IsSignedType():
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	}
 
@@ -808,40 +811,40 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 	case ComplexFloat:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Complex64Value(complex(float64(int64(v)), 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex64Value(complex(float64(int64(v)), 0))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Complex64Value(complex(float64(v), 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex64Value(complex(float64(v), 0))}).normalize(ctx, n)
 		}
 	case ComplexDouble, ComplexLongDouble:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Complex128Value(complex(float64(int64(v)), 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex128Value(complex(float64(int64(v)), 0))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Complex128Value(complex(float64(v), 0))}).normalize(ctx)
+			return (&operand{typ: to, value: Complex128Value(complex(float64(v), 0))}).normalize(ctx, n)
 		}
 	case Float:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Float32Value(float64(int64(v)))}).normalize(ctx)
+			return (&operand{typ: to, value: Float32Value(float64(int64(v)))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Float32Value(float64(v))}).normalize(ctx)
+			return (&operand{typ: to, value: Float32Value(float64(v))}).normalize(ctx, n)
 		}
 	case Double, LongDouble:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Float64Value(int64(v))}).normalize(ctx)
+			return (&operand{typ: to, value: Float64Value(int64(v))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx)
+			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx, n)
 		}
 	case Ptr:
-		return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx)
+		return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 	case Struct, Union, Void, Int128, UInt128:
 		return &operand{typ: to}
 	}
 	panic(internalErrorf("%v, %v", to, to.Kind()))
 }
 
-func (o *operand) normalize(ctx *context) (r Operand) {
+func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 	if o.Type().IsIntegerType() {
 		switch x := o.Value().(type) {
 		case Int64Value:
@@ -907,6 +910,9 @@ func (o *operand) normalize(ctx *context) (r Operand) {
 		}
 	case Array, Void, Function, Struct, Union:
 		return o
+	case ComplexChar, ComplexInt, ComplexLong, ComplexLongLong, ComplexShort, ComplexUInt, ComplexUShort:
+		ctx.errNode(n, "unsupported type: %s", o.Type())
+		return noOperand
 	}
 	panic(internalErrorf("%v, %v", o.Type(), o.Type().Kind()))
 }

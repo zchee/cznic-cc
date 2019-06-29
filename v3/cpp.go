@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"modernc.org/token"
 )
@@ -1858,53 +1859,32 @@ func (c *cpp) intConst(tok cppToken) (r interface{}) {
 }
 
 func charConst(ctx *context, tok cppToken) rune {
+	s := tok.String()
 	switch tok.char {
+	case LONGCHARCONST:
+		s = s[1:] // Remove leading 'L'.
+		fallthrough
 	case CHARCONST:
-		s := tok.String()
 		s = s[1 : len(s)-1] // Remove outer 's.
 		if len(s) == 1 {
 			return rune(s[0])
 		}
 
-		runes := []rune(s)
 		var r rune
-		switch runes[0] {
+		var n int
+		switch s[0] {
 		case '\\':
-			r, _ = decodeEscapeSequence(runes)
+			r, n = decodeEscapeSequence(ctx, tok, s)
 			if r < 0 {
 				r = -r
 			}
 		default:
-			r = runes[0]
+			r, n = utf8.DecodeRuneInString(s)
+		}
+		if n != len(s) {
+			ctx.errNode(&tok, "invalid character constant")
 		}
 		return r
-	case LONGCHARCONST:
-		s := tok.String()
-		var buf bytes.Buffer
-		s = s[2 : len(s)-1]
-		runes := []rune(s)
-		for i := 0; i < len(runes); {
-			switch r := runes[i]; {
-			case r == '\\':
-				r, n := decodeEscapeSequence(runes[i:])
-				switch {
-				case r < 0:
-					buf.WriteByte(byte(-r))
-				default:
-					buf.WriteRune(r)
-				}
-				i += n
-			default:
-				buf.WriteRune(r)
-				i++
-			}
-		}
-		s = buf.String()
-		runes = []rune(s)
-		if len(runes) != 1 {
-			ctx.err(tok.Position(), "invalid character constant %s", &tok)
-		}
-		return runes[0]
 	}
 	panic(internalError())
 }
@@ -1913,16 +1893,16 @@ func charConst(ctx *context, tok cppToken) rune {
 // simple-sequence		\\['\x22?\\abfnrtv]
 // octal-escape-sequence	\\{octal-digit}{octal-digit}?{octal-digit}?
 // hexadecimal-escape-sequence	\\x{hexadecimal-digit}+
-func decodeEscapeSequence(runes []rune) (rune, int) { //TODO-
-	if runes[0] != '\\' {
+func decodeEscapeSequence(ctx *context, tok cppToken, s string) (rune, int) {
+	if s[0] != '\\' {
 		panic(internalError())
 	}
 
-	if len(runes) < 2 {
-		return runes[0], 1
+	if len(s) == 1 {
+		return rune(s[0]), 1
 	}
 
-	r := runes[1]
+	r := rune(s[1])
 	switch r {
 	case '\'', '"', '?', '\\':
 		return r, 2
@@ -1943,7 +1923,8 @@ func decodeEscapeSequence(runes []rune) (rune, int) { //TODO-
 	case 'x':
 		v, n := 0, 2
 	loop2:
-		for _, r := range runes[2:] {
+		for i := 2; i < len(s); i++ {
+			r := s[i]
 			switch {
 			case r >= '0' && r <= '9', r >= 'a' && r <= 'f', r >= 'A' && r <= 'F':
 				v = v<<4 | decodeHex(r)
@@ -1954,7 +1935,7 @@ func decodeEscapeSequence(runes []rune) (rune, int) { //TODO-
 		}
 		return -rune(v & 0xff), n
 	case 'u', 'U':
-		return decodeUCN(runes)
+		return decodeUCN(s)
 	}
 
 	if r < '0' || r > '7' {
@@ -1962,44 +1943,51 @@ func decodeEscapeSequence(runes []rune) (rune, int) { //TODO-
 	}
 
 	v, n := 0, 1
+	ok := false
 loop:
-	for _, r := range runes[1:] {
+	for i := 1; i < len(s); i++ {
+		r := s[i]
 		switch {
-		case r >= '0' && r <= '7':
+		case i < 4 && r >= '0' && r <= '7':
+			ok = true
 			v = v<<3 | (int(r) - '0')
 			n++
 		default:
 			break loop
 		}
 	}
+	if !ok {
+		ctx.errNode(&tok, "invalid octal sequence")
+	}
 	return -rune(v), n
 }
 
 // universal-character-name	\\u{hex-quad}|\\U{hex-quad}{hex-quad}
-func decodeUCN(runes []rune) (rune, int) {
-	if runes[0] != '\\' {
+func decodeUCN(s string) (rune, int) {
+	if s[0] != '\\' {
 		panic(internalError())
 	}
-	runes = runes[1:]
-	switch runes[0] {
+
+	s = s[1:]
+	switch s[0] {
 	case 'u':
-		return rune(decodeHexQuad(runes[1:])), 6
+		return rune(decodeHexQuad(s[1:])), 6
 	case 'U':
-		return rune(decodeHexQuad(runes[1:])<<16 | decodeHexQuad(runes[5:])), 10
+		return rune(decodeHexQuad(s[1:])<<16 | decodeHexQuad(s[5:])), 10
 	}
 	panic(internalError())
 }
 
 // hex-quad	{hexadecimal-digit}{hexadecimal-digit}{hexadecimal-digit}{hexadecimal-digit}
-func decodeHexQuad(runes []rune) int {
+func decodeHexQuad(s string) int {
 	n := 0
-	for _, r := range runes[:4] {
-		n = n<<4 | decodeHex(r)
+	for i := 0; i < 4; i++ {
+		n = n<<4 | decodeHex(s[i])
 	}
 	return n
 }
 
-func decodeHex(r rune) int {
+func decodeHex(r byte) int {
 	switch {
 	case r >= '0' && r <= '9':
 		return int(r) - '0'
@@ -2256,7 +2244,7 @@ func (c *cpp) identicalReplacementLists(a, b []token3) bool {
 	return true
 }
 
-func stringConst(t cppToken) string {
+func stringConst(ctx *context, t cppToken) string {
 	s := t.String()
 	switch t.char {
 	case LONGSTRINGLITERAL:
@@ -2267,7 +2255,7 @@ func stringConst(t cppToken) string {
 		for i := 1; i < len(s)-1; {
 			switch c := s[i]; c {
 			case '\\':
-				r, n := decodeEscapeSequence([]rune(s[i:])) //TODO get rid of the conversion
+				r, n := decodeEscapeSequence(ctx, t, s[i:])
 				switch {
 				case r < 0:
 					buf.WriteByte(byte(-r))
