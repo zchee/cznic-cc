@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/dustin/go-humanize"
 	"modernc.org/mathutil"
@@ -129,6 +130,7 @@ void *__builtin_va_arg_impl(void* ap);
 )
 
 var (
+	oCSmith   = flags.Duration("csmith", time.Minute, "") // Use something like -timeout 25h -csmith 24h for real testing.
 	oDev      = flags.Bool("dev", false, "Enable developer tests/downloads.")
 	oDownload = flags.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
 	oMaxFiles = flags.Int("maxFiles", maxFiles, "")
@@ -150,6 +152,17 @@ var (
 		{sqliteDir, "https://www.sqlite.org/2019/sqlite-amalgamation-3270200.zip", 2200, false},
 		{tccDir, "http://download.savannah.gnu.org/releases/tinycc/tcc-0.9.27.tar.bz2", 620, false},
 	}
+
+	csmithArgs = strings.Join([]string{
+		"--bitfields",                     // --bitfields | --no-bitfields: enable | disable full-bitfields structs (disabled by default).
+		"--no-const-pointers",             // --const-pointers | --no-const-pointers: enable | disable const pointers (enabled by default).
+		"--no-consts",                     // --consts | --no-consts: enable | disable const qualifier (enabled by default).
+		"--no-packed-struct",              // --packed-struct | --no-packed-struct: enable | disable packed structs by adding #pragma pack(1) before struct definition (disabled by default).
+		"--no-volatile-pointers",          // --volatile-pointers | --no-volatile-pointers: enable | disable volatile pointers (enabled by default).
+		"--no-volatiles",                  // --volatiles | --no-volatiles: enable | disable volatiles (enabled by default).
+		"--paranoid",                      // --paranoid | --no-paranoid: enable | disable pointer-related assertions (disabled by default).
+		"--max-nested-struct-level", "10", // --max-nested-struct-level <num>: limit maximum nested level of structs to <num>(default 0). Only works in the exhaustive mode.
+	}, " ")
 
 	testBuiltinSource   *cachedPPFile
 	testIncludes        []string

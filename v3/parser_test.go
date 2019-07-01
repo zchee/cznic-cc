@@ -7,6 +7,7 @@ package cc // import "modernc.org/cc/v3"
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -715,4 +716,63 @@ func ExamplePrimaryExpression_stringLiteral() {
 	// · Case: PrimaryExpressionString,
 	// · Token: example.c:1:12: STRINGLITERAL "abc",
 	// }
+}
+
+func TestParserCSmith(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short")
+		return
+	}
+
+	csmith, err := exec.LookPath("csmith")
+	if err != nil {
+		t.Logf("%v: skipping test", err)
+		return
+	}
+
+	regressionTests := []string{}
+	ch := time.After(*oCSmith)
+	t0 := time.Now()
+	var files, ok int
+	var size int64
+out:
+	for i := 0; ; i++ {
+		extra := ""
+		var args string
+		switch {
+		case i < len(regressionTests):
+			args += regressionTests[i]
+			a := strings.Split(regressionTests[i], " ")
+			extra = strings.Join(a[len(a)-2:], " ")
+		default:
+			select {
+			case <-ch:
+				break out
+			default:
+			}
+
+			args += csmithArgs
+		}
+		out, err := exec.Command(csmith, strings.Split(args, " ")...).Output()
+		if err != nil {
+			t.Fatalf("%v\n%s", err, out)
+		}
+
+		cfg := &Config{}
+		ctx := newContext(cfg)
+		files++
+		size += int64(len(out))
+		sources := []Source{
+			{Name: "<predefined>", Value: testPredef},
+			{Name: "<built-in>", Value: parserTestBuiltin},
+			{Name: "test.c", Value: string(out)},
+		}
+		if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
+			t.Fatalf("%s\n%s\n%v", extra, out, err)
+		}
+
+		ok++
+	}
+	d := time.Since(t0)
+	t.Logf("files %v, bytes %v, ok %v in %v", h(files), h(size), h(ok), d)
 }

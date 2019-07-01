@@ -5,6 +5,7 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"math/bits"
@@ -16,6 +17,7 @@ type mode = int
 
 var (
 	idClosure = dict.sid("0closure") // Must be invalid indentifier.
+	_         fmt.State
 )
 
 const (
@@ -915,10 +917,11 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 				break
 			}
 
-			n.Operand = n.indexAddr(ctx, pe, e)
+			n.Operand = n.indexAddr(ctx, &n.Token, pe, e)
 			break
 		}
 
+		panic(924) //TODO-
 		t = e.Type().Decay()
 		if t.Kind() == Invalid {
 			break
@@ -930,7 +933,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 				break
 			}
 
-			n.Operand = n.indexAddr(ctx, e, pe)
+			n.Operand = n.indexAddr(ctx, &n.Token, e, pe)
 			break
 		}
 
@@ -1030,7 +1033,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *PostfixExpression) indexAddr(ctx *context, pe, e Operand) Operand {
+func (n *PostfixExpression) indexAddr(ctx *context, nd Node, pe, e Operand) Operand {
 	var x uintptr
 	hasx := false
 	switch v := e.Value().(type) {
@@ -1050,7 +1053,7 @@ func (n *PostfixExpression) indexAddr(ctx *context, pe, e Operand) Operand {
 	}
 
 	if d := pe.Declarator(); d != nil && hasx {
-		return &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), offset: n.Operand.Offset() + off}, declarator: d}
+		return &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), offset: pe.Offset() + off}, declarator: d}
 	}
 
 	return &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem())}}
@@ -1856,6 +1859,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			break
 		}
 
+		panic(1862) //TODO-
 		t = e.Type().Decay()
 		if t.Kind() == Invalid {
 			break
