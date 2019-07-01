@@ -26,7 +26,7 @@ type StructInfo struct {
 	Align int
 }
 
-// AST represents a translation unit with related data.
+// AST represents a translation and its related data.
 type AST struct {
 	Scope Scope // File scope.
 	// Alignment and size of every struct/union defined in the translation

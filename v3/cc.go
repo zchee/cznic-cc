@@ -302,7 +302,7 @@ type Config3 struct {
 	RejectUndefExtraTokens                  bool // Pedantic: do not silently accept "#undef foo bar".
 }
 
-// Config amend behavior of translation phase 4 and above. Instances of Config
+// Config amends behavior of translation phase 4 and above. Instances of Config
 // are not mutated by this package and it's safe to share/reuse them.
 //
 // The *Config passed to Parse or Translate should not be mutated afterwards.

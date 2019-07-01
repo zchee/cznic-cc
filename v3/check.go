@@ -938,45 +938,68 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-		op := n.check(ctx)
-		if op.Type().IsBitFieldType() {
-			panic("TODO") //TODO report error
+		op := n.PostfixExpression.addr(ctx)
+		if op.Type().Kind() != Ptr {
+			//TODO report error
+			break
 		}
 
-		switch op.Type().Kind() {
-		case Array:
-			n.Operand = op
-		default:
-			switch d := n.PostfixExpression.Operand.Declarator(); {
-			case d != nil:
-				n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type()), offset: n.Field.Offset()}, declarator: d}
-			default:
-				n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
-			}
-		}
-	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
-		op := n.check(ctx)
-		if op.Type().IsBitFieldType() {
-			panic("TODO") //TODO report error
+		st := op.Type().Elem()
+		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
+			//TODO report error
+			break
 		}
 
-		var v Value
-		if p := n.PostfixExpression.Operand.Value(); p != nil {
-			v = Uint64Value(uintptr(p.(Uint64Value)) + n.Field.Offset())
-			switch op.Type().Kind() {
-			case Array:
-				n.Operand = &lvalue{Operand: (&operand{typ: op.Type(), value: v}).normalize(ctx, n)}
-			default:
-				n.Operand = &lvalue{Operand: (&operand{typ: ctx.cfg.ABI.Ptr(n, op.Type()), value: v}).normalize(ctx, n)}
-			}
+		f, ok := st.FieldByName(n.Token2.Value)
+		if !ok {
+			//TODO report error
+			break
+		}
+
+		n.Field = f
+		ft := f.Type()
+		if f.IsBitField() {
+			//TODO report error
 			break
 		}
 
 		switch op.Type().Kind() {
 		case Array:
-			n.Operand = op
+			n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 		default:
-			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, op.Type())}}
+			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
+		}
+	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
+		op := n.PostfixExpression.check(ctx)
+		t := op.Type()
+		if k := t.Decay().Kind(); k != Ptr && k != Invalid {
+			//TODO report error
+			break
+		}
+
+		st := t.Elem()
+		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
+			//TODO report error
+			break
+		}
+
+		f, ok := st.FieldByName(n.Token2.Value)
+		if !ok {
+			//TODO report error
+			break
+		}
+
+		n.Field = f
+		ft := f.Type()
+		if f.IsBitField() {
+			//TODO report error
+			break
+		}
+		switch op.Type().Kind() {
+		case Array:
+			n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
+		default:
+			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 		}
 	case PostfixExpressionInc: // PostfixExpression "++"
 		panic(n.Position().String())
@@ -1856,7 +1879,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		st := op.Type()
-		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
+		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
 			break
 		}
@@ -1882,7 +1905,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 
 		st := t.Elem()
-		if k := st.Kind(); k != Struct && k != Union && k != Invalid {
+		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
 			break
 		}

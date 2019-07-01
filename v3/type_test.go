@@ -630,7 +630,7 @@ func benchmarkDevTranslate(b *testing.B, predef string) {
 	b.SetBytes(bytes)
 }
 
-func TestAbstractDeclarator(t *testing.T) {
+func TestAbstractDeclarator(t *testing.T) { //TODO -> Example
 	for i, test := range []struct{ src, typ string }{
 		{"int i = sizeof(int);", "int"},                                                                                            // [0], 6.7.6, 3, (a)
 		{"int i = sizeof(int*);", "pointer to int"},                                                                                // [0], 6.7.6, 3, (b)
@@ -671,7 +671,7 @@ func TestAbstractDeclarator(t *testing.T) {
 	}
 }
 
-func TestAbstractDeclarator2(t *testing.T) {
+func TestAbstractDeclarator2(t *testing.T) { //TODO -> Example
 	for i, test := range []struct{ src, typ string }{
 		{"void f(int);", "int"},                                                                                            // [0], 6.7.6, 3, (a)
 		{"void f(int*);", "pointer to int"},                                                                                // [0], 6.7.6, 3, (b)
@@ -709,7 +709,7 @@ func TestAbstractDeclarator2(t *testing.T) {
 	}
 }
 
-func TestDeclarator(t *testing.T) {
+func TestDeclarator(t *testing.T) { //TODO -> Example
 	for i, test := range []struct{ src, typ string }{
 		{"int x;", "int"},                                                                                           // [0], 6.7.6, 3, (a)
 		{"int *x;", "pointer to int"},                                                                               // [0], 6.7.6, 3, (b)
