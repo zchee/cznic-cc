@@ -132,6 +132,9 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		for _, f := range t.fields {
 			ft := f.Type()
 			sz := ft.Size()
+			if n := int64(8 * sz); n > off {
+				off = n
+			}
 			al := ft.FieldAlign()
 			if al == 0 {
 				al = 1
@@ -140,15 +143,8 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				align = al
 			}
 
-			switch {
-			case f.isBitField:
-				if n := int64(f.bitFieldWidth); n > off {
-					off = n
-				}
-			default:
-				if n := 8 * int64(sz); n > off {
-					off = n
-				}
+			if f.isBitField {
+				f.bitFieldMask = 1<<f.bitFieldWidth - 1
 			}
 			f.promote = integerPromotion(ctx, ft)
 		}

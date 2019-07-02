@@ -730,7 +730,9 @@ func TestParserCSmith(t *testing.T) {
 		return
 	}
 
-	regressionTests := []string{}
+	fixedBugs := []string{
+		"--bitfields --no-const-pointers --no-consts --no-packed-struct --no-volatile-pointers --no-volatiles --paranoid --max-nested-struct-level 10 -s 1236173074", // input buffer too small for CSmith generated programs
+	}
 	ch := time.After(*oCSmith)
 	t0 := time.Now()
 	var files, ok int
@@ -740,9 +742,9 @@ out:
 		extra := ""
 		var args string
 		switch {
-		case i < len(regressionTests):
-			args += regressionTests[i]
-			a := strings.Split(regressionTests[i], " ")
+		case i < len(fixedBugs):
+			args += fixedBugs[i]
+			a := strings.Split(fixedBugs[i], " ")
 			extra = strings.Join(a[len(a)-2:], " ")
 		default:
 			select {
@@ -758,7 +760,7 @@ out:
 			t.Fatalf("%v\n%s", err, out)
 		}
 
-		cfg := &Config{}
+		cfg := &Config{Config3: Config3{MaxSourceLine: 1 << 20}}
 		ctx := newContext(cfg)
 		files++
 		size += int64(len(out))
@@ -768,7 +770,8 @@ out:
 			{Name: "test.c", Value: string(out)},
 		}
 		if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-			t.Fatalf("%s\n%s\n%v", extra, out, err)
+			t.Errorf("%s\n%s\n%v", extra, out, err)
+			break
 		}
 
 		ok++

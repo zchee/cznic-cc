@@ -686,7 +686,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = &operand{typ: op.Type()}
 	case UnaryExpressionAddrof: // '&' CastExpression
 		ctx.not(n, mIntConstExpr)
-		op := n.CastExpression.addr(ctx)
+		op := n.CastExpression.addrOf(ctx)
 		if op.Type().IsBitFieldType() {
 			//TODO report error
 			break
@@ -833,14 +833,14 @@ func sizeT(ctx *context, s Scope, tok Token) Type {
 	return t
 }
 
-func (n *CastExpression) addr(ctx *context) Operand {
+func (n *CastExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case CastExpressionUnary: // UnaryExpression
-		n.Operand = n.UnaryExpression.addr(ctx)
+		n.Operand = n.UnaryExpression.addrOf(ctx)
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
 		panic(n.Position().String())
 	default:
@@ -849,7 +849,7 @@ func (n *CastExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *UnaryExpression) addr(ctx *context) Operand {
+func (n *UnaryExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -857,7 +857,7 @@ func (n *UnaryExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case UnaryExpressionPostfix: // PostfixExpression
-		n.Operand = n.PostfixExpression.addr(ctx)
+		n.Operand = n.PostfixExpression.addrOf(ctx)
 	case UnaryExpressionInc: // "++" UnaryExpression
 		panic(n.Position().String())
 	case UnaryExpressionDec: // "--" UnaryExpression
@@ -887,14 +887,14 @@ func (n *UnaryExpression) addr(ctx *context) Operand {
 	case UnaryExpressionImag: // "__imag__" UnaryExpression
 		panic(n.Position().String())
 	case UnaryExpressionReal: // "__real__" UnaryExpression
-		n.Operand = n.UnaryExpression.addr(ctx)
+		n.Operand = n.UnaryExpression.addrOf(ctx)
 	default:
 		panic(internalError())
 	}
 	return n.Operand
 }
 
-func (n *PostfixExpression) addr(ctx *context) Operand {
+func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -902,7 +902,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case PostfixExpressionPrimary: // PrimaryExpression
-		n.Operand = n.PrimaryExpression.addr(ctx)
+		n.Operand = n.PrimaryExpression.addrOf(ctx)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		pe := n.PostfixExpression.check(ctx)
 		e := n.Expression.check(ctx)
@@ -921,7 +921,6 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 			break
 		}
 
-		panic(924) //TODO-
 		t = e.Type().Decay()
 		if t.Kind() == Invalid {
 			break
@@ -941,13 +940,8 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-		op := n.PostfixExpression.addr(ctx)
-		if op.Type().Kind() != Ptr {
-			//TODO report error
-			break
-		}
-
-		st := op.Type().Elem()
+		op := n.PostfixExpression.check(ctx)
+		st := op.Type()
 		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
 			break
@@ -975,7 +969,7 @@ func (n *PostfixExpression) addr(ctx *context) Operand {
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		t := op.Type()
-		if k := t.Decay().Kind(); k != Ptr && k != Invalid {
+		if k := t.Decay().Kind(); k == Invalid || k != Ptr {
 			//TODO report error
 			break
 		}
@@ -1059,7 +1053,7 @@ func (n *PostfixExpression) indexAddr(ctx *context, nd Node, pe, e Operand) Oper
 	return &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem())}}
 }
 
-func (n *PrimaryExpression) addr(ctx *context) Operand {
+func (n *PrimaryExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1099,7 +1093,7 @@ func (n *PrimaryExpression) addr(ctx *context) Operand {
 	case PrimaryExpressionLString: // LONGSTRINGLITERAL
 		panic(n.Position().String())
 	case PrimaryExpressionExpr: // '(' Expression ')'
-		n.Operand = n.Expression.addr(ctx)
+		n.Operand = n.Expression.addrOf(ctx)
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
 		panic(n.Position().String())
 	default:
@@ -1108,14 +1102,14 @@ func (n *PrimaryExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *Expression) addr(ctx *context) Operand {
+func (n *Expression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ExpressionAssign: // AssignmentExpression
-		n.Operand = n.AssignmentExpression.addr(ctx)
+		n.Operand = n.AssignmentExpression.addrOf(ctx)
 	case ExpressionComma: // Expression ',' AssignmentExpression
 		panic(n.Position().String())
 	default:
@@ -1124,14 +1118,14 @@ func (n *Expression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *AssignmentExpression) addr(ctx *context) Operand {
+func (n *AssignmentExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
-		n.Operand = n.ConditionalExpression.addr(ctx)
+		n.Operand = n.ConditionalExpression.addrOf(ctx)
 	case AssignmentExpressionAssign: // UnaryExpression '=' AssignmentExpression
 		panic(n.Position().String())
 	case AssignmentExpressionMul: // UnaryExpression "*=" AssignmentExpression
@@ -1160,14 +1154,14 @@ func (n *AssignmentExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *ConditionalExpression) addr(ctx *context) Operand {
+func (n *ConditionalExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ConditionalExpressionLOr: // LogicalOrExpression
-		n.Operand = n.LogicalOrExpression.addr(ctx)
+		n.Operand = n.LogicalOrExpression.addrOf(ctx)
 	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
 		panic(n.Position().String())
 	default:
@@ -1176,7 +1170,7 @@ func (n *ConditionalExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *LogicalOrExpression) addr(ctx *context) Operand {
+func (n *LogicalOrExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1184,7 +1178,7 @@ func (n *LogicalOrExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case LogicalOrExpressionLAnd: // LogicalAndExpression
-		n.Operand = n.LogicalAndExpression.addr(ctx)
+		n.Operand = n.LogicalAndExpression.addrOf(ctx)
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
 		panic(n.Position().String())
 	default:
@@ -1193,7 +1187,7 @@ func (n *LogicalOrExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *LogicalAndExpression) addr(ctx *context) Operand {
+func (n *LogicalAndExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1201,7 +1195,7 @@ func (n *LogicalAndExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case LogicalAndExpressionOr: // InclusiveOrExpression
-		n.Operand = n.InclusiveOrExpression.addr(ctx)
+		n.Operand = n.InclusiveOrExpression.addrOf(ctx)
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
 		panic(n.Position().String())
 	default:
@@ -1210,7 +1204,7 @@ func (n *LogicalAndExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *InclusiveOrExpression) addr(ctx *context) Operand {
+func (n *InclusiveOrExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1218,7 +1212,7 @@ func (n *InclusiveOrExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case InclusiveOrExpressionXor: // ExclusiveOrExpression
-		n.Operand = n.ExclusiveOrExpression.addr(ctx)
+		n.Operand = n.ExclusiveOrExpression.addrOf(ctx)
 	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
 		panic(n.Position().String())
 	default:
@@ -1227,7 +1221,7 @@ func (n *InclusiveOrExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *ExclusiveOrExpression) addr(ctx *context) Operand {
+func (n *ExclusiveOrExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1235,7 +1229,7 @@ func (n *ExclusiveOrExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ExclusiveOrExpressionAnd: // AndExpression
-		n.Operand = n.AndExpression.addr(ctx)
+		n.Operand = n.AndExpression.addrOf(ctx)
 	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
 		panic(n.Position().String())
 	default:
@@ -1244,7 +1238,7 @@ func (n *ExclusiveOrExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *AndExpression) addr(ctx *context) Operand {
+func (n *AndExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1252,7 +1246,7 @@ func (n *AndExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case AndExpressionEq: // EqualityExpression
-		n.Operand = n.EqualityExpression.addr(ctx)
+		n.Operand = n.EqualityExpression.addrOf(ctx)
 	case AndExpressionAnd: // AndExpression '&' EqualityExpression
 		panic(n.Position().String())
 	default:
@@ -1261,7 +1255,7 @@ func (n *AndExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *EqualityExpression) addr(ctx *context) Operand {
+func (n *EqualityExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1269,7 +1263,7 @@ func (n *EqualityExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case EqualityExpressionRel: // RelationalExpression
-		n.Operand = n.RelationalExpression.addr(ctx)
+		n.Operand = n.RelationalExpression.addrOf(ctx)
 	case EqualityExpressionEq: // EqualityExpression "==" RelationalExpression
 		panic(n.Position().String())
 	case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
@@ -1280,7 +1274,7 @@ func (n *EqualityExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *RelationalExpression) addr(ctx *context) Operand {
+func (n *RelationalExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1288,7 +1282,7 @@ func (n *RelationalExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case RelationalExpressionShift: // ShiftExpression
-		n.Operand = n.ShiftExpression.addr(ctx)
+		n.Operand = n.ShiftExpression.addrOf(ctx)
 	case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
 		panic(n.Position().String())
 	case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
@@ -1303,7 +1297,7 @@ func (n *RelationalExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *ShiftExpression) addr(ctx *context) Operand {
+func (n *ShiftExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1311,7 +1305,7 @@ func (n *ShiftExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case ShiftExpressionAdd: // AdditiveExpression
-		n.Operand = n.AdditiveExpression.addr(ctx)
+		n.Operand = n.AdditiveExpression.addrOf(ctx)
 	case ShiftExpressionLsh: // ShiftExpression "<<" AdditiveExpression
 		panic(n.Position().String())
 	case ShiftExpressionRsh: // ShiftExpression ">>" AdditiveExpression
@@ -1322,7 +1316,7 @@ func (n *ShiftExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *AdditiveExpression) addr(ctx *context) Operand {
+func (n *AdditiveExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1330,7 +1324,7 @@ func (n *AdditiveExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case AdditiveExpressionMul: // MultiplicativeExpression
-		n.Operand = n.MultiplicativeExpression.addr(ctx)
+		n.Operand = n.MultiplicativeExpression.addrOf(ctx)
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
 		panic(n.Position().String())
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
@@ -1341,7 +1335,7 @@ func (n *AdditiveExpression) addr(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *MultiplicativeExpression) addr(ctx *context) Operand {
+func (n *MultiplicativeExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -1349,7 +1343,7 @@ func (n *MultiplicativeExpression) addr(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case MultiplicativeExpressionCast: // CastExpression
-		n.Operand = n.CastExpression.addr(ctx)
+		n.Operand = n.CastExpression.addrOf(ctx)
 	case MultiplicativeExpressionMul: // MultiplicativeExpression '*' CastExpression
 		panic(n.Position().String())
 	case MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
@@ -1859,7 +1853,6 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			break
 		}
 
-		panic(1862) //TODO-
 		t = e.Type().Decay()
 		if t.Kind() == Invalid {
 			break
@@ -1898,12 +1891,15 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		ft := f.Type()
 		if f.IsBitField() {
 			ft = &bitFieldType{Type: ft, field: f.(*field)}
+			n.Operand = &lvalue{Operand: &operand{typ: ft}}
+			break
 		}
-		n.Operand = &lvalue{Operand: &operand{typ: ft}}
+
+		n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		t := op.Type()
-		if k := t.Decay().Kind(); k != Ptr && k != Invalid {
+		if k := t.Decay().Kind(); k == Invalid || k != Ptr {
 			//TODO report error
 			break
 		}
@@ -1978,12 +1974,34 @@ func (n *PostfixExpression) index(ctx *context, pe, e Operand) Operand {
 		x = uintptr(v)
 		hasx = true
 	}
-	switch pe.Value().(type) {
+	off := x * pe.Type().Elem().Size()
+	switch v := pe.Value().(type) {
 	case StringValue:
-		_ = x    //TODO
-		_ = hasx //TODO
-		//TODO case WideStringValue:
+		if hasx {
+			s := StringID(v).String()
+			if x >= uintptr(len(s)) {
+				//TODO report err
+				return noOperand
+			}
+
+			return (&operand{typ: pe.Type().Elem(), value: Int64Value(s[x])}).normalize(ctx, n)
+		}
+	case WideStringValue:
+		if hasx {
+			s := []rune(StringID(v).String())
+			if x >= uintptr(len(s)) {
+				//TODO report err
+				return noOperand
+			}
+
+			return (&operand{typ: pe.Type().Elem(), value: Int64Value(s[x])}).normalize(ctx, n)
+		}
 	}
+
+	if d := pe.Declarator(); d != nil && hasx {
+		return &lvalue{Operand: &operand{typ: pe.Type().Elem(), offset: pe.Offset() + off}, declarator: d}
+	}
+
 	return &lvalue{Operand: &operand{typ: pe.Type().Elem()}}
 }
 
@@ -2060,8 +2078,11 @@ func (n *Expression) check(ctx *context) Operand {
 	case ExpressionAssign: // AssignmentExpression
 		n.Operand = n.AssignmentExpression.check(ctx)
 	case ExpressionComma: // Expression ',' AssignmentExpression
-		n.Expression.check(ctx)
+		op := n.Expression.check(ctx)
 		n.Operand = n.AssignmentExpression.check(ctx)
+		if !op.isConst() && n.Operand.isConst() {
+			n.Operand = &operand{typ: n.Operand.Type()}
+		}
 	default:
 		panic(internalError())
 	}

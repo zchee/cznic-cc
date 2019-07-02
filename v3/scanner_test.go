@@ -522,7 +522,7 @@ func TestScannerCSmith(t *testing.T) {
 		return
 	}
 
-	regressionTests := []string{}
+	fixedBugs := []string{}
 	ch := time.After(*oCSmith)
 	t0 := time.Now()
 	var files, ok int
@@ -532,9 +532,9 @@ out:
 		extra := ""
 		var args string
 		switch {
-		case i < len(regressionTests):
-			args += regressionTests[i]
-			a := strings.Split(regressionTests[i], " ")
+		case i < len(fixedBugs):
+			args += fixedBugs[i]
+			a := strings.Split(fixedBugs[i], " ")
 			extra = strings.Join(a[len(a)-2:], " ")
 		default:
 			select {
@@ -550,13 +550,14 @@ out:
 			t.Fatalf("%v\n%s", err, out)
 		}
 
-		cfg := &Config{}
+		cfg := &Config{Config3: Config3{MaxSourceLine: 1 << 20}}
 		ctx := newContext(cfg)
 		files++
 		size += int64(len(out))
 		newScanner(newContext(cfg), bytes.NewReader(out), token.NewFile("test-scanner", len(out))).translationPhase3()
 		if err := ctx.Err(); err != nil {
-			t.Fatalf("%s\n%s\n%v", extra, out, err)
+			t.Errorf("%s\n%s\n%v", extra, out, err)
+			break
 		}
 
 		ok++
@@ -564,3 +565,5 @@ out:
 	d := time.Since(t0)
 	t.Logf("files %v, bytes %v, ok %v in %v", h(files), h(size), h(ok), d)
 }
+
+//TODO fuzz

@@ -799,7 +799,7 @@ func TestTranslateCSmith(t *testing.T) {
 		return
 	}
 
-	regressionTests := []string{}
+	fixedBugs := []string{}
 	ch := time.After(*oCSmith)
 	t0 := time.Now()
 	var files, ok int
@@ -809,9 +809,9 @@ out:
 		extra := ""
 		var args string
 		switch {
-		case i < len(regressionTests):
-			args += regressionTests[i]
-			a := strings.Split(regressionTests[i], " ")
+		case i < len(fixedBugs):
+			args += fixedBugs[i]
+			a := strings.Split(fixedBugs[i], " ")
 			extra = strings.Join(a[len(a)-2:], " ")
 		default:
 			select {
@@ -827,7 +827,7 @@ out:
 			t.Fatalf("%v\n%s", err, out)
 		}
 
-		cfg := &Config{ABI: testABI}
+		cfg := &Config{ABI: testABI, Config3: Config3{MaxSourceLine: 1 << 20}}
 		ctx := newContext(cfg)
 		files++
 		size += int64(len(out))
@@ -836,12 +836,24 @@ out:
 			{Name: "<built-in>", Value: parserTestBuiltin},
 			{Name: "test.c", Value: string(out)},
 		}
-		if testTranslateAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-			t.Fatalf("%s\n%s\nTranslate: %v", extra, out, err)
-		}
+		if err := func() (err error) {
+			defer func() {
+				if e := recover(); e != nil && err == nil {
+					err = fmt.Errorf("%v", e)
+				}
+			}()
 
-		if err = testTranslateAST.Typecheck(); err != nil {
-			t.Fatalf("%s\n%s\nTypecheck: %v", extra, out, err)
+			var ast *AST
+			if ast, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
+				return err
+			}
+
+			err = ast.Typecheck()
+			return err
+
+		}(); err != nil {
+			t.Errorf("%s\n%s\nTypecheck: %v", extra, out, err)
+			break
 		}
 
 		ok++
