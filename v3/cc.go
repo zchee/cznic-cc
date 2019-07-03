@@ -339,12 +339,13 @@ type Config struct {
 }
 
 type context struct {
-	breaks    int
-	cases     []*LabeledStatement // switch
-	cfg       *Config
-	checkFn   *FunctionDefinition
-	closure   map[StringID]struct{}
-	continues int
+	breaks      int
+	casePromote Type
+	cases       []*LabeledStatement // switch
+	cfg         *Config
+	checkFn     *FunctionDefinition
+	closure     map[StringID]struct{}
+	continues   int
 	goscanner.ErrorList
 	includePaths    []string
 	intBits         int

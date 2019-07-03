@@ -597,6 +597,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	AddressTaken	bool */
 			/*yy:field	IsParameter	bool */
 			/*yy:field	IsTypedefName	bool */
+			/*yy:field	hasInitalizer	bool */
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE
@@ -801,6 +802,7 @@ package cc // import "modernc.org/cc/v3"
 				Expression AttributeSpecifierList ';'
 
 			/* [0], 6.8.4 Selection statements */
+			/*yy:field	promote		Type	// switch expression promoted type */
 			/*yy:field	cases	[]*LabeledStatement	*/
 			/*yy:example int f() { if(x) y(); } */
 /*yy:case If         */ SelectionStatement:

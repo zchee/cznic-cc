@@ -1316,6 +1316,7 @@ type Declarator struct {
 	AddressTaken           bool
 	IsParameter            bool
 	IsTypedefName          bool
+	hasInitalizer          bool
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator
 	Pointer                *Pointer
@@ -3963,6 +3964,7 @@ func (n SelectionStatementCase) String() string {
 //	|       "if" '(' Expression ')' Statement "else" Statement  // Case SelectionStatementIfElse
 //	|       "switch" '(' Expression ')' Statement               // Case SelectionStatementSwitch
 type SelectionStatement struct {
+	promote    Type // switch expression promoted type
 	cases      []*LabeledStatement
 	Case       SelectionStatementCase `PrettyPrint:"stringer,zero"`
 	Expression *Expression

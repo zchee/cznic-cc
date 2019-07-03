@@ -2184,7 +2184,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 		return
 	}
 
-	cf, err := cache.getFile(c.ctx, path)
+	cf, err := cache.getFile(c.ctx, path, false)
 	if err != nil {
 		c.err(toks[0], "%s: %v", path, err)
 		return

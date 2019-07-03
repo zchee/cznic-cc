@@ -8,13 +8,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 )
 
 // Source is a named part of a translation unit. If Value is empty, Name is
 // interpreted as a path to file containing the source code.
 type Source struct {
-	Name  string
-	Value string
+	Name       string
+	Value      string
+	DoNotCache bool // Disable caching of this source
 }
 
 // Promote returns the type the operands of the binary operation are promoted to.
@@ -26,14 +28,17 @@ type StructInfo struct {
 	Align int
 }
 
-// AST represents a translation and its related data.
+// AST represents a translation unit and its related data.
 type AST struct {
-	Scope Scope // File scope.
 	// Alignment and size of every struct/union defined in the translation
 	// unit. Valid only after Translate.
-	PtrdiffType       Type
-	SizeType          Type
-	Structs           map[StructInfo]struct{}
+	PtrdiffType Type
+	Scope       Scope // File scope.
+	SizeType    Type
+	Structs     map[StructInfo]struct{}
+	// TLD contains pruned file scope declarators, ie. either the first one
+	// or the first one that has an initializer.
+	TLD               map[*Declarator]struct{}
 	TrailingSeperator StringID // White space and/or comments preceding EOF.
 	TranslationUnit   *TranslationUnit
 	WideCharType      Type
@@ -196,6 +201,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 
 	return &AST{
 		Scope:             p.declScope,
+		TLD:               map[*Declarator]struct{}{},
 		TrailingSeperator: sep,
 		TranslationUnit:   tu,
 		cfg:               ctx.cfg,
@@ -422,6 +428,39 @@ func (n *AST) typecheck() (*context, error) {
 	ctx.intBits = int(ctx.cfg.ABI.Types[Int].Size) * 8
 	n.TranslationUnit.check(ctx)
 	n.Structs = ctx.structs
+	var a []int
+	for k := range n.Scope {
+		a = append(a, int(k))
+	}
+	sort.Ints(a)
+	for _, v := range a {
+		nm := StringID(v)
+		defs := n.Scope[nm]
+		var pruned *Declarator
+		for _, v := range defs {
+			switch x := v.(type) {
+			case *Declarator:
+				if pruned == nil {
+					pruned = x
+					continue
+				}
+
+				//TODO check compatible types
+				switch {
+				case pruned.hasInitalizer:
+					if x.hasInitalizer {
+						ctx.errNode(x, "multiple initializers for the same symbol")
+						continue
+					}
+				default:
+					if x.hasInitalizer {
+						pruned = x
+					}
+				}
+			}
+		}
+		n.TLD[pruned] = struct{}{}
+	}
 	return ctx, ctx.Err()
 }
 
@@ -649,6 +688,9 @@ func (n *SelectionStatement) Cases() []*LabeledStatement { return n.cases }
 func (n *ShiftExpression) Promote() Type { return n.promote }
 
 func (n *StructOrUnionSpecifier) Type() Type { return n.typ }
+
+// Promote returns the type the type the switch expression is promoted to.
+func (n *SelectionStatement) Promote() Type { return n.promote }
 
 // Type returns the type of n.
 func (n *TypeName) Type() Type { return n.typ }

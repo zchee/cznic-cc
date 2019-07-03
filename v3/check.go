@@ -178,6 +178,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.AttributeSpecifierList.check(ctx)
 	case InitDeclaratorInit: // Declarator AttributeSpecifierList '=' Initializer
 		typ := n.Declarator.check(ctx, td, typ, tld)
+		n.Declarator.hasInitalizer = true
 		n.AttributeSpecifierList.check(ctx)
 		n.Initializer.isConst = true
 		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, 0)
@@ -3568,7 +3569,10 @@ func (n *SelectionStatement) check(ctx *context) {
 			break
 		}
 	case SelectionStatementSwitch: // "switch" '(' Expression ')' Statement
-		n.Expression.check(ctx)
+		op := n.Expression.check(ctx)
+		n.promote = op.integerPromotion(ctx, n).Type()
+		cp := ctx.casePromote
+		ctx.casePromote = n.promote
 		cs := ctx.cases
 		ctx.cases = nil
 		ctx.switches++
@@ -3578,6 +3582,7 @@ func (n *SelectionStatement) check(ctx *context) {
 		ctx.switches--
 		n.cases = ctx.cases
 		ctx.cases = cs
+		ctx.casePromote = cp
 	default:
 		panic(internalError())
 	}
@@ -3614,9 +3619,14 @@ func (n *LabeledStatement) check(ctx *context) {
 			break
 		}
 
-		switch n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr).Value().(type) {
+		switch op := n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr); op.Value().(type) {
 		case Int64Value, Uint64Value:
-			// ok
+			if t := ctx.casePromote; t.Kind() != Invalid {
+				n.ConstantExpression.Operand = op.convertTo(ctx, n, t)
+				break
+			}
+
+			//TODO report error
 		default:
 			//TODO report error
 		}

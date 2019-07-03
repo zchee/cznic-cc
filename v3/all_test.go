@@ -130,6 +130,7 @@ void *__builtin_va_arg_impl(void* ap);
 )
 
 var (
+	oBlackBox = flags.String("blackbox", "", "Rrecord CSmith file to this file")
 	oCSmith   = flags.Duration("csmith", time.Minute, "") // Use something like -timeout 25h -csmith 24h for real testing.
 	oDev      = flags.Bool("dev", false, "Enable developer tests/downloads.")
 	oDownload = flags.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
@@ -245,7 +246,7 @@ func init() {
 	}
 
 	cfg := &Config{}
-	if testPredefGNUSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredefGNU); err != nil {
+	if testPredefGNUSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredefGNU, false); err != nil {
 		log.Fatal(err)
 	}
 
@@ -259,11 +260,11 @@ func init() {
 		}
 	}
 	testPredef = strings.Join(a[:w], "\n")
-	if testPredefSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredef); err != nil {
+	if testPredefSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredef, false); err != nil {
 		log.Fatal(err)
 	}
 
-	if testBuiltinSource, err = cache.getValue(newContext(cfg), "<built-in>", parserTestBuiltin); err != nil {
+	if testBuiltinSource, err = cache.getValue(newContext(cfg), "<built-in>", parserTestBuiltin, false); err != nil {
 		log.Fatal(err)
 	}
 
@@ -283,12 +284,12 @@ func init() {
 	}
 
 	path = filepath.Join(testWD, sqliteDir, "shell.c")
-	if testShellSource, err = cache.getFile(newContext(cfg), path); err != nil {
+	if testShellSource, err = cache.getFile(newContext(cfg), path, false); err != nil {
 		log.Fatal(err)
 	}
 
 	path = filepath.Join(testWD, sqliteDir, "sqlite3.c")
-	if testSQLiteSource, err = cache.getFile(newContext(cfg), path); err != nil {
+	if testSQLiteSource, err = cache.getFile(newContext(cfg), path, false); err != nil {
 		log.Fatal(err)
 	}
 }

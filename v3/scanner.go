@@ -1128,13 +1128,13 @@ func (c *ppCache) file(id int32) *token.File {
 
 func (c *ppCache) get(ctx *context, src Source) (source, error) {
 	if src.Value != "" {
-		return c.getValue(ctx, src.Name, src.Value)
+		return c.getValue(ctx, src.Name, src.Value, src.DoNotCache)
 	}
 
-	return c.getFile(ctx, src.Name)
+	return c.getFile(ctx, src.Name, src.DoNotCache)
 }
 
-func (c *ppCache) getFile(ctx *context, name string) (*cachedPPFile, error) {
+func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPPFile, error) {
 	fi, err := os.Stat(name)
 	if err != nil {
 		return nil, err
@@ -1192,7 +1192,9 @@ func (c *ppCache) getFile(ctx *context, name string) (*cachedPPFile, error) {
 	tf := token.NewFile(name, size)
 	c.f[c.fileID] = tf
 	cf := &cachedPPFile{modTime: modTime, size: size, id: c.fileID, readyCh: make(chan struct{})}
-	c.m[key] = cf
+	if !doNotCache {
+		c.m[key] = cf
+	}
 	c.mu.Unlock()
 
 	go func() {
@@ -1215,7 +1217,7 @@ func (c *ppCache) getFile(ctx *context, name string) (*cachedPPFile, error) {
 	return cf.waitFor()
 }
 
-func (c *ppCache) getValue(ctx *context, name, value string) (*cachedPPFile, error) {
+func (c *ppCache) getValue(ctx *context, name, value string, doNotCache bool) (*cachedPPFile, error) {
 	key := cacheKey{dict.sid(name), dict.sid(value), ctx.cfg.Config3}
 	c.mu.Lock()
 	if cf, ok := c.m[key]; ok {
@@ -1234,7 +1236,9 @@ func (c *ppCache) getValue(ctx *context, name, value string) (*cachedPPFile, err
 	tf := token.NewFile(name, len(value))
 	c.f[fileID] = tf
 	cf := &cachedPPFile{id: fileID, readyCh: make(chan struct{})}
-	c.m[key] = cf
+	if !doNotCache {
+		c.m[key] = cf
+	}
 	c.mu.Unlock()
 	ctx2 := newContext(ctx.cfg)
 	cf.pf = newScanner(ctx2, strings.NewReader(value), tf).translationPhase3()

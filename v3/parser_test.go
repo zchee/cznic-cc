@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -760,14 +761,20 @@ out:
 			t.Fatalf("%v\n%s", err, out)
 		}
 
-		cfg := &Config{Config3: Config3{MaxSourceLine: 1 << 20}}
+		if fn := *oBlackBox; fn != "" {
+			if err := ioutil.WriteFile(fn, out, 0660); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		cfg := &Config{Config3: Config3{MaxSourceLine: 1 << 19}}
 		ctx := newContext(cfg)
 		files++
 		size += int64(len(out))
 		sources := []Source{
 			{Name: "<predefined>", Value: testPredef},
 			{Name: "<built-in>", Value: parserTestBuiltin},
-			{Name: "test.c", Value: string(out)},
+			{Name: "test.c", Value: string(out), DoNotCache: true},
 		}
 		if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
 			t.Errorf("%s\n%s\n%v", extra, out, err)
@@ -775,6 +782,9 @@ out:
 		}
 
 		ok++
+		if *oTrace {
+			fmt.Fprintln(os.Stderr, time.Now(), files, ok)
+		}
 	}
 	d := time.Since(t0)
 	t.Logf("files %v, bytes %v, ok %v in %v", h(files), h(size), h(ok), d)
