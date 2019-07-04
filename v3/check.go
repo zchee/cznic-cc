@@ -2108,6 +2108,11 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		}
 
 		n.Operand = n.floatConst(ctx)
+		if n.Operand.Type().IsComplexType() {
+			if f := ctx.checkFn; f != nil {
+				f.ComplexLiterals = append(f.ComplexLiterals, n)
+			}
+		}
 	case PrimaryExpressionEnum: // ENUMCONST
 		if e := n.resolvedIn.enumerator(n.Token.Value, n.Token); e != nil {
 			n.Operand = e.Operand
@@ -2743,6 +2748,11 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		n.Operand = op
 		lo := n.RelationalExpression.check(ctx)
 		ro := n.ShiftExpression.check(ctx)
+		if lo.Type().IsComplexType() || ro.Type().IsComplexType() {
+			ctx.errNode(&n.Token, "complex numbers are not ordered")
+			break
+		}
+
 		lt := lo.Type().Decay()
 		rt := ro.Type().Decay()
 		n.promote = noType
@@ -3023,6 +3033,15 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 	switch {
 	case n.typ.Kind() == Invalid:
 		ctx.errNode(n, "declarator has incomplete type")
+	}
+	if n.IsTypedefName {
+		if k, ok := complexTypedefs[n.Name()]; ok {
+			abi := ctx.cfg.ABI
+			t := n.typ.Alias()
+			t.setKind(k)
+			abi.types[k] = t
+			abi.Types[k] = ABIType{Size: t.Size(), Align: t.Align(), FieldAlign: t.FieldAlign()}
+		}
 	}
 	return n.typ
 }

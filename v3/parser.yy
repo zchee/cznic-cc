@@ -860,6 +860,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Pragma     */ |	PragmaSTDC
 
 			/* [0], 6.9.1 Function definitions */
+			/*yy:field	ComplexLiterals		[]*PrimaryExpression		*/
 			/*yy:field	CompositeLiterals	[]*PostfixExpression		*/
 			/*yy:field	ComputedGotos		map[StringID]*UnaryExpression	*/
 			/*yy:field	Gotos			map[StringID]*JumpStatement	*/

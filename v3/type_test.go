@@ -646,7 +646,7 @@ func TestAbstractDeclarator(t *testing.T) { //TODO -> Example
 		{"int i = sizeof(int (*const [])(unsigned int, ...));", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
 	} {
 		letter := string('a' + i)
-		cfg := &Config{ABI: testABI}
+		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{
 			{Name: "<built-in>", Value: "typedef long long unsigned size_t;"},
 			{Name: "test", Value: test.src},
@@ -687,7 +687,7 @@ func TestAbstractDeclarator2(t *testing.T) { //TODO -> Example
 		{"void f(int (*const [])(unsigned int, ...));", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
 	} {
 		letter := string('a' + i)
-		cfg := &Config{ABI: testABI}
+		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
@@ -725,7 +725,7 @@ func TestDeclarator(t *testing.T) { //TODO -> Example
 		{"int (*const x[])(unsigned int, ...);", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
 	} {
 		letter := string('a' + i)
-		cfg := &Config{ABI: testABI}
+		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
@@ -763,7 +763,7 @@ func TestDeclarator2(t *testing.T) {
 		{"typeof(42.) x;", "double"},   // (i)
 	} {
 		letter := string('a' + i)
-		cfg := &Config{ABI: testABI}
+		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
@@ -865,7 +865,7 @@ out:
 
 		ok++
 		if *oTrace {
-			fmt.Fprintln(os.Stderr, time.Now(), files, ok)
+			fmt.Fprintln(os.Stderr, time.Since(t0), files, ok)
 		}
 	}
 	d := time.Since(t0)

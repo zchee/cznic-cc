@@ -783,7 +783,7 @@ out:
 
 		ok++
 		if *oTrace {
-			fmt.Fprintln(os.Stderr, time.Now(), files, ok)
+			fmt.Fprintln(os.Stderr, time.Since(t0), files, ok)
 		}
 	}
 	d := time.Since(t0)

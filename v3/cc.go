@@ -332,6 +332,7 @@ type Config struct {
 	RejectParamSemicolon                   bool // Pedantic: do not silently accept "int f(int a; int b)".
 	RejectStatementExpressions             bool // Pedantic: do not silently accept "i = ({foo();})".
 	RejectTypeof                           bool // Pedantic: do not silently accept "typeof foo" or "typeof(bar*)".
+	doNotSanityCheckComplexTypes           bool // Testing only
 	fakeIncludes                           bool // Testing only.
 	ignoreErrors                           bool // Testing only.
 	ignoreIncludes                         bool // Testing only.

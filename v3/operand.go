@@ -297,7 +297,7 @@ func (v Float64Value) rsh(b Value) Value { panic(internalError()) }
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
 func (v Float64Value) xor(b Value) Value { panic(internalError()) }
 
-type Complex64Value complex128 //TODO complex64
+type Complex64Value complex64
 
 func (v Complex64Value) add(b Value) Value { return v + b.(Complex64Value) }
 func (v Complex64Value) and(b Value) Value { panic(internalError()) }
@@ -432,38 +432,46 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 
 	at := a.Type()
 	bt := b.Type()
+	cplx := at.IsComplexType() || bt.IsComplexType()
 
 	// First, if the corresponding real type of either operand is long
 	// double, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is long double.
-	if at.Kind() == ComplexLongDouble || bt.Kind() == ComplexLongDouble {
-		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble))
-	}
-
-	if at.Kind() == LongDouble || bt.Kind() == LongDouble {
-		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble))
+	if at.Kind() == ComplexLongDouble || bt.Kind() == ComplexLongDouble || at.Kind() == LongDouble || bt.Kind() == LongDouble {
+		switch {
+		case cplx:
+			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble))
+		default:
+			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble))
+		}
 	}
 
 	// Otherwise, if the corresponding real type of either operand is
 	// double, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is double.
-	if at.Kind() == ComplexDouble || bt.Kind() == ComplexDouble {
-		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble))
-	}
-
-	if at.Kind() == Double || bt.Kind() == Double {
-		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Double)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Double))
+	if at.Kind() == ComplexDouble || bt.Kind() == ComplexDouble || at.Kind() == Double || bt.Kind() == Double {
+		switch {
+		case cplx:
+			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble))
+		default:
+			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Double)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Double))
+		}
 	}
 
 	// Otherwise, if the corresponding real type of either operand is
 	// float, the other operand is converted, without change of type
 	// domain, to a type whose corresponding real type is float.
-	if at.Kind() == ComplexFloat || bt.Kind() == ComplexFloat {
-		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat))
+	if at.Kind() == ComplexFloat || bt.Kind() == ComplexFloat || at.Kind() == Float || bt.Kind() == Float {
+		switch {
+		case cplx:
+			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat))
+		default:
+			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Float)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Float))
+		}
 	}
 
-	if at.Kind() == Float || bt.Kind() == Float {
-		return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Float)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Float))
+	if cplx {
+		panic(internalErrorf("TODO %v, %v", at, bt))
 	}
 
 	if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
@@ -686,7 +694,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
 			return (&operand{typ: to, value: Float32Value(v)}).normalize(ctx, n)
 		}
 	}
-	panic("TODO")
+	panic(internalErrorf("%v: %v -> %v %v", n.Position(), o.Type(), to, to.Kind()))
 }
 
 type signedSaturationLimit struct {

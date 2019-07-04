@@ -421,7 +421,7 @@ func (n *AST) Typecheck() error {
 
 func (n *AST) typecheck() (*context, error) {
 	ctx := newContext(n.cfg)
-	if err := ctx.cfg.ABI.sanityCheck(ctx, int(ctx.intMaxWidth)); err != nil {
+	if err := ctx.cfg.ABI.sanityCheck(ctx, int(ctx.intMaxWidth), n.Scope); err != nil {
 		return nil, err
 	}
 
@@ -440,6 +440,10 @@ func (n *AST) typecheck() (*context, error) {
 		for _, v := range defs {
 			switch x := v.(type) {
 			case *Declarator:
+				if x.IsExtern() {
+					continue
+				}
+
 				if pruned == nil {
 					pruned = x
 					continue
@@ -459,6 +463,10 @@ func (n *AST) typecheck() (*context, error) {
 				}
 			}
 		}
+		if pruned == nil {
+			continue
+		}
+
 		n.TLD[pruned] = struct{}{}
 	}
 	return ctx, ctx.Err()

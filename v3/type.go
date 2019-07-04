@@ -35,6 +35,9 @@ var (
 	_ Type = (*typeBase)(nil)
 	_ Type = noType
 
+	idReal = dict.sid("real")
+	idImag = dict.sid("imag")
+
 	noType = &typeBase{}
 
 	_ typeDescriptor = (*DeclarationSpecifiers)(nil)
@@ -64,13 +67,30 @@ var (
 	}
 
 	complexIntegerTypes = [maxKind]bool{
-		ComplexChar:     true,
-		ComplexInt:      true,
-		ComplexLong:     true,
-		ComplexLongLong: true,
-		ComplexShort:    true,
-		ComplexUInt:     true,
-		ComplexUShort:   true,
+		ComplexChar:      true,
+		ComplexInt:       true,
+		ComplexLong:      true,
+		ComplexLongLong:  true,
+		ComplexShort:     true,
+		ComplexUInt:      true,
+		ComplexULong:     true,
+		ComplexULongLong: true,
+		ComplexUShort:    true,
+	}
+
+	complexTypes = [maxKind]bool{
+		ComplexChar:       true,
+		ComplexDouble:     true,
+		ComplexFloat:      true,
+		ComplexInt:        true,
+		ComplexLong:       true,
+		ComplexLongDouble: true,
+		ComplexLongLong:   true,
+		ComplexShort:      true,
+		ComplexUInt:       true,
+		ComplexULong:      true,
+		ComplexULongLong:  true,
+		ComplexUShort:     true,
 	}
 
 	integerTypes = [maxKind]bool{
@@ -126,22 +146,25 @@ var (
 	}
 
 	realTypes = [maxKind]bool{
-		Bool:       true,
-		Char:       true,
-		Double:     true,
-		Enum:       true,
-		Float:      true,
-		Int:        true,
-		Long:       true,
-		LongDouble: true,
-		LongLong:   true,
-		SChar:      true,
-		Short:      true,
-		UChar:      true,
-		UInt:       true,
-		ULong:      true,
-		ULongLong:  true,
-		UShort:     true,
+		Bool:              true,
+		Char:              true,
+		ComplexDouble:     true,
+		ComplexFloat:      true,
+		ComplexLongDouble: true,
+		Double:            true,
+		Enum:              true,
+		Float:             true,
+		Int:               true,
+		Long:              true,
+		LongDouble:        true,
+		LongLong:          true,
+		SChar:             true,
+		Short:             true,
+		UChar:             true,
+		UInt:              true,
+		ULong:             true,
+		ULongLong:         true,
+		UShort:            true,
 	}
 )
 
@@ -195,7 +218,8 @@ type Type interface {
 
 	// FieldByIndex returns the nested field corresponding to the index
 	// sequence. It is equivalent to calling Field successively for each
-	// index i.  It panics if the type's Kind is valid but not Struct.
+	// index i.  It panics if the type's Kind is valid but not Struct or
+	// any complex kind.
 	FieldByIndex(index []int) Field
 
 	// FieldByName returns the struct field with the given name and a
@@ -205,11 +229,18 @@ type Type interface {
 	// IsIncomplete reports whether type is incomplete.
 	IsIncomplete() bool
 
+	// IsComplexIntegerType report whether a type is an integer complex
+	// type.
+	IsComplexIntegerType() bool
+
+	// IsComplexType report whether a type is an complex type.
+	IsComplexType() bool
+
 	// IsArithmeticType report whether a type is an arithmetic type.
 	IsArithmeticType() bool
 
 	// IsBitFieldType report whether a type is for a bit field.
-	IsBitFieldType() bool //TODO-
+	IsBitFieldType() bool
 
 	// IsIntegerType report whether a type is an integer type.
 	IsIntegerType() bool
@@ -240,12 +271,20 @@ type Type interface {
 	LenExpr() *AssignmentExpression
 
 	// NumField returns a struct type's field count.  It panics if the
-	// type's Kind is valid but not Struct.
+	// type's Kind is valid but not Struct or any complex kind.
 	NumField() int
 
 	// Parameters returns the parameters of a function type. It panics if
 	// the type's Kind is valid but not Function.
 	Parameters() []*Parameter
+
+	// Real returns the real field of a type. It panics if the type's Kind
+	// is valid but not a complex kind.
+	Real() Field
+
+	// Imag returns the imaginary field of a type. It panics if the type's
+	// Kind is valid but not a complex kind.
+	Imag() Field
 
 	// Result returns the result type of a function type. It panics if the
 	// type's Kind is valid but not Function.
@@ -276,6 +315,7 @@ type Type interface {
 	restrict() bool
 
 	setLen(uintptr)
+	setKind(Kind)
 
 	string(*strings.Builder)
 
@@ -429,13 +469,11 @@ type typeBase struct {
 
 func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type {
 	k0 := t.kind
-	var nd Node
 	var alignmentSpecifiers []*AlignmentSpecifier
 	var attributeSpecifiers []*AttributeSpecifier
 	var typeSpecifiers []*TypeSpecifier
 	switch n := td.(type) {
 	case *DeclarationSpecifiers:
-		nd = n
 		for ; n != nil; n = n.DeclarationSpecifiers {
 			switch n.Case {
 			case DeclarationSpecifiersStorage: // StorageClassSpecifier DeclarationSpecifiers
@@ -455,7 +493,6 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 			}
 		}
 	case *SpecifierQualifierList:
-		nd = n
 		for ; n != nil; n = n.SpecifierQualifierList {
 			switch n.Case {
 			case SpecifierQualifierListTypeSpec: // TypeSpecifier SpecifierQualifierList
@@ -471,7 +508,6 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 			}
 		}
 	case *TypeQualifiers:
-		nd = n
 		for ; n != nil; n = n.TypeQualifiers {
 			if n.Case == TypeQualifiersAttribute {
 				attributeSpecifiers = append(attributeSpecifiers, n.AttributeSpecifier)
@@ -522,11 +558,6 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 		ctx.err(alignmentSpecifiers[1].Position(), "multiple alignment specifiers")
 	}
 
-	if complexIntegerTypes[t.kind] {
-		ctx.errNode(nd, "unsupported type: %s", t)
-		return noType
-	}
-
 	abi := ctx.cfg.ABI
 	switch k := t.Kind(); k {
 	case typeofExpr, typeofType, Struct, Union:
@@ -568,6 +599,10 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 		typ = typeSpecifiers[0].StructOrUnionSpecifier.typ
 	case typeofExpr, typeofType:
 		typ = typeSpecifiers[0].typ
+	default:
+		if complexTypes[k] {
+			typ = ctx.cfg.ABI.Type(k)
+		}
 	}
 
 	if len(attributeSpecifiers) != 0 {
@@ -663,6 +698,12 @@ func (t *typeBase) IsIntegerType() bool { return integerTypes[t.kind] }
 // IsArithmeticType implements Type.
 func (t *typeBase) IsArithmeticType() bool { return arithmeticTypes[t.Kind()] }
 
+// IsComplexType implements Type.
+func (t *typeBase) IsComplexType() bool { return complexTypes[t.Kind()] }
+
+// IsComplexIntegerType implements Type.
+func (t *typeBase) IsComplexIntegerType() bool { return complexIntegerTypes[t.Kind()] }
+
 // IsBitFieldType implements Type.
 func (t *typeBase) IsBitFieldType() bool { return false }
 
@@ -734,6 +775,24 @@ func (t *typeBase) Result() Type {
 	panic(fmt.Errorf("%s: Result of invalid type", t.Kind()))
 }
 
+// Real implements Type
+func (t *typeBase) Real() Field {
+	if t.Kind() == Invalid {
+		return nil
+	}
+
+	panic(fmt.Errorf("%s: Real of invalid type", t.Kind()))
+}
+
+// Imag implements Type
+func (t *typeBase) Imag() Field {
+	if t.Kind() == Invalid {
+		return nil
+	}
+
+	panic(fmt.Errorf("%s: Imag of invalid type", t.Kind()))
+}
+
 // Size implements Type.
 func (t *typeBase) Size() uintptr {
 	if t.IsIncomplete() {
@@ -751,6 +810,9 @@ func (t *typeBase) setLen(uintptr) {
 
 	panic(fmt.Errorf("%s: setLen of non-array type", t.Kind()))
 }
+
+// setKind implements Type.
+func (t *typeBase) setKind(k Kind) { t.kind = byte(k) }
 
 // underlyingType implements Type.
 func (t *typeBase) underlyingType() Type { return t }
@@ -987,6 +1049,12 @@ func (t *aliasType) IsIncomplete() bool { return t.typ.IsIncomplete() }
 // IsArithmeticType implements Type.
 func (t *aliasType) IsArithmeticType() bool { return t.typ.IsArithmeticType() }
 
+// IsComplexType implements Type.
+func (t *aliasType) IsComplexType() bool { return t.typ.IsComplexType() }
+
+// IsComplexIntegerType implements Type.
+func (t *aliasType) IsComplexIntegerType() bool { return t.typ.IsComplexIntegerType() }
+
 // IsBitFieldType implements Type.
 func (t *aliasType) IsBitFieldType() bool { return t.typ.IsBitFieldType() }
 
@@ -1020,6 +1088,12 @@ func (t *aliasType) Parameters() []*Parameter { return t.typ.Parameters() }
 // Result implements Type.
 func (t *aliasType) Result() Type { return t.typ.Result() }
 
+// Real implements Type
+func (t *aliasType) Real() Field { return t.typ.Real() }
+
+// Imag implements Type
+func (t *aliasType) Imag() Field { return t.typ.Imag() }
+
 // Size implements Type.
 func (t *aliasType) Size() uintptr { return t.typ.Size() }
 
@@ -1049,6 +1123,9 @@ func (t *aliasType) restrict() bool { return t.typ.restrict() }
 
 // setLen implements Type.
 func (t *aliasType) setLen(n uintptr) { t.typ.setLen(n) }
+
+// setKind implements Type.
+func (t *aliasType) setKind(k Kind) { t.typ.setKind(k) }
 
 // string implements Type.
 func (t *aliasType) string(b *strings.Builder) { b.WriteString(t.nm.String()) }
@@ -1136,6 +1213,34 @@ func (t *structType) check(ctx *context, n Node) *structType {
 	return ctx.cfg.ABI.layout(ctx, n, t)
 }
 
+// Real implements Type
+func (t *structType) Real() Field {
+	if !complexTypes[t.Kind()] {
+		panic(fmt.Errorf("%s: Real of invalid type", t.Kind()))
+	}
+
+	f, ok := t.FieldByName(idReal)
+	if !ok {
+		panic(internalError())
+	}
+
+	return f
+}
+
+// Imag implements Type
+func (t *structType) Imag() Field {
+	if !complexTypes[t.Kind()] {
+		panic(fmt.Errorf("%s: Real of invalid type", t.Kind()))
+	}
+
+	f, ok := t.FieldByName(idImag)
+	if !ok {
+		panic(internalError())
+	}
+
+	return f
+}
+
 // Decay implements Type.
 func (t *structType) Decay() Type { return t }
 
@@ -1150,7 +1255,12 @@ func (t *structType) String() string {
 
 // string implements Type.
 func (t *structType) string(b *strings.Builder) {
-	b.WriteString(t.Kind().String())
+	switch {
+	case complexTypes[t.Kind()]:
+		b.WriteString("struct")
+	default:
+		b.WriteString(t.Kind().String())
+	}
 	b.WriteByte(' ')
 	for _, v := range t.attr {
 		panic("TODO")

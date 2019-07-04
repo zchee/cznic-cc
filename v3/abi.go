@@ -9,6 +9,23 @@ import (
 	"math"
 )
 
+var (
+	complexTypedefs = map[StringID]Kind{
+		dict.sid("__COMPLEX_CHAR_TYPE__"):               ComplexChar,
+		dict.sid("__COMPLEX_DOUBLE_TYPE__"):             ComplexDouble,
+		dict.sid("__COMPLEX_FLOAT_TYPE__"):              ComplexFloat,
+		dict.sid("__COMPLEX_INT_TYPE__"):                ComplexInt,
+		dict.sid("__COMPLEX_LONG_TYPE__"):               ComplexLong,
+		dict.sid("__COMPLEX_LONG_DOUBLE_TYPE__"):        ComplexLongDouble,
+		dict.sid("__COMPLEX_LONG_LONG_TYPE__"):          ComplexLongLong,
+		dict.sid("__COMPLEX_SHORT_TYPE__"):              ComplexShort,
+		dict.sid("__COMPLEX_UNSIGNED_TYPE__"):           ComplexUInt,
+		dict.sid("__COMPLEX_LONG_UNSIGNED_TYPE__"):      ComplexULong,
+		dict.sid("__COMPLEX_LONG_LONG_UNSIGNED_TYPE__"): ComplexULongLong,
+		dict.sid("__COMPLEX_SHORT_UNSIGNED_TYPE__"):     ComplexUShort,
+	}
+)
+
 // ABIType describes properties of a non-aggregate type.
 type ABIType struct {
 	Size       uintptr
@@ -25,7 +42,7 @@ type ABI struct {
 	SignedChar bool
 }
 
-func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
+func (a *ABI) sanityCheck(ctx *context, intMaxWidth int, s Scope) error {
 	if intMaxWidth == 0 {
 		intMaxWidth = 64
 	}
@@ -34,9 +51,6 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int) error {
 	for _, k := range []Kind{
 		Bool,
 		Char,
-		ComplexDouble,
-		ComplexFloat,
-		ComplexLongDouble,
 		Double,
 		Enum,
 		Float,

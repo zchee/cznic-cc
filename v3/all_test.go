@@ -122,6 +122,19 @@ __UINT32_TYPE__ __builtin_bswap32 (__UINT32_TYPE__ x);
 __UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
 #endif
 
+typedef struct { char real, imag; } __COMPLEX_CHAR_TYPE__;
+typedef struct { double real, imag; } __COMPLEX_DOUBLE_TYPE__;
+typedef struct { float real, imag; } __COMPLEX_FLOAT_TYPE__;
+typedef struct { int real, imag; } __COMPLEX_INT_TYPE__;
+typedef struct { long double real, imag; } __COMPLEX_LONG_DOUBLE_TYPE__;
+typedef struct { long real, imag; } __COMPLEX_LONG_TYPE__;
+typedef struct { long long real, imag; } __COMPLEX_LONG_LONG_TYPE__;
+typedef struct { long long unsigned real, imag; } __COMPLEX_LONG_LONG_UNSIGNED_TYPE__;
+typedef struct { long unsigned real, imag; } __COMPLEX_LONG_UNSIGNED_TYPE__;
+typedef struct { short real, imag; } __COMPLEX_SHORT_TYPE__;
+typedef struct { unsigned real, imag; } __COMPLEX_UNSIGNED_TYPE__;
+typedef struct { unsigned short real, imag; } __COMPLEX_SHORT_UNSIGNED_TYPE__;
+
 int __builtin_clzll (unsigned long long);
 int __printf__ ( const char * format, ... );
 int __scanf__ ( const char *format, ... );
@@ -130,8 +143,8 @@ void *__builtin_va_arg_impl(void* ap);
 )
 
 var (
-	oBlackBox = flags.String("blackbox", "", "Rrecord CSmith file to this file")
-	oCSmith   = flags.Duration("csmith", time.Minute, "") // Use something like -timeout 25h -csmith 24h for real testing.
+	oBlackBox = flags.String("blackbox", "", "Record CSmith file to this file")
+	oCSmith   = flags.Duration("csmith", time.Minute, "")
 	oDev      = flags.Bool("dev", false, "Enable developer tests/downloads.")
 	oDownload = flags.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
 	oMaxFiles = flags.Int("maxFiles", maxFiles, "")
@@ -179,42 +192,32 @@ var (
 	testABI = ABI{ //TODO adjust for arch/os, this is linux/amd64.
 		SignedChar: true,
 		Types: map[Kind]ABIType{
-			Bool:              {1, 1, 1},
-			Char:              {1, 1, 1},
-			ComplexChar:       {2, 1, 1},
-			ComplexDouble:     {16, 8, 8},
-			ComplexFloat:      {8, 8, 4},
-			ComplexInt:        {8, 4, 4},
-			ComplexLong:       {16, 8, 8},
-			ComplexLongDouble: {16, 8, 8},
-			ComplexLongLong:   {16, 8, 8},
-			ComplexShort:      {2, 2, 2},
-			ComplexUInt:       {8, 4, 4},
-			ComplexUShort:     {4, 2, 2},
-			Decimal64:         {8, 8, 8},
-			Double:            {8, 8, 8},
-			Enum:              {4, 4, 4},
-			Float128:          {16, 8, 8},
-			Float32:           {4, 4, 4},
-			Float32x:          {4, 4, 4},
-			Float64:           {8, 8, 8},
-			Float64x:          {8, 8, 8},
-			Float:             {4, 4, 4},
-			Int128:            {16, 8, 8},
-			Int:               {4, 4, 4},
-			Long:              {8, 8, 8},
-			LongDouble:        {8, 8, 8},
-			LongLong:          {8, 8, 8},
-			Ptr:               {8, 8, 8},
-			SChar:             {1, 1, 1},
-			Short:             {2, 2, 2},
-			UChar:             {1, 1, 1},
-			UInt128:           {16, 8, 8},
-			UInt:              {4, 4, 4},
-			ULong:             {8, 8, 8},
-			ULongLong:         {8, 8, 8},
-			UShort:            {2, 2, 2},
-			Void:              {1, 1, 1},
+			Bool:       {1, 1, 1},
+			Char:       {1, 1, 1},
+			Decimal64:  {8, 8, 8},
+			Double:     {8, 8, 8},
+			Enum:       {4, 4, 4},
+			Float128:   {16, 8, 8},
+			Float32:    {4, 4, 4},
+			Float32x:   {4, 4, 4},
+			Float64:    {8, 8, 8},
+			Float64x:   {8, 8, 8},
+			Float:      {4, 4, 4},
+			Int128:     {16, 8, 8},
+			Int:        {4, 4, 4},
+			Long:       {8, 8, 8},
+			LongDouble: {8, 8, 8},
+			LongLong:   {8, 8, 8},
+			Ptr:        {8, 8, 8},
+			SChar:      {1, 1, 1},
+			Short:      {2, 2, 2},
+			UChar:      {1, 1, 1},
+			UInt128:    {16, 8, 8},
+			UInt:       {4, 4, 4},
+			ULong:      {8, 8, 8},
+			ULongLong:  {8, 8, 8},
+			UShort:     {2, 2, 2},
+			Void:       {1, 1, 1},
 		},
 	}
 )

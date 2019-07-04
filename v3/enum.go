@@ -20,6 +20,8 @@ const (
 	ComplexLongLong   // complex long long
 	ComplexShort      // complex short
 	ComplexUInt       // complex unsigned
+	ComplexULong      // complex unsigned long
+	ComplexULongLong  // complex unsigned long long
 	ComplexUShort     // complex shor
 	Decimal128        // _Decimal128
 	Decimal32         // _Decimal32
