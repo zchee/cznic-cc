@@ -625,6 +625,7 @@ type AssignmentExpression struct {
 	Operand               Operand
 	lexicalScope          Scope
 	promote               Type
+	argPromote            Type
 	AssignmentExpression  *AssignmentExpression
 	Case                  AssignmentExpressionCase `PrettyPrint:"stringer,zero"`
 	ConditionalExpression *ConditionalExpression
@@ -2349,7 +2350,7 @@ func (n *ExternalDeclaration) Position() (r token.Position) {
 //	FunctionDefinition:
 //	        DeclarationSpecifiers Declarator DeclarationList CompoundStatement
 type FunctionDefinition struct {
-	ComplexLiterals       []*PrimaryExpression
+	CallSiteComplexExpr   []*AssignmentExpression
 	CompositeLiterals     []*PostfixExpression
 	ComputedGotos         map[StringID]*UnaryExpression
 	Gotos                 map[StringID]*JumpStatement
@@ -3593,7 +3594,7 @@ func (n PostfixExpressionCase) String() string {
 //	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'  // Case PostfixExpressionTypeCmp
 type PostfixExpression struct {
 	Operand                Operand
-	Arguments              []Type // Case Call
+	Arguments              []Type // Case Call //TODO-
 	Field                  Field  // Case Select, PSelect
 	ArgumentExpressionList *ArgumentExpressionList
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`

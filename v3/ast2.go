@@ -22,6 +22,9 @@ type Source struct {
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *AssignmentExpression) Promote() Type { return n.promote }
 
+// CallPromote returns the type n is promoted to when used as an call argument.
+func (n *AssignmentExpression) ArgPromote() Type { return n.argPromote }
+
 type StructInfo struct {
 	Size uintptr
 

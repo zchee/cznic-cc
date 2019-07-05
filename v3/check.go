@@ -1873,7 +1873,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		op := n.PostfixExpression.check(ctx)
 		args := n.ArgumentExpressionList.check(ctx)
-		n.Operand = n.checkCall(ctx, n, op.Type(), args)
+		n.Operand = n.checkCall(ctx, n, op.Type(), args, n.ArgumentExpressionList)
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		st := op.Type()
@@ -2006,7 +2006,7 @@ func (n *PostfixExpression) index(ctx *context, pe, e Operand) Operand {
 	return &lvalue{Operand: &operand{typ: pe.Type().Elem()}}
 }
 
-func (n *PostfixExpression) checkCall(ctx *context, nd Node, f Type, args []Operand) (r Operand) {
+func (n *PostfixExpression) checkCall(ctx *context, nd Node, f Type, args []Operand, argList *ArgumentExpressionList) (r Operand) {
 	r = noOperand
 	switch f.Kind() {
 	case Invalid:
@@ -2036,13 +2036,18 @@ func (n *PostfixExpression) checkCall(ctx *context, nd Node, f Type, args []Oper
 	}
 
 	for i, arg := range args {
+		var t Type
 		switch {
 		case i < len(params):
 			//TODO check assignability
-			n.Arguments = append(n.Arguments, params[i].Type().Decay())
+			t = params[i].Type().Decay()
+			n.Arguments = append(n.Arguments, t)
 		default:
-			n.Arguments = append(n.Arguments, defaultArgumentPromotion(ctx, nd, arg).Type())
+			t = defaultArgumentPromotion(ctx, nd, arg).Type()
+			n.Arguments = append(n.Arguments, t)
 		}
+		argList.AssignmentExpression.argPromote = t
+		argList = argList.ArgumentExpressionList
 	}
 	return r
 }
@@ -2064,7 +2069,11 @@ func defaultArgumentPromotion(ctx *context, n Node, op Operand) Operand {
 
 func (n *ArgumentExpressionList) check(ctx *context) (r []Operand) {
 	for ; n != nil; n = n.ArgumentExpressionList {
-		r = append(r, n.AssignmentExpression.check(ctx))
+		op := n.AssignmentExpression.check(ctx)
+		if op.Type().IsComplexType() {
+			ctx.checkFn.CallSiteComplexExpr = append(ctx.checkFn.CallSiteComplexExpr, n.AssignmentExpression)
+		}
+		r = append(r, op)
 	}
 	return r
 }
@@ -2108,11 +2117,6 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		}
 
 		n.Operand = n.floatConst(ctx)
-		if n.Operand.Type().IsComplexType() {
-			if f := ctx.checkFn; f != nil {
-				f.ComplexLiterals = append(f.ComplexLiterals, n)
-			}
-		}
 	case PrimaryExpressionEnum: // ENUMCONST
 		if e := n.resolvedIn.enumerator(n.Token.Value, n.Token); e != nil {
 			n.Operand = e.Operand

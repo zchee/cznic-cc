@@ -1257,7 +1257,8 @@ func (t *structType) String() string {
 func (t *structType) string(b *strings.Builder) {
 	switch {
 	case complexTypes[t.Kind()]:
-		b.WriteString("struct")
+		b.WriteString(t.Kind().String())
+		return
 	default:
 		b.WriteString(t.Kind().String())
 	}

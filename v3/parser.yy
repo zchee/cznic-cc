@@ -152,7 +152,7 @@ package cc // import "modernc.org/cc/v3"
 
 		        /* [0], 6.5.2 Postfix operators */
 			/*yy:field	Operand		Operand	*/
-			/*yy:field	Arguments	[]Type	// Case Call */
+			/*yy:field	Arguments	[]Type	// Case Call //TODO- */
 			/*yy:field	Field		Field	// Case Select, PSelect */
 			/*yy:example int i = x; */
 /*yy:case Primary    */ PostfixExpression:
@@ -337,6 +337,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	Operand		Operand	*/
 			/*yy:field	lexicalScope	Scope	*/
 			/*yy:field	promote		Type	*/
+			/*yy:field	argPromote	Type	*/
 			/*yy:example int i = x; } */
 /*yy:case Cond       */ AssignmentExpression:
 				ConditionalExpression
@@ -860,7 +861,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Pragma     */ |	PragmaSTDC
 
 			/* [0], 6.9.1 Function definitions */
-			/*yy:field	ComplexLiterals		[]*PrimaryExpression		*/
+			/*yy:field	CallSiteComplexExpr	[]*AssignmentExpression		*/
 			/*yy:field	CompositeLiterals	[]*PostfixExpression		*/
 			/*yy:field	ComputedGotos		map[StringID]*UnaryExpression	*/
 			/*yy:field	Gotos			map[StringID]*JumpStatement	*/
