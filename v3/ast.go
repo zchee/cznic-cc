@@ -1029,6 +1029,7 @@ func (n *CastExpression) Position() (r token.Position) {
 //	CompoundStatement:
 //	        '{' BlockItemList '}'
 type CompoundStatement struct {
+	Operand       Operand
 	scope         Scope
 	BlockItemList *BlockItemList
 	Token         Token
@@ -4233,6 +4234,7 @@ func (n StatementCase) String() string {
 //	|       JumpStatement        // Case StatementJump
 //	|       AsmStatement         // Case StatementAsm
 type Statement struct {
+	Operand             Operand // Case CompoundStatement, ExpressionStatement
 	AsmStatement        *AsmStatement
 	Case                StatementCase `PrettyPrint:"stringer,zero"`
 	CompoundStatement   *CompoundStatement

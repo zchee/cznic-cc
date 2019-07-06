@@ -743,6 +743,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Field2     */ |	IDENTIFIER ':'
 
 			/* [0], 6.8 Statements and blocks */
+			/*yy:field	Operand		Operand	// Case CompoundStatement, ExpressionStatement*/
 			/*yy:example int f() { L: x(); }*/
 /*yy:case Labeled    */ Statement:
 				LabeledStatement
@@ -772,6 +773,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Default    */ |	"default" ':' Statement
 
 			/* [0], 6.8.2 Compound statement */
+			/*yy:field	Operand		Operand	*/
 			/*yy:field	scope Scope	*/
 			/*yy:example int f() { int i; } */
 			CompoundStatement:

@@ -3410,6 +3410,7 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 }
 
 func (n *CompoundStatement) check(ctx *context) Operand {
+	n.Operand = noOperand
 	if n == nil {
 		return noOperand
 	}
@@ -3475,6 +3476,7 @@ func (n *LabelDeclaration) check(ctx *context) {
 }
 
 func (n *Statement) check(ctx *context) Operand {
+	n.Operand = noOperand
 	if n == nil {
 		return noOperand
 	}
@@ -3483,9 +3485,9 @@ func (n *Statement) check(ctx *context) Operand {
 	case StatementLabeled: // LabeledStatement
 		n.LabeledStatement.check(ctx)
 	case StatementCompound: // CompoundStatement
-		n.CompoundStatement.check(ctx)
+		n.Operand = n.CompoundStatement.check(ctx)
 	case StatementExpr: // ExpressionStatement
-		return n.ExpressionStatement.check(ctx)
+		n.Operand = n.ExpressionStatement.check(ctx)
 	case StatementSelection: // SelectionStatement
 		n.SelectionStatement.check(ctx)
 	case StatementIteration: // IterationStatement
@@ -3497,7 +3499,7 @@ func (n *Statement) check(ctx *context) Operand {
 	default:
 		panic(internalError())
 	}
-	return noOperand
+	return n.Operand
 }
 
 func (n *JumpStatement) check(ctx *context) {
