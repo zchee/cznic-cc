@@ -751,6 +751,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = op
 	case UnaryExpressionCpl: // '~' CastExpression
 		op := n.CastExpression.check(ctx)
+		if op.Type().IsComplexType() {
+			n.Operand = op
+			break
+		}
+
 		if !op.Type().IsIntegerType() {
 			//TODO report error
 			break
@@ -2041,12 +2046,10 @@ func (n *PostfixExpression) checkCall(ctx *context, nd Node, f Type, args []Oper
 		case i < len(params):
 			//TODO check assignability
 			t = params[i].Type().Decay()
-			n.Arguments = append(n.Arguments, t)
 		default:
 			t = defaultArgumentPromotion(ctx, nd, arg).Type()
-			n.Arguments = append(n.Arguments, t)
 		}
-		argList.AssignmentExpression.argPromote = t
+		argList.AssignmentExpression.promote = t
 		argList = argList.ArgumentExpressionList
 	}
 	return r
@@ -2816,9 +2819,11 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 			break
 		}
 
-		n.promote = b.integerPromotion(ctx, n).Type()
+		a = a.integerPromotion(ctx, n)
+		b = b.integerPromotion(ctx, n)
+		n.promote = b.Type()
 		if a.Value() == nil || b.Value() == nil {
-			n.Operand = &operand{typ: a.integerPromotion(ctx, n).Type()}
+			n.Operand = &operand{typ: a.Type()}
 			break
 		}
 
@@ -2831,9 +2836,11 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 			break
 		}
 
-		n.promote = b.integerPromotion(ctx, n).Type()
+		a = a.integerPromotion(ctx, n)
+		b = b.integerPromotion(ctx, n)
+		n.promote = b.Type()
 		if a.Value() == nil || b.Value() == nil {
-			n.Operand = &operand{typ: a.integerPromotion(ctx, n).Type()}
+			n.Operand = &operand{typ: a.Type()}
 			break
 		}
 

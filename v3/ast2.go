@@ -19,11 +19,9 @@ type Source struct {
 	DoNotCache bool // Disable caching of this source
 }
 
-// Promote returns the type the operands of the binary operation are promoted to.
+// Promote returns the type the operands of a binary operation are promoted to
+// or the type and argument passed in a function call is promoted.
 func (n *AssignmentExpression) Promote() Type { return n.promote }
-
-// CallPromote returns the type n is promoted to when used as an call argument.
-func (n *AssignmentExpression) ArgPromote() Type { return n.argPromote }
 
 type StructInfo struct {
 	Size uintptr

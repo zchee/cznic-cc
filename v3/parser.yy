@@ -152,7 +152,6 @@ package cc // import "modernc.org/cc/v3"
 
 		        /* [0], 6.5.2 Postfix operators */
 			/*yy:field	Operand		Operand	*/
-			/*yy:field	Arguments	[]Type	// Case Call //TODO- */
 			/*yy:field	Field		Field	// Case Select, PSelect */
 			/*yy:example int i = x; */
 /*yy:case Primary    */ PostfixExpression:
@@ -337,7 +336,6 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	Operand		Operand	*/
 			/*yy:field	lexicalScope	Scope	*/
 			/*yy:field	promote		Type	*/
-			/*yy:field	argPromote	Type	*/
 			/*yy:example int i = x; } */
 /*yy:case Cond       */ AssignmentExpression:
 				ConditionalExpression
