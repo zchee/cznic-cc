@@ -2356,6 +2356,7 @@ type FunctionDefinition struct {
 	Gotos                 map[StringID]*JumpStatement
 	InitDeclarators       []*InitDeclarator
 	Labels                map[StringID]*LabeledStatement
+	ReturnComplexExpr     []*Expression
 	VLAs                  []*Declarator
 	CompoundStatement     *CompoundStatement
 	DeclarationList       *DeclarationList

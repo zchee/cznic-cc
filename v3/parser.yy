@@ -867,6 +867,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	Gotos			map[StringID]*JumpStatement	*/
 			/*yy:field	InitDeclarators		[]*InitDeclarator		*/
 			/*yy:field	Labels			map[StringID]*LabeledStatement	*/
+			/*yy:field	ReturnComplexExpr	[]*Expression			*/
 			/*yy:field	VLAs			[]*Declarator			*/
 			/*yy:example int f() {} */
 			FunctionDefinition:

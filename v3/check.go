@@ -73,6 +73,8 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 	}
 
 	ctx.checkFn = n
+	rd := ctx.readDelta
+	ctx.readDelta = 1
 	n.CompoundStatement.check(ctx)
 	ctx.checkFn = nil
 	for k, v := range n.ComputedGotos {
@@ -86,8 +88,17 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 		}
 	}
 	for _, n := range n.InitDeclarators {
-		if n.Declarator.Type().IsIncomplete() && n.Declarator.Linkage != External {
-			ctx.errNode(n.Declarator, "declarator has incomplete type")
+		d := n.Declarator
+		if d.Type().IsIncomplete() && d.Linkage != External {
+			ctx.errNode(d, "declarator has incomplete type")
+		}
+		if ctx.cfg.RejectUninitializedDeclarators && d.Linkage == None && d.Write == 0 && !d.AddressTaken && d.Read != 0 {
+			switch d.Type().Kind() {
+			case Array, Struct, Union, Invalid:
+				// nop
+			default:
+				ctx.errNode(d, "%s may be used uninitialized in this function", d.Name())
+			}
 		}
 	}
 	for _, n := range n.CompositeLiterals {
@@ -100,6 +111,7 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 			}
 		}
 	}
+	ctx.readDelta = rd
 }
 
 func (n *ExternalDeclaration) check(ctx *context) {
@@ -179,6 +191,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	case InitDeclaratorInit: // Declarator AttributeSpecifierList '=' Initializer
 		typ := n.Declarator.check(ctx, td, typ, tld)
 		n.Declarator.hasInitalizer = true
+		n.Declarator.Write++
 		n.AttributeSpecifierList.check(ctx)
 		n.Initializer.isConst = true
 		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, 0)
@@ -464,7 +477,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionMul: // UnaryExpression "*=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -482,7 +495,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionDiv: // UnaryExpression "/=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -500,7 +513,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionMod: // UnaryExpression "%=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -518,7 +531,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionAdd: // UnaryExpression "+=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -537,7 +550,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionSub: // UnaryExpression "-=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -556,7 +569,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionLsh: // UnaryExpression "<<=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -576,7 +589,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionRsh: // UnaryExpression ">>=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -596,7 +609,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionAnd: // UnaryExpression "&=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -617,7 +630,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionXor: // UnaryExpression "^=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -638,7 +651,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		if !l.IsLValue() {
@@ -674,14 +687,14 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionInc: // "++" UnaryExpression
 		op := n.UnaryExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		n.Operand = &operand{typ: op.Type()}
 	case UnaryExpressionDec: // "--" UnaryExpression
 		op := n.UnaryExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		n.Operand = &operand{typ: op.Type()}
@@ -770,21 +783,27 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.CastExpression.check(ctx)
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
 	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
+		rd := ctx.readDelta
+		ctx.readDelta = 0
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
 		ctx.pop()
+		ctx.readDelta = rd
 		if op.Type().IsIncomplete() {
 			break
 		}
 
 		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(op.Type().Size())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
+		rd := ctx.readDelta
+		ctx.readDelta = 0
 		ctx.push(ctx.mode)
 		if ctx.mode&mIntConstExpr != 0 {
 			ctx.mode |= mIntConstExprAnyCast
 		}
 		t := n.TypeName.check(ctx)
 		ctx.pop()
+		ctx.readDelta = rd
 		if t.IsIncomplete() {
 			break
 		}
@@ -911,6 +930,10 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		n.Operand = n.PrimaryExpression.addrOf(ctx)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		pe := n.PostfixExpression.check(ctx)
+		if d := pe.Declarator(); d != nil {
+			d.AddressTaken = true
+			d.Read += ctx.readDelta
+		}
 		e := n.Expression.check(ctx)
 		t := pe.Type().Decay()
 		if t.Kind() == Invalid {
@@ -947,6 +970,10 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.AddressTaken = true
+			d.Read += ctx.readDelta
+		}
 		st := op.Type()
 		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
@@ -974,6 +1001,10 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.AddressTaken = true
+			d.Read += ctx.readDelta
+		}
 		t := op.Type()
 		if k := t.Decay().Kind(); k == Invalid || k != Ptr {
 			//TODO report error
@@ -1843,6 +1874,9 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.Operand = n.PrimaryExpression.check(ctx)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		pe := n.PostfixExpression.check(ctx)
+		if d := pe.Declarator(); d != nil {
+			d.Read += ctx.readDelta
+		}
 		e := n.Expression.check(ctx)
 		t := pe.Type().Decay()
 		if t.Kind() == Invalid {
@@ -1881,6 +1915,9 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.Operand = n.checkCall(ctx, n, op.Type(), args, n.ArgumentExpressionList)
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.Read += ctx.readDelta
+		}
 		st := op.Type()
 		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
@@ -1904,6 +1941,9 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		if d := op.Declarator(); d != nil {
+			d.Read += ctx.readDelta
+		}
 		t := op.Type()
 		if k := t.Decay().Kind(); k == Invalid || k != Ptr {
 			//TODO report error
@@ -1931,14 +1971,14 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionInc: // PostfixExpression "++"
 		op := n.PostfixExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		n.Operand = &operand{typ: op.Type()}
 	case PostfixExpressionDec: // PostfixExpression "--"
 		op := n.PostfixExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
-			d.Read++
+			d.Read += ctx.readDelta
 			d.Write++
 		}
 		n.Operand = &operand{typ: op.Type()}
@@ -2249,7 +2289,7 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context) Operand {
 	case Function:
 		n.Operand = &funcDesignator{Operand: &operand{typ: t}, declarator: d}
 	default:
-		d.Read++
+		d.Read += ctx.readDelta
 		n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
 	}
 	if !ctx.capture {
@@ -3534,7 +3574,10 @@ func (n *JumpStatement) check(ctx *context) {
 		}
 		//TODO
 	case JumpStatementReturn: // "return" Expression ';'
-		n.Expression.check(ctx)
+		op := n.Expression.check(ctx)
+		if op.Type().IsComplexType() {
+			ctx.checkFn.ReturnComplexExpr = append(ctx.checkFn.ReturnComplexExpr, n.Expression)
+		}
 	default:
 		panic(internalError())
 	}

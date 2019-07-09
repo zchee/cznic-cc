@@ -332,6 +332,7 @@ type Config struct {
 	RejectParamSemicolon                   bool // Pedantic: do not silently accept "int f(int a; int b)".
 	RejectStatementExpressions             bool // Pedantic: do not silently accept "i = ({foo();})".
 	RejectTypeof                           bool // Pedantic: do not silently accept "typeof foo" or "typeof(bar*)".
+	RejectUninitializedDeclarators         bool // Reject int f() { int j; return j; }
 	doNotSanityCheckComplexTypes           bool // Testing only
 	fakeIncludes                           bool // Testing only.
 	ignoreErrors                           bool // Testing only.
@@ -359,6 +360,7 @@ type context struct {
 	modes           []mode
 	mu              sync.Mutex
 	ptrdiffT        Type
+	readDelta       int
 	sizeT           Type
 	structs         map[StructInfo]struct{}
 	switches        int
