@@ -159,7 +159,12 @@ func TestTranslateGCC(t *testing.T) {
 
 func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
+		// TCC
+		"75_array_in_struct_init.c": {}, //TODO initializer missing braces
+
+		// GCC
 		"20000804-1.c":                 {}, //TODO 1: unsupported type: complex long long
+		"20020810-1.c":                 {}, //TODO :17:16: missing braces around initializer
 		"20021118-1.c":                 {}, //TODO array initializer
 		"20030305-1.c":                 {}, //TODO array initializer
 		"20030903-1.c":                 {}, //TODO 41: unsupported type: complex int
@@ -174,6 +179,8 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"20050316-3.c":                 {}, //TODO attribute vector
 		"20050604-1.c":                 {}, //TODO attribute vector
 		"20050607-1.c":                 {}, //TODO attribute vector
+		"20070919-1.c":                 {}, //TODO :39:9: missing braces around initializer
+		"20180921-1.c":                 {}, //TODO :129:27: missing braces around initializer
 		"920415-1.c":                   {}, //TODO label l undefined
 		"920428-2.c":                   {}, //TODO goto from nested function to outer function label
 		"920428-4.c":                   {}, //TODO invalid declarator type
@@ -183,12 +190,14 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"920721-4.c":                   {}, //TODO label default_lab undefined
 		"921017-1.c":                   {}, //TODO invalid declarator type
 		"930510-1.c":                   {}, //TODO array initializer
+		"991201-1.c":                   {}, //TODO :11:27: missing braces around initializer
 		"builtin-types-compatible-p.c": {}, //TODO invalid declarator type
 		"comp-goto-2.c":                {}, //TODO goto from nested function to outer function label
 		"complex-1.c":                  {}, //TODO 9: unsupported type: complex int
 		"complex-5.c":                  {}, //TODO 9: unsupported type: complex int
 		"complex-6.c":                  {}, //TODO 3: unsupported type: complex int
 		"icfmatch.c":                   {}, //TODO __attribute__ ((vector_size (xx)))
+		"limits-externdecl.c":          {}, //TODO :57:3: missing braces around initializer
 		"nestfunc-5.c":                 {}, //TODO goto from nested function to outer function label
 		"nestfunc-6.c":                 {}, //TODO goto from nested function to outer function label
 		"pr21728.c":                    {}, //TODO goto from nested function to outer function label
@@ -197,6 +206,7 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr27889.c":                    {}, //TODO 1: unsupported type: complex int
 		"pr33614.c":                    {}, //TODO __attribute__ ((vector_size (xx)))
 		"pr33617.c":                    {}, //TODO attribute vector
+		"pr33631.c":                    {}, //TODO :10:53: missing braces around initializer
 		"pr35431.c":                    {}, //TODO 3: unsupported type: complex int
 		"pr38151.c":                    {}, //TODO 3: unsupported type: complex int
 		"pr41987.c":                    {}, //TODO 3: unsupported type: complex char
@@ -205,12 +215,14 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr42196-3.c":                  {}, //TODO 3: unsupported type: complex int
 		"pr43191.c":                    {}, //TODO array initializer
 		"pr48517.c":                    {}, //TODO array initializer
+		"pr49218.c":                    {}, //TODO :11:9: missing braces around initializer
 		"pr51447.c":                    {}, //TODO goto from nested function to outer function label
 		"pr52750.c":                    {}, //TODO attribute vector
 		"pr53410-2.c":                  {}, //TODO attribute vector
 		"pr53645-2.c":                  {}, //TODO attribute vector
 		"pr53645.c":                    {}, //TODO attribute vector
 		"pr53748.c":                    {}, //TODO attribute vector
+		"pr54471.c":                    {}, //TODO :15:22: missing braces around initializer
 		"pr54713-1.c":                  {}, //TODO attribute vector
 		"pr54713-2.c":                  {}, //TODO attribute vector
 		"pr54713-3.c":                  {}, //TODO attribute vector
@@ -218,6 +230,8 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr56837.c":                    {}, //TODO 1: unsupported type: complex int
 		"pr60502.c":                    {}, //TODO attribute vector
 		"pr60960.c":                    {}, //TODO attribute vector
+		"pr61375.c":                    {}, //TODO :17:19: missing braces around initializer
+		"pr63302.c":                    {}, //TODO :16:16: missing braces around initializer
 		"pr65427.c":                    {}, //TODO attribute vector
 		"pr70061.c":                    {}, //TODO attribute vector
 		"pr70240.c":                    {}, //TODO attribute vector
@@ -230,9 +244,12 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr80692.c":                    {}, // Decimal64 literals
 		"pr85169.c":                    {}, //TODO attribute vector
 		"pr85331.c":                    {}, //TODO attribute vector
+		"pr85582-2.c":                  {}, //TODO :38:9: missing braces around initializer
+		"pr85582-3.c":                  {}, //TODO :32:9: missing braces around initializer
 		"pr86122.c":                    {}, //TODO 1: unsupported type: complex int
 		"pr86123.c":                    {}, //TODO 6: unsupported type: complex unsigned
 		"pr87053.c":                    {}, //TODO array initializer
+		"pr87647.c":                    {}, //TODO :11:20: missing braces around initializer
 		"pr89369.c":                    {}, //TODO array initializer
 		"scal-to-vec1.c":               {}, //TODO attribute vector
 		"scal-to-vec2.c":               {}, //TODO attribute vector

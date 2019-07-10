@@ -293,6 +293,10 @@ type Type interface {
 	// atomic reports whether type has type qualifier "_Atomic".
 	atomic() bool
 
+	// compatible reports whether a type is compatible with another type.
+	// See [0], 6.2.7.
+	compatible(Type) bool
+
 	// hasConst reports whether type has type qualifier "const".
 	hasConst() bool
 
@@ -622,11 +626,55 @@ func (t *typeBase) BitField() Field {
 		return nil
 	}
 
-	panic(fmt.Errorf("%s: BitField of invalid type", t.Kind()))
+	panic(internalErrorf("%s: BitField of invalid type", t.Kind()))
 }
 
 // base implements Type.
 func (t *typeBase) base() typeBase { return *t }
+
+// compatible implements Type.
+func (t *typeBase) compatible(u Type) bool {
+	// [0], 6.2.7
+
+	if t.Kind() == Invalid || u.Kind() == Invalid {
+		return false
+	}
+
+	// Two types have compatible type if their types are the same.
+	// Additional rules for determining whether two types are compatible
+	// are described in 6.7.2 for type specifiers, in 6.7.3 for type
+	// qualifiers, and in 6.7.5 for declarators
+	if t == u {
+		return true
+	}
+
+	switch t.Kind() {
+	case
+		Array,
+		Enum,
+		Function,
+		Ptr,
+		Struct,
+		TypedefName,
+		Union:
+
+		panic(internalErrorf("%s: compatible of invalid type", t.Kind()))
+	}
+
+	return t.Kind() == u.Kind() && t.compatibleQualifiers(u)
+}
+
+func (t *typeBase) compatibleQualifiers(u Type) bool {
+	const mask = fAtomic | fConst | fRestrict | fVolatile
+
+	// [0], 6.7.3
+	//
+	// For two qualified types to be compatible, both shall have the
+	// identically qualified version of a compatible type; the order of
+	// type qualifiers within a list of specifiers or qualifiers does not
+	// affect the specified type.
+	return t.flags&mask == u.base().flags&mask
+}
 
 // Decay implements Type.
 func (t *typeBase) Decay() Type {
@@ -634,7 +682,7 @@ func (t *typeBase) Decay() Type {
 		return t
 	}
 
-	panic(fmt.Errorf("%s: Decay of invalid type", t.Kind()))
+	panic(internalErrorf("%s: Decay of invalid type", t.Kind()))
 }
 
 // Elem implements Type.
@@ -643,7 +691,7 @@ func (t *typeBase) Elem() Type {
 		return t
 	}
 
-	panic(fmt.Errorf("%s: Elem of invalid type", t.Kind()))
+	panic(internalErrorf("%s: Elem of invalid type", t.Kind()))
 }
 
 // hasConst implements Type.
@@ -658,7 +706,7 @@ func (t *typeBase) FieldByIndex([]int) Field {
 		return nil
 	}
 
-	panic(fmt.Errorf("%s: FieldByIndex of invalid type", t.Kind()))
+	panic(internalErrorf("%s: FieldByIndex of invalid type", t.Kind()))
 }
 
 // NumField implements Type.
@@ -667,7 +715,7 @@ func (t *typeBase) NumField() int {
 		return 0
 	}
 
-	panic(fmt.Errorf("%s: NumField of invalid type", t.Kind()))
+	panic(internalErrorf("%s: NumField of invalid type", t.Kind()))
 }
 
 // FieldByName implements Type.
@@ -676,7 +724,7 @@ func (t *typeBase) FieldByName(StringID) (Field, bool) {
 		return nil, false
 	}
 
-	panic(fmt.Errorf("%s: FieldByName of invalid type", t.Kind()))
+	panic(internalErrorf("%s: FieldByName of invalid type", t.Kind()))
 }
 
 // IsIncomplete implements Type.
@@ -709,7 +757,7 @@ func (t *typeBase) IsScalarType() bool { return t.IsArithmeticType() || t.Kind()
 // IsSignedType implements Type.
 func (t *typeBase) IsSignedType() bool {
 	if !integerTypes[t.kind] {
-		panic(fmt.Errorf("%s: IsSignedType of non-integer type", t.Kind()))
+		panic(internalErrorf("%s: IsSignedType of non-integer type", t.Kind()))
 	}
 
 	return t.flags&fSigned != 0
@@ -721,7 +769,7 @@ func (t *typeBase) IsVariadic() bool {
 		return false
 	}
 
-	panic(fmt.Errorf("%s: IsVariadic of invalid type", t.Kind()))
+	panic(internalErrorf("%s: IsVariadic of invalid type", t.Kind()))
 }
 
 // IsVLA implements Type.
@@ -730,18 +778,18 @@ func (t *typeBase) IsVLA() bool {
 		return false
 	}
 
-	panic(fmt.Errorf("%s: IsVLA of invalid type", t.Kind()))
+	panic(internalErrorf("%s: IsVLA of invalid type", t.Kind()))
 }
 
 // Kind implements Type.
 func (t *typeBase) Kind() Kind { return Kind(t.kind) }
 
 // Len implements Type.
-func (t *typeBase) Len() uintptr { panic(fmt.Errorf("%s: Len of non-array type", t.Kind())) }
+func (t *typeBase) Len() uintptr { panic(internalErrorf("%s: Len of non-array type", t.Kind())) }
 
 // LenExpr implements Type.
 func (t *typeBase) LenExpr() *AssignmentExpression {
-	panic(fmt.Errorf("%s: LenExpr of non-array type", t.Kind()))
+	panic(internalErrorf("%s: LenExpr of non-array type", t.Kind()))
 }
 
 // noReturn implements Type.
@@ -756,7 +804,7 @@ func (t *typeBase) Parameters() []*Parameter {
 		return nil
 	}
 
-	panic(fmt.Errorf("%s: Parameters of invalid type", t.Kind()))
+	panic(internalErrorf("%s: Parameters of invalid type", t.Kind()))
 }
 
 // Result implements Type.
@@ -765,7 +813,7 @@ func (t *typeBase) Result() Type {
 		return noType
 	}
 
-	panic(fmt.Errorf("%s: Result of invalid type", t.Kind()))
+	panic(internalErrorf("%s: Result of invalid type", t.Kind()))
 }
 
 // Real implements Type
@@ -774,7 +822,7 @@ func (t *typeBase) Real() Field {
 		return nil
 	}
 
-	panic(fmt.Errorf("%s: Real of invalid type", t.Kind()))
+	panic(internalErrorf("%s: Real of invalid type", t.Kind()))
 }
 
 // Imag implements Type
@@ -783,7 +831,7 @@ func (t *typeBase) Imag() Field {
 		return nil
 	}
 
-	panic(fmt.Errorf("%s: Imag of invalid type", t.Kind()))
+	panic(internalErrorf("%s: Imag of invalid type", t.Kind()))
 }
 
 // Size implements Type.
@@ -801,7 +849,7 @@ func (t *typeBase) setLen(uintptr) {
 		return
 	}
 
-	panic(fmt.Errorf("%s: setLen of non-array type", t.Kind()))
+	panic(internalErrorf("%s: setLen of non-array type", t.Kind()))
 }
 
 // setKind implements Type.
@@ -910,6 +958,11 @@ func (t *pointerType) Alias() Type { return t }
 // Attributes implements Type.
 func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
 
+// compatible implements Type.
+func (t *pointerType) compatible(u Type) bool {
+	panic("TODO")
+}
+
 // Decay implements Type.
 func (t *pointerType) Decay() Type { return t }
 
@@ -952,6 +1005,11 @@ func (t *arrayType) Alias() Type { return t }
 // IsVLA implements Type.
 func (t *arrayType) IsVLA() bool { return t.vla || t.elem.Kind() == Array && t.Elem().IsVLA() }
 
+// compatible implements Type.
+func (t *arrayType) compatible(u Type) bool {
+	panic("TODO")
+}
+
 // String implements Type.
 func (t *arrayType) String() string {
 	var b strings.Builder
@@ -983,7 +1041,7 @@ func (t *arrayType) Len() uintptr { return t.length }
 // LenExpr implements Type.
 func (t *arrayType) LenExpr() *AssignmentExpression {
 	if !t.vla {
-		panic(fmt.Errorf("%s: LenExpr of non variable length array", t.Kind()))
+		panic(internalErrorf("%s: LenExpr of non variable length array", t.Kind()))
 	}
 
 	return t.expr
@@ -1017,6 +1075,11 @@ func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
 
 // BitField implements Type.
 func (t *aliasType) BitField() Field { return t.typ.BitField() }
+
+// compatible implements Type.
+func (t *aliasType) compatible(u Type) bool {
+	return t == u || t.underlyingType().compatible(u.underlyingType())
+}
 
 // Decay implements Type.
 func (t *aliasType) Decay() Type { return t.typ.Decay() }
@@ -1175,6 +1238,9 @@ type structType struct { //TODO implement Type
 // Alias implements Type.
 func (t *structType) Alias() Type { return t }
 
+// compatible implements Type.
+func (t *structType) compatible(u Type) bool { return t == u }
+
 func (t *structType) check(ctx *context, n Node) *structType {
 	if t == nil {
 		return nil
@@ -1209,7 +1275,7 @@ func (t *structType) check(ctx *context, n Node) *structType {
 // Real implements Type
 func (t *structType) Real() Field {
 	if !complexTypes[t.Kind()] {
-		panic(fmt.Errorf("%s: Real of invalid type", t.Kind()))
+		panic(internalErrorf("%s: Real of invalid type", t.Kind()))
 	}
 
 	f, ok := t.FieldByName(idReal)
@@ -1223,7 +1289,7 @@ func (t *structType) Real() Field {
 // Imag implements Type
 func (t *structType) Imag() Field {
 	if !complexTypes[t.Kind()] {
-		panic(fmt.Errorf("%s: Real of invalid type", t.Kind()))
+		panic(internalErrorf("%s: Real of invalid type", t.Kind()))
 	}
 
 	f, ok := t.FieldByName(idImag)
@@ -1328,6 +1394,11 @@ type taggedType struct {
 // Alias implements Type.
 func (t *taggedType) Alias() Type { return t }
 
+// compatible implements Type.
+func (t *taggedType) compatible(u Type) bool {
+	return t == u || t.Kind() == u.Kind() && t.underlyingType().compatible(u.underlyingType())
+}
+
 // Decay implements Type.
 func (t *taggedType) Decay() Type { return t }
 
@@ -1373,19 +1444,19 @@ func (t *taggedType) underlyingType() Type {
 			case *EnumSpecifier:
 				if k == Enum {
 					t.typ = x.Type()
-					return t.typ
+					return t.typ.underlyingType()
 				}
 			case *StructOrUnionSpecifier:
 				switch k {
 				case Struct:
 					if typ := x.Type(); typ.Kind() == Struct {
 						t.typ = typ
-						return typ
+						return typ.underlyingType()
 					}
 				case Union:
 					if typ := x.Type(); typ.Kind() == Union {
 						t.typ = typ
-						return typ
+						return typ.underlyingType()
 					}
 				}
 			default:
@@ -1420,6 +1491,11 @@ type functionType struct {
 
 // Alias implements Type.
 func (t *functionType) Alias() Type { return t }
+
+// compatible implements Type.
+func (t *functionType) compatible(u Type) bool {
+	panic("TODO")
+}
 
 // Decay implements Type.
 func (t *functionType) Decay() Type { return t }

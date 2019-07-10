@@ -16,8 +16,10 @@ import (
 type mode = int
 
 var (
-	idClosure = dict.sid("0closure") // Must be invalid indentifier.
-	_         fmt.State
+	idBuiltinConstantPIimpl = dict.sid("__builtin_constant_p_impl")
+	idClosure               = dict.sid("0closure") // Must be invalid indentifier.
+
+	_ fmt.State
 )
 
 const (
@@ -211,10 +213,11 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 
 	n.typ = t
 	n.Offset = off
+	var op Operand
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		n.AssignmentExpression.check(ctx)
-		if !n.AssignmentExpression.Operand.isConst() {
+		op = n.AssignmentExpression.check(ctx)
+		if !op.isConst() {
 			*isConst = false
 		}
 		*list = append(*list, n)
@@ -322,6 +325,11 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 		return 0
 	}
 
+	if t.compatible(op.Type()) {
+		return 0
+	}
+
+	ctx.errNode(n, "missing braces around initializer")
 	//TODO must handle
 	return 0
 }
@@ -1912,7 +1920,20 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		op := n.PostfixExpression.check(ctx)
 		args := n.ArgumentExpressionList.check(ctx)
-		n.Operand = n.checkCall(ctx, n, op.Type(), args, n.ArgumentExpressionList)
+		switch op.Declarator().Name() {
+		case idBuiltinConstantPIimpl:
+			if len(args) < 2 {
+				panic(internalError())
+			}
+
+			var v Int64Value
+			if args[1].Value() != nil {
+				v = 1
+			}
+			n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int), value: v}
+		default:
+			n.Operand = n.checkCall(ctx, n, op.Type(), args, n.ArgumentExpressionList)
+		}
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		if d := op.Declarator(); d != nil {

@@ -407,9 +407,9 @@ func translate(ctx *context, includePaths, sysIncludePaths []string, sources []S
 		return nil, err
 	}
 
-	ast.PtrdiffType = ctx.ptrdiffT
-	ast.SizeType = ctx.sizeT
-	ast.WideCharType = ctx.wcharT
+	ast.PtrdiffType = ptrdiffT(ctx, ast.Scope, Token{})
+	ast.SizeType = sizeT(ctx, ast.Scope, Token{})
+	ast.WideCharType = wcharT(ctx, ast.Scope, Token{})
 	return ast, nil
 }
 

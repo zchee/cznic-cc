@@ -86,6 +86,7 @@ const (
 #define __builtin_sub_overflow(...) 0
 #define __builtin_va_arg(ap, type) (type)__builtin_va_arg_impl(ap)
 #define __builtin_va_end(ap)
+#define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
 #define __builtin_va_list void*
 #define __builtin_va_start(ap, v)
 #define __declspec(...)
@@ -136,6 +137,7 @@ typedef struct { unsigned real, imag; } __COMPLEX_UNSIGNED_TYPE__;
 typedef struct { unsigned short real, imag; } __COMPLEX_SHORT_UNSIGNED_TYPE__;
 
 int __builtin_clzll (unsigned long long);
+int __builtin_constant_p_impl(int, ...);
 int __printf__ ( const char * format, ... );
 int __scanf__ ( const char *format, ... );
 void *__builtin_va_arg_impl(void* ap);
