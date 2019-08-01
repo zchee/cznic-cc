@@ -1684,6 +1684,7 @@ type DirectDeclarator struct {
 	lexicalScope           Scope
 	paramScope             Scope
 	typeQualifiers         *typeBase
+	idListNoDeclList       bool
 	Asm                    *Asm
 	AssignmentExpression   *AssignmentExpression
 	AttributeSpecifierList *AttributeSpecifierList

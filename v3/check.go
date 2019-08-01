@@ -2046,22 +2046,30 @@ func (n *PostfixExpression) index(ctx *context, pe, e Operand) Operand {
 	case StringValue:
 		if hasx {
 			s := StringID(v).String()
-			if x >= uintptr(len(s)) {
+			var v byte
+			switch {
+			case x > uintptr(len(s)):
 				//TODO report err
 				return noOperand
+			case x < uintptr(len(s)):
+				v = s[x]
 			}
 
-			return (&operand{typ: pe.Type().Elem(), value: Int64Value(s[x])}).normalize(ctx, n)
+			return (&operand{typ: pe.Type().Elem(), value: Int64Value(v)}).normalize(ctx, n)
 		}
 	case WideStringValue:
 		if hasx {
 			s := []rune(StringID(v).String())
-			if x >= uintptr(len(s)) {
+			var v rune
+			switch {
+			case x > uintptr(len(s)):
 				//TODO report err
 				return noOperand
+			case x < uintptr(len(s)):
+				v = s[x]
 			}
 
-			return (&operand{typ: pe.Type().Elem(), value: Int64Value(s[x])}).normalize(ctx, n)
+			return (&operand{typ: pe.Type().Elem(), value: Int64Value(v)}).normalize(ctx, n)
 		}
 	}
 
@@ -3144,11 +3152,23 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		return n.DirectDeclarator.check(ctx, ft)
 	case DirectDeclaratorFuncIdent: // DirectDeclarator '(' IdentifierList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ, paramList: n.IdentifierList.check(ctx)}
+		if n.idListNoDeclList {
+			n.checkIdentList(ctx, ft)
+		}
 		return n.DirectDeclarator.check(ctx, ft)
 	default:
 		panic(internalError())
 	}
 	return noType //TODO-
+}
+
+func (n *DirectDeclarator) checkIdentList(ctx *context, ft *functionType) {
+	s := n.paramScope
+	for _, nm := range ft.paramList {
+		d := s[nm][0].(*Declarator)
+		d.check(ctx, noTypeDescriptor, ctx.cfg.ABI.Type(Int), false)
+		ft.params = append(ft.params, &Parameter{d, d.Type()})
+	}
 }
 
 func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, exprIsOptional, noExpr bool) Type { //TODO pass and use typeQualifiers

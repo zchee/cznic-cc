@@ -608,9 +608,10 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example _Alignas(0ll) char c; */
 /*yy:case AlignasExpr*/ |	"_Alignas" '(' ConstantExpression ')'
 
-			/*yy:field	lexicalScope	Scope	*/
-			/*yy:field	paramScope	Scope */
-			/*yy:field	typeQualifiers	*typeBase */
+			/*yy:field	lexicalScope		Scope	*/
+			/*yy:field	paramScope		Scope */
+			/*yy:field	typeQualifiers		*typeBase */
+			/*yy:field	idListNoDeclList	bool */
 			/*yy:example int i; */
 /*yy:case Ident      */ DirectDeclarator:
 				IDENTIFIER Asm

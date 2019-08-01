@@ -192,7 +192,11 @@ func (s *Scope) new() (r Scope) {
 func (s *Scope) declare(nm StringID, n Node) {
 	if *s == nil {
 		*s = map[StringID][]Node{nm: {n}}
-		// dbg("declared %s at %v in scope %p", nm, n.Position(), *s)
+		// t := ""
+		// if x, ok := n.(*Declarator); ok && x.IsTypedefName {
+		// 	t = ", typedefname"
+		// }
+		// dbg("declared %s%s at %v in scope %p", nm, t, n.Position(), *s)
 		return
 	}
 

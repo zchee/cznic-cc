@@ -3604,7 +3604,6 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 
 	p.rune()
 	d := p.declarator(true, ds.typedef(), nil)
-	p.rune()
 	switch p.rune() {
 	case ',', ';', '=', ATTRIBUTE:
 		if ds == nil {
@@ -3637,8 +3636,29 @@ func (p *parser) pragmaSTDC() *PragmaSTDC {
 // 	declaration-specifiers declarator declaration-list_opt compound-statement
 func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *FunctionDefinition {
 	var list *DeclarationList
-	if p.rune() != '{' {
-		list = p.declarationList(d.ParamScope())
+	s := d.ParamScope()
+	switch {
+	case p.rune() != '{': // As in: int f(i) int i; { return i; }
+		list = p.declarationList(s)
+	case d.DirectDeclarator != nil && d.DirectDeclarator.Case == DirectDeclaratorFuncIdent: // As in: int f(i) { return i; }
+		d.DirectDeclarator.idListNoDeclList = true
+		for n := d.DirectDeclarator.IdentifierList; n != nil; n = n.IdentifierList {
+			tok := n.Token2
+			if tok.Value == 0 {
+				tok = n.Token
+			}
+			d := &Declarator{
+				IsParameter: true,
+				DirectDeclarator: &DirectDeclarator{
+					Case:  DirectDeclaratorIdent,
+					Token: tok,
+				},
+			}
+			s.declare(tok.Value, d)
+			if p.ctx.cfg.RejectMissingDeclarationSpecifiers {
+				p.ctx.errNode(&tok, "expected declaration-specifiers")
+			}
+		}
 	}
 	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list, CompoundStatement: p.compoundStatement(d.ParamScope(), p.fn(d.Name()))}
 }
