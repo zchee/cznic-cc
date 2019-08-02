@@ -124,9 +124,10 @@ package cc // import "modernc.org/cc/v3"
 %%
 
 		        /* [0], 6.5.1 Primary expressions */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	lexicalScope	Scope	*/
-			/*yy:field	resolvedIn	Scope	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	lexicalScope		Scope	*/
+			/*yy:field	resolvedIn		Scope	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Ident      */
 			PrimaryExpression:
@@ -151,8 +152,9 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Stmt       */	|	'(' CompoundStatement ')'
 
 		        /* [0], 6.5.2 Postfix operators */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	Field		Field	// Case Select, PSelect */
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	Field			Field	// Case Select, PSelect */
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Primary    */ PostfixExpression:
 				PrimaryExpression
@@ -180,8 +182,9 @@ package cc // import "modernc.org/cc/v3"
 			|	ArgumentExpressionList ',' AssignmentExpression
 
 			/* [0], 6.5.3 Unary operators */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	lexicalScope	Scope	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	lexicalScope		Scope	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Postfix    */ UnaryExpression:
 				PostfixExpression
@@ -217,7 +220,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Real       */ |	"__real__" UnaryExpression
 
 			/* [0], 6.5.4 Cast operators */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = 42; */
 /*yy:case Unary      */ CastExpression:
 				UnaryExpression
@@ -225,7 +229,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Cast       */ |	'(' TypeName ')' CastExpression
 
 			/* [0], 6.5.5 Multiplicative operators */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x;*/
 /*yy:case Cast       */ MultiplicativeExpression:
 				CastExpression
@@ -237,8 +242,9 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Mod        */ |	MultiplicativeExpression '%' CastExpression
 
 			/* [0], 6.5.6 Additive operators */
-			/*yy:field	lexicalScope	Scope	*/
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	lexicalScope		Scope	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Mul        */ AdditiveExpression:
 				MultiplicativeExpression
@@ -248,8 +254,9 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Sub        */ |	AdditiveExpression '-' MultiplicativeExpression
 
 			/* [0], 6.5.7 Bitwise shift operators */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	promote		Type	// shift count promoted type */
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	// shift count promoted type */
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Add        */ ShiftExpression:
 				AdditiveExpression
@@ -259,8 +266,9 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Rsh        */ |	ShiftExpression ">>" AdditiveExpression
 
 			/* [0], 6.5.8 Relational operators */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	promote		Type	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Shift      */ RelationalExpression:
 				ShiftExpression        
@@ -274,8 +282,9 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Geq        */ |	RelationalExpression ">=" ShiftExpression
 
 			/* [0], 6.5.9 Equality operators */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	promote		Type	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Rel        */ EqualityExpression:
 				RelationalExpression
@@ -285,7 +294,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Neq        */ |	EqualityExpression "!=" RelationalExpression
 
 			/* [0], 6.5.10 Bitwise AND operator */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Eq         */ AndExpression:
 				EqualityExpression
@@ -293,7 +303,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case And        */ |	AndExpression '&' EqualityExpression
 
 			/* [0], 6.5.11 Bitwise exclusive OR operator */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case And        */ ExclusiveOrExpression:
 				AndExpression
@@ -301,7 +312,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Xor        */ |	ExclusiveOrExpression '^' AndExpression
 
 			/* [0], 6.5.12 Bitwise inclusive OR operator */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Xor        */ InclusiveOrExpression:
 				ExclusiveOrExpression
@@ -309,7 +321,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Or         */ |	InclusiveOrExpression '|' ExclusiveOrExpression
 
 			/* [0], 6.5.13 Logical AND operator */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x;*/
 /*yy:case Or         */ LogicalAndExpression:
 				InclusiveOrExpression
@@ -317,7 +330,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case LAnd       */ |	LogicalAndExpression "&&" InclusiveOrExpression
 
 			/* [0], 6.5.14 Logical OR operator */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x;*/
 /*yy:case LAnd       */ LogicalOrExpression:
 				LogicalAndExpression
@@ -325,7 +339,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case LOr        */ |	LogicalOrExpression "||" LogicalAndExpression
 
 			/* [0], 6.5.15 Conditional operator */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case LOr        */ ConditionalExpression:
 				LogicalOrExpression
@@ -333,9 +348,10 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Cond       */ |	LogicalOrExpression '?' Expression ':' ConditionalExpression
 
 			/* [0], 6.5.16 Assignment operators */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	lexicalScope	Scope	*/
-			/*yy:field	promote		Type	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	lexicalScope		Scope	*/
+			/*yy:field	promote			Type	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; } */
 /*yy:case Cond       */ AssignmentExpression:
 				ConditionalExpression
@@ -363,7 +379,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Or         */ |	UnaryExpression "|=" AssignmentExpression
 
 			/* [0], 6.5.17 Comma operator */
-			/*yy:field	Operand		Operand	*/
+			/*yy:field	Operand			Operand	*/
+			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int f() { i = x; }; */
 /*yy:case Assign     */ Expression:
 				AssignmentExpression

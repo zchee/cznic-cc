@@ -469,6 +469,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
 		n.Operand = n.ConditionalExpression.check(ctx)
+		n.IsSideEffectsFree = n.ConditionalExpression.IsSideEffectsFree
 	case AssignmentExpressionAssign: // UnaryExpression '=' AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
@@ -692,6 +693,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case UnaryExpressionPostfix: // PostfixExpression
 		n.Operand = n.PostfixExpression.check(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 	case UnaryExpressionInc: // "++" UnaryExpression
 		op := n.UnaryExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
@@ -709,6 +711,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionAddrof: // '&' CastExpression
 		ctx.not(n, mIntConstExpr)
 		op := n.CastExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 		if op.Type().IsBitFieldType() {
 			//TODO report error
 			break
@@ -739,6 +742,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionDeref: // '*' CastExpression
 		ctx.not(n, mIntConstExpr)
 		op := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 		if op.Type().Decay().Kind() != Ptr {
 			//TODO report error
 			break
@@ -747,6 +751,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = &lvalue{Operand: &operand{typ: op.Type().Elem()}}
 	case UnaryExpressionPlus: // '+' CastExpression
 		op := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 		if !op.Type().IsArithmeticType() {
 			//TODO report error
 			break
@@ -758,6 +763,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = op
 	case UnaryExpressionMinus: // '-' CastExpression
 		op := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 		if !op.Type().IsArithmeticType() {
 			//TODO report error
 			break
@@ -772,6 +778,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = op
 	case UnaryExpressionCpl: // '~' CastExpression
 		op := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 		if op.Type().IsComplexType() {
 			n.Operand = op
 			break
@@ -789,8 +796,10 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		n.Operand = op
 	case UnaryExpressionNot: // '!' CastExpression
 		n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
 	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
+		n.IsSideEffectsFree = true
 		rd := ctx.readDelta
 		ctx.readDelta = 0
 		ctx.push(ctx.mode &^ mIntConstExpr)
@@ -803,6 +812,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 
 		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(op.Type().Size())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
+		n.IsSideEffectsFree = true
 		rd := ctx.readDelta
 		ctx.readDelta = 0
 		ctx.push(ctx.mode)
@@ -818,6 +828,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 
 		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(t.Size())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
+		n.IsSideEffectsFree = true
 		ctx.not(n, mIntConstExpr)
 		f := ctx.checkFn
 		if f == nil {
@@ -830,11 +841,13 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		}
 		f.ComputedGotos[n.Token2.Value] = n
 	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
+		n.IsSideEffectsFree = true
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
 		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(op.Type().Align())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 		ctx.pop()
 	case UnaryExpressionAlignofType: // "_Alignof" '(' TypeName ')'
+		n.IsSideEffectsFree = true
 		ctx.push(ctx.mode)
 		if ctx.mode&mIntConstExpr != 0 {
 			ctx.mode |= mIntConstExprAnyCast
@@ -845,9 +858,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionImag: // "__imag__" UnaryExpression
 		ctx.not(n, mIntConstExpr)
 		n.UnaryExpression.check(ctx)
+		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	case UnaryExpressionReal: // "__real__" UnaryExpression
 		ctx.not(n, mIntConstExpr)
 		n.UnaryExpression.check(ctx)
+		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	default:
 		panic(internalError())
 	}
@@ -874,6 +889,7 @@ func (n *CastExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case CastExpressionUnary: // UnaryExpression
 		n.Operand = n.UnaryExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
 		panic(n.Position().String())
 	default:
@@ -891,6 +907,7 @@ func (n *UnaryExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case UnaryExpressionPostfix: // PostfixExpression
 		n.Operand = n.PostfixExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 	case UnaryExpressionInc: // "++" UnaryExpression
 		panic(n.Position().String())
 	case UnaryExpressionDec: // "--" UnaryExpression
@@ -899,6 +916,7 @@ func (n *UnaryExpression) addrOf(ctx *context) Operand {
 		panic(n.Position().String())
 	case UnaryExpressionDeref: // '*' CastExpression
 		n.Operand = n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 	case UnaryExpressionPlus: // '+' CastExpression
 		panic(n.Position().String())
 	case UnaryExpressionMinus: // '-' CastExpression
@@ -918,9 +936,11 @@ func (n *UnaryExpression) addrOf(ctx *context) Operand {
 	case UnaryExpressionAlignofType: // "_Alignof" '(' TypeName ')'
 		panic(n.Position().String())
 	case UnaryExpressionImag: // "__imag__" UnaryExpression
-		panic(n.Position().String())
+		n.Operand = n.UnaryExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	case UnaryExpressionReal: // "__real__" UnaryExpression
 		n.Operand = n.UnaryExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	default:
 		panic(internalError())
 	}
@@ -936,6 +956,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case PostfixExpressionPrimary: // PrimaryExpression
 		n.Operand = n.PrimaryExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.PrimaryExpression.IsSideEffectsFree
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		pe := n.PostfixExpression.check(ctx)
 		if d := pe.Declarator(); d != nil {
@@ -943,6 +964,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 			d.Read += ctx.readDelta
 		}
 		e := n.Expression.check(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree && n.Expression.IsSideEffectsFree
 		t := pe.Type().Decay()
 		if t.Kind() == Invalid {
 			break
@@ -978,6 +1000,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.AddressTaken = true
 			d.Read += ctx.readDelta
@@ -1009,6 +1032,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.AddressTaken = true
 			d.Read += ctx.readDelta
@@ -1048,6 +1072,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	case PostfixExpressionDec: // PostfixExpression "--"
 		panic(n.Position().String())
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
+		//TODO IsSideEffectsFree
 		if f := ctx.checkFn; f != nil {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
@@ -1106,6 +1131,7 @@ func (n *PrimaryExpression) addrOf(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
+		n.IsSideEffectsFree = true
 		n.check(ctx)
 		if d := n.Operand.Declarator(); d != nil {
 			switch d.Type().Kind() {
@@ -1139,6 +1165,7 @@ func (n *PrimaryExpression) addrOf(ctx *context) Operand {
 		panic(n.Position().String())
 	case PrimaryExpressionExpr: // '(' Expression ')'
 		n.Operand = n.Expression.addrOf(ctx)
+		n.IsSideEffectsFree = n.Expression.IsSideEffectsFree
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
 		panic(n.Position().String())
 	default:
@@ -1155,6 +1182,7 @@ func (n *Expression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case ExpressionAssign: // AssignmentExpression
 		n.Operand = n.AssignmentExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.AssignmentExpression.IsSideEffectsFree
 	case ExpressionComma: // Expression ',' AssignmentExpression
 		panic(n.Position().String())
 	default:
@@ -1171,6 +1199,7 @@ func (n *AssignmentExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
 		n.Operand = n.ConditionalExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.ConditionalExpression.IsSideEffectsFree
 	case AssignmentExpressionAssign: // UnaryExpression '=' AssignmentExpression
 		panic(n.Position().String())
 	case AssignmentExpressionMul: // UnaryExpression "*=" AssignmentExpression
@@ -1207,6 +1236,7 @@ func (n *ConditionalExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case ConditionalExpressionLOr: // LogicalOrExpression
 		n.Operand = n.LogicalOrExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree
 	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
 		panic(n.Position().String())
 	default:
@@ -1224,6 +1254,7 @@ func (n *LogicalOrExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case LogicalOrExpressionLAnd: // LogicalAndExpression
 		n.Operand = n.LogicalAndExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.LogicalAndExpression.IsSideEffectsFree
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
 		panic(n.Position().String())
 	default:
@@ -1241,6 +1272,7 @@ func (n *LogicalAndExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case LogicalAndExpressionOr: // InclusiveOrExpression
 		n.Operand = n.InclusiveOrExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.InclusiveOrExpression.IsSideEffectsFree
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
 		panic(n.Position().String())
 	default:
@@ -1258,6 +1290,7 @@ func (n *InclusiveOrExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case InclusiveOrExpressionXor: // ExclusiveOrExpression
 		n.Operand = n.ExclusiveOrExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.ExclusiveOrExpression.IsSideEffectsFree
 	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
 		panic(n.Position().String())
 	default:
@@ -1275,6 +1308,7 @@ func (n *ExclusiveOrExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case ExclusiveOrExpressionAnd: // AndExpression
 		n.Operand = n.AndExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.AndExpression.IsSideEffectsFree
 	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
 		panic(n.Position().String())
 	default:
@@ -1292,6 +1326,7 @@ func (n *AndExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case AndExpressionEq: // EqualityExpression
 		n.Operand = n.EqualityExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.EqualityExpression.IsSideEffectsFree
 	case AndExpressionAnd: // AndExpression '&' EqualityExpression
 		panic(n.Position().String())
 	default:
@@ -1309,6 +1344,7 @@ func (n *EqualityExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case EqualityExpressionRel: // RelationalExpression
 		n.Operand = n.RelationalExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.RelationalExpression.IsSideEffectsFree
 	case EqualityExpressionEq: // EqualityExpression "==" RelationalExpression
 		panic(n.Position().String())
 	case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
@@ -1328,6 +1364,7 @@ func (n *RelationalExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case RelationalExpressionShift: // ShiftExpression
 		n.Operand = n.ShiftExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.ShiftExpression.IsSideEffectsFree
 	case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
 		panic(n.Position().String())
 	case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
@@ -1351,6 +1388,7 @@ func (n *ShiftExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case ShiftExpressionAdd: // AdditiveExpression
 		n.Operand = n.AdditiveExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree
 	case ShiftExpressionLsh: // ShiftExpression "<<" AdditiveExpression
 		panic(n.Position().String())
 	case ShiftExpressionRsh: // ShiftExpression ">>" AdditiveExpression
@@ -1370,6 +1408,7 @@ func (n *AdditiveExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case AdditiveExpressionMul: // MultiplicativeExpression
 		n.Operand = n.MultiplicativeExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
 		panic(n.Position().String())
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
@@ -1389,6 +1428,7 @@ func (n *MultiplicativeExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case MultiplicativeExpressionCast: // CastExpression
 		n.Operand = n.CastExpression.addrOf(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 	case MultiplicativeExpressionMul: // MultiplicativeExpression '*' CastExpression
 		panic(n.Position().String())
 	case MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
@@ -1853,6 +1893,7 @@ func (n *CastExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case CastExpressionUnary: // UnaryExpression
 		n.Operand = n.UnaryExpression.check(ctx)
+		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
 		t := n.TypeName.check(ctx)
 		ctx.push(ctx.mode)
@@ -1863,6 +1904,7 @@ func (n *CastExpression) check(ctx *context) Operand {
 			ctx.mode |= mIntConstExprFloat
 		}
 		op := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 		ctx.pop()
 		n.Operand = op.convertTo(ctx, n, t)
 	default:
@@ -1880,12 +1922,14 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case PostfixExpressionPrimary: // PrimaryExpression
 		n.Operand = n.PrimaryExpression.check(ctx)
+		n.IsSideEffectsFree = n.PrimaryExpression.IsSideEffectsFree
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		pe := n.PostfixExpression.check(ctx)
 		if d := pe.Declarator(); d != nil {
 			d.Read += ctx.readDelta
 		}
 		e := n.Expression.check(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree && n.Expression.IsSideEffectsFree
 		t := pe.Type().Decay()
 		if t.Kind() == Invalid {
 			break
@@ -1936,6 +1980,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.Read += ctx.readDelta
 		}
@@ -1962,6 +2007,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
+		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.Read += ctx.readDelta
 		}
@@ -2004,6 +2050,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 		n.Operand = &operand{typ: op.Type()}
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
+		//TODO IsSideEffectsFree
 		if f := ctx.checkFn; f != nil {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
@@ -2021,6 +2068,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 		n.Operand = &lvalue{Operand: (&operand{typ: t, value: v}).normalize(ctx, n)}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
+		n.IsSideEffectsFree = true
 		n.TypeName.check(ctx)
 		n.TypeName2.check(ctx)
 		//TODO
@@ -2159,12 +2207,14 @@ func (n *Expression) check(ctx *context) Operand {
 	switch n.Case {
 	case ExpressionAssign: // AssignmentExpression
 		n.Operand = n.AssignmentExpression.check(ctx)
+		n.IsSideEffectsFree = n.AssignmentExpression.IsSideEffectsFree
 	case ExpressionComma: // Expression ',' AssignmentExpression
 		op := n.Expression.check(ctx)
 		n.Operand = n.AssignmentExpression.check(ctx)
 		if !op.isConst() && n.Operand.isConst() {
 			n.Operand = &operand{typ: n.Operand.Type()}
 		}
+		n.IsSideEffectsFree = n.Expression.IsSideEffectsFree && n.AssignmentExpression.IsSideEffectsFree
 	default:
 		panic(internalError())
 	}
@@ -2179,10 +2229,13 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
+		n.IsSideEffectsFree = true
 		return n.checkIdentifier(ctx)
 	case PrimaryExpressionInt: // INTCONST
+		n.IsSideEffectsFree = true
 		n.Operand = n.intConst(ctx)
 	case PrimaryExpressionFloat: // FLOATCONST
+		n.IsSideEffectsFree = true
 		if ctx.mode&mIntConstExpr != 0 && ctx.mode&mIntConstExprFloat == 0 {
 			ctx.errNode(n, "invalid integer constant expression")
 			break
@@ -2190,6 +2243,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 
 		n.Operand = n.floatConst(ctx)
 	case PrimaryExpressionEnum: // ENUMCONST
+		n.IsSideEffectsFree = true
 		if e := n.resolvedIn.enumerator(n.Token.Value, n.Token); e != nil {
 			n.Operand = e.Operand
 			break
@@ -2197,12 +2251,15 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 
 		//TODO report err
 	case PrimaryExpressionChar: // CHARCONST
+		n.IsSideEffectsFree = true
 		s := []rune(n.Token.Value.String())
 		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(Int), value: Int64Value(s[0])}).normalize(ctx, n)
 	case PrimaryExpressionLChar: // LONGCHARCONST
+		n.IsSideEffectsFree = true
 		s := []rune(n.Token.Value.String())
 		n.Operand = (&operand{typ: wcharT(ctx, n.lexicalScope, n.Token), value: Int64Value(s[0])}).normalize(ctx, n)
 	case PrimaryExpressionString: // STRINGLITERAL
+		n.IsSideEffectsFree = true
 		ctx.not(n, mIntConstExpr)
 		typ := ctx.cfg.ABI.Type(Char)
 		b := typ.base()
@@ -2214,6 +2271,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		arr.setLen(sz)
 		n.Operand = (&operand{typ: arr, value: StringValue(n.Token.Value)}).normalize(ctx, n)
 	case PrimaryExpressionLString: // LONGSTRINGLITERAL
+		n.IsSideEffectsFree = true
 		ctx.not(n, mIntConstExpr)
 		typ := wcharT(ctx, n.lexicalScope, n.Token)
 		b := typ.base()
@@ -2226,7 +2284,9 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 		n.Operand = (&operand{typ: arr, value: WideStringValue(n.Token.Value)}).normalize(ctx, n)
 	case PrimaryExpressionExpr: // '(' Expression ')'
 		n.Operand = n.Expression.check(ctx)
+		n.IsSideEffectsFree = n.Expression.IsSideEffectsFree
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
+		//TODO IsSideEffectsFree
 		ctx.not(n, mIntConstExpr)
 		n.Operand = n.CompoundStatement.check(ctx)
 		if n.Operand == noOperand {
@@ -2532,6 +2592,7 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case ConditionalExpressionLOr: // LogicalOrExpression
 		n.Operand = n.LogicalOrExpression.check(ctx)
+		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree
 	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
 		op := n.LogicalOrExpression.check(ctx)
 		// The first operand shall have scalar type.
@@ -2544,12 +2605,21 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 		b := n.ConditionalExpression.check(ctx)
 
 		var val Value
-		if op.Value() != nil && a.Value() != nil && b.Value() != nil {
+		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree
+		if op.Value() != nil {
 			switch {
 			case op.IsZero():
-				val = b.Value()
+				n.IsSideEffectsFree = n.IsSideEffectsFree && n.ConditionalExpression.IsSideEffectsFree
 			default:
-				val = a.Value()
+				n.IsSideEffectsFree = n.IsSideEffectsFree && n.Expression.IsSideEffectsFree
+			}
+			if a.Value() != nil && b.Value() != nil { //TODO not needed both non nil
+				switch {
+				case op.IsZero():
+					val = b.Value()
+				default:
+					val = a.Value()
+				}
 			}
 		}
 
@@ -2612,11 +2682,16 @@ func (n *LogicalOrExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case LogicalOrExpressionLAnd: // LogicalAndExpression
 		n.Operand = n.LogicalAndExpression.check(ctx)
+		n.IsSideEffectsFree = n.LogicalAndExpression.IsSideEffectsFree
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
 		lop := n.LogicalOrExpression.check(ctx)
 		rop := n.LogicalAndExpression.check(ctx)
+		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree
+		if lop.Value() == nil || lop.Value() != nil && lop.IsZero() {
+			n.IsSideEffectsFree = n.IsSideEffectsFree && n.LogicalAndExpression.IsSideEffectsFree
+		}
 		var v Value
-		if lop.Value() != nil && rop.Value() != nil {
+		if lop.Value() != nil && rop.Value() != nil { //TODO lop.IsNonZero shortcut
 			switch {
 			case n.LogicalOrExpression.Operand.IsNonZero() || n.LogicalAndExpression.Operand.IsNonZero():
 				v = Int64Value(1)
@@ -2640,11 +2715,16 @@ func (n *LogicalAndExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case LogicalAndExpressionOr: // InclusiveOrExpression
 		n.Operand = n.InclusiveOrExpression.check(ctx)
+		n.IsSideEffectsFree = n.InclusiveOrExpression.IsSideEffectsFree
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
 		lop := n.LogicalAndExpression.check(ctx)
 		rop := n.InclusiveOrExpression.check(ctx)
+		n.IsSideEffectsFree = n.LogicalAndExpression.IsSideEffectsFree
+		if lop.Value() == nil || lop.Value() != nil && lop.IsNonZero() {
+			n.IsSideEffectsFree = n.IsSideEffectsFree && n.InclusiveOrExpression.IsSideEffectsFree
+		}
 		var v Value
-		if lop.Value() != nil && rop.Value() != nil {
+		if lop.Value() != nil && rop.Value() != nil { //TODO lop.IsZero shortcut
 			switch {
 			case n.LogicalAndExpression.Operand.IsNonZero() && n.InclusiveOrExpression.Operand.IsNonZero():
 				v = Int64Value(1)
@@ -2668,9 +2748,11 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case InclusiveOrExpressionXor: // ExclusiveOrExpression
 		n.Operand = n.ExclusiveOrExpression.check(ctx)
+		n.IsSideEffectsFree = n.ExclusiveOrExpression.IsSideEffectsFree
 	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
 		a := n.InclusiveOrExpression.check(ctx)
 		b := n.ExclusiveOrExpression.check(ctx)
+		n.IsSideEffectsFree = n.InclusiveOrExpression.IsSideEffectsFree && n.ExclusiveOrExpression.IsSideEffectsFree
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 			//TODO report err
 			break
@@ -2698,9 +2780,11 @@ func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case ExclusiveOrExpressionAnd: // AndExpression
 		n.Operand = n.AndExpression.check(ctx)
+		n.IsSideEffectsFree = n.AndExpression.IsSideEffectsFree
 	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
 		a := n.ExclusiveOrExpression.check(ctx)
 		b := n.AndExpression.check(ctx)
+		n.IsSideEffectsFree = n.ExclusiveOrExpression.IsSideEffectsFree && n.AndExpression.IsSideEffectsFree
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 			//TODO report err
 			break
@@ -2728,9 +2812,11 @@ func (n *AndExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case AndExpressionEq: // EqualityExpression
 		n.Operand = n.EqualityExpression.check(ctx)
+		n.IsSideEffectsFree = n.EqualityExpression.IsSideEffectsFree
 	case AndExpressionAnd: // AndExpression '&' EqualityExpression
 		a := n.AndExpression.check(ctx)
 		b := n.EqualityExpression.check(ctx)
+		n.IsSideEffectsFree = n.AndExpression.IsSideEffectsFree && n.EqualityExpression.IsSideEffectsFree
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 			//TODO report err
 			break
@@ -2757,6 +2843,7 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case EqualityExpressionRel: // RelationalExpression
 		n.Operand = n.RelationalExpression.check(ctx)
+		n.IsSideEffectsFree = n.RelationalExpression.IsSideEffectsFree
 	case
 		EqualityExpressionEq,  // EqualityExpression "==" RelationalExpression
 		EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
@@ -2765,6 +2852,7 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 		n.Operand = op
 		lo := n.EqualityExpression.check(ctx)
 		ro := n.RelationalExpression.check(ctx)
+		n.IsSideEffectsFree = n.EqualityExpression.IsSideEffectsFree && n.RelationalExpression.IsSideEffectsFree
 		lt := lo.Type().Decay()
 		rt := ro.Type().Decay()
 		n.promote = noType
@@ -2814,6 +2902,7 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case RelationalExpressionShift: // ShiftExpression
 		n.Operand = n.ShiftExpression.check(ctx)
+		n.IsSideEffectsFree = n.ShiftExpression.IsSideEffectsFree
 	case
 		RelationalExpressionLt,  // RelationalExpression '<' ShiftExpression
 		RelationalExpressionGt,  // RelationalExpression '>' ShiftExpression
@@ -2824,6 +2913,7 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		n.Operand = op
 		lo := n.RelationalExpression.check(ctx)
 		ro := n.ShiftExpression.check(ctx)
+		n.IsSideEffectsFree = n.RelationalExpression.IsSideEffectsFree && n.ShiftExpression.IsSideEffectsFree
 		if lo.Type().IsComplexType() || ro.Type().IsComplexType() {
 			ctx.errNode(&n.Token, "complex numbers are not ordered")
 			break
@@ -2880,9 +2970,11 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case ShiftExpressionAdd: // AdditiveExpression
 		n.Operand = n.AdditiveExpression.check(ctx)
+		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree
 	case ShiftExpressionLsh: // ShiftExpression "<<" AdditiveExpression
 		a := n.ShiftExpression.check(ctx)
 		b := n.AdditiveExpression.check(ctx)
+		n.IsSideEffectsFree = n.ShiftExpression.IsSideEffectsFree && n.AdditiveExpression.IsSideEffectsFree
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 			//TODO report err
 			break
@@ -2900,6 +2992,7 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 	case ShiftExpressionRsh: // ShiftExpression ">>" AdditiveExpression
 		a := n.ShiftExpression.check(ctx)
 		b := n.AdditiveExpression.check(ctx)
+		n.IsSideEffectsFree = n.ShiftExpression.IsSideEffectsFree && n.AdditiveExpression.IsSideEffectsFree
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 			//TODO report err
 			break
@@ -2929,9 +3022,11 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case AdditiveExpressionMul: // MultiplicativeExpression
 		n.Operand = n.MultiplicativeExpression.check(ctx)
+		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
+		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree && n.MultiplicativeExpression.IsSideEffectsFree
 		if t := a.Type().Decay(); t.Kind() == Ptr && b.Type().IsScalarType() {
 			n.Operand = &operand{typ: t}
 			break
@@ -2957,6 +3052,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
+		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree && n.MultiplicativeExpression.IsSideEffectsFree
 		if a.Type().Decay().Kind() == Ptr && b.Type().Decay().Kind() == Ptr {
 			n.Operand = &operand{typ: ptrdiffT(ctx, n.lexicalScope, n.Token)}
 			break
@@ -3006,9 +3102,11 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case MultiplicativeExpressionCast: // CastExpression
 		n.Operand = n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
 	case MultiplicativeExpressionMul: // MultiplicativeExpression '*' CastExpression
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree && n.CastExpression.IsSideEffectsFree
 		if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
 			break
 		}
@@ -3023,6 +3121,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	case MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree && n.CastExpression.IsSideEffectsFree
 		if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
 			break
 		}
@@ -3037,6 +3136,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
+		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree && n.CastExpression.IsSideEffectsFree
 		if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
 			break
 		}
