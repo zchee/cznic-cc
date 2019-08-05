@@ -279,6 +279,9 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 	t0 := time.Now()
 	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			if os.IsNotExist(err) {
+				err = nil
+			}
 			return err
 		}
 
@@ -398,6 +401,9 @@ func benchmarkTranslateDir(b *testing.B, cfg *Config, predef, dir string, must b
 		bytes = 0
 		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
+				if os.IsNotExist(err) {
+					err = nil
+				}
 				return err
 			}
 
@@ -528,6 +534,9 @@ func testDevTranslate(t *testing.T, predef string, filter func(string) bool, min
 	t0 := time.Now()
 	if err := filepath.Walk(*oWalkDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			if os.IsNotExist(err) {
+				err = nil
+			}
 			return err
 		}
 
@@ -614,6 +623,9 @@ func benchmarkDevTranslate(b *testing.B, predef string) {
 		bytes = 0
 		if err := filepath.Walk(*oWalkDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
+				if os.IsNotExist(err) {
+					err = nil
+				}
 				return err
 			}
 

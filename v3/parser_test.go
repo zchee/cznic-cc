@@ -142,6 +142,9 @@ func TestParseJhjourdan(t *testing.T) {
 	var ok, n int
 	if err := filepath.Walk(filepath.Join(testWD, filepath.FromSlash("testdata/jhjourdan/")), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			if os.IsNotExist(err) {
+				err = nil
+			}
 			return err
 		}
 
@@ -334,6 +337,9 @@ func testDevParse(t *testing.T, predef string, filter func(string) bool, min int
 	t0 := time.Now()
 	if err := filepath.Walk(*oWalkDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			if os.IsNotExist(err) {
+				err = nil
+			}
 			return err
 		}
 
@@ -420,6 +426,9 @@ func benchmarkDevParse(b *testing.B, predef string) {
 		bytes = 0
 		if err := filepath.Walk(*oWalkDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
+				if os.IsNotExist(err) {
+					err = nil
+				}
 				return err
 			}
 
@@ -526,6 +535,9 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bo
 	t0 := time.Now()
 	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			if os.IsNotExist(err) {
+				err = nil
+			}
 			return err
 		}
 
@@ -633,6 +645,9 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string, must bool)
 		bytes = 0
 		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
+				if os.IsNotExist(err) {
+					err = nil
+				}
 				return err
 			}
 
