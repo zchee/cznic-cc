@@ -160,6 +160,7 @@ func TestTranslateGCC(t *testing.T) {
 func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
 		// TCC
+		"34_array_assignment.c":     {}, // gcc: 16:6: error: assignment to expression with array type
 		"75_array_in_struct_init.c": {}, //TODO initializer missing braces
 
 		// GCC

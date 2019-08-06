@@ -474,7 +474,12 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Write++
+			if l.Type().Kind() == Array && !d.IsParameter && l.Type().String() != "va_list" {
+				ctx.errNode(n.UnaryExpression, "assignment to expression with array type")
+				break
+			}
 		}
+
 		if !l.IsLValue() {
 			//TODO ctx.errNode(n.UnaryExpression, "expected lvalue")
 			break
