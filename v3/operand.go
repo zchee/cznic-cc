@@ -531,12 +531,12 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	switch {
 	case abi.isSignedInteger(at.Kind()): // b is unsigned
 		signed = a.Type()
-		if intConvRank[at.Kind()] >= intConvRank[bt.Kind()] {
+		if at.Size() > bt.Size() {
 			return a, b.convertTo(ctx, n, a.Type())
 		}
 	case abi.isSignedInteger(bt.Kind()): // a is unsigned
 		signed = b.Type()
-		if intConvRank[bt.Kind()] >= intConvRank[at.Kind()] {
+		if bt.Size() > at.Size() {
 			return a.convertTo(ctx, n, b.Type()), b
 		}
 
