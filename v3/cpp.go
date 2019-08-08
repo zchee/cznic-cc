@@ -2202,7 +2202,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 
 	c.file = pf.file
 	c.fileID = cf.fileID()
-	c.fileMacro.repl[0].value = dict.sid(c.file.Name())
+	c.fileMacro.repl[0].value = dict.sid(fmt.Sprintf("%q", c.file.Name()))
 
 	defer func() {
 		c.file = saveFile
@@ -2307,7 +2307,7 @@ func (c *cpp) translationPhase4(in []source) chan *[]token4 {
 
 			c.file = pf.file
 			c.fileID = v.fileID()
-			c.fileMacro.repl[0].value = dict.sid(c.file.Name())
+			c.fileMacro.repl[0].value = dict.sid(fmt.Sprintf("%q", c.file.Name()))
 			pf.translationPhase4(c)
 		}
 	}()
