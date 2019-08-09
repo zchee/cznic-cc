@@ -621,18 +621,19 @@ func integerPromotion(ctx *context, t Type) Type {
 	}
 }
 
-func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
+func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 	if o.Type().Kind() == Invalid {
 		return o
 	}
 
 	v := o.Value()
+	r := &operand{typ: to, offset: o.offset, value: v}
 	if v == nil {
-		return &operand{typ: to}
+		return r
 	}
 
 	if o.Type().Kind() == to.Kind() {
-		return (&operand{typ: to, value: v}).normalize(ctx, n)
+		return r.normalize(ctx, n)
 	}
 
 	if o.Type().IsIntegerType() {
@@ -647,54 +648,56 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) (r Operand) {
 	case Array:
 		switch to.Kind() {
 		case Ptr:
-			return &operand{typ: to, value: v}
+			return r
 		}
 	case ComplexFloat:
 		v := v.(Complex64Value)
 		switch to.Kind() {
 		case ComplexDouble, ComplexLongDouble:
-			return (&operand{typ: to, value: Complex128Value(v)}).normalize(ctx, n)
+			r.value = Complex128Value(v)
 		case Float:
-			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx, n)
+			r.value = Float32Value(real(v))
 		case Double:
-			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx, n)
+			r.value = Float64Value(real(v))
 		}
 	case ComplexDouble:
 		v := v.(Complex128Value)
 		switch to.Kind() {
 		case ComplexFloat:
-			return (&operand{typ: to, value: Complex64Value(v)}).normalize(ctx, n)
+			r.value = Complex64Value(v)
 		case ComplexLongDouble:
-			return (&operand{typ: to, value: v}).normalize(ctx, n)
+			r.value = v
 		case Float:
-			return (&operand{typ: to, value: Float32Value(real(v))}).normalize(ctx, n)
+			r.value = Float32Value(real(v))
 		case Double:
-			return (&operand{typ: to, value: Float64Value(real(v))}).normalize(ctx, n)
+			r.value = Float64Value(real(v))
 		}
 	case Float:
 		v := v.(Float32Value)
 		switch to.Kind() {
 		case ComplexFloat:
-			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx, n)
+			r.value = Complex64Value(complex(v, 0))
 		case ComplexDouble, ComplexLongDouble:
-			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx, n)
+			r.value = Complex128Value(complex(v, 0))
 		case Double:
-			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx, n)
+			r.value = Float64Value(v)
 		}
 	case Double:
 		v := v.(Float64Value)
 		switch to.Kind() {
 		case ComplexFloat:
-			return (&operand{typ: to, value: Complex64Value(complex(v, 0))}).normalize(ctx, n)
+			r.value = Complex64Value(complex(v, 0))
 		case ComplexDouble, ComplexLongDouble:
-			return (&operand{typ: to, value: Complex128Value(complex(v, 0))}).normalize(ctx, n)
+			r.value = Complex128Value(complex(v, 0))
 		case LongDouble:
-			return (&operand{typ: to, value: v}).normalize(ctx, n)
+			r.value = v
 		case Float:
-			return (&operand{typ: to, value: Float32Value(v)}).normalize(ctx, n)
+			r.value = Float32Value(v)
 		}
+	default:
+		panic(internalErrorf("%v: %v -> %v %v", n.Position(), o.Type(), to, to.Kind()))
 	}
-	panic(internalErrorf("%v: %v -> %v %v", n.Position(), o.Type(), to, to.Kind()))
+	return r.normalize(ctx, n)
 }
 
 type signedSaturationLimit struct {
@@ -854,23 +857,33 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 
 func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 	if o.Type().IsIntegerType() {
+		switch {
+		case o.Type().IsSignedType():
+			if x, ok := o.value.(Uint64Value); ok {
+				o.value = Int64Value(x)
+			}
+		default:
+			if x, ok := o.value.(Int64Value); ok {
+				o.value = Uint64Value(x)
+			}
+		}
 		switch x := o.Value().(type) {
 		case Int64Value:
-			if v := convertInt64(int64(x), o.Type(), ctx); v != int64(x) { //TODO ???
-				return &operand{o.Type(), Int64Value(v), 0}
+			if v := convertInt64(int64(x), o.Type(), ctx); v != int64(x) {
+				o.value = Int64Value(v)
 			}
 		case Uint64Value:
 			v := uint64(x)
 			switch o.Type().Size() {
 			case 1:
-				v &= math.MaxUint8
+				v &= 0xff
 			case 2:
-				v &= math.MaxUint16
+				v &= 0xffff
 			case 4:
-				v &= math.MaxUint32
+				v &= 0xffffffff
 			}
 			if v != uint64(x) {
-				return &operand{o.Type(), Uint64Value(v), 0}
+				o.value = Uint64Value(v)
 			}
 		case *InitializerValue, nil:
 			// ok
