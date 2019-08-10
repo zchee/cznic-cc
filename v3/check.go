@@ -196,7 +196,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.Declarator.Write++
 		n.AttributeSpecifierList.check(ctx)
 		n.Initializer.isConst = true
-		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, 0)
+		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, nil, 0)
 		if typ.Kind() == Array && typ.Len() == 0 {
 			typ.setLen(length)
 		}
@@ -206,7 +206,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	}
 }
 
-func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (r uintptr) {
+func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) (r uintptr) {
 	if n == nil {
 		return 0
 	}
@@ -242,7 +242,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 				break
 			}
 
-			n.InitializerList.Initializer.check(ctx, list, isConst, t, off)
+			n.InitializerList.Initializer.check(ctx, list, isConst, t, nil, off)
 		}
 		return 0
 	}
@@ -311,7 +311,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		return n.InitializerList.checkArray(ctx, list, isConst, t, off)
+		return n.InitializerList.checkArray(ctx, list, isConst, t, t, off)
 	}
 
 	// Struct or Union.
@@ -321,7 +321,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 	// described below, or a single expression that has compatible
 	// structure or union type. ...
 	if n.Case == InitializerInitList {
-		n.InitializerList.checkStruct(ctx, list, isConst, t, off)
+		n.InitializerList.checkStruct(ctx, list, isConst, t, t, off)
 		return 0
 	}
 
@@ -334,15 +334,15 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 	return 0
 }
 
-func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (r uintptr) {
+func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) (r uintptr) {
 	elem := t.Elem()
 	esz := elem.Size()
 	length := t.Len()
 	var i uintptr
 	for ; n != nil; n = n.InitializerList {
 		if n.Designation != nil {
-			i, t2, off2 := n.Designation.checkArray(ctx, t)
-			n.Initializer.check(ctx, list, isConst, t2, off+off2)
+			i, t2, off2 := n.Designation.checkArray(ctx, currentObject)
+			n.Initializer.check(ctx, list, isConst, t2, currentObject, off+off2)
 			i++
 			if i > r {
 				r = i
@@ -354,7 +354,7 @@ func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		n.Initializer.check(ctx, list, isConst, elem, off+i*esz)
+		n.Initializer.check(ctx, list, isConst, elem, currentObject, off+i*esz)
 		i++
 		if i > r {
 			r = i
@@ -388,20 +388,26 @@ func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, o
 	return ix, elem, off
 }
 
-func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) {
+func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) {
 	nf := t.NumField()
 	union := t.Kind() == Union
 	var i int
 	var f Field
 	for ; n != nil; n = n.InitializerList {
 		if n.Designation != nil {
-			off2, f := n.Designation.checkStruct(t)
-			n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
+			off2, f := n.Designation.checkStruct(currentObject)
+			n.Initializer.check(ctx, list, isConst, f.Type(), currentObject, off+off2+f.Offset())
 			i++
 			continue
 		}
 
-		// Skip anonymous fields. //TODO only anononymous bitfields?
+		// [0], 6.7.8 Initialization
+		//
+		// 9- Except where explicitly stated otherwise, for the
+		// purposes of this subclause unnamed members of objects of
+		// structure and union type do not participate in
+		// initialization.  Unnamed members of structure objects have
+		// indeterminate value even after initialization.
 		for ; ; i++ {
 			if i >= nf {
 				panic(internalErrorf("%v: TODO", n.Position()))
@@ -416,7 +422,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isCons
 				break
 			}
 		}
-		n.Initializer.check(ctx, list, isConst, f.Type(), off+f.Offset())
+		n.Initializer.check(ctx, list, isConst, f.Type(), currentObject, off+f.Offset())
 		i++
 	}
 }
@@ -452,7 +458,7 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *boo
 		Case:            InitializerInitList,
 		InitializerList: n,
 	}
-	return n2.check(ctx, list, isConst, t, off)
+	return n2.check(ctx, list, isConst, t, t, off)
 }
 
 func (n *AssignmentExpression) check(ctx *context) Operand {
