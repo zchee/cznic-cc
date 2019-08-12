@@ -196,7 +196,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.Declarator.Write++
 		n.AttributeSpecifierList.check(ctx)
 		n.Initializer.isConst = true
-		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, nil, 0)
+		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, 0)
 		if typ.Kind() == Array && typ.Len() == 0 {
 			typ.setLen(length)
 		}
@@ -206,161 +206,108 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	}
 }
 
-func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) (r uintptr) {
+// [0], 6.7.8 Initialization
+func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) uintptr {
 	if n == nil {
 		return 0
 	}
 
 	n.typ = t
 	n.Offset = off
-	var op Operand
+
+	// 3 - The type of the entity to be initialized shall be an array of
+	// unknown size or an object type that is not a variable length array
+	// type.
+	if t.Kind() == Array && t.IsVLA() {
+		panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
+	}
+
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		op = n.AssignmentExpression.check(ctx)
-		if !op.isConst() {
+		if !n.AssignmentExpression.check(ctx).isConst() {
 			*isConst = false
 		}
 		*list = append(*list, n)
+		return n.checkExpr(ctx, list, isConst, t, off)
 	case InitializerInitList: // '{' InitializerList ',' '}'
-		// nop
-	default:
-		panic(internalError())
+		_, l := n.InitializerList.check(ctx, list, isConst, t, t, off)
+		return l
 	}
 
-	// [0], 6.7.8 Initialization
-	//
+	panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+}
+
+// [0], 6.7.8 Initialization
+func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *bool, t, currObj Type, off uintptr) (*InitializerList, uintptr) {
+	if n == nil {
+		return nil, 0
+	}
+
 	// 11 - The initializer for a scalar shall be a single expression,
 	// optionally enclosed in braces. The initial value of the object is
 	// that of the expression (after conversion); the same type constraints
 	// and conversions as for simple assignment apply, taking the type of
 	// the scalar to be the unqualified version of its declared type.
 	if t.IsScalarType() {
-		switch n.Case {
-		case InitializerInitList: // '{' InitializerList ',' '}'
-			if m := n.InitializerList.InitializerList; m != nil {
-				ctx.errNode(m, "too many items in initializer")
-				break
-			}
-
-			n.InitializerList.Initializer.check(ctx, list, isConst, t, nil, off)
+		if n.InitializerList != nil {
+			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO error "too many items in initializer list"
 		}
-		return 0
+
+		//TODO todo check assignment compatible
+
+		return nil, n.Initializer.check(ctx, list, isConst, t, off)
 	}
 
 	// 12 - The rest of this subclause deals with initializers for objects
 	// that have aggregate or union type.
-	if t.Kind() == Array {
-		// 14 - An array of character type may be initialized by a
-		// character string literal, optionally enclosed in braces.
-		// Successive characters of the character string literal
-		// (including the terminating null character if there is room
-		// or if the array is of unknown size) initialize the elements
-		// of the array.
-		if k := t.Elem().Kind(); k == Char || k == SChar || k == UChar {
-			switch n.Case {
-			case InitializerExpr: // AssignmentExpression
-				switch x := n.AssignmentExpression.Operand.Value().(type) {
-				case StringValue:
-					return uintptr(len(StringID(x).String())) + 1
-				}
-			case InitializerInitList: // '{' InitializerList ',' '}'
-				l := n.InitializerList
-				if l == nil || l.Initializer.Case != InitializerExpr {
-					break
-				}
-
-				switch l.Initializer.AssignmentExpression.check(ctx).Value().(type) {
-				case StringValue:
-					panic(internalErrorf("%v: TODO", n.Position()))
-					return r
-				}
-			}
-		}
-
-		// 15 - An array with element type compatible with wchar_t may
-		// be initialized by a wide string literal, optionally enclosed
-		// in braces. Successive wide characters of the wide string
-		// literal (including the terminating null wide character if
-		// there is room or if the array is of unknown size) initialize
-		// the elements of the array.
-		if k := t.Elem().Kind(); ctx.wcharT != nil && k == ctx.wcharT.Kind() {
-			switch n.Case {
-			case InitializerExpr: // AssignmentExpression
-				switch x := n.AssignmentExpression.Operand.Value().(type) {
-				case WideStringValue:
-					return uintptr(len([]rune(StringID(x).String()))) + 1
-				}
-			case InitializerInitList: // '{' InitializerList ',' '}'
-				l := n.InitializerList
-				if l == nil || l.Initializer.Case != InitializerExpr {
-					break
-				}
-
-				switch l.Initializer.AssignmentExpression.check(ctx).Value().(type) {
-				case WideStringValue:
-					panic(internalErrorf("%v: TODO", n.Position()))
-					return
-				}
-			}
-		}
-
-		// 16 - Otherwise, the initializer for an object that has
-		// aggregate or union type shall be a brace- enclosed list of
-		// initializers for the elements or named members.
-		if n.Case != InitializerInitList {
-			panic(internalErrorf("%v: TODO", n.Position()))
-		}
-
-		return n.InitializerList.checkArray(ctx, list, isConst, t, t, off)
+	//
+	// 16 - Otherwise, the initializer for an object that has aggregate or
+	// union type shall be a brace- enclosed list of initializers for the
+	// elements or named members.
+	switch t.Kind() {
+	case Struct:
+		return n.checkStruct(ctx, list, isConst, t, t, off), 0
+	case Union:
+		return n.checkUnion(ctx, list, isConst, t, t, off), 0
+	case Array:
+		return n.checkArray(ctx, list, isConst, t, t, off)
 	}
 
-	// Struct or Union.
-
-	// 13 - The initializer for a structure or union object that has
-	// automatic storage duration shall be either an initializer list as
-	// described below, or a single expression that has compatible
-	// structure or union type. ...
-	if n.Case == InitializerInitList {
-		n.InitializerList.checkStruct(ctx, list, isConst, t, t, off)
-		return 0
-	}
-
-	if t.compatible(op.Type()) {
-		return 0
-	}
-
-	ctx.errNode(n, "missing braces around initializer")
-	//TODO must handle
-	return 0
+	panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
 }
 
-func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) (r uintptr) {
+// [0], 6.7.8 Initialization
+func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst *bool, t, currObj Type, off uintptr) (*InitializerList, uintptr) {
 	elem := t.Elem()
 	esz := elem.Size()
 	length := t.Len()
-	var i uintptr
+	var i, r, o, off2 uintptr
+	var t2 Type
 	for ; n != nil; n = n.InitializerList {
-		if n.Designation != nil {
-			i, t2, off2 := n.Designation.checkArray(ctx, currentObject)
-			n.Initializer.check(ctx, list, isConst, t2, currentObject, off+off2)
-			i++
-			if i > r {
-				r = i
+		switch {
+		case n.Designation != nil:
+			if currObj == nil {
+				panic(internalErrorf("%v: TODO", n.Position())) //TODO report error
 			}
-			continue
+
+			i, t2, off2 = n.Designation.checkArray(ctx, currObj)
+			o = off + off2
+		default:
+			t2 = elem
+			o = off + i*esz
 		}
 
 		if length != 0 && i >= length {
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		n.Initializer.check(ctx, list, isConst, elem, currentObject, off+i*esz)
+		n.Initializer.check(ctx, list, isConst, t2, o)
 		i++
 		if i > r {
 			r = i
 		}
 	}
-	return r
+	return n, r
 }
 
 func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, off uintptr) {
@@ -388,43 +335,46 @@ func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, o
 	return ix, elem, off
 }
 
-func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) {
+// [0], 6.7.8 Initialization
+func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isConst *bool, t, currObj Type, off uintptr) *InitializerList {
 	nf := t.NumField()
-	union := t.Kind() == Union
-	var i int
+	i := []int{0}
 	var f Field
+	var off2 uintptr
 	for ; n != nil; n = n.InitializerList {
-		if n.Designation != nil {
-			off2, f := n.Designation.checkStruct(currentObject)
-			n.Initializer.check(ctx, list, isConst, f.Type(), currentObject, off+off2+f.Offset())
-			i++
-			continue
+	out:
+		switch {
+		case n.Designation != nil:
+			if currObj == nil {
+				panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
+			}
+
+			off2, f = n.Designation.checkStruct(currObj)
+		default:
+			// [0], 6.7.8 Initialization
+			//
+			// 9 - Except where explicitly stated otherwise, for the
+			// purposes of this subclause unnamed members of objects of
+			// structure and union type do not participate in
+			// initialization.  Unnamed members of structure objects have
+			// indeterminate value even after initialization.
+			for ; ; i[0]++ {
+				if i[0] >= nf {
+					return n
+				}
+
+				f = t.FieldByIndex(i)
+				if f.Name() != 0 || !f.Type().IsBitFieldType() {
+					break out
+				}
+			}
+			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 		}
-
-		// [0], 6.7.8 Initialization
-		//
-		// 9- Except where explicitly stated otherwise, for the
-		// purposes of this subclause unnamed members of objects of
-		// structure and union type do not participate in
-		// initialization.  Unnamed members of structure objects have
-		// indeterminate value even after initialization.
-		for ; ; i++ {
-			if i >= nf {
-				panic(internalErrorf("%v: TODO", n.Position()))
-			}
-
-			if union && i != 0 {
-				panic(internalErrorf("%v: TODO", n.Position()))
-			}
-
-			f = t.FieldByIndex([]int{i})
-			if f.Name() != 0 {
-				break
-			}
-		}
-		n.Initializer.check(ctx, list, isConst, f.Type(), currentObject, off+f.Offset())
-		i++
+		n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
+		off2 = 0
+		i[0]++
 	}
+	return n
 }
 
 func (n *Designation) checkStruct(t Type) (off uintptr, r Field) {
@@ -453,13 +403,367 @@ func (n *Designation) checkStruct(t Type) (off uintptr, r Field) {
 	return off, r
 }
 
-func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (r uintptr) {
-	n2 := &Initializer{
-		Case:            InitializerInitList,
-		InitializerList: n,
+// [0], 6.7.8 Initialization
+func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, isConst *bool, t, currObj Type, off uintptr) *InitializerList {
+	nf := t.NumField()
+	i := []int{0}
+	var f Field
+	var off2 uintptr
+out:
+	switch {
+	case n.Designation != nil:
+		if currObj == nil {
+			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
+		}
+
+		off2, f = n.Designation.checkStruct(currObj)
+	default:
+		// [0], 6.7.8 Initialization
+		//
+		// 9 - Except where explicitly stated otherwise, for the
+		// purposes of this subclause unnamed members of objects of
+		// structure and union type do not participate in
+		// initialization.  Unnamed members of structure objects have
+		// indeterminate value even after initialization.
+		for ; ; i[0]++ {
+			if i[0] >= nf { // gcc.c-torture/execute/pr87053.c
+				f = t.FieldByIndex([]int{0})
+				break out
+			}
+
+			f = t.FieldByIndex(i)
+			if f.Name() != 0 || !f.Type().IsBitFieldType() {
+				break out
+			}
+		}
+		panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 	}
-	return n2.check(ctx, list, isConst, t, t, off)
+	n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
+	return n
 }
+
+// [0], 6.7.8 Initialization
+func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) uintptr {
+	op := n.AssignmentExpression.Operand
+	// 11 - The initializer for a scalar shall be a single expression,
+	// optionally enclosed in braces. The initial value of the object is
+	// that of the expression (after conversion); the same type constraints
+	// and conversions as for simple assignment apply, taking the type of
+	// the scalar to be the unqualified version of its declared type.
+	if t.IsScalarType() || t.Kind() == Int128 || t.Kind() == UInt128 {
+		//TODO check op is assignment compatible
+		return 0
+	}
+
+	// 12 - The rest of this subclause deals with initializers for objects
+	// that have aggregate or union type.
+
+	switch t.Kind() {
+
+	// 13 - The initializer for a structure or union object that has
+	// automatic storage duration shall be either an initializer list as
+	// described below, or a single expression that has compatible
+	// structure or union type. In the latter case, the initial value of
+	// the object, including unnamed members, is that of the expression.
+	case Struct, Union:
+		if op.Type().Kind() != t.Kind() {
+			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+		}
+
+		//TODO check op is assignment compatible
+		return 0
+
+	// 14 - An array of character type may be initialized by a character
+	// string literal, optionally enclosed in braces.  Successive
+	// characters of the character string literal (including the
+	// terminating null character if there is room or if the array is of
+	// unknown size) initialize the elements of the array.
+	//
+	// 15 - An array with element type compatible with wchar_t may
+	// be initialized by a wide string literal, optionally enclosed
+	// in braces. Successive wide characters of the wide string
+	// literal (including the terminating null wide character if
+	// there is room or if the array is of unknown size) initialize
+	// the elements of the array.
+	case Array:
+		if k := t.Elem().Kind(); k == Char || k == SChar || k == UChar {
+			switch x := n.AssignmentExpression.Operand.Value().(type) {
+			case StringValue:
+				return uintptr(len(StringID(x).String())) + 1
+			}
+
+			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+		}
+
+		if k := t.Elem().Kind(); ctx.wcharT != nil && k == ctx.wcharT.Kind() {
+			switch x := n.AssignmentExpression.Operand.Value().(type) {
+			case WideStringValue:
+				return uintptr(len([]rune(StringID(x).String()))) + 1
+			}
+
+			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+		}
+
+		panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+	}
+
+	panic(fmt.Sprintf("TODO %v: %v, %v\n", n.Position(), t, t.Kind()))
+}
+
+//TODO- func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) (r uintptr) {
+//TODO- 	if n == nil {
+//TODO- 		return 0
+//TODO- 	}
+//TODO-
+//TODO- 	n.typ = t
+//TODO- 	n.Offset = off
+//TODO- 	var op Operand
+//TODO- 	switch n.Case {
+//TODO- 	case InitializerExpr: // AssignmentExpression
+//TODO- 		op = n.AssignmentExpression.check(ctx)
+//TODO- 		if !op.isConst() {
+//TODO- 			*isConst = false
+//TODO- 		}
+//TODO- 		*list = append(*list, n)
+//TODO- 	case InitializerInitList: // '{' InitializerList ',' '}'
+//TODO- 		// nop
+//TODO- 	default:
+//TODO- 		panic(internalError())
+//TODO- 	}
+//TODO-
+//TODO- 	// [0], 6.7.8 Initialization
+//TODO- 	//
+//TODO- 	// 11 - The initializer for a scalar shall be a single expression,
+//TODO- 	// optionally enclosed in braces. The initial value of the object is
+//TODO- 	// that of the expression (after conversion); the same type constraints
+//TODO- 	// and conversions as for simple assignment apply, taking the type of
+//TODO- 	// the scalar to be the unqualified version of its declared type.
+//TODO- 	if t.IsScalarType() {
+//TODO- 		switch n.Case {
+//TODO- 		case InitializerInitList: // '{' InitializerList ',' '}'
+//TODO- 			if m := n.InitializerList.InitializerList; m != nil {
+//TODO- 				ctx.errNode(m, "too many items in initializer")
+//TODO- 				break
+//TODO- 			}
+//TODO-
+//TODO- 			n.InitializerList.Initializer.check(ctx, list, isConst, t, nil, off)
+//TODO- 		}
+//TODO- 		return 0
+//TODO- 	}
+//TODO-
+//TODO- 	// 12 - The rest of this subclause deals with initializers for objects
+//TODO- 	// that have aggregate or union type.
+//TODO- 	if t.Kind() == Array {
+//TODO- 		// 14 - An array of character type may be initialized by a
+//TODO- 		// character string literal, optionally enclosed in braces.
+//TODO- 		// Successive characters of the character string literal
+//TODO- 		// (including the terminating null character if there is room
+//TODO- 		// or if the array is of unknown size) initialize the elements
+//TODO- 		// of the array.
+//TODO- 		if k := t.Elem().Kind(); k == Char || k == SChar || k == UChar {
+//TODO- 			switch n.Case {
+//TODO- 			case InitializerExpr: // AssignmentExpression
+//TODO- 				switch x := n.AssignmentExpression.Operand.Value().(type) {
+//TODO- 				case StringValue:
+//TODO- 					return uintptr(len(StringID(x).String())) + 1
+//TODO- 				}
+//TODO- 			case InitializerInitList: // '{' InitializerList ',' '}'
+//TODO- 				l := n.InitializerList
+//TODO- 				if l == nil || l.Initializer.Case != InitializerExpr {
+//TODO- 					break
+//TODO- 				}
+//TODO-
+//TODO- 				switch l.Initializer.AssignmentExpression.check(ctx).Value().(type) {
+//TODO- 				case StringValue:
+//TODO- 					panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 					return r
+//TODO- 				}
+//TODO- 			}
+//TODO- 		}
+//TODO-
+//TODO- 		// 15 - An array with element type compatible with wchar_t may
+//TODO- 		// be initialized by a wide string literal, optionally enclosed
+//TODO- 		// in braces. Successive wide characters of the wide string
+//TODO- 		// literal (including the terminating null wide character if
+//TODO- 		// there is room or if the array is of unknown size) initialize
+//TODO- 		// the elements of the array.
+//TODO- 		if k := t.Elem().Kind(); ctx.wcharT != nil && k == ctx.wcharT.Kind() {
+//TODO- 			switch n.Case {
+//TODO- 			case InitializerExpr: // AssignmentExpression
+//TODO- 				switch x := n.AssignmentExpression.Operand.Value().(type) {
+//TODO- 				case WideStringValue:
+//TODO- 					return uintptr(len([]rune(StringID(x).String()))) + 1
+//TODO- 				}
+//TODO- 			case InitializerInitList: // '{' InitializerList ',' '}'
+//TODO- 				l := n.InitializerList
+//TODO- 				if l == nil || l.Initializer.Case != InitializerExpr {
+//TODO- 					break
+//TODO- 				}
+//TODO-
+//TODO- 				switch l.Initializer.AssignmentExpression.check(ctx).Value().(type) {
+//TODO- 				case WideStringValue:
+//TODO- 					panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 					return
+//TODO- 				}
+//TODO- 			}
+//TODO- 		}
+//TODO-
+//TODO- 		// 16 - Otherwise, the initializer for an object that has
+//TODO- 		// aggregate or union type shall be a brace- enclosed list of
+//TODO- 		// initializers for the elements or named members.
+//TODO- 		if n.Case != InitializerInitList {
+//TODO- 			panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 		}
+//TODO-
+//TODO- 		return n.InitializerList.checkArray(ctx, list, isConst, t, t, off)
+//TODO- 	}
+//TODO-
+//TODO- 	// Struct or Union.
+//TODO-
+//TODO- 	// 13 - The initializer for a structure or union object that has
+//TODO- 	// automatic storage duration shall be either an initializer list as
+//TODO- 	// described below, or a single expression that has compatible
+//TODO- 	// structure or union type. ...
+//TODO- 	if n.Case == InitializerInitList {
+//TODO- 		n.InitializerList.checkStruct(ctx, list, isConst, t, t, off)
+//TODO- 		return 0
+//TODO- 	}
+//TODO-
+//TODO- 	if t.compatible(op.Type()) {
+//TODO- 		return 0
+//TODO- 	}
+//TODO-
+//TODO- 	ctx.errNode(n, "missing braces around initializer")
+//TODO- 	//TODO must handle
+//TODO- 	return 0
+//TODO- }
+//TODO-
+//TODO- func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) (r uintptr) {
+//TODO- 	elem := t.Elem()
+//TODO- 	esz := elem.Size()
+//TODO- 	length := t.Len()
+//TODO- 	var i uintptr
+//TODO- 	for ; n != nil; n = n.InitializerList {
+//TODO- 		if n.Designation != nil {
+//TODO- 			i, t2, off2 := n.Designation.checkArray(ctx, currentObject)
+//TODO- 			n.Initializer.check(ctx, list, isConst, t2, currentObject, off+off2)
+//TODO- 			i++
+//TODO- 			if i > r {
+//TODO- 				r = i
+//TODO- 			}
+//TODO- 			continue
+//TODO- 		}
+//TODO-
+//TODO- 		if length != 0 && i >= length {
+//TODO- 			panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 		}
+//TODO-
+//TODO- 		n.Initializer.check(ctx, list, isConst, elem, currentObject, off+i*esz)
+//TODO- 		i++
+//TODO- 		if i > r {
+//TODO- 			r = i
+//TODO- 		}
+//TODO- 	}
+//TODO- 	return r
+//TODO- }
+//TODO-
+//TODO- func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, off uintptr) {
+//TODO- 	first := true
+//TODO- 	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
+//TODO- 		d := n.Designator
+//TODO- 		switch d.Case {
+//TODO- 		case DesignatorIndex: // '[' ConstantExpression ']'
+//TODO- 			switch x := d.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr).Value().(type) {
+//TODO- 			case Int64Value:
+//TODO- 				if first {
+//TODO- 					ix = uintptr(x)
+//TODO- 				}
+//TODO- 				elem = t.Elem()
+//TODO- 				off += ix * elem.Size()
+//TODO- 				t = elem
+//TODO- 			default:
+//TODO- 				panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 			}
+//TODO- 		default:
+//TODO- 			panic(internalError())
+//TODO- 		}
+//TODO- 		first = false
+//TODO- 	}
+//TODO- 	return ix, elem, off
+//TODO- }
+//TODO-
+//TODO- func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isConst *bool, t, currentObject Type, off uintptr) {
+//TODO- 	nf := t.NumField()
+//TODO- 	union := t.Kind() == Union
+//TODO- 	var i int
+//TODO- 	var f Field
+//TODO- 	for ; n != nil; n = n.InitializerList {
+//TODO- 		if n.Designation != nil {
+//TODO- 			off2, f := n.Designation.checkStruct(currentObject)
+//TODO- 			n.Initializer.check(ctx, list, isConst, f.Type(), currentObject, off+off2+f.Offset())
+//TODO- 			i++
+//TODO- 			continue
+//TODO- 		}
+//TODO-
+//TODO- 		// [0], 6.7.8 Initialization
+//TODO- 		//
+//TODO- 		// 9- Except where explicitly stated otherwise, for the
+//TODO- 		// purposes of this subclause unnamed members of objects of
+//TODO- 		// structure and union type do not participate in
+//TODO- 		// initialization.  Unnamed members of structure objects have
+//TODO- 		// indeterminate value even after initialization.
+//TODO- 		for ; ; i++ {
+//TODO- 			if i >= nf {
+//TODO- 				panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 			}
+//TODO-
+//TODO- 			if union && i != 0 {
+//TODO- 				panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 			}
+//TODO-
+//TODO- 			f = t.FieldByIndex([]int{i})
+//TODO- 			if f.Name() != 0 {
+//TODO- 				break
+//TODO- 			}
+//TODO- 		}
+//TODO- 		n.Initializer.check(ctx, list, isConst, f.Type(), currentObject, off+f.Offset())
+//TODO- 		i++
+//TODO- 	}
+//TODO- }
+//TODO-
+//TODO- func (n *Designation) checkStruct(t Type) (off uintptr, r Field) {
+//TODO- 	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
+//TODO- 		if r != nil {
+//TODO- 			off += r.Offset()
+//TODO- 		}
+//TODO- 		d := n.Designator
+//TODO- 		var nm StringID
+//TODO- 		switch d.Case {
+//TODO- 		case DesignatorField: // '.' IDENTIFIER
+//TODO- 			nm = d.Token2.Value
+//TODO- 		case DesignatorField2: // IDENTIFIER ':'
+//TODO- 			nm = d.Token.Value
+//TODO- 		default:
+//TODO- 			panic(internalError())
+//TODO- 		}
+//TODO- 		f, ok := t.FieldByName(nm)
+//TODO- 		if !ok {
+//TODO- 			panic(internalErrorf("%v: TODO", n.Position()))
+//TODO- 		}
+//TODO-
+//TODO- 		r = f
+//TODO- 		t = f.Type()
+//TODO- 	}
+//TODO- 	return off, r
+//TODO- }
+//TODO-
+//TODO- func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (r uintptr) {
+//TODO- 	n2 := &Initializer{
+//TODO- 		Case:            InitializerInitList,
+//TODO- 		InitializerList: n,
+//TODO- 	}
+//TODO- 	return n2.check(ctx, list, isConst, t, t, off)
+//TODO- }
 
 func (n *AssignmentExpression) check(ctx *context) Operand {
 	if n == nil {
@@ -1091,7 +1395,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
-			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
+			_, len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, t, 0)
 			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}
@@ -2069,7 +2373,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
-			len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, 0)
+			_, len := n.InitializerList.check(ctx, &n.InitializerList.list, &n.InitializerList.isConst, t, t, 0)
 			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}

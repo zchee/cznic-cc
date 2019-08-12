@@ -249,22 +249,22 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		"pr85582-3.c":                  {}, //TODO :32:9: missing braces around initializer
 		"pr86122.c":                    {}, //TODO 1: unsupported type: complex int
 		"pr86123.c":                    {}, //TODO 6: unsupported type: complex unsigned
-		"pr87053.c":                    {}, //TODO array initializer
-		"pr87647.c":                    {}, //TODO :11:20: missing braces around initializer
-		"pr89369.c":                    {}, //TODO array initializer
-		"scal-to-vec1.c":               {}, //TODO attribute vector
-		"scal-to-vec2.c":               {}, //TODO attribute vector
-		"scal-to-vec3.c":               {}, //TODO attribute vector
-		"simd-1.c":                     {}, //TODO attribute vector
-		"simd-2.c":                     {}, //TODO attribute vector
-		"simd-3.c":                     {}, //TODO attribute vector
-		"simd-4.c":                     {}, //TODO attribute vector
-		"simd-5.c":                     {}, //TODO attribute vector
-		"simd-6.c":                     {}, //TODO attribute vector
-		"struct-ini-1.c":               {}, //TODO array initializer
-		"vector-3.c":                   {}, //TODO attribute vector
-		"vector-5.c":                   {}, //TODO attribute vector
-		"vector-6.c":                   {}, //TODO attribute vector
+		//TODO- "pr87053.c":                    {}, //TODO array initializer
+		"pr87647.c":      {}, //TODO :11:20: missing braces around initializer
+		"pr89369.c":      {}, //TODO array initializer
+		"scal-to-vec1.c": {}, //TODO attribute vector
+		"scal-to-vec2.c": {}, //TODO attribute vector
+		"scal-to-vec3.c": {}, //TODO attribute vector
+		"simd-1.c":       {}, //TODO attribute vector
+		"simd-2.c":       {}, //TODO attribute vector
+		"simd-3.c":       {}, //TODO attribute vector
+		"simd-4.c":       {}, //TODO attribute vector
+		"simd-5.c":       {}, //TODO attribute vector
+		"simd-6.c":       {}, //TODO attribute vector
+		"struct-ini-1.c": {}, //TODO array initializer
+		"vector-3.c":     {}, //TODO attribute vector
+		"vector-5.c":     {}, //TODO attribute vector
+		"vector-6.c":     {}, //TODO attribute vector
 	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {

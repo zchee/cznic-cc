@@ -47,8 +47,9 @@ func dbg(s string, va ...interface{}) {
 	if s == "" {
 		s = strings.Repeat("%v ", len(va))
 	}
-	_, fn, fl, _ := runtime.Caller(1)
-	fmt.Fprintf(os.Stderr, "# dbg %s:%d: ", path.Base(fn), fl)
+	pc, fn, fl, _ := runtime.Caller(1)
+	f := runtime.FuncForPC(pc)
+	fmt.Fprintf(os.Stderr, "# dbg %s:%d:%s: ", path.Base(fn), fl, f.Name())
 	fmt.Fprintf(os.Stderr, s, va...)
 	fmt.Fprintln(os.Stderr)
 	os.Stderr.Sync()

@@ -293,9 +293,9 @@ type Type interface {
 	// atomic reports whether type has type qualifier "_Atomic".
 	atomic() bool
 
-	// compatible reports whether a type is compatible with another type.
+	// isCompatible reports whether a type is compatible with another type.
 	// See [0], 6.2.7.
-	compatible(Type) bool
+	isCompatible(Type) bool
 
 	// hasConst reports whether type has type qualifier "const".
 	hasConst() bool
@@ -632,8 +632,8 @@ func (t *typeBase) BitField() Field {
 // base implements Type.
 func (t *typeBase) base() typeBase { return *t }
 
-// compatible implements Type.
-func (t *typeBase) compatible(u Type) bool {
+// isCompatible implements Type.
+func (t *typeBase) isCompatible(u Type) bool {
 	// [0], 6.2.7
 
 	if t.Kind() == Invalid || u.Kind() == Invalid {
@@ -649,19 +649,20 @@ func (t *typeBase) compatible(u Type) bool {
 	}
 
 	switch t.Kind() {
+	case Enum:
+		return u.IsIntegerType() && t.compatibleQualifiers(u) //TODO enum sizes
 	case
 		Array,
-		Enum,
 		Function,
 		Ptr,
 		Struct,
 		TypedefName,
 		Union:
 
-		panic(internalErrorf("%s: compatible of invalid type", t.Kind()))
+		panic(internalErrorf("%s: isCompatible of invalid type", t.Kind()))
 	}
 
-	return t.Kind() == u.Kind() && t.compatibleQualifiers(u)
+	return (t.Kind() == u.Kind() || t.IsIntegerType() && u.Kind() == Enum) && t.compatibleQualifiers(u) //TODO enum sizes
 }
 
 func (t *typeBase) compatibleQualifiers(u Type) bool {
@@ -958,9 +959,9 @@ func (t *pointerType) Alias() Type { return t }
 // Attributes implements Type.
 func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
 
-// compatible implements Type.
-func (t *pointerType) compatible(u Type) bool {
-	panic("TODO")
+// isCompatible implements Type.
+func (t *pointerType) isCompatible(u Type) bool {
+	return u.underlyingType().Kind() == Ptr && t.Elem().underlyingType().isCompatible(u.Elem().underlyingType())
 }
 
 // Decay implements Type.
@@ -1005,8 +1006,8 @@ func (t *arrayType) Alias() Type { return t }
 // IsVLA implements Type.
 func (t *arrayType) IsVLA() bool { return t.vla || t.elem.Kind() == Array && t.Elem().IsVLA() }
 
-// compatible implements Type.
-func (t *arrayType) compatible(u Type) bool {
+// isCompatible implements Type.
+func (t *arrayType) isCompatible(u Type) bool {
 	panic("TODO")
 }
 
@@ -1076,9 +1077,9 @@ func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
 // BitField implements Type.
 func (t *aliasType) BitField() Field { return t.typ.BitField() }
 
-// compatible implements Type.
-func (t *aliasType) compatible(u Type) bool {
-	return t == u || t.underlyingType().compatible(u.underlyingType())
+// isCompatible implements Type.
+func (t *aliasType) isCompatible(u Type) bool {
+	return t == u || t.underlyingType().isCompatible(u.underlyingType())
 }
 
 // Decay implements Type.
@@ -1238,8 +1239,8 @@ type structType struct { //TODO implement Type
 // Alias implements Type.
 func (t *structType) Alias() Type { return t }
 
-// compatible implements Type.
-func (t *structType) compatible(u Type) bool { return t == u }
+// isCompatible implements Type.
+func (t *structType) isCompatible(u Type) bool { return t == u }
 
 func (t *structType) check(ctx *context, n Node) *structType {
 	if t == nil {
@@ -1394,9 +1395,9 @@ type taggedType struct {
 // Alias implements Type.
 func (t *taggedType) Alias() Type { return t }
 
-// compatible implements Type.
-func (t *taggedType) compatible(u Type) bool {
-	return t == u || t.Kind() == u.Kind() && t.underlyingType().compatible(u.underlyingType())
+// isCompatible implements Type.
+func (t *taggedType) isCompatible(u Type) bool {
+	return t == u || t.Kind() == u.Kind() && t.underlyingType().isCompatible(u.underlyingType())
 }
 
 // Decay implements Type.
@@ -1492,8 +1493,8 @@ type functionType struct {
 // Alias implements Type.
 func (t *functionType) Alias() Type { return t }
 
-// compatible implements Type.
-func (t *functionType) compatible(u Type) bool {
+// isCompatible implements Type.
+func (t *functionType) isCompatible(u Type) bool {
 	panic("TODO")
 }
 
