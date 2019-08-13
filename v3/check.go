@@ -1084,12 +1084,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 			break
 		}
 
-		switch op.Type().Kind() {
-		case Array:
-			n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
-		default:
-			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
-		}
+		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
@@ -1121,12 +1116,8 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 			//TODO report error
 			break
 		}
-		switch op.Type().Kind() {
-		case Array:
-			n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
-		default:
-			n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
-		}
+
+		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 	case PostfixExpressionInc: // PostfixExpression "++"
 		panic(n.Position().String())
 	case PostfixExpressionDec: // PostfixExpression "--"
@@ -2664,14 +2655,14 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 		a := n.Expression.check(ctx)
 		b := n.ConditionalExpression.check(ctx)
 
+		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree && (n.Expression == nil || n.Expression.IsSideEffectsFree) && n.ConditionalExpression.IsSideEffectsFree
 		var val Value
-		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree
 		if op.Value() != nil {
 			switch {
 			case op.IsZero():
-				n.IsSideEffectsFree = n.IsSideEffectsFree && n.ConditionalExpression.IsSideEffectsFree
+				n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree && n.ConditionalExpression.IsSideEffectsFree
 			default:
-				n.IsSideEffectsFree = n.IsSideEffectsFree && n.Expression.IsSideEffectsFree
+				n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree && n.Expression.IsSideEffectsFree
 			}
 			if a.Value() != nil && b.Value() != nil { //TODO not needed both non nil
 				switch {
@@ -2746,10 +2737,8 @@ func (n *LogicalOrExpression) check(ctx *context) Operand {
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
 		lop := n.LogicalOrExpression.check(ctx)
 		rop := n.LogicalAndExpression.check(ctx)
-		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree
-		if lop.Value() == nil || lop.Value() != nil && lop.IsZero() {
-			n.IsSideEffectsFree = n.IsSideEffectsFree && n.LogicalAndExpression.IsSideEffectsFree
-		}
+		n.IsSideEffectsFree = n.LogicalOrExpression.IsSideEffectsFree && n.LogicalAndExpression.IsSideEffectsFree ||
+			lop.Value() != nil && lop.IsNonZero() && n.LogicalOrExpression.IsSideEffectsFree
 		var v Value
 		if lop.Value() != nil && rop.Value() != nil { //TODO lop.IsNonZero shortcut
 			switch {
@@ -2779,10 +2768,8 @@ func (n *LogicalAndExpression) check(ctx *context) Operand {
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
 		lop := n.LogicalAndExpression.check(ctx)
 		rop := n.InclusiveOrExpression.check(ctx)
-		n.IsSideEffectsFree = n.LogicalAndExpression.IsSideEffectsFree
-		if lop.Value() == nil || lop.Value() != nil && lop.IsNonZero() {
-			n.IsSideEffectsFree = n.IsSideEffectsFree && n.InclusiveOrExpression.IsSideEffectsFree
-		}
+		n.IsSideEffectsFree = n.LogicalAndExpression.IsSideEffectsFree && n.InclusiveOrExpression.IsSideEffectsFree ||
+			lop.Value() != nil && lop.IsZero() && n.LogicalAndExpression.IsSideEffectsFree
 		var v Value
 		if lop.Value() != nil && rop.Value() != nil { //TODO lop.IsZero shortcut
 			switch {

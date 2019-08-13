@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -19,13 +20,19 @@ var (
 	panicOnParserError bool //TODOOK
 
 	idChar      = dict.sid("char")
+	idComma     = dict.sid(",")
 	idConst     = dict.sid("const")
 	idEq        = dict.sid("=")
+	idFFlush    = dict.sid("fflush")
+	idFprintf   = dict.sid("fprintf")
 	idFunc      = dict.sid("__func__")
 	idLBracket  = dict.sid("[")
+	idLParen    = dict.sid("(")
 	idRBracket  = dict.sid("]")
+	idRParen    = dict.sid(")")
 	idSemicolon = dict.sid(";")
 	idStatic    = dict.sid("static")
+	idStderr    = dict.sid("stderr")
 )
 
 // Values of Token.Rune for lexemes.
@@ -440,7 +447,10 @@ func (p *parser) shift() (r Token) {
 	return r
 }
 
-func (p *parser) unget(toks ...Token) { p.inBuf = append(toks, p.inBuf...) }
+func (p *parser) unget(toks ...Token) {
+	p.inBuf = append(toks, p.inBuf...)
+	// fmt.Println("injected:", tokStr(toks, " ")) //TODO-
+}
 
 func (p *parser) peek(handleTypedefname bool) rune {
 	if p.closed {
@@ -3668,7 +3678,9 @@ func (p *parser) fn(nm StringID) (r []Token) {
 		return nil
 	}
 
-	for i, v := range []Token{
+	pos := p.tok.Position()
+	pos.Filename = filepath.Base(pos.Filename)
+	toks := []Token{
 		{Rune: STATIC, Value: idStatic},
 		{Rune: CONST, Value: idConst},
 		{Rune: CHAR, Value: idChar},
@@ -3678,7 +3690,24 @@ func (p *parser) fn(nm StringID) (r []Token) {
 		{Rune: '=', Value: idEq},
 		{Rune: STRINGLITERAL, Value: nm},
 		{Rune: ';', Value: idSemicolon},
-	} {
+	}
+	if p.ctx.cfg.InjectTracingCode {
+		toks = append(toks, []Token{
+			{Rune: IDENTIFIER, Value: idFprintf},
+			{Rune: '(', Value: idLParen},
+			{Rune: IDENTIFIER, Value: idStderr},
+			{Rune: ',', Value: idComma},
+			{Rune: STRINGLITERAL, Value: dict.sid(fmt.Sprintf("%s:%s\n", pos, nm.String()))},
+			{Rune: ')', Value: idRParen},
+			{Rune: ';', Value: idSemicolon},
+			{Rune: IDENTIFIER, Value: idFFlush},
+			{Rune: '(', Value: idLParen},
+			{Rune: IDENTIFIER, Value: idStderr},
+			{Rune: ')', Value: idRParen},
+			{Rune: ';', Value: idSemicolon},
+		}...)
+	}
+	for i, v := range toks {
 		v.fileID = p.tok.fileID
 		v.pos = p.tok.pos
 		v.seq = p.tok.seq + int32(i) + 1

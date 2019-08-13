@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 )
 
@@ -389,11 +390,24 @@ func cQuotedString(s string) []byte {
 
 func octal(b byte) byte { return '0' + b&7 }
 
+var trcSource = Source{"<builtin-trc>", `
+extern void *stderr;
+int fflush(void *stream);
+int fprintf(void *stream, const char *format, ...);
+`, false}
+
 // Translate parses and typechecks a translation unit  and returns an *AST or
 // error, if any.
 //
 // Please see Parse for the documentation of the parameters.
 func Translate(cfg *Config, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
+	if cfg.InjectTracingCode {
+		for i, v := range sources {
+			if filepath.Ext(v.Name) == ".c" {
+				sources = append(append(append([]Source(nil), sources[:i]...), trcSource), sources[i:]...)
+			}
+		}
+	}
 	return translate(newContext(cfg), includePaths, sysIncludePaths, sources)
 }
 

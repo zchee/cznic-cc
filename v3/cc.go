@@ -320,6 +320,7 @@ type Config struct {
 
 	DebugIncludePaths                      bool // Output to stderr.
 	DebugWorkingDir                        bool // Output to stderr.
+	InjectTracingCode                      bool // Output to stderr.
 	PreprocessOnly                         bool
 	RejectAnonymousFields                  bool // Pedantic: do not silently accept "struct{int;}".
 	RejectCaseRange                        bool // Pedantic: do not silently accept "case 'a'...'z':".
