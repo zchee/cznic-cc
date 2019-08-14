@@ -6,7 +6,6 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 )
 
@@ -3679,7 +3678,6 @@ func (p *parser) fn(nm StringID) (r []Token) {
 	}
 
 	pos := p.tok.Position()
-	pos.Filename = filepath.Base(pos.Filename)
 	toks := []Token{
 		{Rune: STATIC, Value: idStatic},
 		{Rune: CONST, Value: idConst},
