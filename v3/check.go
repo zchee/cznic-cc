@@ -1754,7 +1754,7 @@ func (n *EnumSpecifier) check(ctx *context) {
 	switch n.Case {
 	case EnumSpecifierDef: // "enum" AttributeSpecifierList IDENTIFIER '{' EnumeratorList ',' '}'
 		n.AttributeSpecifierList.check(ctx)
-		n.EnumeratorList.check(ctx)
+		n.min, n.max = n.EnumeratorList.check(ctx)
 	case EnumSpecifierTag: // "enum" AttributeSpecifierList IDENTIFIER
 		n.AttributeSpecifierList.check(ctx)
 	default:
@@ -1762,39 +1762,86 @@ func (n *EnumSpecifier) check(ctx *context) {
 	}
 }
 
-func (n *EnumeratorList) check(ctx *context) {
-	var v int64
+func (n *EnumeratorList) check(ctx *context) (min, max Value) {
+	var iota Value
 	for ; n != nil; n = n.EnumeratorList {
-		n.Enumerator.check(ctx, &v)
+		iota, min, max = n.Enumerator.check(ctx, iota, min, max)
 	}
+	return min, max
 }
 
-func (n *Enumerator) check(ctx *context, v *int64) {
+func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Value) {
 	if n == nil {
-		return
+		return nil, nil, nil
 	}
 
+	if iota == nil {
+		iota = Int64Value(0)
+	}
 	switch n.Case {
 	case EnumeratorIdent: // IDENTIFIER AttributeSpecifierList
 		n.AttributeSpecifierList.check(ctx)
-		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(Int), value: Int64Value(*v)}).normalize(ctx, n)
-		*v++
+		n.Operand = (&operand{typ: ctx.cfg.ABI.Type(Int), value: iota}).normalize(ctx, n)
 	case EnumeratorExpr: // IDENTIFIER AttributeSpecifierList '=' ConstantExpression
 		n.AttributeSpecifierList.check(ctx)
 		n.Operand = n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
-		switch x := n.Operand.Value().(type) {
-		case Uint64Value:
-			*v = int64(x) + 1
-		case Int64Value:
-			*v = int64(x) + 1
-		case nil:
-			//TODO report error
-		default:
-			panic(internalError())
-		}
+		iota = n.Operand.Value()
 	default:
 		panic(internalError())
 	}
+
+	switch x := iota.(type) {
+	case Int64Value:
+		switch m := min.(type) {
+		case Int64Value:
+			if x < m {
+				min = x
+			}
+		case Uint64Value:
+			panic(fmt.Sprintf("TODO 1799 %v:", n.Position()))
+		case nil:
+			min = x
+		}
+		x++
+		iota = x
+		switch m := max.(type) {
+		case Int64Value:
+			if x > m {
+				max = x
+			}
+		case Uint64Value:
+			panic(fmt.Sprintf("TODO 1807 %v:", n.Position()))
+		case nil:
+			max = x
+		}
+	case Uint64Value:
+		switch m := min.(type) {
+		case Int64Value:
+			panic(fmt.Sprintf("TODO 1815 %v:", n.Position()))
+		case Uint64Value:
+			if x < m {
+				min = x
+			}
+		case nil:
+			min = x
+		}
+		x++
+		iota = x
+		switch m := max.(type) {
+		case Int64Value:
+			panic(fmt.Sprintf("TODO 1823 %v:", n.Position()))
+		case Uint64Value:
+			if x > m {
+				max = x
+			}
+		case nil:
+			max = x
+		}
+	case nil:
+		//TODO report type
+	}
+
+	return iota, min, max
 }
 
 func (n *ConstantExpression) check(ctx *context, mode mode) Operand {

@@ -561,6 +561,8 @@ package cc // import "modernc.org/cc/v3"
 			/* [0], 6.7.2.2 Enumeration specifiers */
 			/*yy:field	lexicalScope	Scope	*/
 			/*yy:field	typ		Type */
+			/*yy:field	min		Value */
+			/*yy:field	max		Value */
 			/*yy:example enum e {a}; */
 /*yy:case Def        */ EnumSpecifier:
 				"enum" AttributeSpecifierList IDENTIFIER '{' EnumeratorList ',' '}'

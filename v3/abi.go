@@ -105,7 +105,8 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int, s Scope) error {
 	return ctx.Err()
 }
 
-func (a *ABI) Type(k Kind) Type      { return a.types[k] }
+func (a *ABI) Type(k Kind) Type { return a.types[k] }
+
 func (a *ABI) align(k Kind) int      { return a.Types[k].Align }
 func (a *ABI) fieldAlign(k Kind) int { return a.Types[k].FieldAlign }
 func (a *ABI) size(k Kind) int       { return int(a.Types[k].Size) }

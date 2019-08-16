@@ -1876,6 +1876,8 @@ func (n EnumSpecifierCase) String() string {
 type EnumSpecifier struct {
 	lexicalScope           Scope
 	typ                    Type
+	min                    Value
+	max                    Value
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   EnumSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumeratorList         *EnumeratorList
