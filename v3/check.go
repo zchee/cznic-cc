@@ -11,6 +11,8 @@ import (
 	"math/bits"
 	"strconv"
 	"strings"
+
+	"modernc.org/mathutil"
 )
 
 type mode = int
@@ -855,9 +857,16 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		}
 		n.Operand = op
 	case UnaryExpressionNot: // '!' CastExpression
-		n.CastExpression.check(ctx)
+		op := n.CastExpression.check(ctx)
 		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
-		n.Operand = &operand{typ: ctx.cfg.ABI.Type(Int)}
+		op2 := &operand{typ: ctx.cfg.ABI.Type(Int)}
+		switch {
+		case op.IsZero():
+			op2.value = Int64Value(1)
+		case op.IsNonZero():
+			op2.value = Int64Value(0)
+		}
+		n.Operand = op2
 	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
 		n.IsSideEffectsFree = true
 		rd := ctx.readDelta
@@ -1754,12 +1763,105 @@ func (n *EnumSpecifier) check(ctx *context) {
 	switch n.Case {
 	case EnumSpecifierDef: // "enum" AttributeSpecifierList IDENTIFIER '{' EnumeratorList ',' '}'
 		n.AttributeSpecifierList.check(ctx)
-		n.min, n.max = n.EnumeratorList.check(ctx)
+		min, max := n.EnumeratorList.check(ctx)
+		var tmin, tmax Type
+		switch min := min.(type) {
+		case Int64Value:
+			tmin = n.requireInt(ctx, int64(min))
+			switch max := max.(type) {
+			case Int64Value:
+				tmax = n.requireInt(ctx, int64(max))
+			case Uint64Value:
+				panic(fmt.Sprintf("TODO 576 %v:", n.Position()))
+			case nil:
+				panic(fmt.Sprintf("TODO 578 %v:", n.Position()))
+			}
+		case Uint64Value:
+			tmin = n.requireUint(ctx, uint64(min))
+			switch max := max.(type) {
+			case Int64Value:
+				panic(fmt.Sprintf("TODO 595 %v:", n.Position()))
+			case Uint64Value:
+				tmax = n.requireUint(ctx, uint64(max))
+			case nil:
+				_ = max
+				panic(fmt.Sprintf("TODO 600 %v:", n.Position()))
+			}
+		case nil:
+			panic(fmt.Sprintf("TODO 603 %v: %v %T", n.Position(), n.Case, min))
+		}
+		switch {
+		case tmin.Size() > tmax.Size():
+			n.typ = tmin
+		default:
+			n.typ = tmax
+		}
+		if !n.typ.IsIntegerType() || n.typ.Size() == 0 { //TODO-
+			panic(internalError())
+		}
 	case EnumSpecifierTag: // "enum" AttributeSpecifierList IDENTIFIER
-		n.AttributeSpecifierList.check(ctx)
+		n.typ = &taggedType{
+			resolutionScope: n.lexicalScope,
+			tag:             n.Token.Value,
+			typeBase:        &typeBase{kind: byte(Enum)},
+		}
 	default:
 		panic(internalError())
 	}
+}
+
+func (n *EnumSpecifier) requireInt(ctx *context, m int64) (r Type) {
+	var w int
+	switch {
+	case m < 0:
+		w = mathutil.BitLenUint64(uint64(-m))
+	default:
+		w = mathutil.BitLenUint64(uint64(m)) + 1
+	}
+	abi := ctx.cfg.ABI
+	for k0, v := range intConvRank {
+		k := Kind(k0)
+		if k == Bool || k == Enum || v == 0 || !abi.isSignedInteger(k) {
+			continue
+		}
+
+		t := abi.Types[k]
+		if int(t.Size)*8 < w {
+			continue
+		}
+
+		if r == nil || t.Size < r.Size() {
+			r = abi.Type(k)
+		}
+	}
+	if r == nil || r.Size() == 0 { //TODO-
+		panic(internalError())
+	}
+	return r
+}
+
+func (n *EnumSpecifier) requireUint(ctx *context, m uint64) (r Type) {
+	w := mathutil.BitLenUint64(m)
+	abi := ctx.cfg.ABI
+	for k0, v := range intConvRank {
+		k := Kind(k0)
+		if k == Bool || k == Enum || v == 0 || abi.isSignedInteger(k) {
+			continue
+		}
+
+		t := abi.Types[k]
+		if int(t.Size)*8 < w {
+			continue
+		}
+
+		if r == nil || t.Size < r.Size() {
+			r = abi.Type(k)
+		}
+	}
+	if r == nil || r.Size() == 0 { //TODO-
+		panic(internalError())
+	}
+	return r
 }
 
 func (n *EnumeratorList) check(ctx *context) (min, max Value) {

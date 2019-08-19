@@ -147,7 +147,7 @@ void *__builtin_va_arg_impl(void* ap);
 
 var (
 	oBlackBox = flags.String("blackbox", "", "Record CSmith file to this file")
-	oCSmith   = flags.Duration("csmith", time.Minute, "")
+	oCSmith   = flags.Duration("csmith", 10*time.Second, "")
 	oDev      = flags.Bool("dev", false, "Enable developer tests/downloads.")
 	oDownload = flags.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
 	oMaxFiles = flags.Int("maxFiles", maxFiles, "")

@@ -91,6 +91,12 @@ var (
 			}
 			f.Format(suffix)
 		},
+		reflect.TypeOf((*operand)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) {
+			op := v.(*operand)
+			f.Format(prefix)
+			f.Format("[%v %T(%[2]v)]", op.Type(), op.Value())
+			f.Format(suffix)
+		},
 	}
 )
 

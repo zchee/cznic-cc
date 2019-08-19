@@ -51,7 +51,7 @@ var (
 	//
 	// Every integer type has an integer conversion rank defined as
 	// follows:
-	intConvRank = [maxKind]int{
+	intConvRank = [maxKind]int{ // Keep Bool first and sorted by rank.
 		Bool:      1,
 		Char:      2,
 		SChar:     2,
@@ -557,14 +557,8 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 
 	abi := ctx.cfg.ABI
 	switch k := t.Kind(); k {
-	case typeofExpr, typeofType, Struct, Union:
+	case typeofExpr, typeofType, Struct, Union, Enum:
 		// nop
-	case Enum:
-		if v, ok := abi.Types[Int]; ok {
-			t.size = uintptr(abi.size(Int))
-			t.align = byte(v.Align)
-			t.fieldAlign = byte(v.FieldAlign)
-		}
 	default:
 		if integerTypes[k] && abi.isSignedInteger(k) {
 			t.flags |= fSigned
@@ -591,6 +585,8 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 		nm := tok.Value
 		d := ts.resolvedIn.typedef(nm, tok)
 		typ = &aliasType{nm: nm, typ: d.Type()}
+	case Enum:
+		typ = typeSpecifiers[0].EnumSpecifier.typ
 	case Struct, Union:
 		t.kind = k0
 		typ = typeSpecifiers[0].StructOrUnionSpecifier.typ
@@ -1443,7 +1439,7 @@ func (t *taggedType) underlyingType() Type {
 			switch x := v.(type) {
 			case *Declarator, *StructDeclarator:
 			case *EnumSpecifier:
-				if k == Enum {
+				if k == Enum && x.Case == EnumSpecifierDef {
 					t.typ = x.Type()
 					return t.typ.underlyingType()
 				}
@@ -1470,7 +1466,7 @@ func (t *taggedType) underlyingType() Type {
 }
 
 // Size implements Type.
-func (t *taggedType) Size() uintptr {
+func (t *taggedType) Size() (r uintptr) {
 	return t.underlyingType().Size()
 }
 
