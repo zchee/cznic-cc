@@ -1068,13 +1068,19 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-		op := n.PostfixExpression.check(ctx)
+		op := n.PostfixExpression.addrOf(ctx)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.AddressTaken = true
 			d.Read += ctx.readDelta
 		}
-		st := op.Type()
+		t := op.Type()
+		if k := t.Decay().Kind(); k == Invalid || k != Ptr {
+			//TODO report error
+			break
+		}
+
+		st := t.Elem()
 		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
 			break
@@ -1093,7 +1099,23 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
+		ot := ctx.cfg.ABI.Ptr(n, ft)
+		switch {
+		case op.isConst():
+			switch x := op.Value().(type) {
+			case Uint64Value:
+				n.Operand = &operand{typ: ot, value: x + Uint64Value(f.Offset())}
+				return n.Operand
+			case nil:
+				// nop
+			default:
+				panic(fmt.Sprintf("TODO %v: %T", n.Position(), x))
+			}
+
+			fallthrough
+		default:
+			n.Operand = &lvalue{Operand: &operand{typ: ot, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
+		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
@@ -1126,7 +1148,23 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, ft), offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
+		ot := ctx.cfg.ABI.Ptr(n, ft)
+		switch {
+		case op.isConst():
+			switch x := op.Value().(type) {
+			case Uint64Value:
+				n.Operand = &operand{typ: ot, value: x + Uint64Value(f.Offset())}
+				return n.Operand
+			case nil:
+				// nop
+			default:
+				panic(fmt.Sprintf("TODO %T", x))
+			}
+
+			fallthrough
+		default:
+			n.Operand = &lvalue{Operand: &operand{typ: ot, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
+		}
 	case PostfixExpressionInc: // PostfixExpression "++"
 		panic(n.Position().String())
 	case PostfixExpressionDec: // PostfixExpression "--"

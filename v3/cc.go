@@ -231,10 +231,29 @@ func (s Scope) Parent() Scope {
 }
 
 func (s *Scope) typedef(nm StringID, tok Token) *Declarator {
-	if d := s.declarator(nm, tok); d != nil && d.IsTypedefName {
-		return d
-	}
+	seq := tok.seq
+	for s := *s; s != nil; s = s.Parent() {
+		for _, v := range s[nm] {
+			switch x := v.(type) {
+			case *Declarator:
+				if !x.isVisible(seq) {
+					continue
+				}
 
+				if x.IsTypedefName {
+					return x
+				}
+
+				return nil
+			case *Enumerator:
+				return nil
+			case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator:
+				// nop
+			default:
+				panic(internalError())
+			}
+		}
+	}
 	return nil
 }
 
@@ -249,13 +268,20 @@ func (s *Scope) identifier(nm StringID, tok Token) *Declarator {
 func (s *Scope) declarator(nm StringID, tok Token) *Declarator {
 	seq := tok.seq
 	for s := *s; s != nil; s = s.Parent() {
-		for _, v := range s[nm] {
+		defs := s[nm]
+		for _, v := range defs {
 			switch x := v.(type) {
 			case *Declarator:
 				if !x.isVisible(seq) {
 					continue
 				}
 
+				for _, v := range defs {
+					if x, ok := v.(*Declarator); ok && x.Type() != nil && !x.Type().IsIncomplete() {
+						return x
+					}
+
+				}
 				return x
 			case *Enumerator:
 				return nil
@@ -334,6 +360,7 @@ type Config struct {
 	RejectEmptyDeclarations                bool // Pedantic: do not silently accept "int foo(){};".
 	RejectEmptyInitializerList             bool // Pedantic: do not silently accept "foo f = {};".
 	RejectEmptyStructs                     bool // Pedantic: do not silently accept "struct foo {};".
+	RejectIncompatibleMacroRedef           bool // Pedantic: do not silently accept "#define MIN(A,B) ...\n#define MIN(a,b) ...\n" etc.
 	RejectLabelValues                      bool // Pedantic: do not silently accept "foo: bar(); void *ptr = &&foo;" or "goto *ptr".
 	RejectLateBinding                      bool // Pedantic: do not silently accept void f() { g(); } void g() {}
 	RejectMissingConditionalExpr           bool // Pedantic: do not silently accept "foo = bar ? : baz;".

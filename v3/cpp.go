@@ -2620,7 +2620,7 @@ func (n *ppDefineFunctionMacroDirective) translationPhase4(c *cpp) {
 			return
 		}
 
-		if !m.isFnLike {
+		if !m.isFnLike && c.ctx.cfg.RejectIncompatibleMacroRedef {
 			c.err(n.name, "redefinition of an object-like macro with a function-like one")
 			return
 		}
@@ -2634,17 +2634,17 @@ func (n *ppDefineFunctionMacroDirective) translationPhase4(c *cpp) {
 				}
 			}
 		}
-		if !ok && (len(n.replacementList) != 0 || len(m.repl) != 0) {
+		if !ok && (len(n.replacementList) != 0 || len(m.repl) != 0) && c.ctx.cfg.RejectIncompatibleMacroRedef {
 			c.err(n.name, "redefinition with different formal parameters")
 			return
 		}
 
-		if !c.identicalReplacementLists(n.replacementList, m.repl) {
+		if !c.identicalReplacementLists(n.replacementList, m.repl) && c.ctx.cfg.RejectIncompatibleMacroRedef {
 			c.err(n.name, "redefinition with different replacement list")
 			return
 		}
 
-		if m.variadic != n.variadic {
+		if m.variadic != n.variadic && c.ctx.cfg.RejectIncompatibleMacroRedef {
 			c.err(n.name, "redefinition differs in being variadic")
 			return
 		}

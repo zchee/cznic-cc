@@ -25,7 +25,7 @@ func TestCPPExpand(t *testing.T) {
 		re = regexp.MustCompile(s)
 	}
 
-	cfg := &Config{fakeIncludes: true, PreprocessOnly: true}
+	cfg := &Config{fakeIncludes: true, PreprocessOnly: true, RejectIncompatibleMacroRedef: true}
 	if err := filepath.Walk(filepath.Join(testWD, filepath.FromSlash("testdata/cpp-expand/")), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
