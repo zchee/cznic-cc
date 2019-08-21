@@ -379,6 +379,7 @@ type Config struct {
 }
 
 type context struct {
+	ast         *AST
 	breaks      int
 	casePromote Type
 	cases       []*LabeledStatement // switch

@@ -754,7 +754,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case UnaryExpressionPostfix: // PostfixExpression
-		n.Operand = n.PostfixExpression.check(ctx)
+		n.Operand = n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 	case UnaryExpressionInc: // "++" UnaryExpression
 		op := n.UnaryExpression.check(ctx)
@@ -805,6 +805,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		ctx.not(n, mIntConstExpr)
 		op := n.CastExpression.check(ctx)
 		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
+		if x, ok := op.(*funcDesignator); ok {
+			n.Operand = x
+			break
+		}
+
 		if op.Type().Decay().Kind() != Ptr {
 			//TODO report error
 			break
@@ -1027,7 +1032,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		n.Operand = n.PrimaryExpression.addrOf(ctx)
 		n.IsSideEffectsFree = n.PrimaryExpression.IsSideEffectsFree
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
-		pe := n.PostfixExpression.check(ctx)
+		pe := n.PostfixExpression.check(ctx, false)
 		if d := pe.Declarator(); d != nil {
 			d.AddressTaken = true
 			d.Read += ctx.readDelta
@@ -1117,7 +1122,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 			n.Operand = &lvalue{Operand: &operand{typ: ot, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
-		op := n.PostfixExpression.check(ctx)
+		op := n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.AddressTaken = true
@@ -1230,7 +1235,7 @@ func (n *PrimaryExpression) addrOf(ctx *context) Operand {
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
 		n.IsSideEffectsFree = true
-		n.check(ctx)
+		n.check(ctx, false)
 		if d := n.Operand.Declarator(); d != nil {
 			switch d.Type().Kind() {
 			case Function:
@@ -2151,7 +2156,7 @@ func (n *CastExpression) check(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *PostfixExpression) check(ctx *context) Operand {
+func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -2159,10 +2164,10 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case PostfixExpressionPrimary: // PrimaryExpression
-		n.Operand = n.PrimaryExpression.check(ctx)
+		n.Operand = n.PrimaryExpression.check(ctx, implicitFunc)
 		n.IsSideEffectsFree = n.PrimaryExpression.IsSideEffectsFree
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
-		pe := n.PostfixExpression.check(ctx)
+		pe := n.PostfixExpression.check(ctx, false)
 		if d := pe.Declarator(); d != nil {
 			d.Read += ctx.readDelta
 		}
@@ -2200,7 +2205,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 
 		ctx.errNode(n, "invalid index expression %v[%v]", pe.Type(), e.Type())
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
-		op := n.PostfixExpression.check(ctx)
+		op := n.PostfixExpression.check(ctx, false) //TODO true
 		args := n.ArgumentExpressionList.check(ctx)
 		switch op.Declarator().Name() {
 		case idBuiltinConstantPIimpl:
@@ -2217,7 +2222,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 			n.Operand = n.checkCall(ctx, n, op.Type(), args, n.ArgumentExpressionList)
 		}
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-		op := n.PostfixExpression.check(ctx)
+		op := n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.Read += ctx.readDelta
@@ -2244,7 +2249,7 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 
 		n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
-		op := n.PostfixExpression.check(ctx)
+		op := n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := op.Declarator(); d != nil {
 			d.Read += ctx.readDelta
@@ -2274,14 +2279,14 @@ func (n *PostfixExpression) check(ctx *context) Operand {
 		}
 		n.Operand = &lvalue{Operand: &operand{typ: ft}}
 	case PostfixExpressionInc: // PostfixExpression "++"
-		op := n.PostfixExpression.check(ctx)
+		op := n.PostfixExpression.check(ctx, false)
 		if d := op.Declarator(); d != nil {
 			d.Read += ctx.readDelta
 			d.Write++
 		}
 		n.Operand = &operand{typ: op.Type()}
 	case PostfixExpressionDec: // PostfixExpression "--"
-		op := n.PostfixExpression.check(ctx)
+		op := n.PostfixExpression.check(ctx, false)
 		if d := op.Declarator(); d != nil {
 			d.Read += ctx.readDelta
 			d.Write++
@@ -2459,7 +2464,7 @@ func (n *Expression) check(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *PrimaryExpression) check(ctx *context) Operand {
+func (n *PrimaryExpression) check(ctx *context, implicitFunc bool) Operand {
 	if n == nil {
 		return noOperand
 	}
@@ -2468,7 +2473,7 @@ func (n *PrimaryExpression) check(ctx *context) Operand {
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
 		n.IsSideEffectsFree = true
-		return n.checkIdentifier(ctx)
+		return n.checkIdentifier(ctx, implicitFunc)
 	case PrimaryExpressionInt: // INTCONST
 		n.IsSideEffectsFree = true
 		n.Operand = n.intConst(ctx)
@@ -2548,7 +2553,7 @@ func wcharT(ctx *context, s Scope, tok Token) Type {
 	return t
 }
 
-func (n *PrimaryExpression) checkIdentifier(ctx *context) Operand {
+func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Operand {
 	ctx.not(n, mIntConstExpr)
 	var d *Declarator
 	nm := n.Token.Value
@@ -2580,12 +2585,47 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context) Operand {
 			}
 		}
 	}
-	if d == nil {
+	if d == nil && n.resolvedIn != nil {
 		d = n.resolvedIn.identifier(n.Token.Value, n.Token) //TODO use .declarator()
 	}
 	if d == nil {
+		_, ok := gccKeywords[nm]
+		if !ok && implicitFunc {
+			d := &Declarator{
+				DirectDeclarator: &DirectDeclarator{
+					lexicalScope: ctx.ast.Scope,
+					Case:         DirectDeclaratorFuncIdent,
+					DirectDeclarator: &DirectDeclarator{
+						lexicalScope: ctx.ast.Scope,
+						Case:         DirectDeclaratorIdent,
+						Token:        Token{Value: nm},
+					},
+				},
+			}
+			ed := &ExternalDeclaration{
+				Case: ExternalDeclarationDecl,
+				Declaration: &Declaration{
+					DeclarationSpecifiers: &DeclarationSpecifiers{
+						Case: DeclarationSpecifiersTypeSpec,
+						TypeSpecifier: &TypeSpecifier{
+							Case: TypeSpecifierInt,
+						},
+					},
+					InitDeclaratorList: &InitDeclaratorList{
+						InitDeclarator: &InitDeclarator{
+							Case:       InitDeclaratorDecl,
+							Declarator: d,
+						},
+					},
+				},
+			}
+			ed.check(ctx)
+			n.Operand = &funcDesignator{Operand: &operand{typ: d.Type()}, declarator: d}
+			return n.Operand
+		}
+
 		if !ctx.cfg.ignoreUndefinedIdentifiers {
-			ctx.errNode(n, "undefined: %s", n.Token.Value)
+			ctx.errNode(n, "undefined: %s", n.Token.Value) //TODO
 		}
 		return noOperand
 	}

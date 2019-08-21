@@ -441,6 +441,7 @@ func (n *AST) typecheck() (*context, error) {
 	}
 
 	ctx.intBits = int(ctx.cfg.ABI.Types[Int].Size) * 8
+	ctx.ast = n
 	n.TranslationUnit.check(ctx)
 	n.Structs = ctx.structs
 	var a []int
