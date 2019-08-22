@@ -2205,7 +2205,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 
 		ctx.errNode(n, "invalid index expression %v[%v]", pe.Type(), e.Type())
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
-		op := n.PostfixExpression.check(ctx, false) //TODO true
+		op := n.PostfixExpression.check(ctx, true)
 		args := n.ArgumentExpressionList.check(ctx)
 		switch op.Declarator().Name() {
 		case idBuiltinConstantPIimpl:
