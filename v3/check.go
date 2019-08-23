@@ -15,6 +15,8 @@ import (
 	"modernc.org/mathutil"
 )
 
+const longDoublePrec = 256
+
 type mode = int
 
 var (
@@ -2707,10 +2709,14 @@ loop2:
 
 	var v float64
 	var err error
+	prec := uint(64)
+	if suff == "l" {
+		prec = longDoublePrec
+	}
+	var bf *big.Float
 	switch {
-	case strings.Contains(s, "p") || strings.Contains(s, "P"):
-		var bf *big.Float
-		bf, _, err = big.ParseFloat(strings.ToLower(s), 0, 53, big.ToNearestEven)
+	case suff == "l" || strings.Contains(s, "p") || strings.Contains(s, "P"):
+		bf, _, err = big.ParseFloat(strings.ToLower(s), 0, prec, big.ToNearestEven)
 		if err == nil {
 			v, _ = bf.Float64()
 		}
@@ -2743,7 +2749,7 @@ loop2:
 
 	// [0]6.4.4.2
 	switch suff {
-	case "", "l":
+	case "":
 		switch {
 		case cplx != "":
 			return (&operand{typ: ctx.cfg.ABI.Type(ComplexDouble), value: Complex128Value(complex(0, v))}).normalize(ctx, n)
@@ -2756,6 +2762,13 @@ loop2:
 			return (&operand{typ: ctx.cfg.ABI.Type(ComplexFloat), value: Complex64Value(complex(0, float32(v)))}).normalize(ctx, n)
 		default:
 			return (&operand{typ: ctx.cfg.ABI.Type(Float), value: Float32Value(float32(v))}).normalize(ctx, n)
+		}
+	case "l":
+		switch {
+		case cplx != "":
+			return (&operand{typ: ctx.cfg.ABI.Type(ComplexLongDouble), value: Complex256Value{&Float128Value{n: bf}, &Float128Value{n: big.NewFloat(0)}}}).normalize(ctx, n)
+		default:
+			return (&operand{typ: ctx.cfg.ABI.Type(LongDouble), value: &Float128Value{n: bf}}).normalize(ctx, n)
 		}
 	default:
 		//dbg("%q %q %q %q %v", s0, s, suff, cplx, err)

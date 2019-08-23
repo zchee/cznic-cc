@@ -209,7 +209,7 @@ var (
 			Int128:     {16, 8, 8},
 			Int:        {4, 4, 4},
 			Long:       {8, 8, 8},
-			LongDouble: {8, 8, 8},
+			LongDouble: {16, 16, 16},
 			LongLong:   {8, 8, 8},
 			Ptr:        {8, 8, 8},
 			SChar:      {1, 1, 1},
