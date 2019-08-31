@@ -165,7 +165,7 @@ var (
 		sz       int
 		dev      bool
 	}{
-		{gccDir, "http://mirrors-usa.go-parts.com/gcc/releases/gcc-9.1.0/gcc-9.1.0.tar.gz", 118000, true},
+		{gccDir, "http://mirror.koddos.net/gcc/releases/gcc-9.1.0/gcc-9.1.0.tar.gz", 118000, true},
 		{sqliteDir, "https://www.sqlite.org/2019/sqlite-amalgamation-3270200.zip", 2200, false},
 		{tccDir, "http://download.savannah.gnu.org/releases/tinycc/tcc-0.9.27.tar.bz2", 620, false},
 	}
@@ -246,6 +246,8 @@ func init() {
 		log.Fatal("Cannot acquire host cpp configuration.")
 		return
 	}
+
+	testIncludes = append(testIncludes, filepath.FromSlash("/usr/include/csmith"))
 
 	if *oSkipInit {
 		return

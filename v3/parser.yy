@@ -349,6 +349,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.16 Assignment operators */
 			/*yy:field	Operand			Operand	*/
+			/*yy:field	InitializerOperand	Operand	// When the expression is used in an initializer */
 			/*yy:field	lexicalScope		Scope	*/
 			/*yy:field	promote			Type	*/
 			/*yy:field	IsSideEffectsFree	bool	*/
@@ -725,8 +726,8 @@ package cc // import "modernc.org/cc/v3"
 			/* [0], 6.7.8 Initialization */
 			/*yy:field	list	[]*Initializer       */
 			/*yy:field	typ	Type                 */
-			/*yy:field	isConst	bool                 */
 			/*yy:field	Offset	uintptr	// case Expr */
+			/*yy:field	isConst	bool                 */
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:
 				AssignmentExpression

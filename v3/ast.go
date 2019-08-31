@@ -625,6 +625,7 @@ func (n AssignmentExpressionCase) String() string {
 //	|       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
 type AssignmentExpression struct {
 	Operand               Operand
+	InitializerOperand    Operand // When the expression is used in an initializer
 	lexicalScope          Scope
 	promote               Type
 	IsSideEffectsFree     bool
@@ -2651,8 +2652,8 @@ func (n InitializerCase) String() string {
 type Initializer struct {
 	list                 []*Initializer
 	typ                  Type
-	isConst              bool
 	Offset               uintptr // case Expr
+	isConst              bool
 	AssignmentExpression *AssignmentExpression
 	Case                 InitializerCase `PrettyPrint:"stringer,zero"`
 	InitializerList      *InitializerList

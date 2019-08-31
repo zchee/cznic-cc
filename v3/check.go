@@ -231,6 +231,12 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 		if !n.AssignmentExpression.check(ctx).isConst() {
 			*isConst = false
 		}
+		switch op := n.AssignmentExpression.Operand; {
+		case t.Kind() == op.Type().Kind():
+			n.AssignmentExpression.InitializerOperand = op
+		default:
+			n.AssignmentExpression.InitializerOperand = op.convertTo(ctx, n, t)
+		}
 		*list = append(*list, n)
 		return n.checkExpr(ctx, list, isConst, t, off)
 	case InitializerInitList: // '{' InitializerList ',' '}'
@@ -1863,6 +1869,7 @@ func (n *EnumSpecifier) requireInt(ctx *context, m int64) (r Type) {
 	default:
 		w = mathutil.BitLenUint64(uint64(m)) + 1
 	}
+	w = mathutil.Max(w, 32)
 	abi := ctx.cfg.ABI
 	for k0, v := range intConvRank {
 		k := Kind(k0)
@@ -1887,6 +1894,7 @@ func (n *EnumSpecifier) requireInt(ctx *context, m int64) (r Type) {
 
 func (n *EnumSpecifier) requireUint(ctx *context, m uint64) (r Type) {
 	w := mathutil.BitLenUint64(m)
+	w = mathutil.Max(w, 32)
 	abi := ctx.cfg.ABI
 	for k0, v := range intConvRank {
 		k := Kind(k0)
@@ -2766,9 +2774,9 @@ loop2:
 	case "l":
 		switch {
 		case cplx != "":
-			return (&operand{typ: ctx.cfg.ABI.Type(ComplexLongDouble), value: Complex256Value{&Float128Value{n: bf}, &Float128Value{n: big.NewFloat(0)}}}).normalize(ctx, n)
+			return (&operand{typ: ctx.cfg.ABI.Type(ComplexLongDouble), value: Complex256Value{&Float128Value{N: bf}, &Float128Value{N: big.NewFloat(0)}}}).normalize(ctx, n)
 		default:
-			return (&operand{typ: ctx.cfg.ABI.Type(LongDouble), value: &Float128Value{n: bf}}).normalize(ctx, n)
+			return (&operand{typ: ctx.cfg.ABI.Type(LongDouble), value: &Float128Value{N: bf}}).normalize(ctx, n)
 		}
 	default:
 		//dbg("%q %q %q %q %v", s0, s, suff, cplx, err)

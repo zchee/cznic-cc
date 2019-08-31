@@ -300,9 +300,11 @@ func (v Float64Value) rsh(b Value) Value { panic(internalError()) }
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
 func (v Float64Value) xor(b Value) Value { panic(internalError()) }
 
+var float128Zero = &Float128Value{N: big.NewFloat(0)}
+
 type Float128Value struct {
-	n   *big.Float
-	nan bool
+	N   *big.Float
+	NaN bool
 }
 
 func (v *Float128Value) add(b Value) Value { return v.safe(b, func(x, y *big.Float) { x.Add(x, y) }) }
@@ -313,7 +315,7 @@ func (v *Float128Value) eq(b Value) Value  { panic(internalError()) }
 func (v *Float128Value) ge(b Value) Value  { panic(internalError()) }
 func (v *Float128Value) gt(b Value) Value  { return boolValue(v.cmp(b, -1, 0)) }
 func (v *Float128Value) isNonZero() bool   { panic(internalError()) }
-func (v *Float128Value) isZero() bool      { panic(internalError()) }
+func (v *Float128Value) isZero() bool      { return v.cmp(float128Zero, 0) }
 func (v *Float128Value) le(b Value) Value  { panic(internalError()) }
 func (v *Float128Value) lsh(b Value) Value { panic(internalError()) }
 func (v *Float128Value) lt(b Value) Value  { panic(internalError()) }
@@ -328,11 +330,11 @@ func (v *Float128Value) xor(b Value) Value { panic(internalError()) }
 
 func (v *Float128Value) cmp(b Value, accept ...int) bool {
 	w := b.(*Float128Value)
-	if v.nan || w.nan {
+	if v.NaN || w.NaN {
 		return false
 	}
 
-	x := v.n.Cmp(w.n)
+	x := v.N.Cmp(w.N)
 	for _, v := range accept {
 		if v == x {
 			return true
@@ -341,13 +343,13 @@ func (v *Float128Value) cmp(b Value, accept ...int) bool {
 	return false
 }
 
-func (v *Float128Value) safe(b Value, f func(*big.Float, *big.Float)) Value {
+func (v *Float128Value) safe(b Value, f func(*big.Float, *big.Float)) (ret Value) {
 	var w *Float128Value
 	if b != nil {
 		w = b.(*Float128Value)
 	}
-	if v.nan || w != nil && w.nan {
-		return &Float128Value{nan: true}
+	if v.NaN || w != nil && w.NaN {
+		return &Float128Value{NaN: true}
 	}
 
 	r := &Float128Value{}
@@ -355,8 +357,9 @@ func (v *Float128Value) safe(b Value, f func(*big.Float, *big.Float)) Value {
 	defer func() {
 		switch x := recover().(type) {
 		case big.ErrNaN:
-			r.n = nil
-			r.nan = true
+			r.N = nil
+			r.NaN = true
+			ret = r
 		case nil:
 			// ok
 		default:
@@ -364,12 +367,12 @@ func (v *Float128Value) safe(b Value, f func(*big.Float, *big.Float)) Value {
 		}
 	}()
 
-	r.n = big.NewFloat(0).Set(v.n)
+	r.N = big.NewFloat(0).SetPrec(0).Set(v.N)
 	var wn *big.Float
 	if w != nil {
-		wn = w.n
+		wn = w.N
 	}
-	f(r.n, wn)
+	f(r.N, wn)
 	return r
 }
 
@@ -420,12 +423,12 @@ func (v Complex128Value) sub(b Value) Value { return v - b.(Complex128Value) }
 func (v Complex128Value) xor(b Value) Value { panic(internalError()) }
 
 type Complex256Value struct {
-	re, im *Float128Value
+	Re, Im *Float128Value
 }
 
 func (v Complex256Value) add(b Value) Value {
 	w := b.(Complex256Value)
-	return Complex256Value{v.re.add(w.re).(*Float128Value), v.im.add(w.im).(*Float128Value)}
+	return Complex256Value{v.Re.add(w.Re).(*Float128Value), v.Im.add(w.Im).(*Float128Value)}
 }
 
 func (v Complex256Value) and(b Value) Value { panic(internalError()) }
@@ -435,7 +438,7 @@ func (v Complex256Value) eq(b Value) Value  { panic(internalError()) }
 func (v Complex256Value) ge(b Value) Value  { panic(internalError()) }
 func (v Complex256Value) gt(b Value) Value  { panic(internalError()) }
 func (v Complex256Value) isNonZero() bool   { panic(internalError()) }
-func (v Complex256Value) isZero() bool      { panic(internalError()) }
+func (v Complex256Value) isZero() bool      { return v.Re.isZero() && v.Im.isZero() }
 func (v Complex256Value) le(b Value) Value  { panic(internalError()) }
 func (v Complex256Value) lsh(b Value) Value { panic(internalError()) }
 func (v Complex256Value) lt(b Value) Value  { panic(internalError()) }
@@ -797,7 +800,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		case ComplexLongDouble:
 			panic("TODO693")
 		case LongDouble:
-			r.value = &Float128Value{n: big.NewFloat(float64(v))}
+			r.value = &Float128Value{N: big.NewFloat(float64(v))}
 		default:
 			panic(fmt.Sprintf("TODO695 %s", to.Kind()))
 		}
@@ -812,9 +815,9 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 			f := float64(v)
 			switch {
 			case math.IsNaN(f):
-				r.value = &Float128Value{nan: true}
+				r.value = &Float128Value{NaN: true}
 			default:
-				r.value = &Float128Value{n: big.NewFloat(f)}
+				r.value = &Float128Value{N: big.NewFloat(f)}
 			}
 		case Float:
 			r.value = Float32Value(v)
@@ -827,20 +830,20 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		v := v.(*Float128Value)
 		switch to.Kind() {
 		case Double:
-			if v.nan {
+			if v.NaN {
 				r.value = Float64Value(math.NaN())
 				break
 			}
 
-			d, _ := v.n.Float64()
+			d, _ := v.N.Float64()
 			r.value = Float64Value(d)
 		case ComplexLongDouble:
-			if v.nan {
-				r.value = Complex256Value{v, &Float128Value{nan: true}}
+			if v.NaN {
+				r.value = Complex256Value{v, &Float128Value{NaN: true}}
 				break
 			}
 
-			r.value = Complex256Value{v, &Float128Value{n: big.NewFloat(0)}}
+			r.value = Complex256Value{v, &Float128Value{N: big.NewFloat(0)}}
 		default:
 			panic(fmt.Sprintf("TODO813 %v", to.Kind()))
 		}
@@ -1004,9 +1007,9 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 	case LongDouble:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: &Float128Value{n: big.NewFloat(0).SetInt64(int64(v))}}).normalize(ctx, n)
+			return (&operand{typ: to, value: &Float128Value{N: big.NewFloat(0).SetInt64(int64(v))}}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: &Float128Value{n: big.NewFloat(0).SetUint64(v)}}).normalize(ctx, n)
+			return (&operand{typ: to, value: &Float128Value{N: big.NewFloat(0).SetUint64(v)}}).normalize(ctx, n)
 		}
 	case Ptr:
 		return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
