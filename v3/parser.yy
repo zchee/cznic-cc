@@ -533,6 +533,7 @@ package cc // import "modernc.org/cc/v3"
 			|	StructDeclarationList StructDeclaration
 		
 			/*yy:example struct{ int i; } */
+			/*yy:field	Empty		bool // TCC extension */
 			StructDeclaration:
 				SpecifierQualifierList StructDeclaratorList ';'
 		

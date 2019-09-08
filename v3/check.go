@@ -2058,7 +2058,7 @@ func (n *StructDeclarationList) check(ctx *context) (s []*field) {
 }
 
 func (n *StructDeclaration) check(ctx *context) (s []*field) {
-	if n == nil {
+	if n == nil || n.Empty {
 		return nil
 	}
 

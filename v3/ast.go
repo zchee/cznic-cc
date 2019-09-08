@@ -4357,6 +4357,7 @@ func (n *StorageClassSpecifier) Position() (r token.Position) {
 //	StructDeclaration:
 //	        SpecifierQualifierList StructDeclaratorList ';'
 type StructDeclaration struct {
+	Empty                  bool // TCC extension
 	SpecifierQualifierList *SpecifierQualifierList
 	StructDeclaratorList   *StructDeclaratorList
 	Token                  Token

@@ -856,6 +856,24 @@ start:
 // paste last of left side with first of right side
 //
 // [1] pg. 3
+//
+//TODO implement properly [0], 6.10.3.3, 2. Must rescan the resulting token(s).
+//
+// $ cat main.c
+// #include <stdio.h>
+//
+// #define foo(a, b) a ## b
+//
+// int main() {
+// 	int i = 42;
+// 	i foo(+, +);
+// 	printf("%i\n", i);
+// 	return 0;
+// }
+// $ rm -f a.out ; gcc -Wall main.c && ./a.out ; echo $?
+// 43
+// 0
+// $
 func (c *cpp) glue(ls, rs []cppToken) (out []cppToken) {
 	if len(rs) == 0 {
 		return ls
@@ -2058,12 +2076,14 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 		return
 	}
 
-	args := make([]cppToken, len(n.arg))
-	for i, v := range n.arg {
-		args[i] = cppToken{token4{token3: v}, nil}
-	}
-	for len(args) != 0 && args[0].char == ' ' {
-		args = args[1:]
+	args := make([]cppToken, 0, len(n.arg))
+	for _, v := range n.arg {
+		switch v.char {
+		case ' ', '\t', '\v', '\f':
+			// nop
+		default:
+			args = append(args, cppToken{token4{token3: v}, nil})
+		}
 	}
 	var sb strings.Builder
 	for _, v := range args {
@@ -2081,12 +2101,20 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 	default:
 		var w cppWriter
 		c.expand(&cppReader{buf: args}, &w, false)
+		x := 0
+		for _, v := range w.toks {
+			switch v.char {
+			case ' ', '\t', '\v', '\f':
+				// nop
+			default:
+				w.toks[x] = v
+				x++
+			}
+		}
+		w.toks = w.toks[:x]
 		nm = strings.TrimSpace(cppToksStr(w.toks, ""))
 	}
 	toks := n.toks
-	for toks[0].char == ' ' {
-		toks = toks[1:]
-	}
 	if c.ctx.cfg.RejectIncludeNext {
 		c.err(toks[0], "#include_next is a GCC extension")
 		return

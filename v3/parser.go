@@ -422,7 +422,7 @@ func (p *parser) err0(consume bool, msg string, args ...interface{}) {
 	if consume {
 		p.tok.Rune = 0
 	}
-	if p.ctx.err(p.tok.Position(), msg, args...) {
+	if p.ctx.err(p.tok.Position(), "`%s`: "+msg, append([]interface{}{p.tok}, args...)...) {
 		p.closed = true
 	}
 }
@@ -446,9 +446,9 @@ func (p *parser) shift() (r Token) {
 	return r
 }
 
-func (p *parser) unget(toks ...Token) {
+func (p *parser) unget(toks ...Token) { //TODO injected __func__ has two trailing semicolons, why?
 	p.inBuf = append(toks, p.inBuf...)
-	// fmt.Println("injected:", tokStr(toks, " ")) //TODO-
+	// fmt.Printf("unget %q\n", tokStr(toks, "|")) //TODO-
 }
 
 func (p *parser) peek(handleTypedefname bool) rune {
@@ -468,7 +468,7 @@ func (p *parser) peek(handleTypedefname bool) rune {
 
 		p.inBuf = *p.inBufp
 		// dbg("parser receives: %q", tokStr(p.inBuf, "|"))
-		// fmt.Println(tokStr(p.inBuf, " ")) //TODO-
+		// fmt.Printf("parser receives %v: %q\n", p.inBuf[0].Position(), tokStr(p.inBuf, "|")) //TODO-
 	}
 	tok := p.inBuf[0]
 	r := tok.Rune
@@ -529,7 +529,7 @@ more:
 
 		p.inBuf = *p.inBufp
 		// dbg("parser receives: %q", tokStr(p.inBuf, "|"))
-		// fmt.Println(tokStr(p.inBuf, " ")) //TODO-
+		// fmt.Printf("parser receives %v: %q\n", p.inBuf[0].Position(), tokStr(p.inBuf, "|")) //TODO-
 	}
 	p.tok = p.inBuf[0]
 	switch p.tok.Rune {
@@ -1855,6 +1855,12 @@ func (p *parser) structDeclarationList() (r *StructDeclarationList) {
 //  struct-declaration:
 // 	specifier-qualifier-list struct-declarator-list ;
 func (p *parser) structDeclaration() (r *StructDeclaration) {
+	if p.rune() == ';' {
+		if p.ctx.cfg.RejectEmptyStructDeclaration {
+			p.err("expected struct-declaration")
+		}
+		return &StructDeclaration{Empty: true, Token: p.shift()}
+	}
 	sql := p.specifierQualifierList()
 	var list *StructDeclaratorList
 	switch p.rune() {

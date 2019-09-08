@@ -359,6 +359,7 @@ type Config struct {
 	RejectEmptyCompositeLiterals           bool // Pedantic: do not silently accept "foo = (T){}".
 	RejectEmptyDeclarations                bool // Pedantic: do not silently accept "int foo(){};".
 	RejectEmptyInitializerList             bool // Pedantic: do not silently accept "foo f = {};".
+	RejectEmptyStructDeclaration           bool // Pedantic: do not silently accept "struct{; int i}".
 	RejectEmptyStructs                     bool // Pedantic: do not silently accept "struct foo {};".
 	RejectIncompatibleMacroRedef           bool // Pedantic: do not silently accept "#define MIN(A,B) ...\n#define MIN(a,b) ...\n" etc.
 	RejectLabelValues                      bool // Pedantic: do not silently accept "foo: bar(); void *ptr = &&foo;" or "goto *ptr".
