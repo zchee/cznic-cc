@@ -1323,6 +1323,7 @@ type Declarator struct {
 	AddressTaken           bool
 	IsParameter            bool
 	IsTypedefName          bool
+	fnDef                  bool
 	hasInitalizer          bool
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator

@@ -477,7 +477,7 @@ func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *boo
 	// the object, including unnamed members, is that of the expression.
 	case Struct, Union:
 		if op.Type().Kind() != t.Kind() {
-			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+			panic(fmt.Sprintf("TODO %v: %v <- %v\n", n.Position(), t, op.Type().Kind()))
 		}
 
 		//TODO check op is assignment compatible
@@ -2574,19 +2574,31 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 		}
 
 	out:
-		for s := n.lexicalScope; s != nil; s = s.Parent() { //TODO use s.declarator()
+		for s := n.lexicalScope; s != nil; s = s.Parent() {
 			for _, v := range s[nm] {
 				switch x := v.(type) {
 				case *Enumerator:
 					break out
 				case *Declarator:
 					if x.IsTypedefName {
+						d = nil
 						break out
 					}
 
 					n.resolvedIn = s
 					d = x
-					break out
+					t := d.Type()
+					if t != nil && t.Kind() == Function {
+						if d.fnDef {
+							break out
+						}
+
+						continue
+					}
+
+					if t != nil && !t.IsIncomplete() {
+						break out
+					}
 				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator, *LabeledStatement:
 					// nop
 				default:
@@ -2596,7 +2608,7 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 		}
 	}
 	if d == nil && n.resolvedIn != nil {
-		d = n.resolvedIn.identifier(n.Token.Value, n.Token) //TODO use .declarator()
+		d = n.resolvedIn.declarator(n.Token.Value, n.Token)
 	}
 	if d == nil {
 		_, ok := gccKeywords[nm]
@@ -3821,6 +3833,7 @@ func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 		return
 	}
 
+	n.Declarator.fnDef = true
 	ctx.checkFn = n
 	typ := n.DeclarationSpecifiers.check(ctx)
 	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)

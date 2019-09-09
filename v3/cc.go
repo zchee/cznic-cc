@@ -277,8 +277,19 @@ func (s *Scope) declarator(nm StringID, tok Token) *Declarator {
 				}
 
 				for _, v := range defs {
-					if x, ok := v.(*Declarator); ok && x.Type() != nil && !x.Type().IsIncomplete() {
-						return x
+					if x, ok := v.(*Declarator); ok {
+						t := x.Type()
+						if t != nil && t.Kind() == Function {
+							if x.fnDef {
+								return x
+							}
+
+							continue
+						}
+
+						if t != nil && !x.Type().IsIncomplete() {
+							return x
+						}
 					}
 
 				}

@@ -3711,10 +3711,10 @@ func (p *parser) fn(nm StringID) (r []Token) {
 			{Rune: ';', Value: idSemicolon},
 		}...)
 	}
-	for i, v := range toks {
+	for _, v := range toks {
 		v.fileID = p.tok.fileID
 		v.pos = p.tok.pos
-		v.seq = p.tok.seq + int32(i) + 1
+		v.seq = p.tok.seq
 		r = append(r, v)
 	}
 	return r
