@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -225,7 +226,11 @@ var (
 	}
 )
 
-func init() {
+func TestMain(m *testing.M) {
+	defer func() {
+		os.Exit(m.Run())
+	}()
+
 	isTesting = true
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	flags.BoolVar(&panicOnParserError, "panicOnParserError", false, "Panic on parser error.") //TODOOK
