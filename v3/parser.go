@@ -3712,7 +3712,7 @@ func (p *parser) fn(nm StringID) (r []Token) {
 		}...)
 	}
 	for _, v := range toks {
-		v.fileID = p.tok.fileID
+		v.file = p.tok.file
 		v.pos = p.tok.pos
 		v.seq = p.tok.seq
 		r = append(r, v)

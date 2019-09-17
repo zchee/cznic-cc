@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"modernc.org/token"
 )
 
 func TestScanner(t *testing.T) {
@@ -28,7 +27,7 @@ func TestScanner(t *testing.T) {
 	//         12 34 5 6
 
 	buf := []byte(c)
-	file := token.NewFile("x", len(buf))
+	file := tokenNewFile("x", len(buf))
 	s := newScanner(newContext(&Config{}), bytes.NewReader(buf), file)
 	var gtoks []token3
 	for {
@@ -57,7 +56,7 @@ func TestScanner(t *testing.T) {
 	}
 }
 
-func (t *token3) str(file *token.File) string {
+func (t *token3) str(file *tokenFile) string {
 	pos := ""
 	switch {
 	case t.pos <= 0 || int(t.pos) > file.Size()+1:
@@ -106,7 +105,7 @@ in() {
 	for _, v := range trigraphs {
 		buf = bytes.Replace(buf, v.to, v.from, -1)
 	}
-	file := token.NewFile("x", len(buf))
+	file := tokenNewFile("x", len(buf))
 	s := newScanner(newContext(&Config{Config3: Config3{PreserveWhiteSpace: true}}), bytes.NewReader(buf), file)
 	out := ""
 	for {
@@ -147,7 +146,7 @@ func TestScannerTranslationPhase2b(t *testing.T) {
 	} {
 
 		buf := []byte(v.in)
-		file := token.NewFile("x", len(buf))
+		file := tokenNewFile("x", len(buf))
 		cfg := v.cfg
 		if cfg == nil {
 			cfg = &Config{}
@@ -296,7 +295,7 @@ next:
 		if cfg == nil {
 			cfg = &Config{}
 		}
-		file := token.NewFile("x", len(buf))
+		file := tokenNewFile("x", len(buf))
 		s := newScanner(newContext(cfg), bytes.NewReader(buf), file)
 		s.ctx = newContext(cfg)
 		var toks []token3
@@ -377,7 +376,7 @@ func TestScanner3(t *testing.T) {
 
 		sz := info.Size()
 		bytes += sz
-		s := newScanner(newContext(cfg), bufio.NewReader(f), token.NewFile(path, int(sz)))
+		s := newScanner(newContext(cfg), bufio.NewReader(f), tokenNewFile(path, int(sz)))
 		for {
 			s.lex()
 			if s.tok.char < 0 {
@@ -443,7 +442,7 @@ func BenchmarkScanner(b *testing.B) {
 
 			sz := info.Size()
 			bytes += sz
-			s := newScanner(newContext(cfg), bufio.NewReader(f), token.NewFile(path, int(sz)))
+			s := newScanner(newContext(cfg), bufio.NewReader(f), tokenNewFile(path, int(sz)))
 			for {
 				s.lex()
 				if s.tok.char < 0 {
@@ -496,7 +495,7 @@ func TestScannerTranslationPhase3(t *testing.T) {
 		sz := info.Size()
 		bytes += sz
 		ctx := newContext(cfg)
-		newScanner(newContext(cfg), bufio.NewReader(f), token.NewFile(path, int(sz))).translationPhase3()
+		newScanner(newContext(cfg), bufio.NewReader(f), tokenNewFile(path, int(sz))).translationPhase3()
 		if err := ctx.Err(); err != nil {
 			t.Error(err)
 		}
@@ -561,7 +560,7 @@ out:
 		ctx := newContext(cfg)
 		files++
 		size += int64(len(out))
-		newScanner(newContext(cfg), bytes.NewReader(out), token.NewFile("test-scanner", len(out))).translationPhase3()
+		newScanner(newContext(cfg), bytes.NewReader(out), tokenNewFile("test-scanner", len(out))).translationPhase3()
 		if err := ctx.Err(); err != nil {
 			t.Errorf("%s\n%s\n%v", extra, out, err)
 			break

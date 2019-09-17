@@ -212,7 +212,7 @@ func testParse(t *testing.T, cfg *Config, predef string, files ...string) {
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m1)
 	t.Logf("sources %v, bytes %v, %v, %v B/s, mem %v",
-		h(ctx.tuSources), h(ctx.tuSize), d, h(float64(time.Second)*float64(ctx.tuSize)/float64(d)), h(m1.Alloc-m0.Alloc))
+		h(ctx.tuSources()), h(ctx.tuSize()), d, h(float64(time.Second)*float64(ctx.tuSize())/float64(d)), h(m1.Alloc-m0.Alloc))
 }
 
 func BenchmarkParseSQLite(b *testing.B) {
@@ -239,7 +239,7 @@ func benchmarkParseSQLite(b *testing.B, cfg *Config, predef string, files ...str
 		return
 	}
 
-	sz := ctx.tuSize
+	sz := ctx.tuSize()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -376,8 +376,8 @@ func testDevParse(t *testing.T, predef string, filter func(string) bool, min int
 			ok++
 			m[key]++
 		}
-		psources += ctx.tuSources
-		bytes += ctx.tuSize
+		psources += ctx.tuSources()
+		bytes += ctx.tuSize()
 		return nil
 	}); err != nil {
 		t.Error(err)
@@ -456,7 +456,7 @@ func benchmarkDevParse(b *testing.B, predef string) {
 			}
 			ctx := newContext(cfg)
 			parse(ctx, testIncludes, testSysIncludes, sources)
-			bytes += ctx.tuSize
+			bytes += ctx.tuSize()
 			return nil
 		}); err != nil {
 			b.Fatal(err)
@@ -567,8 +567,8 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bo
 		ctx := newContext(cfg)
 
 		defer func() {
-			psources += ctx.tuSources
-			bytes += ctx.tuSize
+			psources += ctx.tuSources()
+			bytes += ctx.tuSize()
 		}()
 
 		if *oTrace {
@@ -670,7 +670,7 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string, must bool)
 					b.Error(err)
 				}
 			}
-			bytes += ctx.tuSize
+			bytes += ctx.tuSize()
 			return nil
 		}); err != nil {
 			b.Error(err)

@@ -41,6 +41,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"modernc.org/strutil"
 	"modernc.org/token"
@@ -416,8 +417,8 @@ type context struct {
 	structs         map[StructInfo]struct{}
 	switches        int
 	sysIncludePaths []string
-	tuSize          int64 // Sum of sizes of processed inputs
-	tuSources       int   // Number of processed inputs
+	tuSize0         int64 // Sum of sizes of processed inputs
+	tuSources0      int32 // Number of processed inputs
 	wcharT          Type
 
 	capture bool
@@ -435,6 +436,11 @@ func newContext(cfg *Config) *context {
 		structs:   map[StructInfo]struct{}{},
 	}
 }
+
+func (c *context) tuSizeAdd(n int64)    { atomic.AddInt64(&c.tuSize0, n) }
+func (c *context) tuSize() int64        { return atomic.LoadInt64(&c.tuSize0) }
+func (c *context) tuSourcesAdd(n int32) { atomic.AddInt32(&c.tuSources0, n) }
+func (c *context) tuSources() int       { return int(atomic.LoadInt32(&c.tuSources0)) }
 
 func (c *context) stddef(nm StringID, s Scope, tok Token) Type {
 	if d := s.typedef(nm, tok); d != nil {
@@ -642,12 +648,12 @@ func env(key, val string) string {
 
 // Token is a grammar terminal.
 type Token struct {
-	Rune   rune     // ';' or IDENTIFIER etc.
-	Sep    StringID // If Config3.PreserveWhiteSpace is in effect: All preceding white space, if any, combined, including comments.
-	Value  StringID // ";" or "foo" etc.
-	fileID int32
-	pos    int32
-	seq    int32
+	Rune  rune     // ';' or IDENTIFIER etc.
+	Sep   StringID // If Config3.PreserveWhiteSpace is in effect: All preceding white space combined, including comments.
+	Value StringID // ";" or "foo" etc.
+	file  *tokenFile
+	pos   int32
+	seq   int32
 }
 
 // Seq returns t's sequential number.
@@ -664,10 +670,8 @@ func (t Token) String() string { return t.Value.String() }
 
 // Position implements Node.
 func (t *Token) Position() (r token.Position) {
-	if t.pos != 0 && t.fileID > 0 {
-		if file := cache.file(t.fileID); file != nil {
-			r = file.PositionFor(token.Pos(t.pos), true)
-		}
+	if t.pos != 0 && t.file != nil {
+		r = t.file.PositionFor(token.Pos(t.pos), true)
 	}
 	return r
 }

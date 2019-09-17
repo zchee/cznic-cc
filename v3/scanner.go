@@ -61,6 +61,39 @@ var (
 	}
 )
 
+type tokenFile struct {
+	*token.File
+	sync.RWMutex
+}
+
+func tokenNewFile(name string, sz int) *tokenFile { return &tokenFile{File: token.NewFile(name, sz)} }
+
+func (f *tokenFile) Position(pos token.Pos) (r token.Position) {
+	f.RLock()
+	r = f.File.Position(pos)
+	f.RUnlock()
+	return r
+}
+
+func (f *tokenFile) PositionFor(pos token.Pos, adjusted bool) (r token.Position) {
+	f.RLock()
+	r = f.File.PositionFor(pos, adjusted)
+	f.RUnlock()
+	return r
+}
+
+func (f *tokenFile) AddLine(off int) {
+	f.Lock()
+	f.File.AddLine(off)
+	f.Unlock()
+}
+
+func (f *tokenFile) AddLineInfo(off int, fn string, line int) {
+	f.Lock()
+	f.File.AddLineInfo(off, fn, line)
+	f.Unlock()
+}
+
 type node interface {
 	Pos() token.Pos
 }
@@ -160,7 +193,7 @@ type scanner struct {
 	bytesBuf      []byte
 	charBuf       []char
 	ctx           *context
-	file          *token.File
+	file          *tokenFile
 	fileOffset    int
 	firstPos      token.Pos
 	lineBuf       []byte
@@ -178,7 +211,7 @@ type scanner struct {
 	preserveWhiteSpace bool
 }
 
-func newScanner0(ctx *context, r io.Reader, file *token.File, bufSize int) *scanner {
+func newScanner0(ctx *context, r io.Reader, file *tokenFile, bufSize int) *scanner {
 	s := &scanner{
 		ctx:  ctx,
 		file: file,
@@ -190,7 +223,7 @@ func newScanner0(ctx *context, r io.Reader, file *token.File, bufSize int) *scan
 	return s
 }
 
-func newScanner(ctx *context, r io.Reader, file *token.File) *scanner {
+func newScanner(ctx *context, r io.Reader, file *tokenFile) *scanner {
 	bufSize := 1 << 17 // emulate gcc
 	if n := ctx.cfg.MaxSourceLine; n > 4096 {
 		bufSize = n
@@ -1062,7 +1095,6 @@ func (s *scanner) scanToNonBlankToken(toks []token3) []token3 {
 // Translation phase4 source.
 type source interface {
 	ppFile() (*ppFile, error)
-	fileID() int32
 }
 
 type cachedPPFile struct {
@@ -1072,11 +1104,8 @@ type cachedPPFile struct {
 	pf      *ppFile
 	readyCh chan struct{}
 	size    int
-
-	id int32
 }
 
-func (c *cachedPPFile) fileID() int32                   { return c.id }
 func (c *cachedPPFile) ready() *cachedPPFile            { close(c.readyCh); return c }
 func (c *cachedPPFile) waitFor() (*cachedPPFile, error) { <-c.readyCh; return c, c.err }
 
@@ -1097,34 +1126,10 @@ type cacheKey struct {
 
 type ppCache struct {
 	mu sync.RWMutex
-	f  map[int32]*token.File
 	m  map[cacheKey]*cachedPPFile
-
-	fileID int32
 }
 
-func newPPCache() *ppCache {
-	return &ppCache{
-		f: map[int32]*token.File{},
-		m: map[cacheKey]*cachedPPFile{},
-	}
-}
-
-func (c *ppCache) allocID(tf *token.File) (r int32) {
-	c.mu.Lock()
-	c.fileID++
-	r = c.fileID
-	c.f[r] = tf
-	c.mu.Unlock()
-	return r
-}
-
-func (c *ppCache) file(id int32) *token.File {
-	c.mu.RLock()
-	r := c.f[id]
-	c.mu.RUnlock()
-	return r
-}
+func newPPCache() *ppCache { return &ppCache{m: map[cacheKey]*cachedPPFile{}} }
 
 func (c *ppCache) get(ctx *context, src Source) (source, error) {
 	if src.Value != "" {
@@ -1161,10 +1166,9 @@ func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPP
 
 		defer f.Close()
 
-		tf := token.NewFile(name, size)
+		tf := tokenNewFile(name, size)
 		ppFile := newScanner(ctx, f, tf).translationPhase3()
-		cf := &cachedPPFile{pf: ppFile, id: c.allocID(tf), readyCh: make(chan struct{})}
-		c.allocID(tf)
+		cf := &cachedPPFile{pf: ppFile, readyCh: make(chan struct{})}
 		cf.ready()
 		return cf, nil
 	}
@@ -1184,14 +1188,11 @@ func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPP
 			return r, err
 		}
 
-		delete(c.f, cf.id)
 		delete(c.m, key)
 	}
 
-	c.fileID++
-	tf := token.NewFile(name, size)
-	c.f[c.fileID] = tf
-	cf := &cachedPPFile{modTime: modTime, size: size, id: c.fileID, readyCh: make(chan struct{})}
+	tf := tokenNewFile(name, size)
+	cf := &cachedPPFile{modTime: modTime, size: size, readyCh: make(chan struct{})}
 	if !doNotCache {
 		c.m[key] = cf
 	}
@@ -1231,11 +1232,8 @@ func (c *ppCache) getValue(ctx *context, name, value string, doNotCache bool) (*
 		return r, err
 	}
 
-	c.fileID++
-	fileID := c.fileID
-	tf := token.NewFile(name, len(value))
-	c.f[fileID] = tf
-	cf := &cachedPPFile{id: fileID, readyCh: make(chan struct{})}
+	tf := tokenNewFile(name, len(value))
+	cf := &cachedPPFile{readyCh: make(chan struct{})}
 	if !doNotCache {
 		c.m[key] = cf
 	}

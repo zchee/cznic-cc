@@ -263,7 +263,7 @@ func testTranslationPhase4(t *testing.T, predef, src source) {
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m1)
 	t.Logf("sources %v, bytes %v, %v, %v B/s, mem %v",
-		h(ctx.tuSources), h(ctx.tuSize), d, h(float64(time.Second)*float64(ctx.tuSize)/float64(d)), h(m1.Alloc-m0.Alloc))
+		h(ctx.tuSources()), h(ctx.tuSize()), d, h(float64(time.Second)*float64(ctx.tuSize())/float64(d)), h(m1.Alloc-m0.Alloc))
 }
 
 func BenchmarkTranslationPhase4(b *testing.B) {
@@ -291,5 +291,5 @@ func benchmarkTranslationPhase4(b *testing.B, predef, src source) {
 			b.Error(err)
 		}
 	}
-	b.SetBytes(ctx.tuSize)
+	b.SetBytes(ctx.tuSize())
 }

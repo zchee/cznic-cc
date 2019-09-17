@@ -74,15 +74,13 @@ type tokenWriter interface {
 
 // token4 is produced by translation phase 4.
 type token4 struct {
-	fileID int32
+	file *tokenFile //TODO sort fields
 	token3
 }
 
 func (t *token4) Position() (r token.Position) {
-	if t.pos != 0 && t.fileID != 0 {
-		if f := cache.file(t.fileID); f != nil {
-			r = f.PositionFor(token.Pos(t.pos), true)
-		}
+	if t.pos != 0 && t.file != nil {
+		r = t.file.PositionFor(token.Pos(t.pos), true)
 	}
 	return r
 }
@@ -235,7 +233,7 @@ type cpp struct {
 	counter      int
 	counterMacro macro
 	ctx          *context
-	file         *token.File
+	file         *tokenFile
 	fileMacro    macro
 	in           chan []token3
 	inBuf        []token3
@@ -247,8 +245,6 @@ type cpp struct {
 	outBuf       *[]token4
 	rq           chan struct{}
 	ungetBuf
-
-	fileID int32
 
 	last rune
 
@@ -281,7 +277,7 @@ func (c *cpp) cppToks(toks []token3) (r []cppToken) {
 	r = make([]cppToken, len(toks))
 	for i, v := range toks {
 		r[i].token4.token3 = v
-		r[i].token4.fileID = c.fileID
+		r[i].token4.file = c.file
 	}
 	return r
 }
@@ -324,7 +320,7 @@ func (c *cpp) read() (cppToken, bool) {
 
 	tok := c.inBuf[0]
 	c.inBuf = c.inBuf[1:]
-	return cppToken{token4{c.fileID, tok}, nil}, true
+	return cppToken{token4{token3: tok, file: c.file}, nil}, true
 }
 
 func (c *cpp) write(tok cppToken) {
@@ -431,7 +427,7 @@ loop:
 		a[i] = "#pragma " + strings.ReplaceAll(v, `\\`, `\`) + "\n"
 	}
 	src := strings.Join(a, "")
-	s := newScanner0(c.ctx, strings.NewReader(src), token.NewFile("", len(src)), 4096)
+	s := newScanner0(c.ctx, strings.NewReader(src), tokenNewFile("", len(src)), 4096)
 	if ppf := s.translationPhase3(); ppf != nil {
 		ppf.translationPhase4(c)
 	}
@@ -479,7 +475,7 @@ func (c *cpp) expand(ts tokenReader, w tokenWriter, expandDefined bool) {
 	// dbg("==== expand enter")
 start:
 	tok, ok := ts.read()
-	tok.fileID = c.fileID
+	tok.file = c.file
 	// First, if TS is the empty set, the result is the empty set.
 	if !ok {
 		// ---------------------------------------------------------- A
@@ -976,7 +972,7 @@ func (c *cpp) hsAdd(hs hideSet, toks []cppToken) []cppToken {
 		for k, w := range hs {
 			v.hs[k] = w
 		}
-		v.fileID = c.fileID
+		v.file = c.file
 		toks[i] = v
 	}
 	return toks
@@ -2225,16 +2221,13 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 	}
 
 	saveFile := c.file
-	saveFileIF := c.fileID
 	saveFileMacro := c.fileMacro.repl[0].value
 
 	c.file = pf.file
-	c.fileID = cf.fileID()
 	c.fileMacro.repl[0].value = dict.sid(fmt.Sprintf("%q", c.file.Name()))
 
 	defer func() {
 		c.file = saveFile
-		c.fileID = saveFileIF
 		c.fileMacro.repl[0].value = saveFileMacro
 	}()
 
@@ -2334,7 +2327,6 @@ func (c *cpp) translationPhase4(in []source) chan *[]token4 {
 			}
 
 			c.file = pf.file
-			c.fileID = v.fileID()
 			c.fileMacro.repl[0].value = dict.sid(fmt.Sprintf("%q", c.file.Name()))
 			pf.translationPhase4(c)
 		}
@@ -2422,7 +2414,7 @@ func parsePragma(c *cpp, args0 []token3) {
 
 	var toks []cppToken
 	for _, v := range args0[:len(args0)-1] {
-		toks = append(toks, cppToken{token4: token4{fileID: c.fileID, token3: v}})
+		toks = append(toks, cppToken{token4: token4{file: c.file, token3: v}})
 	}
 	if len(toks) == 0 {
 		return
@@ -2444,7 +2436,7 @@ func parsePragma(c *cpp, args0 []token3) {
 			t.Rune = tok.char
 			t.Sep = sep
 			t.Value = tok.value
-			t.fileID = tok.fileID
+			t.file = tok.file
 			t.pos = tok.pos
 			toks2 = append(toks2, t)
 			sep = 0
@@ -2539,7 +2531,7 @@ func expandArgs(c *cpp, args []token3) []cppToken {
 	var w cppWriter
 	var toks []cppToken
 	for _, v := range args {
-		toks = append(toks, cppToken{token4: token4{fileID: c.fileID, token3: v}})
+		toks = append(toks, cppToken{token4: token4{file: c.file, token3: v}})
 	}
 	c.expand(&cppReader{buf: toks}, &w, true)
 	return w.toks
@@ -2618,7 +2610,7 @@ func (n *ppDefineObjectMacroDirective) translationPhase4(c *cpp) {
 		}
 	}
 	// dbg("#define %s %s // %v", n.name, tokStr(n.replacementList, " "), c.file.PositionFor(n.name.Pos(), true))
-	c.macros[nm] = &macro{name: token4{token3: n.name, fileID: c.fileID}, repl: n.replacementList}
+	c.macros[nm] = &macro{name: token4{token3: n.name, file: c.file}, repl: n.replacementList}
 	if nm != idGNUC {
 		return
 	}
@@ -2688,7 +2680,7 @@ func (n *ppDefineFunctionMacroDirective) translationPhase4(c *cpp) {
 		fp = append(fp, v.value)
 	}
 	// dbg("#define %s %s // %v", n.name, tokStr(n.replacementList, " "), c.file.PositionFor(n.name.Pos(), true))
-	c.macros[nm] = &macro{fp: fp, isFnLike: true, name: token4{token3: n.name, fileID: c.fileID}, repl: n.replacementList, variadic: n.variadic, namedVariadic: n.namedVariadic}
+	c.macros[nm] = &macro{fp: fp, isFnLike: true, name: token4{token3: n.name, file: c.file}, repl: n.replacementList, variadic: n.variadic, namedVariadic: n.namedVariadic}
 }
 
 // [0], 6.10.1
@@ -2735,14 +2727,14 @@ func (n *ppElseGroup) translationPhase4(c *cpp) {
 //  PreprocessingFile:
 //  		GroupOpt
 type ppFile struct {
-	file   *token.File
+	file   *tokenFile
 	groups []ppGroup
 }
 
 func (n *ppFile) translationPhase4(c *cpp) {
-	c.ctx.tuSources++
+	c.ctx.tuSourcesAdd(1)
 	if f := n.file; f != nil {
-		c.ctx.tuSize += int64(f.Size())
+		c.ctx.tuSizeAdd(int64(f.Size()))
 	}
 	for _, v := range n.groups {
 		v.translationPhase4(c)

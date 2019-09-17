@@ -57,7 +57,7 @@ func testTranslate(t *testing.T, cfg *Config, predef string, files ...string) {
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m1)
 	t.Logf("sources %v, bytes %v, %v, %v B/s, mem %v",
-		h(ctx.tuSources), h(ctx.tuSize), d, h(float64(time.Second)*float64(ctx.tuSize)/float64(d)), h(m1.Alloc-m0.Alloc))
+		h(ctx.tuSources()), h(ctx.tuSize()), d, h(float64(time.Second)*float64(ctx.tuSize())/float64(d)), h(m1.Alloc-m0.Alloc))
 }
 
 func BenchmarkTranslateSQLite(b *testing.B) {
@@ -84,7 +84,7 @@ func benchmarkTranslateSQLite(b *testing.B, cfg *Config, predef string, files ..
 		return
 	}
 
-	sz := ctx.tuSize
+	sz := ctx.tuSize()
 	var err error
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -312,8 +312,8 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, mus
 		ctx := newContext(cfg)
 
 		defer func() {
-			psources += ctx.tuSources
-			bytes += ctx.tuSize
+			psources += ctx.tuSources()
+			bytes += ctx.tuSize()
 		}()
 
 		if *oTrace {
@@ -439,7 +439,7 @@ func benchmarkTranslateDir(b *testing.B, cfg *Config, predef, dir string, must b
 				}
 				return nil
 			}
-			bytes += ctx.tuSize
+			bytes += ctx.tuSize()
 			return nil
 		}); err != nil {
 			b.Error(err)
@@ -574,8 +574,8 @@ func testDevTranslate(t *testing.T, predef string, filter func(string) bool, min
 			ok++
 			m[key]++
 		}
-		psources += ctx.tuSources
-		bytes += ctx.tuSize
+		psources += ctx.tuSources()
+		bytes += ctx.tuSize()
 		return nil
 	}); err != nil {
 		t.Error(err)
@@ -654,7 +654,7 @@ func benchmarkDevTranslate(b *testing.B, predef string) {
 			}
 			ctx := newContext(cfg)
 			translate(ctx, testIncludes, testSysIncludes, sources)
-			bytes += ctx.tuSize
+			bytes += ctx.tuSize()
 			return nil
 		}); err != nil {
 			b.Fatal(err)
