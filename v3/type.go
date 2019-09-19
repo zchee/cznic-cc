@@ -290,6 +290,9 @@ type Type interface {
 	// String implements fmt.Stringer.
 	String() string
 
+	// Name returns type name, if any.
+	Name() StringID
+
 	// atomic reports whether type has type qualifier "_Atomic".
 	atomic() bool
 
@@ -865,6 +868,9 @@ func (t *typeBase) String() string {
 	return strings.TrimSpace(b.String())
 }
 
+// Name implements Type.
+func (t *typeBase) Name() StringID { return 0 }
+
 // string implements Type.
 func (t *typeBase) string(b *strings.Builder) {
 	spc := ""
@@ -1153,6 +1159,9 @@ func (t *aliasType) Size() uintptr { return t.typ.Size() }
 // String implements Type.
 func (t *aliasType) String() string { return t.nm.String() }
 
+// Name implements Type.
+func (t *aliasType) Name() StringID { return t.nm }
+
 // atomic implements Type.
 func (t *aliasType) atomic() bool { return t.typ.atomic() }
 
@@ -1309,6 +1318,9 @@ func (t *structType) String() string {
 	return strings.TrimSpace(b.String())
 }
 
+// Name implements Type.
+func (t *structType) Name() StringID { return t.tag }
+
 // string implements Type.
 func (t *structType) string(b *strings.Builder) {
 	switch {
@@ -1411,6 +1423,9 @@ func (t *taggedType) String() string {
 	t.string(&b)
 	return strings.TrimSpace(b.String())
 }
+
+// Name implements Type.
+func (t *taggedType) Name() StringID { return t.tag }
 
 // NumField implements Type.
 func (t *taggedType) NumField() int { return t.underlyingType().NumField() }
