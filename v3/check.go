@@ -1823,7 +1823,7 @@ func (n *EnumSpecifier) check(ctx *context) {
 			case Int64Value:
 				tmax = n.requireInt(ctx, int64(max))
 			case Uint64Value:
-				panic(fmt.Sprintf("TODO 576 %v:", n.Position()))
+				tmax = n.requireInt(ctx, int64(max))
 			case nil:
 				panic(fmt.Sprintf("TODO 578 %v:", n.Position()))
 			}
@@ -1953,7 +1953,9 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 				min = x
 			}
 		case Uint64Value:
-			panic(fmt.Sprintf("TODO 1799 %v:", n.Position()))
+			if x < 0 || Uint64Value(x) < m {
+				min = x
+			}
 		case nil:
 			min = x
 		}
@@ -1965,7 +1967,9 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 				max = x
 			}
 		case Uint64Value:
-			panic(fmt.Sprintf("TODO 1807 %v:", n.Position()))
+			if x >= 0 && Uint64Value(x) > m {
+				max = x
+			}
 		case nil:
 			max = x
 		}
