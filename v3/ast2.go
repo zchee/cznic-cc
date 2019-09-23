@@ -32,12 +32,12 @@ type StructInfo struct {
 
 // AST represents a translation unit and its related data.
 type AST struct {
-	// Alignment and size of every struct/union defined in the translation
-	// unit. Valid only after Translate.
 	PtrdiffType Type
 	Scope       Scope // File scope.
 	SizeType    Type
-	Structs     map[StructInfo]struct{}
+	// Alignment and size of every struct/union defined in the translation
+	// unit. Valid only after Translate.
+	Structs map[StructInfo]struct{}
 	// TLD contains pruned file scope declarators, ie. either the first one
 	// or the first one that has an initializer.
 	TLD               map[*Declarator]struct{}
