@@ -15,7 +15,28 @@
 
 //go:generate sh -c "go test -run ^Example |fe"
 
-// Package cc is a C99 compiler front end. Work in progress.
+// Package cc is a C99 compiler front end (Work in progress).
+//
+// Installation
+//
+// To install/update cc/v3 invoke:
+//
+//     $ go get [-u] modernc.org/cc/v3
+//
+// Online documentation
+//
+// See https://godoc.org/modernc.org/cc/v3.
+//
+// Status
+//
+// This software is slowly nearing alpha status.
+//
+// Supported platforms
+//
+// The code is known to work on 64 bit Linux. No other operating systems or
+// architectures were tested and should be assumed to not work at all.
+//
+// Maintainers/testers for other operating systems/architectures are welcome.
 //
 // Links
 //
