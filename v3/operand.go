@@ -865,15 +865,15 @@ type unsignedSaturationLimit struct {
 
 var (
 	signedSaturationLimits = [...]signedSaturationLimit{
-		1: {math.Nextafter(math.MinInt8, 0), math.Nextafter(math.MaxInt8, 0), math.MinInt8, math.MaxInt8},
-		2: {math.Nextafter(math.MinInt16, 0), math.Nextafter(math.MaxInt16, 0), math.MinInt16, math.MaxInt16},
+		1: {math.Nextafter(math.MinInt32, 0), math.Nextafter(math.MaxInt32, 0), math.MinInt32, math.MaxInt32},
+		2: {math.Nextafter(math.MinInt32, 0), math.Nextafter(math.MaxInt32, 0), math.MinInt32, math.MaxInt32},
 		4: {math.Nextafter(math.MinInt32, 0), math.Nextafter(math.MaxInt32, 0), math.MinInt32, math.MaxInt32},
-		8: {math.Nextafter(math.MinInt64, 0), math.Nextafter(math.MaxInt64, 0), math.MinInt32, math.MaxInt64},
+		8: {math.Nextafter(math.MinInt64, 0), math.Nextafter(math.MaxInt64, 0), math.MinInt64, math.MaxInt64},
 	}
 
 	unsignedSaturationLimits = [...]unsignedSaturationLimit{
-		1: {math.Nextafter(math.MaxUint8, 0), math.MaxUint8},
-		2: {math.Nextafter(math.MaxUint16, 0), math.MaxUint16},
+		1: {math.Nextafter(math.MaxUint32, 0), math.MaxUint32},
+		2: {math.Nextafter(math.MaxUint32, 0), math.MaxUint32},
 		4: {math.Nextafter(math.MaxUint32, 0), math.MaxUint32},
 		8: {math.Nextafter(math.MaxUint64, 0), math.MaxUint64},
 	}
