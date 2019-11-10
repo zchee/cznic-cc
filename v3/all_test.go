@@ -89,7 +89,6 @@ const (
 #define __builtin_va_arg(ap, type) (type)__builtin_va_arg_impl(ap)
 #define __builtin_va_end(ap)
 #define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
-#define __builtin_va_list void*
 #define __builtin_va_start(ap, v)
 #define __declspec(...)
 #define __extension__
@@ -111,6 +110,13 @@ typedef __SIZE_TYPE__ size_t;
 
 #ifdef __WCHAR_TYPE__
 typedef __WCHAR_TYPE__ wchar_t;
+#endif
+
+#if __SIZEOF_POINTER__ == 8
+typedef void* __builtin_va_list[3];
+#else
+typedef void* __builtin_va_list[1];
+typedef long double __float128;
 #endif
 
 #ifdef __UINT16_TYPE__

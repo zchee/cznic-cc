@@ -1331,9 +1331,8 @@ func (t *structType) string(b *strings.Builder) {
 		b.WriteString(t.Kind().String())
 	}
 	b.WriteByte(' ')
-	for _, v := range t.attr {
+	for range t.attr {
 		panic("TODO")
-		_ = v
 	}
 	if t.tag != 0 {
 		b.WriteString(t.tag.String())

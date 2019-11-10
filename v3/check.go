@@ -378,7 +378,6 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isCons
 					break out
 				}
 			}
-			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 		}
 		n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
 		off2 = 0
@@ -446,7 +445,6 @@ out:
 				break out
 			}
 		}
-		panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 	}
 	n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
 	return n
@@ -1612,10 +1610,9 @@ func (n *DirectAbstractDeclarator) check(ctx *context, typ Type) Type {
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ}
 		n.ParameterTypeList.check(ctx, ft)
 		return n.DirectAbstractDeclarator.check(ctx, ft)
-	default:
-		panic(internalError())
 	}
-	return noType //TODO-
+
+	panic(internalErrorf("%v: %v", n.Position(), n.Case))
 }
 
 func (n *ParameterTypeList) check(ctx *context, ft *functionType) {
@@ -2790,7 +2787,7 @@ loop2:
 	case "l":
 		switch {
 		case cplx != "":
-			return (&operand{typ: ctx.cfg.ABI.Type(ComplexLongDouble), value: Complex256Value{&Float128Value{N: bf}, &Float128Value{N: big.NewFloat(0)}}}).normalize(ctx, n)
+			return (&operand{typ: ctx.cfg.ABI.Type(ComplexLongDouble), value: Complex256Value{&Float128Value{N: big.NewFloat(0)}, &Float128Value{N: bf}}}).normalize(ctx, n)
 		default:
 			return (&operand{typ: ctx.cfg.ABI.Type(LongDouble), value: &Float128Value{N: bf}}).normalize(ctx, n)
 		}
@@ -3567,10 +3564,9 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 			n.checkIdentList(ctx, ft)
 		}
 		return n.DirectDeclarator.check(ctx, ft)
-	default:
-		panic(internalError())
 	}
-	return noType //TODO-
+
+	panic(internalErrorf("%v: %v", n.Position(), n.Case))
 }
 
 func (n *DirectDeclarator) checkIdentList(ctx *context, ft *functionType) {

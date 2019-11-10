@@ -343,6 +343,17 @@ func (v *Float128Value) cmp(b Value, accept ...int) bool {
 	return false
 }
 
+func (v *Float128Value) String() string {
+	switch {
+	case v == nil:
+		return "<nil>"
+	case v.NaN:
+		return "NaN"
+	default:
+		return fmt.Sprint(v.N)
+	}
+}
+
 func (v *Float128Value) safe(b Value, f func(*big.Float, *big.Float)) (ret Value) {
 	var w *Float128Value
 	if b != nil {

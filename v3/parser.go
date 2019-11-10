@@ -319,7 +319,6 @@ var (
 		dict.sid("__attribute"):                  ATTRIBUTE,
 		dict.sid("__attribute__"):                ATTRIBUTE,
 		dict.sid("__builtin_types_compatible_p"): BUILTINTYPESCOMPATIBLE,
-		dict.sid("__float128"):                   FLOAT128,
 		dict.sid("__float80"):                    FLOAT80,
 		dict.sid("__fp16"):                       FLOAT16,
 		dict.sid("__imag"):                       IMAG,

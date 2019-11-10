@@ -13,7 +13,7 @@ all: lexer.go
 	./unconvert.sh
 	gofmt -l -s -w *.go
 	go test -i
-	go test 2>&1 -csmith 10s | tee -a log
+	go test 2>&1 -csmith 10s -timeout 1h | tee -a log
 	go install
 	GOOS=linux GOARCH=arm go build
 	GOOS=linux GOARCH=386 go build
