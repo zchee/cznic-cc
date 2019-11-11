@@ -197,7 +197,11 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 
 			switch {
 			case f.isBitField:
-				down := off &^ (8*int64(al) - 1)
+				eal := 8 * al
+				if eal < bitSize {
+					eal = bitSize
+				}
+				down := off &^ (int64(eal) - 1)
 				bitoff := off - down
 				downMax := off &^ (int64(bitSize) - 1)
 				switch {
