@@ -243,7 +243,7 @@ func TestMain(m *testing.M) {
 	}
 
 	cfg := &Config{}
-	if testPredefGNUSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredefGNU, false); err != nil {
+	if testPredefGNUSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredefGNU, false, false); err != nil {
 		log.Fatal(err)
 	}
 
@@ -257,11 +257,11 @@ func TestMain(m *testing.M) {
 		}
 	}
 	testPredef = strings.Join(a[:w], "\n")
-	if testPredefSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredef, false); err != nil {
+	if testPredefSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredef, false, false); err != nil {
 		log.Fatal(err)
 	}
 
-	if testBuiltinSource, err = cache.getValue(newContext(cfg), "<built-in>", parserTestBuiltin, false); err != nil {
+	if testBuiltinSource, err = cache.getValue(newContext(cfg), "<built-in>", parserTestBuiltin, false, false); err != nil {
 		log.Fatal(err)
 	}
 
@@ -281,12 +281,12 @@ func TestMain(m *testing.M) {
 	}
 
 	path = filepath.Join(testWD, sqliteDir, "shell.c")
-	if testShellSource, err = cache.getFile(newContext(cfg), path, false); err != nil {
+	if testShellSource, err = cache.getFile(newContext(cfg), path, false, false); err != nil {
 		log.Fatal(err)
 	}
 
 	path = filepath.Join(testWD, sqliteDir, "sqlite3.c")
-	if testSQLiteSource, err = cache.getFile(newContext(cfg), path, false); err != nil {
+	if testSQLiteSource, err = cache.getFile(newContext(cfg), path, false, false); err != nil {
 		log.Fatal(err)
 	}
 }

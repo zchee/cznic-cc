@@ -2169,14 +2169,18 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 
 	defer func() { c.includeLevel-- }()
 
-	var b byte
-	var paths []string
+	var (
+		b     byte
+		paths []string
+		sys   bool
+	)
 	switch {
 	case nm != "" && nm[0] == '"':
 		paths = c.ctx.includePaths
 		b = '"'
 	case nm != "" && nm[0] == '<':
 		paths = c.ctx.sysIncludePaths
+		sys = true
 		b = '>'
 	case nm == "":
 		c.err(toks[0], "invalid empty include argument")
@@ -2232,7 +2236,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 			default:
 				p = filepath.Join(v, nm)
 			}
-			fi, err := os.Stat(p)
+			fi, err := c.ctx.statFile(p, sys)
 			if err != nil || fi.IsDir() {
 				continue
 			}
@@ -2247,7 +2251,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 		return
 	}
 
-	cf, err := cache.getFile(c.ctx, path, false)
+	cf, err := cache.getFile(c.ctx, path, sys, false)
 	if err != nil {
 		c.err(toks[0], "%s: %v", path, err)
 		return

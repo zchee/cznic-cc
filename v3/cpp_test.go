@@ -40,7 +40,7 @@ func TestCPPExpand(t *testing.T) {
 		}
 
 		ctx := newContext(cfg)
-		cf, err := cache.getFile(ctx, path, true)
+		cf, err := cache.getFile(ctx, path, false, true)
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func TestTCCExpand(t *testing.T) {
 		}
 
 		ctx := newContext(cfg)
-		cf, err := cache.getFile(ctx, path, true)
+		cf, err := cache.getFile(ctx, path, false, true)
 		if err != nil {
 			return err
 		}

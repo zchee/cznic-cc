@@ -10,7 +10,6 @@ import (
 	"fmt"
 	goscanner "go/scanner"
 	"io"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -1127,6 +1126,7 @@ func (c *cachedPPFile) ppFile() (*ppFile, error) {
 
 type cacheKey struct {
 	name  StringID
+	sys   bool
 	value StringID
 	Config3
 }
@@ -1140,14 +1140,14 @@ func newPPCache() *ppCache { return &ppCache{m: map[cacheKey]*cachedPPFile{}} }
 
 func (c *ppCache) get(ctx *context, src Source) (source, error) {
 	if src.Value != "" {
-		return c.getValue(ctx, src.Name, src.Value, src.DoNotCache)
+		return c.getValue(ctx, src.Name, src.Value, false, src.DoNotCache)
 	}
 
-	return c.getFile(ctx, src.Name, src.DoNotCache)
+	return c.getFile(ctx, src.Name, false, src.DoNotCache)
 }
 
-func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPPFile, error) {
-	fi, err := os.Stat(name)
+func (c *ppCache) getFile(ctx *context, name string, sys bool, doNotCache bool) (*cachedPPFile, error) {
+	fi, err := ctx.statFile(name, sys)
 	if err != nil {
 		return nil, err
 	}
@@ -1166,7 +1166,7 @@ func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPP
 			panic(internalError())
 		}
 
-		f, err := os.Open(name)
+		f, err := ctx.openFile(name, sys)
 		if err != nil {
 			return nil, err
 		}
@@ -1181,7 +1181,7 @@ func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPP
 	}
 
 	modTime := fi.ModTime().UnixNano()
-	key := cacheKey{dict.sid(name), 0, ctx.cfg.Config3}
+	key := cacheKey{dict.sid(name), sys, 0, ctx.cfg.Config3}
 	c.mu.Lock()
 	if cf, ok := c.m[key]; ok {
 		if modTime <= cf.modTime && size == cf.size {
@@ -1208,7 +1208,7 @@ func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPP
 	go func() {
 		defer cf.ready()
 
-		f, err := os.Open(name)
+		f, err := ctx.openFile(name, sys)
 		if err != nil {
 			cf.err = err
 			return
@@ -1225,8 +1225,8 @@ func (c *ppCache) getFile(ctx *context, name string, doNotCache bool) (*cachedPP
 	return cf.waitFor()
 }
 
-func (c *ppCache) getValue(ctx *context, name, value string, doNotCache bool) (*cachedPPFile, error) {
-	key := cacheKey{dict.sid(name), dict.sid(value), ctx.cfg.Config3}
+func (c *ppCache) getValue(ctx *context, name, value string, sys bool, doNotCache bool) (*cachedPPFile, error) {
+	key := cacheKey{dict.sid(name), sys, dict.sid(value), ctx.cfg.Config3}
 	c.mu.Lock()
 	if cf, ok := c.m[key]; ok {
 		c.mu.Unlock()

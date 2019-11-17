@@ -53,6 +53,7 @@ import (
 	"fmt"
 	goscanner "go/scanner"
 	gotoken "go/token"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -412,7 +413,8 @@ type Config3 struct {
 	// evaluates to is true the include directive will be ignored completely.
 	IgnoreInclude *regexp.Regexp
 
-	WorkingDir string // Overrides os.Getwd if non empty.
+	WorkingDir string     // Overrides os.Getwd if non empty.
+	Filesystem Filesystem // Overrides filesystem access if not empty.
 
 	MaxSourceLine int // Zero: Scanner will use default buffer. Non zero: Scanner will use max(default buffer size, MaxSourceLine).
 
@@ -669,6 +671,22 @@ func (c *context) pop() {
 	n := len(c.modes)
 	c.mode = c.modes[n-1]
 	c.modes = c.modes[:n-1]
+}
+
+func (c *context) statFile(name string, sys bool) (os.FileInfo, error) {
+	fs := c.cfg.Config3.Filesystem
+	if fs == nil {
+		fs = LocalFS()
+	}
+	return fs.Stat(name, sys)
+}
+
+func (c *context) openFile(name string, sys bool) (io.ReadCloser, error) {
+	fs := c.cfg.Config3.Filesystem
+	if fs == nil {
+		fs = LocalFS()
+	}
+	return fs.Open(name, sys)
 }
 
 // HostConfig returns the system C preprocessor/compiler configuration, or an
