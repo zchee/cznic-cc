@@ -122,6 +122,11 @@ var (
 	}
 )
 
+// String returns a StringID for a given value.
+func String(s string) StringID {
+	return dict.sid(s)
+}
+
 type Linkage int
 
 // Pragma defines behavior of the object passed to Config.PragmaHandler.
