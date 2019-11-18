@@ -1024,7 +1024,7 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 		}
 	case Ptr:
 		return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
-	case Struct, Union, Void, Int128, UInt128:
+	case Struct, Union, Array, Void, Int128, UInt128:
 		return &operand{typ: to}
 	}
 	panic(internalErrorf("%q, %q", to, to.Kind()))

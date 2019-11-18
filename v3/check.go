@@ -478,7 +478,7 @@ func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *boo
 	// structure or union type. In the latter case, the initial value of
 	// the object, including unnamed members, is that of the expression.
 	case Struct, Union:
-		if op.Type().Kind() != t.Kind() {
+		if op.Type().Kind() != t.Kind() && !op.IsZero() {
 			panic(fmt.Sprintf("TODO %v: %v <- %v\n", n.Position(), t, op.Type().Kind()))
 		}
 
@@ -514,6 +514,10 @@ func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *boo
 			}
 
 			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+		}
+
+		if n.AssignmentExpression.Operand.IsZero() {
+			return 0
 		}
 
 		panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
