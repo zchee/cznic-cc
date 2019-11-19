@@ -1400,7 +1400,7 @@ type taggedType struct {
 }
 
 // Alias implements Type.
-func (t *taggedType) Alias() Type { return t }
+func (t *taggedType) Alias() Type { return t.typ }
 
 // isCompatible implements Type.
 func (t *taggedType) isCompatible(u Type) bool {
