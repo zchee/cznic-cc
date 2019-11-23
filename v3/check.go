@@ -2675,11 +2675,11 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 		}
 	}
 
+	d.Read += ctx.readDelta
 	switch t := d.Type(); t.Kind() {
 	case Function:
 		n.Operand = &funcDesignator{Operand: &operand{typ: t}, declarator: d}
 	default:
-		d.Read += ctx.readDelta
 		n.Operand = &lvalue{Operand: &operand{typ: t}, declarator: d}
 	}
 	if !ctx.capture {

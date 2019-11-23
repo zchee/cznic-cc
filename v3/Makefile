@@ -12,9 +12,9 @@ all: lexer.go
 	go version 2>&1 | tee log
 	./unconvert.sh
 	gofmt -l -s -w *.go
+	go install -v
 	go test -i
 	go test 2>&1 -csmith 10s -timeout 1h | tee -a log
-	go install
 	GOOS=linux GOARCH=arm go build
 	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
