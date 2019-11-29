@@ -244,6 +244,20 @@ type Type interface {
 	// IsScalarType report whether a type is a scalar type.
 	IsScalarType() bool
 
+	// IsAliasType returns whether a type is an alias name of another type
+	// For eample
+	//
+	//	typedef int foo;
+	//	foo x;	// The type of x reports true from IsAliasType().
+	IsAliasType() bool
+
+	// IsTaggedType returns whether a type is a tagged reference of a enum,
+	// struct or union type. For example
+	//
+	//	struct s { int x; } y;	//  The type of y reports false from IsTaggedType.
+	//	struct s z;		//  The type of z reports true from IsTaggedType.
+	IsTaggedType() bool
+
 	// IsVariadic reports whether a function type is variadic. It panics if
 	// the type's Kind is valid but not Function.
 	IsVariadic() bool
@@ -615,6 +629,12 @@ func (t *typeBase) Attributes() (a []*AttributeSpecifier) { return nil }
 
 // Alias implements Type.
 func (t *typeBase) Alias() Type { return t }
+
+// IsAliasType implements Type.
+func (t *typeBase) IsAliasType() bool { return false }
+
+// IsTaggedType implements Type.
+func (t *typeBase) IsTaggedType() bool { return false }
 
 // Align implements Type.
 func (t *typeBase) Align() int { return int(t.align) }
@@ -1067,6 +1087,12 @@ type aliasType struct {
 	typ Type
 }
 
+// IsAliasType implements Type.
+func (t *aliasType) IsAliasType() bool { return true }
+
+// IsTaggedType implements Type.
+func (t *aliasType) IsTaggedType() bool { return false }
+
 // Alias implements Type.
 func (t *aliasType) Alias() Type { return t.typ }
 
@@ -1399,8 +1425,11 @@ type taggedType struct {
 	tag StringID
 }
 
+// IsTaggedType implements Type.
+func (t *taggedType) IsTaggedType() bool { return true }
+
 // Alias implements Type.
-func (t *taggedType) Alias() Type { return t.typ }
+func (t *taggedType) Alias() Type { return t.underlyingType() }
 
 // isCompatible implements Type.
 func (t *taggedType) isCompatible(u Type) bool {
