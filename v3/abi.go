@@ -6,7 +6,10 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math"
+	"os"
+	"runtime"
 )
 
 var (
@@ -25,6 +28,46 @@ var (
 		dict.sid("__COMPLEX_SHORT_UNSIGNED_TYPE__"):     ComplexUShort,
 	}
 )
+
+// NewABI creates an ABI for a given OS and architecture. The OS and architecture values are the same as used in Go.
+// The ABI type map may miss advanced types like complex numbers, etc. If the os/arch pair is not recognized, a
+// *ErrUnsupportedOSArch is returned.
+func NewABI(os, arch string) (ABI, error) {
+	order, ok := abiByteOrders[arch]
+	if !ok {
+		return ABI{}, fmt.Errorf("unsupported arch: %s", arch)
+	}
+	types, ok := abiTypes[[2]string{os, arch}]
+	if !ok {
+		return ABI{}, fmt.Errorf("unsupported os/arch pair: %s-%s", os, arch)
+	}
+	abi := ABI{
+		ByteOrder: order,
+		Types:     make(map[Kind]ABIType, len(types)),
+		// TODO: depends on the OS?
+		SignedChar: true,
+	}
+	// copy the map, so it can be modified by user
+	for k, v := range types {
+		abi.Types[k] = v
+	}
+	return abi, nil
+}
+
+// NewABIFromEnv uses GOOS and GOARCH values to create a corresponding ABI.
+// If those environment variables are not set, an OS/arch of a Go runtime is used.
+// It returns a *ErrUnsupportedOSArch if OS/arch pair is not supported.
+func NewABIFromEnv() (ABI, error) {
+	osv := os.Getenv("GOOS")
+	if osv == "" {
+		osv = runtime.GOOS
+	}
+	arch := os.Getenv("GOARCH")
+	if arch == "" {
+		arch = runtime.GOARCH
+	}
+	return NewABI(osv, arch)
+}
 
 // ABIType describes properties of a non-aggregate type.
 type ABIType struct {

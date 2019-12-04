@@ -199,38 +199,16 @@ var (
 	testSysIncludes     []string
 	testWD              string
 
-	testABI = ABI{ //TODO adjust for arch/os, this is linux/amd64.
-		SignedChar: true,
-		Types: map[Kind]ABIType{
-			Bool:       {1, 1, 1},
-			Char:       {1, 1, 1},
-			Decimal64:  {8, 8, 8},
-			Double:     {8, 8, 8},
-			Enum:       {4, 4, 4},
-			Float128:   {16, 8, 8},
-			Float32:    {4, 4, 4},
-			Float32x:   {4, 4, 4},
-			Float64:    {8, 8, 8},
-			Float64x:   {8, 8, 8},
-			Float:      {4, 4, 4},
-			Int128:     {16, 8, 8},
-			Int:        {4, 4, 4},
-			Long:       {8, 8, 8},
-			LongDouble: {16, 16, 16},
-			LongLong:   {8, 8, 8},
-			Ptr:        {8, 8, 8},
-			SChar:      {1, 1, 1},
-			Short:      {2, 2, 2},
-			UChar:      {1, 1, 1},
-			UInt128:    {16, 8, 8},
-			UInt:       {4, 4, 4},
-			ULong:      {8, 8, 8},
-			ULongLong:  {8, 8, 8},
-			UShort:     {2, 2, 2},
-			Void:       {1, 1, 1},
-		},
-	}
+	testABI = newTestABI()
 )
+
+func newTestABI() ABI {
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	return abi
+}
 
 func TestMain(m *testing.M) {
 	defer func() {
