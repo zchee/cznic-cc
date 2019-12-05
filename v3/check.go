@@ -226,6 +226,8 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 		panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 	}
 
+	rd := ctx.readDelta
+	ctx.readDelta = 1
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
 		if !n.AssignmentExpression.check(ctx).isConst() {
@@ -238,9 +240,11 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t
 			n.AssignmentExpression.InitializerOperand = op.convertTo(ctx, n, t)
 		}
 		*list = append(*list, n)
+		ctx.readDelta = rd
 		return n.checkExpr(ctx, list, isConst, t, off)
 	case InitializerInitList: // '{' InitializerList ',' '}'
 		_, l := n.InitializerList.check(ctx, list, isConst, t, t, off)
+		ctx.readDelta = rd
 		return l
 	}
 
