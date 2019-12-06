@@ -2262,7 +2262,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 			break
 		}
 
-		n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}, declarator: op.Declarator()}
+		n.Operand = &lvalue{Operand: &operand{typ: ft, offset: op.Offset() + f.Offset()}}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
