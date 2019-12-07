@@ -5,6 +5,7 @@
 package cc
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 )
@@ -86,235 +87,292 @@ func intLit(v int) Expr {
 }
 
 func TestExpr(t *testing.T) {
+	joinE := [2]string{`int func() { `, `; }`}
+	joinX := [2]string{`int func(int x) { `, `; }`}
+	joinXp := [2]string{`int func(int* x) { `, `; }`}
+	joinXY := [2]string{`int func(int x, int y) { `, `; }`}
 	cfg := &Config{ABI: testABI}
 	for _, v := range []struct {
 		name string
 		src  string
+		join [2]string
 		exp  Expr
+		cstr string
 	}{
 		{
 			name: "int lit",
-			src:  `int f() { 42; }`,
+			src:  `42`,
+			join: joinE,
 			exp:  lit(LiteralInt, `42`),
 		},
 		{
 			name: "int lit hex",
-			src:  `int f() { 0x42; }`,
+			src:  `0x42`,
+			join: joinE,
 			exp:  lit(LiteralInt, `0x42`),
 		},
 		{
 			name: "int lit suffix",
-			src:  `int f() { 42u; }`,
+			src:  `42u`,
+			join: joinE,
 			exp:  lit(LiteralInt, `42u`),
 		},
 		{
 			name: "int lit pos",
-			src:  `int f() { +42; }`,
+			src:  `+42`,
+			join: joinE,
 			exp:  &UnaryExpr{Op: UnaryPlus, X: intLit(42)},
 		},
 		{
 			name: "int lit neg",
-			src:  `int f() { -42; }`,
+			src:  `-42`,
+			join: joinE,
 			exp:  &UnaryExpr{Op: UnaryMinus, X: intLit(42)},
 		},
 		{
 			name: "float lit",
-			src:  `int f() { 1.0; }`,
+			src:  `1.0`,
+			join: joinE,
 			exp:  lit(LiteralFloat, `1.0`),
 		},
 		{
 			name: "float lit exp",
-			src:  `int f() { 1e5; }`,
+			src:  `1e5`,
+			join: joinE,
 			exp:  lit(LiteralFloat, `1e5`),
 		},
 		{
 			name: "float lit pos",
-			src:  `int f() { +1.0; }`,
+			src:  `+1.0`,
+			join: joinE,
 			exp:  &UnaryExpr{Op: UnaryPlus, X: lit(LiteralFloat, `1.0`)},
 		},
 		{
 			name: "float lit neg",
-			src:  `int f() { -1.0; }`,
+			src:  `-1.0`,
+			join: joinE,
 			exp:  &UnaryExpr{Op: UnaryMinus, X: lit(LiteralFloat, `1.0`)},
 		},
 		{
 			name: "char lit",
-			src:  `int f() { 'a'; }`,
+			src:  `'a'`,
+			join: joinE,
 			exp:  lit(LiteralChar, `a`),
 		},
 		{
 			name: "wide char lit",
-			src:  `int f() { L'a'; }`,
+			src:  `L'a'`,
+			join: joinE,
 			exp:  lit(LiteralWChar, `a`),
 		},
 		{
 			name: "string lit",
-			src:  `int f() { "a"; }`,
+			src:  `"a"`,
+			join: joinE,
 			exp:  lit(LiteralString, `a`),
 		},
 		{
 			name: "wide string lit",
-			src:  `int f() { L"a"; }`,
+			src:  `L"a"`,
+			join: joinE,
 			exp:  lit(LiteralWString, `a`),
 		},
 		{
 			name: "parentheses",
-			src:  `int f() { (1); }`,
+			src:  `(1)`,
+			join: joinE,
 			exp:  &ParenExpr{X: intLit(1)},
 		},
 		{
 			name: "comma",
-			src:  `int f() { 1,2,3; }`,
+			src:  `1, 2, 3`,
+			join: joinE,
 			exp:  CommaExpr{intLit(1), intLit(2), intLit(3)},
 		},
 		{
 			name: "ident",
-			src:  `int f(int x) { x; }`,
+			src:  `x`,
+			join: joinX,
 			exp:  identExpr("x"),
 		},
 		{
 			name: "unary plus",
-			src:  `int f(int x) { +x; }`,
+			src:  `+x`,
+			join: joinX,
 			exp:  &UnaryExpr{Op: UnaryPlus, X: identExpr("x")},
 		},
 		{
 			name: "unary minus",
-			src:  `int f(int x) { -x; }`,
+			src:  `-x`,
+			join: joinX,
 			exp:  &UnaryExpr{Op: UnaryMinus, X: identExpr("x")},
 		},
 		{
 			name: "unary addr",
-			src:  `int f(int x) { &x; }`,
+			src:  `&x`,
+			join: joinX,
 			exp:  &UnaryExpr{Op: UnaryAddr, X: identExpr("x")},
 		},
 		{
 			name: "unary deref",
-			src:  `int f(int x) { *x; }`,
+			src:  `*x`,
+			join: joinX,
 			exp:  &UnaryExpr{Op: UnaryDeref, X: identExpr("x")},
 		},
 		{
 			name: "unary not",
-			src:  `int f(int x) { !x; }`,
+			src:  `!x`,
+			join: joinX,
 			exp:  &UnaryExpr{Op: UnaryNot, X: identExpr("x")},
 		},
 		{
 			name: "unary invert",
-			src:  `int f(int x) { ~x; }`,
+			src:  `~x`,
+			join: joinX,
 			exp:  &UnaryExpr{Op: UnaryInvert, X: identExpr("x")},
 		},
 		{
 			name: "binary add",
-			src:  `int f(int x, int y) { x + y; }`,
+			src:  `x + y`,
+			join: joinXY,
 			exp:  &BinaryExpr{X: identExpr("x"), Op: BinaryAdd, Y: identExpr("y")},
 		},
 		{
 			name: "binary order 1",
-			src:  `int f(int x, int y) { x * 2 + y; }`,
+			src:  `x * 2 + y`,
+			cstr: `x*2 + y`,
+			join: joinXY,
 			exp:  &BinaryExpr{X: &BinaryExpr{X: identExpr("x"), Op: BinaryMul, Y: intLit(2)}, Op: BinaryAdd, Y: identExpr("y")},
 		},
 		{
 			name: "binary order 2",
-			src:  `int f(int x, int y) { x + y * 2; }`,
+			src:  `x + y * 2`,
+			cstr: `x + y*2`,
+			join: joinXY,
 			exp:  &BinaryExpr{X: identExpr("x"), Op: BinaryAdd, Y: &BinaryExpr{X: identExpr("y"), Op: BinaryMul, Y: intLit(2)}},
 		},
 		{
 			name: "assign",
-			src:  `int f(int x) { x = 1; }`,
+			src:  `x = 1`,
+			join: joinX,
 			exp:  &AssignExpr{Left: identExpr("x"), Op: BinaryNone, Right: intLit(1)},
 		},
 		{
 			name: "assign op",
-			src:  `int f(int x) { x += 1; }`,
+			src:  `x += 1`,
+			join: joinX,
 			exp:  &AssignExpr{Left: identExpr("x"), Op: BinaryAdd, Right: intLit(1)},
 		},
 		{
 			name: "assign chain",
-			src:  `int f(int x, int y) { y = x = 1; }`,
+			src:  `y = x = 1`,
+			join: joinXY,
 			exp:  &AssignExpr{Left: identExpr("y"), Right: &AssignExpr{Left: identExpr("x"), Right: intLit(1)}},
 		},
 		{
 			name: "inc post",
-			src:  `int f(int x) { x++; }`,
+			src:  `x++`,
+			join: joinX,
 			exp:  &IncDecExpr{X: identExpr("x"), Op: IncPost},
 		},
 		{
 			name: "inc pre",
-			src:  `int f(int x) { ++x; }`,
+			src:  `++x`,
+			join: joinX,
 			exp:  &IncDecExpr{X: identExpr("x"), Op: IncPre},
 		},
 		{
 			name: "inc add 1",
-			src:  `int f(int x, int y) { x+++y; }`,
+			src:  `x+++y`,
+			cstr: `x++ + y`,
+			join: joinXY,
 			exp:  &BinaryExpr{X: &IncDecExpr{X: identExpr("x"), Op: IncPost}, Op: BinaryAdd, Y: identExpr("y")},
 		},
 		{
 			name: "inc add 2",
-			src:  `int f(int x, int y) { ++x+y; }`,
+			src:  `++x+y`,
+			cstr: `++x + y`,
+			join: joinXY,
 			exp:  &BinaryExpr{X: &IncDecExpr{X: identExpr("x"), Op: IncPre}, Op: BinaryAdd, Y: identExpr("y")},
 		},
 		{
 			name: "inc add 3",
-			src:  `int f(int x, int y) { x+y++; }`,
+			src:  `x+y++`,
+			cstr: `x + y++`,
+			join: joinXY,
 			exp:  &BinaryExpr{X: identExpr("x"), Op: BinaryAdd, Y: &IncDecExpr{X: identExpr("y"), Op: IncPost}},
 		},
 		{
 			name: "index",
-			src:  `int f(int* x) { x[1]; }`,
+			src:  `x[1]`,
+			join: joinXp,
 			exp:  &IndexExpr{X: identExpr("x"), Ind: intLit(1)},
 		},
 		{
 			name: "index chain",
-			src:  `int f(int* x) { x[1][2]; }`,
+			src:  `x[1][2]`,
+			join: joinXp,
 			exp:  &IndexExpr{X: &IndexExpr{X: identExpr("x"), Ind: intLit(1)}, Ind: intLit(2)},
 		},
 		{
 			name: "select",
-			src:  `struct s { int y; }; int f(struct s x) { x.y; }`,
+			src:  `x.y`,
+			join: [2]string{`struct s { int y; }; int f(struct s x) { `, `; }`},
 			exp:  &SelectExpr{X: identExpr("x"), Sel: ident("y"), Ptr: false},
 		},
 		{
 			name: "select ptr",
-			src:  `struct s { int y; }; int f(struct s* x) { x->y; }`,
+			src:  `x->y`,
+			join: [2]string{`struct s { int y; }; int f(struct s* x) { `, `; }`},
 			exp:  &SelectExpr{X: identExpr("x"), Sel: ident("y"), Ptr: true},
 		},
 		{
 			name: "select chain 1",
-			src:  `struct s1 { int z; }; struct s2 { struct s1 y; }; int f(struct s2 x) { x.y.z; }`,
+			src:  `x.y.z`,
+			join: [2]string{`struct s1 { int z; }; struct s2 { struct s1 y; }; int f(struct s2 x) { `, `; }`},
 			exp:  &SelectExpr{X: &SelectExpr{X: identExpr("x"), Sel: ident("y")}, Sel: ident("z")},
 		},
 		{
 			name: "select chain 2",
-			src:  `struct s1 { int z; }; struct s2 { struct s1* y; }; int f(struct s2* x) { x->y->z; }`,
+			src:  `x->y->z`,
+			join: [2]string{`struct s1 { int z; }; struct s2 { struct s1* y; }; int f(struct s2* x) { `, `; }`},
 			exp:  &SelectExpr{X: &SelectExpr{X: identExpr("x"), Sel: ident("y"), Ptr: true}, Sel: ident("z"), Ptr: true},
 		},
 		{
 			name: "select chain 3",
-			src:  `struct s1 { int z; }; struct s2 { struct s1 y; }; int f(struct s2* x) { x.y->z; }`,
+			src:  `x.y->z`,
+			join: [2]string{`struct s1 { int z; }; struct s2 { struct s1 y; }; int f(struct s2* x) { `, `; }`},
 			exp:  &SelectExpr{X: &SelectExpr{X: identExpr("x"), Sel: ident("y")}, Sel: ident("z"), Ptr: true},
 		},
 		{
 			name: "select chain 4",
-			src:  `struct s1 { int z; }; struct s2 { struct s1* y; }; int f(struct s2 x) { x->y.z; }`,
+			src:  `x->y.z`,
+			join: [2]string{`struct s1 { int z; }; struct s2 { struct s1* y; }; int f(struct s2 x) { `, `; }`},
 			exp:  &SelectExpr{X: &SelectExpr{X: identExpr("x"), Sel: ident("y"), Ptr: true}, Sel: ident("z")},
 		},
 		{
 			name: "call",
-			src:  `void x(int a1, int a2); int f() { x(1,2); }`,
+			src:  `x(1, 2)`,
+			join: [2]string{`void x(int a1, int a2); int f() { `, `; }`},
 			exp:  &CallExpr{Func: identExpr("x"), Args: []Expr{intLit(1), intLit(2)}},
 		},
 		{
 			name: "cond",
-			src:  `int f(int x) { x ? 1 : 2; }`,
+			src:  `x ? 1 : 2`,
+			join: joinX,
 			exp:  &CondExpr{Cond: identExpr("x"), Then: intLit(1), Else: intLit(2)},
 		},
 		{
 			name: "cond chain",
-			src:  `int f(int x, int y) { x ? 1 : y ? 2 : 3; }`,
+			src:  `x ? 1 : y ? 2 : 3`,
+			join: joinXY,
 			exp:  &CondExpr{Cond: identExpr("x"), Then: intLit(1), Else: &CondExpr{Cond: identExpr("y"), Then: intLit(2), Else: intLit(3)}},
 		},
 	} {
 		t.Run(v.name, func(t *testing.T) {
-			ast, err := Parse(cfg, nil, nil, []Source{{Name: "test", Value: v.src}})
+			ast, err := Parse(cfg, nil, nil, []Source{
+				{Name: "test", Value: v.join[0] + v.src + v.join[1]},
+			})
 			if err != nil {
 				t.Fatal(err)
 				return
@@ -335,6 +393,17 @@ func TestExpr(t *testing.T) {
 				Expr()
 			if !eqExpr(v.exp, e) {
 				t.Fatalf("unexpected expression: %#v", e)
+			}
+			buf := bytes.NewBuffer(nil)
+			if err := PrintExpr(buf, e); err != nil {
+				t.Fatal(err)
+			}
+			exp := v.cstr
+			if exp == "" {
+				exp = v.src
+			}
+			if s := buf.String(); s != exp {
+				t.Fatalf("unexpected C code printed:\nexp: %q\nvs\ngot: %q\n", exp, s)
 			}
 		})
 	}

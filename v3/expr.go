@@ -4,20 +4,43 @@
 
 package cc
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"strconv"
+)
 
 // Expr is an interface type for C expressions.
 type Expr interface {
-	// isExpr disallows custom implementation of this interface.
-	isExpr()
+	// printC prints an expression as a C code.
+	printC(p printer) error
+
 	// Type returns a type of an expression.
 	Type() Type
 	// TODO(dennwc): operand, isConst, ...
 }
 
-type baseExpr struct{}
+type printer interface {
+	io.Writer
+	io.ByteWriter
+	io.StringWriter
+}
 
-func (*baseExpr) isExpr() {}
+// PrintExpr prints an expression as C code. It doesn't guarantee any specific formatting.
+func PrintExpr(w io.Writer, e Expr) error {
+	if e == nil {
+		return nil
+	}
+	if p, ok := w.(printer); ok {
+		return e.printC(p)
+	}
+	bw := bufio.NewWriter(w)
+	if err := e.printC(bw); err != nil {
+		return err
+	}
+	return bw.Flush()
+}
 
 // NewIdent creates a new identifier with a given type.
 func NewIdent(name string, typ Type) *Ident {
@@ -44,6 +67,12 @@ type IdentExpr struct {
 	*Ident
 }
 
+// printC implements Expr.
+func (e IdentExpr) printC(p printer) error {
+	_, err := p.WriteString(e.Name)
+	return err
+}
+
 func (IdentExpr) isExpr() {}
 
 // LiteralKind is an enum for literal kinds in C.
@@ -67,7 +96,6 @@ const (
 // Literal is a constant literal expression in C.
 // See LiteralKind for details on specific kinds.
 type Literal struct {
-	baseExpr
 	typ   Type
 	kind  LiteralKind
 	value string
@@ -83,6 +111,32 @@ func (e *Literal) Value() string {
 	return e.value
 }
 
+// printC implements Expr.
+func (e *Literal) printC(p printer) error {
+	switch e.kind {
+	case LiteralChar:
+		// TODO: escape properly
+		_, err := p.WriteString(`'` + e.value + `'`)
+		return err
+	case LiteralWChar:
+		// TODO: escape properly
+		_, err := p.WriteString(`L'` + e.value + `'`)
+		return err
+	case LiteralString:
+		// TODO: escape properly
+		v := strconv.Quote(e.value)
+		_, err := p.WriteString(v)
+		return err
+	case LiteralWString:
+		// TODO: escape properly
+		v := strconv.Quote(e.value)
+		_, err := p.WriteString(`L` + v)
+		return err
+	}
+	_, err := p.WriteString(e.value)
+	return err
+}
+
 // Type implements Expr.
 func (e *Literal) Type() Type {
 	// TODO: type-check if no type is set
@@ -92,13 +146,23 @@ func (e *Literal) Type() Type {
 // ParenExpr is a parentheses expression in C: (x).
 // It returns the expression value without changes. Used primarily to control evaluation order in binary expressions.
 type ParenExpr struct {
-	baseExpr
 	X Expr
 }
 
 // Type implements Expr.
 func (e *ParenExpr) Type() Type {
 	return e.X.Type()
+}
+
+// printC implements Expr.
+func (e *ParenExpr) printC(p printer) error {
+	if err := p.WriteByte('('); err != nil {
+		return err
+	}
+	if err := e.X.printC(p); err != nil {
+		return err
+	}
+	return p.WriteByte(')')
 }
 
 // CommaExpr is a comma expression in C: x1, x2, ..., xN.
@@ -113,6 +177,21 @@ func (e CommaExpr) Type() Type {
 		return InvalidType()
 	}
 	return e[len(e)-1].Type()
+}
+
+// printC implements Expr.
+func (e CommaExpr) printC(p printer) error {
+	for i, x := range e {
+		if i != 0 {
+			if _, err := p.WriteString(", "); err != nil {
+				return err
+			}
+		}
+		if err := x.printC(p); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // UnaryOp is an enum for unary operators in C.
@@ -135,7 +214,6 @@ const (
 
 // UnaryExpr is an unary expression in C: !x, *x, etc.
 type UnaryExpr struct {
-	baseExpr
 	typ Type
 	Op  UnaryOp
 	X   Expr
@@ -145,6 +223,31 @@ type UnaryExpr struct {
 func (e *UnaryExpr) Type() Type {
 	// TODO: type-check if no type is set
 	return e.typ
+}
+
+// printC implements Expr.
+func (e *UnaryExpr) printC(p printer) error {
+	var op byte
+	switch e.Op {
+	case UnaryPlus:
+		op = '+'
+	case UnaryMinus:
+		op = '-'
+	case UnaryInvert:
+		op = '~'
+	case UnaryNot:
+		op = '!'
+	case UnaryAddr:
+		op = '&'
+	case UnaryDeref:
+		op = '*'
+	default:
+		return fmt.Errorf("unsupported unary op: %d", int(e.Op))
+	}
+	if err := p.WriteByte(op); err != nil {
+		return err
+	}
+	return e.X.printC(p)
 }
 
 // BinaryOp is an enum for binary operators in C.
@@ -193,7 +296,6 @@ const (
 
 // BinaryExpr is a binary expression in C: x + y, x == y, etc.
 type BinaryExpr struct {
-	baseExpr
 	typ Type
 	X   Expr
 	Op  BinaryOp
@@ -206,10 +308,61 @@ func (e *BinaryExpr) Type() Type {
 	return e.typ
 }
 
+// printC implements Expr.
+func (e *BinaryExpr) printC(p printer) error {
+	var op string
+	switch e.Op {
+	case BinaryAdd:
+		op = " + "
+	case BinarySub:
+		op = " - "
+	case BinaryMul:
+		op = "*"
+	case BinaryDiv:
+		op = "/"
+	case BinaryMod:
+		op = "%"
+	case BinaryLsh:
+		op = "<<"
+	case BinaryRsh:
+		op = ">>"
+	case BinaryEqual:
+		op = " == "
+	case BinaryNotEqual:
+		op = " != "
+	case BinaryLess:
+		op = " < "
+	case BinaryGreater:
+		op = " > "
+	case BinaryLessEqual:
+		op = " <= "
+	case BinaryGreaterEqual:
+		op = " >= "
+	case BinaryAnd:
+		op = " && "
+	case BinaryOr:
+		op = " || "
+	case BinaryBitAnd:
+		op = "&"
+	case BinaryBitOr:
+		op = "|"
+	case BinaryBitXOr:
+		op = "^"
+	default:
+		return fmt.Errorf("unsupported binary op: %d", int(e.Op))
+	}
+	if err := e.X.printC(p); err != nil {
+		return err
+	}
+	if _, err := p.WriteString(op); err != nil {
+		return err
+	}
+	return e.Y.printC(p)
+}
+
 // AssignExpr is an assignment expression in C: x = y, x += y, etc.
 // It returns a value that was assigned, allowing chaining assignments: x = y = z.
 type AssignExpr struct {
-	baseExpr
 	Left  Expr
 	Op    BinaryOp
 	Right Expr
@@ -218,6 +371,44 @@ type AssignExpr struct {
 // Type implements Expr.
 func (e *AssignExpr) Type() Type {
 	return e.Left.Type()
+}
+
+// printC implements Expr.
+func (e *AssignExpr) printC(p printer) error {
+	var op string
+	switch e.Op {
+	case BinaryNone:
+		op = " = "
+	case BinaryAdd:
+		op = " += "
+	case BinarySub:
+		op = " -= "
+	case BinaryMul:
+		op = " *= "
+	case BinaryDiv:
+		op = " /= "
+	case BinaryMod:
+		op = " %= "
+	case BinaryLsh:
+		op = " <<= "
+	case BinaryRsh:
+		op = " >>= "
+	case BinaryBitAnd:
+		op = " &= "
+	case BinaryBitOr:
+		op = " |= "
+	case BinaryBitXOr:
+		op = " ^= "
+	default:
+		return fmt.Errorf("unsupported assign op: %d", int(e.Op))
+	}
+	if err := e.Left.printC(p); err != nil {
+		return err
+	}
+	if _, err := p.WriteString(op); err != nil {
+		return err
+	}
+	return e.Right.printC(p)
 }
 
 // IncDecOp is an enum for increment/decrement operators in C.
@@ -238,9 +429,27 @@ const (
 // Prefix operators first increment the value and return a modified one,
 // while postfix variant return an old value and then increment the value.
 type IncDecExpr struct {
-	baseExpr
 	X  Expr
 	Op IncDecOp
+}
+
+// printC implements Expr.
+func (e *IncDecExpr) printC(p printer) error {
+	op := "++"
+	if e.Op == DecPost || e.Op == DecPre {
+		op = "--"
+	}
+	if e.Op == IncPre || e.Op == DecPre {
+		if _, err := p.WriteString(op); err != nil {
+			return err
+		}
+		return e.X.printC(p)
+	}
+	if err := e.X.printC(p); err != nil {
+		return err
+	}
+	_, err := p.WriteString(op)
+	return err
 }
 
 // Type implements Expr.
@@ -251,7 +460,6 @@ func (e *IncDecExpr) Type() Type {
 // IndexExpr is an index expression in C: x[y].
 // The left operand should be either an array or a pointer.
 type IndexExpr struct {
-	baseExpr
 	X   Expr
 	Ind Expr
 }
@@ -261,9 +469,22 @@ func (e *IndexExpr) Type() Type {
 	return e.X.Type().Elem()
 }
 
+// printC implements Expr.
+func (e *IndexExpr) printC(p printer) error {
+	if err := e.X.printC(p); err != nil {
+		return err
+	}
+	if err := p.WriteByte('['); err != nil {
+		return err
+	}
+	if err := e.Ind.printC(p); err != nil {
+		return err
+	}
+	return p.WriteByte(']')
+}
+
 // SelectExpr is field select expression in C: x.y, x->y.
 type SelectExpr struct {
-	baseExpr
 	X   Expr
 	Sel *Ident
 	Ptr bool
@@ -274,9 +495,24 @@ func (e *SelectExpr) Type() Type {
 	return e.Sel.Type()
 }
 
+// printC implements Expr.
+func (e *SelectExpr) printC(p printer) error {
+	if err := e.X.printC(p); err != nil {
+		return err
+	}
+	tok := "."
+	if e.Ptr {
+		tok = "->"
+	}
+	if _, err := p.WriteString(tok); err != nil {
+		return err
+	}
+	_, err := p.WriteString(e.Sel.Name)
+	return err
+}
+
 // CallExpr is a function call expression in C: x(a1, a2, a3).
 type CallExpr struct {
-	baseExpr
 	Func Expr
 	Args []Expr
 }
@@ -286,10 +522,30 @@ func (e *CallExpr) Type() Type {
 	return e.Func.Type().Result()
 }
 
+// printC implements Expr.
+func (e *CallExpr) printC(p printer) error {
+	if err := e.Func.printC(p); err != nil {
+		return err
+	}
+	if err := p.WriteByte('('); err != nil {
+		return err
+	}
+	for i, a := range e.Args {
+		if i != 0 {
+			if _, err := p.WriteString(", "); err != nil {
+				return err
+			}
+		}
+		if err := a.printC(p); err != nil {
+			return err
+		}
+	}
+	return p.WriteByte(')')
+}
+
 // CondExpr is a conditional expression in C: x ? y : z.
 // If condition evaluates to true, "then" expression is returned. Otherwise, the "else" expression is returned.
 type CondExpr struct {
-	baseExpr
 	typ  Type
 	Cond Expr
 	Then Expr
@@ -300,6 +556,23 @@ type CondExpr struct {
 func (e *CondExpr) Type() Type {
 	// TODO: type-check if no type is set
 	return e.typ
+}
+
+// printC implements Expr.
+func (e *CondExpr) printC(p printer) error {
+	if err := e.Cond.printC(p); err != nil {
+		return err
+	}
+	if _, err := p.WriteString(" ? "); err != nil {
+		return err
+	}
+	if err := e.Then.printC(p); err != nil {
+		return err
+	}
+	if _, err := p.WriteString(" : "); err != nil {
+		return err
+	}
+	return e.Else.printC(p)
 }
 
 func operandType(o Operand) Type {
