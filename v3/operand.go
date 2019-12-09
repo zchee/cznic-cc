@@ -858,6 +858,13 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		default:
 			panic(fmt.Sprintf("TODO813 %v", to.Kind()))
 		}
+	case Ptr:
+		switch to.Kind() {
+		case Void:
+			return noOperand
+		default:
+			panic(internalErrorf("%v: %v y-> %v %v", n.Position(), o.Type(), to, to.Kind()))
+		}
 	default:
 		panic(internalErrorf("%v: %v -> %v %v", n.Position(), o.Type(), to, to.Kind()))
 	}

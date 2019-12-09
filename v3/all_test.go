@@ -164,7 +164,7 @@ var (
 	oWalkDir  = flags.String("walkDir", "testdata", "")
 
 	gccDir    = filepath.FromSlash("testdata/gcc-9.1.0")
-	sqliteDir = filepath.FromSlash("testdata/sqlite-amalgamation-3270200")
+	sqliteDir = filepath.FromSlash("testdata/sqlite-amalgamation-3300100")
 	tccDir    = filepath.FromSlash("testdata/tcc-0.9.27")
 
 	downloads = []struct {
@@ -173,7 +173,7 @@ var (
 		dev      bool
 	}{
 		{gccDir, "http://mirror.koddos.net/gcc/releases/gcc-9.1.0/gcc-9.1.0.tar.gz", 118000, true},
-		{sqliteDir, "https://www.sqlite.org/2019/sqlite-amalgamation-3270200.zip", 2200, false},
+		{sqliteDir, "https://www.sqlite.org/2019/sqlite-amalgamation-3300100.zip", 2200, false},
 		{tccDir, "http://download.savannah.gnu.org/releases/tinycc/tcc-0.9.27.tar.bz2", 620, false},
 	}
 
