@@ -170,6 +170,11 @@ func (noStorageClass) static() bool      { return false }
 func (noStorageClass) threadLocal() bool { return false }
 func (noStorageClass) typedef() bool     { return false }
 
+// InvalidType creates a new invalid type.
+func InvalidType() Type {
+	return noType
+}
+
 // Type is the representation of a C type.
 //
 // Not all methods apply to all kinds of types. Restrictions, if any, are noted

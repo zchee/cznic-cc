@@ -5,13 +5,68 @@
 package cc
 
 import (
-	"reflect"
 	"strconv"
 	"testing"
 )
 
+// eqExpr implements a limited deep equality for expressions.
+// Namely, it ignores types and identifier matching (only matches by the name).
 func eqExpr(e1, e2 Expr) bool {
-	return reflect.DeepEqual(e1, e2)
+	switch e1 := e1.(type) {
+	case IdentExpr:
+		e2, ok := e2.(IdentExpr)
+		return ok && e1.Ident.Name == e2.Ident.Name
+	case *Literal:
+		e2, ok := e2.(*Literal)
+		return ok && e1.kind == e2.kind && e1.value == e2.value
+	case *ParenExpr:
+		e2, ok := e2.(*ParenExpr)
+		return ok && eqExpr(e1.X, e2.X)
+	case *UnaryExpr:
+		e2, ok := e2.(*UnaryExpr)
+		return ok && e1.Op == e2.Op && eqExpr(e1.X, e2.X)
+	case *IncDecExpr:
+		e2, ok := e2.(*IncDecExpr)
+		return ok && e1.Op == e2.Op && eqExpr(e1.X, e2.X)
+	case *BinaryExpr:
+		e2, ok := e2.(*BinaryExpr)
+		return ok && e1.Op == e2.Op && eqExpr(e1.X, e2.X) && eqExpr(e1.Y, e2.Y)
+	case *AssignExpr:
+		e2, ok := e2.(*AssignExpr)
+		return ok && e1.Op == e2.Op && eqExpr(e1.Left, e2.Left) && eqExpr(e1.Right, e2.Right)
+	case *IndexExpr:
+		e2, ok := e2.(*IndexExpr)
+		return ok && eqExpr(e1.X, e2.X) && eqExpr(e1.Ind, e2.Ind)
+	case *SelectExpr:
+		e2, ok := e2.(*SelectExpr)
+		return ok && e1.Ptr == e2.Ptr && eqExpr(e1.X, e2.X) && eqExpr(IdentExpr{e1.Sel}, IdentExpr{e2.Sel})
+	case *CondExpr:
+		e2, ok := e2.(*CondExpr)
+		return ok && eqExpr(e1.Cond, e2.Cond) && eqExpr(e1.Then, e2.Then) && eqExpr(e1.Else, e2.Else)
+	case *CallExpr:
+		e2, ok := e2.(*CallExpr)
+		if !ok || len(e1.Args) != len(e2.Args) || !eqExpr(e1.Func, e2.Func) {
+			return false
+		}
+		for i := range e1.Args {
+			if !eqExpr(e1.Args[i], e2.Args[i]) {
+				return false
+			}
+		}
+		return true
+	case CommaExpr:
+		e2, ok := e2.(CommaExpr)
+		if !ok || len(e1) != len(e2) {
+			return false
+		}
+		for i := range e1 {
+			if !eqExpr(e1[i], e2[i]) {
+				return false
+			}
+		}
+		return true
+	}
+	panic(e1)
 }
 
 func ident(s string) *Ident {
@@ -22,8 +77,12 @@ func identExpr(s string) IdentExpr {
 	return IdentExpr{ident(s)}
 }
 
+func lit(kind LiteralKind, v string) Expr {
+	return &Literal{kind: kind, value: v}
+}
+
 func intLit(v int) Expr {
-	return &Literal{Kind: LiteralInt, Value: strconv.Itoa(v)}
+	return lit(LiteralInt, strconv.Itoa(v))
 }
 
 func TestExpr(t *testing.T) {
@@ -36,17 +95,17 @@ func TestExpr(t *testing.T) {
 		{
 			name: "int lit",
 			src:  `int f() { 42; }`,
-			exp:  &Literal{Kind: LiteralInt, Value: `42`},
+			exp:  lit(LiteralInt, `42`),
 		},
 		{
 			name: "int lit hex",
 			src:  `int f() { 0x42; }`,
-			exp:  &Literal{Kind: LiteralInt, Value: `0x42`},
+			exp:  lit(LiteralInt, `0x42`),
 		},
 		{
 			name: "int lit suffix",
 			src:  `int f() { 42u; }`,
-			exp:  &Literal{Kind: LiteralInt, Value: `42u`},
+			exp:  lit(LiteralInt, `42u`),
 		},
 		{
 			name: "int lit pos",
@@ -61,42 +120,42 @@ func TestExpr(t *testing.T) {
 		{
 			name: "float lit",
 			src:  `int f() { 1.0; }`,
-			exp:  &Literal{Kind: LiteralFloat, Value: `1.0`},
+			exp:  lit(LiteralFloat, `1.0`),
 		},
 		{
 			name: "float lit exp",
 			src:  `int f() { 1e5; }`,
-			exp:  &Literal{Kind: LiteralFloat, Value: `1e5`},
+			exp:  lit(LiteralFloat, `1e5`),
 		},
 		{
 			name: "float lit pos",
 			src:  `int f() { +1.0; }`,
-			exp:  &UnaryExpr{Op: UnaryPlus, X: &Literal{Kind: LiteralFloat, Value: `1.0`}},
+			exp:  &UnaryExpr{Op: UnaryPlus, X: lit(LiteralFloat, `1.0`)},
 		},
 		{
 			name: "float lit neg",
 			src:  `int f() { -1.0; }`,
-			exp:  &UnaryExpr{Op: UnaryMinus, X: &Literal{Kind: LiteralFloat, Value: `1.0`}},
+			exp:  &UnaryExpr{Op: UnaryMinus, X: lit(LiteralFloat, `1.0`)},
 		},
 		{
 			name: "char lit",
 			src:  `int f() { 'a'; }`,
-			exp:  &Literal{Kind: LiteralChar, Value: `a`},
+			exp:  lit(LiteralChar, `a`),
 		},
 		{
 			name: "wide char lit",
 			src:  `int f() { L'a'; }`,
-			exp:  &Literal{Kind: LiteralWChar, Value: `a`},
+			exp:  lit(LiteralWChar, `a`),
 		},
 		{
 			name: "string lit",
 			src:  `int f() { "a"; }`,
-			exp:  &Literal{Kind: LiteralString, Value: `a`},
+			exp:  lit(LiteralString, `a`),
 		},
 		{
 			name: "wide string lit",
 			src:  `int f() { L"a"; }`,
-			exp:  &Literal{Kind: LiteralWString, Value: `a`},
+			exp:  lit(LiteralWString, `a`),
 		},
 		{
 			name: "parentheses",

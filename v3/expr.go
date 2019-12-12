@@ -10,17 +10,33 @@ import "fmt"
 type Expr interface {
 	// isExpr disallows custom implementation of this interface.
 	isExpr()
-	// TODO(dennwc): operand, type, isConst, ...
+	// Type returns a type of an expression.
+	Type() Type
+	// TODO(dennwc): operand, isConst, ...
 }
 
 type baseExpr struct{}
 
 func (*baseExpr) isExpr() {}
 
+// NewIdent creates a new identifier with a given type.
+func NewIdent(name string, typ Type) *Ident {
+	if typ == nil {
+		typ = InvalidType()
+	}
+	return &Ident{Name: name, typ: typ}
+}
+
 // Ident is an identifier in C.
 type Ident struct {
 	Name string
-	// TODO(dennwc): type, defined Scope, usages?
+	typ  Type
+	// TODO(dennwc): defined Scope, usages?
+}
+
+// Type implements Expr.
+func (e *Ident) Type() Type {
+	return e.typ
 }
 
 // IdentExpr is an identifier expression in C.
@@ -52,8 +68,25 @@ const (
 // See LiteralKind for details on specific kinds.
 type Literal struct {
 	baseExpr
-	Kind  LiteralKind
-	Value string
+	typ   Type
+	kind  LiteralKind
+	value string
+}
+
+// Kind returns a kind of a literal.
+func (e *Literal) Kind() LiteralKind {
+	return e.kind
+}
+
+// Kind returns a literal value.
+func (e *Literal) Value() string {
+	return e.value
+}
+
+// Type implements Expr.
+func (e *Literal) Type() Type {
+	// TODO: type-check if no type is set
+	return e.typ
 }
 
 // ParenExpr is a parentheses expression in C: (x).
@@ -63,11 +96,24 @@ type ParenExpr struct {
 	X Expr
 }
 
+// Type implements Expr.
+func (e *ParenExpr) Type() Type {
+	return e.X.Type()
+}
+
 // CommaExpr is a comma expression in C: x1, x2, ..., xN.
 // It evaluates all expressions in order and returns the result of the last one only. Other results are discarded.
 type CommaExpr []Expr
 
 func (e CommaExpr) isExpr() {}
+
+// Type implements Expr.
+func (e CommaExpr) Type() Type {
+	if len(e) == 0 {
+		return InvalidType()
+	}
+	return e[len(e)-1].Type()
+}
 
 // UnaryOp is an enum for unary operators in C.
 type UnaryOp int
@@ -90,8 +136,15 @@ const (
 // UnaryExpr is an unary expression in C: !x, *x, etc.
 type UnaryExpr struct {
 	baseExpr
-	Op UnaryOp
-	X  Expr
+	typ Type
+	Op  UnaryOp
+	X   Expr
+}
+
+// Type implements Expr.
+func (e *UnaryExpr) Type() Type {
+	// TODO: type-check if no type is set
+	return e.typ
 }
 
 // BinaryOp is an enum for binary operators in C.
@@ -141,9 +194,16 @@ const (
 // BinaryExpr is a binary expression in C: x + y, x == y, etc.
 type BinaryExpr struct {
 	baseExpr
-	X  Expr
-	Op BinaryOp
-	Y  Expr
+	typ Type
+	X   Expr
+	Op  BinaryOp
+	Y   Expr
+}
+
+// Type implements Expr.
+func (e *BinaryExpr) Type() Type {
+	// TODO: type-check if no type is set
+	return e.typ
 }
 
 // AssignExpr is an assignment expression in C: x = y, x += y, etc.
@@ -153,6 +213,11 @@ type AssignExpr struct {
 	Left  Expr
 	Op    BinaryOp
 	Right Expr
+}
+
+// Type implements Expr.
+func (e *AssignExpr) Type() Type {
+	return e.Left.Type()
 }
 
 // IncDecOp is an enum for increment/decrement operators in C.
@@ -178,12 +243,22 @@ type IncDecExpr struct {
 	Op IncDecOp
 }
 
+// Type implements Expr.
+func (e *IncDecExpr) Type() Type {
+	return e.X.Type()
+}
+
 // IndexExpr is an index expression in C: x[y].
 // The left operand should be either an array or a pointer.
 type IndexExpr struct {
 	baseExpr
 	X   Expr
 	Ind Expr
+}
+
+// Type implements Expr.
+func (e *IndexExpr) Type() Type {
+	return e.X.Type().Elem()
 }
 
 // SelectExpr is field select expression in C: x.y, x->y.
@@ -194,6 +269,11 @@ type SelectExpr struct {
 	Ptr bool
 }
 
+// Type implements Expr.
+func (e *SelectExpr) Type() Type {
+	return e.Sel.Type()
+}
+
 // CallExpr is a function call expression in C: x(a1, a2, a3).
 type CallExpr struct {
 	baseExpr
@@ -201,34 +281,55 @@ type CallExpr struct {
 	Args []Expr
 }
 
+// Type implements Expr.
+func (e *CallExpr) Type() Type {
+	return e.Func.Type().Result()
+}
+
 // CondExpr is a conditional expression in C: x ? y : z.
 // If condition evaluates to true, "then" expression is returned. Otherwise, the "else" expression is returned.
 type CondExpr struct {
 	baseExpr
+	typ  Type
 	Cond Expr
 	Then Expr
 	Else Expr
+}
+
+// Type implements Expr.
+func (e *CondExpr) Type() Type {
+	// TODO: type-check if no type is set
+	return e.typ
+}
+
+func operandType(o Operand) Type {
+	if o == nil {
+		return InvalidType()
+	}
+	return o.Type()
 }
 
 func (n *PrimaryExpression) Expr() Expr {
 	switch n.Case {
 	case PrimaryExpressionIdent:
 		// TODO(dennwc): "asm" expression
-		return IdentExpr{&Ident{n.Token.Value.String()}}
+		id := NewIdent(n.Token.Value.String(), operandType(n.Operand))
+		return IdentExpr{id}
 	case PrimaryExpressionEnum:
-		return IdentExpr{&Ident{n.Token.Value.String()}}
+		id := NewIdent(n.Token.Value.String(), operandType(n.Operand))
+		return IdentExpr{id}
 	case PrimaryExpressionInt:
-		return &Literal{Kind: LiteralInt, Value: n.Token.Value.String()}
+		return &Literal{typ: operandType(n.Operand), kind: LiteralInt, value: n.Token.Value.String()}
 	case PrimaryExpressionFloat:
-		return &Literal{Kind: LiteralFloat, Value: n.Token.Value.String()}
+		return &Literal{typ: operandType(n.Operand), kind: LiteralFloat, value: n.Token.Value.String()}
 	case PrimaryExpressionChar:
-		return &Literal{Kind: LiteralChar, Value: n.Token.Value.String()}
+		return &Literal{typ: operandType(n.Operand), kind: LiteralChar, value: n.Token.Value.String()}
 	case PrimaryExpressionLChar:
-		return &Literal{Kind: LiteralWChar, Value: n.Token.Value.String()}
+		return &Literal{typ: operandType(n.Operand), kind: LiteralWChar, value: n.Token.Value.String()}
 	case PrimaryExpressionString:
-		return &Literal{Kind: LiteralString, Value: n.Token.Value.String()}
+		return &Literal{typ: operandType(n.Operand), kind: LiteralString, value: n.Token.Value.String()}
 	case PrimaryExpressionLString:
-		return &Literal{Kind: LiteralWString, Value: n.Token.Value.String()}
+		return &Literal{typ: operandType(n.Operand), kind: LiteralWString, value: n.Token.Value.String()}
 	case PrimaryExpressionExpr:
 		return &ParenExpr{X: n.Expression.Expr()}
 	default:
@@ -296,7 +397,8 @@ func (n *UnaryExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &UnaryExpr{
-		Op: op, X: n.CastExpression.Expr(),
+		typ: operandType(n.Operand),
+		Op:  op, X: n.CastExpression.Expr(),
 	}
 }
 
@@ -328,7 +430,8 @@ func (n *MultiplicativeExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -349,7 +452,8 @@ func (n *AdditiveExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -370,7 +474,8 @@ func (n *ShiftExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -395,7 +500,8 @@ func (n *RelationalExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -416,7 +522,8 @@ func (n *EqualityExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -435,7 +542,8 @@ func (n *AndExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -454,7 +562,8 @@ func (n *ExclusiveOrExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -473,7 +582,8 @@ func (n *InclusiveOrExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -492,7 +602,8 @@ func (n *LogicalAndExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -511,7 +622,8 @@ func (n *LogicalOrExpression) Expr() Expr {
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &BinaryExpr{
-		X: x, Op: op, Y: y,
+		typ: operandType(n.Operand),
+		X:   x, Op: op, Y: y,
 	}
 }
 
@@ -521,6 +633,7 @@ func (n *ConditionalExpression) Expr() Expr {
 		return n.LogicalOrExpression.Expr()
 	case ConditionalExpressionCond:
 		return &CondExpr{
+			typ:  operandType(n.Operand),
 			Cond: n.LogicalOrExpression.Expr(),
 			Then: n.Expression.Expr(),
 			Else: n.ConditionalExpression.Expr(),
