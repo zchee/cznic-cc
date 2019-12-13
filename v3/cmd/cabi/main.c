@@ -33,12 +33,16 @@ int main() {
     PRINT_TYPE("Long", long);
     PRINT_TYPE("ULong", unsigned long);
 
+    PRINT_TYPE("LongLong", long long);
+    PRINT_TYPE("ULongLong", unsigned long long);
+
     PRINT_TYPE("Ptr", void*);
     print_entry("Function", sizeof(void(*)(void)), alignof(void(*)(void)), offsetof(struct{ char a; void(*b)(void); }, b));
 
     PRINT_TYPE("Float", float);
-
     PRINT_TYPE("Double", double);
+    PRINT_TYPE("LongDouble", long double);
+
 
 #ifdef __SIZEOF_INT128__
     PRINT_TYPE("Int128", __int128);
@@ -46,11 +50,6 @@ int main() {
 #endif
 
 #ifdef __GNUC__
-    PRINT_TYPE("LongLong", long long);
-    PRINT_TYPE("ULongLong", unsigned long long);
-
-    PRINT_TYPE("LongDouble", long double);
-
     PRINT_TYPE("Float32", _Float32);
     PRINT_TYPE("Float32x", _Float32x);
     PRINT_TYPE("Float64", _Float64);
