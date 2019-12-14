@@ -446,6 +446,7 @@ type context struct {
 	tuSize0         int64 // Sum of sizes of processed inputs
 	tuSources0      int32 // Number of processed inputs
 	wcharT          Type
+	enums           map[StringID]Operand //TODO puting this in alphabetical order within the struct causes crashes in VirtualBox/386 ???
 
 	capture        bool
 	evalIdentError bool
@@ -458,6 +459,7 @@ func newContext(cfg *Config) *context {
 	}
 	return &context{
 		cfg:       cfg,
+		enums:     map[StringID]Operand{},
 		keywords:  keywords,
 		maxErrors: maxErrors,
 		structs:   map[StructInfo]struct{}{},

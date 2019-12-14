@@ -32,7 +32,8 @@ type StructInfo struct {
 
 // AST represents a translation unit and its related data.
 type AST struct {
-	Macros      map[StringID]*Macro // Macros as defined after parsing.
+	Enums       map[StringID]Operand // Enumeration constants declared in file scope.
+	Macros      map[StringID]*Macro  // Macros as defined after parsing.
 	PtrdiffType Type
 	Scope       Scope // File scope.
 	SizeType    Type
@@ -516,6 +517,7 @@ func (n *AST) typecheck() (*context, error) {
 
 		n.TLD[pruned] = struct{}{}
 	}
+	n.Enums = ctx.enums
 	return ctx, ctx.Err()
 }
 

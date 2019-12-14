@@ -1949,6 +1949,9 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 	default:
 		panic(internalError())
 	}
+	if n.lexicalScope.Parent() == nil {
+		ctx.enums[n.Token.Value] = n.Operand
+	}
 
 	switch x := iota.(type) {
 	case Int64Value:
