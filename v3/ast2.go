@@ -32,6 +32,7 @@ type StructInfo struct {
 
 // AST represents a translation unit and its related data.
 type AST struct {
+	Macros      map[StringID]*Macro // Macros as defined after parsing.
 	PtrdiffType Type
 	Scope       Scope // File scope.
 	SizeType    Type
@@ -45,6 +46,34 @@ type AST struct {
 	TranslationUnit   *TranslationUnit
 	WideCharType      Type
 	cfg               *Config
+	cpp               *cpp
+}
+
+// Eval returns the operand that represents the value of m, if it expands to a
+// valid constant expression other than an identifier, or an error, if any.
+func (n *AST) Eval(m *Macro) (o Operand, err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			o = nil
+			err = fmt.Errorf("%v", e)
+		}
+	}()
+
+	if m.IsFnLike() {
+		return nil, fmt.Errorf("cannot evaluate function-like macro")
+	}
+
+	n.cpp.ctx.cfg.ignoreErrors = true
+	n.cpp.ctx.evalIdentError = true
+	v := n.cpp.eval(m.repl)
+	switch x := v.(type) {
+	case int64:
+		return &operand{typ: n.cfg.ABI.Type(LongLong), value: Int64Value(x)}, nil
+	case uint64:
+		return &operand{typ: n.cfg.ABI.Type(ULongLong), value: Int64Value(x)}, nil
+	default:
+		return nil, fmt.Errorf("unexpected value: %T", x)
+	}
 }
 
 // Parse preprocesses and parses a translation unit and returns an *AST or
@@ -126,8 +155,8 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 	p := newParser(ctx, make(chan *[]Token, 5000)) //DONE benchmark tuned
 	var sep StringID
 	var seq int32
+	cpp := newCPP(ctx)
 	go func() {
-		cpp := newCPP(ctx)
 
 		defer func() {
 			close(p.in)
@@ -202,11 +231,13 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 	}
 
 	return &AST{
+		Macros:            cpp.macros,
 		Scope:             p.declScope,
 		TLD:               map[*Declarator]struct{}{},
 		TrailingSeperator: sep,
 		TranslationUnit:   tu,
 		cfg:               ctx.cfg,
+		cpp:               cpp,
 	}, nil
 }
 

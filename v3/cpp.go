@@ -179,9 +179,11 @@ func (s *cppScanner) Pos() token.Pos {
 	return (*s)[0].Pos()
 }
 
-type macro struct {
-	fp   []StringID
-	repl []token3
+// Macro represents a preprocessor macro definition.
+type Macro struct {
+	fp    []StringID
+	repl  []token3
+	repl2 []Token
 
 	name token4
 
@@ -190,11 +192,31 @@ type macro struct {
 	variadic      bool
 }
 
-func (m *macro) isNamedVariadicParam(nm StringID) bool {
+// Parameters return the list of function-like macro parameters.
+func (m *Macro) Parameters() []StringID { return m.fp }
+
+// ReplacementTokens return the list of tokens m is replaced with. Tokens in
+// the returned list have only the Rune and Value fields valid.
+func (m *Macro) ReplacementTokens() []Token {
+	if m.repl2 != nil {
+		return m.repl2
+	}
+
+	m.repl2 = make([]Token, len(m.repl))
+	for i, v := range m.repl {
+		m.repl2[i] = Token{Rune: v.char, Value: v.value}
+	}
+	return m.repl2
+}
+
+// IsFnLike reports whether m is a function-like macro.
+func (m *Macro) IsFnLike() bool { return m.isFnLike }
+
+func (m *Macro) isNamedVariadicParam(nm StringID) bool {
 	return m.namedVariadic && nm == m.fp[len(m.fp)-1]
 }
 
-func (m *macro) param2(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]cppToken, argIndex *int) bool {
+func (m *Macro) param2(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]cppToken, argIndex *int) bool {
 	*out = nil
 	if nm == idVaArgs || m.isNamedVariadicParam(nm) {
 		if !m.variadic {
@@ -223,7 +245,7 @@ func (m *macro) param2(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]
 	return false
 }
 
-func (m *macro) param(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]cppToken) bool {
+func (m *Macro) param(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]cppToken) bool {
 	return m.param2(varArgs, ap, nm, out, nil)
 }
 
@@ -231,16 +253,16 @@ func (m *macro) param(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]c
 
 type cpp struct {
 	counter      int
-	counterMacro macro
+	counterMacro Macro
 	ctx          *context
 	file         *tokenFile
-	fileMacro    macro
+	fileMacro    Macro
 	in           chan []token3
 	inBuf        []token3
 	includeLevel int
-	lineMacro    macro
-	macroStack   map[StringID][]*macro
-	macros       map[StringID]*macro
+	lineMacro    Macro
+	macroStack   map[StringID][]*Macro
+	macros       map[StringID]*Macro
 	out          chan *[]token4
 	outBuf       *[]token4
 	rq           chan struct{}
@@ -258,14 +280,14 @@ func newCPP(ctx *context) *cpp {
 	*b = (*b)[:0]
 	r := &cpp{
 		ctx:        ctx,
-		macroStack: map[StringID][]*macro{},
-		macros:     map[StringID]*macro{},
+		macroStack: map[StringID][]*Macro{},
+		macros:     map[StringID]*Macro{},
 		outBuf:     b,
 	}
-	r.counterMacro = macro{repl: []token3{{char: PPNUMBER}}}
-	r.fileMacro = macro{repl: []token3{{char: STRINGLITERAL}}}
-	r.lineMacro = macro{repl: []token3{{char: PPNUMBER}}}
-	r.macros = map[StringID]*macro{
+	r.counterMacro = Macro{repl: []token3{{char: PPNUMBER}}}
+	r.fileMacro = Macro{repl: []token3{{char: STRINGLITERAL}}}
+	r.lineMacro = Macro{repl: []token3{{char: PPNUMBER}}}
+	r.macros = map[StringID]*Macro{
 		idCOUNTER: &r.counterMacro,
 		idFILE:    &r.fileMacro,
 		idLINE:    &r.lineMacro,
@@ -597,7 +619,7 @@ start:
 	goto start
 }
 
-func (c *cpp) actuals(m *macro, r tokenReader) (varArgs []cppToken, ap [][]cppToken, hs hideSet) {
+func (c *cpp) actuals(m *Macro, r tokenReader) (varArgs []cppToken, ap [][]cppToken, hs hideSet) {
 	var lvl, n int
 	varx := len(m.fp)
 	if m.namedVariadic {
@@ -724,7 +746,7 @@ func (c *cpp) actuals(m *macro, r tokenReader) (varArgs []cppToken, ap [][]cppTo
 // requires trickier handling because the operation has a bunch of
 // combinations. After the entire input sequence is finished, the updated hide
 // set is applied to the output sequence, and that is the result of subst.
-func (c *cpp) subst(m *macro, is []cppToken, fp []StringID, varArgs []cppToken, ap [][]cppToken, hs hideSet, os []cppToken, expandDefined bool) (r []cppToken) {
+func (c *cpp) subst(m *Macro, is []cppToken, fp []StringID, varArgs []cppToken, ap [][]cppToken, hs hideSet, os []cppToken, expandDefined bool) (r []cppToken) {
 	// var a []string
 	// for _, v := range ap {
 	// 	a = append(a, fmt.Sprintf("%q", cppToksStr(v, "|")))
@@ -1760,6 +1782,10 @@ func (c *cpp) primaryExpression(s *cppScanner, eval bool) interface{} {
 		r := charConst(c.ctx, tok)
 		return int64(r)
 	case IDENTIFIER:
+		if c.ctx.evalIdentError {
+			panic("cannot evaluate identifier")
+		}
+
 		s.next()
 		if s.peek().char == '(' {
 			s.next()
@@ -2610,7 +2636,7 @@ func (n *ppDefineObjectMacroDirective) translationPhase4(c *cpp) {
 		}
 	}
 	// dbg("#define %s %s // %v", n.name, tokStr(n.replacementList, " "), c.file.PositionFor(n.name.Pos(), true))
-	c.macros[nm] = &macro{name: token4{token3: n.name, file: c.file}, repl: n.replacementList}
+	c.macros[nm] = &Macro{name: token4{token3: n.name, file: c.file}, repl: n.replacementList}
 	if nm != idGNUC {
 		return
 	}
@@ -2680,7 +2706,7 @@ func (n *ppDefineFunctionMacroDirective) translationPhase4(c *cpp) {
 		fp = append(fp, v.value)
 	}
 	// dbg("#define %s %s // %v", n.name, tokStr(n.replacementList, " "), c.file.PositionFor(n.name.Pos(), true))
-	c.macros[nm] = &macro{fp: fp, isFnLike: true, name: token4{token3: n.name, file: c.file}, repl: n.replacementList, variadic: n.variadic, namedVariadic: n.namedVariadic}
+	c.macros[nm] = &Macro{fp: fp, isFnLike: true, name: token4{token3: n.name, file: c.file}, repl: n.replacementList, variadic: n.variadic, namedVariadic: n.namedVariadic}
 }
 
 // [0], 6.10.1

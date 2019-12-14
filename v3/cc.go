@@ -162,7 +162,7 @@ func (p *pragma) SetAlignment(n int) {
 func (p *pragma) PushMacro(nm string) {
 	id := dict.sid(nm)
 	if p.c.macroStack == nil {
-		p.c.macroStack = map[StringID][]*macro{}
+		p.c.macroStack = map[StringID][]*Macro{}
 	}
 	if m := p.c.macros[id]; m != nil {
 		p.c.macroStack[id] = append(p.c.macroStack[id], p.c.macros[id])
@@ -447,7 +447,8 @@ type context struct {
 	tuSources0      int32 // Number of processed inputs
 	wcharT          Type
 
-	capture bool
+	capture        bool
+	evalIdentError bool
 }
 
 func newContext(cfg *Config) *context {
