@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package ast2
 
 import (
 	"bytes"
 	"strconv"
 	"testing"
+
+	"modernc.org/cc/v3"
 )
 
 // eqExpr implements a limited deep equality for expressions.
@@ -86,12 +88,20 @@ func intLit(v int) Expr {
 	return lit(LiteralInt, strconv.Itoa(v))
 }
 
+func newTestABI(t testing.TB) cc.ABI {
+	abi, err := cc.NewABIFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return abi
+}
+
 func TestExpr(t *testing.T) {
 	joinE := [2]string{`int func() { `, `; }`}
 	joinX := [2]string{`int func(int x) { `, `; }`}
 	joinXp := [2]string{`int func(int* x) { `, `; }`}
 	joinXY := [2]string{`int func(int x, int y) { `, `; }`}
-	cfg := &Config{ABI: testABI}
+	cfg := &cc.Config{ABI: newTestABI(t)}
 	for _, v := range []struct {
 		name string
 		src  string
@@ -370,7 +380,7 @@ func TestExpr(t *testing.T) {
 		},
 	} {
 		t.Run(v.name, func(t *testing.T) {
-			ast, err := Parse(cfg, nil, nil, []Source{
+			ast, err := cc.Parse(cfg, nil, nil, []cc.Source{
 				{Name: "test", Value: v.join[0] + v.src + v.join[1]},
 			})
 			if err != nil {
@@ -380,7 +390,7 @@ func TestExpr(t *testing.T) {
 			tu := ast.TranslationUnit
 			for ; tu.TranslationUnit != nil; tu = tu.TranslationUnit {
 			}
-			e := tu.
+			cce := tu.
 				ExternalDeclaration.
 				FunctionDefinition.
 				CompoundStatement.
@@ -389,8 +399,8 @@ func TestExpr(t *testing.T) {
 				BlockItem.
 				Statement.
 				ExpressionStatement.
-				Expression.
-				Expr()
+				Expression
+			e := NewExprFrom(cce)
 			if !eqExpr(v.exp, e) {
 				t.Fatalf("unexpected expression: %#v", e)
 			}

@@ -2,14 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package cc
+package ast2
 
 import (
 	"bufio"
 	"fmt"
 	"io"
 	"strconv"
+
+	"modernc.org/cc/v3"
 )
+
+type Type = cc.Type
 
 // Expr is an interface type for C expressions.
 type Expr interface {
@@ -45,7 +49,7 @@ func PrintExpr(w io.Writer, e Expr) error {
 // NewIdent creates a new identifier with a given type.
 func NewIdent(name string, typ Type) *Ident {
 	if typ == nil {
-		typ = InvalidType()
+		typ = cc.InvalidType()
 	}
 	return &Ident{Name: name, typ: typ}
 }
@@ -174,7 +178,7 @@ func (e CommaExpr) isExpr() {}
 // Type implements Expr.
 func (e CommaExpr) Type() Type {
 	if len(e) == 0 {
-		return InvalidType()
+		return cc.InvalidType()
 	}
 	return e[len(e)-1].Type()
 }
@@ -575,129 +579,173 @@ func (e *CondExpr) printC(p printer) error {
 	return e.Else.printC(p)
 }
 
-func operandType(o Operand) Type {
+func operandType(o cc.Operand) Type {
 	if o == nil {
-		return InvalidType()
+		return cc.InvalidType()
 	}
 	return o.Type()
 }
 
-func (n *PrimaryExpression) Expr() Expr {
+// NewExprFrom creates an Expr node from a CC AST node (*cc.Expression, *cc.PrimaryExpression, etc).
+func NewExprFrom(n cc.Node) Expr {
+	switch n := n.(type) {
+	case *cc.Expression:
+		return exprFromExpression(n)
+	case *cc.ConstantExpression:
+		return exprFromConstantExpression(n)
+	case *cc.PrimaryExpression:
+		return exprFromPrimaryExpression(n)
+	case *cc.PostfixExpression:
+		return exprFromPostfixExpression(n)
+	case *cc.UnaryExpression:
+		return exprFromUnaryExpression(n)
+	case *cc.CastExpression:
+		return exprFromCastExpression(n)
+	case *cc.MultiplicativeExpression:
+		return exprFromMultiplicativeExpression(n)
+	case *cc.AdditiveExpression:
+		return exprFromAdditiveExpression(n)
+	case *cc.ShiftExpression:
+		return exprFromShiftExpression(n)
+	case *cc.RelationalExpression:
+		return exprFromRelationalExpression(n)
+	case *cc.EqualityExpression:
+		return exprFromEqualityExpression(n)
+	case *cc.AndExpression:
+		return exprFromAndExpression(n)
+	case *cc.ExclusiveOrExpression:
+		return exprFromExclusiveOrExpression(n)
+	case *cc.InclusiveOrExpression:
+		return exprFromInclusiveOrExpression(n)
+	case *cc.LogicalAndExpression:
+		return exprFromLogicalAndExpression(n)
+	case *cc.LogicalOrExpression:
+		return exprFromLogicalOrExpression(n)
+	case *cc.ConditionalExpression:
+		return exprFromConditionalExpression(n)
+	case *cc.AssignmentExpression:
+		return exprFromAssignmentExpression(n)
+	default:
+		panic(fmt.Errorf("unsupported node type: %T", n))
+	}
+}
+
+func exprFromPrimaryExpression(n *cc.PrimaryExpression) Expr {
 	switch n.Case {
-	case PrimaryExpressionIdent:
+	case cc.PrimaryExpressionIdent:
 		// TODO(dennwc): "asm" expression
 		id := NewIdent(n.Token.Value.String(), operandType(n.Operand))
 		return IdentExpr{id}
-	case PrimaryExpressionEnum:
+	case cc.PrimaryExpressionEnum:
 		id := NewIdent(n.Token.Value.String(), operandType(n.Operand))
 		return IdentExpr{id}
-	case PrimaryExpressionInt:
+	case cc.PrimaryExpressionInt:
 		return &Literal{typ: operandType(n.Operand), kind: LiteralInt, value: n.Token.Value.String()}
-	case PrimaryExpressionFloat:
+	case cc.PrimaryExpressionFloat:
 		return &Literal{typ: operandType(n.Operand), kind: LiteralFloat, value: n.Token.Value.String()}
-	case PrimaryExpressionChar:
+	case cc.PrimaryExpressionChar:
 		return &Literal{typ: operandType(n.Operand), kind: LiteralChar, value: n.Token.Value.String()}
-	case PrimaryExpressionLChar:
+	case cc.PrimaryExpressionLChar:
 		return &Literal{typ: operandType(n.Operand), kind: LiteralWChar, value: n.Token.Value.String()}
-	case PrimaryExpressionString:
+	case cc.PrimaryExpressionString:
 		return &Literal{typ: operandType(n.Operand), kind: LiteralString, value: n.Token.Value.String()}
-	case PrimaryExpressionLString:
+	case cc.PrimaryExpressionLString:
 		return &Literal{typ: operandType(n.Operand), kind: LiteralWString, value: n.Token.Value.String()}
-	case PrimaryExpressionExpr:
-		return &ParenExpr{X: n.Expression.Expr()}
+	case cc.PrimaryExpressionExpr:
+		return &ParenExpr{X: exprFromExpression(n.Expression)}
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 }
 
-func (n *PostfixExpression) Expr() Expr {
+func exprFromPostfixExpression(n *cc.PostfixExpression) Expr {
 	switch n.Case {
-	case PostfixExpressionPrimary:
-		return n.PrimaryExpression.Expr()
-	case PostfixExpressionIndex:
+	case cc.PostfixExpressionPrimary:
+		return exprFromPrimaryExpression(n.PrimaryExpression)
+	case cc.PostfixExpressionIndex:
 		return &IndexExpr{
-			X:   n.PostfixExpression.Expr(),
-			Ind: n.Expression.Expr(),
+			X:   exprFromPostfixExpression(n.PostfixExpression),
+			Ind: exprFromExpression(n.Expression),
 		}
-	case PostfixExpressionSelect, PostfixExpressionPSelect:
+	case cc.PostfixExpressionSelect, cc.PostfixExpressionPSelect:
 		return &SelectExpr{
-			X:   n.PostfixExpression.Expr(),
+			X:   exprFromPostfixExpression(n.PostfixExpression),
 			Sel: &Ident{Name: n.Token2.Value.String()},
-			Ptr: n.Case == PostfixExpressionPSelect,
+			Ptr: n.Case == cc.PostfixExpressionPSelect,
 		}
-	case PostfixExpressionCall:
+	case cc.PostfixExpressionCall:
 		var args []Expr
 		for it := n.ArgumentExpressionList; it != nil; it = it.ArgumentExpressionList {
-			args = append(args, it.AssignmentExpression.Expr())
+			args = append(args, exprFromAssignmentExpression(it.AssignmentExpression))
 		}
 		return &CallExpr{
-			Func: n.PostfixExpression.Expr(),
+			Func: exprFromPostfixExpression(n.PostfixExpression),
 			Args: args,
 		}
-	case PostfixExpressionInc:
-		return &IncDecExpr{X: n.PostfixExpression.Expr(), Op: IncPost}
-	case PostfixExpressionDec:
-		return &IncDecExpr{X: n.PostfixExpression.Expr(), Op: DecPost}
+	case cc.PostfixExpressionInc:
+		return &IncDecExpr{X: exprFromPostfixExpression(n.PostfixExpression), Op: IncPost}
+	case cc.PostfixExpressionDec:
+		return &IncDecExpr{X: exprFromPostfixExpression(n.PostfixExpression), Op: DecPost}
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 }
 
-func (n *UnaryExpression) Expr() Expr {
+func exprFromUnaryExpression(n *cc.UnaryExpression) Expr {
 	switch n.Case {
-	case UnaryExpressionPostfix:
-		return n.PostfixExpression.Expr()
-	case UnaryExpressionInc:
-		return &IncDecExpr{Op: IncPre, X: n.UnaryExpression.Expr()}
-	case UnaryExpressionDec:
-		return &IncDecExpr{Op: DecPre, X: n.UnaryExpression.Expr()}
+	case cc.UnaryExpressionPostfix:
+		return exprFromPostfixExpression(n.PostfixExpression)
+	case cc.UnaryExpressionInc:
+		return &IncDecExpr{Op: IncPre, X: exprFromUnaryExpression(n.UnaryExpression)}
+	case cc.UnaryExpressionDec:
+		return &IncDecExpr{Op: DecPre, X: exprFromUnaryExpression(n.UnaryExpression)}
 	}
 	var op UnaryOp
 	switch n.Case {
-	case UnaryExpressionAddrof:
+	case cc.UnaryExpressionAddrof:
 		op = UnaryAddr
-	case UnaryExpressionDeref:
+	case cc.UnaryExpressionDeref:
 		op = UnaryDeref
-	case UnaryExpressionPlus:
+	case cc.UnaryExpressionPlus:
 		op = UnaryPlus
-	case UnaryExpressionMinus:
+	case cc.UnaryExpressionMinus:
 		op = UnaryMinus
-	case UnaryExpressionCpl:
+	case cc.UnaryExpressionCpl:
 		op = UnaryInvert
-	case UnaryExpressionNot:
+	case cc.UnaryExpressionNot:
 		op = UnaryNot
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 	return &UnaryExpr{
 		typ: operandType(n.Operand),
-		Op:  op, X: n.CastExpression.Expr(),
+		Op:  op, X: exprFromCastExpression(n.CastExpression),
 	}
 }
 
-func (n *CastExpression) Expr() Expr {
+func exprFromCastExpression(n *cc.CastExpression) Expr {
 	switch n.Case {
-	case CastExpressionUnary:
-		return n.UnaryExpression.Expr()
+	case cc.CastExpressionUnary:
+		return exprFromUnaryExpression(n.UnaryExpression)
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 }
 
-func (n *MultiplicativeExpression) Expr() Expr {
+func exprFromMultiplicativeExpression(n *cc.MultiplicativeExpression) Expr {
 	switch n.Case {
-	case MultiplicativeExpressionCast:
-		return n.CastExpression.Expr()
+	case cc.MultiplicativeExpressionCast:
+		return exprFromCastExpression(n.CastExpression)
 	}
-	x := n.MultiplicativeExpression.Expr()
-	y := n.CastExpression.Expr()
+	x := exprFromMultiplicativeExpression(n.MultiplicativeExpression)
+	y := exprFromCastExpression(n.CastExpression)
 	var op BinaryOp
 	switch n.Case {
-	case MultiplicativeExpressionMul:
+	case cc.MultiplicativeExpressionMul:
 		op = BinaryMul
-	case MultiplicativeExpressionDiv:
+	case cc.MultiplicativeExpressionDiv:
 		op = BinaryDiv
-	case MultiplicativeExpressionMod:
+	case cc.MultiplicativeExpressionMod:
 		op = BinaryMod
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -708,18 +756,18 @@ func (n *MultiplicativeExpression) Expr() Expr {
 	}
 }
 
-func (n *AdditiveExpression) Expr() Expr {
+func exprFromAdditiveExpression(n *cc.AdditiveExpression) Expr {
 	switch n.Case {
-	case AdditiveExpressionMul:
-		return n.MultiplicativeExpression.Expr()
+	case cc.AdditiveExpressionMul:
+		return exprFromMultiplicativeExpression(n.MultiplicativeExpression)
 	}
-	x := n.AdditiveExpression.Expr()
-	y := n.MultiplicativeExpression.Expr()
+	x := exprFromAdditiveExpression(n.AdditiveExpression)
+	y := exprFromMultiplicativeExpression(n.MultiplicativeExpression)
 	var op BinaryOp
 	switch n.Case {
-	case AdditiveExpressionAdd:
+	case cc.AdditiveExpressionAdd:
 		op = BinaryAdd
-	case AdditiveExpressionSub:
+	case cc.AdditiveExpressionSub:
 		op = BinarySub
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -730,18 +778,18 @@ func (n *AdditiveExpression) Expr() Expr {
 	}
 }
 
-func (n *ShiftExpression) Expr() Expr {
+func exprFromShiftExpression(n *cc.ShiftExpression) Expr {
 	switch n.Case {
-	case ShiftExpressionAdd:
-		return n.AdditiveExpression.Expr()
+	case cc.ShiftExpressionAdd:
+		return exprFromAdditiveExpression(n.AdditiveExpression)
 	}
-	x := n.ShiftExpression.Expr()
-	y := n.AdditiveExpression.Expr()
+	x := exprFromShiftExpression(n.ShiftExpression)
+	y := exprFromAdditiveExpression(n.AdditiveExpression)
 	var op BinaryOp
 	switch n.Case {
-	case ShiftExpressionLsh:
+	case cc.ShiftExpressionLsh:
 		op = BinaryLsh
-	case ShiftExpressionRsh:
+	case cc.ShiftExpressionRsh:
 		op = BinaryRsh
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -752,22 +800,22 @@ func (n *ShiftExpression) Expr() Expr {
 	}
 }
 
-func (n *RelationalExpression) Expr() Expr {
+func exprFromRelationalExpression(n *cc.RelationalExpression) Expr {
 	switch n.Case {
-	case RelationalExpressionShift:
-		return n.ShiftExpression.Expr()
+	case cc.RelationalExpressionShift:
+		return exprFromShiftExpression(n.ShiftExpression)
 	}
-	x := n.RelationalExpression.Expr()
-	y := n.ShiftExpression.Expr()
+	x := exprFromRelationalExpression(n.RelationalExpression)
+	y := exprFromShiftExpression(n.ShiftExpression)
 	var op BinaryOp
 	switch n.Case {
-	case RelationalExpressionLt:
+	case cc.RelationalExpressionLt:
 		op = BinaryLess
-	case RelationalExpressionGt:
+	case cc.RelationalExpressionGt:
 		op = BinaryGreater
-	case RelationalExpressionLeq:
+	case cc.RelationalExpressionLeq:
 		op = BinaryLessEqual
-	case RelationalExpressionGeq:
+	case cc.RelationalExpressionGeq:
 		op = BinaryGreaterEqual
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -778,18 +826,18 @@ func (n *RelationalExpression) Expr() Expr {
 	}
 }
 
-func (n *EqualityExpression) Expr() Expr {
+func exprFromEqualityExpression(n *cc.EqualityExpression) Expr {
 	switch n.Case {
-	case EqualityExpressionRel:
-		return n.RelationalExpression.Expr()
+	case cc.EqualityExpressionRel:
+		return exprFromRelationalExpression(n.RelationalExpression)
 	}
-	x := n.EqualityExpression.Expr()
-	y := n.RelationalExpression.Expr()
+	x := exprFromEqualityExpression(n.EqualityExpression)
+	y := exprFromRelationalExpression(n.RelationalExpression)
 	var op BinaryOp
 	switch n.Case {
-	case EqualityExpressionEq:
+	case cc.EqualityExpressionEq:
 		op = BinaryEqual
-	case EqualityExpressionNeq:
+	case cc.EqualityExpressionNeq:
 		op = BinaryNotEqual
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -800,16 +848,16 @@ func (n *EqualityExpression) Expr() Expr {
 	}
 }
 
-func (n *AndExpression) Expr() Expr {
+func exprFromAndExpression(n *cc.AndExpression) Expr {
 	switch n.Case {
-	case AndExpressionEq:
-		return n.EqualityExpression.Expr()
+	case cc.AndExpressionEq:
+		return exprFromEqualityExpression(n.EqualityExpression)
 	}
-	x := n.AndExpression.Expr()
-	y := n.EqualityExpression.Expr()
+	x := exprFromAndExpression(n.AndExpression)
+	y := exprFromEqualityExpression(n.EqualityExpression)
 	var op BinaryOp
 	switch n.Case {
-	case AndExpressionAnd:
+	case cc.AndExpressionAnd:
 		op = BinaryBitAnd
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -820,16 +868,16 @@ func (n *AndExpression) Expr() Expr {
 	}
 }
 
-func (n *ExclusiveOrExpression) Expr() Expr {
+func exprFromExclusiveOrExpression(n *cc.ExclusiveOrExpression) Expr {
 	switch n.Case {
-	case ExclusiveOrExpressionAnd:
-		return n.AndExpression.Expr()
+	case cc.ExclusiveOrExpressionAnd:
+		return exprFromAndExpression(n.AndExpression)
 	}
-	x := n.ExclusiveOrExpression.Expr()
-	y := n.AndExpression.Expr()
+	x := exprFromExclusiveOrExpression(n.ExclusiveOrExpression)
+	y := exprFromAndExpression(n.AndExpression)
 	var op BinaryOp
 	switch n.Case {
-	case ExclusiveOrExpressionXor:
+	case cc.ExclusiveOrExpressionXor:
 		op = BinaryBitXOr
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -840,16 +888,16 @@ func (n *ExclusiveOrExpression) Expr() Expr {
 	}
 }
 
-func (n *InclusiveOrExpression) Expr() Expr {
+func exprFromInclusiveOrExpression(n *cc.InclusiveOrExpression) Expr {
 	switch n.Case {
-	case InclusiveOrExpressionXor:
-		return n.ExclusiveOrExpression.Expr()
+	case cc.InclusiveOrExpressionXor:
+		return exprFromExclusiveOrExpression(n.ExclusiveOrExpression)
 	}
-	x := n.InclusiveOrExpression.Expr()
-	y := n.ExclusiveOrExpression.Expr()
+	x := exprFromInclusiveOrExpression(n.InclusiveOrExpression)
+	y := exprFromExclusiveOrExpression(n.ExclusiveOrExpression)
 	var op BinaryOp
 	switch n.Case {
-	case InclusiveOrExpressionOr:
+	case cc.InclusiveOrExpressionOr:
 		op = BinaryBitOr
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -860,16 +908,16 @@ func (n *InclusiveOrExpression) Expr() Expr {
 	}
 }
 
-func (n *LogicalAndExpression) Expr() Expr {
+func exprFromLogicalAndExpression(n *cc.LogicalAndExpression) Expr {
 	switch n.Case {
-	case LogicalAndExpressionOr:
-		return n.InclusiveOrExpression.Expr()
+	case cc.LogicalAndExpressionOr:
+		return exprFromInclusiveOrExpression(n.InclusiveOrExpression)
 	}
-	x := n.LogicalAndExpression.Expr()
-	y := n.InclusiveOrExpression.Expr()
+	x := exprFromLogicalAndExpression(n.LogicalAndExpression)
+	y := exprFromInclusiveOrExpression(n.InclusiveOrExpression)
 	var op BinaryOp
 	switch n.Case {
-	case LogicalAndExpressionLAnd:
+	case cc.LogicalAndExpressionLAnd:
 		op = BinaryAnd
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -880,16 +928,16 @@ func (n *LogicalAndExpression) Expr() Expr {
 	}
 }
 
-func (n *LogicalOrExpression) Expr() Expr {
+func exprFromLogicalOrExpression(n *cc.LogicalOrExpression) Expr {
 	switch n.Case {
-	case LogicalOrExpressionLAnd:
-		return n.LogicalAndExpression.Expr()
+	case cc.LogicalOrExpressionLAnd:
+		return exprFromLogicalAndExpression(n.LogicalAndExpression)
 	}
-	x := n.LogicalOrExpression.Expr()
-	y := n.LogicalAndExpression.Expr()
+	x := exprFromLogicalOrExpression(n.LogicalOrExpression)
+	y := exprFromLogicalAndExpression(n.LogicalAndExpression)
 	var op BinaryOp
 	switch n.Case {
-	case LogicalOrExpressionLOr:
+	case cc.LogicalOrExpressionLOr:
 		op = BinaryOr
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -900,52 +948,52 @@ func (n *LogicalOrExpression) Expr() Expr {
 	}
 }
 
-func (n *ConditionalExpression) Expr() Expr {
+func exprFromConditionalExpression(n *cc.ConditionalExpression) Expr {
 	switch n.Case {
-	case ConditionalExpressionLOr:
-		return n.LogicalOrExpression.Expr()
-	case ConditionalExpressionCond:
+	case cc.ConditionalExpressionLOr:
+		return exprFromLogicalOrExpression(n.LogicalOrExpression)
+	case cc.ConditionalExpressionCond:
 		return &CondExpr{
 			typ:  operandType(n.Operand),
-			Cond: n.LogicalOrExpression.Expr(),
-			Then: n.Expression.Expr(),
-			Else: n.ConditionalExpression.Expr(),
+			Cond: exprFromLogicalOrExpression(n.LogicalOrExpression),
+			Then: exprFromExpression(n.Expression),
+			Else: exprFromConditionalExpression(n.ConditionalExpression),
 		}
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
 	}
 }
 
-func (n *AssignmentExpression) Expr() Expr {
+func exprFromAssignmentExpression(n *cc.AssignmentExpression) Expr {
 	switch n.Case {
-	case AssignmentExpressionCond:
-		return n.ConditionalExpression.Expr()
+	case cc.AssignmentExpressionCond:
+		return exprFromConditionalExpression(n.ConditionalExpression)
 	}
-	left := n.UnaryExpression.Expr()
-	right := n.AssignmentExpression.Expr()
+	left := exprFromUnaryExpression(n.UnaryExpression)
+	right := exprFromAssignmentExpression(n.AssignmentExpression)
 	var op BinaryOp
 	switch n.Case {
-	case AssignmentExpressionAssign:
+	case cc.AssignmentExpressionAssign:
 		op = BinaryNone
-	case AssignmentExpressionMul:
+	case cc.AssignmentExpressionMul:
 		op = BinaryMul
-	case AssignmentExpressionDiv:
+	case cc.AssignmentExpressionDiv:
 		op = BinaryDiv
-	case AssignmentExpressionMod:
+	case cc.AssignmentExpressionMod:
 		op = BinaryMod
-	case AssignmentExpressionAdd:
+	case cc.AssignmentExpressionAdd:
 		op = BinaryAdd
-	case AssignmentExpressionSub:
+	case cc.AssignmentExpressionSub:
 		op = BinarySub
-	case AssignmentExpressionLsh:
+	case cc.AssignmentExpressionLsh:
 		op = BinaryLsh
-	case AssignmentExpressionRsh:
+	case cc.AssignmentExpressionRsh:
 		op = BinaryRsh
-	case AssignmentExpressionAnd:
+	case cc.AssignmentExpressionAnd:
 		op = BinaryBitAnd
-	case AssignmentExpressionXor:
+	case cc.AssignmentExpressionXor:
 		op = BinaryBitXOr
-	case AssignmentExpressionOr:
+	case cc.AssignmentExpressionOr:
 		op = BinaryBitOr
 	default:
 		panic(fmt.Errorf("TODO: case %v (%v)", n.Case, n.Position()))
@@ -955,22 +1003,22 @@ func (n *AssignmentExpression) Expr() Expr {
 	}
 }
 
-func (n *Expression) Expr() Expr {
+func exprFromExpression(n *cc.Expression) Expr {
 	if n.Expression == nil {
-		return n.AssignmentExpression.Expr()
+		return exprFromAssignmentExpression(n.AssignmentExpression)
 	}
-	var arr []*AssignmentExpression
+	var arr []*cc.AssignmentExpression
 	for it := n; it != nil; it = it.Expression {
 		arr = append(arr, it.AssignmentExpression)
 	}
 	expr := make(CommaExpr, 0, len(arr))
 	// order is reversed: returned expression is the first in linked list
 	for i := len(arr) - 1; i >= 0; i-- {
-		expr = append(expr, arr[i].Expr())
+		expr = append(expr, exprFromAssignmentExpression(arr[i]))
 	}
 	return expr
 }
 
-func (n *ConstantExpression) Expr() Expr {
-	return n.ConditionalExpression.Expr()
+func exprFromConstantExpression(n *cc.ConstantExpression) Expr {
+	return exprFromConditionalExpression(n.ConditionalExpression)
 }
