@@ -37,6 +37,7 @@ type AST struct {
 	PtrdiffType Type
 	Scope       Scope // File scope.
 	SizeType    Type
+	StructTypes map[StringID]Type // Tagged struct/union types declared in file scope.
 	// Alignment and size of every struct/union defined in the translation
 	// unit. Valid only after Translate.
 	Structs map[StructInfo]struct{}
@@ -518,6 +519,7 @@ func (n *AST) typecheck() (*context, error) {
 		n.TLD[pruned] = struct{}{}
 	}
 	n.Enums = ctx.enums
+	n.StructTypes = ctx.structTypes
 	return ctx, ctx.Err()
 }
 

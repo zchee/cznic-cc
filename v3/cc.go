@@ -426,6 +426,7 @@ type context struct {
 	checkFn     *FunctionDefinition
 	closure     map[StringID]struct{}
 	continues   int
+	enums       map[StringID]Operand //TODO puting this in alphabetical order within the struct causes crashes in VirtualBox/386 ???
 	goscanner.ErrorList
 	includePaths    []string
 	intBits         int
@@ -440,13 +441,13 @@ type context struct {
 	ptrdiffT        Type
 	readDelta       int
 	sizeT           Type
+	structTypes     map[StringID]Type
 	structs         map[StructInfo]struct{}
 	switches        int
 	sysIncludePaths []string
 	tuSize0         int64 // Sum of sizes of processed inputs
 	tuSources0      int32 // Number of processed inputs
 	wcharT          Type
-	enums           map[StringID]Operand //TODO puting this in alphabetical order within the struct causes crashes in VirtualBox/386 ???
 
 	capture        bool
 	evalIdentError bool
@@ -458,11 +459,12 @@ func newContext(cfg *Config) *context {
 		maxErrors = 10
 	}
 	return &context{
-		cfg:       cfg,
-		enums:     map[StringID]Operand{},
-		keywords:  keywords,
-		maxErrors: maxErrors,
-		structs:   map[StructInfo]struct{}{},
+		cfg:         cfg,
+		enums:       map[StringID]Operand{},
+		keywords:    keywords,
+		maxErrors:   maxErrors,
+		structTypes: map[StringID]Type{},
+		structs:     map[StructInfo]struct{}{},
 	}
 }
 

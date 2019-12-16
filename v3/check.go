@@ -2038,13 +2038,17 @@ func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase) Type {
 				m[v.name] = v
 			}
 		}
-		n.typ = (&structType{
+		t := (&structType{
 			attr:     attr,
 			fields:   fields,
 			m:        m,
 			tag:      n.Token.Value,
 			typeBase: typ,
 		}).check(ctx, n)
+		n.typ = t
+		if nm := n.Token.Value; nm != 0 && n.lexicalScope.Parent() == nil {
+			ctx.structTypes[nm] = t
+		}
 	case StructOrUnionSpecifierTag: // StructOrUnion AttributeSpecifierList IDENTIFIER
 		typ.kind = byte(n.StructOrUnion.check(ctx))
 		attr := n.AttributeSpecifierList.check(ctx)
