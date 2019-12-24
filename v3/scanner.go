@@ -315,6 +315,7 @@ func (s *scanner) init() *scanner {
 	if err == nil && bytes.Equal(b, bom) {
 		s.bomFix, _ = s.r.Discard(3)
 	}
+	s.tokenBuf = nil
 	return s
 }
 
@@ -585,6 +586,7 @@ func (s *scanner) parseIfGroup() *ppIfGroup {
 }
 
 func (s *scanner) nextLine() {
+	s.tokenBuf = nil
 	s.lookaheadLine = s.scanLine()
 }
 

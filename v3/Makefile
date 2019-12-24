@@ -70,7 +70,9 @@ later:
 	@grep -n $(grep) MAYBE * || true
 
 mem: clean
-	go test -v -run ParserCS -csmith 2m -memprofile mem.out -timeout 24h
+	# go test -v -run ParserCS -csmith 2m -memprofile mem.out -timeout 24h
+	# go test -v -run @ -bench BenchmarkScanner -memprofile mem.out -timeout 24h
+	go test -v -run TestTranslateSQLite -memprofile mem.out -timeout 24h
 	go tool pprof -lines -web -alloc_space *.test mem.out
 
 nuke: clean
