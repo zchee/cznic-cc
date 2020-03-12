@@ -2595,8 +2595,12 @@ type ppIfndefDirective struct {
 	toks []token3
 }
 
-func (n *ppIfndefDirective) evalInclusionCondition(c *cpp) bool { _, ok := c.macros[n.name]; return !ok }
-func (n *ppIfndefDirective) getToks() []token3                  { return n.toks }
+func (n *ppIfndefDirective) evalInclusionCondition(c *cpp) bool {
+	_, ok := c.macros[n.name]
+	return !ok
+}
+
+func (n *ppIfndefDirective) getToks() []token3 { return n.toks }
 
 type ppIfDirective struct {
 	toks []token3

@@ -342,8 +342,8 @@ type Type interface {
 
 	underlyingType() Type
 
-	// volatile reports whether type has type qualifier "volatile".
-	volatile() bool
+	// IsVolatile reports whether type has type qualifier "volatile".
+	IsVolatile() bool
 }
 
 // A Field describes a single field in a struct/union.
@@ -883,8 +883,8 @@ func (t *typeBase) setKind(k Kind) { t.kind = byte(k) }
 // underlyingType implements Type.
 func (t *typeBase) underlyingType() Type { return t }
 
-// volatile implements Type.
-func (t *typeBase) volatile() bool { return t.flags&fVolatile != 0 }
+// IsVolatile implements Type.
+func (t *typeBase) IsVolatile() bool { return t.flags&fVolatile != 0 }
 
 // String implements Type.
 func (t *typeBase) String() string {
@@ -923,7 +923,7 @@ func (t *typeBase) string(b *strings.Builder) {
 		b.WriteString("restrict")
 		spc = " "
 	}
-	if t.volatile() {
+	if t.IsVolatile() {
 		b.WriteString(spc)
 		b.WriteString("volatile")
 		spc = " "
@@ -1225,8 +1225,8 @@ func (t *aliasType) string(b *strings.Builder) { b.WriteString(t.nm.String()) }
 
 func (t *aliasType) underlyingType() Type { return t.typ.underlyingType() }
 
-// volatile implements Type.
-func (t *aliasType) volatile() bool { return t.typ.volatile() }
+// IsVolatile implements Type.
+func (t *aliasType) IsVolatile() bool { return t.typ.IsVolatile() }
 
 type field struct {
 	bitFieldMask uint64  // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
