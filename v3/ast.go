@@ -1323,6 +1323,8 @@ type Declarator struct {
 	AddressTaken           bool
 	IsParameter            bool
 	IsTypedefName          bool
+	SubjectOfIncDec        bool
+	SubjectOfAsgnOp        bool
 	fnDef                  bool
 	hasInitalizer          bool
 	AttributeSpecifierList *AttributeSpecifierList

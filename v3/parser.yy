@@ -617,6 +617,8 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	AddressTaken	bool */
 			/*yy:field	IsParameter	bool */
 			/*yy:field	IsTypedefName	bool */
+			/*yy:field	SubjectOfIncDec	bool */
+			/*yy:field	SubjectOfAsgnOp	bool */
 			/*yy:field	fnDef		bool */
 			/*yy:field	hasInitalizer	bool */
 			/*yy:example int *p; */

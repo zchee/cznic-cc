@@ -562,6 +562,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionMul: // UnaryExpression "*=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -580,6 +581,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionDiv: // UnaryExpression "/=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -598,6 +600,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionMod: // UnaryExpression "%=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -616,6 +619,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionAdd: // UnaryExpression "+=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -635,6 +639,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionSub: // UnaryExpression "-=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -654,6 +659,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionLsh: // UnaryExpression "<<=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -674,6 +680,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionRsh: // UnaryExpression ">>=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -694,6 +701,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionAnd: // UnaryExpression "&=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -715,6 +723,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionXor: // UnaryExpression "^=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -736,6 +745,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
+			d.SubjectOfAsgnOp = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -773,6 +783,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionInc: // "++" UnaryExpression
 		op := n.UnaryExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
+			d.SubjectOfIncDec = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -780,6 +791,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionDec: // "--" UnaryExpression
 		op := n.UnaryExpression.check(ctx)
 		if d := op.Declarator(); d != nil {
+			d.SubjectOfIncDec = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -2307,6 +2319,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 	case PostfixExpressionInc: // PostfixExpression "++"
 		op := n.PostfixExpression.check(ctx, false)
 		if d := op.Declarator(); d != nil {
+			d.SubjectOfIncDec = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -2314,6 +2327,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 	case PostfixExpressionDec: // PostfixExpression "--"
 		op := n.PostfixExpression.check(ctx, false)
 		if d := op.Declarator(); d != nil {
+			d.SubjectOfIncDec = true
 			d.Read += ctx.readDelta
 			d.Write++
 		}
@@ -3893,6 +3907,7 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 			switch n.Case {
 			case InitDeclaratorDecl: // Declarator AttributeSpecifierList
 				nm := n.Declarator.Name()
+				n.Declarator.IsParameter = true
 				switch x, ok := m[nm]; {
 				case ok:
 					params[x] = &Parameter{d: n.Declarator, typ: n.Declarator.Type()}
