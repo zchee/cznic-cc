@@ -388,6 +388,7 @@ type Config struct {
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
+	LongDoubleIsDouble                     bool
 	DebugIncludePaths                      bool // Output to stderr.
 	DebugWorkingDir                        bool // Output to stderr.
 	InjectTracingCode                      bool // Output to stderr.

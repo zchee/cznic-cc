@@ -562,6 +562,10 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 			ctx.err(td.Position(), "invalid type specifiers combination")
 			return t
 		}
+
+		if t.kind == byte(LongDouble) && ctx.cfg.LongDoubleIsDouble {
+			t.kind = byte(Double)
+		}
 	}
 	switch len(alignmentSpecifiers) {
 	case 0:

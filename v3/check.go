@@ -805,9 +805,9 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			break
 		}
 
-		d := op.Declarator()
+		d := n.CastExpression.Declarator()
 		if d != nil {
-			d.AddressTaken = true
+			setAddressTaken(n, d, "'&' CastExpression")
 			if d.td.register() {
 				//TODO report error
 			}
@@ -1059,8 +1059,8 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		n.IsSideEffectsFree = n.PrimaryExpression.IsSideEffectsFree
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		pe := n.PostfixExpression.check(ctx, false)
-		if d := pe.Declarator(); d != nil {
-			d.AddressTaken = true
+		if d := n.PostfixExpression.Declarator(); d != nil && d.Type().Kind() != Ptr {
+			setAddressTaken(n, d, "PostfixExpression '[' Expression ']'")
 			d.Read += ctx.readDelta
 		}
 		e := n.Expression.check(ctx)
@@ -1101,8 +1101,8 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.addrOf(ctx)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
-		if d := op.Declarator(); d != nil {
-			d.AddressTaken = true
+		if d := n.PostfixExpression.Declarator(); d != nil {
+			setAddressTaken(n, d, "PostfixExpression '.' IDENTIFIER")
 			d.Read += ctx.readDelta
 		}
 		t := op.Type()
@@ -1150,8 +1150,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		op := n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
-		if d := op.Declarator(); d != nil {
-			d.AddressTaken = true
+		if d := n.PostfixExpression.Declarator(); d != nil {
 			d.Read += ctx.readDelta
 		}
 		t := op.Type()
@@ -1267,7 +1266,7 @@ func (n *PrimaryExpression) addrOf(ctx *context) Operand {
 			case Function:
 				// nop //TODO ?
 			default:
-				d.AddressTaken = true
+				setAddressTaken(n, d, "&IDENTIFIER")
 				n.Operand = &lvalue{Operand: &operand{typ: ctx.cfg.ABI.Ptr(n, d.Type())}, declarator: d}
 			}
 			return n.Operand
@@ -4223,4 +4222,11 @@ func (n *DeclarationList) check(ctx *context) {
 	for ; n != nil; n = n.DeclarationList {
 		n.Declaration.check(ctx, false)
 	}
+}
+
+func setAddressTaken(n Node, d *Declarator, s string) {
+	d.AddressTaken = true
+	// fmt.Printf("%v: %s, type %v (%v, %v), declared at %v, AddressTaken = true: %v\n",
+	// 	n.Position(), d.Name(), d.Type(), d.Type().Kind(), d.Type().Size(), d.Position(), s,
+	// ) //TODO-
 }

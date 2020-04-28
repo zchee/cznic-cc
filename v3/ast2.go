@@ -784,3 +784,158 @@ func (n *TypeName) Type() Type { return n.typ }
 
 // // LexicalScope returns the lexical scope of n.
 // func (n *UnaryExpression) LexicalScope() Scope { return n.lexicalScope }
+
+func (n *UnaryExpression) Declarator() *Declarator {
+	switch n.Case {
+	case UnaryExpressionPostfix: // PostfixExpression
+		return n.PostfixExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *PostfixExpression) Declarator() *Declarator {
+	switch n.Case {
+	case PostfixExpressionPrimary: // PrimaryExpression
+		return n.PrimaryExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *PrimaryExpression) Declarator() *Declarator {
+	switch n.Case {
+	case PrimaryExpressionIdent: // IDENTIFIER
+		return n.Operand.Declarator()
+	case PrimaryExpressionExpr: // '(' Expression ')'
+		return n.Expression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *Expression) Declarator() *Declarator {
+	switch n.Case {
+	case ExpressionAssign: // AssignmentExpression
+		return n.AssignmentExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *AssignmentExpression) Declarator() *Declarator {
+	switch n.Case {
+	case AssignmentExpressionCond: // ConditionalExpression
+		return n.ConditionalExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *ConditionalExpression) Declarator() *Declarator {
+	switch n.Case {
+	case ConditionalExpressionLOr: // LogicalOrExpression
+		return n.LogicalOrExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *LogicalOrExpression) Declarator() *Declarator {
+	switch n.Case {
+	case LogicalOrExpressionLAnd: // LogicalAndExpression
+		return n.LogicalAndExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *LogicalAndExpression) Declarator() *Declarator {
+	switch n.Case {
+	case LogicalAndExpressionOr: // InclusiveOrExpression
+		return n.InclusiveOrExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *InclusiveOrExpression) Declarator() *Declarator {
+	switch n.Case {
+	case InclusiveOrExpressionXor: // ExclusiveOrExpression
+		return n.ExclusiveOrExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *ExclusiveOrExpression) Declarator() *Declarator {
+	switch n.Case {
+	case ExclusiveOrExpressionAnd: // AndExpression
+		return n.AndExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *AndExpression) Declarator() *Declarator {
+	switch n.Case {
+	case AndExpressionEq: // EqualityExpression
+		return n.EqualityExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *EqualityExpression) Declarator() *Declarator {
+	switch n.Case {
+	case EqualityExpressionRel: // RelationalExpression
+		return n.RelationalExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *RelationalExpression) Declarator() *Declarator {
+	switch n.Case {
+	case RelationalExpressionShift: // ShiftExpression
+		return n.ShiftExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *ShiftExpression) Declarator() *Declarator {
+	switch n.Case {
+	case ShiftExpressionAdd: // AdditiveExpression
+		return n.AdditiveExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *AdditiveExpression) Declarator() *Declarator {
+	switch n.Case {
+	case AdditiveExpressionMul: // MultiplicativeExpression
+		return n.MultiplicativeExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *MultiplicativeExpression) Declarator() *Declarator {
+	switch n.Case {
+	case MultiplicativeExpressionCast: // CastExpression
+		return n.CastExpression.Declarator()
+	default:
+		return nil
+	}
+}
+
+func (n *CastExpression) Declarator() *Declarator {
+	switch n.Case {
+	case CastExpressionUnary: // UnaryExpression
+		return n.UnaryExpression.Declarator()
+	default:
+		return nil
+	}
+}
