@@ -2739,6 +2739,10 @@ loop2:
 		switch s0[i] {
 		case 'l', 'L':
 			s = s[:i]
+			if ctx.cfg.LongDoubleIsDouble {
+				break
+			}
+
 			suff += "l"
 		case 'f', 'F':
 			s = s[:i]
