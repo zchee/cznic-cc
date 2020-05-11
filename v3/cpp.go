@@ -2634,7 +2634,7 @@ func (n *ppDefineObjectMacroDirective) translationPhase4(c *cpp) {
 			c.err(n.name, "redefinition of a function-like macro with an object-like one")
 		}
 
-		if !c.identicalReplacementLists(n.replacementList, m.repl) {
+		if !c.identicalReplacementLists(n.replacementList, m.repl) && c.ctx.cfg.RejectIncompatibleMacroRedef {
 			c.err(n.name, "redefinition with different replacement list")
 			return
 		}
