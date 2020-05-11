@@ -114,7 +114,7 @@ func TestTCCExpand(t *testing.T) {
 		re = regexp.MustCompile(s)
 	}
 
-	cfg := &Config{fakeIncludes: true, PreprocessOnly: true}
+	cfg := &Config{fakeIncludes: true, PreprocessOnly: true, RejectIncompatibleMacroRedef: true}
 	files := 0
 	if err := filepath.Walk(filepath.Join(root, filepath.FromSlash("tests/pp")), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
