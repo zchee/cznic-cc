@@ -49,7 +49,7 @@ int main() {
     PRINT_TYPE("UInt128", unsigned __int128);
 #endif
 
-#ifdef __GNUC__
+#if defined __GNUC__ || defined(__APPLE__) && !defined(__clang__)
     PRINT_TYPE("Float32", _Float32);
     PRINT_TYPE("Float32x", _Float32x);
     PRINT_TYPE("Float64", _Float64);
