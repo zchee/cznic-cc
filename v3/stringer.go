@@ -54,14 +54,15 @@ func _() {
 	_ = x[UShort-43]
 	_ = x[Union-44]
 	_ = x[Void-45]
-	_ = x[typeofExpr-46]
-	_ = x[typeofType-47]
-	_ = x[maxKind-48]
+	_ = x[Vector-46]
+	_ = x[typeofExpr-47]
+	_ = x[typeofType-48]
+	_ = x[maxKind-49]
 }
 
-const _Kind_name = "InvalidT[]_Boolcharcomplex charcomplex doublecomplex floatcomplex intcomplex longcomplex long doublecomplex long longcomplex shortcomplex unsignedcomplex unsigned longcomplex unsigned long longcomplex shor_Decimal128_Decimal32_Decimal64doubleenumfloat_Float128_Float32_Float32x_Float64_Float64xfunctionint__int128longlong doublelong longpointersigned charshortstructtypedefnameunsigned charunsignedunsigned __int128unsigned longunsigned long longunsigned shortunionvoidtypeofExprtypeofTypemaxKind"
+const _Kind_name = "InvalidT[]_Boolcharcomplex charcomplex doublecomplex floatcomplex intcomplex longcomplex long doublecomplex long longcomplex shortcomplex unsignedcomplex unsigned longcomplex unsigned long longcomplex shor_Decimal128_Decimal32_Decimal64doubleenumfloat_Float128_Float32_Float32x_Float64_Float64xfunctionint__int128longlong doublelong longpointersigned charshortstructtypedefnameunsigned charunsignedunsigned __int128unsigned longunsigned long longunsigned shortunionvoidvectortypeofExprtypeofTypemaxKind"
 
-var _Kind_index = [...]uint16{0, 7, 10, 15, 19, 31, 45, 58, 69, 81, 100, 117, 130, 146, 167, 193, 205, 216, 226, 236, 242, 246, 251, 260, 268, 277, 285, 294, 302, 305, 313, 317, 328, 337, 344, 355, 360, 366, 377, 390, 398, 415, 428, 446, 460, 465, 469, 479, 489, 496}
+var _Kind_index = [...]uint16{0, 7, 10, 15, 19, 31, 45, 58, 69, 81, 100, 117, 130, 146, 167, 193, 205, 216, 226, 236, 242, 246, 251, 260, 268, 277, 285, 294, 302, 305, 313, 317, 328, 337, 344, 355, 360, 366, 377, 390, 398, 415, 428, 446, 460, 465, 469, 475, 485, 495, 502}
 
 func (i Kind) String() string {
 	if i >= Kind(len(_Kind_index)-1) {

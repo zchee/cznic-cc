@@ -33,10 +33,13 @@ var (
 	_ Type = (*structType)(nil)
 	_ Type = (*taggedType)(nil)
 	_ Type = (*typeBase)(nil)
+	_ Type = (*vectorType)(nil)
 	_ Type = noType
 
-	idReal = dict.sid("real")
-	idImag = dict.sid("imag")
+	idImag        = dict.sid("imag")
+	idReal        = dict.sid("real")
+	idVectorSize  = dict.sid("vector_size")
+	idVectorSize2 = dict.sid("__vector_size__")
 
 	noType = &typeBase{}
 
@@ -107,6 +110,8 @@ var (
 		ULong:     true,
 		ULongLong: true,
 		UShort:    true,
+		Int128:    true,
+		UInt128:   true,
 	}
 
 	arithmeticTypes = [maxKind]bool{
@@ -136,6 +141,8 @@ var (
 		ULong:             true,
 		ULongLong:         true,
 		UShort:            true,
+		Int128:            true,
+		UInt128:           true,
 	}
 
 	realTypes = [maxKind]bool{
@@ -622,10 +629,6 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 		if complexTypes[k] {
 			typ = ctx.cfg.ABI.Type(k)
 		}
-	}
-
-	if len(attributeSpecifiers) != 0 {
-		typ = &attributedType{Type: typ, attr: attributeSpecifiers}
 	}
 	return typ
 }
@@ -1496,6 +1499,10 @@ func (t *taggedType) underlyingType() Type {
 					return t.typ.underlyingType()
 				}
 			case *StructOrUnionSpecifier:
+				if x.typ == nil {
+					break
+				}
+
 				switch k {
 				case Struct:
 					if typ := x.Type(); typ.Kind() == Struct {
@@ -1597,3 +1604,56 @@ func (t *bitFieldType) IsBitFieldType() bool { return true }
 
 // BitField implements Type.
 func (t *bitFieldType) BitField() Field { return t.field }
+
+type vectorType struct {
+	typeBase
+
+	elem   Type
+	length uintptr
+}
+
+// Alias implements Type.
+func (t *vectorType) Alias() Type { return t }
+
+// IsVLA implements Type.
+func (t *vectorType) IsVLA() bool { return false }
+
+// isCompatible implements Type.
+func (t *vectorType) isCompatible(u Type) bool {
+	panic("TODO")
+}
+
+// String implements Type.
+func (t *vectorType) String() string {
+	var b strings.Builder
+	t.string(&b)
+	return strings.TrimSpace(b.String())
+}
+
+// string implements Type.
+func (t *vectorType) string(b *strings.Builder) {
+	fmt.Fprintf(b, "vector of %d ", t.Len())
+	t.Elem().string(b)
+}
+
+// Attributes implements Type.
+func (t *vectorType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
+
+// Elem implements Type.
+func (t *vectorType) Elem() Type { return t.elem }
+
+// Len implements Type.
+func (t *vectorType) Len() uintptr { return t.length }
+
+// LenExpr implements Type.
+func (t *vectorType) LenExpr() *AssignmentExpression {
+	panic(internalErrorf("%s: LenExpr of non variable length array", t.Kind()))
+}
+
+// setLen implements Type.
+func (t *vectorType) setLen(n uintptr) {
+	panic("internal error")
+}
+
+// underlyingType implements Type.
+func (t *vectorType) underlyingType() Type { return t }

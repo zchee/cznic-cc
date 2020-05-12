@@ -53,6 +53,7 @@ const (
 	UShort            // unsigned short
 	Union             // union
 	Void              // void
+	Vector            // vector
 
 	typeofExpr
 	typeofType
