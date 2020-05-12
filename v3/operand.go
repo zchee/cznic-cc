@@ -535,8 +535,14 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 		return noOperand, noOperand
 	}
 
-	if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
-		panic(internalError())
+	if !a.Type().IsArithmeticType() {
+		ctx.errNode(n, "not an arithmetic type: %s", a.Type())
+		return noOperand, noOperand
+	}
+
+	if !b.Type().IsArithmeticType() {
+		ctx.errNode(n, "not an arithmetic type: %s", b.Type())
+		return noOperand, noOperand
 	}
 
 	if a.Type() == nil || b.Type() == nil {
@@ -812,6 +818,8 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 			panic("TODO693")
 		case LongDouble:
 			r.value = &Float128Value{N: big.NewFloat(float64(v))}
+		case Decimal32, Decimal64, Decimal128:
+			// ok
 		default:
 			panic(fmt.Sprintf("TODO695 %s", to.Kind()))
 		}
@@ -834,8 +842,12 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 			r.value = Float32Value(v)
 		case ComplexLongDouble:
 			panic("TODO709")
+		case Vector:
+			r.value = nil
+		case Decimal32, Decimal64, Decimal128:
+			// ok
 		default:
-			panic("TODO711")
+			panic(todo("", to.Kind()))
 		}
 	case LongDouble:
 		v := v.(*Float128Value)
@@ -848,6 +860,14 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 
 			d, _ := v.N.Float64()
 			r.value = Float64Value(d)
+		case Float:
+			if v.NaN {
+				r.value = Float32Value(math.NaN())
+				break
+			}
+
+			d, _ := v.N.Float64()
+			r.value = Float32Value(d)
 		case ComplexLongDouble:
 			if v.NaN {
 				r.value = Complex256Value{v, &Float128Value{NaN: true}}
@@ -855,6 +875,8 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 			}
 
 			r.value = Complex256Value{v, &Float128Value{N: big.NewFloat(0)}}
+		case Decimal32, Decimal64, Decimal128:
+			// ok
 		default:
 			panic(fmt.Sprintf("TODO813 %v", to.Kind()))
 		}
@@ -966,8 +988,13 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 		}
 	case Array:
 		return &operand{typ: to}
+	case Vector:
+		if o.Type().Size() == to.Size() {
+			return &operand{typ: to}
+		}
 	}
-	panic("TODO")
+	ctx.errNode(n, "cannot convert %s to %s", o.Type(), to)
+	return &operand{typ: to}
 }
 
 func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
@@ -1033,8 +1060,13 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 		return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 	case Struct, Union, Array, Void, Int128, UInt128:
 		return &operand{typ: to}
+	case Vector:
+		if o.Type().Size() == to.Size() {
+			return &operand{typ: to}
+		}
 	}
-	panic(internalErrorf("%q, %q", to, to.Kind()))
+	ctx.errNode(n, "cannot convert %s to %s", o.Type(), to)
+	return &operand{typ: to}
 }
 
 func (o *operand) normalize(ctx *context, n Node) (r Operand) {
@@ -1125,7 +1157,7 @@ func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 		default:
 			panic(internalError())
 		}
-	case Array, Void, Function, Struct, Union:
+	case Array, Void, Function, Struct, Union, Vector, Decimal32, Decimal64, Decimal128:
 		return o
 	case ComplexChar, ComplexInt, ComplexLong, ComplexLongLong, ComplexShort, ComplexUInt, ComplexUShort:
 		ctx.errNode(n, "unsupported type: %s", o.Type())
@@ -1178,10 +1210,8 @@ func convertInt64(n int64, t Type, ctx *context) int64 {
 		default:
 			return n & math.MaxUint32
 		}
-	case 8:
-		return n
 	default:
-		panic(internalError())
+		return n
 	}
 }
 

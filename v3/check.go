@@ -264,7 +264,11 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *boo
 	// the scalar to be the unqualified version of its declared type.
 	if t.IsScalarType() {
 		if n.InitializerList != nil {
-			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO error "too many items in initializer list"
+			// trc("%v, %v", t, currObj)
+			// t2 := t.underlyingType()
+			// trc("", t2)
+			ctx.errNode(n.InitializerList, "initializer for a scalar shall be a single expression")
+			return n, 0
 		}
 
 		//TODO todo check assignment compatible
@@ -285,9 +289,39 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *boo
 		return n.checkUnion(ctx, list, isConst, t, t, off), 0
 	case Array:
 		return n.checkArray(ctx, list, isConst, t, t, off)
+	case Vector:
+		return n.checkVector(ctx, list, isConst, t, off)
 	}
 
 	panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+}
+
+func (n *InitializerList) checkVector(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) (*InitializerList, uintptr) {
+	elem := t.Elem()
+	esz := elem.Size()
+	length := t.Len()
+	var i, r, o uintptr
+	var t2 Type
+	for ; n != nil; n = n.InitializerList {
+		switch {
+		case n.Designation != nil:
+			ctx.errNode(n.Designation, "designation not allowed in vector initializer")
+		default:
+			t2 = elem
+			o = off + i*esz
+		}
+
+		if length != 0 && i >= length {
+			panic(internalErrorf("%v: TODO", n.Position()))
+		}
+
+		n.Initializer.check(ctx, list, isConst, t2, o)
+		i++
+		if i > r {
+			r = i
+		}
+	}
+	return n, r
 }
 
 // [0], 6.7.8 Initialization
@@ -462,7 +496,7 @@ func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *boo
 	// that of the expression (after conversion); the same type constraints
 	// and conversions as for simple assignment apply, taking the type of
 	// the scalar to be the unqualified version of its declared type.
-	if t.IsScalarType() || t.Kind() == Int128 || t.Kind() == UInt128 {
+	if t.IsScalarType() || t.Kind() == Int128 || t.Kind() == UInt128 || t.Kind() == Vector {
 		//TODO check op is assignment compatible
 		return 0
 	}
@@ -504,7 +538,8 @@ func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *boo
 				return uintptr(len(StringID(x).String())) + 1
 			}
 
-			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
+			ctx.errNode(n.AssignmentExpression, "unsupported operand")
+			return 0
 		}
 
 		if k := t.Elem().Kind(); ctx.wcharT != nil && k == ctx.wcharT.Kind() {
@@ -523,7 +558,8 @@ func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *boo
 		panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
 	}
 
-	panic(fmt.Sprintf("TODO %v: %v, %v\n", n.Position(), t, t.Kind()))
+	ctx.errNode(n, "unsupported type: %v", t)
+	return 0
 }
 
 func (n *AssignmentExpression) check(ctx *context) Operand {
@@ -857,6 +893,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionMinus: // '-' CastExpression
 		op := n.CastExpression.check(ctx)
 		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
+		if op.Type().Kind() == Vector {
+			n.Operand = &operand{typ: op.Type()}
+			break
+		}
+
 		if !op.Type().IsArithmeticType() {
 			//TODO report error
 			break
@@ -872,13 +913,21 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionCpl: // '~' CastExpression
 		op := n.CastExpression.check(ctx)
 		n.IsSideEffectsFree = n.CastExpression.IsSideEffectsFree
+		if op.Type().Kind() == Vector {
+			if !op.Type().Elem().IsIntegerType() {
+				ctx.errNode(n, "operand must be integer")
+			}
+			n.Operand = &operand{typ: op.Type()}
+			break
+		}
+
 		if op.Type().IsComplexType() {
 			n.Operand = op
 			break
 		}
 
 		if !op.Type().IsIntegerType() {
-			//TODO report error
+			ctx.errNode(n, "operand must be integer")
 			break
 		}
 
@@ -1077,6 +1126,16 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 			}
 
 			n.Operand = n.indexAddr(ctx, &n.Token, pe, e)
+			break
+		}
+
+		if pe.Type().Kind() == Vector {
+			if t := e.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
+				ctx.errNode(n.Expression, "index must be integer type, have %v", e.Type())
+				break
+			}
+
+			n.Operand = n.index(ctx, pe, e)
 			break
 		}
 
@@ -1578,7 +1637,39 @@ func (n *TypeName) check(ctx *context) Type {
 	if n.AbstractDeclarator != nil {
 		n.typ = n.AbstractDeclarator.check(ctx, n.typ)
 	}
+	for list := n.SpecifierQualifierList; list != nil; list = list.SpecifierQualifierList {
+		if expr, ok := list.AttributeSpecifier.has(idVectorSize, idVectorSize2); ok {
+			n.vectorize(ctx, expr)
+			break
+		}
+	}
 	return n.typ
+}
+
+func (n *TypeName) vectorize(ctx *context, expr *ExpressionList) {
+	dst := &n.typ
+	elem := n.typ
+	switch n.typ.Kind() {
+	case Function:
+		dst = &n.typ.(*functionType).result
+		elem = n.typ.Result()
+	}
+
+	sz := expr.vectorSize(ctx)
+	if sz == 0 {
+		sz = elem.Size()
+	}
+	if sz%elem.Size() != 0 {
+		ctx.errNode(expr, "vector size must be a multiple of the base size")
+	}
+	b := n.typ.base()
+	b.size = sz
+	b.kind = byte(Vector)
+	*dst = &vectorType{
+		typeBase: b,
+		elem:     elem,
+		length:   sz / elem.Size(),
+	}
 }
 
 func (n *AbstractDeclarator) check(ctx *context, typ Type) Type {
@@ -1670,7 +1761,7 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) *Parameter 
 			panic(n.Position().String())
 		}
 		if n.AttributeSpecifierList != nil {
-			panic(n.Position().String())
+			//TODO panic(n.Position().String())
 		}
 		n.AttributeSpecifierList.check(ctx)
 		return &Parameter{d: n.Declarator, typ: n.Declarator.Type()}
@@ -2225,6 +2316,16 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 			break
 		}
 
+		if pe.Type().Kind() == Vector {
+			if t := e.Type(); t.Kind() != Invalid && !t.IsIntegerType() {
+				ctx.errNode(n.Expression, "index must be integer type, have %v", e.Type())
+				break
+			}
+
+			n.Operand = n.index(ctx, pe, e)
+			break
+		}
+
 		t = e.Type().Decay()
 		if t.Kind() == Invalid {
 			break
@@ -2239,7 +2340,6 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 			n.Operand = n.index(ctx, e, pe)
 			break
 		}
-
 		ctx.errNode(n, "invalid index expression %v[%v]", pe.Type(), e.Type())
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		op := n.PostfixExpression.check(ctx, true)
@@ -3093,8 +3193,13 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 		a := n.InclusiveOrExpression.check(ctx)
 		b := n.ExclusiveOrExpression.check(ctx)
 		n.IsSideEffectsFree = n.InclusiveOrExpression.IsSideEffectsFree && n.ExclusiveOrExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorIntegerArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
-			//TODO report err
+			ctx.errNode(n, "operands must be integers")
 			break
 		}
 
@@ -3111,6 +3216,25 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 	return n.Operand
 }
 
+func checkBinaryVectorIntegerArtithmetic(ctx *context, n Node, a, b Operand) Operand {
+	var rt Type
+	if a.Type().Kind() == Vector {
+		rt = a.Type()
+		a = &operand{typ: a.Type().Elem()}
+	}
+	if b.Type().Kind() == Vector {
+		if rt == nil {
+			rt = b.Type()
+		}
+		b = &operand{typ: b.Type().Elem()}
+	}
+	a, b = usualArithmeticConversions(ctx, n, a, b)
+	if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
+		ctx.errNode(n, "operands must be integers")
+	}
+	return &operand{typ: rt}
+}
+
 func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 	if n == nil {
 		return noOperand
@@ -3125,8 +3249,13 @@ func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 		a := n.ExclusiveOrExpression.check(ctx)
 		b := n.AndExpression.check(ctx)
 		n.IsSideEffectsFree = n.ExclusiveOrExpression.IsSideEffectsFree && n.AndExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorIntegerArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
-			//TODO report err
+			ctx.errNode(n, "operands must be integers")
 			break
 		}
 
@@ -3157,8 +3286,13 @@ func (n *AndExpression) check(ctx *context) Operand {
 		a := n.AndExpression.check(ctx)
 		b := n.EqualityExpression.check(ctx)
 		n.IsSideEffectsFree = n.AndExpression.IsSideEffectsFree && n.EqualityExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorIntegerArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
-			//TODO report err
+			ctx.errNode(n, "operands must be integers")
 			break
 		}
 
@@ -3198,6 +3332,9 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 		n.promote = noType
 		ok := false
 		switch {
+		case lo.Type().Kind() == Vector && ro.Type().Kind() == Vector:
+			n.Operand = checkVectorComparison(ctx, n, lo.Type(), ro.Type())
+			return n.Operand
 		case lt.IsArithmeticType() && rt.IsArithmeticType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
 			n.promote = op.Type()
@@ -3233,6 +3370,20 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 	return n.Operand
 }
 
+func checkVectorComparison(ctx *context, n Node, a, b Type) (r Operand) {
+	a = a.underlyingType()
+	b = b.underlyingType()
+	rt := *a.(*vectorType)
+	rt.elem = ctx.cfg.ABI.Type(Int)
+	r = &operand{typ: &rt}
+	x := a.Elem()
+	y := b.Elem()
+	if x.Kind() != y.Kind() {
+		ctx.errNode(n, "cannot compare vectors of different element types: %s and %s", x, y)
+	}
+	return r
+}
+
 func (n *RelationalExpression) check(ctx *context) Operand {
 	if n == nil {
 		return noOperand
@@ -3254,6 +3405,11 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		lo := n.RelationalExpression.check(ctx)
 		ro := n.ShiftExpression.check(ctx)
 		n.IsSideEffectsFree = n.RelationalExpression.IsSideEffectsFree && n.ShiftExpression.IsSideEffectsFree
+		if lo.Type().Kind() == Vector && ro.Type().Kind() == Vector {
+			n.Operand = checkVectorComparison(ctx, n, lo.Type(), ro.Type())
+			break
+		}
+
 		if lo.Type().IsComplexType() || ro.Type().IsComplexType() {
 			ctx.errNode(&n.Token, "complex numbers are not ordered")
 			break
@@ -3315,6 +3471,11 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 		a := n.ShiftExpression.check(ctx)
 		b := n.AdditiveExpression.check(ctx)
 		n.IsSideEffectsFree = n.ShiftExpression.IsSideEffectsFree && n.AdditiveExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorIntegerArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 			//TODO report err
 			break
@@ -3333,6 +3494,11 @@ func (n *ShiftExpression) check(ctx *context) Operand {
 		a := n.ShiftExpression.check(ctx)
 		b := n.AdditiveExpression.check(ctx)
 		n.IsSideEffectsFree = n.ShiftExpression.IsSideEffectsFree && n.AdditiveExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorIntegerArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 			//TODO report err
 			break
@@ -3367,6 +3533,11 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
 		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree && n.MultiplicativeExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if t := a.Type().Decay(); t.Kind() == Ptr && b.Type().IsScalarType() {
 			n.Operand = &operand{typ: t}
 			break
@@ -3393,6 +3564,11 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
 		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree && n.MultiplicativeExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if a.Type().Decay().Kind() == Ptr && b.Type().Decay().Kind() == Ptr {
 			n.Operand = &operand{typ: ptrdiffT(ctx, n.lexicalScope, n.Token)}
 			break
@@ -3421,6 +3597,22 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 	return n.Operand
 }
 
+func checkBinaryVectorArtithmetic(ctx *context, n Node, a, b Operand) Operand {
+	var rt Type
+	if a.Type().Kind() == Vector {
+		rt = a.Type()
+		a = &operand{typ: a.Type().Elem()}
+	}
+	if b.Type().Kind() == Vector {
+		if rt == nil {
+			rt = b.Type()
+		}
+		b = &operand{typ: b.Type().Elem()}
+	}
+	usualArithmeticConversions(ctx, n, a, b)
+	return &operand{typ: rt}
+}
+
 func ptrdiffT(ctx *context, s Scope, tok Token) Type {
 	if t := ctx.ptrdiffT; t != nil {
 		return t
@@ -3447,6 +3639,11 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
 		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree && n.CastExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
 			break
 		}
@@ -3462,6 +3659,11 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
 		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree && n.CastExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
 			break
 		}
@@ -3477,6 +3679,11 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 		a := n.MultiplicativeExpression.check(ctx)
 		b := n.CastExpression.check(ctx)
 		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree && n.CastExpression.IsSideEffectsFree
+		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
+			n.Operand = checkBinaryVectorArtithmetic(ctx, n, a, b)
+			break
+		}
+
 		if !a.Type().IsArithmeticType() || !b.Type().IsArithmeticType() {
 			break
 		}
@@ -3563,7 +3770,76 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 			abi.Types[k] = ABIType{Size: t.Size(), Align: t.Align(), FieldAlign: t.FieldAlign()}
 		}
 	}
+	switch expr, ok := n.AttributeSpecifierList.has(idVectorSize, idVectorSize2); {
+	case ok:
+		n.vectorize(ctx, expr)
+	default:
+		switch x := td.(type) {
+		case *DeclarationSpecifiers:
+			for ; x != nil; x = x.DeclarationSpecifiers {
+				if expr, ok := x.AttributeSpecifier.has(idVectorSize, idVectorSize2); ok {
+					n.vectorize(ctx, expr)
+					break
+				}
+			}
+		}
+	}
 	return n.typ
+}
+
+func (n *Declarator) vectorize(ctx *context, expr *ExpressionList) {
+	dst := &n.typ
+	elem := n.typ
+	switch n.typ.Kind() {
+	case Function:
+		dst = &n.typ.(*functionType).result
+		elem = n.typ.Result()
+	}
+
+	sz := expr.vectorSize(ctx)
+	if sz == 0 {
+		sz = elem.Size()
+	}
+	if sz%elem.Size() != 0 {
+		ctx.errNode(expr, "vector size must be a multiple of the base size")
+	}
+	b := n.typ.base()
+	b.size = sz
+	b.kind = byte(Vector)
+	*dst = &vectorType{
+		typeBase: b,
+		elem:     elem,
+		length:   sz / elem.Size(),
+	}
+}
+
+func (n *ExpressionList) vectorSize(ctx *context) (r uintptr) {
+	if n.ExpressionList != nil {
+		ctx.errNode(n, "expected single expression")
+		return 0
+	}
+
+	switch x := n.AssignmentExpression.Operand.Value().(type) {
+	case Int64Value:
+		if x <= 0 {
+			ctx.errNode(n, "expected integer greater than zero")
+			return 0
+		}
+
+		r = uintptr(x)
+	case Uint64Value:
+		r = uintptr(x)
+	case nil:
+		ctx.errNode(n, "expected constant expression")
+		r = 0
+	default:
+		panic(todo("%T", x))
+	}
+	if bits.OnesCount64(uint64(r)) != 1 {
+		ctx.errNode(n, "expected a power of two")
+		r = 0
+	}
+	return r
 }
 
 func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
@@ -3870,10 +4146,10 @@ func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 	typ := n.DeclarationSpecifiers.check(ctx)
 	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)
 	ctx.checkFn = nil
-	n.DeclarationList.checkFn(ctx, typ)
+	n.DeclarationList.checkFn(ctx, typ, n.Declarator.ParamScope())
 }
 
-func (n *DeclarationList) checkFn(ctx *context, typ Type) {
+func (n *DeclarationList) checkFn(ctx *context, typ Type, s Scope) {
 	if n == nil {
 		return
 	}
@@ -3888,6 +4164,7 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 		//TODO report error
 		return
 	}
+
 	if len(ft.paramList) == 0 {
 		//TODO report error
 		return
@@ -3896,8 +4173,8 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 	m := make(map[StringID]int, len(ft.paramList))
 	for i, v := range ft.paramList {
 		if _, ok := m[v]; ok {
-			//TODO report error
-			return
+			ctx.errNode(n, "duplicate parameter: %s", v)
+			continue
 		}
 
 		m[v] = i
@@ -3926,15 +4203,23 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type) {
 			}
 		}
 	}
-	switch {
-	case i > len(m):
-		ctx.errNode(n, "expected %d declarations, got %d", len(m), i)
-		return
-	case i < len(m):
-		//TODO synthetize missing declarator
-		return //TODO-
-	}
+	for i, v := range params {
+		if v != nil {
+			continue
+		}
 
+		nm := ft.paramList[i]
+		d := &Declarator{
+			DirectDeclarator: &DirectDeclarator{
+				Case:  DirectDeclaratorIdent,
+				Token: Token{Rune: IDENTIFIER, Value: nm},
+			},
+			IsParameter: true,
+			typ:         ctx.cfg.ABI.Type(Int),
+		}
+		s.declare(nm, d)
+		params[i] = &Parameter{d, d.typ}
+	}
 	ft.params = params
 }
 

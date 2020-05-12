@@ -3725,7 +3725,7 @@ func (p *parser) fn(nm StringID) (r []Token) {
 func (p *parser) declarationList(s Scope) (r *DeclarationList) {
 	p.declScope = s
 	p.resolveScope = s
-	switch p.rune() {
+	switch ch := p.rune(); ch {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
 		VOID, CHAR, SHORT, INT, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 		CONST, RESTRICT, VOLATILE,
@@ -3733,7 +3733,7 @@ func (p *parser) declarationList(s Scope) (r *DeclarationList) {
 		INLINE, NORETURN, ATTRIBUTE:
 		r = &DeclarationList{Declaration: p.declaration(nil, nil)}
 	default:
-		p.err("expected declaration")
+		p.err("expected declaration: %s", tokName(ch))
 		return nil
 	}
 

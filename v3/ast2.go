@@ -939,3 +939,33 @@ func (n *CastExpression) Declarator() *Declarator {
 		return nil
 	}
 }
+
+func (n *AttributeSpecifier) has(key ...StringID) (*ExpressionList, bool) {
+	if n == nil {
+		return nil, false
+	}
+
+	for list := n.AttributeValueList; list != nil; list = list.AttributeValueList {
+		av := list.AttributeValue
+		for _, k := range key {
+			if av.Token.Value == k {
+				switch av.Case {
+				case AttributeValueIdent: // IDENTIFIER
+					return nil, true
+				case AttributeValueExpr: // IDENTIFIER '(' ExpressionList ')'
+					return av.ExpressionList, true
+				}
+			}
+		}
+	}
+	return nil, false
+}
+
+func (n *AttributeSpecifierList) has(key ...StringID) (*ExpressionList, bool) {
+	for ; n != nil; n = n.AttributeSpecifierList {
+		if exprList, ok := n.AttributeSpecifier.has(key...); ok {
+			return exprList, ok
+		}
+	}
+	return nil, false
+}
