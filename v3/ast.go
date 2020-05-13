@@ -1033,8 +1033,11 @@ func (n *CastExpression) Position() (r token.Position) {
 //	CompoundStatement:
 //	        '{' BlockItemList '}'
 type CompoundStatement struct {
+	Declarations  []*Declaration
 	Operand       Operand
+	parent        *CompoundStatement
 	scope         Scope
+	isJumpTarget  bool
 	BlockItemList *BlockItemList
 	Token         Token
 	Token2        Token

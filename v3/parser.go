@@ -353,21 +353,22 @@ func tokName(r rune) string {
 }
 
 type parser struct {
-	ctx          *context
-	declScope    Scope
-	fileScope    Scope
-	in           chan *[]Token
-	inBuf        []Token
-	inBufp       *[]Token
-	prev         Token
-	resolveScope Scope
-	resolvedIn   Scope // Typedef name
-	scopes       int
-	sepLen       int
-	seps         []StringID
-	strcatLen    int
-	strcats      []StringID
-	switches     int
+	compStatement *CompoundStatement
+	ctx           *context
+	declScope     Scope
+	fileScope     Scope
+	in            chan *[]Token
+	inBuf         []Token
+	inBufp        *[]Token
+	prev          Token
+	resolveScope  Scope
+	resolvedIn    Scope // Typedef name
+	scopes        int
+	sepLen        int
+	seps          []StringID
+	strcatLen     int
+	strcats       []StringID
+	switches      int
 
 	tok Token
 
@@ -1460,7 +1461,13 @@ func (p *parser) constantExpression() (r *ConstantExpression) {
 //
 //  declaration:
 // 	declaration-specifiers init-declarator-list_opt attribute-specifier-list_opt ;
-func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) *Declaration {
+func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Declaration) {
+	defer func() {
+		if cs := p.compStatement; cs != nil && r != nil {
+			cs.Declarations = append(cs.Declarations, r)
+		}
+	}()
+
 	if ds == nil {
 		ds = p.declarationSpecifiers()
 	}
@@ -1471,8 +1478,7 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) *Declarat
 		switch p.rune() {
 		case ';':
 			p.typedefNameEnabled = true
-			r := &Declaration{DeclarationSpecifiers: ds, Token: p.shift()}
-			return r
+			return &Declaration{DeclarationSpecifiers: ds, Token: p.shift()}
 		}
 	}
 
@@ -3057,6 +3063,7 @@ func (p *parser) labeledStatement() *LabeledStatement {
 		}
 
 		attr := p.attributeSpecifierListOpt()
+		p.compStatement.hasLabel()
 		r := &LabeledStatement{Case: LabeledStatementLabel, Token: t, Token2: t2, AttributeSpecifierList: attr, Statement: p.statement(), lexicalScope: p.declScope}
 		p.declScope.declare(t.Value, r)
 		return r
@@ -3108,12 +3115,14 @@ func (p *parser) labeledStatement() *LabeledStatement {
 //
 //  compound-statement:
 // 	{ block-item-list_opt }
-func (p *parser) compoundStatement(s Scope, inject []Token) *CompoundStatement {
+func (p *parser) compoundStatement(s Scope, inject []Token) (r *CompoundStatement) {
 	if p.rune() != '{' {
 		p.err("expected {")
 		return nil
 	}
 
+	r = &CompoundStatement{parent: p.compStatement}
+	p.compStatement = r
 	switch {
 	case s != nil:
 		p.declScope = s
@@ -3143,7 +3152,11 @@ func (p *parser) compoundStatement(s Scope, inject []Token) *CompoundStatement {
 	default:
 		p.err("expected }")
 	}
-	return &CompoundStatement{Token: t, BlockItemList: list, Token2: t2, scope: s}
+	r.Token = t
+	r.BlockItemList = list
+	r.Token2 = t2
+	r.scope = s
+	return r
 }
 
 //  block-item-list:
@@ -3200,6 +3213,7 @@ func (p *parser) blockItem() *BlockItem {
 			return r
 		}
 	case LABEL:
+		p.compStatement.hasLabel()
 		return &BlockItem{Case: BlockItemLabel, LabelDeclaration: p.labelDeclaration()}
 	case PRAGMASTDC:
 		return &BlockItem{Case: BlockItemPragma, PragmaSTDC: p.pragmaSTDC()}
@@ -3674,6 +3688,7 @@ func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *F
 			}
 		}
 	}
+	p.compStatement = nil
 	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list, CompoundStatement: p.compoundStatement(d.ParamScope(), p.fn(d.Name()))}
 }
 

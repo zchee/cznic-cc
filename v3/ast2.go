@@ -969,3 +969,16 @@ func (n *AttributeSpecifierList) has(key ...StringID) (*ExpressionList, bool) {
 	}
 	return nil, false
 }
+
+// Parent returns the CompoundStatement that contains n, if any.
+func (n *CompoundStatement) Parent() *CompoundStatement { return n.parent }
+
+// IsJumpTarget returns whether n or any of its children contain a named
+// labeled statement.
+func (n *CompoundStatement) IsJumpTarget() bool { return n.isJumpTarget }
+
+func (n *CompoundStatement) hasLabel() {
+	for ; n != nil; n = n.parent {
+		n.isJumpTarget = true
+	}
+}

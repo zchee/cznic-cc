@@ -796,9 +796,12 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Default    */ |	"default" ':' Statement
 
 			/* [0], 6.8.2 Compound statement */
-			/*yy:field	Operand		Operand	*/
-			/*yy:field	scope Scope	*/
-			/*yy:example int f() { int i; } */
+			/*yy:field	Declarations	[]*Declaration		*/
+			/*yy:field	Operand		Operand			*/
+			/*yy:field	parent		*CompoundStatement	*/
+			/*yy:field	scope		Scope			*/
+			/*yy:field	isJumpTarget	bool			*/
+			/*yy:example int f() { int i; } 		*/
 			CompoundStatement:
 				'{' BlockItemList '}'
 
