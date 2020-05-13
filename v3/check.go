@@ -43,9 +43,15 @@ const (
 	mIntConstExprAnyCast // As mIntConstExpr plus accept any cast.
 )
 
+// Parameter represents a function parameter.
 type Parameter struct {
 	d   *Declarator
 	typ Type
+}
+
+// NewParameter returns a newly created parameter
+func NewParameter(d *Declarator, t Type) *Parameter {
+	return &Parameter{d, t}
 }
 
 func (p *Parameter) Declarator() *Declarator { return p.d }
