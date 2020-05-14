@@ -353,23 +353,23 @@ func tokName(r rune) string {
 }
 
 type parser struct {
-	compStatement *CompoundStatement
-	ctx           *context
-	currFn        *FunctionDefinition
-	declScope     Scope
-	fileScope     Scope
-	in            chan *[]Token
-	inBuf         []Token
-	inBufp        *[]Token
-	prev          Token
-	resolveScope  Scope
-	resolvedIn    Scope // Typedef name
-	scopes        int
-	sepLen        int
-	seps          []StringID
-	strcatLen     int
-	strcats       []StringID
-	switches      int
+	block        *CompoundStatement
+	ctx          *context
+	currFn       *FunctionDefinition
+	declScope    Scope
+	fileScope    Scope
+	in           chan *[]Token
+	inBuf        []Token
+	inBufp       *[]Token
+	prev         Token
+	resolveScope Scope
+	resolvedIn   Scope // Typedef name
+	scopes       int
+	sepLen       int
+	seps         []StringID
+	strcatLen    int
+	strcats      []StringID
+	switches     int
 
 	tok Token
 
@@ -1464,7 +1464,7 @@ func (p *parser) constantExpression() (r *ConstantExpression) {
 // 	declaration-specifiers init-declarator-list_opt attribute-specifier-list_opt ;
 func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Declaration) {
 	defer func() {
-		if cs := p.compStatement; cs != nil && r != nil {
+		if cs := p.block; cs != nil && r != nil {
 			cs.declarations = append(cs.declarations, r)
 		}
 	}()
@@ -3050,7 +3050,13 @@ func (p *parser) statement() *Statement {
 // 	case constant-expression : statement
 // 	case constant-expression ... constant-expression : statement
 // 	default : statement
-func (p *parser) labeledStatement() *LabeledStatement {
+func (p *parser) labeledStatement() (r *LabeledStatement) {
+	defer func() {
+		if r != nil {
+			p.block.labeledStmts = append(p.block.labeledStmts, r)
+		}
+	}()
+
 	var t, t2, t3 Token
 	switch p.rune() {
 	case IDENTIFIER:
@@ -3064,8 +3070,11 @@ func (p *parser) labeledStatement() *LabeledStatement {
 		}
 
 		attr := p.attributeSpecifierListOpt()
-		p.compStatement.hasLabel()
-		r := &LabeledStatement{Case: LabeledStatementLabel, Token: t, Token2: t2, AttributeSpecifierList: attr, Statement: p.statement(), lexicalScope: p.declScope}
+		p.block.hasLabel()
+		r = &LabeledStatement{
+			Case: LabeledStatementLabel, Token: t, Token2: t2, AttributeSpecifierList: attr,
+			Statement: p.statement(), lexicalScope: p.declScope, block: p.block,
+		}
 		p.declScope.declare(t.Value, r)
 		return r
 	case CASE:
@@ -3087,13 +3096,22 @@ func (p *parser) labeledStatement() *LabeledStatement {
 			default:
 				p.err("expected :")
 			}
-			return &LabeledStatement{Case: LabeledStatementRange, Token: t, ConstantExpression: e, Token2: t2, ConstantExpression2: e2, Token3: t3, Statement: p.statement(), lexicalScope: p.declScope}
+			return &LabeledStatement{
+				Case: LabeledStatementRange, Token: t, ConstantExpression: e,
+				Token2: t2, ConstantExpression2: e2, Token3: t3,
+				Statement: p.statement(), lexicalScope: p.declScope,
+				block: p.block,
+			}
 		case ':':
 			t2 = p.shift()
 		default:
 			p.err("expected :")
 		}
-		return &LabeledStatement{Case: LabeledStatementCaseLabel, Token: t, ConstantExpression: e, Token2: t2, Statement: p.statement(), lexicalScope: p.declScope}
+		return &LabeledStatement{
+			Case: LabeledStatementCaseLabel, Token: t, ConstantExpression: e,
+			Token2: t2, Statement: p.statement(), lexicalScope: p.declScope,
+			block: p.block,
+		}
 	case DEFAULT:
 		if p.switches == 0 {
 			p.err("'deafult' label not within a switch statement")
@@ -3105,7 +3123,10 @@ func (p *parser) labeledStatement() *LabeledStatement {
 		default:
 			p.err("expected :")
 		}
-		return &LabeledStatement{Case: LabeledStatementDefault, Token: t, Token2: t2, Statement: p.statement(), lexicalScope: p.declScope}
+		return &LabeledStatement{
+			Case: LabeledStatementDefault, Token: t, Token2: t2, Statement: p.statement(),
+			lexicalScope: p.declScope, block: p.block,
+		}
 	default:
 		p.err("expected labeled-statement")
 		return nil
@@ -3122,15 +3143,15 @@ func (p *parser) compoundStatement(s Scope, inject []Token) (r *CompoundStatemen
 		return nil
 	}
 
-	r = &CompoundStatement{parent: p.compStatement}
+	r = &CompoundStatement{parent: p.block}
 	if fn := p.currFn; fn != nil {
 		fn.compoundStatements = append(fn.compoundStatements, r)
 	}
-	sv := p.compStatement
+	sv := p.block
 	if sv != nil {
 		sv.children = append(sv.children, r)
 	}
-	p.compStatement = r
+	p.block = r
 	switch {
 	case s != nil:
 		p.declScope = s
@@ -3164,7 +3185,7 @@ func (p *parser) compoundStatement(s Scope, inject []Token) (r *CompoundStatemen
 	r.BlockItemList = list
 	r.Token2 = t2
 	r.scope = s
-	p.compStatement = sv
+	p.block = sv
 	return r
 }
 
@@ -3222,7 +3243,7 @@ func (p *parser) blockItem() *BlockItem {
 			return r
 		}
 	case LABEL:
-		p.compStatement.hasLabel()
+		p.block.hasLabel()
 		return &BlockItem{Case: BlockItemLabel, LabelDeclaration: p.labelDeclaration()}
 	case PRAGMASTDC:
 		return &BlockItem{Case: BlockItemPragma, PragmaSTDC: p.pragmaSTDC()}
@@ -3697,7 +3718,7 @@ func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) (r
 			}
 		}
 	}
-	p.compStatement = nil
+	p.block = nil
 	r = &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list}
 	sv := p.currFn
 	p.currFn = r

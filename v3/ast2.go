@@ -991,3 +991,9 @@ func (n *CompoundStatement) Children() []*CompoundStatement { return n.children 
 
 // CompoundStatements returns the list of compound statements in n.
 func (n *FunctionDefinition) CompoundStatements() []*CompoundStatement { return n.compoundStatements }
+
+// CompoundStatement returns the block containing n.
+func (n *LabeledStatement) CompoundStatement() *CompoundStatement { return n.block }
+
+// LabeledStatements returns labeled statements of n.
+func (n *CompoundStatement) LabeledStatements() []*LabeledStatement { return n.labeledStmts }

@@ -784,7 +784,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Asm        */ |	AsmStatement
 
 			/* [0], 6.8.1 Labeled statements */
-			/*yy:field	lexicalScope	Scope	*/
+			/*yy:field	block		*CompoundStatement	*/
+			/*yy:field	lexicalScope	Scope			*/
 			/*yy:example int f() { L: goto L; } */
 /*yy:case Label      */ LabeledStatement:
 				IDENTIFIER ':' AttributeSpecifierList Statement
@@ -800,6 +801,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	children	[]*CompoundStatement	*/
 			/*yy:field	declarations	[]*Declaration		*/
 			/*yy:field	isJumpTarget	bool			*/
+			/*yy:field	labeledStmts	[]*LabeledStatement	*/
 			/*yy:field	parent		*CompoundStatement	*/
 			/*yy:field	scope		Scope			*/
 			/*yy:example int f() { int i; } 		*/

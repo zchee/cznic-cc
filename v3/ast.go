@@ -1037,6 +1037,7 @@ type CompoundStatement struct {
 	children      []*CompoundStatement
 	declarations  []*Declaration
 	isJumpTarget  bool
+	labeledStmts  []*LabeledStatement
 	parent        *CompoundStatement
 	scope         Scope
 	BlockItemList *BlockItemList
@@ -3069,6 +3070,7 @@ func (n LabeledStatementCase) String() string {
 //	|       "case" ConstantExpression "..." ConstantExpression ':' Statement  // Case LabeledStatementRange
 //	|       "default" ':' Statement                                           // Case LabeledStatementDefault
 type LabeledStatement struct {
+	block                  *CompoundStatement
 	lexicalScope           Scope
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   LabeledStatementCase `PrettyPrint:"stringer,zero"`
