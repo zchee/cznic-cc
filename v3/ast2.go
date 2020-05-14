@@ -982,3 +982,12 @@ func (n *CompoundStatement) hasLabel() {
 		n.isJumpTarget = true
 	}
 }
+
+// Declarations returns the list of declarations in n.
+func (n *CompoundStatement) Declarations() []*Declaration { return n.declarations }
+
+// Children returns the list of n's children.
+func (n *CompoundStatement) Children() []*CompoundStatement { return n.children }
+
+// CompoundStatements returns the list of compound statements in n.
+func (n *FunctionDefinition) CompoundStatements() []*CompoundStatement { return n.compoundStatements }

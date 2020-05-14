@@ -1033,11 +1033,12 @@ func (n *CastExpression) Position() (r token.Position) {
 //	CompoundStatement:
 //	        '{' BlockItemList '}'
 type CompoundStatement struct {
-	Declarations  []*Declaration
 	Operand       Operand
+	children      []*CompoundStatement
+	declarations  []*Declaration
+	isJumpTarget  bool
 	parent        *CompoundStatement
 	scope         Scope
-	isJumpTarget  bool
 	BlockItemList *BlockItemList
 	Token         Token
 	Token2        Token
@@ -2376,6 +2377,7 @@ type FunctionDefinition struct {
 	Labels                map[StringID]*LabeledStatement
 	ReturnComplexExpr     []*Expression
 	VLAs                  []*Declarator
+	compoundStatements    []*CompoundStatement
 	CompoundStatement     *CompoundStatement
 	DeclarationList       *DeclarationList
 	DeclarationSpecifiers *DeclarationSpecifiers

@@ -355,6 +355,7 @@ func tokName(r rune) string {
 type parser struct {
 	compStatement *CompoundStatement
 	ctx           *context
+	currFn        *FunctionDefinition
 	declScope     Scope
 	fileScope     Scope
 	in            chan *[]Token
@@ -1464,7 +1465,7 @@ func (p *parser) constantExpression() (r *ConstantExpression) {
 func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Declaration) {
 	defer func() {
 		if cs := p.compStatement; cs != nil && r != nil {
-			cs.Declarations = append(cs.Declarations, r)
+			cs.declarations = append(cs.declarations, r)
 		}
 	}()
 
@@ -3122,6 +3123,13 @@ func (p *parser) compoundStatement(s Scope, inject []Token) (r *CompoundStatemen
 	}
 
 	r = &CompoundStatement{parent: p.compStatement}
+	if fn := p.currFn; fn != nil {
+		fn.compoundStatements = append(fn.compoundStatements, r)
+	}
+	sv := p.compStatement
+	if sv != nil {
+		sv.children = append(sv.children, r)
+	}
 	p.compStatement = r
 	switch {
 	case s != nil:
@@ -3156,6 +3164,7 @@ func (p *parser) compoundStatement(s Scope, inject []Token) (r *CompoundStatemen
 	r.BlockItemList = list
 	r.Token2 = t2
 	r.scope = s
+	p.compStatement = sv
 	return r
 }
 
@@ -3662,7 +3671,7 @@ func (p *parser) pragmaSTDC() *PragmaSTDC {
 //
 //  function-definition:
 // 	declaration-specifiers declarator declaration-list_opt compound-statement
-func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *FunctionDefinition {
+func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) (r *FunctionDefinition) {
 	var list *DeclarationList
 	s := d.ParamScope()
 	switch {
@@ -3689,7 +3698,12 @@ func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) *F
 		}
 	}
 	p.compStatement = nil
-	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list, CompoundStatement: p.compoundStatement(d.ParamScope(), p.fn(d.Name()))}
+	r = &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: list}
+	sv := p.currFn
+	p.currFn = r
+	r.CompoundStatement = p.compoundStatement(d.ParamScope(), p.fn(d.Name()))
+	p.currFn = sv
+	return r
 }
 
 func (p *parser) fn(nm StringID) (r []Token) {

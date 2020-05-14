@@ -2300,33 +2300,30 @@ func ExampleCompoundStatement_case0() {
 	fmt.Println(exampleAST(216, "int f() { int i; }"))
 	// Output:
 	// &cc.CompoundStatement{
-	// · Declarations: []*cc.Declaration{ // len 1
-	// · · 0: &cc.Declaration{
-	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:11: INT "int",
-	// · · · · },
-	// · · · },
-	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
-	// · · · · InitDeclarator: &cc.InitDeclarator{
-	// · · · · · Case: InitDeclaratorDecl,
-	// · · · · · Declarator: &cc.Declarator{
-	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:15: IDENTIFIER "i",
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Token: example.c:1:16: ';' ";",
-	// · · },
-	// · },
 	// · BlockItemList: &cc.BlockItemList{
 	// · · BlockItem: &cc.BlockItem{
 	// · · · Case: BlockItemDecl,
-	// · · · Declaration: &cc.Declaration{ /* recursive/repetitive pointee not shown */ },
+	// · · · Declaration: &cc.Declaration{
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · Case: TypeSpecifierInt,
+	// · · · · · · Token: example.c:1:11: INT "int",
+	// · · · · · },
+	// · · · · },
+	// · · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · · Case: InitDeclaratorDecl,
+	// · · · · · · Declarator: &cc.Declarator{
+	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · Token: example.c:1:15: IDENTIFIER "i",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · },
+	// · · · · },
+	// · · · · Token: example.c:1:16: ';' ";",
+	// · · · },
 	// · · },
 	// · },
 	// · Token: example.c:1:9: '{' "{",
@@ -7896,79 +7893,6 @@ func ExamplePrimaryExpression_stmt() {
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionStmt,
 	// · CompoundStatement: &cc.CompoundStatement{
-	// · · Declarations: []*cc.Declaration{ // len 1
-	// · · · 0: &cc.Declaration{
-	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · · · Case: TypeSpecifierInt,
-	// · · · · · · Token: example.c:1:1: INT "int",
-	// · · · · · },
-	// · · · · },
-	// · · · · InitDeclaratorList: &cc.InitDeclaratorList{
-	// · · · · · InitDeclarator: &cc.InitDeclarator{
-	// · · · · · · Case: InitDeclaratorInit,
-	// · · · · · · Declarator: &cc.Declarator{
-	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · · Token: example.c:1:5: IDENTIFIER "i",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · · Initializer: &cc.Initializer{
-	// · · · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{ /* recursive/repetitive pointee not shown */ },
-	// · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: InitializerExpr,
-	// · · · · · · },
-	// · · · · · · Token: example.c:1:7: '=' "=",
-	// · · · · · },
-	// · · · · },
-	// · · · · Token: example.c:1:17: ';' ";",
-	// · · · },
-	// · · },
 	// · · BlockItemList: &cc.BlockItemList{
 	// · · · BlockItem: &cc.BlockItem{
 	// · · · · Case: BlockItemStmt,
