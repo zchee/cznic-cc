@@ -585,6 +585,9 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		n.IsSideEffectsFree = n.ConditionalExpression.IsSideEffectsFree
 	case AssignmentExpressionAssign: // UnaryExpression '=' AssignmentExpression
 		l := n.UnaryExpression.check(ctx)
+		if d := n.UnaryExpression.Declarator(); d != nil {
+			d.Read -= ctx.readDelta
+		}
 		if d := n.UnaryExpression.Operand.Declarator(); d != nil {
 			d.Write++
 			if l.Type().Kind() == Array && !d.IsParameter && l.Type().String() != "va_list" {
