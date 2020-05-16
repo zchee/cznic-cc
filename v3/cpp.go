@@ -204,7 +204,7 @@ func (m *Macro) ReplacementTokens() []Token {
 
 	m.repl2 = make([]Token, len(m.repl))
 	for i, v := range m.repl {
-		m.repl2[i] = Token{Rune: v.char, Value: v.value}
+		m.repl2[i] = Token{Rune: v.char, Value: v.value, Src: v.src}
 	}
 	return m.repl2
 }
@@ -2143,7 +2143,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 	}
 
 	if c.ctx.cfg.fakeIncludes {
-		c.send([]token3{{char: STRINGLITERAL, value: dict.sid(nm)}, {char: '\n', value: idNL}})
+		c.send([]token3{{char: STRINGLITERAL, value: dict.sid(nm), src: dict.sid(nm)}, {char: '\n', value: idNL}})
 		return
 	}
 
@@ -2394,7 +2394,7 @@ func parsePragma(c *cpp, args0 []token3) {
 		p := t
 		p.char = PRAGMASTDC
 		p.value = idPragmaSTDC
-		send := []token3{p, {char: ' ', value: idSpace, pos: t.pos}}
+		send := []token3{p, {char: ' ', value: idSpace, src: idSpace, pos: t.pos}}
 		args := ltrim3(args0[1:])
 		if len(args) == 0 {
 			c.err(args[0], "expected argument of STDC")

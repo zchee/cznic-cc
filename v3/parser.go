@@ -3734,30 +3734,31 @@ func (p *parser) fn(nm StringID) (r []Token) {
 
 	pos := p.tok.Position()
 	toks := []Token{
-		{Rune: STATIC, Value: idStatic},
-		{Rune: CONST, Value: idConst},
-		{Rune: CHAR, Value: idChar},
-		{Rune: IDENTIFIER, Value: idFunc},
-		{Rune: '[', Value: idLBracket},
-		{Rune: ']', Value: idRBracket},
-		{Rune: '=', Value: idEq},
-		{Rune: STRINGLITERAL, Value: nm},
-		{Rune: ';', Value: idSemicolon},
+		{Rune: STATIC, Value: idStatic, Src: idStatic},
+		{Rune: CONST, Value: idConst, Src: idConst},
+		{Rune: CHAR, Value: idChar, Src: idChar},
+		{Rune: IDENTIFIER, Value: idFunc, Src: idFunc},
+		{Rune: '[', Value: idLBracket, Src: idLBracket},
+		{Rune: ']', Value: idRBracket, Src: idRBracket},
+		{Rune: '=', Value: idEq, Src: idEq},
+		{Rune: STRINGLITERAL, Value: nm, Src: nm},
+		{Rune: ';', Value: idSemicolon, Src: idSemicolon},
 	}
 	if p.ctx.cfg.InjectTracingCode {
+		id := dict.sid(fmt.Sprintf("%s:%s\n", pos, nm.String()))
 		toks = append(toks, []Token{
-			{Rune: IDENTIFIER, Value: idFprintf},
-			{Rune: '(', Value: idLParen},
-			{Rune: IDENTIFIER, Value: idStderr},
-			{Rune: ',', Value: idComma},
-			{Rune: STRINGLITERAL, Value: dict.sid(fmt.Sprintf("%s:%s\n", pos, nm.String()))},
-			{Rune: ')', Value: idRParen},
-			{Rune: ';', Value: idSemicolon},
-			{Rune: IDENTIFIER, Value: idFFlush},
-			{Rune: '(', Value: idLParen},
-			{Rune: IDENTIFIER, Value: idStderr},
-			{Rune: ')', Value: idRParen},
-			{Rune: ';', Value: idSemicolon},
+			{Rune: IDENTIFIER, Value: idFprintf, Src: idFprintf},
+			{Rune: '(', Value: idLParen, Src: idLParen},
+			{Rune: IDENTIFIER, Value: idStderr, Src: idStderr},
+			{Rune: ',', Value: idComma, Src: idComma},
+			{Rune: STRINGLITERAL, Value: id, Src: id},
+			{Rune: ')', Value: idRParen, Src: idRParen},
+			{Rune: ';', Value: idSemicolon, Src: idSemicolon},
+			{Rune: IDENTIFIER, Value: idFFlush, Src: idFFlush},
+			{Rune: '(', Value: idLParen, Src: idLParen},
+			{Rune: IDENTIFIER, Value: idStderr, Src: idStderr},
+			{Rune: ')', Value: idRParen, Src: idRParen},
+			{Rune: ';', Value: idSemicolon, Src: idSemicolon},
 		}...)
 	}
 	for _, v := range toks {

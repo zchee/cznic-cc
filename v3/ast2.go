@@ -183,6 +183,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 					t.Rune = tok.char
 					t.Sep = sep
 					t.Value = tok.value
+					t.Src = tok.src
 					t.file = tok.file
 					t.pos = tok.pos
 					seq++
@@ -257,6 +258,7 @@ func translationPhase5(ctx *context, toks *[]Token) *[]Token {
 		case STRINGLITERAL, LONGSTRINGLITERAL:
 			cpt.char = tok.Rune
 			cpt.value = tok.Value
+			cpt.src = tok.Src
 			cpt.file = tok.file
 			cpt.pos = tok.pos
 			(*toks)[i].Value = dict.sid(stringConst(ctx, cpt))
@@ -264,6 +266,7 @@ func translationPhase5(ctx *context, toks *[]Token) *[]Token {
 			var cpt cppToken
 			cpt.char = tok.Rune
 			cpt.value = tok.Value
+			cpt.src = tok.Src
 			cpt.file = tok.file
 			cpt.pos = tok.pos
 			switch r := charConst(ctx, cpt); {
@@ -332,6 +335,7 @@ func Preprocess(cfg *Config, includePaths, sysIncludePaths []string, sources []S
 				t.Rune = tok.char
 				t.Sep = sep
 				t.Value = tok.value
+				t.Src = tok.src
 				t.file = tok.file
 				t.pos = tok.pos
 				*toks = append(*toks, t)

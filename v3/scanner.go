@@ -183,6 +183,7 @@ type token3 struct {
 	char  rune
 	pos   int32
 	value StringID
+	src   StringID
 }
 
 func (t token3) Pos() token.Pos { return token.Pos(t.pos) }
@@ -202,6 +203,7 @@ type scanner struct {
 	mark          int
 	pos           token.Pos
 	r             *bufio.Reader
+	srcBuf        []byte
 	tokenBuf      []token3
 	ungetBuf      []char
 
@@ -328,9 +330,11 @@ func (s *scanner) initScan() (r byte) {
 	if len(s.charBuf) > 1<<18 { //DONE benchmark tuned
 		s.bytesBuf = nil
 		s.charBuf = nil
+		s.srcBuf = nil
 	} else {
 		s.bytesBuf = s.bytesBuf[:0]
 		s.charBuf = s.charBuf[:0]
+		s.srcBuf = s.bytesBuf[:0]
 	}
 	return s.class(s.lookaheadChar.c)
 }
@@ -338,6 +342,10 @@ func (s *scanner) initScan() (r byte) {
 func (s *scanner) lex() {
 	s.tok.char = s.scan()
 	s.tok.pos = int32(s.firstPos)
+	for _, v := range s.charBuf {
+		s.srcBuf = append(s.srcBuf, v.c)
+	}
+	s.tok.src = dict.id(s.srcBuf)
 	switch {
 	case s.tok.char == ' ' && !s.preserveWhiteSpace && !s.ctx.cfg.PreserveWhiteSpace:
 		s.tok.value = idSpace
@@ -375,10 +383,7 @@ func (s *scanner) lex() {
 		}
 		s.tok.value = dict.id(s.bytesBuf)
 	default:
-		for _, v := range s.charBuf {
-			s.bytesBuf = append(s.bytesBuf, v.c)
-		}
-		s.tok.value = dict.id(s.bytesBuf)
+		s.tok.value = s.tok.src
 	}
 	switch s.tok.char {
 	case clsEOF:

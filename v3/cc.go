@@ -719,6 +719,7 @@ type Token struct {
 	Rune  rune     // ';' or IDENTIFIER etc.
 	Sep   StringID // If Config3.PreserveWhiteSpace is in effect: All preceding white space combined, including comments.
 	Value StringID // ";" or "foo" etc.
+	Src   StringID
 	file  *tokenFile
 	pos   int32
 	seq   int32

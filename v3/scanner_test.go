@@ -50,6 +50,8 @@ func TestScanner(t *testing.T) {
 	}
 
 	for i, g := range gtoks {
+		g.src = 0        //TODO
+		etoks[i].src = 0 //TODO
 		if e := etoks[i]; g != e {
 			t.Errorf("%v: %v %v", i, g.str(file), e.str(file))
 		}
@@ -331,6 +333,8 @@ next:
 		}
 
 		for j, gtok := range toks {
+			gtok.src = 0      //TODO
+			v.toks[j].src = 0 //TODO
 			if etok := v.toks[j]; gtok != etok {
 				t.Logf("%q", v.in)
 				t.Errorf("%v, %v: %v %v", i, j, gtok.str(file), etok.str(file))
