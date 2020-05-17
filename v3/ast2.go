@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 // Source is a named part of a translation unit. If Value is empty, Name is
@@ -172,6 +173,13 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 			for _, tok := range line {
 				switch tok.char {
 				case ' ', '\n':
+					if ctx.cfg.PreserveOnlyLastNonBlankSeparator {
+						if strings.TrimSpace(tok.value.String()) != "" {
+							sep = tok.value
+						}
+						break
+					}
+
 					switch {
 					case sep != 0:
 						sep = dict.sid(sep.String() + tok.String())
@@ -324,6 +332,13 @@ func Preprocess(cfg *Config, includePaths, sysIncludePaths []string, sources []S
 		for _, tok := range line {
 			switch tok.char {
 			case ' ', '\n':
+				if ctx.cfg.PreserveOnlyLastNonBlankSeparator {
+					if strings.TrimSpace(tok.value.String()) != "" {
+						sep = tok.value
+					}
+					break
+				}
+
 				switch {
 				case sep != 0:
 					sep = dict.sid(sep.String() + tok.String())
@@ -504,13 +519,13 @@ func (n *AST) typecheck() (*context, error) {
 
 				//TODO check compatible types
 				switch {
-				case pruned.hasInitalizer:
-					if x.hasInitalizer {
+				case pruned.hasInitializer:
+					if x.hasInitializer {
 						ctx.errNode(x, "multiple initializers for the same symbol")
 						continue
 					}
 				default:
-					if x.hasInitalizer {
+					if x.hasInitializer {
 						pruned = x
 					}
 				}
@@ -1001,3 +1016,6 @@ func (n *LabeledStatement) CompoundStatement() *CompoundStatement { return n.blo
 
 // LabeledStatements returns labeled statements of n.
 func (n *CompoundStatement) LabeledStatements() []*LabeledStatement { return n.labeledStmts }
+
+// HasInitializer reports whether d has an initializator.
+func (n *Declarator) HasInitializer() bool { return n.hasInitializer }

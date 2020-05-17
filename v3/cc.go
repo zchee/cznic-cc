@@ -398,6 +398,7 @@ type Config3 struct {
 
 	MaxSourceLine int // Zero: Scanner will use default buffer. Non zero: Scanner will use max(default buffer size, MaxSourceLine).
 
+	PreserveOnlyLastNonBlankSeparator       bool // If PreserveWhiteSpace is true, keep only the last white space, do not combine
 	PreserveWhiteSpace                      bool // Including also comments.
 	RejectElseExtraTokens                   bool // Pedantic: do not silently accept "#else foo".
 	RejectEndifExtraTokens                  bool // Pedantic: do not silently accept "#endif foo".
@@ -729,9 +730,9 @@ type Token struct {
 //
 // Comparing positions as in 'before', 'after' is complicated as tokens in a
 // translation unit usually come from more than one source file. Macro
-// expansion further complicates that. The solution is to sequentially
-// numbering the tokens as they are finally seen by the parser, so the usual
-// artithmetic '<', '>' operators can be used for that purpose.
+// expansion further complicates that. The solution is sequentially numbering
+// the tokens as they are finally seen by the parser, so the usual arithmetic
+// '<', '>' operators can be used for that purpose.
 func (t Token) Seq() int { return int(t.seq) }
 
 // String implements fmt.Stringer.

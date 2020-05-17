@@ -2451,6 +2451,13 @@ func parsePragma(c *cpp, args0 []token3) {
 	for _, tok := range toks {
 		switch tok.char {
 		case ' ', '\n':
+			if c.ctx.cfg.PreserveOnlyLastNonBlankSeparator {
+				if strings.TrimSpace(tok.value.String()) != "" {
+					sep = tok.value
+				}
+				break
+			}
+
 			switch {
 			case sep != 0:
 				sep = dict.sid(sep.String() + tok.String())

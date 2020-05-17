@@ -202,7 +202,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.AttributeSpecifierList.check(ctx)
 	case InitDeclaratorInit: // Declarator AttributeSpecifierList '=' Initializer
 		typ := n.Declarator.check(ctx, td, typ, tld)
-		n.Declarator.hasInitalizer = true
+		n.Declarator.hasInitializer = true
 		n.Declarator.Write++
 		n.AttributeSpecifierList.check(ctx)
 		n.Initializer.isConst = true

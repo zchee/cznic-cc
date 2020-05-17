@@ -1331,7 +1331,7 @@ type Declarator struct {
 	SubjectOfIncDec        bool
 	SubjectOfAsgnOp        bool
 	fnDef                  bool
-	hasInitalizer          bool
+	hasInitializer         bool
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator
 	Pointer                *Pointer

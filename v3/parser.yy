@@ -620,7 +620,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	SubjectOfIncDec	bool */
 			/*yy:field	SubjectOfAsgnOp	bool */
 			/*yy:field	fnDef		bool */
-			/*yy:field	hasInitalizer	bool */
+			/*yy:field	hasInitializer	bool */
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE
