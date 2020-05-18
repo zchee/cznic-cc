@@ -101,6 +101,7 @@ func (n AdditiveExpressionCase) String() string {
 type AdditiveExpression struct {
 	lexicalScope             Scope
 	Operand                  Operand
+	promote                  Type
 	IsSideEffectsFree        bool
 	AdditiveExpression       *AdditiveExpression
 	Case                     AdditiveExpressionCase `PrettyPrint:"stringer,zero"`
@@ -3317,6 +3318,7 @@ func (n MultiplicativeExpressionCase) String() string {
 //	|       MultiplicativeExpression '%' CastExpression  // Case MultiplicativeExpressionMod
 type MultiplicativeExpression struct {
 	Operand                  Operand
+	promote                  Type
 	IsSideEffectsFree        bool
 	Case                     MultiplicativeExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression           *CastExpression

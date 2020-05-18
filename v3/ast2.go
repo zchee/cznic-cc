@@ -717,6 +717,12 @@ func (n *EnumSpecifier) Type() Type { return n.typ }
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *EqualityExpression) Promote() Type { return n.promote }
 
+// Promote returns the type the operands of the binary operation are promoted to.
+func (n *AdditiveExpression) Promote() Type { return n.promote }
+
+// Promote returns the type the operands of the binary operation are promoted to.
+func (n *MultiplicativeExpression) Promote() Type { return n.promote }
+
 func (n *InitDeclarator) Value() *InitializerValue { return n.initializer }
 
 // IsConst reports whether n is constant.

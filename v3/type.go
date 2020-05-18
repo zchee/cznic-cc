@@ -316,6 +316,10 @@ type Type interface {
 	// String implements fmt.Stringer.
 	String() string
 
+	// Tag returns the tag, of a tagged type or of a struct or union type.
+	// Tag panics if the type is not tagged type or a struct or union type.
+	Tag() StringID
+
 	// Name returns type name, if any.
 	Name() StringID
 
@@ -903,6 +907,11 @@ func (t *typeBase) String() string {
 // Name implements Type.
 func (t *typeBase) Name() StringID { return 0 }
 
+// Tag implements Type.
+func (t *typeBase) Tag() StringID {
+	panic(internalErrorf("%s: Tag of invalid type", t.Kind()))
+}
+
 // string implements Type.
 func (t *typeBase) string(b *strings.Builder) {
 	spc := ""
@@ -1197,6 +1206,9 @@ func (t *aliasType) Size() uintptr { return t.typ.Size() }
 // String implements Type.
 func (t *aliasType) String() string { return t.nm.String() }
 
+// Tag implements Type.
+func (t *aliasType) Tag() StringID { return t.typ.Tag() }
+
 // Name implements Type.
 func (t *aliasType) Name() StringID { return t.nm }
 
@@ -1281,6 +1293,9 @@ type structType struct { //TODO implement Type
 
 // Alias implements Type.
 func (t *structType) Alias() Type { return t }
+
+// Tag implements Type.
+func (t *structType) Tag() StringID { return t.tag }
 
 // isCompatible implements Type.
 func (t *structType) isCompatible(u Type) bool { return t == u }
@@ -1369,9 +1384,6 @@ func (t *structType) string(b *strings.Builder) {
 		b.WriteString(t.Kind().String())
 	}
 	b.WriteByte(' ')
-	for range t.attr {
-		panic("TODO")
-	}
 	if t.tag != 0 {
 		b.WriteString(t.tag.String())
 		b.WriteByte(' ')
@@ -1439,6 +1451,9 @@ type taggedType struct {
 
 // IsTaggedType implements Type.
 func (t *taggedType) IsTaggedType() bool { return true }
+
+// Tag implements Type.
+func (t *taggedType) Tag() StringID { return t.tag }
 
 // Alias implements Type.
 func (t *taggedType) Alias() Type { return t.underlyingType() }

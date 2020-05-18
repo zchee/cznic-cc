@@ -230,6 +230,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.5 Multiplicative operators */
 			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	*/
 			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x;*/
 /*yy:case Cast       */ MultiplicativeExpression:
@@ -244,6 +245,7 @@ package cc // import "modernc.org/cc/v3"
 			/* [0], 6.5.6 Additive operators */
 			/*yy:field	lexicalScope		Scope	*/
 			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	*/
 			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Mul        */ AdditiveExpression:

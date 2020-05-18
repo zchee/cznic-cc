@@ -3409,6 +3409,7 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		RelationalExpressionLeq, // RelationalExpression "<=" ShiftExpression
 		RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
 
+		n.promote = noType
 		op := &operand{typ: ctx.cfg.ABI.Type(Int)}
 		n.Operand = op
 		lo := n.RelationalExpression.check(ctx)
@@ -3539,6 +3540,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		n.Operand = n.MultiplicativeExpression.check(ctx)
 		n.IsSideEffectsFree = n.MultiplicativeExpression.IsSideEffectsFree
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
+		n.promote = noType
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
 		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree && n.MultiplicativeExpression.IsSideEffectsFree
@@ -3563,6 +3565,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
@@ -3570,6 +3573,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 
 		n.Operand = (&operand{typ: a.Type(), value: a.Value().add(b.Value())}).normalize(ctx, n)
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
+		n.promote = noType
 		a := n.AdditiveExpression.check(ctx)
 		b := n.MultiplicativeExpression.check(ctx)
 		n.IsSideEffectsFree = n.AdditiveExpression.IsSideEffectsFree && n.MultiplicativeExpression.IsSideEffectsFree
@@ -3594,6 +3598,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
@@ -3658,6 +3663,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
@@ -3678,6 +3684,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
@@ -3703,6 +3710,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
