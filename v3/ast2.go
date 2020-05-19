@@ -1025,3 +1025,8 @@ func (n *CompoundStatement) LabeledStatements() []*LabeledStatement { return n.l
 
 // HasInitializer reports whether d has an initializator.
 func (n *Declarator) HasInitializer() bool { return n.hasInitializer }
+
+// Context reports the statement, if any, a break or continue belongs to. Valid
+// only after typecheck and for n.Case == JumpStatementBreak or
+// JumpStatementContinue.
+func (n *JumpStatement) Context() Node { return n.context }

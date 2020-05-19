@@ -2943,6 +2943,7 @@ func (n JumpStatementCase) String() string {
 //	|       "break" ';'                // Case JumpStatementBreak
 //	|       "return" Expression ';'    // Case JumpStatementReturn
 type JumpStatement struct {
+	context      Node
 	lexicalScope Scope
 	Case         JumpStatementCase `PrettyPrint:"stringer,zero"`
 	Expression   *Expression

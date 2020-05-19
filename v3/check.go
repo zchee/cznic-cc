@@ -4348,11 +4348,13 @@ func (n *JumpStatement) check(ctx *context) {
 		n.Expression.check(ctx)
 		//TODO
 	case JumpStatementContinue: // "continue" ';'
+		n.context = ctx.breakCtx
 		if ctx.continues <= 0 {
 			panic(n.Position().String())
 		}
 		//TODO
 	case JumpStatementBreak: // "break" ';'
+		n.context = ctx.breakCtx
 		if ctx.breaks <= 0 {
 			panic(n.Position().String())
 		}
@@ -4371,6 +4373,11 @@ func (n *IterationStatement) check(ctx *context) {
 	if n == nil {
 		return
 	}
+
+	sv := ctx.breakCtx
+	ctx.breakCtx = n
+
+	defer func() { ctx.breakCtx = sv }()
 
 	switch n.Case {
 	case IterationStatementWhile: // "while" '(' Expression ')' Statement
@@ -4428,6 +4435,15 @@ func (n *SelectionStatement) check(ctx *context) {
 			break
 		}
 	case SelectionStatementSwitch: // "switch" '(' Expression ')' Statement
+		if n == nil {
+			return
+		}
+
+		sv := ctx.breakCtx
+		ctx.breakCtx = n
+
+		defer func() { ctx.breakCtx = sv }()
+
 		op := n.Expression.check(ctx)
 		n.promote = op.integerPromotion(ctx, n).Type()
 		cp := ctx.casePromote

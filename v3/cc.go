@@ -457,6 +457,7 @@ type Config struct {
 
 type context struct {
 	ast         *AST
+	breakCtx    Node
 	breaks      int
 	casePromote Type
 	cases       []*LabeledStatement // switch

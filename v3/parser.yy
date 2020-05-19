@@ -858,6 +858,7 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case ForDecl    */ |	"for" '(' Declaration Expression ';' Expression ')' Statement
 
 			/* [0], 6.8.6 Jump statements */
+			/*yy:field	context		Node	*/
 			/*yy:field	lexicalScope	Scope	*/
 			/*yy:example int f() { L: goto L; } */
 /*yy:case Goto       */ JumpStatement:
