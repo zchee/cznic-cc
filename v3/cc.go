@@ -5,7 +5,6 @@
 //TODO https://todo.sr.ht/~mcf/cc-issues/34
 //TODO http://mcpp.sourceforge.net/ "Provides a validation suite to test C/C++ preprocessor's conformance and quality comprehensively."
 
-
 //go:generate rm -f lexer.go
 //go:generate golex -o lexer.go lexer.l
 
