@@ -297,6 +297,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.10 Bitwise AND operator */
 			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	*/
 			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Eq         */ AndExpression:
@@ -306,6 +307,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.11 Bitwise exclusive OR operator */
 			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	*/
 			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case And        */ ExclusiveOrExpression:
@@ -315,6 +317,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/* [0], 6.5.12 Bitwise inclusive OR operator */
 			/*yy:field	Operand			Operand	*/
+			/*yy:field	promote			Type	*/
 			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Xor        */ InclusiveOrExpression:

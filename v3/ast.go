@@ -242,6 +242,7 @@ func (n AndExpressionCase) String() string {
 //	|       AndExpression '&' EqualityExpression  // Case AndExpressionAnd
 type AndExpression struct {
 	Operand            Operand
+	promote            Type
 	IsSideEffectsFree  bool
 	AndExpression      *AndExpression
 	Case               AndExpressionCase `PrettyPrint:"stringer,zero"`
@@ -2138,6 +2139,7 @@ func (n ExclusiveOrExpressionCase) String() string {
 //	|       ExclusiveOrExpression '^' AndExpression  // Case ExclusiveOrExpressionXor
 type ExclusiveOrExpression struct {
 	Operand               Operand
+	promote               Type
 	IsSideEffectsFree     bool
 	AndExpression         *AndExpression
 	Case                  ExclusiveOrExpressionCase `PrettyPrint:"stringer,zero"`
@@ -2505,6 +2507,7 @@ func (n InclusiveOrExpressionCase) String() string {
 //	|       InclusiveOrExpression '|' ExclusiveOrExpression  // Case InclusiveOrExpressionOr
 type InclusiveOrExpression struct {
 	Operand               Operand
+	promote               Type
 	IsSideEffectsFree     bool
 	Case                  InclusiveOrExpressionCase `PrettyPrint:"stringer,zero"`
 	ExclusiveOrExpression *ExclusiveOrExpression

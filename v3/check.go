@@ -3202,6 +3202,7 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 		a := n.InclusiveOrExpression.check(ctx)
 		b := n.ExclusiveOrExpression.check(ctx)
 		n.IsSideEffectsFree = n.InclusiveOrExpression.IsSideEffectsFree && n.ExclusiveOrExpression.IsSideEffectsFree
+		n.promote = noType
 		if a.Type().Kind() == Vector || b.Type().Kind() == Vector {
 			n.Operand = checkBinaryVectorIntegerArtithmetic(ctx, n, a, b)
 			break
@@ -3213,6 +3214,7 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
@@ -3269,6 +3271,7 @@ func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
@@ -3306,6 +3309,7 @@ func (n *AndExpression) check(ctx *context) Operand {
 		}
 
 		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{typ: a.Type()}
 			break
