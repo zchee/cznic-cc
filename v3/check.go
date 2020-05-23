@@ -4357,6 +4357,7 @@ func (n *JumpStatement) check(ctx *context) {
 
 	switch n.Case {
 	case JumpStatementGoto: // "goto" IDENTIFIER ';'
+		n.context = ctx.breakCtx
 		if ctx.checkFn.Gotos == nil {
 			ctx.checkFn.Gotos = map[StringID]*JumpStatement{}
 		}
@@ -4377,6 +4378,7 @@ func (n *JumpStatement) check(ctx *context) {
 		}
 		//TODO
 	case JumpStatementReturn: // "return" Expression ';'
+		n.context = ctx.breakCtx
 		op := n.Expression.check(ctx)
 		if op.Type().IsComplexType() {
 			ctx.checkFn.ReturnComplexExpr = append(ctx.checkFn.ReturnComplexExpr, n.Expression)
