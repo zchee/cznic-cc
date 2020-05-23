@@ -614,18 +614,19 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:field	Linkage		Linkage */
-			/*yy:field	Read		int */
-			/*yy:field	Write		int */
-			/*yy:field	td		typeDescriptor */
-			/*yy:field	typ		Type */
-			/*yy:field	AddressTaken	bool */
-			/*yy:field	IsParameter	bool */
-			/*yy:field	IsTypedefName	bool */
-			/*yy:field	SubjectOfIncDec	bool */
-			/*yy:field	SubjectOfAsgnOp	bool */
-			/*yy:field	fnDef		bool */
-			/*yy:field	hasInitializer	bool */
+			/*yy:field	Linkage		Linkage		*/
+			/*yy:field	Read		int		*/
+			/*yy:field	StorageClass	StorageClass	*/
+			/*yy:field	Write		int		*/
+			/*yy:field	td		typeDescriptor	*/
+			/*yy:field	typ		Type		*/
+			/*yy:field	AddressTaken	bool		*/
+			/*yy:field	IsParameter	bool		*/
+			/*yy:field	IsTypedefName	bool		*/
+			/*yy:field	SubjectOfIncDec	bool		*/
+			/*yy:field	SubjectOfAsgnOp	bool		*/
+			/*yy:field	fnDef		bool		*/
+			/*yy:field	hasInitializer	bool		*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE

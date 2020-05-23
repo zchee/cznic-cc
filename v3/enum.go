@@ -67,3 +67,10 @@ const (
 	Internal
 	External
 )
+
+// Values of StorageClass
+const (
+	Static StorageClass = iota
+	Automatic
+	Allocated
+)

@@ -164,7 +164,19 @@ func String(s string) StringID {
 	return dict.sid(s)
 }
 
+// Linkage represents identifier linkage.
+//
+// [0]6.2.2: An identifier declared in different scopes or in the same scope
+// more than once can be made to refer to the same object or function by a
+// process called linkage. There are three kinds of linkage: External,
+// Internal, and None.
 type Linkage int
+
+// StorageClass determines storage duration.
+//
+// [0]6.2.4: An object has a storage duration that determines its lifetime.
+// There are three storage durations: Static, Automatic, and Allocated.
+type StorageClass int
 
 // Pragma defines behavior of the object passed to Config.PragmaHandler.
 type Pragma interface {

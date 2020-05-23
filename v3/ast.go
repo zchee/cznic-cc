@@ -1324,6 +1324,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 type Declarator struct {
 	Linkage                Linkage
 	Read                   int
+	StorageClass           StorageClass
 	Write                  int
 	td                     typeDescriptor
 	typ                    Type

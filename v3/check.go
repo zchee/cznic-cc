@@ -3740,43 +3740,54 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 	hasStorageSpecifiers := td.typedef() || td.extern() || td.static() ||
 		td.auto() || td.register() || td.threadLocal()
 
-	// 6.2.2 Linkages of identifiers
-
 	typ = n.typ
 	if typ.Kind() == Array && typ.IsVLA() {
 		if f := ctx.checkFn; f != nil {
 			f.VLAs = append(f.VLAs, n)
 		}
 	}
+
+	// 6.2.2 Linkages of identifiers
 	n.Linkage = None
 	switch {
 	case tld && td.static():
-		// 3: If the declaration of a file scope identifier for an object or a
-		// function contains the storage-class specifier static, the identifier
-		// has internal linkage.
+		// 3: If the declaration of a file scope identifier for an object or a function
+		// contains the storage-class specifier static, the identifier has internal
+		// linkage.
 		n.Linkage = Internal
 	case td.extern():
 		//TODO
 		//
-		// 4: For an identifier declared with the storage-class
-		// specifier extern in a scope in which a prior declaration of
-		// that identifier is visible, 23) if the prior declaration
-		// specifies internal or external linkage, the linkage of the
-		// identifier at the later declaration is the same as the
-		// linkage specified at the prior declaration. If no prior
-		// declaration is visible, or if the prior declaration
-		// specifies no linkage, then the identifier has external
-		// linkage.
+		// 4: For an identifier declared with the storage-class specifier extern in a
+		// scope in which a prior declaration of that identifier is visible, 23) if the
+		// prior declaration specifies internal or external linkage, the linkage of the
+		// identifier at the later declaration is the same as the linkage specified at
+		// the prior declaration. If no prior declaration is visible, or if the prior
+		// declaration specifies no linkage, then the identifier has external linkage.
 		n.Linkage = External
 	case
 		!n.IsParameter && typ.Kind() == Function && !hasStorageSpecifiers,
 		tld && !hasStorageSpecifiers:
 
-		// 5: If the declaration of an identifier for a function has no
-		// storage-class specifier, its linkage is determined exactly
-		// as if it were declared with the storage-class specifier
-		// extern.
+		// 5: If the declaration of an identifier for a function has no storage-class
+		// specifier, its linkage is determined exactly as if it were declared with the
+		// storage-class specifier extern.
 		n.Linkage = External
+	}
+
+	// 6.2.4 Storage durations of objects
+	switch {
+	case n.Linkage == External, n.Linkage == Internal, td.static():
+		// 2: An object whose identifier is declared with external or internal linkage,
+		// or with the storage-class specifier static has static storage duration. Its
+		// lifetime is the entire execution of the program and its stored value is
+		// initialized only once, prior to
+		// program startup.
+		n.StorageClass = Static
+	case n.Linkage == None && !td.static():
+		// 4: An object whose identifier is declared with no linkage and without the
+		// storage-class specifier static has automatic storage duration.
+		n.StorageClass = Automatic
 	}
 	switch {
 	case n.typ.Kind() == Invalid:
