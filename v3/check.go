@@ -1043,6 +1043,7 @@ func (n *CastExpression) addrOf(ctx *context) Operand {
 	if n == nil {
 		return noOperand
 	}
+
 	n.Operand = noOperand //TODO-
 	switch n.Case {
 	case CastExpressionUnary: // UnaryExpression
@@ -1168,6 +1169,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		op := n.PostfixExpression.addrOf(ctx)
+		n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := n.PostfixExpression.Declarator(); d != nil {
 			setAddressTaken(n, d, "PostfixExpression '.' IDENTIFIER")
