@@ -1033,3 +1033,6 @@ func (n *Declarator) HasInitializer() bool { return n.hasInitializer }
 // only after typecheck and for n.Case == JumpStatementBreak or
 // JumpStatementContinue.
 func (n *JumpStatement) Context() Node { return n.context }
+
+// IsFunctionPrototype reports whether n is a function prototype.
+func (n *Declarator) IsFunctionPrototype() bool { return n.Type().Kind() == Function && !n.fnDef }
