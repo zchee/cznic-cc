@@ -508,26 +508,20 @@ func (n *AST) typecheck() (*context, error) {
 		for _, v := range defs {
 			switch x := v.(type) {
 			case *Declarator:
-				if x.IsExtern() {
-					continue
-				}
-
-				if pruned == nil {
-					pruned = x
-					continue
-				}
-
 				//TODO check compatible types
 				switch {
-				case pruned.hasInitializer:
-					if x.hasInitializer {
-						ctx.errNode(x, "multiple initializers for the same symbol")
-						continue
-					}
-				default:
-					if x.hasInitializer {
-						pruned = x
-					}
+				case x.IsExtern():
+					// nop
+				case pruned == nil:
+					pruned = x
+				case pruned.hasInitializer && x.hasInitializer:
+					ctx.errNode(x, "multiple initializers for the same symbol")
+					continue
+				case pruned.fnDef && x.fnDef:
+					ctx.errNode(x, "multiple function defintion")
+					continue
+				case x.hasInitializer || x.fnDef:
+					pruned = x
 				}
 			}
 		}
