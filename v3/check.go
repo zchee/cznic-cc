@@ -959,7 +959,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
 		n.IsSideEffectsFree = true
 		rd := ctx.readDelta
-		ctx.readDelta = 0
+		ctx.readDelta = 1
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
 		ctx.pop()
