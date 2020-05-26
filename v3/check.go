@@ -2750,6 +2750,9 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 	if d == nil && n.resolvedIn != nil {
 		d = n.resolvedIn.declarator(n.Token.Value, n.Token)
 	}
+	if d == nil && !ctx.cfg.DisableBuiltinResolution {
+		d = builtin(ctx, nm)
+	}
 	if d == nil {
 		_, ok := gccKeywords[nm]
 		if !ok && implicitFunc {
@@ -2839,6 +2842,22 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 		}
 	}
 	panic(internalError())
+}
+
+func builtin(ctx *context, nm StringID) *Declarator {
+	id := dict.sid("__builtin_" + nm.String())
+	a := ctx.ast.Scope[id]
+	if len(a) == 0 {
+		return nil
+	}
+
+	switch x := a[0].(type) {
+	case *Declarator:
+		if x.fnDef || x.IsFunctionPrototype() {
+			return x
+		}
+	}
+	return nil
 }
 
 func (n *PrimaryExpression) floatConst(ctx *context) Operand {

@@ -407,14 +407,20 @@ func (s *Scope) enumerator(nm StringID, tok Token) *Enumerator {
 
 // Config3 amends behavior of translation phases 1 to 3.
 type Config3 struct {
-	// If IgnoreInclude is not nil, its MatchString method will be called
-	// by the preprocessor with the argument any include directive expands
-	// to. If the call evaluates to is true the include directive will be
-	// ignored completely.
+	// If IgnoreInclude is not nil, its MatchString method will be called by the
+	// preprocessor with the argument any include directive expands to. If the call
+	// evaluates to is true the include directive will be ignored completely.
 	IgnoreInclude *regexp.Regexp
-	WorkingDir    string // Overrides os.Getwd if non empty.
+
+	WorkingDir string // Overrides os.Getwd if non empty.
 
 	MaxSourceLine int // Zero: Scanner will use default buffer. Non zero: Scanner will use max(default buffer size, MaxSourceLine).
+
+	// DisableBuiltinResolution disables resolution of undefined identifiers such
+	// that eg. abort, becomes the same as __builtin_abort, prototype of which is
+	// expected to be provided by one of the sources passed to Parse, Preprocess or
+	// Translate.
+	DisableBuiltinResolution bool
 
 	PreserveOnlyLastNonBlankSeparator       bool // If PreserveWhiteSpace is true, keep only the last white space, do not combine
 	PreserveWhiteSpace                      bool // Including also comments.
