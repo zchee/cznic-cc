@@ -959,7 +959,15 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
 		n.IsSideEffectsFree = true
 		rd := ctx.readDelta
-		ctx.readDelta = 1
+		// [0]6.5.3.4, 2: If the type of the operand is a variable length array type,
+		// the operand is evaluated; otherwise, the operand is not evaluated and the
+		// result is an integer constant.
+		switch op := n.UnaryExpression.Operand; {
+		case op != nil && op.Type() != nil && op.Type().IsVLA():
+			ctx.readDelta = 1
+		default:
+			ctx.readDelta = 0
+		}
 		ctx.push(ctx.mode &^ mIntConstExpr)
 		op := n.UnaryExpression.check(ctx)
 		ctx.pop()
