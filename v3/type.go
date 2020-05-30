@@ -213,6 +213,10 @@ type Type interface {
 	// valid but not Array or Ptr.
 	Elem() Type
 
+	// EnumType returns the undelying integer type of an enumerated type.  It
+	// panics if the type's Kind is valid but not Enum.
+	EnumType() Type
+
 	// BitField returns the associated Field of a type. It panics if the
 	// type IsBitFieldType returns false.
 	BitField() Field
@@ -730,6 +734,15 @@ func (t *typeBase) Elem() Type {
 	panic(internalErrorf("%s: Elem of invalid type", t.Kind()))
 }
 
+// EnumType implements Type.
+func (t *typeBase) EnumType() Type {
+	if t.Kind() == Invalid {
+		return t
+	}
+
+	panic(internalErrorf("%s: EnumType of invalid type", t.Kind()))
+}
+
 // hasConst implements Type.
 func (t *typeBase) hasConst() bool { return t.flags&fConst != 0 }
 
@@ -1131,6 +1144,9 @@ func (t *aliasType) isCompatible(u Type) bool {
 	return t == u || t.underlyingType().isCompatible(u.underlyingType())
 }
 
+// EnumType implements Type.
+func (t *aliasType) EnumType() Type { return t.typ.EnumType() }
+
 // Decay implements Type.
 func (t *aliasType) Decay() Type { return t.typ.Decay() }
 
@@ -1490,6 +1506,12 @@ func (t *taggedType) FieldByIndex(i []int) Field { return t.underlyingType().Fie
 
 // FieldByName implements Type.
 func (t *taggedType) FieldByName(s StringID) (Field, bool) { return t.underlyingType().FieldByName(s) }
+
+// IsSignedType implements Type.
+func (t *taggedType) IsSignedType() bool { return t.underlyingType().IsSignedType() }
+
+// EnumType implements Type.
+func (t *taggedType) EnumType() Type { return t.underlyingType() }
 
 // string implements Type.
 func (t *taggedType) string(b *strings.Builder) {

@@ -1976,6 +1976,15 @@ func (n *EnumSpecifier) check(ctx *context) {
 		if !n.typ.IsIntegerType() || n.typ.Size() == 0 { //TODO-
 			panic(internalError())
 		}
+
+		reg := n.lexicalScope.Parent() == nil
+		for list := n.EnumeratorList; list != nil; list = list.EnumeratorList {
+			en := list.Enumerator
+			en.Operand = en.Operand.convertTo(ctx, en, n.typ)
+			if reg {
+				ctx.enums[en.Token.Value] = en.Operand
+			}
+		}
 	case EnumSpecifierTag: // "enum" AttributeSpecifierList IDENTIFIER
 		n.typ = &taggedType{
 			resolutionScope: n.lexicalScope,
@@ -2070,10 +2079,6 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 	default:
 		panic(internalError())
 	}
-	if n.lexicalScope.Parent() == nil {
-		ctx.enums[n.Token.Value] = n.Operand
-	}
-
 	switch x := iota.(type) {
 	case Int64Value:
 		switch m := min.(type) {
@@ -2088,8 +2093,6 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 		case nil:
 			min = x
 		}
-		x++
-		iota = x
 		switch m := max.(type) {
 		case Int64Value:
 			if x > m {
@@ -2102,6 +2105,8 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 		case nil:
 			max = x
 		}
+		x++
+		iota = x
 	case Uint64Value:
 		switch m := min.(type) {
 		case Int64Value:
@@ -2113,8 +2118,6 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 		case nil:
 			min = x
 		}
-		x++
-		iota = x
 		switch m := max.(type) {
 		case Int64Value:
 			panic(fmt.Sprintf("TODO 1823 %v:", n.Position()))
@@ -2125,6 +2128,8 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 		case nil:
 			max = x
 		}
+		x++
+		iota = x
 	case nil:
 		//TODO report type
 	}
