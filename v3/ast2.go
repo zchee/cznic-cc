@@ -1036,3 +1036,30 @@ func (n *JumpStatement) Context() Node { return n.context }
 
 // IsFunctionPrototype reports whether n is a function prototype.
 func (n *Declarator) IsFunctionPrototype() bool { return n.Type().Kind() == Function && !n.fnDef }
+
+// DeclarationSpecifiers returns the declaration specifiers associated with n or nil.
+func (n *Declarator) DeclarationSpecifiers() *DeclarationSpecifiers {
+	if x, ok := n.td.(*DeclarationSpecifiers); ok {
+		return x
+	}
+
+	return nil
+}
+
+// SpecifierQualifierList returns the specifier qualifer list associated with n or nil.
+func (n *Declarator) SpecifierQualifierList() *SpecifierQualifierList {
+	if x, ok := n.td.(*SpecifierQualifierList); ok {
+		return x
+	}
+
+	return nil
+}
+
+// TypeQualifier returns the type qualifiers associated with n or nil.
+func (n *Declarator) TypeQualifiers() *TypeQualifiers {
+	if x, ok := n.td.(*TypeQualifiers); ok {
+		return x
+	}
+
+	return nil
+}

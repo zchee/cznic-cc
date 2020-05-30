@@ -242,7 +242,7 @@ type Type interface {
 	// type.
 	IsComplexIntegerType() bool
 
-	// IsComplexType report whether a type is an complex type.
+	// IsComplexType report whether a type is a complex type.
 	IsComplexType() bool
 
 	// IsArithmeticType report whether a type is an arithmetic type.
@@ -266,6 +266,10 @@ type Type interface {
 	//	typedef int foo;
 	//	foo x;	// The type of x reports true from IsAliasType().
 	IsAliasType() bool
+
+	// AliasDeclarator returns the typedef declarator of the alias type. It panics
+	// if the type is not an alias type.
+	AliasDeclarator() *Declarator
 
 	// IsTaggedType returns whether a type is a tagged reference of a enum,
 	// struct or union type. For example
@@ -625,7 +629,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 		tok := ts.Token
 		nm := tok.Value
 		d := ts.resolvedIn.typedef(nm, tok)
-		typ = &aliasType{nm: nm, typ: d.Type()}
+		typ = &aliasType{nm: nm, d: d}
 	case Enum:
 		typ = typeSpecifiers[0].EnumSpecifier.typ
 	case Struct, Union:
@@ -652,6 +656,10 @@ func (t *typeBase) Alias() Type { return t }
 
 // IsAliasType implements Type.
 func (t *typeBase) IsAliasType() bool { return false }
+
+func (t *typeBase) AliasDeclarator() *Declarator {
+	panic(internalErrorf("%s: AliasDeclarator of invalid type", t.Kind()))
+}
 
 // IsTaggedType implements Type.
 func (t *typeBase) IsTaggedType() bool { return false }
@@ -1117,27 +1125,29 @@ func (t *arrayType) setLen(n uintptr) {
 func (t *arrayType) underlyingType() Type { return t }
 
 type aliasType struct {
-	nm  StringID
-	typ Type
+	nm StringID
+	d  *Declarator
 }
 
 // IsAliasType implements Type.
 func (t *aliasType) IsAliasType() bool { return true }
 
+func (t *aliasType) AliasDeclarator() *Declarator { return t.d }
+
 // IsTaggedType implements Type.
 func (t *aliasType) IsTaggedType() bool { return false }
 
 // Alias implements Type.
-func (t *aliasType) Alias() Type { return t.typ }
+func (t *aliasType) Alias() Type { return t.d.Type() }
 
 // Align implements Type.
-func (t *aliasType) Align() int { return t.typ.Align() }
+func (t *aliasType) Align() int { return t.d.Type().Align() }
 
 // Attributes implements Type.
 func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
 
 // BitField implements Type.
-func (t *aliasType) BitField() Field { return t.typ.BitField() }
+func (t *aliasType) BitField() Field { return t.d.Type().BitField() }
 
 // isCompatible implements Type.
 func (t *aliasType) isCompatible(u Type) bool {
@@ -1145,123 +1155,123 @@ func (t *aliasType) isCompatible(u Type) bool {
 }
 
 // EnumType implements Type.
-func (t *aliasType) EnumType() Type { return t.typ.EnumType() }
+func (t *aliasType) EnumType() Type { return t.d.Type().EnumType() }
 
 // Decay implements Type.
-func (t *aliasType) Decay() Type { return t.typ.Decay() }
+func (t *aliasType) Decay() Type { return t.d.Type().Decay() }
 
 // Elem implements Type.
-func (t *aliasType) Elem() Type { return t.typ.Elem() }
+func (t *aliasType) Elem() Type { return t.d.Type().Elem() }
 
 // FieldAlign implements Type.
-func (t *aliasType) FieldAlign() int { return t.typ.FieldAlign() }
+func (t *aliasType) FieldAlign() int { return t.d.Type().FieldAlign() }
 
 // NumField implements Type.
-func (t *aliasType) NumField() int { return t.typ.NumField() }
+func (t *aliasType) NumField() int { return t.d.Type().NumField() }
 
 // FieldByIndex implements Type.
-func (t *aliasType) FieldByIndex(i []int) Field { return t.typ.FieldByIndex(i) }
+func (t *aliasType) FieldByIndex(i []int) Field { return t.d.Type().FieldByIndex(i) }
 
 // FieldByName implements Type.
-func (t *aliasType) FieldByName(s StringID) (Field, bool) { return t.typ.FieldByName(s) }
+func (t *aliasType) FieldByName(s StringID) (Field, bool) { return t.d.Type().FieldByName(s) }
 
 // IsIncomplete implements Type.
-func (t *aliasType) IsIncomplete() bool { return t.typ.IsIncomplete() }
+func (t *aliasType) IsIncomplete() bool { return t.d.Type().IsIncomplete() }
 
 // IsArithmeticType implements Type.
-func (t *aliasType) IsArithmeticType() bool { return t.typ.IsArithmeticType() }
+func (t *aliasType) IsArithmeticType() bool { return t.d.Type().IsArithmeticType() }
 
 // IsComplexType implements Type.
-func (t *aliasType) IsComplexType() bool { return t.typ.IsComplexType() }
+func (t *aliasType) IsComplexType() bool { return t.d.Type().IsComplexType() }
 
 // IsComplexIntegerType implements Type.
-func (t *aliasType) IsComplexIntegerType() bool { return t.typ.IsComplexIntegerType() }
+func (t *aliasType) IsComplexIntegerType() bool { return t.d.Type().IsComplexIntegerType() }
 
 // IsBitFieldType implements Type.
-func (t *aliasType) IsBitFieldType() bool { return t.typ.IsBitFieldType() }
+func (t *aliasType) IsBitFieldType() bool { return t.d.Type().IsBitFieldType() }
 
 // IsIntegerType implements Type.
-func (t *aliasType) IsIntegerType() bool { return t.typ.IsIntegerType() }
+func (t *aliasType) IsIntegerType() bool { return t.d.Type().IsIntegerType() }
 
 // IsRealType implements Type.
-func (t *aliasType) IsRealType() bool { return t.typ.IsRealType() }
+func (t *aliasType) IsRealType() bool { return t.d.Type().IsRealType() }
 
 // IsScalarType implements Type.
-func (t *aliasType) IsScalarType() bool { return t.typ.IsScalarType() }
+func (t *aliasType) IsScalarType() bool { return t.d.Type().IsScalarType() }
 
 // IsVLA implements Type.
-func (t *aliasType) IsVLA() bool { return t.typ.IsVLA() }
+func (t *aliasType) IsVLA() bool { return t.d.Type().IsVLA() }
 
 // IsVariadic implements Type.
-func (t *aliasType) IsVariadic() bool { return t.typ.IsVariadic() }
+func (t *aliasType) IsVariadic() bool { return t.d.Type().IsVariadic() }
 
 // Kind implements Type.
-func (t *aliasType) Kind() Kind { return t.typ.Kind() }
+func (t *aliasType) Kind() Kind { return t.d.Type().Kind() }
 
 // Len implements Type.
-func (t *aliasType) Len() uintptr { return t.typ.Len() }
+func (t *aliasType) Len() uintptr { return t.d.Type().Len() }
 
 // LenExpr implements Type.
-func (t *aliasType) LenExpr() *AssignmentExpression { return t.typ.LenExpr() }
+func (t *aliasType) LenExpr() *AssignmentExpression { return t.d.Type().LenExpr() }
 
 // Parameters implements Type.
-func (t *aliasType) Parameters() []*Parameter { return t.typ.Parameters() }
+func (t *aliasType) Parameters() []*Parameter { return t.d.Type().Parameters() }
 
 // Result implements Type.
-func (t *aliasType) Result() Type { return t.typ.Result() }
+func (t *aliasType) Result() Type { return t.d.Type().Result() }
 
 // Real implements Type
-func (t *aliasType) Real() Field { return t.typ.Real() }
+func (t *aliasType) Real() Field { return t.d.Type().Real() }
 
 // Imag implements Type
-func (t *aliasType) Imag() Field { return t.typ.Imag() }
+func (t *aliasType) Imag() Field { return t.d.Type().Imag() }
 
 // Size implements Type.
-func (t *aliasType) Size() uintptr { return t.typ.Size() }
+func (t *aliasType) Size() uintptr { return t.d.Type().Size() }
 
 // String implements Type.
 func (t *aliasType) String() string { return t.nm.String() }
 
 // Tag implements Type.
-func (t *aliasType) Tag() StringID { return t.typ.Tag() }
+func (t *aliasType) Tag() StringID { return t.d.Type().Tag() }
 
 // Name implements Type.
 func (t *aliasType) Name() StringID { return t.nm }
 
 // atomic implements Type.
-func (t *aliasType) atomic() bool { return t.typ.atomic() }
+func (t *aliasType) atomic() bool { return t.d.Type().atomic() }
 
 // base implements Type.
-func (t *aliasType) base() typeBase { return t.typ.base() }
+func (t *aliasType) base() typeBase { return t.d.Type().base() }
 
 // hasConst implements Type.
-func (t *aliasType) hasConst() bool { return t.typ.hasConst() }
+func (t *aliasType) hasConst() bool { return t.d.Type().hasConst() }
 
 // inline implements Type.
-func (t *aliasType) inline() bool { return t.typ.inline() }
+func (t *aliasType) inline() bool { return t.d.Type().inline() }
 
 // IsSignedType implements Type.
-func (t *aliasType) IsSignedType() bool { return t.typ.IsSignedType() }
+func (t *aliasType) IsSignedType() bool { return t.d.Type().IsSignedType() }
 
 // noReturn implements Type.
-func (t *aliasType) noReturn() bool { return t.typ.noReturn() }
+func (t *aliasType) noReturn() bool { return t.d.Type().noReturn() }
 
 // restrict implements Type.
-func (t *aliasType) restrict() bool { return t.typ.restrict() }
+func (t *aliasType) restrict() bool { return t.d.Type().restrict() }
 
 // setLen implements Type.
-func (t *aliasType) setLen(n uintptr) { t.typ.setLen(n) }
+func (t *aliasType) setLen(n uintptr) { t.d.Type().setLen(n) }
 
 // setKind implements Type.
-func (t *aliasType) setKind(k Kind) { t.typ.setKind(k) }
+func (t *aliasType) setKind(k Kind) { t.d.Type().setKind(k) }
 
 // string implements Type.
 func (t *aliasType) string(b *strings.Builder) { b.WriteString(t.nm.String()) }
 
-func (t *aliasType) underlyingType() Type { return t.typ.underlyingType() }
+func (t *aliasType) underlyingType() Type { return t.d.Type().underlyingType() }
 
 // IsVolatile implements Type.
-func (t *aliasType) IsVolatile() bool { return t.typ.IsVolatile() }
+func (t *aliasType) IsVolatile() bool { return t.d.Type().IsVolatile() }
 
 type field struct {
 	bitFieldMask uint64  // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
