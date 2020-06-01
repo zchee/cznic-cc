@@ -518,7 +518,7 @@ func (n *AST) typecheck() (*context, error) {
 					ctx.errNode(x, "multiple initializers for the same symbol")
 					continue
 				case pruned.fnDef && x.fnDef:
-					ctx.errNode(x, "multiple function defintion")
+					ctx.errNode(x, "multiple function definitions")
 					continue
 				case x.hasInitializer || x.fnDef:
 					pruned = x

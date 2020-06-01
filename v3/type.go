@@ -367,6 +367,8 @@ type Type interface {
 
 // A Field describes a single field in a struct/union.
 type Field interface {
+	BitFieldBlockFirst() Field
+	BitFieldBlockWidth() int
 	BitFieldOffset() int
 	BitFieldWidth() int
 	IsBitField() bool
@@ -1275,6 +1277,7 @@ func (t *aliasType) IsVolatile() bool { return t.d.Type().IsVolatile() }
 
 type field struct {
 	bitFieldMask uint64  // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
+	blockStart   *field  // First bit field of the block this bit field belongs to.
 	offset       uintptr // In bytes from start of the struct.
 	promote      Type
 	typ          Type
@@ -1285,18 +1288,21 @@ type field struct {
 
 	bitFieldOffset byte // In bits from bit 0 within the field. Valid only when isBitField is true.
 	bitFieldWidth  byte // Width of the bit field in bits. Valid only when isBitField is true.
+	blockWidth     byte // Total width of the bit field block this bit field belongs to.
 	pad            byte
 }
 
-func (f *field) BitFieldOffset() int { return int(f.bitFieldOffset) }
-func (f *field) BitFieldWidth() int  { return int(f.bitFieldWidth) }
-func (f *field) IsBitField() bool    { return f.isBitField }
-func (f *field) Mask() uint64        { return f.bitFieldMask }
-func (f *field) Name() StringID      { return f.name }
-func (f *field) Offset() uintptr     { return f.offset }
-func (f *field) Padding() int        { return int(f.pad) } // N/A for bitfields
-func (f *field) Promote() Type       { return f.promote }
-func (f *field) Type() Type          { return f.typ }
+func (f *field) BitFieldBlockFirst() Field { return f.blockStart }
+func (f *field) BitFieldBlockWidth() int   { return int(f.blockWidth) }
+func (f *field) BitFieldOffset() int       { return int(f.bitFieldOffset) }
+func (f *field) BitFieldWidth() int        { return int(f.bitFieldWidth) }
+func (f *field) IsBitField() bool          { return f.isBitField }
+func (f *field) Mask() uint64              { return f.bitFieldMask }
+func (f *field) Name() StringID            { return f.name }
+func (f *field) Offset() uintptr           { return f.offset }
+func (f *field) Padding() int              { return int(f.pad) } // N/A for bitfields
+func (f *field) Promote() Type             { return f.promote }
+func (f *field) Type() Type                { return f.typ }
 
 func (f *field) string(b *strings.Builder) {
 	b.WriteString(f.name.String())
