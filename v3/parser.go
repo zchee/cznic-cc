@@ -1868,16 +1868,15 @@ func (p *parser) structDeclaration() (r *StructDeclaration) {
 		return &StructDeclaration{Empty: true, Token: p.shift()}
 	}
 	sql := p.specifierQualifierList()
-	var list *StructDeclaratorList
+	r = &StructDeclaration{SpecifierQualifierList: sql}
 	switch p.rune() {
 	case ';':
 		if p.ctx.cfg.RejectAnonymousFields {
 			p.err("expected struct-declarator")
 		}
 	default:
-		list = p.structDeclaratorList()
+		r.StructDeclaratorList = p.structDeclaratorList(r)
 	}
-	r = &StructDeclaration{SpecifierQualifierList: sql, StructDeclaratorList: list}
 	var t Token
 	p.typedefNameEnabled = true
 	switch p.rune() {
@@ -1945,13 +1944,13 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 //  struct-declarator-list:
 // 	struct-declarator
 // 	struct-declarator-list , struct-declarator
-func (p *parser) structDeclaratorList() (r *StructDeclaratorList) {
-	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator()}
+func (p *parser) structDeclaratorList(decl *StructDeclaration) (r *StructDeclaratorList) {
+	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator(decl)}
 	for prev := r; ; prev = prev.StructDeclaratorList {
 		switch p.rune() {
 		case ',':
 			t := p.shift()
-			prev.StructDeclaratorList = &StructDeclaratorList{Token: t, StructDeclarator: p.structDeclarator()}
+			prev.StructDeclaratorList = &StructDeclaratorList{Token: t, StructDeclarator: p.structDeclarator(decl)}
 		default:
 			return r
 		}
@@ -1961,7 +1960,7 @@ func (p *parser) structDeclaratorList() (r *StructDeclaratorList) {
 //  struct-declarator:
 // 	declarator
 // 	declarator_opt : constant-expression attribute-specifier-list_opt
-func (p *parser) structDeclarator() (r *StructDeclarator) {
+func (p *parser) structDeclarator(decl *StructDeclaration) (r *StructDeclarator) {
 	var d *Declarator
 	if p.rune() != ':' {
 		d = p.declarator(false, false, nil)
@@ -1970,10 +1969,10 @@ func (p *parser) structDeclarator() (r *StructDeclarator) {
 	switch p.rune() {
 	case ':':
 		t := p.shift()
-		r = &StructDeclarator{Case: StructDeclaratorBitField, Declarator: d, Token: t, ConstantExpression: p.constantExpression()}
+		r = &StructDeclarator{Case: StructDeclaratorBitField, Declarator: d, Token: t, ConstantExpression: p.constantExpression(), decl: decl}
 		r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 	default:
-		r = &StructDeclarator{Case: StructDeclaratorDecl, Declarator: d}
+		r = &StructDeclarator{Case: StructDeclaratorDecl, Declarator: d, decl: decl}
 	}
 	if d != nil {
 		p.declScope.declare(d.Name(), r)
@@ -4001,7 +4000,7 @@ func (p *parser) attributeSpecifierList() (r *AttributeSpecifierList) {
 
 //  attribute-specifier:
 // 	__attribute__ (( attribute-value-list_opt ))
-func (p *parser) attributeSpecifier() *AttributeSpecifier {
+func (p *parser) attributeSpecifier() (r *AttributeSpecifier) {
 	if p.rune() != ATTRIBUTE {
 		p.err("expected __attribute__")
 		return nil

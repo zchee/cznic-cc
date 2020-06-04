@@ -559,6 +559,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:example struct{ int i, j; } */
 			|	StructDeclaratorList ',' StructDeclarator
 		
+			/*yy:field	decl *StructDeclaration */
 			/*yy:example struct{ int i; } */
 /*yy:case Decl       */ StructDeclarator:
 				Declarator

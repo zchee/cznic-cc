@@ -1063,3 +1063,6 @@ func (n *Declarator) TypeQualifiers() *TypeQualifiers {
 
 	return nil
 }
+
+// StructDeclaration returns the struct declaration associated with n.
+func (n *StructDeclarator) StructDeclaration() *StructDeclaration { return n.decl }

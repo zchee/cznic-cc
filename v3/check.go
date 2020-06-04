@@ -2229,6 +2229,7 @@ func (n *StructDeclarator) check(ctx *context, td typeDescriptor, typ Type) *fie
 	}
 	sf := &field{
 		typ: typ,
+		d:   n,
 	}
 	switch n.Case {
 	case StructDeclaratorDecl: // Declarator

@@ -4449,6 +4449,7 @@ func (n StructDeclaratorCase) String() string {
 //	        Declarator                                                // Case StructDeclaratorDecl
 //	|       Declarator ':' ConstantExpression AttributeSpecifierList  // Case StructDeclaratorBitField
 type StructDeclarator struct {
+	decl                   *StructDeclaration
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   StructDeclaratorCase `PrettyPrint:"stringer,zero"`
 	ConstantExpression     *ConstantExpression
