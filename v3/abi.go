@@ -177,7 +177,7 @@ func roundup(n, to int64) int64 {
 	return n
 }
 
-func normalizeBitFieldWidth(n int) int {
+func normalizeBitFieldWidth(n byte) byte {
 	switch {
 	case n <= 8:
 		return 8
@@ -204,35 +204,31 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 			return
 		}
 
-		var block []*field
-		var bits int
-		for i := 0; i < len(t.fields); i++ {
-			f := t.fields[i]
-			if f.isBitField && f.BitFieldOffset() == 0 { // block start found
-				bits = f.BitFieldWidth()
-				block = append(block[:0], f)
-				f.blockStart = f
-				for i = i + 1; i < len(t.fields); i++ {
-					g := t.fields[i]
-					if !g.isBitField {
-						break
-					}
-
-					if g.BitFieldOffset() == 0 {
-						i--
-						break
-					}
-
-					g.blockStart = f
-					block = append(block, g)
-					bits += g.BitFieldWidth()
+		m := make(map[uintptr][]*field, len(t.fields))
+		for _, f := range t.fields {
+			off := f.offset
+			m[off] = append(m[off], f)
+		}
+		for _, a := range m {
+			var first *field
+			var w byte
+			for _, f := range a {
+				if first == nil {
+					first = f
 				}
-				bits = normalizeBitFieldWidth(bits)
-				for _, f := range block {
-					f.blockWidth = byte(bits)
+				if f.isBitField {
+					n := f.bitFieldOffset + f.bitFieldWidth
+					if n > w {
+						w = n
+					}
 				}
-				block = block[:0]
-				continue
+			}
+			w = normalizeBitFieldWidth(w)
+			for _, f := range a {
+				if f.isBitField {
+					f.blockStart = first
+					f.blockWidth = w
+				}
 			}
 		}
 		// trc("", t)
