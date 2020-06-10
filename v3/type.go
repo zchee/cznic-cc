@@ -585,7 +585,6 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 	default:
 		var ok bool
 		if t.kind, ok = validTypeSpecifiers[k]; !ok {
-			fmt.Println(k) //TODO-
 			ctx.err(td.Position(), "invalid type specifiers combination")
 			return t
 		}
