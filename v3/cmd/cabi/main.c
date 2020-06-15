@@ -9,6 +9,7 @@ void print_entry(const char* name, int size, int align, int falign) {
 }
 
 #define PRINT_TYPE(name, type) print_entry(name, sizeof(type), alignof(type), offsetof(struct{ char a; type b; }, b))
+#define PRINT_FIXED_TYPE(name, size, type) print_entry(name, size, alignof(type), offsetof(struct{ char a; type b; }, b))
 
 typedef enum {
     NONE
@@ -43,6 +44,14 @@ int main() {
     PRINT_TYPE("Double", double);
     PRINT_TYPE("LongDouble", long double);
 
+    PRINT_FIXED_TYPE("Int8", 1, char);
+    PRINT_FIXED_TYPE("UInt8", 1, unsigned char);
+    PRINT_FIXED_TYPE("Int16", 2, short);
+    PRINT_FIXED_TYPE("UInt16", 2, unsigned short);
+    PRINT_FIXED_TYPE("Int32", 4, int);
+    PRINT_FIXED_TYPE("UInt32", 4, unsigned int);
+    PRINT_FIXED_TYPE("Int64", 8, long);
+    PRINT_FIXED_TYPE("UInt64", 8, unsigned long);
 
 #ifdef __SIZEOF_INT128__
     PRINT_TYPE("Int128", __int128);

@@ -36,6 +36,10 @@ const (
 	Float64x          // _Float64x
 	Function          // function
 	Int               // int
+	Int8              // __int8
+	Int16             // __int16
+	Int32             // __int32
+	Int64             // __int64
 	Int128            // __int128
 	Long              // long
 	LongDouble        // long double
@@ -47,6 +51,10 @@ const (
 	TypedefName       // typedefname
 	UChar             // unsigned char
 	UInt              // unsigned
+	UInt8             // unsigned __int8
+	UInt16            // unsigned __int16
+	UInt32            // unsigned __int32
+	UInt64            // unsigned __int64
 	UInt128           // unsigned __int128
 	ULong             // unsigned long
 	ULongLong         // unsigned long long

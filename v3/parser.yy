@@ -74,6 +74,10 @@ package cc // import "modernc.org/cc/v3"
 	INC			"++"
 	INLINE			"inline"
 	INT			"int"
+	INT8			"__int8"
+	INT16			"__int16"
+	INT32			"__int32"
+	INT64			"__int64"
 	INT128			"__int128"
 	LABEL			"__label__"
 	LEQ			"<="
@@ -459,6 +463,14 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Short      */ |	"short"
 			/*yy:example int i; */
 /*yy:case Int        */ |	"int"
+			/*yy:example __int8 i; */
+/*yy:case Int8     */ |	"__int8"
+			/*yy:example __int16 i; */
+/*yy:case Int16     */ |	"__int16"
+			/*yy:example __int32 i; */
+/*yy:case Int32     */ |	"__int32"
+			/*yy:example __int64 i; */
+/*yy:case Int64     */ |	"__int64"
 			/*yy:example __int128 i; */
 /*yy:case Int128     */ |	"__int128"
 			/*yy:example long i; */

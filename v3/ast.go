@@ -4817,6 +4817,10 @@ const (
 	TypeSpecifierChar
 	TypeSpecifierShort
 	TypeSpecifierInt
+	TypeSpecifierInt8
+	TypeSpecifierInt16
+	TypeSpecifierInt32
+	TypeSpecifierInt64
 	TypeSpecifierInt128
 	TypeSpecifierLong
 	TypeSpecifierFloat
@@ -4857,6 +4861,14 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierShort"
 	case TypeSpecifierInt:
 		return "TypeSpecifierInt"
+	case TypeSpecifierInt8:
+		return "TypeSpecifierInt8"
+	case TypeSpecifierInt16:
+		return "TypeSpecifierInt16"
+	case TypeSpecifierInt32:
+		return "TypeSpecifierInt32"
+	case TypeSpecifierInt64:
+		return "TypeSpecifierInt64"
 	case TypeSpecifierInt128:
 		return "TypeSpecifierInt128"
 	case TypeSpecifierLong:
@@ -4923,6 +4935,10 @@ func (n TypeSpecifierCase) String() string {
 //	|       "char"                       // Case TypeSpecifierChar
 //	|       "short"                      // Case TypeSpecifierShort
 //	|       "int"                        // Case TypeSpecifierInt
+//	|       "__int8"                     // Case TypeSpecifierInt8
+//	|       "__int16"                    // Case TypeSpecifierInt16
+//	|       "__int32"                    // Case TypeSpecifierInt32
+//	|       "__int64"                    // Case TypeSpecifierInt64
 //	|       "__int128"                   // Case TypeSpecifierInt128
 //	|       "long"                       // Case TypeSpecifierLong
 //	|       "float"                      // Case TypeSpecifierFloat
@@ -4974,15 +4990,15 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 23:
+	case 27:
 		return n.AtomicTypeSpecifier.Position()
-	case 19:
+	case 23:
 		return n.EnumSpecifier.Position()
-	case 18:
+	case 22:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 24, 25, 26, 27, 28, 29, 30:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 24, 28, 29, 30, 31, 32, 33, 34:
 		return n.Token.Position()
-	case 21:
+	case 25:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -4996,7 +5012,7 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 		}
 
 		return n.Token3.Position()
-	case 22:
+	case 26:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
