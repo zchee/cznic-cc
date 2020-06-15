@@ -1944,14 +1944,27 @@ func (n *EnumSpecifier) check(ctx *context) {
 		var tmin, tmax Type
 		switch min := min.(type) {
 		case Int64Value:
-			tmin = n.requireInt(ctx, int64(min))
-			switch max := max.(type) {
-			case Int64Value:
-				tmax = n.requireInt(ctx, int64(max))
-			case Uint64Value:
-				tmax = n.requireInt(ctx, int64(max))
-			case nil:
-				panic(fmt.Sprintf("TODO 578 %v:", n.Position()))
+			switch {
+			case min >= 0 && ctx.cfg.UnsignedEnums:
+				tmin = n.requireUint(ctx, uint64(min))
+				switch max := max.(type) {
+				case Int64Value:
+					tmax = n.requireUint(ctx, uint64(max))
+				case Uint64Value:
+					tmax = n.requireUint(ctx, uint64(max))
+				case nil:
+					panic(fmt.Sprintf("TODO 578 %v:", n.Position()))
+				}
+			default:
+				tmin = n.requireInt(ctx, int64(min))
+				switch max := max.(type) {
+				case Int64Value:
+					tmax = n.requireInt(ctx, int64(max))
+				case Uint64Value:
+					tmax = n.requireInt(ctx, int64(max))
+				case nil:
+					panic(fmt.Sprintf("TODO 578 %v:", n.Position()))
+				}
 			}
 		case Uint64Value:
 			tmin = n.requireUint(ctx, uint64(min))
@@ -2652,7 +2665,9 @@ func (n *PrimaryExpression) check(ctx *context, implicitFunc bool) Operand {
 	case PrimaryExpressionEnum: // ENUMCONST
 		n.IsSideEffectsFree = true
 		if e := n.resolvedIn.enumerator(n.Token.Value, n.Token); e != nil {
-			n.Operand = e.Operand
+			op := e.Operand.(*operand)
+			op.typ = ctx.cfg.ABI.Type(Int) //  [0] 6.4.4.3/2
+			n.Operand = op
 			break
 		}
 

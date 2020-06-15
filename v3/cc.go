@@ -435,6 +435,7 @@ type Config3 struct {
 	RejectLineExtraTokens                   bool // Pedantic: do not silently accept "#line 1234 \"foo.c\" bar".
 	RejectMissingFinalNewline               bool // Pedantic: do not silently accept "foo\nbar".
 	RejectUndefExtraTokens                  bool // Pedantic: do not silently accept "#undef foo bar".
+	UnsignedEnums                           bool // GCC compatibility: enums with no negative values will have unsigned type.
 }
 
 // Config amends behavior of translation phase 4 and above. Instances of Config
