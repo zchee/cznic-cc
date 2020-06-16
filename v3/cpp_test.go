@@ -293,3 +293,19 @@ func benchmarkTranslationPhase4(b *testing.B, predef, src source) {
 	}
 	b.SetBytes(ctx.tuSize())
 }
+
+func TestMacroPosition(t *testing.T) {
+	cfg := &Config{PreprocessOnly: true}
+	ast, err := Parse(cfg, nil, nil, []Source{{Name: "test", Value: `
+/* noise to make position more interesting */
+ # define foo 42
+`}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := ast.Macros[String("foo")]
+	pos := m.Position()
+	if g, e := pos.String(), `test:3:2`; g != e {
+		t.Errorf("bad position: %q != %q: %#v", g, e, pos)
+	}
+}

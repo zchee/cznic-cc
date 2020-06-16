@@ -186,10 +186,19 @@ type Macro struct {
 	repl2 []Token
 
 	name token4
+	pos  int32
 
 	isFnLike      bool
 	namedVariadic bool // foo..., note no comma before ellipsis.
 	variadic      bool
+}
+
+// Position reports the position of the macro definition.
+func (m *Macro) Position() token.Position {
+	if m.pos != 0 && m.name.file != nil {
+		return m.name.file.PositionFor(token.Pos(m.pos), true)
+	}
+	return token.Position{}
 }
 
 // Parameters return the list of function-like macro parameters.
@@ -2650,8 +2659,18 @@ func (n *ppDefineObjectMacroDirective) translationPhase4(c *cpp) {
 			return
 		}
 	}
+
+	// find first non-blank token to claim as our location
+	var pos int32
+	for _, t := range n.toks {
+		if t.char != ' ' {
+			pos = t.pos
+			break
+		}
+	}
+
 	// dbg("#define %s %s // %v", n.name, tokStr(n.replacementList, " "), c.file.PositionFor(n.name.Pos(), true))
-	c.macros[nm] = &Macro{name: token4{token3: n.name, file: c.file}, repl: n.replacementList}
+	c.macros[nm] = &Macro{pos: pos, name: token4{token3: n.name, file: c.file}, repl: n.replacementList}
 	if nm != idGNUC {
 		return
 	}
