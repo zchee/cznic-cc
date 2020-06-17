@@ -1176,20 +1176,13 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-		op := n.PostfixExpression.addrOf(ctx)
-		n.PostfixExpression.check(ctx, false)
+		op := n.PostfixExpression.check(ctx, false)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := n.PostfixExpression.Declarator(); d != nil {
 			setAddressTaken(n, d, "PostfixExpression '.' IDENTIFIER")
 			d.Read += ctx.readDelta
 		}
-		t := op.Type()
-		if k := t.Decay().Kind(); k == Invalid || k != Ptr {
-			//TODO report error
-			break
-		}
-
-		st := t.Elem()
+		st := op.Type()
 		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
 			break
