@@ -4565,8 +4565,8 @@ func (n *LabeledStatement) check(ctx *context) {
 		default:
 			//TODO report error
 		}
-		n.Statement.check(ctx)
 		ctx.cases = append(ctx.cases, n)
+		n.Statement.check(ctx)
 	case LabeledStatementRange: // "case" ConstantExpression "..." ConstantExpression ':' Statement
 		if ctx.switches <= 0 {
 			//TODO report error
@@ -4585,16 +4585,16 @@ func (n *LabeledStatement) check(ctx *context) {
 		default:
 			//TODO report error
 		}
-		n.Statement.check(ctx)
 		ctx.cases = append(ctx.cases, n)
+		n.Statement.check(ctx)
 	case LabeledStatementDefault: // "default" ':' Statement
 		if ctx.switches <= 0 {
 			//TODO report error
 			break
 		}
 
-		n.Statement.check(ctx)
 		ctx.cases = append(ctx.cases, n)
+		n.Statement.check(ctx)
 	default:
 		panic(internalError())
 	}

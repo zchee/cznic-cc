@@ -768,7 +768,7 @@ func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *RelationalExpression) Promote() Type { return n.promote }
 
-// Cases returns the cases a switch statement consist of.
+// Cases returns the cases a switch statement consist of, in source order.
 func (n *SelectionStatement) Cases() []*LabeledStatement { return n.cases }
 
 // Promote returns the type the shift count operand is promoted to.
