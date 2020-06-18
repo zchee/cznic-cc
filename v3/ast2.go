@@ -504,6 +504,21 @@ func (n *AST) typecheck() (*context, error) {
 	for _, v := range a {
 		nm := StringID(v)
 		defs := n.Scope[nm]
+		var r, w int
+		for _, v := range defs {
+			switch x := v.(type) {
+			case *Declarator:
+				r += x.Read
+				w += x.Write
+			}
+		}
+		for _, v := range defs {
+			switch x := v.(type) {
+			case *Declarator:
+				x.Read = r
+				x.Write = w
+			}
+		}
 		var pruned *Declarator
 		for _, v := range defs {
 			switch x := v.(type) {
