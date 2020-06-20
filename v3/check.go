@@ -542,6 +542,10 @@ func (n *Initializer) checkExpr(ctx *context, list *[]*Initializer, isConst *boo
 			switch x := n.AssignmentExpression.Operand.Value().(type) {
 			case StringValue:
 				return uintptr(len(StringID(x).String())) + 1
+			case Int64Value:
+				if x.isZero() {
+					return 1
+				}
 			}
 
 			ctx.errNode(n.AssignmentExpression, "unsupported operand")
