@@ -885,6 +885,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			break
 		}
 
+		if op.Type().Kind() == Function {
+			n.Operand = op
+			break
+		}
+
 		if op.Type().Decay().Kind() != Ptr {
 			//TODO report error
 			break
