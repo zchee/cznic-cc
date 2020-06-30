@@ -3105,8 +3105,8 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
 		op := n.LogicalOrExpression.check(ctx)
 		// The first operand shall have scalar type.
-		if !op.Type().IsScalarType() {
-			//TODO report errpr
+		if !op.Type().Decay().IsScalarType() {
+			//TODO report error
 			break
 		}
 

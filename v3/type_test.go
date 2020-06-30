@@ -163,9 +163,12 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 		"75_array_in_struct_init.c": {}, //TODO initializer missing braces
 
 		// GCC
+		"20000120-2.c":                 {}, //TODO function redefinition
 		"20000804-1.c":                 {}, //TODO 1: unsupported type: complex long long
 		"20020810-1.c":                 {}, //TODO :17:16: missing braces around initializer
 		"20021118-1.c":                 {}, //TODO array initializer
+		"20021120-1.c":                 {}, //TODO function redefinition
+		"20021120-2.c":                 {}, //TODO function redefinition
 		"20030305-1.c":                 {}, //TODO array initializer
 		"20030903-1.c":                 {}, //TODO 41: unsupported type: complex int
 		"20040726-2.c":                 {}, //TODO array initializer
@@ -173,6 +176,9 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 		"20041201-1.c":                 {}, //TODO 18: unsupported type: complex char
 		"20050121-1.c":                 {}, //TODO 1: unsupported type: complex char
 		"20050122-2.c":                 {}, //TODO goto from nested function to outer function label
+		"20050215-1.c":                 {}, //TODO function redefinition
+		"20050215-2.c":                 {}, //TODO function redefinition
+		"20050215-3.c":                 {}, //TODO function redefinition
 		"20070919-1.c":                 {}, //TODO :39:9: missing braces around initializer
 		"20180921-1.c":                 {}, //TODO :129:27: missing braces around initializer
 		"920415-1.c":                   {}, //TODO label l undefined
@@ -221,6 +227,7 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 		"pr87647.c":                    {}, //TODO :11:20: missing braces around initializer
 		"pr89369.c":                    {}, //TODO array initializer
 		"struct-ini-1.c":               {}, //TODO array initializer
+
 	}
 	if !gnuc { // vector extensions
 		for k, v := range map[string]struct{}{

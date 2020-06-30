@@ -525,7 +525,7 @@ func (n *AST) typecheck() (*context, error) {
 			case *Declarator:
 				//TODO check compatible types
 				switch {
-				case x.IsExtern():
+				case x.IsExtern() && !x.fnDef:
 					// nop
 				case pruned == nil:
 					pruned = x
