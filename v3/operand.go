@@ -32,6 +32,7 @@ var (
 )
 
 type Operand interface {
+	ConvertTo(Type) Operand
 	Declarator() *Declarator
 	IsLValue() bool
 	IsNonZero() bool
@@ -45,6 +46,7 @@ type Operand interface {
 	integerPromotion(*context, Node) Operand
 	isConst() bool
 	normalize(*context, Node) Operand
+	getABI() *ABI
 }
 
 type Value interface {
@@ -467,8 +469,9 @@ type lvalue struct {
 	declarator *Declarator
 }
 
-func (o *lvalue) Declarator() *Declarator { return o.declarator }
-func (o *lvalue) IsLValue() bool          { return true }
+func (o *lvalue) ConvertTo(to Type) (r Operand) { return o.convertTo(nil, nil, to) }
+func (o *lvalue) Declarator() *Declarator       { return o.declarator }
+func (o *lvalue) IsLValue() bool                { return true }
 
 func (o *lvalue) isConst() bool {
 	if o.Value() != nil {
@@ -488,27 +491,31 @@ type funcDesignator struct {
 	declarator *Declarator
 }
 
-func (o *funcDesignator) Declarator() *Declarator { return o.declarator }
-func (o *funcDesignator) IsLValue() bool          { return false }
-func (o *funcDesignator) isConst() bool           { return true }
+func (o *funcDesignator) ConvertTo(to Type) (r Operand) { return o.convertTo(nil, nil, to) }
+func (o *funcDesignator) Declarator() *Declarator       { return o.declarator }
+func (o *funcDesignator) IsLValue() bool                { return false }
+func (o *funcDesignator) isConst() bool                 { return true }
 
 func (o *funcDesignator) convertTo(ctx *context, n Node, to Type) (r Operand) {
 	return &lvalue{Operand: o.Operand.convertTo(ctx, n, to), declarator: o.declarator}
 }
 
 type operand struct {
+	abi    *ABI
 	typ    Type
 	value  Value
 	offset uintptr
 }
 
-func (o *operand) Declarator() *Declarator { return nil }
-func (o *operand) Offset() uintptr         { return o.offset }
-func (o *operand) IsLValue() bool          { return false }
-func (o *operand) IsNonZero() bool         { return o.value != nil && o.value.isNonZero() }
-func (o *operand) IsZero() bool            { return o.value != nil && o.value.isZero() }
-func (o *operand) Type() Type              { return o.typ }
-func (o *operand) Value() Value            { return o.value }
+func (o *operand) ConvertTo(to Type) (r Operand) { return o.convertTo(nil, nil, to) }
+func (o *operand) Declarator() *Declarator       { return nil }
+func (o *operand) Offset() uintptr               { return o.offset }
+func (o *operand) IsLValue() bool                { return false }
+func (o *operand) IsNonZero() bool               { return o.value != nil && o.value.isNonZero() }
+func (o *operand) IsZero() bool                  { return o.value != nil && o.value.isZero() }
+func (o *operand) Type() Type                    { return o.typ }
+func (o *operand) Value() Value                  { return o.value }
+func (o *operand) getABI() *ABI                  { return o.abi }
 
 func (o *operand) isConst() bool {
 	if o.Value() != nil {
@@ -535,13 +542,18 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 		return noOperand, noOperand
 	}
 
+	abi := a.getABI()
 	if !a.Type().IsArithmeticType() {
-		ctx.errNode(n, "not an arithmetic type: %s", a.Type())
+		if ctx != nil {
+			ctx.errNode(n, "not an arithmetic type: %s", a.Type())
+		}
 		return noOperand, noOperand
 	}
 
 	if !b.Type().IsArithmeticType() {
-		ctx.errNode(n, "not an arithmetic type: %s", b.Type())
+		if ctx != nil {
+			ctx.errNode(n, "not an arithmetic type: %s", b.Type())
+		}
 		return noOperand, noOperand
 	}
 
@@ -565,9 +577,9 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	if at.Kind() == ComplexLongDouble || bt.Kind() == ComplexLongDouble || at.Kind() == LongDouble || bt.Kind() == LongDouble {
 		switch {
 		case cplx:
-			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexLongDouble))
+			return a.convertTo(ctx, n, abi.Type(ComplexLongDouble)), b.convertTo(ctx, n, abi.Type(ComplexLongDouble))
 		default:
-			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(LongDouble))
+			return a.convertTo(ctx, n, abi.Type(LongDouble)), b.convertTo(ctx, n, abi.Type(LongDouble))
 		}
 	}
 
@@ -577,9 +589,9 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	if at.Kind() == ComplexDouble || bt.Kind() == ComplexDouble || at.Kind() == Double || bt.Kind() == Double {
 		switch {
 		case cplx:
-			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexDouble))
+			return a.convertTo(ctx, n, abi.Type(ComplexDouble)), b.convertTo(ctx, n, abi.Type(ComplexDouble))
 		default:
-			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Double)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Double))
+			return a.convertTo(ctx, n, abi.Type(Double)), b.convertTo(ctx, n, abi.Type(Double))
 		}
 	}
 
@@ -589,9 +601,9 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	if at.Kind() == ComplexFloat || bt.Kind() == ComplexFloat || at.Kind() == Float || bt.Kind() == Float {
 		switch {
 		case cplx:
-			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(ComplexFloat))
+			return a.convertTo(ctx, n, abi.Type(ComplexFloat)), b.convertTo(ctx, n, abi.Type(ComplexFloat))
 		default:
-			return a.convertTo(ctx, n, ctx.cfg.ABI.Type(Float)), b.convertTo(ctx, n, ctx.cfg.ABI.Type(Float))
+			return a.convertTo(ctx, n, abi.Type(Float)), b.convertTo(ctx, n, abi.Type(Float))
 		}
 	}
 
@@ -621,7 +633,6 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	// unsigned integer types, the operand with the type of lesser integer
 	// conversion rank is converted to the type of the operand with greater
 	// rank.
-	abi := ctx.cfg.ABI
 	if abi.isSignedInteger(at.Kind()) == abi.isSignedInteger(bt.Kind()) {
 		t := a.Type()
 		if intConvRank[bt.Kind()] > intConvRank[at.Kind()] {
@@ -695,7 +706,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 // integer promotions.
 func (o *operand) integerPromotion(ctx *context, n Node) Operand {
 	t := o.Type()
-	if t2 := integerPromotion(ctx, t); t2.Kind() != t.Kind() {
+	if t2 := integerPromotion(o.abi, t); t2.Kind() != t.Kind() {
 		return o.convertTo(ctx, n, t2)
 	}
 
@@ -708,7 +719,7 @@ func (o *operand) integerPromotion(ctx *context, n Node) Operand {
 // converted to an int; otherwise, it is converted to an unsigned int. These
 // are called the integer promotions. All other types are unchanged by the
 // integer promotions.
-func integerPromotion(ctx *context, t Type) Type {
+func integerPromotion(abi *ABI, t Type) Type {
 	// github.com/gcc-mirror/gcc/gcc/testsuite/gcc.c-torture/execute/bf-sign-2.c
 	//
 	// This test checks promotion of bitfields.  Bitfields
@@ -722,15 +733,15 @@ func integerPromotion(ctx *context, t Type) Type {
 	// larger than an unsigned int).
 	if t.IsBitFieldType() {
 		f := t.BitField()
-		intBits := int(ctx.cfg.ABI.Types[Int].Size) * 8
+		intBits := int(abi.Types[Int].Size) * 8
 		switch {
 		case t.IsSignedType():
 			if f.BitFieldWidth() < intBits-1 {
-				return ctx.cfg.ABI.Type(Int)
+				return abi.Type(Int)
 			}
 		default:
 			if f.BitFieldWidth() < intBits {
-				return ctx.cfg.ABI.Type(Int)
+				return abi.Type(Int)
 			}
 		}
 		return t
@@ -740,7 +751,7 @@ func integerPromotion(ctx *context, t Type) Type {
 	case Invalid:
 		return t
 	case Char, SChar, UChar, Short, UShort:
-		return ctx.cfg.ABI.Type(Int)
+		return abi.Type(Int)
 	default:
 		return t
 	}
@@ -752,7 +763,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 	}
 
 	v := o.Value()
-	r := &operand{typ: to, offset: o.offset, value: v}
+	r := &operand{abi: o.abi, typ: to, offset: o.offset, value: v}
 	if v == nil {
 		return r
 	}
@@ -928,21 +939,21 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 		case to.IsSignedType():
 			limits := &signedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx, n)
+				return (&operand{abi: o.abi, typ: to, value: Int64Value(limits.max)}).normalize(ctx, n)
 			}
 
 			if v < limits.fmin {
-				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx, n)
+				return (&operand{abi: o.abi, typ: to, value: Int64Value(limits.min)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
 			limits := &unsignedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx, n)
+				return (&operand{abi: o.abi, typ: to, value: Uint64Value(limits.max)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	case Double:
 		v := float64(v.(Float64Value))
@@ -950,21 +961,21 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 		case to.IsSignedType():
 			limits := &signedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Int64Value(limits.max)}).normalize(ctx, n)
+				return (&operand{abi: o.abi, typ: to, value: Int64Value(limits.max)}).normalize(ctx, n)
 			}
 
 			if v < limits.fmin {
-				return (&operand{typ: to, value: Int64Value(limits.min)}).normalize(ctx, n)
+				return (&operand{abi: o.abi, typ: to, value: Int64Value(limits.min)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
 			limits := &unsignedSaturationLimits[to.Size()]
 			if v > limits.fmax {
-				return (&operand{typ: to, value: Uint64Value(limits.max)}).normalize(ctx, n)
+				return (&operand{abi: o.abi, typ: to, value: Uint64Value(limits.max)}).normalize(ctx, n)
 			}
 
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	case LongDouble:
 		panic("TODO791")
@@ -976,25 +987,27 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 		case Uint64Value:
 			v = uint64(x)
 		case *InitializerValue:
-			return (&operand{typ: to})
+			return (&operand{abi: o.abi, typ: to})
 		default:
 			panic(internalErrorf("%v: %T", n.Position(), x))
 		}
 		switch {
 		case to.IsSignedType():
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	case Array:
-		return &operand{typ: to}
+		return &operand{abi: o.abi, typ: to}
 	case Vector:
 		if o.Type().Size() == to.Size() {
-			return &operand{typ: to}
+			return &operand{abi: o.abi, typ: to}
 		}
 	}
-	ctx.errNode(n, "cannot convert %s to %s", o.Type(), to)
-	return &operand{typ: to}
+	if ctx != nil {
+		ctx.errNode(n, "cannot convert %s to %s", o.Type(), to)
+	}
+	return &operand{abi: o.abi, typ: to}
 }
 
 func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
@@ -1005,16 +1018,18 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 	case Uint64Value:
 		v = uint64(x)
 	default:
-		ctx.errNode(n, "conversion to integer: invalid value")
-		return &operand{typ: to}
+		if ctx != nil {
+			ctx.errNode(n, "conversion to integer: invalid value")
+		}
+		return &operand{abi: o.abi, typ: to}
 	}
 
 	if to.IsIntegerType() {
 		switch {
 		case to.IsSignedType():
-			return (&operand{typ: to, value: Int64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Int64Value(v)}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	}
 
@@ -1022,51 +1037,53 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 	case ComplexFloat:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Complex64Value(complex(float64(int64(v)), 0))}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Complex64Value(complex(float64(int64(v)), 0))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Complex64Value(complex(float64(v), 0))}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Complex64Value(complex(float64(v), 0))}).normalize(ctx, n)
 		}
 	case ComplexDouble:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Complex128Value(complex(float64(int64(v)), 0))}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Complex128Value(complex(float64(int64(v)), 0))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Complex128Value(complex(float64(v), 0))}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Complex128Value(complex(float64(v), 0))}).normalize(ctx, n)
 		}
 	case Float:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Float32Value(float64(int64(v)))}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Float32Value(float64(int64(v)))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Float32Value(float64(v))}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Float32Value(float64(v))}).normalize(ctx, n)
 		}
 	case ComplexLongDouble:
 		panic("TODO896")
 	case Double:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: Float64Value(int64(v))}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Float64Value(int64(v))}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: Float64Value(v)}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: Float64Value(v)}).normalize(ctx, n)
 		}
 	case LongDouble:
 		switch {
 		case o.Type().IsSignedType():
-			return (&operand{typ: to, value: &Float128Value{N: big.NewFloat(0).SetInt64(int64(v))}}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: &Float128Value{N: big.NewFloat(0).SetInt64(int64(v))}}).normalize(ctx, n)
 		default:
-			return (&operand{typ: to, value: &Float128Value{N: big.NewFloat(0).SetUint64(v)}}).normalize(ctx, n)
+			return (&operand{abi: o.abi, typ: to, value: &Float128Value{N: big.NewFloat(0).SetUint64(v)}}).normalize(ctx, n)
 		}
 	case Ptr:
-		return (&operand{typ: to, value: Uint64Value(v)}).normalize(ctx, n)
+		return (&operand{abi: o.abi, typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 	case Struct, Union, Array, Void, Int128, UInt128:
-		return &operand{typ: to}
+		return &operand{abi: o.abi, typ: to}
 	case Vector:
 		if o.Type().Size() == to.Size() {
-			return &operand{typ: to}
+			return &operand{abi: o.abi, typ: to}
 		}
 	}
-	ctx.errNode(n, "cannot convert %s to %s", o.Type(), to)
-	return &operand{typ: to}
+	if ctx != nil {
+		ctx.errNode(n, "cannot convert %s to %s", o.Type(), to)
+	}
+	return &operand{abi: o.abi, typ: to}
 }
 
 func (o *operand) normalize(ctx *context, n Node) (r Operand) {
@@ -1083,7 +1100,7 @@ func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 		}
 		switch x := o.Value().(type) {
 		case Int64Value:
-			if v := convertInt64(int64(x), o.Type(), ctx); v != int64(x) {
+			if v := convertInt64(int64(x), o.Type(), o.abi); v != int64(x) {
 				o.value = Int64Value(v)
 			}
 		case Uint64Value:
@@ -1160,14 +1177,15 @@ func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 	case Array, Void, Function, Struct, Union, Vector, Decimal32, Decimal64, Decimal128:
 		return o
 	case ComplexChar, ComplexInt, ComplexLong, ComplexLongLong, ComplexShort, ComplexUInt, ComplexUShort:
-		ctx.errNode(n, "unsupported type: %s", o.Type())
+		if ctx != nil {
+			ctx.errNode(n, "unsupported type: %s", o.Type())
+		}
 		return noOperand
 	}
 	panic(internalErrorf("%v, %v", o.Type(), o.Type().Kind()))
 }
 
-func convertInt64(n int64, t Type, ctx *context) int64 {
-	abi := ctx.cfg.ABI
+func convertInt64(n int64, t Type, abi *ABI) int64 {
 	k := t.Kind()
 	if k == Enum {
 		//TODO

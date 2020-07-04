@@ -260,7 +260,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				hasBitfields = true
 				f.bitFieldMask = 1<<f.bitFieldWidth - 1
 			}
-			f.promote = integerPromotion(ctx, ft)
+			f.promote = integerPromotion(a, ft)
 		}
 		t.align = byte(align)
 		t.fieldAlign = byte(align)
@@ -327,7 +327,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				f.offset = uintptr(off) >> 3
 				off += 8 * int64(sz)
 			}
-			f.promote = integerPromotion(ctx, ft)
+			f.promote = integerPromotion(a, ft)
 			lzero = false
 		}
 		t.align = byte(align)
