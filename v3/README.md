@@ -1,10 +1,8 @@
 # cc
 
-Package CC is a C99 compiler front end. Work In Progress. API unstable.
+Package CC is a C99 compiler front end.
 
-The package will get a go.mod file and a proper repository tag once it becomes reasonably complete and stable.
-
-Type checking is not yet complete.
+Most of the functionality is now working.
 
 Installation
 
