@@ -20,6 +20,6 @@ Building with `make` requires indent(1) and the following Go packages
 
 Changelog
 
-2018-07-01 This package is no longer maintained. Please see the v2 version at
+2020-07-13 This package is no longer maintained. Please see the v3 version at
 
-[https://modernc.org/cc/v2](https://modernc.org/cc/v2)
+[https://modernc.org/cc/v3](https://modernc.org/cc/v3)
