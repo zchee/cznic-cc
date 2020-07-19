@@ -59,7 +59,7 @@ edit:
 editor: lexer.go
 	gofmt -l -s -w *.go
 	go test -i
-	go test -short 2>&1 | tee log
+	#go test -short 2>&1 | tee log
 	go install
 
 ast.go lexer.go stringer.go: lexer.l parser.yy enum.go

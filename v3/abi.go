@@ -264,7 +264,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		}
 		t.align = byte(align)
 		t.fieldAlign = byte(align)
-		off = roundup(off, int64(align))
+		off = roundup(off, 8*int64(align))
 		t.size = uintptr(off >> 3)
 		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
 	default:
