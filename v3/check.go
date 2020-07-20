@@ -206,7 +206,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.Declarator.Write++
 		n.AttributeSpecifierList.check(ctx)
 		n.Initializer.isConst = true
-		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, 0)
+		length := n.Initializer.check(ctx, &n.Initializer.list, &n.Initializer.isConst, typ, 0, nil)
 		if typ.Kind() == Array && typ.Len() == 0 {
 			typ.setLen(length)
 		}
@@ -217,12 +217,13 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 }
 
 // [0], 6.7.8 Initialization
-func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr) uintptr {
+func (n *Initializer) check(ctx *context, list *[]*Initializer, isConst *bool, t Type, off uintptr, fld Field) uintptr {
 	if n == nil {
 		return 0
 	}
 
 	n.typ = t
+	n.Field = fld
 	n.Offset = off
 
 	// 3 - The type of the entity to be initialized shall be an array of
@@ -279,7 +280,7 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *boo
 
 		//TODO todo check assignment compatible
 
-		return nil, n.Initializer.check(ctx, list, isConst, t, off)
+		return nil, n.Initializer.check(ctx, list, isConst, t, off, nil)
 	}
 
 	// 12 - The rest of this subclause deals with initializers for objects
@@ -321,7 +322,7 @@ func (n *InitializerList) checkVector(ctx *context, list *[]*Initializer, isCons
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		n.Initializer.check(ctx, list, isConst, t2, o)
+		n.Initializer.check(ctx, list, isConst, t2, o, nil)
 		i++
 		if i > r {
 			r = i
@@ -355,7 +356,7 @@ func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, isConst
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		n.Initializer.check(ctx, list, isConst, t2, o)
+		n.Initializer.check(ctx, list, isConst, t2, o, nil)
 		i++
 		if i > r {
 			r = i
@@ -423,7 +424,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, isCons
 				}
 			}
 		}
-		n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
+		n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset(), f)
 		off2 = 0
 		i[0]++
 	}
@@ -490,7 +491,7 @@ out:
 			}
 		}
 	}
-	n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset())
+	n.Initializer.check(ctx, list, isConst, f.Type(), off+off2+f.Offset(), f)
 	return n
 }
 

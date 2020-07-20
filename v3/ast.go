@@ -2664,9 +2664,10 @@ func (n InitializerCase) String() string {
 //	        AssignmentExpression         // Case InitializerExpr
 //	|       '{' InitializerList ',' '}'  // Case InitializerInitList
 type Initializer struct {
+	Field                Field   // Where aplicable
+	Offset               uintptr // Case Expr
 	list                 []*Initializer
 	typ                  Type
-	Offset               uintptr // case Expr
 	isConst              bool
 	AssignmentExpression *AssignmentExpression
 	Case                 InitializerCase `PrettyPrint:"stringer,zero"`
