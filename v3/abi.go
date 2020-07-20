@@ -269,8 +269,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
 	default:
 		var i int
-		var f *field
-		lzero := false
+		var f, lf *field
 		for i, f = range t.fields {
 			ft := f.Type()
 			var sz uintptr
@@ -304,14 +303,16 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				down := off &^ (int64(eal) - 1)
 				bitoff := off - down
 				downMax := off &^ (int64(bitSize) - 1)
+				skip := lf != nil && lf.bitFieldWidth == 0 && ctx.cfg.NoFieldAndBitfieldOverlap
 				switch {
-				case lzero || int(off-downMax)+int(f.bitFieldWidth) > bitSize:
+				case skip || int(off-downMax)+int(f.bitFieldWidth) > bitSize:
 					off = roundup(off, 8*int64(al))
 					f.offset = uintptr(off >> 3)
 					f.bitFieldOffset = 0
 					f.bitFieldMask = 1<<f.bitFieldWidth - 1
 					off += int64(f.bitFieldWidth)
 					if f.bitFieldWidth == 0 {
+						lf = f
 						continue
 					}
 				default:
@@ -328,7 +329,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				off += 8 * int64(sz)
 			}
 			f.promote = integerPromotion(a, ft)
-			lzero = false
+			lf = f
 		}
 		t.align = byte(align)
 		t.fieldAlign = byte(align)

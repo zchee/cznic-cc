@@ -424,6 +424,7 @@ type Config3 struct {
 	// Translate.
 	DisableBuiltinResolution bool
 
+	NoFieldAndBitfieldOverlap               bool // Only bitfields can be grouped together.
 	PreserveOnlyLastNonBlankSeparator       bool // If PreserveWhiteSpace is true, keep only the last white space, do not combine
 	PreserveWhiteSpace                      bool // Including also comments.
 	RejectElseExtraTokens                   bool // Pedantic: do not silently accept "#else foo".
