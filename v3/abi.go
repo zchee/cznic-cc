@@ -188,7 +188,7 @@ func normalizeBitFieldWidth(n byte) byte {
 	case n <= 64:
 		return 64
 	default:
-		panic(todo("internal error"))
+		panic(todo("internal error: %v", n))
 	}
 }
 
@@ -269,6 +269,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
 	default:
 		var i int
+		var group byte
 		var f, lf *field
 		for i, f = range t.fields {
 			ft := f.Type()
@@ -303,9 +304,11 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				down := off &^ (int64(eal) - 1)
 				bitoff := off - down
 				downMax := off &^ (int64(bitSize) - 1)
-				skip := lf != nil && lf.bitFieldWidth == 0 && ctx.cfg.NoFieldAndBitfieldOverlap
+				skip := lf != nil && lf.isBitField && lf.bitFieldWidth == 0 ||
+					lf != nil && lf.bitFieldWidth == 0 && ctx.cfg.NoFieldAndBitfieldOverlap
 				switch {
 				case skip || int(off-downMax)+int(f.bitFieldWidth) > bitSize:
+					group = 0
 					off = roundup(off, 8*int64(al))
 					f.offset = uintptr(off >> 3)
 					f.bitFieldOffset = 0
@@ -321,12 +324,18 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 					f.bitFieldMask = (1<<f.bitFieldWidth - 1) << byte(bitoff)
 					off += int64(f.bitFieldWidth)
 				}
+				group += f.bitFieldWidth
 			default:
+				if group != 0 {
+					group %= 64
+					off += int64(normalizeBitFieldWidth(group) - group)
+				}
 				off0 := off
 				off = roundup(off, 8*int64(al))
 				f.pad = byte(off-off0) >> 3
 				f.offset = uintptr(off) >> 3
 				off += 8 * int64(sz)
+				group = 0
 			}
 			f.promote = integerPromotion(a, ft)
 			lf = f
