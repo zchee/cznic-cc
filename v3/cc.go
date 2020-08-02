@@ -71,7 +71,8 @@ import (
 )
 
 const (
-	scopeParent StringID = -1
+	scopeParent StringID = -iota - 1
+	scopeSkip
 )
 
 var (
@@ -273,7 +274,8 @@ func (s *Scope) new() (r Scope) {
 }
 
 func (s *Scope) declare(nm StringID, n Node) {
-	if *s == nil {
+	sc := *s
+	if sc == nil {
 		*s = map[StringID][]Node{nm: {n}}
 		// t := ""
 		// if x, ok := n.(*Declarator); ok && x.IsTypedefName {
@@ -283,12 +285,27 @@ func (s *Scope) declare(nm StringID, n Node) {
 		return
 	}
 
-	(*s)[nm] = append((*s)[nm], n)
+	switch x := n.(type) {
+	case *Declarator, *StructDeclarator, *LabeledStatement, *BlockItem:
+		// nop
+	case *StructOrUnionSpecifier, *EnumSpecifier, *Enumerator:
+		for {
+			if _, ok := sc[scopeSkip]; !ok {
+				break
+			}
+
+			sc = sc.Parent()
+		}
+	default:
+		panic(todo("%T", x))
+	}
+
+	sc[nm] = append(sc[nm], n)
 	// t := ""
 	// if x, ok := n.(*Declarator); ok && x.IsTypedefName {
 	// 	t = ", typedefname"
 	// }
-	// dbg("declared %s%s at %v in scope %p", nm, t, n.Position(), *s)
+	// dbg("declared %s%s at %v in scope %p", nm, t, n.Position(), sc)
 }
 
 // Parent returns s's outer scope, if any.

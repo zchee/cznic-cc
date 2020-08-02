@@ -402,18 +402,22 @@ func newParser(ctx *context, in chan *[]Token) *parser {
 	}
 }
 
-func (p *parser) openScope() {
+func (p *parser) openScope(skip bool) {
 	p.scopes++
 	p.declScope = p.declScope.new()
+	if skip {
+		p.declScope[scopeSkip] = nil
+	}
 	p.resolveScope = p.declScope
 	// var a []string
 	// for s := p.declScope; s != nil; s = s.Parent() {
 	// 	a = append(a, fmt.Sprintf("%p", s))
 	// }
-	// dbg("openScope %v", strings.Join(a, " "))
+	// trc("openScope(%v) %p: %v", skip, p.declScope, strings.Join(a, " "))
 }
 
 func (p *parser) closeScope() {
+	// declScope := p.declScope
 	p.declScope = p.declScope.Parent()
 	p.resolveScope = p.declScope
 	p.scopes--
@@ -421,7 +425,7 @@ func (p *parser) closeScope() {
 	// for s := p.declScope; s != nil; s = s.Parent() {
 	// 	a = append(a, fmt.Sprintf("%p", s))
 	// }
-	// dbg("closeScope %v", strings.Join(a, " "))
+	// trc("%p.closeScope %v", declScope, strings.Join(a, " "))
 }
 
 func (p *parser) err0(consume bool, msg string, args ...interface{}) {
@@ -654,6 +658,7 @@ out:
 func (p *parser) primaryExpression() *PrimaryExpression {
 	var kind PrimaryExpressionCase
 	var resolvedIn Scope
+	var resolvedTo Node
 out:
 	switch p.rune() {
 	case IDENTIFIER:
@@ -665,6 +670,7 @@ out:
 				switch x := v.(type) {
 				case *Enumerator:
 					if x.isVisible(seq) {
+						resolvedTo = x
 						p.tok.Rune = ENUMCONST
 						kind = PrimaryExpressionEnum
 						resolvedIn = s
@@ -676,6 +682,7 @@ out:
 					}
 
 					resolvedIn = s
+					resolvedTo = x
 					break out
 				case *EnumSpecifier, *StructOrUnionSpecifier, *StructDeclarator, *LabeledStatement:
 					// nop
@@ -734,7 +741,7 @@ out:
 		return nil
 	}
 
-	return &PrimaryExpression{Case: kind, Token: p.shift(), resolvedIn: resolvedIn, lexicalScope: p.declScope}
+	return &PrimaryExpression{Case: kind, Token: p.shift(), resolvedIn: resolvedIn, lexicalScope: p.declScope, resolvedTo: resolvedTo}
 }
 
 // [0], 6.5.2 Postfix operators
@@ -1811,7 +1818,7 @@ func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
 		fallthrough
 	case '{':
 		maxAlign := p.ctx.maxAlign
-		p.openScope()
+		p.openScope(true)
 		p.typedefNameEnabled = true
 		p.resolveScope = p.declScope.Parent()
 		t2 = p.shift()
@@ -1833,7 +1840,7 @@ func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
 		}
 		r := &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attr, Token: t, Token2: t2, StructDeclarationList: list, Token3: t3, lexicalScope: p.declScope, maxAlign: maxAlign}
 		if t.Value != 0 {
-			p.fileScope.declare(t.Value, r)
+			p.declScope.declare(t.Value, r)
 		}
 		return r
 	default:
@@ -2043,7 +2050,7 @@ func (p *parser) enumSpecifier() *EnumSpecifier {
 	}
 	r := &EnumSpecifier{Case: EnumSpecifierDef, AttributeSpecifierList: attr, Token: t, Token2: t2, Token3: t3, EnumeratorList: list, Token4: t4, Token5: t5, lexicalScope: p.declScope}
 	if t2.Value != 0 {
-		p.fileScope.declare(t.Value, r)
+		p.declScope.declare(t2.Value, r)
 	}
 	return r
 }
@@ -2081,13 +2088,13 @@ func (p *parser) enumerator() (r *Enumerator) {
 	attr := p.attributeSpecifierListOpt()
 	if p.rune() != '=' {
 		r = &Enumerator{Case: EnumeratorIdent, Token: t, AttributeSpecifierList: attr, lexicalScope: p.declScope}
-		p.fileScope.declare(t.Value, r)
+		p.declScope.declare(t.Value, r)
 		return r
 	}
 
 	t2 := p.shift()
 	r = &Enumerator{Case: EnumeratorExpr, Token: t, AttributeSpecifierList: attr, Token2: t2, ConstantExpression: p.constantExpression(), lexicalScope: p.declScope}
-	p.fileScope.declare(t.Value, r)
+	p.declScope.declare(t.Value, r)
 	return r
 }
 
@@ -2342,7 +2349,7 @@ func (p *parser) directDeclarator(d *DirectDeclarator) (r *DirectDeclarator) {
 				r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: t, AssignmentExpression: e, Token2: t2, lexicalScope: p.declScope}
 			}
 		case '(':
-			p.openScope()
+			p.openScope(false)
 			p.typedefNameEnabled = true
 			t = p.shift()
 			paramScope := p.declScope
@@ -2529,7 +2536,7 @@ func (p *parser) declaratorOrAbstractDeclarator(isTypedefName bool) (r Node) {
 			CONST, RESTRICT, VOLATILE,
 			INLINE, NORETURN, ATTRIBUTE,
 			ALIGNAS:
-			p.openScope()
+			p.openScope(false)
 			paramScope := p.declScope
 			p.typedefNameEnabled = true
 			t := p.shift()
@@ -2753,7 +2760,7 @@ func (p *parser) directAbstractDeclarator(d *DirectAbstractDeclarator) (r *Direc
 			case VOID, CHAR, SHORT, INT, INT8, INT16, INT32, INT64, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 				ATTRIBUTE, CONST, RESTRICT, VOLATILE,
 				ALIGNAS:
-				p.openScope()
+				p.openScope(false)
 				paramScope := p.declScope
 				p.typedefNameEnabled = true
 				t = p.shift()
@@ -2768,7 +2775,7 @@ func (p *parser) directAbstractDeclarator(d *DirectAbstractDeclarator) (r *Direc
 				}
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: t, ParameterTypeList: list, Token2: t2, paramScope: paramScope}
 			default:
-				p.openScope()
+				p.openScope(false)
 				paramScope := p.declScope
 				p.typedefNameEnabled = true
 				t = p.shift()
@@ -2797,7 +2804,7 @@ func (p *parser) directAbstractDeclarator(d *DirectAbstractDeclarator) (r *Direc
 				break
 			}
 
-			p.openScope()
+			p.openScope(false)
 			p.typedefNameEnabled = true
 			t = p.shift()
 			paramScope := p.declScope
@@ -3182,7 +3189,7 @@ func (p *parser) compoundStatement(s Scope, inject []Token) (r *CompoundStatemen
 		// }
 		// dbg("using func scope %p: %v", s, strings.Join(a, " "))
 	default:
-		p.openScope()
+		p.openScope(false)
 	}
 	s = p.declScope
 	p.typedefNameEnabled = true
@@ -3340,7 +3347,7 @@ func (p *parser) selectionStatement() *SelectionStatement {
 	var t, t2, t3, t4 Token
 	switch p.rune() {
 	case IF:
-		p.openScope()
+		p.openScope(false)
 		t = p.shift()
 		switch p.rune() {
 		case '(':
@@ -3355,7 +3362,7 @@ func (p *parser) selectionStatement() *SelectionStatement {
 		default:
 			p.err("expected )")
 		}
-		p.openScope()
+		p.openScope(false)
 		s := p.statement()
 		if p.peek(false) != ELSE {
 			r := &SelectionStatement{Case: SelectionStatementIf, Token: t, Token2: t2, Expression: e, Token3: t3, Statement: s}
@@ -3365,7 +3372,7 @@ func (p *parser) selectionStatement() *SelectionStatement {
 		}
 
 		p.closeScope()
-		p.openScope()
+		p.openScope(false)
 		t4 = p.shift()
 		r := &SelectionStatement{Case: SelectionStatementIfElse, Token: t, Token2: t2, Expression: e, Token3: t3, Statement: s, Token4: t4, Statement2: p.statement()}
 		p.closeScope()
@@ -3373,7 +3380,7 @@ func (p *parser) selectionStatement() *SelectionStatement {
 		return r
 	case SWITCH:
 		p.switches++
-		p.openScope()
+		p.openScope(false)
 		t = p.shift()
 		switch p.rune() {
 		case '(':
@@ -3388,7 +3395,7 @@ func (p *parser) selectionStatement() *SelectionStatement {
 		default:
 			p.err("expected )")
 		}
-		p.openScope()
+		p.openScope(false)
 		s := p.statement()
 		p.closeScope()
 		p.closeScope()
@@ -3412,7 +3419,7 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 	var e, e2, e3 *Expression
 	switch p.rune() {
 	case WHILE:
-		p.openScope()
+		p.openScope(false)
 		t = p.shift()
 		if p.rune() != '(' {
 			p.err("expected (")
@@ -3428,15 +3435,15 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 		default:
 			p.err("expected )")
 		}
-		p.openScope()
+		p.openScope(false)
 		r = &IterationStatement{Case: IterationStatementWhile, Token: t, Token2: t2, Expression: e, Token3: t3, Statement: p.statement()}
 		p.closeScope()
 		p.closeScope()
 		return r
 	case DO:
 		t := p.shift()
-		p.openScope()
-		p.openScope()
+		p.openScope(false)
+		p.openScope(false)
 		s := p.statement()
 		p.closeScope()
 		switch p.rune() {
@@ -3473,7 +3480,7 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 		p.closeScope()
 		return r
 	case FOR:
-		p.openScope()
+		p.openScope(false)
 		t = p.shift()
 		if p.rune() != '(' {
 			p.err("expected (")
@@ -3508,7 +3515,7 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 			default:
 				p.err("expected )")
 			}
-			p.openScope()
+			p.openScope(false)
 			r = &IterationStatement{Case: IterationStatementForDecl, Token: t, Token2: t2, Declaration: d, Expression: e, Token3: t3, Expression2: e2, Token4: t4, Statement: p.statement()}
 			p.closeScope()
 			p.closeScope()
@@ -3541,7 +3548,7 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 			default:
 				p.err("expected )")
 			}
-			p.openScope()
+			p.openScope(false)
 			r = &IterationStatement{Case: IterationStatementFor, Token: t, Token2: t2, Expression: e, Token3: t3, Expression2: e2, Token4: t4, Expression3: e3, Token5: t5, Statement: p.statement()}
 			p.closeScope()
 			p.closeScope()

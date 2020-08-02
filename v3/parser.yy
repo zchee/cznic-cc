@@ -131,6 +131,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	Operand			Operand	*/
 			/*yy:field	lexicalScope		Scope	*/
 			/*yy:field	resolvedIn		Scope	*/
+			/*yy:field	resolvedTo		Node	*/
 			/*yy:field	IsSideEffectsFree	bool	*/
 			/*yy:example int i = x; */
 /*yy:case Ident      */

@@ -2008,7 +2008,7 @@ func (n *EnumSpecifier) check(ctx *context) {
 	case EnumSpecifierTag: // "enum" AttributeSpecifierList IDENTIFIER
 		n.typ = &taggedType{
 			resolutionScope: n.lexicalScope,
-			tag:             n.Token.Value,
+			tag:             n.Token2.Value,
 			typeBase:        &typeBase{kind: byte(Enum)},
 		}
 	default:

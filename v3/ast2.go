@@ -780,6 +780,10 @@ func (n *Pointer) TypeQualifier() Type { return n.typeQualifiers }
 // PrimaryExpressionIdent, PrimaryExpressionEnum were resolved in, if any.
 func (n *PrimaryExpression) ResolvedIn() Scope { return n.resolvedIn }
 
+// ResolvedTo reports which Node the identifier of cases
+// PrimaryExpressionIdent, PrimaryExpressionEnum resolved to, if any.
+func (n *PrimaryExpression) ResolvedTo() Node { return n.resolvedTo }
+
 // Promote returns the type the operands of the binary operation are promoted to.
 func (n *RelationalExpression) Promote() Type { return n.promote }
 

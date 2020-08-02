@@ -3852,6 +3852,7 @@ type PrimaryExpression struct {
 	Operand           Operand
 	lexicalScope      Scope
 	resolvedIn        Scope
+	resolvedTo        Node
 	IsSideEffectsFree bool
 	Case              PrimaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CompoundStatement *CompoundStatement
