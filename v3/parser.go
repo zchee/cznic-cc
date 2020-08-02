@@ -392,7 +392,7 @@ type parser struct {
 }
 
 func newParser(ctx *context, in chan *[]Token) *parser {
-	s := map[StringID][]Node{}
+	s := Scope{}
 	return &parser{
 		ctx:          ctx,
 		declScope:    s,

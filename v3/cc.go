@@ -263,7 +263,7 @@ type Scope map[StringID][]Node
 
 func (s *Scope) new() (r Scope) {
 	if *s == nil {
-		*s = map[StringID][]Node{}
+		*s = Scope{}
 	}
 	r = Scope{scopeParent: []Node{struct {
 		noder

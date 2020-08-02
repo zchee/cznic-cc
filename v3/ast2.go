@@ -243,7 +243,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 
 	return &AST{
 		Macros:            cpp.macros,
-		Scope:             p.declScope,
+		Scope:             p.fileScope,
 		TLD:               map[*Declarator]struct{}{},
 		TrailingSeperator: sep,
 		TranslationUnit:   tu,
@@ -809,8 +809,8 @@ func (n *TypeName) Type() Type { return n.typ }
 // // LexicalScope returns the lexical scope of n.
 // func (n *DirectDeclarator) LexicalScope() Scope { return n.lexicalScope }
 
-// // LexicalScope returns the lexical scope of n.
-// func (n *EnumSpecifier) LexicalScope() Scope { return n.lexicalScope }
+// LexicalScope returns the lexical scope of n.
+func (n *EnumSpecifier) LexicalScope() Scope { return n.lexicalScope }
 
 // // LexicalScope returns the lexical scope of n.
 // func (n *IdentifierList) LexicalScope() Scope { return n.lexicalScope }
