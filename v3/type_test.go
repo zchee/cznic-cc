@@ -472,7 +472,7 @@ func TestAbstractDeclarator(t *testing.T) { //TODO -> Example
 		{"int i = sizeof(int (*[])(unsigned int, ...));", "array of pointer to function(unsigned, ...) returning int"},             // [0], 6.7.6, 3, (h)
 		{"int i = sizeof(int (*const [])(unsigned int, ...));", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
 	} {
-		letter := string('a' + i)
+		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{
 			{Name: "<built-in>", Value: "typedef long long unsigned size_t;"},
@@ -513,7 +513,7 @@ func TestAbstractDeclarator2(t *testing.T) { //TODO -> Example
 		{"void f(int (*[])(unsigned int, ...));", "array of pointer to function(unsigned, ...) returning int"},             // [0], 6.7.6, 3, (h)
 		{"void f(int (*const [])(unsigned int, ...));", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
 	} {
-		letter := string('a' + i)
+		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
 		if err != nil {
@@ -551,7 +551,7 @@ func TestDeclarator(t *testing.T) { //TODO -> Example
 		{"int (*x[])(unsigned int, ...);", "array of pointer to function(unsigned, ...) returning int"},             // [0], 6.7.6, 3, (h)
 		{"int (*const x[])(unsigned int, ...);", "array of const pointer to function(unsigned, ...) returning int"}, // [0], 6.7.6, 3, (h)
 	} {
-		letter := string('a' + i)
+		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
 		if err != nil {
@@ -590,7 +590,7 @@ func TestDeclarator2(t *testing.T) {
 		{"typeof(42.) x;", "double"},   // (i)
 		{"#define __GNUC__\ntypedef int x __attribute__ ((vector_size (16)));", "vector of 4 int"}, // (j)
 	} {
-		letter := string('a' + i)
+		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
 		if err != nil {

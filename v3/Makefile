@@ -14,7 +14,7 @@ all: lexer.go
 	gofmt -l -s -w *.go
 	go install -v
 	go test -i
-	go test 2>&1 -csmith 10s -timeout 1h | tee -a log
+	go test 2>&1 -timeout 1h -csmith 10s | tee -a log
 	GOOS=linux GOARCH=arm go build
 	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build

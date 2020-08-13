@@ -3786,6 +3786,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 
 func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) Type {
 	if n == nil {
+		n.typ = ctx.cfg.ABI.Type(Int)
 		return noType
 	}
 
@@ -3798,6 +3799,12 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 		td.auto() || td.register() || td.threadLocal()
 
 	typ = n.typ
+	if typ == nil {
+		n.typ = ctx.cfg.ABI.Type(Int)
+		ctx.errNode(n, "declarator has invalid or incomplete type")
+		return noType
+	}
+
 	if typ.Kind() == Array && typ.IsVLA() {
 		if f := ctx.checkFn; f != nil {
 			f.VLAs = append(f.VLAs, n)
