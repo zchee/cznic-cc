@@ -569,7 +569,7 @@ func (n *BlockItem) Closure() map[StringID]struct{} { return n.closure }
 // FunctionDefinition returns the nested function (case BlockItemFuncDef).
 func (n *BlockItem) FunctionDefinition() *FunctionDefinition { return n.fn }
 
-func (n *Declarator) IsStatic() bool          { return n.td.static() }
+func (n *Declarator) IsStatic() bool          { return n.td != nil && n.td.static() }
 func (n *Declarator) isVisible(at int32) bool { return at == 0 || n.DirectDeclarator.ends() < at }
 
 // NameTok returns n's declaring name token.
@@ -609,7 +609,7 @@ func (n *Declarator) ParamScope() Scope {
 func (n *Declarator) Type() Type { return n.typ }
 
 // IsExtern reports whether n was declared with storage class specifier 'extern'.
-func (n *Declarator) IsExtern() bool { return n.td.extern() }
+func (n *Declarator) IsExtern() bool { return n.td != nil && n.td.extern() }
 
 func (n *DeclarationSpecifiers) auto() bool        { return n != nil && n.class&fAuto != 0 }
 func (n *DeclarationSpecifiers) extern() bool      { return n != nil && n.class&fExtern != 0 }

@@ -2617,7 +2617,10 @@ func defaultArgumentPromotion(ctx *context, n Node, op Operand) Operand {
 func (n *ArgumentExpressionList) check(ctx *context) (r []Operand) {
 	for ; n != nil; n = n.ArgumentExpressionList {
 		op := n.AssignmentExpression.check(ctx)
-		if op.Type().IsComplexType() {
+		if op.Type() == nil {
+			ctx.errNode(n, "operand has invalid or incomplete type")
+			op = noOperand
+		} else if op.Type().IsComplexType() {
 			ctx.checkFn.CallSiteComplexExpr = append(ctx.checkFn.CallSiteComplexExpr, n.AssignmentExpression)
 		}
 		r = append(r, op)
@@ -3983,6 +3986,11 @@ func (n *DirectDeclarator) checkIdentList(ctx *context, ft *functionType) {
 }
 
 func checkArray(ctx *context, n Node, typ Type, expr *AssignmentExpression, exprIsOptional, noExpr bool) Type { //TODO pass and use typeQualifiers
+	if typ == nil {
+		ctx.errNode(n, "array of invalid or incomplete type")
+		return noType
+	}
+
 	b := typ.base()
 	b.align = byte(typ.Align())
 	b.fieldAlign = byte(typ.FieldAlign())

@@ -1087,6 +1087,11 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 }
 
 func (o *operand) normalize(ctx *context, n Node) (r Operand) {
+	if o.Type() == nil {
+		ctx.errNode(n, "operand has invalid or incomplete type")
+		return noOperand
+	}
+
 	if o.Type().IsIntegerType() {
 		switch {
 		case o.Type().IsSignedType():
