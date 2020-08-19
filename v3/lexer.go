@@ -15,8 +15,6 @@ yystate0:
 
 	goto yystart1
 
-	goto yystate0 // silence unused label error
-	goto yyAction // silence unused label error
 yyAction:
 	switch yyrule {
 	case 1:
@@ -98,7 +96,6 @@ yyAction:
 	case 39:
 		goto yyrule39
 	}
-	goto yystate1 // silence unused label error
 yystate1:
 	c = s.next()
 yystart1:
@@ -1529,14 +1526,27 @@ yyrule38: // {string-literal}
 		return STRINGLITERAL
 	}
 yyrule39: // \r?\n
-	{
+	if true { // avoid go vet determining the below panic will not be reached
 		return '\n'
 	}
 	panic("unreachable")
 
-	goto yyabort // silence unused label error
-
 yyabort: // no lexem recognized
+	//
+	// silence unused label errors for build and satisfy go vet reachability analysis
+	//
+	{
+		if false {
+			goto yyabort
+		}
+		if false {
+			goto yystate0
+		}
+		if false {
+			goto yystate1
+		}
+	}
+
 	if c, ok := s.abort(); ok {
 		return rune(c)
 	}

@@ -389,6 +389,7 @@ type Field interface {
 	BitFieldWidth() int
 	Declarator() *StructDeclarator
 	IsBitField() bool
+	IsFlexible() bool // https://en.wikipedia.org/wiki/Flexible_array_member
 	Mask() uint64
 	Name() StringID  // Can be zero.
 	Offset() uintptr // In bytes from the beginning of the struct/union.
@@ -1319,6 +1320,7 @@ type field struct {
 	name StringID // Can be zero.
 
 	isBitField bool
+	isFlexible bool // https://en.wikipedia.org/wiki/Flexible_array_member
 
 	bitFieldOffset byte // In bits from bit 0 within the field. Valid only when isBitField is true.
 	bitFieldWidth  byte // Width of the bit field in bits. Valid only when isBitField is true.
@@ -1332,6 +1334,7 @@ func (f *field) BitFieldOffset() int           { return int(f.bitFieldOffset) }
 func (f *field) BitFieldWidth() int            { return int(f.bitFieldWidth) }
 func (f *field) Declarator() *StructDeclarator { return f.d }
 func (f *field) IsBitField() bool              { return f.isBitField }
+func (f *field) IsFlexible() bool              { return f.isFlexible }
 func (f *field) Mask() uint64                  { return f.bitFieldMask }
 func (f *field) Name() StringID                { return f.name }
 func (f *field) Offset() uintptr               { return f.offset }
