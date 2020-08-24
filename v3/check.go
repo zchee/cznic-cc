@@ -3081,17 +3081,6 @@ func intConst(ctx *context, n Node, s string, val uint64, list ...Kind) Operand 
 		}
 	}
 
-	k := list[len(list)-1]
-	if abi.size(k)*8 == b {
-		switch {
-		case abi.isSignedInteger(k):
-			return (&operand{abi: &ctx.cfg.ABI, typ: abi.Type(k), value: Int64Value(val)}).normalize(ctx, n)
-		default:
-			return (&operand{abi: &ctx.cfg.ABI, typ: abi.Type(k), value: Uint64Value(val)}).normalize(ctx, n)
-		}
-	}
-
-	// dbg("%q %v %q", s, val, list)
 	ctx.errNode(n, "invalid integer constant %v", s)
 	return nil
 }

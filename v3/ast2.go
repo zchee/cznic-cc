@@ -73,7 +73,7 @@ func (n *AST) Eval(m *Macro) (o Operand, err error) {
 	case int64:
 		return &operand{abi: &n.cfg.ABI, typ: n.cfg.ABI.Type(LongLong), value: Int64Value(x)}, nil
 	case uint64:
-		return &operand{abi: &n.cfg.ABI, typ: n.cfg.ABI.Type(ULongLong), value: Int64Value(x)}, nil
+		return &operand{abi: &n.cfg.ABI, typ: n.cfg.ABI.Type(ULongLong), value: Uint64Value(x)}, nil
 	default:
 		return nil, fmt.Errorf("unexpected value: %T", x)
 	}
