@@ -3636,7 +3636,33 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		}
 
 		if a.Type().Decay().Kind() == Ptr && b.Type().Decay().Kind() == Ptr {
-			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ptrdiffT(ctx, n.lexicalScope, n.Token)}
+			var val Value
+			if a.Value() != nil && b.Value() != nil {
+				ae := a.Type().Decay().Elem()
+				be := b.Type().Decay().Elem()
+				switch {
+				case ae.Size() == be.Size():
+					var d int64
+					switch x := a.Value().(type) {
+					case Int64Value:
+						d = int64(x)
+					case Uint64Value:
+						d = int64(x)
+					}
+					switch x := b.Value().(type) {
+					case Int64Value:
+						val = Int64Value(d - int64(x))
+					case Uint64Value:
+						val = Int64Value(d - int64(x))
+					}
+				default:
+					ctx.errNode(n, "difference of pointers of differently sized elements")
+				}
+			}
+			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ptrdiffT(ctx, n.lexicalScope, n.Token), value: val}
+			if val != nil {
+				n.Operand = n.Operand.convertTo(ctx, n, a.Type())
+			}
 			break
 		}
 
