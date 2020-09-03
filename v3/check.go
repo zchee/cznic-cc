@@ -3914,6 +3914,11 @@ func (n *Declarator) vectorize(ctx *context, expr *ExpressionList) {
 	if sz == 0 {
 		sz = elem.Size()
 	}
+	if elem.Size() == 0 {
+		ctx.errNode(expr, "vector element has zero size")
+		return
+	}
+
 	if sz%elem.Size() != 0 {
 		ctx.errNode(expr, "vector size must be a multiple of the base size")
 	}

@@ -80,6 +80,8 @@ var abiTypes = map[[2]string]map[Kind]ABIType{
 		UInt32:     {4, 4, 4},
 		Int64:      {8, 4, 4},
 		UInt64:     {8, 4, 4},
+		Int128:     {16, 16, 16},
+		UInt128:    {16, 16, 16},
 		Float32:    {4, 4, 4},
 		Float32x:   {8, 4, 4},
 		Float64:    {8, 4, 4},
