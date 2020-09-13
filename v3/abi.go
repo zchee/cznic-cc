@@ -44,7 +44,7 @@ func NewABI(os, arch string) (ABI, error) {
 	abi := ABI{
 		ByteOrder: order,
 		Types:     make(map[Kind]ABIType, len(types)),
-		// TODO: depends on the OS?
+		//TODO: depends on the OS?
 		SignedChar: true,
 	}
 	// copy the map, so it can be modified by user

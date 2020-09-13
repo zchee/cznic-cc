@@ -6,6 +6,8 @@
 
 grep=--include=*.go --include=*.l --include=*.y --include=*.yy
 ngrep='internalError\|TODOOK\|lexer\.go\|ast.go\|trigraphs\.go\|.*_string\.go\|stringer\.go\|testdata\/gcc'
+host=$(shell go env GOOS)-$(shell go env GOARCH)
+testlog=testdata/testlog-$(shell echo $$GOOS)-$(shell echo $$GOARCH)$(shell echo $$CC_TEST_SUFFIX)
 
 all: lexer.go
 	date
@@ -30,6 +32,32 @@ all: lexer.go
 	grep -n 'FAIL\|PASS' log 
 	go version
 	date 2>&1 | tee -a log
+
+test:
+	go version | tee $(testlog)
+	uname -a | tee -a $(testlog)
+	go test -v -timeout 24h | tee -a $(testlog)
+	grep -ni fail $(testlog) | tee -a $(testlog) || true
+	LC_ALL=C date | tee -a $(testlog)
+	grep -ni --color=always fail $(testlog) || true
+
+test_linux_amd64:
+	GOOS=linux GOARCH=amd64 make test
+
+test_linux_386:
+	GOOS=linux GOARCH=386 make test
+
+test_linux_386_hosted:
+	GOOS=linux GOARCH=386 CC_TEST_CPP=i686-linux-gnu-cpp-8 CC_TEST_SUFFIX=-hosted-$(host) make test
+
+test_linux_arm:
+	GOOS=linux GOARCH=arm make test
+
+test_linux_arm_hosted:
+	GOOS=linux GOARCH=arm CC_TEST_CPP=arm-linux-gnueabi-cpp-8 CC_TEST_SUFFIX=-hosted-$(host) make test
+
+test_linux_arm64:
+	GOOS=linux GOARCH=arm64 make test
 
 devbench:
 	date 2>&1 | tee log-devbench

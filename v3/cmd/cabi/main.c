@@ -44,21 +44,21 @@ int main() {
     PRINT_TYPE("Double", double);
     PRINT_TYPE("LongDouble", long double);
 
-    PRINT_FIXED_TYPE("Int8", 1, char);
-    PRINT_FIXED_TYPE("UInt8", 1, unsigned char);
-    PRINT_FIXED_TYPE("Int16", 2, short);
-    PRINT_FIXED_TYPE("UInt16", 2, unsigned short);
-    PRINT_FIXED_TYPE("Int32", 4, int);
-    PRINT_FIXED_TYPE("UInt32", 4, unsigned int);
-    PRINT_FIXED_TYPE("Int64", 8, long);
-    PRINT_FIXED_TYPE("UInt64", 8, unsigned long);
+    PRINT_FIXED_TYPE("Int8", 1, int8_t);
+    PRINT_FIXED_TYPE("UInt8", 1, uint8_t);
+    PRINT_FIXED_TYPE("Int16", 2, int16_t);
+    PRINT_FIXED_TYPE("UInt16", 2, uint16_t);
+    PRINT_FIXED_TYPE("Int32", 4, int32_t);
+    PRINT_FIXED_TYPE("UInt32", 4, uint32_t);
+    PRINT_FIXED_TYPE("Int64", 8, int64_t);
+    PRINT_FIXED_TYPE("UInt64", 8, uint64_t);
 
 #ifdef __SIZEOF_INT128__
     PRINT_TYPE("Int128", __int128);
     PRINT_TYPE("UInt128", unsigned __int128);
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__)&&!defined(__arm__)&&!defined(__ARM_ARCH)
     PRINT_TYPE("Float32", _Float32);
     PRINT_TYPE("Float32x", _Float32x);
     PRINT_TYPE("Float64", _Float64);

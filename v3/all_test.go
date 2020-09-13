@@ -131,6 +131,11 @@ __UINT32_TYPE__ __builtin_bswap32 (__UINT32_TYPE__ x);
 __UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
 #endif
 
+#ifdef __SIZEOF_INT128__
+typedef __INT64_TYPE__ __int128_t[2];	//TODO
+typedef __UINT64_TYPE__ __uint128_t[2];	//TODO
+#endif;
+
 typedef struct { char real, imag; } __COMPLEX_CHAR_TYPE__;
 typedef struct { double real, imag; } __COMPLEX_DOUBLE_TYPE__;
 typedef struct { float real, imag; } __COMPLEX_FLOAT_TYPE__;
@@ -215,6 +220,9 @@ func TestMain(m *testing.M) {
 		os.Exit(m.Run())
 	}()
 
+	fmt.Printf("test binary compiled for %s/%s\n", runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("CC_TEST_CPP=%q\n", os.Getenv("CC_TEST_CPP"))
+
 	isTesting = true
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	flags.BoolVar(&panicOnParserError, "panicOnParserError", false, "Panic on parser error.") //TODOOK
@@ -231,7 +239,7 @@ func TestMain(m *testing.M) {
 		*oWalkDir = filepath.Join(testWD, s)
 	}
 
-	if testPredefGNU, testIncludes, testSysIncludes, err = HostConfig(""); err != nil {
+	if testPredefGNU, testIncludes, testSysIncludes, err = HostConfig(os.Getenv("CC_TEST_CPP")); err != nil {
 		log.Fatal("Cannot acquire host cpp configuration.")
 		return
 	}
@@ -517,7 +525,7 @@ func exampleAST(rule int, src string) interface{} {
 	cfg := &Config{ignoreErrors: true, PreprocessOnly: true}
 	ctx := newContext(cfg)
 	ctx.keywords = gccKeywords
-	ast, _ := parse(ctx, nil, nil, []Source{{Name: "example.c", Value: src}})
+	ast, _ := parse(ctx, nil, nil, []Source{{Name: "example.c", Value: src, DoNotCache: true}})
 	if ast == nil {
 		return "FAIL"
 	}

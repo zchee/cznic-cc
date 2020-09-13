@@ -300,19 +300,20 @@ var (
 		dict.sid("__const"):       CONST,
 		dict.sid("__inline"):      INLINE,
 		dict.sid("__inline__"):    INLINE,
+		dict.sid("__int16"):       INT16,
+		dict.sid("__int32"):       INT32,
+		dict.sid("__int64"):       INT64,
+		dict.sid("__int8"):        INT8,
 		dict.sid("__pragma_stdc"): PRAGMASTDC,
 		dict.sid("__restrict"):    RESTRICT,
 		dict.sid("__restrict__"):  RESTRICT,
+		dict.sid("__signed__"):    SIGNED,
 		dict.sid("__thread"):      THREADLOCAL,
 		dict.sid("__typeof"):      TYPEOF,
 		dict.sid("__typeof__"):    TYPEOF,
 		dict.sid("__volatile"):    VOLATILE,
 		dict.sid("__volatile__"):  VOLATILE,
 		dict.sid("typeof"):        TYPEOF,
-		dict.sid("__int8"):        INT8,
-		dict.sid("__int16"):       INT16,
-		dict.sid("__int32"):       INT32,
-		dict.sid("__int64"):       INT64,
 	}
 
 	gccKeywords = map[StringID]rune{
@@ -645,6 +646,7 @@ out:
 		}
 	}
 	// dbg("parser.next p.tok %v", PrettyString(p.tok))
+	// fmt.Printf("%s%s/* %s */", p.tok.Sep, p.tok.Value, tokName(p.tok.Rune)) //TODO-
 }
 
 // [0], 6.5.1 Primary expressions
@@ -1942,7 +1944,7 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 	case ATTRIBUTE:
 		r = &SpecifierQualifierList{Case: SpecifierQualifierListAttribute, AttributeSpecifier: p.attributeSpecifier()}
 	default:
-		p.err("expected specifier-qualifier-list")
+		p.err("expected specifier-qualifier-list: %s", tokName(p.rune()))
 		return nil
 	}
 	for prev := r; ; prev = prev.SpecifierQualifierList {

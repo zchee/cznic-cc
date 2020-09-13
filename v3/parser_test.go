@@ -26,7 +26,7 @@ func TestBOM(t *testing.T) {
 		{"int main() {}", ""},
 		{"\xEF\xBB\xBFint main() {}", ""},
 	} {
-		switch _, err := Parse(&Config{}, nil, nil, []Source{{Value: v.src}}); {
+		switch _, err := Parse(&Config{}, nil, nil, []Source{{Value: v.src, DoNotCache: true}}); {
 		case v.err == "" && err != nil:
 			t.Errorf("%v: unexpected error %v", i, err)
 		case v.err != "" && err == nil:
@@ -78,7 +78,7 @@ func TestStrCatSep(t *testing.T) {
 		{`int f() {` + "\n" + ` "a";}`, "a", "\n ", "\n"},
 		{`int f() {` + "\n" + `"a";}`, "a", "\n", "\n"},
 	} {
-		ast, err := Parse(cfg, nil, nil, []Source{{Name: "test", Value: v.src}})
+		ast, err := Parse(cfg, nil, nil, []Source{{Name: "test", Value: v.src, DoNotCache: true}})
 		if err != nil {
 			t.Errorf("%v: %v", i, err)
 			continue
@@ -157,7 +157,7 @@ func TestParseJhjourdan(t *testing.T) {
 
 		n++
 		_, expectFail := mustFail[filepath.Base(path)]
-		switch _, err := Parse(cfg, nil, nil, []Source{{Name: path}}); {
+		switch _, err := Parse(cfg, nil, nil, []Source{{Name: path, DoNotCache: true}}); {
 		case err != nil:
 			if !expectFail {
 				t.Errorf("FAIL: unexpected error: %v", err)
@@ -192,11 +192,11 @@ var testParseAST *AST
 func testParse(t *testing.T, cfg *Config, predef string, files ...string) {
 	testParseAST = nil
 	sources := []Source{
-		{Name: "<predefined>", Value: predef},
-		{Name: "<built-in>", Value: parserTestBuiltin},
+		{Name: "<predefined>", Value: predef, DoNotCache: true},
+		{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
 	}
 	for _, v := range files {
-		sources = append(sources, Source{Name: v})
+		sources = append(sources, Source{Name: v, DoNotCache: true})
 	}
 	ctx := newContext(cfg)
 	var m0, m1 runtime.MemStats
@@ -225,11 +225,11 @@ func BenchmarkParseSQLite(b *testing.B) {
 
 func benchmarkParseSQLite(b *testing.B, cfg *Config, predef string, files ...string) {
 	sources := []Source{
-		{Name: "<predefined>", Value: predef},
-		{Name: "<built-in>", Value: parserTestBuiltin},
+		{Name: "<predefined>", Value: predef, DoNotCache: true},
+		{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
 	}
 	for _, v := range files {
-		sources = append(sources, Source{Name: v})
+		sources = append(sources, Source{Name: v, DoNotCache: true})
 	}
 	ctx := newContext(cfg)
 	// Warm up the cache
@@ -345,9 +345,9 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bo
 		}
 
 		sources := []Source{
-			{Name: "<predefined>", Value: predef},
-			{Name: "<built-in>", Value: parserTestBuiltin},
-			{Name: path},
+			{Name: "<predefined>", Value: predef, DoNotCache: true},
+			{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
+			{Name: path, DoNotCache: true},
 		}
 		ctx := newContext(cfg)
 
@@ -445,9 +445,9 @@ func benchmarkParseDir(b *testing.B, cfg *Config, predef, dir string, must bool)
 			}
 
 			sources := []Source{
-				{Name: "<predefined>", Value: predef},
-				{Name: "<built-in>", Value: parserTestBuiltin},
-				{Name: path},
+				{Name: "<predefined>", Value: predef, DoNotCache: true},
+				{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
+				{Name: path, DoNotCache: true},
 			}
 			ctx := newContext(cfg)
 			if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
@@ -572,8 +572,8 @@ out:
 		files++
 		size += int64(len(out))
 		sources := []Source{
-			{Name: "<predefined>", Value: testPredef},
-			{Name: "<built-in>", Value: parserTestBuiltin},
+			{Name: "<predefined>", Value: testPredef, DoNotCache: true},
+			{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
 			{Name: "test.c", Value: string(out), DoNotCache: true},
 		}
 		if _, err := parse(ctx, testIncludes, testSysIncludes, sources); err != nil {

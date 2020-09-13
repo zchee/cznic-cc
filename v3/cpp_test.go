@@ -299,7 +299,7 @@ func TestMacroPosition(t *testing.T) {
 	ast, err := Parse(cfg, nil, nil, []Source{{Name: "test", Value: `
 /* noise to make position more interesting */
  # define foo 42
-`}})
+`, DoNotCache: true}})
 	if err != nil {
 		t.Fatal(err)
 	}

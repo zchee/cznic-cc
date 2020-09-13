@@ -37,11 +37,11 @@ var (
 func testTranslate(t *testing.T, cfg *Config, predef string, files ...string) {
 	testTranslateSQLiteAST = nil
 	sources := []Source{
-		{Name: "<predefined>", Value: predef},
-		{Name: "<built-in>", Value: parserTestBuiltin},
+		{Name: "<predefined>", Value: predef, DoNotCache: true},
+		{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
 	}
 	for _, v := range files {
-		sources = append(sources, Source{Name: v})
+		sources = append(sources, Source{Name: v, DoNotCache: true})
 	}
 	ctx := newContext(cfg)
 	var m0, m1 runtime.MemStats
@@ -70,11 +70,11 @@ func BenchmarkTranslateSQLite(b *testing.B) {
 
 func benchmarkTranslateSQLite(b *testing.B, cfg *Config, predef string, files ...string) {
 	sources := []Source{
-		{Name: "<predefined>", Value: predef},
-		{Name: "<built-in>", Value: parserTestBuiltin},
+		{Name: "<predefined>", Value: predef, DoNotCache: true},
+		{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
 	}
 	for _, v := range files {
-		sources = append(sources, Source{Name: v})
+		sources = append(sources, Source{Name: v, DoNotCache: true})
 	}
 	ctx := newContext(cfg)
 	// Warm up the cache
@@ -227,6 +227,7 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 		"pr87647.c":                    {}, //TODO :11:20: missing braces around initializer
 		"pr89369.c":                    {}, //TODO array initializer
 		"struct-ini-1.c":               {}, //TODO array initializer
+		"pr70355.c":                    {}, /* { dg-require-effective-target int128 } */
 
 	}
 	if !gnuc { // vector extensions
@@ -317,9 +318,9 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 		}
 
 		sources := []Source{
-			{Name: "<predefined>", Value: predef},
-			{Name: "<built-in>", Value: parserTestBuiltin},
-			{Name: path},
+			{Name: "<predefined>", Value: predef, DoNotCache: true},
+			{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
+			{Name: path, DoNotCache: true},
 		}
 		ctx := newContext(cfg)
 
@@ -433,9 +434,9 @@ func benchmarkTranslateDir(b *testing.B, cfg *Config, predef, dir string, must b
 			}
 
 			sources := []Source{
-				{Name: "<predefined>", Value: predef},
-				{Name: "<built-in>", Value: parserTestBuiltin},
-				{Name: path},
+				{Name: "<predefined>", Value: predef, DoNotCache: true},
+				{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
+				{Name: path, DoNotCache: true},
 			}
 			ctx := newContext(cfg)
 			if benchmarkTranslateAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
@@ -475,8 +476,8 @@ func TestAbstractDeclarator(t *testing.T) { //TODO -> Example
 		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
 		ast, err := Translate(cfg, nil, nil, []Source{
-			{Name: "<built-in>", Value: "typedef long long unsigned size_t;"},
-			{Name: "test", Value: test.src},
+			{Name: "<built-in>", Value: "typedef long long unsigned size_t;", DoNotCache: true},
+			{Name: "test", Value: test.src, DoNotCache: true},
 		})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
@@ -515,7 +516,7 @@ func TestAbstractDeclarator2(t *testing.T) { //TODO -> Example
 	} {
 		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
-		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src, DoNotCache: true}})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
 			continue
@@ -553,7 +554,7 @@ func TestDeclarator(t *testing.T) { //TODO -> Example
 	} {
 		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
-		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src, DoNotCache: true}})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
 			continue
@@ -592,7 +593,7 @@ func TestDeclarator2(t *testing.T) {
 	} {
 		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}
-		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src}})
+		ast, err := Translate(cfg, nil, nil, []Source{{Name: "test", Value: test.src, DoNotCache: true}})
 		if err != nil {
 			t.Errorf("(%v): %v", letter, err)
 			continue
@@ -667,8 +668,8 @@ out:
 		files++
 		size += int64(len(out))
 		sources := []Source{
-			{Name: "<predefined>", Value: testPredef},
-			{Name: "<built-in>", Value: parserTestBuiltin},
+			{Name: "<predefined>", Value: testPredef, DoNotCache: true},
+			{Name: "<built-in>", Value: parserTestBuiltin, DoNotCache: true},
 			{Name: "test.c", Value: string(out), DoNotCache: true},
 		}
 		if err := func() (err error) {

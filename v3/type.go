@@ -456,9 +456,6 @@ var (
 		{TypeSpecifierDecimal128}:                                         byte(Decimal128),
 		{TypeSpecifierDecimal32}:                                          byte(Decimal32),
 		{TypeSpecifierDecimal64}:                                          byte(Decimal64),
-		{TypeSpecifierDouble, TypeSpecifierFloat32x}:                      byte(Double),
-		{TypeSpecifierDouble, TypeSpecifierFloat64}:                       byte(Double),
-		{TypeSpecifierFloat, TypeSpecifierFloat32}:                        byte(Float),
 		{TypeSpecifierFloat128}:                                           byte(Float128),
 		{TypeSpecifierFloat32x}:                                           byte(Float32x),
 		{TypeSpecifierFloat32}:                                            byte(Float32),
@@ -614,7 +611,11 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type 
 	default:
 		var ok bool
 		if t.kind, ok = validTypeSpecifiers[k]; !ok {
-			ctx.err(td.Position(), "invalid type specifiers combination")
+			s := k[:]
+			for len(s) > 1 && s[len(s)-1] == TypeSpecifierVoid {
+				s = s[:len(s)-1]
+			}
+			ctx.err(td.Position(), "invalid type specifiers combination: %v", s)
 			return t
 		}
 

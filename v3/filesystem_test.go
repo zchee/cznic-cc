@@ -66,7 +66,7 @@ void foo() {
 	})
 	lfs := &logPathFS{fs: WorkingDir(usrDir, Overlay(usr, sys))}
 	cfg.Filesystem = lfs
-	_, err := Parse(cfg, []string{usrDir}, []string{sysDir}, []Source{{Name: "file.c"}})
+	_, err := Parse(cfg, []string{usrDir}, []string{sysDir}, []Source{{Name: "file.c", DoNotCache: true}})
 	if err != nil {
 		t.Logf("\nstats: %q\nopens: %q", lfs.stats, lfs.opens)
 		t.Fatal(err)
