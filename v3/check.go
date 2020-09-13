@@ -2130,7 +2130,13 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 	case Uint64Value:
 		switch m := min.(type) {
 		case Int64Value:
-			panic(fmt.Sprintf("TODO 1815 %v:", n.Position()))
+			if m < 0 {
+				break
+			}
+
+			if x < Uint64Value(m) {
+				min = x
+			}
 		case Uint64Value:
 			if x < m {
 				min = x
@@ -2140,7 +2146,15 @@ func (n *Enumerator) check(ctx *context, iota, min, max Value) (Value, Value, Va
 		}
 		switch m := max.(type) {
 		case Int64Value:
-			panic(fmt.Sprintf("TODO 1823 %v:", n.Position()))
+			if m < 0 {
+				max = x
+				break
+			}
+
+			if x > Uint64Value(m) {
+				max = x
+			}
+
 		case Uint64Value:
 			if x > m {
 				max = x
@@ -4089,6 +4103,10 @@ func (n *AsmArgList) check(ctx *context) {
 }
 
 func (n *AsmExpressionList) check(ctx *context) {
+	if ctx.cfg.DoNotTypecheckAsm {
+		return
+	}
+
 	for ; n != nil; n = n.AsmExpressionList {
 		n.AsmIndex.check(ctx)
 		n.AssignmentExpression.check(ctx)

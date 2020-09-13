@@ -40,6 +40,11 @@ func (fs *logPathFS) Open(path string, sys bool) (io.ReadCloser, error) {
 }
 
 func TestParseVFS(t *testing.T) {
+	if isTestingMingw {
+		t.Skip("mingw")
+		return
+	}
+
 	isTesting = false
 	defer func() {
 		isTesting = true

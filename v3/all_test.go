@@ -134,7 +134,14 @@ __UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
 #ifdef __SIZEOF_INT128__
 typedef __INT64_TYPE__ __int128_t[2];	//TODO
 typedef __UINT64_TYPE__ __uint128_t[2];	//TODO
-#endif;
+#endif
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+int gnu_printf(const char *format, ...);
+int gnu_scanf(const char *format, ...);
+int ms_scanf(const char *format, ...);
+int ms_printf(const char *format, ...);
+#endif
 
 typedef struct { char real, imag; } __COMPLEX_CHAR_TYPE__;
 typedef struct { double real, imag; } __COMPLEX_DOUBLE_TYPE__;
@@ -244,6 +251,7 @@ func TestMain(m *testing.M) {
 		return
 	}
 
+	isTestingMingw = detectMingw(testPredefGNU)
 	testIncludes = append(testIncludes, filepath.FromSlash("/usr/include/csmith"))
 
 	if *oSkipInit {
@@ -255,16 +263,21 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	a := strings.Split(testPredefGNU, "\n")
-	w := 0
-	for _, v0 := range a {
-		v := strings.TrimSpace(strings.ToLower(v0))
-		if !strings.HasPrefix(v, "#define __gnu") && !strings.HasPrefix(v, "#define __gcc") {
-			a[w] = v0
-			w++
+	switch {
+	case isTestingMingw:
+		testPredef = testPredefGNU
+	default:
+		a := strings.Split(testPredefGNU, "\n")
+		w := 0
+		for _, v0 := range a {
+			v := strings.TrimSpace(strings.ToLower(v0))
+			if !strings.HasPrefix(v, "#define __gnu") && !strings.HasPrefix(v, "#define __gcc") {
+				a[w] = v0
+				w++
+			}
 		}
+		testPredef = strings.Join(a[:w], "\n")
 	}
-	testPredef = strings.Join(a[:w], "\n")
 	if testPredefSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredef, false, false); err != nil {
 		log.Fatal(err)
 	}

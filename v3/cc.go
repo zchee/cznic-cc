@@ -86,6 +86,7 @@ var (
 	debugIncludePaths bool
 	debugWorkingDir   bool
 	isTesting         bool
+	isTestingMingw    bool
 
 	idPtrdiffT = dict.sid("ptrdiff_t")
 	idSizeT    = dict.sid("size_t")
@@ -493,6 +494,7 @@ type Config struct {
 	RejectStatementExpressions             bool // Pedantic: do not silently accept "i = ({foo();})".
 	RejectTypeof                           bool // Pedantic: do not silently accept "typeof foo" or "typeof(bar*)".
 	RejectUninitializedDeclarators         bool // Reject int f() { int j; return j; }
+	DoNotTypecheckAsm                      bool
 	doNotSanityCheckComplexTypes           bool // Testing only
 	fakeIncludes                           bool // Testing only.
 	ignoreErrors                           bool // Testing only.
@@ -847,3 +849,7 @@ func tokStr(toks interface{}, sep string) string {
 
 func internalError() int                               { return internalErrorf("") }
 func internalErrorf(s string, args ...interface{}) int { panic(fmt.Errorf(s, args...)) }
+
+func detectMingw(s string) bool {
+	return strings.Contains(s, "#define __MINGW")
+}

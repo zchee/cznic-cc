@@ -22,6 +22,9 @@ import (
 
 func TestTranslateSQLite(t *testing.T) {
 	cfg := &Config{ABI: testABI}
+	if isTestingMingw {
+		cfg.DoNotTypecheckAsm = true
+	}
 	root := filepath.Join(testWD, filepath.FromSlash(sqliteDir))
 	t.Run("shell.c", func(t *testing.T) { testTranslate(t, cfg, testPredef, filepath.Join(root, "shell.c")) })
 	t.Run("shell.c/gnu", func(t *testing.T) { testTranslate(t, cfg, testPredefGNU, filepath.Join(root, "shell.c")) })
@@ -278,6 +281,10 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 		} {
 			blacklist[k] = v
 		}
+	}
+	if isTestingMingw {
+		blacklist["loop-2f.c"] = struct{}{} // sys/mman.h
+		blacklist["loop-2g.c"] = struct{}{} // sys/mman.h
 	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
