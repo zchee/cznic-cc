@@ -6,32 +6,27 @@
 
 grep=--include=*.go --include=*.l --include=*.y --include=*.yy
 ngrep='internalError\|TODOOK\|lexer\.go\|ast.go\|trigraphs\.go\|.*_string\.go\|stringer\.go\|testdata\/gcc'
-host=$(shell go env GOOS)-$(shell go env GOARCH)
-testlog=testdata/testlog-$(shell echo $$GOOS)-$(shell echo $$GOARCH)$(shell echo $$CC_TEST_SUFFIX)
+testlog=testdata/testlog-$(shell echo $$GOOS)-$(shell echo $$GOARCH)-on-$(shell go env GOOS)-$(shell go env GOARCH)
 
 all: lexer.go
+	LC_ALL=C make all_log 2>&1 | tee log
+
+all_log:
 	date
-	go version 2>&1 | tee log
+	go version
+	uname -a
 	./unconvert.sh
 	gofmt -l -s -w *.go
-	go install -v
-	go test -i
-	go test 2>&1 -timeout 1h -csmith 10s | tee -a log
 	GOOS=linux GOARCH=arm go build
 	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
 	GOOS=windows GOARCH=386 go build
 	GOOS=windows GOARCH=amd64 go build
-	go vet 2>&1 | grep -v $(ngrep) || true
-	golint 2>&1 | grep -v $(ngrep) || true
-	make todo
+	go vet | grep -v $(ngrep) || true
+	golint | grep -v $(ngrep) || true
 	misspell *.go
 	staticcheck | grep -v 'lexer\.go' || true
-	maligned || true
 	pcregrep -nM 'FAIL|false|<nil>|:\n}' ast_test.go || true
-	grep -n 'FAIL\|PASS' log 
-	go version
-	date 2>&1 | tee -a log
 
 test:
 	go version | tee $(testlog)
@@ -54,8 +49,8 @@ test_linux_arm64:
 	GOOS=linux GOARCH=arm64 make test
 
 test_windows_amd64:
-	GOOS=windows GOARCH=arm64 CC_TEST_CPP=x86_64-w64-mingw32-cpp make test
-
+	go version
+	go test -v -timeout 24h
 
 devbench:
 	date 2>&1 | tee log-devbench
@@ -85,8 +80,7 @@ edit:
 editor: lexer.go
 	gofmt -l -s -w *.go
 	go test -i
-	#go test -short 2>&1 | tee log
-	go install
+	go install 2>&1 | tee log
 
 ast.go lexer.go stringer.go: lexer.l parser.yy enum.go
 	go generate

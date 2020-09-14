@@ -764,7 +764,8 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 
 	v := o.Value()
 	r := &operand{abi: o.abi, typ: to, offset: o.offset, value: v}
-	if v == nil {
+	switch v.(type) {
+	case nil, *InitializerValue:
 		return r
 	}
 

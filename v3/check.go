@@ -274,7 +274,7 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, isConst *boo
 			// trc("%v, %v", t, currObj)
 			// t2 := t.underlyingType()
 			// trc("", t2)
-			ctx.errNode(n.InitializerList, "initializer for a scalar shall be a single expression")
+			ctx.errNode(n.InitializerList, "initializer for a scalar shall be a single expression: %v", t)
 			return n, 0
 		}
 
@@ -1977,7 +1977,11 @@ func (n *EnumSpecifier) check(ctx *context) {
 			tmin = n.requireUint(ctx, uint64(min))
 			switch max := max.(type) {
 			case Int64Value:
-				panic(fmt.Sprintf("TODO 595 %v:", n.Position()))
+				if max < 0 {
+					panic(todo("%v: min %v max %v", n.Position(), min, max))
+				}
+
+				tmax = n.requireUint(ctx, uint64(max))
 			case Uint64Value:
 				tmax = n.requireUint(ctx, uint64(max))
 			case nil:

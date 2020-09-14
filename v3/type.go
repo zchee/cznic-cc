@@ -379,6 +379,8 @@ type Type interface {
 
 	// IsVolatile reports whether type has type qualifier "volatile".
 	IsVolatile() bool
+
+	isVectorType() bool
 }
 
 // A Field describes a single field in a struct/union.
@@ -716,6 +718,11 @@ func (t *typeBase) BitField() Field {
 // base implements Type.
 func (t *typeBase) base() typeBase { return *t }
 
+// isVectorType implements Type.
+func (t *typeBase) isVectorType() bool {
+	return false
+}
+
 // isCompatible implements Type.
 func (t *typeBase) isCompatible(u Type) bool {
 	// [0], 6.2.7
@@ -846,7 +853,9 @@ func (t *typeBase) IsBitFieldType() bool { return false }
 func (t *typeBase) IsRealType() bool { return realTypes[t.Kind()] }
 
 // IsScalarType implements Type.
-func (t *typeBase) IsScalarType() bool { return t.IsArithmeticType() || t.Kind() == Ptr }
+func (t *typeBase) IsScalarType() bool {
+	return (t.IsArithmeticType() || t.Kind() == Ptr) && !t.isVectorType()
+}
 
 // IsSignedType implements Type.
 func (t *typeBase) IsSignedType() bool {
@@ -1309,6 +1318,8 @@ func (t *aliasType) underlyingType() Type { return t.d.Type().underlyingType() }
 
 // IsVolatile implements Type.
 func (t *aliasType) IsVolatile() bool { return t.d.Type().IsVolatile() }
+
+func (t *aliasType) isVectorType() bool { return t.d.Type().isVectorType() }
 
 type field struct {
 	bitFieldMask uint64 // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
