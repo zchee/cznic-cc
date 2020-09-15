@@ -357,8 +357,8 @@ type Type interface {
 	// hasConst reports whether type has type qualifier "const".
 	hasConst() bool
 
-	// inline reports whether type has function specifier "inline".
-	inline() bool
+	// Inline reports whether type has function specifier "inline".
+	Inline() bool
 
 	IsSignedType() bool
 
@@ -369,6 +369,7 @@ type Type interface {
 	restrict() bool
 
 	setLen(uintptr)
+	setFnSpecs(inline, noret bool)
 	setKind(Kind)
 
 	string(*strings.Builder)
@@ -540,7 +541,7 @@ type typeBase struct {
 	kind       byte
 }
 
-func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type {
+func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) (r Type) {
 	k0 := t.kind
 	var alignmentSpecifiers []*AlignmentSpecifier
 	var attributeSpecifiers []*AttributeSpecifier
@@ -831,8 +832,8 @@ func (t *typeBase) FieldByName(StringID) (Field, bool) {
 // IsIncomplete implements Type.
 func (t *typeBase) IsIncomplete() bool { return t.flags&fIncomplete != 0 }
 
-// inline implements Type.
-func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
+// Inline implements Type.
+func (t *typeBase) Inline() bool { return t.flags&fInline != 0 }
 
 // IsIntegerType implements Type.
 func (t *typeBase) IsIntegerType() bool { return integerTypes[t.kind] }
@@ -955,6 +956,17 @@ func (t *typeBase) setLen(uintptr) {
 	panic(internalErrorf("%s: setLen of non-array type", t.Kind()))
 }
 
+// setFnSpecs implements Type.
+func (t *typeBase) setFnSpecs(inline, noret bool) {
+	t.flags &^= fInline | fNoReturn
+	if inline {
+		t.flags |= fInline
+	}
+	if noret {
+		t.flags |= fNoReturn
+	}
+}
+
 // setKind implements Type.
 func (t *typeBase) setKind(k Kind) { t.kind = byte(k) }
 
@@ -991,7 +1003,7 @@ func (t *typeBase) string(b *strings.Builder) {
 		b.WriteString("const")
 		spc = " "
 	}
-	if t.inline() {
+	if t.Inline() {
 		b.WriteString(spc)
 		b.WriteString("inline")
 		spc = " "
@@ -1293,8 +1305,8 @@ func (t *aliasType) base() typeBase { return t.d.Type().base() }
 // hasConst implements Type.
 func (t *aliasType) hasConst() bool { return t.d.Type().hasConst() }
 
-// inline implements Type.
-func (t *aliasType) inline() bool { return t.d.Type().inline() }
+// Inline implements Type.
+func (t *aliasType) Inline() bool { return t.d.Type().Inline() }
 
 // IsSignedType implements Type.
 func (t *aliasType) IsSignedType() bool { return t.d.Type().IsSignedType() }
@@ -1320,6 +1332,8 @@ func (t *aliasType) underlyingType() Type { return t.d.Type().underlyingType() }
 func (t *aliasType) IsVolatile() bool { return t.d.Type().IsVolatile() }
 
 func (t *aliasType) isVectorType() bool { return t.d.Type().isVectorType() }
+
+func (t *aliasType) setFnSpecs(inline, noret bool) { t.d.Type().setFnSpecs(inline, noret) }
 
 type field struct {
 	bitFieldMask uint64 // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.

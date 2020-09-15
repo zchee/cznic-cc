@@ -158,7 +158,8 @@ func (n *AsmFunctionDefinition) check(ctx *context) {
 		return
 	}
 
-	typ := n.DeclarationSpecifiers.check(ctx)
+	typ, inline, noret := n.DeclarationSpecifiers.check(ctx)
+	typ.setFnSpecs(inline, noret)
 	n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)
 	n.AsmStatement.check(ctx)
 }
@@ -177,7 +178,7 @@ func (n *Declaration) check(ctx *context, tld bool) {
 		return
 	}
 
-	typ := n.DeclarationSpecifiers.check(ctx)
+	typ, _, _ := n.DeclarationSpecifiers.check(ctx)
 	n.InitDeclaratorList.check(ctx, n.DeclarationSpecifiers, typ, tld)
 }
 
@@ -1777,7 +1778,7 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) *Parameter 
 
 	switch n.Case {
 	case ParameterDeclarationDecl: // DeclarationSpecifiers Declarator AttributeSpecifierList
-		typ := n.DeclarationSpecifiers.check(ctx)
+		typ, _, _ := n.DeclarationSpecifiers.check(ctx)
 		n.Declarator.IsParameter = true
 		if n.typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, false); n.typ.Kind() == Void {
 			panic(n.Position().String())
@@ -1788,7 +1789,7 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) *Parameter 
 		n.AttributeSpecifierList.check(ctx)
 		return &Parameter{d: n.Declarator, typ: n.Declarator.Type()}
 	case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclarator
-		n.typ = n.DeclarationSpecifiers.check(ctx)
+		n.typ, _, _ = n.DeclarationSpecifiers.check(ctx)
 		if n.AbstractDeclarator != nil {
 			n.typ = n.AbstractDeclarator.check(ctx, n.typ)
 		}
@@ -4001,10 +4002,16 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, nil, true, true))
 	case DirectDeclaratorFuncParam: // DirectDeclarator '(' ParameterTypeList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ}
+		if typ.Inline() {
+			ft.typeBase.flags = fInline
+		}
 		n.ParameterTypeList.check(ctx, ft)
 		return n.DirectDeclarator.check(ctx, ft)
 	case DirectDeclaratorFuncIdent: // DirectDeclarator '(' IdentifierList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ, paramList: n.IdentifierList.check(ctx)}
+		if typ.Inline() {
+			ft.typeBase.flags = fInline
+		}
 		if n.idListNoDeclList {
 			n.checkIdentList(ctx, ft)
 		}
@@ -4191,7 +4198,7 @@ func (n *ExpressionList) check(ctx *context) {
 	}
 }
 
-func (n *DeclarationSpecifiers) check(ctx *context) Type {
+func (n *DeclarationSpecifiers) check(ctx *context) (r Type, inline, noret bool) {
 	n0 := n
 	typ := &typeBase{}
 	for ; n != nil; n = n.DeclarationSpecifiers {
@@ -4203,7 +4210,18 @@ func (n *DeclarationSpecifiers) check(ctx *context) Type {
 		case DeclarationSpecifiersTypeQual: // TypeQualifier DeclarationSpecifiers
 			n.TypeQualifier.check(ctx, typ)
 		case DeclarationSpecifiersFunc: // FunctionSpecifier DeclarationSpecifiers
-			n.FunctionSpecifier.check(ctx, typ)
+			if n.FunctionSpecifier == nil {
+				break
+			}
+
+			switch n.FunctionSpecifier.Case {
+			case FunctionSpecifierInline: // "inline"
+				inline = true
+			case FunctionSpecifierNoreturn: // "_Noreturn"
+				noret = true
+			default:
+				panic(internalError())
+			}
 		case DeclarationSpecifiersAlignSpec: // AlignmentSpecifier DeclarationSpecifiers
 			n.AlignmentSpecifier.check(ctx)
 		case DeclarationSpecifiersAttribute: // AttributeSpecifier DeclarationSpecifiers
@@ -4212,7 +4230,7 @@ func (n *DeclarationSpecifiers) check(ctx *context) Type {
 			panic(internalError())
 		}
 	}
-	return typ.check(ctx, n0, true)
+	return typ.check(ctx, n0, true), inline, noret
 }
 
 func (n *AlignmentSpecifier) check(ctx *context) {
@@ -4225,21 +4243,6 @@ func (n *AlignmentSpecifier) check(ctx *context) {
 		n.TypeName.check(ctx)
 	case AlignmentSpecifierAlignasExpr: // "_Alignas" '(' ConstantExpression ')'
 		n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
-	default:
-		panic(internalError())
-	}
-}
-
-func (n *FunctionSpecifier) check(ctx *context, typ *typeBase) {
-	if n == nil {
-		return
-	}
-
-	switch n.Case {
-	case FunctionSpecifierInline: // "inline"
-		typ.flags |= fInline
-	case FunctionSpecifierNoreturn: // "_Noreturn"
-		typ.flags |= fNoReturn
 	default:
 		panic(internalError())
 	}
@@ -4289,8 +4292,9 @@ func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 
 	n.Declarator.fnDef = true
 	ctx.checkFn = n
-	typ := n.DeclarationSpecifiers.check(ctx)
+	typ, inline, noret := n.DeclarationSpecifiers.check(ctx)
 	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)
+	typ.setFnSpecs(inline, noret)
 	ctx.checkFn = nil
 	n.DeclarationList.checkFn(ctx, typ, n.Declarator.ParamScope())
 }
