@@ -158,7 +158,7 @@ func (n *AsmFunctionDefinition) check(ctx *context) {
 		return
 	}
 
-	typ, inline, noret := n.DeclarationSpecifiers.check(ctx)
+	typ, inline, noret := n.DeclarationSpecifiers.check(ctx, false)
 	typ.setFnSpecs(inline, noret)
 	n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)
 	n.AsmStatement.check(ctx)
@@ -178,7 +178,7 @@ func (n *Declaration) check(ctx *context, tld bool) {
 		return
 	}
 
-	typ, _, _ := n.DeclarationSpecifiers.check(ctx)
+	typ, _, _ := n.DeclarationSpecifiers.check(ctx, false)
 	n.InitDeclaratorList.check(ctx, n.DeclarationSpecifiers, typ, tld)
 }
 
@@ -996,7 +996,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		if ctx.mode&mIntConstExpr != 0 {
 			ctx.mode |= mIntConstExprAnyCast
 		}
-		t := n.TypeName.check(ctx)
+		t := n.TypeName.check(ctx, false)
 		ctx.pop()
 		ctx.readDelta = rd
 		if t.IsIncomplete() {
@@ -1029,7 +1029,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		if ctx.mode&mIntConstExpr != 0 {
 			ctx.mode |= mIntConstExprAnyCast
 		}
-		t := n.TypeName.check(ctx)
+		t := n.TypeName.check(ctx, false)
 		n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(t.Align())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 		ctx.pop()
 	case UnaryExpressionImag: // "__imag__" UnaryExpression
@@ -1286,7 +1286,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		if f := ctx.checkFn; f != nil {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
-		t := n.TypeName.check(ctx)
+		t := n.TypeName.check(ctx, false)
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
@@ -1651,12 +1651,12 @@ func (n *MultiplicativeExpression) addrOf(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *TypeName) check(ctx *context) Type {
+func (n *TypeName) check(ctx *context, inUnion bool) Type {
 	if n == nil {
 		return noType
 	}
 
-	n.typ = n.SpecifierQualifierList.check(ctx)
+	n.typ = n.SpecifierQualifierList.check(ctx, inUnion)
 	if n.AbstractDeclarator != nil {
 		n.typ = n.AbstractDeclarator.check(ctx, n.typ)
 	}
@@ -1778,7 +1778,7 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) *Parameter 
 
 	switch n.Case {
 	case ParameterDeclarationDecl: // DeclarationSpecifiers Declarator AttributeSpecifierList
-		typ, _, _ := n.DeclarationSpecifiers.check(ctx)
+		typ, _, _ := n.DeclarationSpecifiers.check(ctx, false)
 		n.Declarator.IsParameter = true
 		if n.typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, false); n.typ.Kind() == Void {
 			panic(n.Position().String())
@@ -1789,7 +1789,7 @@ func (n *ParameterDeclaration) check(ctx *context, ft *functionType) *Parameter 
 		n.AttributeSpecifierList.check(ctx)
 		return &Parameter{d: n.Declarator, typ: n.Declarator.Type()}
 	case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclarator
-		n.typ, _, _ = n.DeclarationSpecifiers.check(ctx)
+		n.typ, _, _ = n.DeclarationSpecifiers.check(ctx, false)
 		if n.AbstractDeclarator != nil {
 			n.typ = n.AbstractDeclarator.check(ctx, n.typ)
 		}
@@ -1855,13 +1855,13 @@ func (n *TypeQualifier) check(ctx *context, typ *typeBase) {
 	}
 }
 
-func (n *SpecifierQualifierList) check(ctx *context) Type {
+func (n *SpecifierQualifierList) check(ctx *context, inUnion bool) Type {
 	n0 := n
 	typ := &typeBase{}
 	for ; n != nil; n = n.SpecifierQualifierList {
 		switch n.Case {
 		case SpecifierQualifierListTypeSpec: // TypeSpecifier SpecifierQualifierList
-			n.TypeSpecifier.check(ctx, typ)
+			n.TypeSpecifier.check(ctx, typ, inUnion)
 		case SpecifierQualifierListTypeQual: // TypeQualifier SpecifierQualifierList
 			n.TypeQualifier.check(ctx, typ)
 		case SpecifierQualifierListAlignSpec: // AlignmentSpecifier SpecifierQualifierList
@@ -1875,7 +1875,7 @@ func (n *SpecifierQualifierList) check(ctx *context) Type {
 	return typ.check(ctx, n0, true)
 }
 
-func (n *TypeSpecifier) check(ctx *context, typ *typeBase) {
+func (n *TypeSpecifier) check(ctx *context, typ *typeBase, inUnion bool) {
 	if n == nil {
 		return
 	}
@@ -1910,7 +1910,7 @@ func (n *TypeSpecifier) check(ctx *context, typ *typeBase) {
 		TypeSpecifierComplex:    // "_Complex"
 		// nop
 	case TypeSpecifierStructOrUnion: // StructOrUnionSpecifier
-		n.StructOrUnionSpecifier.check(ctx, typ)
+		n.StructOrUnionSpecifier.check(ctx, typ, inUnion)
 	case TypeSpecifierEnum: // EnumSpecifier
 		n.EnumSpecifier.check(ctx)
 	case TypeSpecifierTypedefName: // TYPEDEFNAME
@@ -1919,7 +1919,7 @@ func (n *TypeSpecifier) check(ctx *context, typ *typeBase) {
 		op := n.Expression.check(ctx)
 		n.typ = op.Type()
 	case TypeSpecifierTypeofType: // "typeof" '(' TypeName ')'
-		n.typ = n.TypeName.check(ctx)
+		n.typ = n.TypeName.check(ctx, false)
 	case TypeSpecifierAtomic: // AtomicTypeSpecifier
 		n.AtomicTypeSpecifier.check(ctx)
 	case
@@ -1937,7 +1937,7 @@ func (n *AtomicTypeSpecifier) check(ctx *context) {
 		return
 	}
 
-	n.TypeName.check(ctx)
+	n.TypeName.check(ctx, false)
 }
 
 func (n *EnumSpecifier) check(ctx *context) {
@@ -2187,7 +2187,7 @@ func (n *ConstantExpression) check(ctx *context, mode mode) Operand {
 	return n.Operand
 }
 
-func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase) Type {
+func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase, inUnion bool) Type {
 	if n == nil {
 		return noType
 	}
@@ -2196,7 +2196,7 @@ func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase) Type {
 	case StructOrUnionSpecifierDef: // StructOrUnion AttributeSpecifierList IDENTIFIER '{' StructDeclarationList '}'
 		typ.kind = byte(n.StructOrUnion.check(ctx))
 		attr := n.AttributeSpecifierList.check(ctx)
-		fields := n.StructDeclarationList.check(ctx)
+		fields := n.StructDeclarationList.check(ctx, inUnion || typ.Kind() == Union)
 		m := make(map[StringID]*field, len(fields))
 		for _, v := range fields {
 			if v.name != 0 {
@@ -2231,34 +2231,34 @@ func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase) Type {
 	return n.typ
 }
 
-func (n *StructDeclarationList) check(ctx *context) (s []*field) {
+func (n *StructDeclarationList) check(ctx *context, inUnion bool) (s []*field) {
 	for ; n != nil; n = n.StructDeclarationList {
-		s = append(s, n.StructDeclaration.check(ctx)...)
+		s = append(s, n.StructDeclaration.check(ctx, inUnion)...)
 	}
 	return s
 }
 
-func (n *StructDeclaration) check(ctx *context) (s []*field) {
+func (n *StructDeclaration) check(ctx *context, inUnion bool) (s []*field) {
 	if n == nil || n.Empty {
 		return nil
 	}
 
-	typ := n.SpecifierQualifierList.check(ctx)
+	typ := n.SpecifierQualifierList.check(ctx, inUnion)
 	if n.StructDeclaratorList != nil {
-		return n.StructDeclaratorList.check(ctx, n.SpecifierQualifierList, typ)
+		return n.StructDeclaratorList.check(ctx, n.SpecifierQualifierList, typ, inUnion)
 	}
 
-	return []*field{{typ: typ}}
+	return []*field{{typ: typ, inUnion: inUnion}}
 }
 
-func (n *StructDeclaratorList) check(ctx *context, td typeDescriptor, typ Type) (s []*field) {
+func (n *StructDeclaratorList) check(ctx *context, td typeDescriptor, typ Type, inUnion bool) (s []*field) {
 	for ; n != nil; n = n.StructDeclaratorList {
-		s = append(s, n.StructDeclarator.check(ctx, td, typ))
+		s = append(s, n.StructDeclarator.check(ctx, td, typ, inUnion))
 	}
 	return s
 }
 
-func (n *StructDeclarator) check(ctx *context, td typeDescriptor, typ Type) *field {
+func (n *StructDeclarator) check(ctx *context, td typeDescriptor, typ Type, inUnion bool) *field {
 	if n == nil {
 		return nil
 	}
@@ -2267,8 +2267,9 @@ func (n *StructDeclarator) check(ctx *context, td typeDescriptor, typ Type) *fie
 		typ = n.Declarator.check(ctx, td, typ, false)
 	}
 	sf := &field{
-		typ: typ,
-		d:   n,
+		typ:     typ,
+		d:       n,
+		inUnion: inUnion,
 	}
 	switch n.Case {
 	case StructDeclaratorDecl: // Declarator
@@ -2330,7 +2331,7 @@ func (n *CastExpression) check(ctx *context) Operand {
 		n.Operand = n.UnaryExpression.check(ctx)
 		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
-		t := n.TypeName.check(ctx)
+		t := n.TypeName.check(ctx, false)
 		ctx.push(ctx.mode)
 		if m := ctx.mode; m&mIntConstExpr != 0 && m&mIntConstExprAnyCast == 0 {
 			if t := n.TypeName.Type(); t != nil && t.Kind() != Int {
@@ -2500,7 +2501,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		if f := ctx.checkFn; f != nil {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
-		t := n.TypeName.check(ctx)
+		t := n.TypeName.check(ctx, false)
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
@@ -2515,8 +2516,8 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		n.Operand = &lvalue{Operand: (&operand{abi: &ctx.cfg.ABI, typ: t, value: v}).normalize(ctx, n)}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		n.IsSideEffectsFree = true
-		n.TypeName.check(ctx)
-		n.TypeName2.check(ctx)
+		n.TypeName.check(ctx, false)
+		n.TypeName2.check(ctx, false)
 		//TODO
 	default:
 		panic(internalError())
@@ -4198,7 +4199,7 @@ func (n *ExpressionList) check(ctx *context) {
 	}
 }
 
-func (n *DeclarationSpecifiers) check(ctx *context) (r Type, inline, noret bool) {
+func (n *DeclarationSpecifiers) check(ctx *context, inUnion bool) (r Type, inline, noret bool) {
 	n0 := n
 	typ := &typeBase{}
 	for ; n != nil; n = n.DeclarationSpecifiers {
@@ -4206,7 +4207,7 @@ func (n *DeclarationSpecifiers) check(ctx *context) (r Type, inline, noret bool)
 		case DeclarationSpecifiersStorage: // StorageClassSpecifier DeclarationSpecifiers
 			n.StorageClassSpecifier.check(ctx, n)
 		case DeclarationSpecifiersTypeSpec: // TypeSpecifier DeclarationSpecifiers
-			n.TypeSpecifier.check(ctx, typ)
+			n.TypeSpecifier.check(ctx, typ, inUnion)
 		case DeclarationSpecifiersTypeQual: // TypeQualifier DeclarationSpecifiers
 			n.TypeQualifier.check(ctx, typ)
 		case DeclarationSpecifiersFunc: // FunctionSpecifier DeclarationSpecifiers
@@ -4240,7 +4241,7 @@ func (n *AlignmentSpecifier) check(ctx *context) {
 
 	switch n.Case {
 	case AlignmentSpecifierAlignasType: // "_Alignas" '(' TypeName ')'
-		n.TypeName.check(ctx)
+		n.TypeName.check(ctx, false)
 	case AlignmentSpecifierAlignasExpr: // "_Alignas" '(' ConstantExpression ')'
 		n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
 	default:
@@ -4292,7 +4293,7 @@ func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 
 	n.Declarator.fnDef = true
 	ctx.checkFn = n
-	typ, inline, noret := n.DeclarationSpecifiers.check(ctx)
+	typ, inline, noret := n.DeclarationSpecifiers.check(ctx, false)
 	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)
 	typ.setFnSpecs(inline, noret)
 	ctx.checkFn = nil
