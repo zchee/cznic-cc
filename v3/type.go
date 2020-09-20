@@ -305,8 +305,9 @@ type Type interface {
 	// Kind returns the specific kind of this type.
 	Kind() Kind
 
-	// Len returns an array type's length.  It panics if the type's Kind is
-	// valid but not Array.
+	// Len returns an array type's length for array types and vector size
+	// for vector types.  It panics if the type's Kind is valid but not
+	// Array or Vector.
 	Len() uintptr
 
 	// LenExpr returns an array type's length expression.  It panics if the

@@ -35,6 +35,7 @@ var (
 	idFenvAccess     = dict.sid("FENV_ACCESS")
 	idGNUC           = dict.sid("__GNUC__")
 	idIntMaxWidth    = dict.sid("__INTMAX_WIDTH__")
+	idL              = dict.sid("L")
 	idLINE           = dict.sid("__LINE__")
 	idNL             = dict.sid("\n")
 	idOff            = dict.sid("OFF")
@@ -915,6 +916,9 @@ func (c *cpp) glue(ls, rs []cppToken) (out []cppToken) {
 	r := rs[0]
 	rs = rs[1:]
 
+	if l.char == IDENTIFIER && l.value == idL && r.char == STRINGLITERAL {
+		l.char = LONGSTRINGLITERAL
+	}
 	l.value = dict.sid(l.String() + r.String())
 	return append(append(ls, l), rs...)
 }
