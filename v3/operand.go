@@ -1280,6 +1280,10 @@ func (v *InitializerValue) sub(b Value) Value    { return nil }
 func (v *InitializerValue) xor(b Value) Value    { return nil }
 
 func (v *InitializerValue) isNonZero() bool {
+	if v == nil {
+		return false
+	}
+
 	for _, v := range v.List() {
 		if v.AssignmentExpression.Operand.IsNonZero() {
 			return true
@@ -1289,6 +1293,10 @@ func (v *InitializerValue) isNonZero() bool {
 }
 
 func (v *InitializerValue) isZero() bool {
+	if v == nil {
+		return false
+	}
+
 	for _, v := range v.List() {
 		if v.AssignmentExpression.Operand.IsNonZero() {
 			return false

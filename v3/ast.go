@@ -2669,6 +2669,7 @@ type Initializer struct {
 	list                 []*Initializer
 	typ                  Type
 	isConst              bool
+	isZero               bool
 	AssignmentExpression *AssignmentExpression
 	Case                 InitializerCase `PrettyPrint:"stringer,zero"`
 	InitializerList      *InitializerList
@@ -2716,6 +2717,7 @@ func (n *Initializer) Position() (r token.Position) {
 type InitializerList struct {
 	list            []*Initializer
 	isConst         bool
+	isZero          bool
 	Designation     *Designation
 	Initializer     *Initializer
 	InitializerList *InitializerList

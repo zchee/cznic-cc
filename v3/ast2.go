@@ -157,6 +157,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 
 	p := newParser(ctx, make(chan *[]Token, 5000)) //DONE benchmark tuned
 	var sep StringID
+	var ssep []byte
 	var seq int32
 	cpp := newCPP(ctx)
 	go func() {
@@ -182,14 +183,20 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 
 					switch {
 					case sep != 0:
-						sep = dict.sid(sep.String() + tok.String())
+						ssep = append(ssep, tok.String()...)
 					default:
 						sep = tok.value
+						ssep = append(ssep[:0], sep.String()...)
 					}
 				default:
 					var t Token
 					t.Rune = tok.char
-					t.Sep = sep
+					switch {
+					case len(ssep) != 0:
+						t.Sep = dict.id(ssep)
+					default:
+						t.Sep = sep
+					}
 					t.Value = tok.value
 					t.Src = tok.src
 					t.file = tok.file
@@ -198,6 +205,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 					t.seq = seq
 					*toks = append(*toks, t)
 					sep = 0
+					ssep = ssep[:0]
 				}
 			}
 			token4Pool.Put(pline)
@@ -241,11 +249,15 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 		panic(internalErrorf("invalid scope nesting but no error reported"))
 	}
 
+	ts := sep
+	if len(ssep) != 0 {
+		ts = dict.id(ssep)
+	}
 	return &AST{
 		Macros:            cpp.macros,
 		Scope:             p.fileScope,
 		TLD:               map[*Declarator]struct{}{},
-		TrailingSeperator: sep,
+		TrailingSeperator: ts,
 		TranslationUnit:   tu,
 		cfg:               ctx.cfg,
 		cpp:               cpp,
@@ -746,6 +758,9 @@ func (n *InitDeclarator) Value() *InitializerValue { return n.initializer }
 // IsConst reports whether n is constant.
 func (n *Initializer) IsConst() bool { return n == nil || n.isConst }
 
+// IsZero reports whether n is a zero value.
+func (n *Initializer) IsZero() bool { return n == nil || n.isZero }
+
 // List returns n as a flattened list of all items that are case
 // InitializerExpr.
 func (n *Initializer) List() []*Initializer { return n.list }
@@ -756,6 +771,9 @@ func (n *Initializer) Type() Type { return n.typ }
 // IsConst reports whether n is constant.
 func (n *InitializerList) IsConst() bool { return n == nil || n.isConst }
 
+// IsZero reports whether n is a zero value.
+func (n *InitializerList) IsZero() bool { return n == nil || n.isZero }
+
 // List returns n as a flattened list of all items that are case
 // InitializerExpr.
 func (n *InitializerList) List() []*Initializer {
@@ -765,6 +783,9 @@ func (n *InitializerList) List() []*Initializer {
 
 	return n.list
 }
+
+// IsEmpty reprts whether n is an empty list.
+func (n *InitializerList) IsEmpty() bool { return len(n.list) == 0 }
 
 // LexicalScope returns the lexical scope of n.
 func (n *JumpStatement) LexicalScope() Scope { return n.lexicalScope }

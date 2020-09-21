@@ -753,6 +753,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	list	[]*Initializer       */
 			/*yy:field	typ	Type                 */
 			/*yy:field	isConst	bool                 */
+			/*yy:field	isZero	bool                 */
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:
 				AssignmentExpression
@@ -761,6 +762,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/*yy:field	list	[]*Initializer */
 			/*yy:field	isConst	bool */
+			/*yy:field	isZero	bool                 */
 			/*yy:example int i[] = { [10] = x }; */
 			InitializerList:
 				Designation Initializer

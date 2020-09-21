@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"modernc.org/token"
@@ -45,6 +46,8 @@ var (
 	idSTDC           = dict.sid("STDC")
 	idVaArgs         = dict.sid("__VA_ARGS__")
 	idZero           = dict.sid("0")
+
+	cppTokensPool = sync.Pool{New: func() interface{} { r := []cppToken{}; return &r }}
 
 	protectedMacros = hideSet{ // [0], 6.10.8, 4
 		dict.sid("__DATE__"):                 {},
@@ -561,11 +564,14 @@ start:
 			for k, v := range tok.hs {
 				hs[k] = v
 			}
-			toks := c.subst(m, c.cppToks(m.repl), nil, nil, nil, hs, nil, expandDefined)
+			os := cppTokensPool.Get().(*[]cppToken)
+			toks := c.subst(m, c.cppToks(m.repl), nil, nil, nil, hs, os, expandDefined)
 			for i := range toks {
 				toks[i].pos = tok.pos
 			}
 			ts.ungets(toks)
+			(*os) = (*os)[:0]
+			cppTokensPool.Put(os)
 			goto start
 		}
 
@@ -611,11 +617,14 @@ start:
 				nhs[nm] = struct{}{}
 				hs2 = nhs
 			}
-			toks := c.subst(m, c.cppToks(m.repl), m.fp, varArgs, ap, hs2, nil, expandDefined)
+			os := cppTokensPool.Get().(*[]cppToken)
+			toks := c.subst(m, c.cppToks(m.repl), m.fp, varArgs, ap, hs2, os, expandDefined)
 			for i := range toks {
 				toks[i].pos = tok.pos
 			}
 			ts.ungets(toks)
+			(*os) = (*os)[:0]
+			cppTokensPool.Put(os)
 			goto start
 		}
 	}
@@ -756,7 +765,7 @@ func (c *cpp) actuals(m *Macro, r tokenReader) (varArgs []cppToken, ap [][]cppTo
 // requires trickier handling because the operation has a bunch of
 // combinations. After the entire input sequence is finished, the updated hide
 // set is applied to the output sequence, and that is the result of subst.
-func (c *cpp) subst(m *Macro, is []cppToken, fp []StringID, varArgs []cppToken, ap [][]cppToken, hs hideSet, os []cppToken, expandDefined bool) (r []cppToken) {
+func (c *cpp) subst(m *Macro, is []cppToken, fp []StringID, varArgs []cppToken, ap [][]cppToken, hs hideSet, os *[]cppToken, expandDefined bool) (r []cppToken) {
 	// var a []string
 	// for _, v := range ap {
 	// 	a = append(a, fmt.Sprintf("%q", cppToksStr(v, "|")))
@@ -779,7 +788,7 @@ start:
 			// -------------------------------------------------- B
 			// return subst(IS’, FP, AP, HS, OS • stringize(select(i, AP)));
 			// dbg("---- subst B")
-			os = append(os, c.stringize(arg))
+			*os = append(*os, c.stringize(arg))
 			is = is[2:]
 			goto start
 		}
@@ -794,8 +803,8 @@ start:
 				// ------------------------------------------ D
 				// return subst(IS’, FP, AP, HS, OS);
 				// dbg("---- D")
-				if c := len(os); c != 0 && os[c-1].char == ',' {
-					os = os[:c-1]
+				if c := len(*os); c != 0 && (*os)[c-1].char == ',' {
+					*os = (*os)[:c-1]
 				}
 				is = is[2:]
 				goto start
@@ -804,7 +813,7 @@ start:
 			// -------------------------------------------------- E
 			// return subst(IS’, FP, AP, HS, glue(OS, select(i, AP)));
 			// dbg("---- subst E")
-			os = c.glue(os, arg)
+			*os = c.glue(*os, arg)
 			is = is[2:]
 			goto start
 		}
@@ -813,7 +822,7 @@ start:
 			// -------------------------------------------------- F
 			// return subst(IS’, FP, AP, HS, glue(OS, T^HS’));
 			// dbg("---- subst F")
-			os = c.glue(os, is[1:2])
+			*os = c.glue(*os, is[1:2])
 			is = is[2:]
 			goto start
 		}
@@ -831,7 +840,7 @@ start:
 				// -------------------------------------------------- I
 				// return subst(IS’’, FP, AP, HS, OS • select(j, AP));
 				// dbg("---- subst I")
-				os = append(os, arg...)
+				*os = append(*os, arg...)
 				is = is[1:]
 				goto start
 			} else {
@@ -845,7 +854,7 @@ start:
 		// ---------------------------------------------------------- K
 		// return subst(##^HS’ • IS’, FP, AP, HS, OS • select(i, AP));
 		// dbg("---- subst K")
-		os = append(os, arg...)
+		*os = append(*os, arg...)
 		is = is[1:]
 		goto start
 	}
@@ -864,7 +873,7 @@ start:
 		sel := cppReader{buf: arg}
 		var w cppWriter
 		c.expand(&sel, &w, expandDefined)
-		os = append(os, w.toks...)
+		*os = append(*os, w.toks...)
 		if ax >= 0 {
 			ap[ax] = w.toks
 		}
@@ -876,7 +885,7 @@ start:
 	// note IS must be T^HS’ • IS’
 	// return subst(IS’, FP, AP, HS, OS • T^HS’);
 	// dbg("---- subst M")
-	os = append(os, tok)
+	*os = append(*os, tok)
 	is = is[1:]
 	goto start
 }
@@ -999,8 +1008,8 @@ func (c *cpp) trim(toks []cppToken) []cppToken {
 	return toks
 }
 
-func (c *cpp) hsAdd(hs hideSet, toks []cppToken) []cppToken {
-	for i, v := range toks {
+func (c *cpp) hsAdd(hs hideSet, toks *[]cppToken) []cppToken {
+	for i, v := range *toks {
 		if v.hs == nil {
 			v.hs = hideSet{}
 		}
@@ -1008,9 +1017,9 @@ func (c *cpp) hsAdd(hs hideSet, toks []cppToken) []cppToken {
 			v.hs[k] = w
 		}
 		v.file = c.file
-		toks[i] = v
+		(*toks)[i] = v
 	}
-	return toks
+	return *toks
 }
 
 func (c *cpp) parseDefined(tok cppToken, r tokenReader, w tokenWriter) {

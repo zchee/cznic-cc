@@ -5,6 +5,7 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 )
@@ -295,6 +296,8 @@ var (
 		dict.sid("__alignof__"):   ALIGNOF,
 		dict.sid("__asm"):         ASM,
 		dict.sid("__asm__"):       ASM,
+		dict.sid("__attribute"):   ATTRIBUTE,
+		dict.sid("__attribute__"): ATTRIBUTE,
 		dict.sid("__complex"):     COMPLEX,
 		dict.sid("__complex__"):   COMPLEX,
 		dict.sid("__const"):       CONST,
@@ -329,8 +332,6 @@ var (
 		dict.sid("_Float64x"):                    FLOAT64X,
 		dict.sid("_Fract"):                       FRACT,
 		dict.sid("_Sat"):                         SAT,
-		dict.sid("__attribute"):                  ATTRIBUTE,
-		dict.sid("__attribute__"):                ATTRIBUTE,
 		dict.sid("__builtin_types_compatible_p"): BUILTINTYPESCOMPATIBLE,
 		dict.sid("__float80"):                    FLOAT80,
 		dict.sid("__fp16"):                       FLOAT16,
@@ -573,18 +574,18 @@ more:
 		switch p.prev.Rune {
 		case STRINGLITERAL, LONGSTRINGLITERAL:
 			p.tok = p.prev
-			var b strings.Builder
+			var b bytes.Buffer
 			b.Grow(p.strcatLen)
 			for _, v := range p.strcats {
 				b.WriteString(v.String())
 			}
-			p.tok.Value = dict.sid(b.String())
+			p.tok.Value = dict.id(b.Bytes())
 			b.Reset()
 			b.Grow(p.sepLen)
 			for _, v := range p.seps {
 				b.WriteString(v.String())
 			}
-			p.tok.Sep = dict.sid(b.String())
+			p.tok.Sep = dict.id(b.Bytes())
 			p.prev.Rune = 0
 		default:
 			p.inBuf = p.inBuf[1:]
