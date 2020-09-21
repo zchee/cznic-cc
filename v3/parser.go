@@ -52,6 +52,7 @@ const (
 	AUTO                   // auto
 	BOOL                   // _Bool
 	BREAK                  // break
+	BUILTINCHOOSEEXPR      // __builtin_choose_expr
 	BUILTINTYPESCOMPATIBLE // __builtin_types_compatible_p
 	CASE                   // case
 	CHAR                   // char
@@ -158,6 +159,7 @@ var (
 		AUTO:                   dict.sid("AUTO"),
 		BOOL:                   dict.sid("BOOL"),
 		BREAK:                  dict.sid("BREAK"),
+		BUILTINCHOOSEEXPR:      dict.sid("BUILTINCHOOSEEXPR"),
 		BUILTINTYPESCOMPATIBLE: dict.sid("BUILTINTYPESCOMPATIBLE"),
 		CASE:                   dict.sid("CASE"),
 		CHAR:                   dict.sid("CHAR"),
@@ -332,6 +334,7 @@ var (
 		dict.sid("_Float64x"):                    FLOAT64X,
 		dict.sid("_Fract"):                       FRACT,
 		dict.sid("_Sat"):                         SAT,
+		dict.sid("__builtin_choose_expr"):        BUILTINCHOOSEEXPR,
 		dict.sid("__builtin_types_compatible_p"): BUILTINTYPESCOMPATIBLE,
 		dict.sid("__float80"):                    FLOAT80,
 		dict.sid("__fp16"):                       FLOAT16,
@@ -795,6 +798,23 @@ out:
 		break out
 	default:
 		switch p.rune() {
+		case BUILTINCHOOSEEXPR:
+			t = p.shift()
+			switch p.rune() {
+			case '(':
+				t2 = p.shift()
+			default:
+				p.err("expected (")
+			}
+			panic(todo(""))
+			list := p.argumentExpressionListOpt()
+			switch p.rune() {
+			case ')':
+				t3 = p.shift()
+			default:
+				p.err("expected )")
+			}
+			return &PostfixExpression{Case: PostfixExpressionChooseExpr, Token: t, Token2: t2, TypeName: typ, Token3: t3, ArgumentExpressionList: list}
 		case BUILTINTYPESCOMPATIBLE:
 			t = p.shift()
 			switch p.rune() {

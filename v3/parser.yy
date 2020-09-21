@@ -38,6 +38,7 @@ package cc // import "modernc.org/cc/v3"
 	AUTO			"auto"
 	BOOL			"_Bool"
 	BREAK			"break"
+	BUILTINCHOOSEXPR	"__builtin_choose_expr"
 	BUILTINTYPESCOMPATIBLE	"__builtin_types_compatible_p"
 	CASE			"case"
 	CHAR			"char"
@@ -179,6 +180,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Complit    */ |	'(' TypeName ')' '{' InitializerList ',' '}'
 			/*yy:example int i = __builtin_types_compatible_p(int, double); */
 /*yy:case TypeCmp   */  |	"__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
+			/*yy:example int i = __builtin_choose_expr(1, 2, "foo"); */
+/*yy:case ChooseExpr*/  |	"__builtin_choose_expr" '(' ConstantExpression ',' AssignmentExpression ',' AssignmentExpression ')'
 
 			/*yy:example int i = f(x); */
 			ArgumentExpressionList:

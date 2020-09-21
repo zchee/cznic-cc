@@ -3589,6 +3589,7 @@ const (
 	PostfixExpressionDec
 	PostfixExpressionComplit
 	PostfixExpressionTypeCmp
+	PostfixExpressionChooseExpr
 )
 
 // String implements fmt.Stringer
@@ -3612,6 +3613,8 @@ func (n PostfixExpressionCase) String() string {
 		return "PostfixExpressionComplit"
 	case PostfixExpressionTypeCmp:
 		return "PostfixExpressionTypeCmp"
+	case PostfixExpressionChooseExpr:
+		return "PostfixExpressionChooseExpr"
 	default:
 		return fmt.Sprintf("PostfixExpressionCase(%v)", int(n))
 	}
@@ -3620,21 +3623,25 @@ func (n PostfixExpressionCase) String() string {
 // PostfixExpression represents data reduced by productions:
 //
 //	PostfixExpression:
-//	        PrimaryExpression                                             // Case PostfixExpressionPrimary
-//	|       PostfixExpression '[' Expression ']'                          // Case PostfixExpressionIndex
-//	|       PostfixExpression '(' ArgumentExpressionList ')'              // Case PostfixExpressionCall
-//	|       PostfixExpression '.' IDENTIFIER                              // Case PostfixExpressionSelect
-//	|       PostfixExpression "->" IDENTIFIER                             // Case PostfixExpressionPSelect
-//	|       PostfixExpression "++"                                        // Case PostfixExpressionInc
-//	|       PostfixExpression "--"                                        // Case PostfixExpressionDec
-//	|       '(' TypeName ')' '{' InitializerList ',' '}'                  // Case PostfixExpressionComplit
-//	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'  // Case PostfixExpressionTypeCmp
+//	        PrimaryExpression                                                                                     // Case PostfixExpressionPrimary
+//	|       PostfixExpression '[' Expression ']'                                                                  // Case PostfixExpressionIndex
+//	|       PostfixExpression '(' ArgumentExpressionList ')'                                                      // Case PostfixExpressionCall
+//	|       PostfixExpression '.' IDENTIFIER                                                                      // Case PostfixExpressionSelect
+//	|       PostfixExpression "->" IDENTIFIER                                                                     // Case PostfixExpressionPSelect
+//	|       PostfixExpression "++"                                                                                // Case PostfixExpressionInc
+//	|       PostfixExpression "--"                                                                                // Case PostfixExpressionDec
+//	|       '(' TypeName ')' '{' InitializerList ',' '}'                                                          // Case PostfixExpressionComplit
+//	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'                                          // Case PostfixExpressionTypeCmp
+//	|       "__builtin_choose_expr" '(' ConstantExpression ',' AssignmentExpression ',' AssignmentExpression ')'  // Case PostfixExpressionChooseExpr
 type PostfixExpression struct {
 	Operand                Operand
 	Field                  Field // Case Select, PSelect
 	IsSideEffectsFree      bool
 	ArgumentExpressionList *ArgumentExpressionList
+	AssignmentExpression   *AssignmentExpression
+	AssignmentExpression2  *AssignmentExpression
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
+	ConstantExpression     *ConstantExpression
 	Expression             *Expression
 	InitializerList        *InitializerList
 	PostfixExpression      *PostfixExpression
@@ -3704,6 +3711,36 @@ func (n *PostfixExpression) Position() (r token.Position) {
 		return n.Token2.Position()
 	case 0:
 		return n.PrimaryExpression.Position()
+	case 9:
+		if p := n.Token.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token2.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.ConstantExpression.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token3.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.AssignmentExpression.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token4.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.AssignmentExpression2.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Token5.Position()
 	case 8:
 		if p := n.Token.Position(); p.IsValid() {
 			return p

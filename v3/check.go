@@ -2551,9 +2551,39 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		n.Operand = &lvalue{Operand: (&operand{abi: &ctx.cfg.ABI, typ: t, value: v}).normalize(ctx, n)}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		n.IsSideEffectsFree = true
-		n.TypeName.check(ctx, false)
-		n.TypeName2.check(ctx, false)
-		//TODO
+		t1 := n.TypeName.check(ctx, false)
+		t2 := n.TypeName2.check(ctx, false)
+		v := 0
+		switch {
+		case t1.IsArithmeticType() && t2.IsArithmeticType():
+			if t1.Kind() == t2.Kind() {
+				v = 1
+			}
+		default:
+			ctx.errNode(n, "ICE: __builtin_types_compatible_p(%v, %v)", t1, t2)
+		}
+		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(Int), value: Int64Value(v)}
+	case PostfixExpressionChooseExpr: // "__builtin_choose_expr" '(' ArgumentExpressionList ')'
+		n.Operand = noOperand
+		args := n.ArgumentExpressionList.check(ctx)
+		if len(args) != 3 {
+			ctx.errNode(n, "expected 3 arguments")
+			break
+		}
+
+		if !args[0].isConst() {
+			ctx.errNode(n, "first argument of __builtin_choose_expr must be a constant expression: %v %v", args[0].Value(), args[0].Type())
+			break
+		}
+
+		switch {
+		case args[0].IsNonZero():
+			n.Operand = args[1]
+			// n.IsSideEffectsFree =
+		default:
+			n.Operand = args[2]
+			// n.IsSideEffectsFree =
+		}
 	default:
 		panic(internalError())
 	}
