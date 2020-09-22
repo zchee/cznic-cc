@@ -2563,26 +2563,26 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 			ctx.errNode(n, "ICE: __builtin_types_compatible_p(%v, %v)", t1, t2)
 		}
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(Int), value: Int64Value(v)}
-	case PostfixExpressionChooseExpr: // "__builtin_choose_expr" '(' ArgumentExpressionList ')'
+	case PostfixExpressionChooseExpr: // "__builtin_choose_expr" '(' ConstantExpression ',' AssignmentExpression ',' AssignmentExpression ')'
 		n.Operand = noOperand
-		args := n.ArgumentExpressionList.check(ctx)
-		if len(args) != 3 {
-			ctx.errNode(n, "expected 3 arguments")
+		expr1 := n.AssignmentExpression.check(ctx)
+		if expr1 == nil {
+			ctx.errNode(n, "first argument of __builtin_choose_expr must be a constant expression")
 			break
 		}
 
-		if !args[0].isConst() {
-			ctx.errNode(n, "first argument of __builtin_choose_expr must be a constant expression: %v %v", args[0].Value(), args[0].Type())
+		if !expr1.isConst() {
+			ctx.errNode(n, "first argument of __builtin_choose_expr must be a constant expression: %v %v", expr1.Value(), expr1.Type())
 			break
 		}
 
 		switch {
-		case args[0].IsNonZero():
-			n.Operand = args[1]
-			// n.IsSideEffectsFree =
+		case expr1.IsNonZero():
+			n.Operand = n.AssignmentExpression2.check(ctx)
+			n.IsSideEffectsFree = n.AssignmentExpression2.IsSideEffectsFree
 		default:
-			n.Operand = args[2]
-			// n.IsSideEffectsFree =
+			n.Operand = n.AssignmentExpression3.check(ctx)
+			n.IsSideEffectsFree = n.AssignmentExpression3.IsSideEffectsFree
 		}
 	default:
 		panic(internalError())

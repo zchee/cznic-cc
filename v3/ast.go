@@ -3623,16 +3623,16 @@ func (n PostfixExpressionCase) String() string {
 // PostfixExpression represents data reduced by productions:
 //
 //	PostfixExpression:
-//	        PrimaryExpression                                                                                     // Case PostfixExpressionPrimary
-//	|       PostfixExpression '[' Expression ']'                                                                  // Case PostfixExpressionIndex
-//	|       PostfixExpression '(' ArgumentExpressionList ')'                                                      // Case PostfixExpressionCall
-//	|       PostfixExpression '.' IDENTIFIER                                                                      // Case PostfixExpressionSelect
-//	|       PostfixExpression "->" IDENTIFIER                                                                     // Case PostfixExpressionPSelect
-//	|       PostfixExpression "++"                                                                                // Case PostfixExpressionInc
-//	|       PostfixExpression "--"                                                                                // Case PostfixExpressionDec
-//	|       '(' TypeName ')' '{' InitializerList ',' '}'                                                          // Case PostfixExpressionComplit
-//	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'                                          // Case PostfixExpressionTypeCmp
-//	|       "__builtin_choose_expr" '(' ConstantExpression ',' AssignmentExpression ',' AssignmentExpression ')'  // Case PostfixExpressionChooseExpr
+//	        PrimaryExpression                                                                                       // Case PostfixExpressionPrimary
+//	|       PostfixExpression '[' Expression ']'                                                                    // Case PostfixExpressionIndex
+//	|       PostfixExpression '(' ArgumentExpressionList ')'                                                        // Case PostfixExpressionCall
+//	|       PostfixExpression '.' IDENTIFIER                                                                        // Case PostfixExpressionSelect
+//	|       PostfixExpression "->" IDENTIFIER                                                                       // Case PostfixExpressionPSelect
+//	|       PostfixExpression "++"                                                                                  // Case PostfixExpressionInc
+//	|       PostfixExpression "--"                                                                                  // Case PostfixExpressionDec
+//	|       '(' TypeName ')' '{' InitializerList ',' '}'                                                            // Case PostfixExpressionComplit
+//	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'                                            // Case PostfixExpressionTypeCmp
+//	|       "__builtin_choose_expr" '(' AssignmentExpression ',' AssignmentExpression ',' AssignmentExpression ')'  // Case PostfixExpressionChooseExpr
 type PostfixExpression struct {
 	Operand                Operand
 	Field                  Field // Case Select, PSelect
@@ -3640,8 +3640,8 @@ type PostfixExpression struct {
 	ArgumentExpressionList *ArgumentExpressionList
 	AssignmentExpression   *AssignmentExpression
 	AssignmentExpression2  *AssignmentExpression
+	AssignmentExpression3  *AssignmentExpression
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
-	ConstantExpression     *ConstantExpression
 	Expression             *Expression
 	InitializerList        *InitializerList
 	PostfixExpression      *PostfixExpression
@@ -3720,7 +3720,7 @@ func (n *PostfixExpression) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.ConstantExpression.Position(); p.IsValid() {
+		if p := n.AssignmentExpression.Position(); p.IsValid() {
 			return p
 		}
 
@@ -3728,7 +3728,7 @@ func (n *PostfixExpression) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.AssignmentExpression.Position(); p.IsValid() {
+		if p := n.AssignmentExpression2.Position(); p.IsValid() {
 			return p
 		}
 
@@ -3736,7 +3736,7 @@ func (n *PostfixExpression) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.AssignmentExpression2.Position(); p.IsValid() {
+		if p := n.AssignmentExpression3.Position(); p.IsValid() {
 			return p
 		}
 

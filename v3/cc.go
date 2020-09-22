@@ -457,6 +457,8 @@ type Config3 struct {
 	RejectMissingFinalNewline               bool // Pedantic: do not silently accept "foo\nbar".
 	RejectUndefExtraTokens                  bool // Pedantic: do not silently accept "#undef foo bar".
 	UnsignedEnums                           bool // GCC compatibility: enums with no negative values will have unsigned type.
+	IgnoreExternInlineFunctions             bool
+	IgnoreHeaderFunctionDefinitions         bool
 }
 
 // Config amends behavior of translation phase 4 and above. Instances of Config

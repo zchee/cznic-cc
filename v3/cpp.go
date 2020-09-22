@@ -2490,7 +2490,7 @@ func parsePragma(c *cpp, args0 []token3) {
 
 			switch {
 			case sep != 0:
-				sep = dict.sid(sep.String() + tok.String())
+				sep = dict.sid(sep.String() + tok.String()) //TODO quadratic
 			default:
 				sep = tok.value
 			}
