@@ -1,25 +1,25 @@
-go version go1.15.2 linux/arm64
-Linux pi64 5.4.0-1018-raspi #20-Ubuntu SMP Sun Sep 6 05:11:16 UTC 2020 aarch64 aarch64 aarch64 GNU/Linux
-test binary compiled for linux/arm64
+go version go1.15.2 linux/amd64
+Linux e5-1650 4.19.0-10-amd64 #1 SMP Debian 4.19.132-1 (2020-07-24) x86_64 GNU/Linux
+test binary compiled for linux/amd64
 CC_TEST_CPP=""
 === RUN   TestCPPExpand
---- PASS: TestCPPExpand (0.02s)
+--- PASS: TestCPPExpand (0.01s)
 === RUN   TestTCCExpand
---- PASS: TestTCCExpand (0.76s)
+--- PASS: TestTCCExpand (0.22s)
 === RUN   TestTranslationPhase4
 === RUN   TestTranslationPhase4/shell.c
-    cpp_test.go:265: sources 287, bytes 3,091,314, 372.826018ms, 8,291,572 B/s, mem 6,712,200
+    cpp_test.go:265: sources 252, bytes 2,972,718, 92.105952ms, 32,274,982 B/s, mem 6,461,648
 === RUN   TestTranslationPhase4/shell.c/gnu
-    cpp_test.go:265: sources 286, bytes 3,088,128, 169.421537ms, 18,227,481 B/s, mem 44,640
+    cpp_test.go:265: sources 251, bytes 2,969,521, 39.931932ms, 74,364,571 B/s, mem 96,480
 === RUN   TestTranslationPhase4/sqlite3.c
-    cpp_test.go:265: sources 198, bytes 9,271,388, 785.693592ms, 11,800,259 B/s, mem -169,064
+    cpp_test.go:265: sources 189, bytes 9,246,454, 194.835407ms, 47,457,770 B/s, mem 58,456
 === RUN   TestTranslationPhase4/sqlite3.c/gnu
-    cpp_test.go:265: sources 251, bytes 9,539,895, 959.374296ms, 9,943,871 B/s, mem 181,680
---- PASS: TestTranslationPhase4 (2.66s)
-    --- PASS: TestTranslationPhase4/shell.c (0.46s)
-    --- PASS: TestTranslationPhase4/shell.c/gnu (0.25s)
-    --- PASS: TestTranslationPhase4/sqlite3.c (0.91s)
-    --- PASS: TestTranslationPhase4/sqlite3.c/gnu (1.03s)
+    cpp_test.go:265: sources 238, bytes 9,492,063, 218.241222ms, 43,493,446 B/s, mem 358,560
+--- PASS: TestTranslationPhase4 (0.65s)
+    --- PASS: TestTranslationPhase4/shell.c (0.12s)
+    --- PASS: TestTranslationPhase4/shell.c/gnu (0.06s)
+    --- PASS: TestTranslationPhase4/sqlite3.c (0.22s)
+    --- PASS: TestTranslationPhase4/sqlite3.c/gnu (0.24s)
 === RUN   TestMacroPosition
 --- PASS: TestMacroPosition (0.00s)
 === RUN   TestParseVFS
@@ -27,53 +27,53 @@ CC_TEST_CPP=""
 === RUN   TestBOM
 --- PASS: TestBOM (0.00s)
 === RUN   TestStrCatSep
---- PASS: TestStrCatSep (0.01s)
+--- PASS: TestStrCatSep (0.00s)
 === RUN   TestParseJhjourdan
     parser_test.go:178: jhjourdan parse: ok 45/45
---- PASS: TestParseJhjourdan (0.04s)
+--- PASS: TestParseJhjourdan (0.01s)
 === RUN   TestParseSQLite
 === RUN   TestParseSQLite/shell.c
-    parser_test.go:213: sources 287, bytes 3,091,314, 348.900203ms, 8,860,166 B/s, mem 54,843,552
+    parser_test.go:213: sources 252, bytes 2,972,718, 81.347445ms, 36,543,471 B/s, mem 54,551,592
 === RUN   TestParseSQLite/shell.c/gnu
-    parser_test.go:213: sources 286, bytes 3,088,128, 361.768814ms, 8,536,191 B/s, mem 56,285,104
+    parser_test.go:213: sources 251, bytes 2,969,521, 89.761361ms, 33,082,397 B/s, mem 55,961,464
 === RUN   TestParseSQLite/sqlite3.c
-    parser_test.go:213: sources 198, bytes 9,271,388, 1.71380698s, 5,409,820 B/s, mem 314,509,208
+    parser_test.go:213: sources 189, bytes 9,246,454, 478.072772ms, 19,341,101 B/s, mem 313,677,440
 === RUN   TestParseSQLite/sqlite3.c/gnu
-    parser_test.go:213: sources 251, bytes 9,539,895, 1.861601276s, 5,124,564 B/s, mem 322,693,880
---- PASS: TestParseSQLite (5.68s)
-    --- PASS: TestParseSQLite/shell.c (0.47s)
-    --- PASS: TestParseSQLite/shell.c/gnu (0.52s)
-    --- PASS: TestParseSQLite/sqlite3.c (2.34s)
-    --- PASS: TestParseSQLite/sqlite3.c/gnu (2.36s)
+    parser_test.go:213: sources 238, bytes 9,492,063, 463.684445ms, 20,470,954 B/s, mem 323,024,536
+--- PASS: TestParseSQLite (1.40s)
+    --- PASS: TestParseSQLite/shell.c (0.11s)
+    --- PASS: TestParseSQLite/shell.c/gnu (0.12s)
+    --- PASS: TestParseSQLite/sqlite3.c (0.59s)
+    --- PASS: TestParseSQLite/sqlite3.c/gnu (0.57s)
 === RUN   TestParseTCC
 === RUN   TestParseTCC/tests/tests2
-    parser_test.go:377: files 83, sources 2,849, bytes 15,286,526, ok 83, 1.410380425s, 10,838,583 B/s, mem 2,323,544
+    parser_test.go:381: files 83, sources 2,546, bytes 14,443,056, ok 83, 330.548996ms, 43,694,145 B/s, mem 1,750,200
 === RUN   TestParseTCC/tests/tests2/gnu
-    parser_test.go:377: files 83, sources 2,778, bytes 15,070,952, ok 83, 1.587564869s, 9,493,125 B/s, mem 2,062,104
+    parser_test.go:381: files 83, sources 2,477, bytes 14,230,097, ok 83, 390.085743ms, 36,479,408 B/s, mem 1,443,224
 === CONT  TestParseTCC
     parser_test.go:270: ok 166
---- PASS: TestParseTCC (4.48s)
-    --- PASS: TestParseTCC/tests/tests2 (2.13s)
-    --- PASS: TestParseTCC/tests/tests2/gnu (2.36s)
+--- PASS: TestParseTCC (1.02s)
+    --- PASS: TestParseTCC/tests/tests2 (0.47s)
+    --- PASS: TestParseTCC/tests/tests2/gnu (0.55s)
 === RUN   TestParseGCC
 === RUN   TestParseGCC/gcc/testsuite/gcc.c-torture/compile
-    parser_test.go:377: files 1,791, sources 5,664, bytes 29,196,206, ok 1,770, 55.584331152s, 525,259 B/s, mem 60,202,928
+    parser_test.go:381: files 1,791, sources 5,643, bytes 27,698,689, ok 1,771, 8.951116898s, 3,094,439 B/s, mem 59,277,128
 === RUN   TestParseGCC/gcc/testsuite/gcc.c-torture/compile/gnu
-    parser_test.go:377: files 1,791, sources 5,655, bytes 30,770,664, ok 1,791, 2m1.351410582s, 253,566 B/s, mem 1,198,888
+    parser_test.go:381: files 1,791, sources 5,634, bytes 29,258,206, ok 1,791, 8.115806052s, 3,605,089 B/s, mem 317,832
 === RUN   TestParseGCC/gcc/testsuite/gcc.c-torture/execute
-    parser_test.go:377: files 1,701, sources 12,011, bytes 64,517,111, ok 1,670, 7.688521694s, 8,391,354 B/s, mem 3,440,696
+    parser_test.go:381: files 1,701, sources 11,233, bytes 60,508,249, ok 1,672, 1.897872313s, 31,882,149 B/s, mem 2,185,864
 === RUN   TestParseGCC/gcc/testsuite/gcc.c-torture/execute/gnu
-    parser_test.go:377: files 1,701, sources 11,914, bytes 65,783,998, ok 1,701, 8.372988842s, 7,856,692 B/s, mem 1,452,184
+    parser_test.go:381: files 1,701, sources 11,139, bytes 61,792,062, ok 1,701, 1.753178878s, 35,245,725 B/s, mem 290,216
 === CONT  TestParseGCC
-    parser_test.go:299: ok 6,932
---- PASS: TestParseGCC (196.60s)
-    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/compile (56.42s)
-    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/compile/gnu (122.14s)
-    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/execute (8.55s)
-    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/execute/gnu (9.50s)
+    parser_test.go:299: ok 6,935
+--- PASS: TestParseGCC (21.51s)
+    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/compile (9.15s)
+    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/compile/gnu (8.31s)
+    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/execute (2.09s)
+    --- PASS: TestParseGCC/gcc/testsuite/gcc.c-torture/execute/gnu (1.97s)
 === RUN   TestParserCSmith
-    parser_test.go:530: exec: "csmith": executable file not found in $PATH: skipping test
---- PASS: TestParserCSmith (0.00s)
+    parser_test.go:594: files 10, bytes 2,284,946, ok 10 in 10.143867265s
+--- PASS: TestParserCSmith (10.15s)
 === RUN   TestScanner
 --- PASS: TestScanner (0.00s)
 === RUN   TestScannerTranslationPhase2
@@ -81,67 +81,67 @@ CC_TEST_CPP=""
 === RUN   TestScannerTranslationPhase2b
 --- PASS: TestScannerTranslationPhase2b (0.00s)
 === RUN   TestScanner2
---- PASS: TestScanner2 (0.01s)
+--- PASS: TestScanner2 (0.00s)
 === RUN   TestScanner3
-    scanner_test.go:401: files 4, bytes 9,134,872, 810.372274ms, 11,272,438 B/s, mem -38,576, dict items 696,725, strings 37,195,333 53 B/item
---- PASS: TestScanner3 (2.26s)
+    scanner_test.go:401: files 4, bytes 9,134,872, 222.370483ms, 41,079,516 B/s, mem -22,446,864, dict items 693,930, strings 33,820,294 48 B/item
+--- PASS: TestScanner3 (0.64s)
 === RUN   TestScannerTranslationPhase3
-    scanner_test.go:513: files 4, bytes 9,134,872, 1.17898872s, 7,748,057 B/s, mem -1,144
---- PASS: TestScannerTranslationPhase3 (1.98s)
+    scanner_test.go:513: files 4, bytes 9,134,872, 299.962951ms, 30,453,334 B/s, mem -2,168
+--- PASS: TestScannerTranslationPhase3 (0.50s)
 === RUN   TestScannerCSmith
-    scanner_test.go:525: exec: "csmith": executable file not found in $PATH: skipping test
---- PASS: TestScannerCSmith (0.00s)
+    scanner_test.go:579: files 43, bytes 4,123,802, ok 43 in 10.016434898s
+--- PASS: TestScannerCSmith (10.02s)
 === RUN   TestTranslateSQLite
 === RUN   TestTranslateSQLite/shell.c
-    type_test.go:58: sources 287, bytes 3,091,314, 447.653302ms, 6,905,598 B/s, mem 59,532,680
+    type_test.go:61: sources 252, bytes 2,972,718, 110.253446ms, 26,962,585 B/s, mem 59,677,560
 === RUN   TestTranslateSQLite/shell.c/gnu
-    type_test.go:58: sources 286, bytes 3,088,128, 473.40188ms, 6,523,269 B/s, mem 40,890,840
+    type_test.go:61: sources 251, bytes 2,969,521, 117.385834ms, 25,297,098 B/s, mem 5,823,360
 === RUN   TestTranslateSQLite/sqlite3.c
-    type_test.go:58: sources 198, bytes 9,271,388, 2.172960113s, 4,266,708 B/s, mem 313,211,488
+    type_test.go:61: sources 189, bytes 9,246,454, 576.754823ms, 16,031,862 B/s, mem 278,348,472
 === RUN   TestTranslateSQLite/sqlite3.c/gnu
-    type_test.go:58: sources 251, bytes 9,539,895, 2.374477139s, 4,017,682 B/s, mem 244,254,528
---- PASS: TestTranslateSQLite (9.98s)
-    --- PASS: TestTranslateSQLite/shell.c (1.28s)
-    --- PASS: TestTranslateSQLite/shell.c/gnu (1.47s)
-    --- PASS: TestTranslateSQLite/sqlite3.c (3.46s)
-    --- PASS: TestTranslateSQLite/sqlite3.c/gnu (3.77s)
+    type_test.go:61: sources 238, bytes 9,492,063, 643.093817ms, 14,759,997 B/s, mem 37,473,344
+--- PASS: TestTranslateSQLite (2.48s)
+    --- PASS: TestTranslateSQLite/shell.c (0.30s)
+    --- PASS: TestTranslateSQLite/shell.c/gnu (0.34s)
+    --- PASS: TestTranslateSQLite/sqlite3.c (0.82s)
+    --- PASS: TestTranslateSQLite/sqlite3.c/gnu (1.02s)
 === RUN   TestTranslateTCC
 === RUN   TestTranslateTCC/tests/tests2
-    type_test.go:355: files 86, sources 3,023, bytes 16,250,384, ok 81, 1.671716909s, 9,720,775 B/s, mem 2,700,504
+    type_test.go:362: files 86, sources 2,724, bytes 15,442,005, ok 84, 341.955217ms, 45,157,974 B/s, mem 3,883,304
 === RUN   TestTranslateTCC/tests/tests2/gnu
-    type_test.go:355: files 86, sources 2,965, bytes 16,096,644, ok 84, 1.9906521s, 8,086,116 B/s, mem 3,454,880
+    type_test.go:362: files 86, sources 2,652, bytes 15,219,455, ok 84, 405.810704ms, 37,503,828 B/s, mem 2,481,744
 === CONT  TestTranslateTCC
-    type_test.go:126: ok 165
---- PASS: TestTranslateTCC (6.85s)
-    --- PASS: TestTranslateTCC/tests/tests2 (3.26s)
-    --- PASS: TestTranslateTCC/tests/tests2/gnu (3.58s)
+    type_test.go:129: ok 168
+--- PASS: TestTranslateTCC (1.42s)
+    --- PASS: TestTranslateTCC/tests/tests2 (0.68s)
+    --- PASS: TestTranslateTCC/tests/tests2/gnu (0.75s)
 === RUN   TestTranslateGCC
 === RUN   TestTranslateGCC/gcc/testsuite/gcc.c-torture/compile
-    type_test.go:355: files 1,730, sources 5,478, bytes 28,215,506, ok 1,717, 34.037315503s, 828,958 B/s, mem 396,544
+    type_test.go:362: files 1,730, sources 5,457, bytes 26,766,241, ok 1,718, 6.818128268s, 3,925,746 B/s, mem 447,776
 === RUN   TestTranslateGCC/gcc/testsuite/gcc.c-torture/compile/gnu
-    type_test.go:355: files 1,753, sources 5,541, bytes 30,129,518, ok 1,753, 31.621622163s, 952,813 B/s, mem 275,304
+    type_test.go:362: files 1,753, sources 5,520, bytes 28,647,498, ok 1,753, 6.992373465s, 4,096,963 B/s, mem 314,712
 === RUN   TestTranslateGCC/gcc/testsuite/gcc.c-torture/execute
-    type_test.go:355: files 1,638, sources 11,708, bytes 62,860,266, ok 1,626, 9.401659877s, 6,686,081 B/s, mem 539,296
+    type_test.go:362: files 1,638, sources 10,942, bytes 58,940,122, ok 1,628, 1.984446168s, 29,701,043 B/s, mem 1,000,544
 === RUN   TestTranslateGCC/gcc/testsuite/gcc.c-torture/execute/gnu
-    type_test.go:355: files 1,662, sources 11,709, bytes 64,598,686, ok 1,662, 10.147243129s, 6,366,131 B/s, mem 539,208
+    type_test.go:362: files 1,662, sources 10,942, bytes 60,665,541, ok 1,662, 2.138528024s, 28,367,896 B/s, mem 1,021,976
 === CONT  TestTranslateGCC
-    type_test.go:156: ok 6,758
---- PASS: TestTranslateGCC (92.01s)
-    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/compile (35.66s)
-    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/compile/gnu (33.39s)
-    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/execute (11.10s)
-    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/execute/gnu (11.86s)
+    type_test.go:159: ok 6,761
+--- PASS: TestTranslateGCC (19.50s)
+    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/compile (7.22s)
+    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/compile/gnu (7.39s)
+    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/execute (2.35s)
+    --- PASS: TestTranslateGCC/gcc/testsuite/gcc.c-torture/execute/gnu (2.53s)
 === RUN   TestAbstractDeclarator
---- PASS: TestAbstractDeclarator (0.01s)
+--- PASS: TestAbstractDeclarator (0.00s)
 === RUN   TestAbstractDeclarator2
 --- PASS: TestAbstractDeclarator2 (0.00s)
 === RUN   TestDeclarator
 --- PASS: TestDeclarator (0.00s)
 === RUN   TestDeclarator2
---- PASS: TestDeclarator2 (0.01s)
+--- PASS: TestDeclarator2 (0.00s)
 === RUN   TestTranslateCSmith
-    type_test.go:628: exec: "csmith": executable file not found in $PATH: skipping test
---- PASS: TestTranslateCSmith (0.00s)
+    type_test.go:708: files 32, bytes 2,842,102, ok 32 in 10.161600206s
+--- PASS: TestTranslateCSmith (10.16s)
 === RUN   ExampleAbstractDeclarator_ptr
 --- PASS: ExampleAbstractDeclarator_ptr (0.00s)
 === RUN   ExampleAbstractDeclarator_decl
@@ -468,6 +468,8 @@ CC_TEST_CPP=""
 --- PASS: ExamplePostfixExpression_complit (0.00s)
 === RUN   ExamplePostfixExpression_typeCmp
 --- PASS: ExamplePostfixExpression_typeCmp (0.00s)
+=== RUN   ExamplePostfixExpression_chooseExpr
+--- PASS: ExamplePostfixExpression_chooseExpr (0.00s)
 === RUN   ExamplePragmaSTDC_case0
 --- PASS: ExamplePragmaSTDC_case0 (0.00s)
 === RUN   ExamplePrimaryExpression_ident
@@ -701,5 +703,5 @@ CC_TEST_CPP=""
 === RUN   ExamplePrimaryExpression_stringLiteral
 --- PASS: ExamplePrimaryExpression_stringLiteral (0.00s)
 PASS
-ok  	modernc.org/cc/v3	326.136s
-Sun Sep 13 07:00:04 UTC 2020
+ok  	modernc.org/cc/v3	80.207s
+Wed Sep 23 16:46:47 CEST 2020

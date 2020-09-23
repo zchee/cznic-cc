@@ -1326,6 +1326,7 @@ type Declarator struct {
 	Read                   int
 	StorageClass           StorageClass
 	Write                  int
+	funcDefinition         *FunctionDefinition
 	td                     typeDescriptor
 	typ                    Type
 	AddressTaken           bool
@@ -2383,6 +2384,7 @@ type FunctionDefinition struct {
 	ReturnComplexExpr     []*Expression
 	VLAs                  []*Declarator
 	compoundStatements    []*CompoundStatement
+	checked               bool
 	CompoundStatement     *CompoundStatement
 	DeclarationList       *DeclarationList
 	DeclarationSpecifiers *DeclarationSpecifiers

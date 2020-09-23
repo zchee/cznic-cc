@@ -635,6 +635,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	Read		int		*/
 			/*yy:field	StorageClass	StorageClass	*/
 			/*yy:field	Write		int		*/
+			/*yy:field	funcDefinition	*FunctionDefinition		*/
 			/*yy:field	td		typeDescriptor	*/
 			/*yy:field	typ		Type		*/
 			/*yy:field	AddressTaken	bool		*/
@@ -928,6 +929,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	ReturnComplexExpr	[]*Expression			*/
 			/*yy:field	VLAs			[]*Declarator			*/
 			/*yy:field	compoundStatements	[]*CompoundStatement		*/
+			/*yy:field	checked			bool 				*/
 			/*yy:example int f() {} */
 			FunctionDefinition:
 				DeclarationSpecifiers Declarator DeclarationList CompoundStatement

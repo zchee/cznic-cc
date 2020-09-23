@@ -53,6 +53,7 @@ import (
 	"fmt"
 	goscanner "go/scanner"
 	gotoken "go/token"
+	"hash/maphash"
 	"io"
 	"math"
 	"os"
@@ -457,8 +458,18 @@ type Config3 struct {
 	RejectMissingFinalNewline               bool // Pedantic: do not silently accept "foo\nbar".
 	RejectUndefExtraTokens                  bool // Pedantic: do not silently accept "#undef foo bar".
 	UnsignedEnums                           bool // GCC compatibility: enums with no negative values will have unsigned type.
-	IgnoreExternInlineFunctions             bool
-	IgnoreHeaderFunctionDefinitions         bool
+}
+
+type SharedFunctionDefinitions struct {
+	M    map[*FunctionDefinition]struct{}
+	m    map[sharedFunctionDefinitionKey]*FunctionDefinition //TODO
+	hash maphash.Hash
+}
+
+type sharedFunctionDefinitionKey struct {
+	pos  StringID
+	nm   StringID
+	hash uint64
 }
 
 // Config amends behavior of translation phase 4 and above. Instances of Config
@@ -470,6 +481,14 @@ type Config struct {
 	ABI ABI
 
 	PragmaHandler func(Pragma, []Token) // Called on pragmas, other than #pragma STDC ..., if non nil
+
+	// SharedFunctionDefinitions collects function definitions having the
+	// same position and definition. This can happen, for example, when a
+	// function is defined in a header file included multiple times. Either
+	// within a single translation unit or across translation units. In the
+	// later case just supply the same SharedFunctionDefinitions in Config
+	// when translating/parsing each translation unit.
+	SharedFunctionDefinitions *SharedFunctionDefinitions
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 

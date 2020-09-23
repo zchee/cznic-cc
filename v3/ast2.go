@@ -130,6 +130,14 @@ func Parse(cfg *Config, includePaths, sysIncludePaths []string, sources []Source
 }
 
 func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Source) (*AST, error) {
+	if s := ctx.cfg.SharedFunctionDefinitions; s != nil {
+		if s.M == nil {
+			s.M = map[*FunctionDefinition]struct{}{}
+		}
+		if s.m == nil {
+			s.m = map[sharedFunctionDefinitionKey]*FunctionDefinition{}
+		}
+	}
 	if debugWorkingDir || ctx.cfg.DebugWorkingDir {
 		switch wd, err := os.Getwd(); err {
 		case nil:
@@ -583,6 +591,11 @@ func (n *BlockItem) FunctionDefinition() *FunctionDefinition { return n.fn }
 
 func (n *Declarator) IsStatic() bool          { return n.td != nil && n.td.static() }
 func (n *Declarator) isVisible(at int32) bool { return at == 0 || n.DirectDeclarator.ends() < at }
+
+// FunctionDefinition returns the function definition associated with n, if any.
+func (n *Declarator) FunctionDefinition() *FunctionDefinition {
+	return n.funcDefinition
+}
 
 // NameTok returns n's declaring name token.
 func (n *Declarator) NameTok() (r Token) {

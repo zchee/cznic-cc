@@ -84,6 +84,11 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 		return
 	}
 
+	if n.checked {
+		return
+	}
+
+	n.checked = true
 	ctx.checkFn = n
 	rd := ctx.readDelta
 	ctx.readDelta = 1
@@ -4357,6 +4362,7 @@ func (n *FunctionDefinition) checkDeclarator(ctx *context) {
 	}
 
 	n.Declarator.fnDef = true
+	n.Declarator.funcDefinition = n
 	ctx.checkFn = n
 	typ, inline, noret := n.DeclarationSpecifiers.check(ctx, false)
 	typ = n.Declarator.check(ctx, n.DeclarationSpecifiers, typ, true)

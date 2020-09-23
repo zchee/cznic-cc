@@ -7,6 +7,7 @@ package cc // import "modernc.org/cc/v3"
 import (
 	"bytes"
 	"fmt"
+	"hash/maphash"
 	"strings"
 )
 
@@ -375,9 +376,11 @@ type parser struct {
 	currFn       *FunctionDefinition
 	declScope    Scope
 	fileScope    Scope
+	hash         *maphash.Hash
 	in           chan *[]Token
 	inBuf        []Token
 	inBufp       *[]Token
+	key          sharedFunctionDefinitionKey
 	prev         Token
 	resolveScope Scope
 	resolvedIn   Scope // Typedef name
@@ -398,10 +401,15 @@ type parser struct {
 
 func newParser(ctx *context, in chan *[]Token) *parser {
 	s := Scope{}
+	var hash *maphash.Hash
+	if s := ctx.cfg.SharedFunctionDefinitions; s != nil {
+		hash = &s.hash
+	}
 	return &parser{
 		ctx:          ctx,
 		declScope:    s,
 		fileScope:    s,
+		hash:         hash,
 		in:           in,
 		resolveScope: s,
 	}
@@ -649,8 +657,24 @@ out:
 			p.tok.Rune = INTCONST
 		}
 	}
+	if p.ctx.cfg.SharedFunctionDefinitions != nil {
+		p.hashTok()
+	}
 	// dbg("parser.next p.tok %v", PrettyString(p.tok))
 	// fmt.Printf("%s%s/* %s */", p.tok.Sep, p.tok.Value, tokName(p.tok.Rune)) //TODO-
+}
+
+func (p *parser) hashTok() {
+	n := p.tok.Rune
+	for i := 0; i < 4; i++ {
+		p.hash.WriteByte(byte(n))
+		n >>= 8
+	}
+	n = int32(p.tok.Value)
+	for i := 0; i < 4; i++ {
+		p.hash.WriteByte(byte(n))
+		n >>= 8
+	}
 }
 
 // [0], 6.5.1 Primary expressions
@@ -3717,6 +3741,12 @@ func (p *parser) translationUnit() (r *TranslationUnit) {
 func (p *parser) externalDeclaration() *ExternalDeclaration {
 	var ds *DeclarationSpecifiers
 	var inline, extern bool
+	if p.ctx.cfg.SharedFunctionDefinitions != nil {
+		p.rune()
+		p.hash.Reset()
+		p.key = sharedFunctionDefinitionKey{pos: dict.sid(p.tok.Position().String())}
+		p.hashTok()
+	}
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
 		VOID, CHAR, SHORT, INT, INT8, INT16, INT32, INT64, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
@@ -3758,22 +3788,25 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 		p.declScope.declare(d.Name(), d)
 		return &ExternalDeclaration{Case: ExternalDeclarationAsm, AsmFunctionDefinition: p.asmFunctionDefinition(ds, d)}
 	default:
-		r := &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
-		switch {
-		case
-			p.ctx.cfg.IgnoreExternInlineFunctions && extern && inline,
-			p.ctx.cfg.IgnoreHeaderFunctionDefinitions && isIgnoredSuffix(d.Position().Filename):
+		fd := p.functionDefinition(ds, d)
+		if sfd := p.ctx.cfg.SharedFunctionDefinitions; sfd != nil {
+			p.key.nm = d.Name()
+			p.key.hash = p.hash.Sum64()
+			if ex := sfd.m[p.key]; ex != nil {
+				sfd.M[ex] = struct{}{}
+				d := ex.Declarator
+				p.declScope.declare(d.Name(), d)
+				r := &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: ex}
+				return r
+			}
 
-			r = nil
-		default:
-			p.declScope.declare(d.Name(), d)
+			sfd.m[p.key] = fd
 		}
+
+		p.declScope.declare(d.Name(), d)
+		r := &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: fd}
 		return r
 	}
-}
-
-func isIgnoredSuffix(s string) bool {
-	return strings.HasSuffix(s, ".h") || strings.HasSuffix(s, ".inl")
 }
 
 func (p *parser) pragmaSTDC() *PragmaSTDC {
