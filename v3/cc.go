@@ -163,6 +163,19 @@ func trc(s string, args ...interface{}) string { //TODO-
 	return r
 }
 
+func origin(skip int) string {
+	pc, fn, fl, _ := runtime.Caller(skip)
+	f := runtime.FuncForPC(pc)
+	var fns string
+	if f != nil {
+		fns = f.Name()
+		if x := strings.LastIndex(fns, "."); x > 0 {
+			fns = fns[x+1:]
+		}
+	}
+	return fmt.Sprintf("%s:%d:%s", fn, fl, fns)
+}
+
 // String returns a StringID for a given value.
 func String(s string) StringID {
 	return dict.sid(s)
@@ -868,8 +881,14 @@ func tokStr(toks interface{}, sep string) string {
 	return b.String()
 }
 
-func internalError() int                               { return internalErrorf("") }
-func internalErrorf(s string, args ...interface{}) int { panic(fmt.Errorf(s, args...)) }
+func internalError() int {
+	panic(fmt.Errorf("%v:", origin(2)))
+}
+
+func internalErrorf(s string, args ...interface{}) int {
+	s = fmt.Sprintf(s, args)
+	panic(fmt.Errorf("%v: %s", origin(2), s))
+}
 
 func detectMingw(s string) bool {
 	return strings.Contains(s, "#define __MINGW")
