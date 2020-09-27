@@ -2708,7 +2708,7 @@ func (n *ArgumentExpressionList) check(ctx *context) (r []Operand) {
 	for ; n != nil; n = n.ArgumentExpressionList {
 		op := n.AssignmentExpression.check(ctx)
 		if op.Type() == nil {
-			ctx.errNode(n, "operand has invalid or incomplete type")
+			ctx.errNode(n, "operand has usupported, invalid or incomplete type")
 			op = noOperand
 		} else if op.Type().IsComplexType() {
 			ctx.checkFn.CallSiteComplexExpr = append(ctx.checkFn.CallSiteComplexExpr, n.AssignmentExpression)
@@ -3909,7 +3909,7 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 	typ = n.typ
 	if typ == nil {
 		n.typ = ctx.cfg.ABI.Type(Int)
-		ctx.errNode(n, "declarator has invalid or incomplete type")
+		ctx.errNode(n, "declarator has unsupported, invalid or incomplete type")
 		return noType
 	}
 
@@ -4073,14 +4073,14 @@ func (n *DirectDeclarator) check(ctx *context, typ Type) Type {
 		return n.DirectDeclarator.check(ctx, checkArray(ctx, &n.Token, typ, nil, true, true))
 	case DirectDeclaratorFuncParam: // DirectDeclarator '(' ParameterTypeList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ}
-		if typ.Inline() {
+		if typ != nil && typ.Inline() {
 			ft.typeBase.flags = fInline
 		}
 		n.ParameterTypeList.check(ctx, ft)
 		return n.DirectDeclarator.check(ctx, ft)
 	case DirectDeclaratorFuncIdent: // DirectDeclarator '(' IdentifierList ')'
 		ft := &functionType{typeBase: typeBase{kind: byte(Function)}, result: typ, paramList: n.IdentifierList.check(ctx)}
-		if typ.Inline() {
+		if typ != nil && typ.Inline() {
 			ft.typeBase.flags = fInline
 		}
 		if n.idListNoDeclList {
