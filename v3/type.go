@@ -1529,19 +1529,18 @@ func (t *structType) fieldByName(name StringID, lvl int, best *int, off uintptr)
 		*best = lvl
 		if off != 0 {
 			g := *f
-			g.offset += off
+			g.offset += off //TODO this does not seem ok
 			f = &g
 		}
 		return f, ok
 	}
 
 	for _, f := range t.fields {
-		if f.Name() != 0 {
-			continue
-		}
-
-		if f, ok := f.Type().(*structType).fieldByName(name, lvl+1, best, off+f.offset); ok {
-			return f, ok
+		switch x := f.Type().(type) {
+		case *structType:
+			if f, ok := x.fieldByName(name, lvl+1, best, off+f.offset); ok {
+				return f, ok
+			}
 		}
 	}
 

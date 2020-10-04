@@ -2471,14 +2471,15 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 			d.Read += ctx.readDelta
 		}
 		st := op.Type()
+		st0 := st.underlyingType()
 		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
-			//TODO report error
+			ctx.errNode(n.PostfixExpression, "select expression of wrong type: %s (%s)", st, st0)
 			break
 		}
 
 		f, ok := st.FieldByName(n.Token2.Value)
 		if !ok {
-			//TODO report error
+			ctx.errNode(n.PostfixExpression, "unknown field %q of type %s (%s)", n.Token2.Value, st, st0)
 			break
 		}
 
