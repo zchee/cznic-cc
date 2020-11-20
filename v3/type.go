@@ -13,10 +13,12 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"sort"
 	"strings"
+	"sync"
 
 	"modernc.org/mathutil"
 )
@@ -35,6 +37,8 @@ var (
 	_ Type = (*typeBase)(nil)
 	_ Type = (*vectorType)(nil)
 	_ Type = noType
+
+	bytesBufferPool = sync.Pool{New: func() interface{} { return &bytes.Buffer{} }}
 
 	idImag        = dict.sid("imag")
 	idReal        = dict.sid("real")
@@ -305,8 +309,9 @@ type Type interface {
 	// Kind returns the specific kind of this type.
 	Kind() Kind
 
-	// Len returns an array type's length.  It panics if the type's Kind is
-	// valid but not Array.
+	// Len returns an array type's length for array types and vector size
+	// for vector types.  It panics if the type's Kind is valid but not
+	// Array or Vector.
 	Len() uintptr
 
 	// LenExpr returns an array type's length expression.  It panics if the
@@ -357,8 +362,8 @@ type Type interface {
 	// hasConst reports whether type has type qualifier "const".
 	hasConst() bool
 
-	// inline reports whether type has function specifier "inline".
-	inline() bool
+	// Inline reports whether type has function specifier "inline".
+	Inline() bool
 
 	IsSignedType() bool
 
@@ -369,9 +374,10 @@ type Type interface {
 	restrict() bool
 
 	setLen(uintptr)
+	setFnSpecs(inline, noret bool)
 	setKind(Kind)
 
-	string(*strings.Builder)
+	string(*bytes.Buffer)
 
 	base() typeBase
 
@@ -379,6 +385,8 @@ type Type interface {
 
 	// IsVolatile reports whether type has type qualifier "volatile".
 	IsVolatile() bool
+
+	isVectorType() bool
 }
 
 // A Field describes a single field in a struct/union.
@@ -390,6 +398,7 @@ type Field interface {
 	Declarator() *StructDeclarator
 	IsBitField() bool
 	IsFlexible() bool // https://en.wikipedia.org/wiki/Flexible_array_member
+	InUnion() bool    // Directly or indirectly
 	Mask() uint64
 	Name() StringID  // Can be zero.
 	Offset() uintptr // In bytes from the beginning of the struct/union.
@@ -538,7 +547,7 @@ type typeBase struct {
 	kind       byte
 }
 
-func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) Type {
+func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) (r Type) {
 	k0 := t.kind
 	var alignmentSpecifiers []*AlignmentSpecifier
 	var attributeSpecifiers []*AttributeSpecifier
@@ -716,6 +725,11 @@ func (t *typeBase) BitField() Field {
 // base implements Type.
 func (t *typeBase) base() typeBase { return *t }
 
+// isVectorType implements Type.
+func (t *typeBase) isVectorType() bool {
+	return false
+}
+
 // isCompatible implements Type.
 func (t *typeBase) isCompatible(u Type) bool {
 	// [0], 6.2.7
@@ -824,8 +838,8 @@ func (t *typeBase) FieldByName(StringID) (Field, bool) {
 // IsIncomplete implements Type.
 func (t *typeBase) IsIncomplete() bool { return t.flags&fIncomplete != 0 }
 
-// inline implements Type.
-func (t *typeBase) inline() bool { return t.flags&fInline != 0 }
+// Inline implements Type.
+func (t *typeBase) Inline() bool { return t.flags&fInline != 0 }
 
 // IsIntegerType implements Type.
 func (t *typeBase) IsIntegerType() bool { return integerTypes[t.kind] }
@@ -846,7 +860,9 @@ func (t *typeBase) IsBitFieldType() bool { return false }
 func (t *typeBase) IsRealType() bool { return realTypes[t.Kind()] }
 
 // IsScalarType implements Type.
-func (t *typeBase) IsScalarType() bool { return t.IsArithmeticType() || t.Kind() == Ptr }
+func (t *typeBase) IsScalarType() bool {
+	return (t.IsArithmeticType() || t.Kind() == Ptr) && !t.isVectorType()
+}
 
 // IsSignedType implements Type.
 func (t *typeBase) IsSignedType() bool {
@@ -946,6 +962,17 @@ func (t *typeBase) setLen(uintptr) {
 	panic(internalErrorf("%s: setLen of non-array type", t.Kind()))
 }
 
+// setFnSpecs implements Type.
+func (t *typeBase) setFnSpecs(inline, noret bool) {
+	t.flags &^= fInline | fNoReturn
+	if inline {
+		t.flags |= fInline
+	}
+	if noret {
+		t.flags |= fNoReturn
+	}
+}
+
 // setKind implements Type.
 func (t *typeBase) setKind(k Kind) { t.kind = byte(k) }
 
@@ -957,8 +984,9 @@ func (t *typeBase) IsVolatile() bool { return t.flags&fVolatile != 0 }
 
 // String implements Type.
 func (t *typeBase) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
@@ -971,7 +999,7 @@ func (t *typeBase) Tag() StringID {
 }
 
 // string implements Type.
-func (t *typeBase) string(b *strings.Builder) {
+func (t *typeBase) string(b *bytes.Buffer) {
 	spc := ""
 	if t.atomic() {
 		b.WriteString("atomic")
@@ -982,7 +1010,7 @@ func (t *typeBase) string(b *strings.Builder) {
 		b.WriteString("const")
 		spc = " "
 	}
-	if t.inline() {
+	if t.Inline() {
 		b.WriteString(spc)
 		b.WriteString("inline")
 		spc = " "
@@ -1031,13 +1059,14 @@ func (t *attributedType) Alias() Type { return t }
 
 // String implements Type.
 func (t *attributedType) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
 // string implements Type.
-func (t *attributedType) string(b *strings.Builder) {
+func (t *attributedType) string(b *bytes.Buffer) {
 	for _, v := range t.attr {
 		panic(v.Position())
 	}
@@ -1076,13 +1105,14 @@ func (t *pointerType) underlyingType() Type { return t }
 
 // String implements Type.
 func (t *pointerType) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
 // string implements Type.
-func (t *pointerType) string(b *strings.Builder) {
+func (t *pointerType) string(b *bytes.Buffer) {
 	if t := t.typeQualifiers; t != nil {
 		t.string(b)
 	}
@@ -1114,13 +1144,14 @@ func (t *arrayType) isCompatible(u Type) bool {
 
 // String implements Type.
 func (t *arrayType) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
 // string implements Type.
-func (t *arrayType) string(b *strings.Builder) {
+func (t *arrayType) string(b *bytes.Buffer) {
 	b.WriteString("array of ")
 	if t.Len() != 0 {
 		fmt.Fprintf(b, "%d ", t.Len())
@@ -1284,8 +1315,8 @@ func (t *aliasType) base() typeBase { return t.d.Type().base() }
 // hasConst implements Type.
 func (t *aliasType) hasConst() bool { return t.d.Type().hasConst() }
 
-// inline implements Type.
-func (t *aliasType) inline() bool { return t.d.Type().inline() }
+// Inline implements Type.
+func (t *aliasType) Inline() bool { return t.d.Type().Inline() }
 
 // IsSignedType implements Type.
 func (t *aliasType) IsSignedType() bool { return t.d.Type().IsSignedType() }
@@ -1303,12 +1334,16 @@ func (t *aliasType) setLen(n uintptr) { t.d.Type().setLen(n) }
 func (t *aliasType) setKind(k Kind) { t.d.Type().setKind(k) }
 
 // string implements Type.
-func (t *aliasType) string(b *strings.Builder) { b.WriteString(t.nm.String()) }
+func (t *aliasType) string(b *bytes.Buffer) { b.WriteString(t.nm.String()) }
 
 func (t *aliasType) underlyingType() Type { return t.d.Type().underlyingType() }
 
 // IsVolatile implements Type.
 func (t *aliasType) IsVolatile() bool { return t.d.Type().IsVolatile() }
+
+func (t *aliasType) isVectorType() bool { return t.d.Type().isVectorType() }
+
+func (t *aliasType) setFnSpecs(inline, noret bool) { t.d.Type().setFnSpecs(inline, noret) }
 
 type field struct {
 	bitFieldMask uint64 // bits: 3, bitOffset: 2 -> 0x1c. Valid only when isBitField is true.
@@ -1322,6 +1357,7 @@ type field struct {
 
 	isBitField bool
 	isFlexible bool // https://en.wikipedia.org/wiki/Flexible_array_member
+	inUnion    bool // directly or indirectly
 
 	bitFieldOffset byte // In bits from bit 0 within the field. Valid only when isBitField is true.
 	bitFieldWidth  byte // Width of the bit field in bits. Valid only when isBitField is true.
@@ -1336,6 +1372,7 @@ func (f *field) BitFieldWidth() int            { return int(f.bitFieldWidth) }
 func (f *field) Declarator() *StructDeclarator { return f.d }
 func (f *field) IsBitField() bool              { return f.isBitField }
 func (f *field) IsFlexible() bool              { return f.isFlexible }
+func (f *field) InUnion() bool                 { return f.inUnion }
 func (f *field) Mask() uint64                  { return f.bitFieldMask }
 func (f *field) Name() StringID                { return f.name }
 func (f *field) Offset() uintptr               { return f.offset }
@@ -1343,7 +1380,7 @@ func (f *field) Padding() int                  { return int(f.pad) } // N/A for 
 func (f *field) Promote() Type                 { return f.promote }
 func (f *field) Type() Type                    { return f.typ }
 
-func (f *field) string(b *strings.Builder) {
+func (f *field) string(b *bytes.Buffer) {
 	b.WriteString(f.name.String())
 	if f.isBitField {
 		fmt.Fprintf(b, ":%d", f.bitFieldWidth)
@@ -1437,8 +1474,9 @@ func (t *structType) underlyingType() Type { return t }
 
 // String implements Type.
 func (t *structType) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
@@ -1446,7 +1484,7 @@ func (t *structType) String() string {
 func (t *structType) Name() StringID { return t.tag }
 
 // string implements Type.
-func (t *structType) string(b *strings.Builder) {
+func (t *structType) string(b *bytes.Buffer) {
 	switch {
 	case complexTypes[t.Kind()]:
 		b.WriteString(t.Kind().String())
@@ -1491,19 +1529,18 @@ func (t *structType) fieldByName(name StringID, lvl int, best *int, off uintptr)
 		*best = lvl
 		if off != 0 {
 			g := *f
-			g.offset += off
+			g.offset += off //TODO this does not seem ok
 			f = &g
 		}
 		return f, ok
 	}
 
 	for _, f := range t.fields {
-		if f.Name() != 0 {
-			continue
-		}
-
-		if f, ok := f.Type().(*structType).fieldByName(name, lvl+1, best, off+f.offset); ok {
-			return f, ok
+		switch x := f.Type().(type) {
+		case *structType:
+			if f, ok := x.fieldByName(name, lvl+1, best, off+f.offset); ok {
+				return f, ok
+			}
 		}
 	}
 
@@ -1545,8 +1582,9 @@ func (t *taggedType) IsIncomplete() bool {
 
 // String implements Type.
 func (t *taggedType) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
@@ -1569,7 +1607,7 @@ func (t *taggedType) IsSignedType() bool { return t.underlyingType().IsSignedTyp
 func (t *taggedType) EnumType() Type { return t.underlyingType() }
 
 // string implements Type.
-func (t *taggedType) string(b *strings.Builder) {
+func (t *taggedType) string(b *bytes.Buffer) {
 	t.typeBase.string(b)
 	b.WriteByte(' ')
 	b.WriteString(t.tag.String())
@@ -1650,13 +1688,14 @@ func (t *functionType) Decay() Type { return t }
 
 // String implements Type.
 func (t *functionType) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
 // string implements Type.
-func (t *functionType) string(b *strings.Builder) {
+func (t *functionType) string(b *bytes.Buffer) {
 	b.WriteString("function(")
 	for i, v := range t.params {
 		v.Type().string(b)
@@ -1717,13 +1756,14 @@ func (t *vectorType) isCompatible(u Type) bool {
 
 // String implements Type.
 func (t *vectorType) String() string {
-	var b strings.Builder
-	t.string(&b)
+	b := bytesBufferPool.Get().(*bytes.Buffer)
+	defer func() { b.Reset(); bytesBufferPool.Put(b) }()
+	t.string(b)
 	return strings.TrimSpace(b.String())
 }
 
 // string implements Type.
-func (t *vectorType) string(b *strings.Builder) {
+func (t *vectorType) string(b *bytes.Buffer) {
 	fmt.Fprintf(b, "vector of %d ", t.Len())
 	t.Elem().string(b)
 }

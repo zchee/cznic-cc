@@ -307,6 +307,10 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bo
 		"95_bitfields_ms.c": {},
 		"99_fastcall.c":     {},
 	}
+	if isTestingMingw {
+		blacklist["loop-2f.c"] = struct{}{} // sys/mman.h
+		blacklist["loop-2g.c"] = struct{}{} // sys/mman.h
+	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
 		re = regexp.MustCompile(s)

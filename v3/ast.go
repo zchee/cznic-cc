@@ -1326,6 +1326,7 @@ type Declarator struct {
 	Read                   int
 	StorageClass           StorageClass
 	Write                  int
+	funcDefinition         *FunctionDefinition
 	td                     typeDescriptor
 	typ                    Type
 	AddressTaken           bool
@@ -2383,6 +2384,7 @@ type FunctionDefinition struct {
 	ReturnComplexExpr     []*Expression
 	VLAs                  []*Declarator
 	compoundStatements    []*CompoundStatement
+	checked               bool
 	CompoundStatement     *CompoundStatement
 	DeclarationList       *DeclarationList
 	DeclarationSpecifiers *DeclarationSpecifiers
@@ -2669,6 +2671,7 @@ type Initializer struct {
 	list                 []*Initializer
 	typ                  Type
 	isConst              bool
+	isZero               bool
 	AssignmentExpression *AssignmentExpression
 	Case                 InitializerCase `PrettyPrint:"stringer,zero"`
 	InitializerList      *InitializerList
@@ -2716,6 +2719,7 @@ func (n *Initializer) Position() (r token.Position) {
 type InitializerList struct {
 	list            []*Initializer
 	isConst         bool
+	isZero          bool
 	Designation     *Designation
 	Initializer     *Initializer
 	InitializerList *InitializerList
@@ -3587,6 +3591,7 @@ const (
 	PostfixExpressionDec
 	PostfixExpressionComplit
 	PostfixExpressionTypeCmp
+	PostfixExpressionChooseExpr
 )
 
 // String implements fmt.Stringer
@@ -3610,6 +3615,8 @@ func (n PostfixExpressionCase) String() string {
 		return "PostfixExpressionComplit"
 	case PostfixExpressionTypeCmp:
 		return "PostfixExpressionTypeCmp"
+	case PostfixExpressionChooseExpr:
+		return "PostfixExpressionChooseExpr"
 	default:
 		return fmt.Sprintf("PostfixExpressionCase(%v)", int(n))
 	}
@@ -3618,20 +3625,24 @@ func (n PostfixExpressionCase) String() string {
 // PostfixExpression represents data reduced by productions:
 //
 //	PostfixExpression:
-//	        PrimaryExpression                                             // Case PostfixExpressionPrimary
-//	|       PostfixExpression '[' Expression ']'                          // Case PostfixExpressionIndex
-//	|       PostfixExpression '(' ArgumentExpressionList ')'              // Case PostfixExpressionCall
-//	|       PostfixExpression '.' IDENTIFIER                              // Case PostfixExpressionSelect
-//	|       PostfixExpression "->" IDENTIFIER                             // Case PostfixExpressionPSelect
-//	|       PostfixExpression "++"                                        // Case PostfixExpressionInc
-//	|       PostfixExpression "--"                                        // Case PostfixExpressionDec
-//	|       '(' TypeName ')' '{' InitializerList ',' '}'                  // Case PostfixExpressionComplit
-//	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'  // Case PostfixExpressionTypeCmp
+//	        PrimaryExpression                                                                                       // Case PostfixExpressionPrimary
+//	|       PostfixExpression '[' Expression ']'                                                                    // Case PostfixExpressionIndex
+//	|       PostfixExpression '(' ArgumentExpressionList ')'                                                        // Case PostfixExpressionCall
+//	|       PostfixExpression '.' IDENTIFIER                                                                        // Case PostfixExpressionSelect
+//	|       PostfixExpression "->" IDENTIFIER                                                                       // Case PostfixExpressionPSelect
+//	|       PostfixExpression "++"                                                                                  // Case PostfixExpressionInc
+//	|       PostfixExpression "--"                                                                                  // Case PostfixExpressionDec
+//	|       '(' TypeName ')' '{' InitializerList ',' '}'                                                            // Case PostfixExpressionComplit
+//	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'                                            // Case PostfixExpressionTypeCmp
+//	|       "__builtin_choose_expr" '(' AssignmentExpression ',' AssignmentExpression ',' AssignmentExpression ')'  // Case PostfixExpressionChooseExpr
 type PostfixExpression struct {
 	Operand                Operand
 	Field                  Field // Case Select, PSelect
 	IsSideEffectsFree      bool
 	ArgumentExpressionList *ArgumentExpressionList
+	AssignmentExpression   *AssignmentExpression
+	AssignmentExpression2  *AssignmentExpression
+	AssignmentExpression3  *AssignmentExpression
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
 	Expression             *Expression
 	InitializerList        *InitializerList
@@ -3702,6 +3713,36 @@ func (n *PostfixExpression) Position() (r token.Position) {
 		return n.Token2.Position()
 	case 0:
 		return n.PrimaryExpression.Position()
+	case 9:
+		if p := n.Token.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token2.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.AssignmentExpression.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token3.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.AssignmentExpression2.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token4.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.AssignmentExpression3.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Token5.Position()
 	case 8:
 		if p := n.Token.Position(); p.IsValid() {
 			return p

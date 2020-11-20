@@ -38,6 +38,7 @@ package cc // import "modernc.org/cc/v3"
 	AUTO			"auto"
 	BOOL			"_Bool"
 	BREAK			"break"
+	BUILTINCHOOSEXPR	"__builtin_choose_expr"
 	BUILTINTYPESCOMPATIBLE	"__builtin_types_compatible_p"
 	CASE			"case"
 	CHAR			"char"
@@ -179,6 +180,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Complit    */ |	'(' TypeName ')' '{' InitializerList ',' '}'
 			/*yy:example int i = __builtin_types_compatible_p(int, double); */
 /*yy:case TypeCmp   */  |	"__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
+			/*yy:example int i = __builtin_choose_expr(1, 2, "foo"); */
+/*yy:case ChooseExpr*/  |	"__builtin_choose_expr" '(' AssignmentExpression ',' AssignmentExpression ',' AssignmentExpression ')'
 
 			/*yy:example int i = f(x); */
 			ArgumentExpressionList:
@@ -632,6 +635,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	Read		int		*/
 			/*yy:field	StorageClass	StorageClass	*/
 			/*yy:field	Write		int		*/
+			/*yy:field	funcDefinition	*FunctionDefinition		*/
 			/*yy:field	td		typeDescriptor	*/
 			/*yy:field	typ		Type		*/
 			/*yy:field	AddressTaken	bool		*/
@@ -753,6 +757,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	list	[]*Initializer       */
 			/*yy:field	typ	Type                 */
 			/*yy:field	isConst	bool                 */
+			/*yy:field	isZero	bool                 */
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:
 				AssignmentExpression
@@ -761,6 +766,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/*yy:field	list	[]*Initializer */
 			/*yy:field	isConst	bool */
+			/*yy:field	isZero	bool                 */
 			/*yy:example int i[] = { [10] = x }; */
 			InitializerList:
 				Designation Initializer
@@ -923,6 +929,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	ReturnComplexExpr	[]*Expression			*/
 			/*yy:field	VLAs			[]*Declarator			*/
 			/*yy:field	compoundStatements	[]*CompoundStatement		*/
+			/*yy:field	checked			bool 				*/
 			/*yy:example int f() {} */
 			FunctionDefinition:
 				DeclarationSpecifiers Declarator DeclarationList CompoundStatement

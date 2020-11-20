@@ -764,7 +764,8 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 
 	v := o.Value()
 	r := &operand{abi: o.abi, typ: to, offset: o.offset, value: v}
-	if v == nil {
+	switch v.(type) {
+	case nil, *InitializerValue:
 		return r
 	}
 
@@ -1088,7 +1089,7 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 
 func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 	if o.Type() == nil {
-		ctx.errNode(n, "operand has invalid or incomplete type")
+		ctx.errNode(n, "operand has unsupported, invalid or incomplete type")
 		return noOperand
 	}
 
@@ -1259,26 +1260,30 @@ type InitializerValue struct {
 func (v *InitializerValue) IsConst() bool        { return v.initializer.IsConst() }
 func (v *InitializerValue) List() []*Initializer { return v.initializer.List() }
 func (v *InitializerValue) Type() Type           { return v.typ }
-func (v *InitializerValue) add(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) and(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) cpl() Value           { panic(internalError()) }
-func (v *InitializerValue) div(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) eq(b Value) Value     { panic(internalError()) }
-func (v *InitializerValue) ge(b Value) Value     { panic(internalError()) }
-func (v *InitializerValue) gt(b Value) Value     { panic(internalError()) }
-func (v *InitializerValue) le(b Value) Value     { panic(internalError()) }
-func (v *InitializerValue) lsh(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) lt(b Value) Value     { panic(internalError()) }
-func (v *InitializerValue) mod(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) mul(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) neg() Value           { panic(internalError()) }
-func (v *InitializerValue) neq(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) or(b Value) Value     { panic(internalError()) }
-func (v *InitializerValue) rsh(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) sub(b Value) Value    { panic(internalError()) }
-func (v *InitializerValue) xor(b Value) Value    { panic(internalError()) }
+func (v *InitializerValue) add(b Value) Value    { return nil }
+func (v *InitializerValue) and(b Value) Value    { return nil }
+func (v *InitializerValue) cpl() Value           { return nil }
+func (v *InitializerValue) div(b Value) Value    { return nil }
+func (v *InitializerValue) eq(b Value) Value     { return nil }
+func (v *InitializerValue) ge(b Value) Value     { return nil }
+func (v *InitializerValue) gt(b Value) Value     { return nil }
+func (v *InitializerValue) le(b Value) Value     { return nil }
+func (v *InitializerValue) lsh(b Value) Value    { return nil }
+func (v *InitializerValue) lt(b Value) Value     { return nil }
+func (v *InitializerValue) mod(b Value) Value    { return nil }
+func (v *InitializerValue) mul(b Value) Value    { return nil }
+func (v *InitializerValue) neg() Value           { return nil }
+func (v *InitializerValue) neq(b Value) Value    { return nil }
+func (v *InitializerValue) or(b Value) Value     { return nil }
+func (v *InitializerValue) rsh(b Value) Value    { return nil }
+func (v *InitializerValue) sub(b Value) Value    { return nil }
+func (v *InitializerValue) xor(b Value) Value    { return nil }
 
 func (v *InitializerValue) isNonZero() bool {
+	if v == nil {
+		return false
+	}
+
 	for _, v := range v.List() {
 		if v.AssignmentExpression.Operand.IsNonZero() {
 			return true
@@ -1288,6 +1293,10 @@ func (v *InitializerValue) isNonZero() bool {
 }
 
 func (v *InitializerValue) isZero() bool {
+	if v == nil {
+		return false
+	}
+
 	for _, v := range v.List() {
 		if v.AssignmentExpression.Operand.IsNonZero() {
 			return false

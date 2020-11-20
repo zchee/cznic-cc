@@ -53,6 +53,7 @@ import (
 	"fmt"
 	goscanner "go/scanner"
 	gotoken "go/token"
+	"hash/maphash"
 	"io"
 	"math"
 	"os"
@@ -86,6 +87,7 @@ var (
 	debugIncludePaths bool
 	debugWorkingDir   bool
 	isTesting         bool
+	isTestingMingw    bool
 
 	idPtrdiffT = dict.sid("ptrdiff_t")
 	idSizeT    = dict.sid("size_t")
@@ -159,6 +161,19 @@ func trc(s string, args ...interface{}) string { //TODO-
 	fmt.Fprintf(os.Stdout, "%s\n", r)
 	os.Stdout.Sync()
 	return r
+}
+
+func origin(skip int) string {
+	pc, fn, fl, _ := runtime.Caller(skip)
+	f := runtime.FuncForPC(pc)
+	var fns string
+	if f != nil {
+		fns = f.Name()
+		if x := strings.LastIndex(fns, "."); x > 0 {
+			fns = fns[x+1:]
+		}
+	}
+	return fmt.Sprintf("%s:%d:%s", fn, fl, fns)
 }
 
 // String returns a StringID for a given value.
@@ -458,6 +473,18 @@ type Config3 struct {
 	UnsignedEnums                           bool // GCC compatibility: enums with no negative values will have unsigned type.
 }
 
+type SharedFunctionDefinitions struct {
+	M    map[*FunctionDefinition]struct{}
+	m    map[sharedFunctionDefinitionKey]*FunctionDefinition //TODO
+	hash maphash.Hash
+}
+
+type sharedFunctionDefinitionKey struct {
+	pos  StringID
+	nm   StringID
+	hash uint64
+}
+
 // Config amends behavior of translation phase 4 and above. Instances of Config
 // are not mutated by this package and it's safe to share/reuse them.
 //
@@ -467,6 +494,14 @@ type Config struct {
 	ABI ABI
 
 	PragmaHandler func(Pragma, []Token) // Called on pragmas, other than #pragma STDC ..., if non nil
+
+	// SharedFunctionDefinitions collects function definitions having the
+	// same position and definition. This can happen, for example, when a
+	// function is defined in a header file included multiple times. Either
+	// within a single translation unit or across translation units. In the
+	// later case just supply the same SharedFunctionDefinitions in Config
+	// when translating/parsing each translation unit.
+	SharedFunctionDefinitions *SharedFunctionDefinitions
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
@@ -493,6 +528,7 @@ type Config struct {
 	RejectStatementExpressions             bool // Pedantic: do not silently accept "i = ({foo();})".
 	RejectTypeof                           bool // Pedantic: do not silently accept "typeof foo" or "typeof(bar*)".
 	RejectUninitializedDeclarators         bool // Reject int f() { int j; return j; }
+	DoNotTypecheckAsm                      bool
 	doNotSanityCheckComplexTypes           bool // Testing only
 	fakeIncludes                           bool // Testing only.
 	ignoreErrors                           bool // Testing only.
@@ -845,5 +881,15 @@ func tokStr(toks interface{}, sep string) string {
 	return b.String()
 }
 
-func internalError() int                               { return internalErrorf("") }
-func internalErrorf(s string, args ...interface{}) int { panic(fmt.Errorf(s, args...)) }
+func internalError() int {
+	panic(fmt.Errorf("%v:", origin(2)))
+}
+
+func internalErrorf(s string, args ...interface{}) int {
+	s = fmt.Sprintf(s, args)
+	panic(fmt.Errorf("%v: %s", origin(2), s))
+}
+
+func detectMingw(s string) bool {
+	return strings.Contains(s, "#define __MINGW")
+}

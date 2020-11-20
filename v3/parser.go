@@ -5,7 +5,9 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
+	"bytes"
 	"fmt"
+	"hash/maphash"
 	"strings"
 )
 
@@ -51,6 +53,7 @@ const (
 	AUTO                   // auto
 	BOOL                   // _Bool
 	BREAK                  // break
+	BUILTINCHOOSEEXPR      // __builtin_choose_expr
 	BUILTINTYPESCOMPATIBLE // __builtin_types_compatible_p
 	CASE                   // case
 	CHAR                   // char
@@ -157,6 +160,7 @@ var (
 		AUTO:                   dict.sid("AUTO"),
 		BOOL:                   dict.sid("BOOL"),
 		BREAK:                  dict.sid("BREAK"),
+		BUILTINCHOOSEEXPR:      dict.sid("BUILTINCHOOSEEXPR"),
 		BUILTINTYPESCOMPATIBLE: dict.sid("BUILTINTYPESCOMPATIBLE"),
 		CASE:                   dict.sid("CASE"),
 		CHAR:                   dict.sid("CHAR"),
@@ -295,6 +299,8 @@ var (
 		dict.sid("__alignof__"):   ALIGNOF,
 		dict.sid("__asm"):         ASM,
 		dict.sid("__asm__"):       ASM,
+		dict.sid("__attribute"):   ATTRIBUTE,
+		dict.sid("__attribute__"): ATTRIBUTE,
 		dict.sid("__complex"):     COMPLEX,
 		dict.sid("__complex__"):   COMPLEX,
 		dict.sid("__const"):       CONST,
@@ -329,8 +335,7 @@ var (
 		dict.sid("_Float64x"):                    FLOAT64X,
 		dict.sid("_Fract"):                       FRACT,
 		dict.sid("_Sat"):                         SAT,
-		dict.sid("__attribute"):                  ATTRIBUTE,
-		dict.sid("__attribute__"):                ATTRIBUTE,
+		dict.sid("__builtin_choose_expr"):        BUILTINCHOOSEEXPR,
 		dict.sid("__builtin_types_compatible_p"): BUILTINTYPESCOMPATIBLE,
 		dict.sid("__float80"):                    FLOAT80,
 		dict.sid("__fp16"):                       FLOAT16,
@@ -371,9 +376,11 @@ type parser struct {
 	currFn       *FunctionDefinition
 	declScope    Scope
 	fileScope    Scope
+	hash         *maphash.Hash
 	in           chan *[]Token
 	inBuf        []Token
 	inBufp       *[]Token
+	key          sharedFunctionDefinitionKey
 	prev         Token
 	resolveScope Scope
 	resolvedIn   Scope // Typedef name
@@ -394,10 +401,15 @@ type parser struct {
 
 func newParser(ctx *context, in chan *[]Token) *parser {
 	s := Scope{}
+	var hash *maphash.Hash
+	if s := ctx.cfg.SharedFunctionDefinitions; s != nil {
+		hash = &s.hash
+	}
 	return &parser{
 		ctx:          ctx,
 		declScope:    s,
 		fileScope:    s,
+		hash:         hash,
 		in:           in,
 		resolveScope: s,
 	}
@@ -573,18 +585,18 @@ more:
 		switch p.prev.Rune {
 		case STRINGLITERAL, LONGSTRINGLITERAL:
 			p.tok = p.prev
-			var b strings.Builder
+			var b bytes.Buffer
 			b.Grow(p.strcatLen)
 			for _, v := range p.strcats {
 				b.WriteString(v.String())
 			}
-			p.tok.Value = dict.sid(b.String())
+			p.tok.Value = dict.id(b.Bytes())
 			b.Reset()
 			b.Grow(p.sepLen)
 			for _, v := range p.seps {
 				b.WriteString(v.String())
 			}
-			p.tok.Sep = dict.sid(b.String())
+			p.tok.Sep = dict.id(b.Bytes())
 			p.prev.Rune = 0
 		default:
 			p.inBuf = p.inBuf[1:]
@@ -645,8 +657,24 @@ out:
 			p.tok.Rune = INTCONST
 		}
 	}
+	if p.ctx.cfg.SharedFunctionDefinitions != nil {
+		p.hashTok()
+	}
 	// dbg("parser.next p.tok %v", PrettyString(p.tok))
 	// fmt.Printf("%s%s/* %s */", p.tok.Sep, p.tok.Value, tokName(p.tok.Rune)) //TODO-
+}
+
+func (p *parser) hashTok() {
+	n := p.tok.Rune
+	for i := 0; i < 4; i++ {
+		p.hash.WriteByte(byte(n))
+		n >>= 8
+	}
+	n = int32(p.tok.Value)
+	for i := 0; i < 4; i++ {
+		p.hash.WriteByte(byte(n))
+		n >>= 8
+	}
 }
 
 // [0], 6.5.1 Primary expressions
@@ -794,6 +822,36 @@ out:
 		break out
 	default:
 		switch p.rune() {
+		case BUILTINCHOOSEEXPR:
+			t = p.shift()
+			switch p.rune() {
+			case '(':
+				t2 = p.shift()
+			default:
+				p.err("expected (")
+			}
+			expr1 := p.assignmentExpression()
+			switch p.rune() {
+			case ',':
+				t3 = p.shift()
+			default:
+				p.err("expected ,")
+			}
+			expr2 := p.assignmentExpression()
+			switch p.rune() {
+			case ',':
+				t4 = p.shift()
+			default:
+				p.err("expected ,")
+			}
+			expr3 := p.assignmentExpression()
+			switch p.rune() {
+			case ')':
+				t5 = p.shift()
+			default:
+				p.err("expected )")
+			}
+			return &PostfixExpression{Case: PostfixExpressionChooseExpr, Token: t, Token2: t2, Token3: t3, Token4: t4, Token5: t5, AssignmentExpression: expr1, AssignmentExpression2: expr2, AssignmentExpression3: expr3}
 		case BUILTINTYPESCOMPATIBLE:
 			t = p.shift()
 			switch p.rune() {
@@ -1491,7 +1549,7 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Decla
 	}()
 
 	if ds == nil {
-		ds = p.declarationSpecifiers()
+		ds = p.declarationSpecifiers(nil, nil)
 	}
 	if ds == noDeclSpecs {
 		ds = nil
@@ -1523,9 +1581,12 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Decla
 // 	function-specifier declaration-specifiers_opt
 //	alignment-specifier declaration-specifiers_opt
 //	attribute-specifier declaration-specifiers_opt
-func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
+func (p *parser) declarationSpecifiers(extern, inline *bool) (r *DeclarationSpecifiers) {
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL:
+		if extern != nil && p.rune() == EXTERN {
+			*extern = true
+		}
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
 		if r.StorageClassSpecifier.Case == StorageClassSpecifierTypedef {
 			r.class = fTypedef
@@ -1535,7 +1596,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 	case CONST, RESTRICT, VOLATILE:
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
 	case INLINE, NORETURN:
-		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersFunc, FunctionSpecifier: p.functionSpecifier()}
+		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersFunc, FunctionSpecifier: p.functionSpecifier(inline)}
 	case ALIGNAS:
 		r = &DeclarationSpecifiers{Case: DeclarationSpecifiersAlignSpec, AlignmentSpecifier: p.alignmentSpecifier()}
 	case ATOMIC:
@@ -1555,6 +1616,9 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 	for prev := r; ; prev = prev.DeclarationSpecifiers {
 		switch p.rune() {
 		case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL:
+			if extern != nil && p.rune() == EXTERN {
+				*extern = true
+			}
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
 			if prev.DeclarationSpecifiers.StorageClassSpecifier.Case == StorageClassSpecifierTypedef {
 				r0.class |= fTypedef
@@ -1564,7 +1628,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 		case CONST, RESTRICT, VOLATILE:
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
 		case INLINE, NORETURN:
-			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersFunc, FunctionSpecifier: p.functionSpecifier()}
+			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersFunc, FunctionSpecifier: p.functionSpecifier(inline)}
 		case ALIGNAS:
 			prev.DeclarationSpecifiers = &DeclarationSpecifiers{Case: DeclarationSpecifiersAlignSpec, AlignmentSpecifier: p.alignmentSpecifier()}
 		case ATOMIC:
@@ -2156,9 +2220,12 @@ func (p *parser) typeQualifier() *TypeQualifier {
 //  function-specifier:
 // 	inline
 // 	_Noreturn
-func (p *parser) functionSpecifier() *FunctionSpecifier {
+func (p *parser) functionSpecifier(inline *bool) *FunctionSpecifier {
 	switch p.rune() {
 	case INLINE:
+		if inline != nil {
+			*inline = true
+		}
 		return &FunctionSpecifier{Case: FunctionSpecifierInline, Token: p.shift()}
 	case NORETURN:
 		return &FunctionSpecifier{Case: FunctionSpecifierNoreturn, Token: p.shift()}
@@ -2488,7 +2555,7 @@ func (p *parser) parameterList() (r *ParameterList) {
 // 	declaration-specifiers declarator attribute-specifier-list_opt
 // 	declaration-specifiers abstract-declarator_opt
 func (p *parser) parameterDeclaration() *ParameterDeclaration {
-	ds := p.declarationSpecifiers()
+	ds := p.declarationSpecifiers(nil, nil)
 	switch p.rune() {
 	case ',', ')':
 		r := &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds}
@@ -3249,7 +3316,7 @@ func (p *parser) blockItem() *BlockItem {
 		CONST, RESTRICT, VOLATILE,
 		ALIGNAS,
 		INLINE, NORETURN, ATTRIBUTE:
-		ds := p.declarationSpecifiers()
+		ds := p.declarationSpecifiers(nil, nil)
 		switch p.rune() {
 		case ';':
 			r := &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(ds, nil)}
@@ -3643,15 +3710,27 @@ func (p *parser) jumpStatement() *JumpStatement {
 // 	translation-unit external-declaration
 func (p *parser) translationUnit() (r *TranslationUnit) {
 	p.typedefNameEnabled = true
-	if p.rune() < 0 {
-		return &TranslationUnit{}
+	var prev *TranslationUnit
+	for p.rune() >= 0 {
+		ed := p.externalDeclaration()
+		if ed == nil {
+			continue
+		}
+
+		t := &TranslationUnit{ExternalDeclaration: ed}
+		switch {
+		case r == nil:
+			r = t
+		default:
+			prev.TranslationUnit = t
+		}
+		prev = t
+	}
+	if r != nil {
+		return r
 	}
 
-	r = &TranslationUnit{ExternalDeclaration: p.externalDeclaration()}
-	for prev := r; p.rune() >= 0; prev = prev.TranslationUnit {
-		prev.TranslationUnit = &TranslationUnit{ExternalDeclaration: p.externalDeclaration()}
-	}
-	return r
+	return &TranslationUnit{}
 }
 
 //  external-declaration:
@@ -3661,13 +3740,20 @@ func (p *parser) translationUnit() (r *TranslationUnit) {
 // 	;
 func (p *parser) externalDeclaration() *ExternalDeclaration {
 	var ds *DeclarationSpecifiers
+	var inline, extern bool
+	if p.ctx.cfg.SharedFunctionDefinitions != nil {
+		p.rune()
+		p.hash.Reset()
+		p.key = sharedFunctionDefinitionKey{pos: dict.sid(p.tok.Position().String())}
+		p.hashTok()
+	}
 	switch p.rune() {
 	case TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, THREADLOCAL,
 		VOID, CHAR, SHORT, INT, INT8, INT16, INT32, INT64, INT128, LONG, FLOAT, FLOAT16, FLOAT80, FLOAT32, FLOAT32X, FLOAT64, FLOAT64X, FLOAT128, DECIMAL32, DECIMAL64, DECIMAL128, FRACT, SAT, ACCUM, DOUBLE, SIGNED, UNSIGNED, BOOL, COMPLEX, STRUCT, UNION, ENUM, TYPEDEFNAME, TYPEOF, ATOMIC,
 		CONST, RESTRICT, VOLATILE,
 		INLINE, NORETURN, ATTRIBUTE,
 		ALIGNAS:
-		ds = p.declarationSpecifiers()
+		ds = p.declarationSpecifiers(&extern, &inline)
 	case ';':
 		if p.ctx.cfg.RejectEmptyDeclarations {
 			p.err("expected external-declaration")
@@ -3689,18 +3775,37 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 	}
 
 	p.rune()
-	d := p.declarator(true, ds.typedef(), nil)
+	d := p.declarator(false, ds.typedef(), nil)
 	switch p.rune() {
 	case ',', ';', '=', ATTRIBUTE:
+		p.declScope.declare(d.Name(), d)
 		if ds == nil {
 			ds = noDeclSpecs
 		}
 		r := &ExternalDeclaration{Case: ExternalDeclarationDecl, Declaration: p.declaration(ds, d)}
 		return r
 	case ASM:
+		p.declScope.declare(d.Name(), d)
 		return &ExternalDeclaration{Case: ExternalDeclarationAsm, AsmFunctionDefinition: p.asmFunctionDefinition(ds, d)}
 	default:
-		return &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
+		fd := p.functionDefinition(ds, d)
+		if sfd := p.ctx.cfg.SharedFunctionDefinitions; sfd != nil {
+			p.key.nm = d.Name()
+			p.key.hash = p.hash.Sum64()
+			if ex := sfd.m[p.key]; ex != nil {
+				sfd.M[ex] = struct{}{}
+				d := ex.Declarator
+				p.declScope.declare(d.Name(), d)
+				r := &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: ex}
+				return r
+			}
+
+			sfd.m[p.key] = fd
+		}
+
+		p.declScope.declare(d.Name(), d)
+		r := &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: fd}
+		return r
 	}
 }
 
