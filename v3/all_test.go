@@ -81,7 +81,6 @@ const (
 #define __PRETTY_FUNCTION__ __func__
 #define __QI__
 #define __SI__
-#define __attr_access(...)
 #define __builtin_add_overflow(...) 0
 #define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
 #define __builtin_expect(exp, c) exp
@@ -93,8 +92,10 @@ const (
 #define __builtin_va_start(ap, v)
 #define __declspec(...)
 #define __extension__
+#define __read_only__
 #define __sync_synchronize(...)
 #define __word__
+#define __write_only__
 #define asm __asm__
 
 #ifndef __GNUC__
