@@ -92,10 +92,10 @@ const (
 #define __builtin_va_start(ap, v)
 #define __declspec(...)
 #define __extension__
-#define __read_only__
+#define __read_only__ 0
 #define __sync_synchronize(...)
 #define __word__
-#define __write_only__
+#define __write_only__ 0
 #define asm __asm__
 
 #ifndef __GNUC__
