@@ -473,20 +473,16 @@ func ExampleInitDeclaratorList_uCN() {
 	// Output:
 	// &cc.InitDeclaratorList{
 	// · InitDeclarator: &cc.InitDeclarator{
-	// · · Case: InitDeclaratorDecl,
 	// · · Declarator: &cc.Declarator{
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Case: DirectDeclaratorIdent,
 	// · · · · Token: example.c:1:5: IDENTIFIER "a·z",
 	// · · · },
 	// · · },
 	// · },
 	// · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · InitDeclarator: &cc.InitDeclarator{
-	// · · · Case: InitDeclaratorDecl,
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · Case: DirectDeclaratorIdent,
 	// · · · · · Token: example.c:1:11: IDENTIFIER "a·z",
 	// · · · · },
 	// · · · },
@@ -500,7 +496,6 @@ func ExampleDirectDeclarator_line() {
 	fmt.Println(exampleAST(0, "#line 1234\nint i;"))
 	// Output:
 	// &cc.DirectDeclarator{
-	// · Case: DirectDeclaratorIdent,
 	// · Token: example.c:1234:5: IDENTIFIER "i",
 	// }
 }
@@ -509,7 +504,6 @@ func ExampleDirectDeclarator_line2() {
 	fmt.Println(exampleAST(0, "#line 1234 \"foo.c\"\nint i;"))
 	// Output:
 	// &cc.DirectDeclarator{
-	// · Case: DirectDeclaratorIdent,
 	// · Token: foo.c:1234:5: IDENTIFIER "i",
 	// }
 }
@@ -518,7 +512,7 @@ func ExamplePrimaryExpression_stringLiteral() {
 	fmt.Println(exampleAST(0, "char s[] = \"a\"\n\"b\"\n\"c\";"))
 	// Output:
 	// &cc.PrimaryExpression{
-	// · Case: PrimaryExpressionString,
+	// · Case: 6,
 	// · Token: example.c:1:12: STRINGLITERAL "abc",
 	// }
 }

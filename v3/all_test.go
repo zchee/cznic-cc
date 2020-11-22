@@ -81,14 +81,15 @@ const (
 #define __PRETTY_FUNCTION__ __func__
 #define __QI__
 #define __SI__
+#define __attr_access(...)
 #define __builtin_add_overflow(...) 0
+#define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
 #define __builtin_expect(exp, c) exp
 #define __builtin_mul_overflow(...) 0
 #define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
 #define __builtin_sub_overflow(...) 0
 #define __builtin_va_arg(ap, type) (type)__builtin_va_arg_impl(ap)
 #define __builtin_va_end(ap)
-#define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
 #define __builtin_va_start(ap, v)
 #define __declspec(...)
 #define __extension__
