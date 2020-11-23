@@ -255,10 +255,6 @@ func TestParseTCC(t *testing.T) {
 		ignoreUndefinedIdentifiers: true,
 	}
 	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
-	if _, err := os.Stat(root); err != nil {
-		t.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
-	}
-
 	ok := 0
 	const dir = "tests/tests2"
 	t.Run(dir, func(t *testing.T) {
@@ -280,10 +276,6 @@ func TestParseGCC(t *testing.T) {
 		ignoreUndefinedIdentifiers: true,
 	}
 	root := filepath.Join(testWD, filepath.FromSlash(gccDir))
-	if _, err := os.Stat(root); err != nil {
-		t.Skipf("Missing resources in %s. Please run 'go test -download -dev' to fix.", root)
-	}
-
 	ok := 0
 	for _, v := range []string{
 		"gcc/testsuite/gcc.c-torture/compile",
@@ -388,10 +380,6 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bo
 
 func BenchmarkParseTCC(b *testing.B) {
 	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
-	if _, err := os.Stat(root); err != nil {
-		b.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
-	}
-
 	cfg := &Config{
 		ignoreUndefinedIdentifiers: true,
 	}
@@ -406,10 +394,6 @@ func BenchmarkParseTCC(b *testing.B) {
 
 func BenchmarkParseGCC(b *testing.B) {
 	root := filepath.Join(testWD, filepath.FromSlash(gccDir))
-	if _, err := os.Stat(root); err != nil {
-		b.Skipf("Missing resources in %s. Please run 'go test -download -dev' to fix.", root)
-	}
-
 	cfg := &Config{
 		ignoreUndefinedIdentifiers: true,
 	}

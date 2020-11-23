@@ -5,17 +5,9 @@
 package cc // import "modernc.org/cc/v3"
 
 import (
-	"archive/tar"
-	"archive/zip"
-	"bufio"
-	"compress/bzip2"
-	"compress/gzip"
 	flags "flag"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -169,8 +161,6 @@ void *__builtin_va_arg_impl(void* ap);
 var (
 	oBlackBox = flags.String("blackbox", "", "Record CSmith file to this file")
 	oCSmith   = flags.Duration("csmith", 10*time.Second, "")
-	oDev      = flags.Bool("dev", false, "Enable developer tests/downloads.")
-	oDownload = flags.Bool("download", false, "Download missing testdata. Add -dev to download also 100+ MB of developer resources.")
 	oMaxFiles = flags.Int("maxFiles", maxFiles, "")
 	oRE       = flags.String("re", "", "")
 	oSkipInit = flags.Bool("skipInit", false, "")
@@ -180,16 +170,6 @@ var (
 	gccDir    = filepath.FromSlash("testdata/gcc-9.1.0")
 	sqliteDir = filepath.FromSlash("testdata/sqlite-amalgamation-3300100")
 	tccDir    = filepath.FromSlash("testdata/tcc-0.9.27")
-
-	downloads = []struct {
-		dir, url string
-		sz       int
-		dev      bool
-	}{
-		{gccDir, "http://mirror.koddos.net/gcc/releases/gcc-9.1.0/gcc-9.1.0.tar.gz", 118000, true},
-		{sqliteDir, "https://www.sqlite.org/2019/sqlite-amalgamation-3300100.zip", 2200, false},
-		{tccDir, "http://download.savannah.gnu.org/releases/tinycc/tcc-0.9.27.tar.bz2", 620, false},
-	}
 
 	csmithArgs = strings.Join([]string{
 		"--bitfields",                     // --bitfields | --no-bitfields: enable | disable full-bitfields structs (disabled by default).
@@ -293,17 +273,7 @@ func TestMain(m *testing.M) {
 	testIncludes = append(testIncludes, "@")
 	testIncludes = append(testIncludes, testSysIncludes...)
 
-	if *oDownload {
-		download()
-	}
-
-	path := filepath.Join(testWD, sqliteDir)
-	if _, err := os.Stat(path); err != nil {
-		log.Fatalf("Missing resources in %s. Please run 'go test -download' to fix.", path)
-		return
-	}
-
-	path = filepath.Join(testWD, sqliteDir, "shell.c")
+	path := filepath.Join(testWD, sqliteDir, "shell.c")
 	if testShellSource, err = cache.getFile(newContext(cfg), path, false, false); err != nil {
 		log.Fatal(err)
 	}
@@ -311,197 +281,6 @@ func TestMain(m *testing.M) {
 	path = filepath.Join(testWD, sqliteDir, "sqlite3.c")
 	if testSQLiteSource, err = cache.getFile(newContext(cfg), path, false, false); err != nil {
 		log.Fatal(err)
-	}
-}
-
-func download() {
-	tmp, err := ioutil.TempDir("", "")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		return
-	}
-
-	defer os.RemoveAll(tmp)
-
-	for _, v := range downloads {
-		dir := filepath.FromSlash(v.dir)
-		root := filepath.Dir(v.dir)
-		fi, err := os.Stat(dir)
-		switch {
-		case err == nil:
-			if !fi.IsDir() {
-				fmt.Fprintf(os.Stderr, "expected %s to be a directory\n", dir)
-			}
-			continue
-		default:
-			if !os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "%s", err)
-				continue
-			}
-
-			if v.dev && !*oDev {
-				fmt.Printf("Not downloading (no -dev) %v MB from %s\n", float64(v.sz)/1000, v.url)
-				continue
-			}
-
-		}
-
-		if err := func() error {
-			fmt.Printf("Downloading %v MB from %s\n", float64(v.sz)/1000, v.url)
-			resp, err := http.Get(v.url)
-			if err != nil {
-				return err
-			}
-
-			defer resp.Body.Close()
-
-			base := filepath.Base(v.url)
-			name := filepath.Join(tmp, base)
-			f, err := os.Create(name)
-			if err != nil {
-				return err
-			}
-
-			defer os.Remove(name)
-
-			n, err := io.Copy(f, resp.Body)
-			if err != nil {
-				return err
-			}
-
-			if _, err := f.Seek(0, io.SeekStart); err != nil {
-				return err
-			}
-
-			switch {
-			case strings.HasSuffix(base, ".tar.bz2"):
-				b2r := bzip2.NewReader(bufio.NewReader(f))
-				tr := tar.NewReader(b2r)
-				for {
-					hdr, err := tr.Next()
-					if err != nil {
-						if err != io.EOF {
-							return err
-						}
-
-						return nil
-					}
-
-					switch hdr.Typeflag {
-					case tar.TypeDir:
-						if err = os.MkdirAll(filepath.Join(root, hdr.Name), 0770); err != nil {
-							return err
-						}
-					case tar.TypeReg, tar.TypeRegA:
-						f, err := os.OpenFile(filepath.Join(root, hdr.Name), os.O_CREATE|os.O_WRONLY, os.FileMode(hdr.Mode))
-						if err != nil {
-							return err
-						}
-
-						w := bufio.NewWriter(f)
-						if _, err = io.Copy(w, tr); err != nil {
-							return err
-						}
-
-						if err := w.Flush(); err != nil {
-							return err
-						}
-
-						if err := f.Close(); err != nil {
-							return err
-						}
-					default:
-						return fmt.Errorf("unexpected tar header typeflag %#02x", hdr.Typeflag)
-					}
-				}
-			case strings.HasSuffix(base, ".tar.gz"):
-				gr, err := gzip.NewReader(bufio.NewReader(f))
-				if err != nil {
-					return err
-				}
-
-				tr := tar.NewReader(gr)
-				for {
-					hdr, err := tr.Next()
-					if err != nil {
-						if err != io.EOF {
-							return err
-						}
-
-						return nil
-					}
-
-					switch hdr.Typeflag {
-					case tar.TypeDir:
-						if err = os.MkdirAll(filepath.Join(root, hdr.Name), 0770); err != nil {
-							return err
-						}
-					case tar.TypeReg, tar.TypeRegA:
-						f, err := os.OpenFile(filepath.Join(root, hdr.Name), os.O_CREATE|os.O_WRONLY, os.FileMode(hdr.Mode))
-						if err != nil {
-							return err
-						}
-
-						w := bufio.NewWriter(f)
-						if _, err = io.Copy(w, tr); err != nil {
-							return err
-						}
-
-						if err := w.Flush(); err != nil {
-							return err
-						}
-
-						if err := f.Close(); err != nil {
-							return err
-						}
-					default:
-						return fmt.Errorf("unexpected tar header typeflag %#02x", hdr.Typeflag)
-					}
-				}
-			case strings.HasSuffix(base, ".zip"):
-				r, err := zip.NewReader(f, n)
-				if err != nil {
-					return err
-				}
-
-				for _, f := range r.File {
-					fi := f.FileInfo()
-					if fi.IsDir() {
-						if err := os.MkdirAll(filepath.Join(root, f.Name), 0770); err != nil {
-							return err
-						}
-
-						continue
-					}
-
-					if err := func() error {
-						rc, err := f.Open()
-						if err != nil {
-							return err
-						}
-
-						defer rc.Close()
-
-						dname := filepath.Join(root, f.Name)
-						g, err := os.Create(dname)
-						if err != nil {
-							return err
-						}
-
-						defer g.Close()
-
-						n, err = io.Copy(g, rc)
-						return err
-					}(); err != nil {
-						return err
-					}
-				}
-				return nil
-			}
-			panic(internalError())
-		}(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
 	}
 }
 

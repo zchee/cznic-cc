@@ -105,10 +105,6 @@ func TestTCCExpand(t *testing.T) {
 		"16.c": "redefinition",
 	}
 	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
-	if _, err := os.Stat(root); err != nil {
-		t.Skipf("Missing resources in %s. Please run 'go test -download' to fix.", root)
-	}
-
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
 		re = regexp.MustCompile(s)
