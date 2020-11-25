@@ -85,6 +85,7 @@ const (
 #define __declspec(...)
 #define __extension__
 #define __read_only__ 0
+#define __signed signed
 #define __sync_synchronize(...)
 #define __word__
 #define __write_only__ 0
@@ -233,8 +234,23 @@ func TestMain(m *testing.M) {
 		return
 	}
 
+	if runtime.GOOS == "darwin" {
+		switch runtime.GOARCH {
+		case "amd64":
+			testPredefGNU += `
+				#define TARGET_CPU_X86_64 1
+				#define TARGET_OS_UNIX 1
+			`
+		default:
+			log.Fatalf("clang: unknown/unsupported GOARCH: %s", runtime.GOARCH)
+		}
+	}
+
 	isTestingMingw = detectMingw(testPredefGNU)
-	testIncludes = append(testIncludes, filepath.FromSlash("/usr/include/csmith"))
+	if s := os.Getenv("CSMITH_PATH"); s != "" {
+		testIncludes = append(testIncludes, s) //TODO nix only
+	}
+	testIncludes = append(testIncludes, filepath.FromSlash("/usr/include/csmith")) //TODO nix only
 
 	if *oSkipInit {
 		return
