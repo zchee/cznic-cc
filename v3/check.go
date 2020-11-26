@@ -2953,6 +2953,11 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 		}
 	}
 
+	if d.Type() == nil {
+		ctx.errNode(d, "unresolved type of: %s", n.Token.Value)
+		return noOperand
+	}
+
 	d.Read += ctx.readDelta
 	switch t := d.Type(); t.Kind() {
 	case Function:
