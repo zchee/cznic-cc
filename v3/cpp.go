@@ -2120,6 +2120,13 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 		return
 	}
 
+	if c.ctx.cfg.PreprocessOnly {
+		for _, v := range n.toks {
+			t4 := token4{token3: v}
+			*c.outBuf = append(*c.outBuf, t4)
+		}
+	}
+
 	args := make([]cppToken, 0, len(n.arg))
 	for _, v := range n.arg {
 		switch v.char {
