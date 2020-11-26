@@ -316,8 +316,7 @@ func h(v interface{}) string {
 }
 
 func skipDir(path string) error {
-	sp := filepath.ToSlash(path)
-	if strings.Contains(sp, "/.") {
+	if strings.HasPrefix(filepath.Base(path), ".") {
 		return filepath.SkipDir
 	}
 
