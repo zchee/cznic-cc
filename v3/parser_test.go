@@ -323,6 +323,10 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bo
 		}
 
 		if info.IsDir() {
+			if path == dir {
+				return nil
+			}
+
 			return skipDir(path)
 		}
 
