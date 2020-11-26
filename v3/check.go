@@ -2920,7 +2920,13 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 		}
 
 		if !ctx.cfg.ignoreUndefinedIdentifiers {
-			ctx.errNode(n, "undefined: %s", n.Token.Value) //TODO
+			ctx.errNode(n, "undefined: %s", n.Token.Value)
+		}
+		return noOperand
+	}
+	if d == nil {
+		if !ctx.cfg.ignoreUndefinedIdentifiers {
+			ctx.errNode(n, "undefined: %s", n.Token.Value)
 		}
 		return noOperand
 	}
