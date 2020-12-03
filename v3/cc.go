@@ -600,7 +600,7 @@ func (c *context) stddef(nm StringID, s Scope, tok Token) Type {
 		}
 	}
 
-	c.errNode(&tok, "undefined: %s", nm)
+	c.errNode(&tok, "front-end: undefined: %s", nm)
 	return noType
 }
 

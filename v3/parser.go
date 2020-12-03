@@ -723,7 +723,7 @@ out:
 		}
 
 		if !p.ctx.cfg.ignoreUndefinedIdentifiers && p.ctx.cfg.RejectLateBinding {
-			p.err0(false, "undefined: %s", nm)
+			p.err0(false, "front-end: undefined: %s", nm)
 		}
 	case INTCONST:
 		kind = PrimaryExpressionInt

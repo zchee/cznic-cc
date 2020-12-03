@@ -1395,7 +1395,7 @@ func (n *PrimaryExpression) addrOf(ctx *context) Operand {
 			return n.Operand
 		}
 		if ctx.cfg.RejectLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
-			ctx.errNode(n, "undefined: %s", n.Token.Value)
+			ctx.errNode(n, "front-end: undefined: %s", n.Token.Value)
 			return noOperand
 		}
 
@@ -2839,7 +2839,7 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 	nm := n.Token.Value
 	if n.resolvedIn == nil {
 		if ctx.cfg.RejectLateBinding && !ctx.cfg.ignoreUndefinedIdentifiers {
-			ctx.errNode(n, "undefined: %s", n.Token.Value)
+			ctx.errNode(n, "front-end: undefined: %s", n.Token.Value)
 			return noOperand
 		}
 
@@ -2920,13 +2920,13 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 		}
 
 		if !ctx.cfg.ignoreUndefinedIdentifiers {
-			ctx.errNode(n, "undefined: %s", n.Token.Value)
+			ctx.errNode(n, "front-end: undefined: %s", n.Token.Value)
 		}
 		return noOperand
 	}
 	if d == nil {
 		if !ctx.cfg.ignoreUndefinedIdentifiers {
-			ctx.errNode(n, "undefined: %s", n.Token.Value)
+			ctx.errNode(n, "front-end: undefined: %s", n.Token.Value)
 		}
 		return noOperand
 	}
