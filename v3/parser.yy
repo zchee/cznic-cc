@@ -843,6 +843,7 @@ package cc // import "modernc.org/cc/v3"
 
 			/*yy:field	fn *FunctionDefinition		// Case FuncDef */
 			/*yy:field	closure map[StringID]struct{}	// Case FuncDef */
+			/*yy:field	Last	bool	*/
 			/*yy:example int f() { int i; }*/
 /*yy:case Decl       */ BlockItem:
 				Declaration

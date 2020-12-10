@@ -897,7 +897,8 @@ func (n BlockItemCase) String() string {
 type BlockItem struct {
 	fn                    *FunctionDefinition   // Case FuncDef
 	closure               map[StringID]struct{} // Case FuncDef
-	Case                  BlockItemCase         `PrettyPrint:"stringer,zero"`
+	Last                  bool
+	Case                  BlockItemCase `PrettyPrint:"stringer,zero"`
 	CompoundStatement     *CompoundStatement
 	Declaration           *Declaration
 	DeclarationSpecifiers *DeclarationSpecifiers

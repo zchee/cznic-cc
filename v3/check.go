@@ -439,7 +439,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, cur
 				panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 			}
 
-			off2, f = n.Designation.checkStruct(currObj)
+			off2, f = n.Designation.checkStruct(ctx, currObj)
 		default:
 			// [0], 6.7.8 Initialization
 			//
@@ -468,7 +468,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, cur
 	return n
 }
 
-func (n *Designation) checkStruct(t Type) (off uintptr, r Field) {
+func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, r Field) {
 	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
 		if r != nil {
 			off += r.Offset()
@@ -476,6 +476,17 @@ func (n *Designation) checkStruct(t Type) (off uintptr, r Field) {
 		d := n.Designator
 		var nm StringID
 		switch d.Case {
+		case DesignatorIndex: // '[' ConstantExpression ']'
+			if t.Kind() != Array {
+				panic(todo(""))
+			}
+
+			op := d.ConstantExpression.check(ctx, mIntConstExpr)
+			if op == nil || op == noOperand {
+				return 0, r
+			}
+
+			panic(todo("%v: TODO: %v, %v", n.Position(), t, op.Value()))
 		case DesignatorField: // '.' IDENTIFIER
 			nm = d.Token2.Value
 		case DesignatorField2: // IDENTIFIER ':'
@@ -510,7 +521,7 @@ out:
 			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 		}
 
-		off2, f = n.Designation.checkStruct(currObj)
+		off2, f = n.Designation.checkStruct(ctx, currObj)
 	default:
 		// [0], 6.7.8 Initialization
 		//
@@ -4458,18 +4469,19 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type, s Scope) {
 }
 
 func (n *CompoundStatement) check(ctx *context) Operand {
-	n.Operand = noOperand
-	if n == nil {
-		return noOperand
-	}
-
-	return n.BlockItemList.check(ctx)
+	n.Operand = n.BlockItemList.check(ctx)
+	return n.Operand
 }
 
 func (n *BlockItemList) check(ctx *context) (r Operand) {
 	r = noOperand
+	var last *BlockItem
 	for ; n != nil; n = n.BlockItemList {
+		last = n.BlockItem
 		r = n.BlockItem.check(ctx)
+	}
+	if last != nil {
+		last.Last = true
 	}
 	return r
 }
