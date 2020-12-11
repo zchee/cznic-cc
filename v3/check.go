@@ -468,10 +468,11 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, cur
 	return n
 }
 
-func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, r Field) {
+func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field) {
+	index := false
 	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
-		if r != nil {
-			off += r.Offset()
+		if !index && rf != nil {
+			off += rf.Offset()
 		}
 		d := n.Designator
 		var nm StringID
@@ -483,10 +484,20 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, r Field) {
 
 			op := d.ConstantExpression.check(ctx, mIntConstExpr)
 			if op == nil || op == noOperand {
-				return 0, r
+				return 0, rf
 			}
 
-			panic(todo("%v: TODO: %v, %v", n.Position(), t, op.Value()))
+			index = true
+			t = t.Elem()
+			switch x := op.Value().(type) {
+			case Int64Value:
+				off += uintptr(x) * t.Size()
+			case Uint64Value:
+				off += uintptr(x) * t.Size()
+			default:
+				panic(todo("%T", x))
+			}
+			continue
 		case DesignatorField: // '.' IDENTIFIER
 			nm = d.Token2.Value
 		case DesignatorField2: // IDENTIFIER ':'
@@ -499,10 +510,10 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, r Field) {
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		r = f
+		rf = f
 		t = f.Type()
 	}
-	return off, r
+	return off, rf
 }
 
 // [0], 6.7.8 Initialization
