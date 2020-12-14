@@ -17,9 +17,10 @@ all_log:
 	uname -a
 	./unconvert.sh
 	gofmt -l -s -w *.go
-	GOOS=linux GOARCH=arm go build
+	GOOS=darwin GOARCH=amd64 go build
 	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
+	GOOS=linux GOARCH=arm go build
 	GOOS=windows GOARCH=386 go build
 	GOOS=windows GOARCH=amd64 go build
 	go vet | grep -v $(ngrep) || true
@@ -49,6 +50,10 @@ test_linux_arm64:
 	GOOS=linux GOARCH=arm64 make test
 
 test_windows_amd64:
+	go version
+	go test -v -timeout 24h
+
+test_windows386:
 	go version
 	go test -v -timeout 24h
 
