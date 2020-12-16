@@ -78,6 +78,24 @@ func (n *ExternalDeclaration) checkFnBodies(ctx *context) {
 	}
 }
 
+// https://gcc.gnu.org/onlinedocs/gcc/Inline.html
+//
+// If you specify both inline and extern in the function definition, then the
+// definition is used only for inlining. In no case is the function compiled on
+// its own, not even if you refer to its address explicitly. Such an address
+// becomes an external reference, as if you had only declared the function, and
+// had not defined it.
+//
+// This combination of inline and extern has almost the effect of a macro. The
+// way to use it is to put a function definition in a header file with these
+// keywords, and put another copy of the definition (lacking inline and extern)
+// in a library file. The definition in the header file causes most calls to
+// the function to be inlined. If any uses of the function remain, they refer
+// to the single copy in the library.
+func (n *Declarator) isExternInline() bool {
+	return n.IsExtern() && n.Type() != nil && n.Type().Inline()
+}
+
 // DeclarationSpecifiers Declarator DeclarationList CompoundStatement
 func (n *FunctionDefinition) checkBody(ctx *context) {
 	if n == nil {
@@ -89,6 +107,10 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 	}
 
 	n.checked = true
+	if n.Declarator.isExternInline() {
+		return
+	}
+
 	ctx.checkFn = n
 	rd := ctx.readDelta
 	ctx.readDelta = 1
