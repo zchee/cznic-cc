@@ -363,7 +363,7 @@ func (s *scanner) lex() {
 			case 'u':
 				n = 4
 			case 'U':
-				n = 4
+				n = 8
 			default:
 				panic(internalError())
 			}
