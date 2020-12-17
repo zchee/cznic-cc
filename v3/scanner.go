@@ -470,6 +470,20 @@ func (s *scanner) next() (r byte) {
 				}
 				b = append(b[:n:n], '\n') // bufio.Reader owns the bytes
 			}
+		case n > 2 && b[n-3] == '\\' && b[n-2] == '\r':
+			// we've got a windows source that has \r\n line endings. 
+			if n == 3 {
+				goto more
+			}
+
+			b = b[:n-3]
+			n = len(b)
+			if s.fileOffset == s.file.Size() {
+				if s.ctx.cfg.RejectFinalBackslash {
+					s.errPos(s.pos+token.Pos(n+1), "source file final new-line character shall not be preceded by a backslash character")
+				}
+				b = append(b[:n:n], '\n') // bufio.Reader owns the bytes
+			}
 		}
 		s.lineBuf = b
 	}
