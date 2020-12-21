@@ -33,6 +33,7 @@ var (
 	idEmptyString    = dict.sid(`""`)
 	idFILE           = dict.sid("__FILE__")
 	idFPContract     = dict.sid("FP_CONTRACT")
+	idFdZero         = dict.sid("FD_ZERO")
 	idFenvAccess     = dict.sid("FENV_ACCESS")
 	idGNUC           = dict.sid("__GNUC__")
 	idIntMaxWidth    = dict.sid("__INTMAX_WIDTH__")
@@ -576,6 +577,9 @@ start:
 		}
 
 		if m != nil && m.isFnLike {
+			if nm == idFdZero && c.ctx.cfg.ReplaceMacroFdZero != "" {
+				m = c.macros[dict.sid(c.ctx.cfg.ReplaceMacroFdZero)]
+			}
 			// -------------------------------------------------- D
 			// check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 			// return expand(subst(ts(T), fp(T), actuals,(HS \cap HS’) \cup {T }, {}) • TS’’);

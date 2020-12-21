@@ -471,7 +471,7 @@ func (s *scanner) next() (r byte) {
 				b = append(b[:n:n], '\n') // bufio.Reader owns the bytes
 			}
 		case n > 2 && b[n-3] == '\\' && b[n-2] == '\r':
-			// we've got a windows source that has \r\n line endings. 
+			// we've got a windows source that has \r\n line endings.
 			if n == 3 {
 				goto more
 			}
