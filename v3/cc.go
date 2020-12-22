@@ -445,7 +445,9 @@ type Config3 struct {
 	// evaluates to is true the include directive will be ignored completely.
 	IgnoreInclude *regexp.Regexp
 
-	ReplaceMacroFdZero string // Name of a macro to use instead of FD_ZERO.
+	ReplaceMacroFdZero                   string // Name of a macro to use instead of FD_ZERO.
+	ReplaceMacroTclDefaultDoubleRounding string // Name of a macro to use instead of TCL_DEFAULT_DOUBLE_ROUNDING.
+	ReplaceMacroTclIeeeDoubleRounding    string // Name of a macro to use instead of TCL_IEEE_DOUBLE_ROUNDING.
 
 	WorkingDir string     // Overrides os.Getwd if non empty.
 	Filesystem Filesystem // Overrides filesystem access if not empty.

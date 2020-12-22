@@ -26,27 +26,29 @@ var (
 	_ tokenReader = (*cpp)(nil)
 	_ tokenWriter = (*cpp)(nil)
 
-	idCOUNTER        = dict.sid("__COUNTER__")
-	idCxLimitedRange = dict.sid("CX_LIMITED_RANGE")
-	idDefault        = dict.sid("DEFAULT")
-	idDefined        = dict.sid("defined")
-	idEmptyString    = dict.sid(`""`)
-	idFILE           = dict.sid("__FILE__")
-	idFPContract     = dict.sid("FP_CONTRACT")
-	idFdZero         = dict.sid("FD_ZERO")
-	idFenvAccess     = dict.sid("FENV_ACCESS")
-	idGNUC           = dict.sid("__GNUC__")
-	idIntMaxWidth    = dict.sid("__INTMAX_WIDTH__")
-	idL              = dict.sid("L")
-	idLINE           = dict.sid("__LINE__")
-	idNL             = dict.sid("\n")
-	idOff            = dict.sid("OFF")
-	idOn             = dict.sid("ON")
-	idOne            = dict.sid("1")
-	idPragmaSTDC     = dict.sid("__pragma_stdc")
-	idSTDC           = dict.sid("STDC")
-	idVaArgs         = dict.sid("__VA_ARGS__")
-	idZero           = dict.sid("0")
+	idCOUNTER                  = dict.sid("__COUNTER__")
+	idCxLimitedRange           = dict.sid("CX_LIMITED_RANGE")
+	idDefault                  = dict.sid("DEFAULT")
+	idDefined                  = dict.sid("defined")
+	idEmptyString              = dict.sid(`""`)
+	idFILE                     = dict.sid("__FILE__")
+	idFPContract               = dict.sid("FP_CONTRACT")
+	idFdZero                   = dict.sid("FD_ZERO")
+	idFenvAccess               = dict.sid("FENV_ACCESS")
+	idGNUC                     = dict.sid("__GNUC__")
+	idIntMaxWidth              = dict.sid("__INTMAX_WIDTH__")
+	idL                        = dict.sid("L")
+	idLINE                     = dict.sid("__LINE__")
+	idNL                       = dict.sid("\n")
+	idOff                      = dict.sid("OFF")
+	idOn                       = dict.sid("ON")
+	idOne                      = dict.sid("1")
+	idPragmaSTDC               = dict.sid("__pragma_stdc")
+	idSTDC                     = dict.sid("STDC")
+	idTclDefaultDoubleRounding = dict.sid("TCL_DEFAULT_DOUBLE_ROUNDING")
+	idTclIeeeDoubleRounding    = dict.sid("TCL_IEEE_DOUBLE_ROUNDING")
+	idVaArgs                   = dict.sid("__VA_ARGS__")
+	idZero                     = dict.sid("0")
 
 	cppTokensPool = sync.Pool{New: func() interface{} { r := []cppToken{}; return &r }}
 
@@ -557,79 +559,94 @@ start:
 			case idCOUNTER:
 				c.counterMacro.repl[0].value = dict.sid(fmt.Sprint(c.counter))
 				c.counter++
+			case idTclDefaultDoubleRounding:
+				if c.ctx.cfg.ReplaceMacroTclDefaultDoubleRounding != "" {
+					m = c.macros[dict.sid(c.ctx.cfg.ReplaceMacroTclDefaultDoubleRounding)]
+				}
+			case idTclIeeeDoubleRounding:
+				if c.ctx.cfg.ReplaceMacroTclIeeeDoubleRounding != "" {
+					m = c.macros[dict.sid(c.ctx.cfg.ReplaceMacroTclIeeeDoubleRounding)]
+				}
 			}
-			// -------------------------------------------------- C
-			// return expand(subst(ts(T), {}, {}, HS \cup {T}, {}) • TS’ );
-			// dbg("---- expand C")
-			hs := hideSet{nm: {}}
-			for k, v := range tok.hs {
-				hs[k] = v
+			if m != nil {
+				// -------------------------------------------------- C
+				// return expand(subst(ts(T), {}, {}, HS \cup {T}, {}) • TS’ );
+				// dbg("---- expand C")
+				hs := hideSet{nm: {}}
+				for k, v := range tok.hs {
+					hs[k] = v
+				}
+				os := cppTokensPool.Get().(*[]cppToken)
+				toks := c.subst(m, c.cppToks(m.repl), nil, nil, nil, hs, os, expandDefined)
+				for i := range toks {
+					toks[i].pos = tok.pos
+				}
+				ts.ungets(toks)
+				(*os) = (*os)[:0]
+				cppTokensPool.Put(os)
+				goto start
 			}
-			os := cppTokensPool.Get().(*[]cppToken)
-			toks := c.subst(m, c.cppToks(m.repl), nil, nil, nil, hs, os, expandDefined)
-			for i := range toks {
-				toks[i].pos = tok.pos
-			}
-			ts.ungets(toks)
-			(*os) = (*os)[:0]
-			cppTokensPool.Put(os)
-			goto start
 		}
 
 		if m != nil && m.isFnLike {
-			if nm == idFdZero && c.ctx.cfg.ReplaceMacroFdZero != "" {
-				m = c.macros[dict.sid(c.ctx.cfg.ReplaceMacroFdZero)]
-			}
-			// -------------------------------------------------- D
-			// check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
-			// return expand(subst(ts(T), fp(T), actuals,(HS \cap HS’) \cup {T }, {}) • TS’’);
-			// dbg("---- expand D")
-			hs := tok.hs
-			var skip []cppToken
-		again:
-			t2, ok := ts.read()
-			if !ok {
-				// dbg("expand write %q", tok)
-				w.write(tok)
-				ts.ungets(skip)
-				goto start
-			}
-
-			skip = append(skip, t2)
-			switch t2.char {
-			case '\n', ' ':
-				goto again
-			case '(':
-				// ok
-			default:
-				w.write(tok)
-				ts.ungets(skip)
-				goto start
-			}
-
-			varArgs, ap, hs2 := c.actuals(m, ts)
-			switch {
-			case len(hs2) == 0:
-				hs2 = hideSet{nm: {}}
-			default:
-				nhs := hideSet{}
-				for k := range hs {
-					if _, ok := hs2[k]; ok {
-						nhs[k] = struct{}{}
-					}
+			switch nm {
+			case idFdZero:
+				if c.ctx.cfg.ReplaceMacroFdZero != "" {
+					m = c.macros[dict.sid(c.ctx.cfg.ReplaceMacroFdZero)]
 				}
-				nhs[nm] = struct{}{}
-				hs2 = nhs
 			}
-			os := cppTokensPool.Get().(*[]cppToken)
-			toks := c.subst(m, c.cppToks(m.repl), m.fp, varArgs, ap, hs2, os, expandDefined)
-			for i := range toks {
-				toks[i].pos = tok.pos
+			if m != nil {
+				// -------------------------------------------------- D
+				// check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
+				// return expand(subst(ts(T), fp(T), actuals,(HS \cap HS’) \cup {T }, {}) • TS’’);
+				// dbg("---- expand D")
+				hs := tok.hs
+				var skip []cppToken
+			again:
+				t2, ok := ts.read()
+				if !ok {
+					// dbg("expand write %q", tok)
+					w.write(tok)
+					ts.ungets(skip)
+					goto start
+				}
+
+				skip = append(skip, t2)
+				switch t2.char {
+				case '\n', ' ':
+					goto again
+				case '(':
+					// ok
+				default:
+					w.write(tok)
+					ts.ungets(skip)
+					goto start
+				}
+
+				varArgs, ap, hs2 := c.actuals(m, ts)
+				switch {
+				case len(hs2) == 0:
+					hs2 = hideSet{nm: {}}
+				default:
+					nhs := hideSet{}
+					for k := range hs {
+						if _, ok := hs2[k]; ok {
+							nhs[k] = struct{}{}
+						}
+					}
+					nhs[nm] = struct{}{}
+					hs2 = nhs
+				}
+				os := cppTokensPool.Get().(*[]cppToken)
+				toks := c.subst(m, c.cppToks(m.repl), m.fp, varArgs, ap, hs2, os, expandDefined)
+				for i := range toks {
+					toks[i].pos = tok.pos
+				}
+				ts.ungets(toks)
+				(*os) = (*os)[:0]
+				cppTokensPool.Put(os)
+				goto start
 			}
-			ts.ungets(toks)
-			(*os) = (*os)[:0]
-			cppTokensPool.Put(os)
-			goto start
 		}
 	}
 
