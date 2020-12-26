@@ -36,6 +36,7 @@ var (
 	idFdZero                   = dict.sid("FD_ZERO")
 	idFenvAccess               = dict.sid("FENV_ACCESS")
 	idGNUC                     = dict.sid("__GNUC__")
+	idHasIncludeImpl           = dict.sid("__has_include_impl")
 	idIntMaxWidth              = dict.sid("__INTMAX_WIDTH__")
 	idL                        = dict.sid("L")
 	idLINE                     = dict.sid("__LINE__")
@@ -624,6 +625,26 @@ start:
 				}
 
 				varArgs, ap, hs2 := c.actuals(m, ts)
+				if nm == idHasIncludeImpl { //TODO-
+					if len(ap) != 1 || len(ap[0]) != 1 {
+						panic(todo("internal error"))
+					}
+
+					arg := ap[0][0].value.String()
+					arg = arg[1 : len(arg)-1] // `"<x>"` -> `<x>`, `""y""` -> `"y"`
+					var tok3 token3
+					tok3.char = PPNUMBER
+					switch _, err := c.hasInclude(&tok, arg); {
+					case err != nil:
+						tok3.value = idZero
+					default:
+						tok3.value = idOne
+					}
+					tok := cppToken{token4{token3: tok3, file: c.file}, nil}
+					ts.ungets([]cppToken{tok})
+					goto start
+				}
+
 				switch {
 				case len(hs2) == 0:
 					hs2 = hideSet{nm: {}}
@@ -657,6 +678,77 @@ start:
 	// dbg("expand write %q", tok)
 	w.write(tok)
 	goto start
+}
+
+func (c *cpp) hasInclude(n Node, nm string) (string, error) {
+	var (
+		b     byte
+		paths []string
+		sys   bool
+	)
+	switch {
+	case nm != "" && nm[0] == '"':
+		paths = c.ctx.includePaths
+		b = '"'
+	case nm != "" && nm[0] == '<':
+		paths = c.ctx.sysIncludePaths
+		sys = true
+		b = '>'
+	case nm == "":
+		return "", fmt.Errorf("%v: invalid empty include argument", n.Position())
+	default:
+		return "", fmt.Errorf("%v: invalid include argument %s", n.Position(), nm)
+	}
+
+	x := strings.IndexByte(nm[1:], b)
+	if x < 0 {
+		return "", fmt.Errorf("%v: invalid include argument %s", n.Position(), nm)
+	}
+
+	nm = filepath.FromSlash(nm[1 : x+1])
+	switch {
+	case filepath.IsAbs(nm):
+		fi, err := c.ctx.statFile(nm, sys)
+		if err != nil {
+			return "", fmt.Errorf("%v: %s", n.Position(), err)
+		}
+
+		if fi.IsDir() {
+			return "", fmt.Errorf("%v: %s is a directory, not a file", n.Position(), nm)
+		}
+
+		return nm, nil
+	default:
+		dir := filepath.Dir(c.file.Name())
+		for _, v := range paths {
+			if v == "@" {
+				v = dir
+			}
+
+			var p string
+			switch {
+			case strings.HasPrefix(nm, "./"):
+				wd := c.ctx.cfg.WorkingDir
+				if wd == "" {
+					var err error
+					if wd, err = os.Getwd(); err != nil {
+						return "", fmt.Errorf("%v: cannot determine working dir: %v", n.Position(), err)
+					}
+				}
+				p = filepath.Join(wd, nm)
+			default:
+				p = filepath.Join(v, nm)
+			}
+			fi, err := c.ctx.statFile(p, sys)
+			if err != nil || fi.IsDir() {
+				continue
+			}
+
+			return p, nil
+		}
+		wd, _ := os.Getwd()
+		return "", fmt.Errorf("include file not found: %s (wd %s)\nsearch paths:\n\t%s", nm, wd, strings.Join(paths, "\n\t"))
+	}
 }
 
 func (c *cpp) actuals(m *Macro, r tokenReader) (varArgs []cppToken, ap [][]cppToken, hs hideSet) {
@@ -2281,7 +2373,8 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 	}
 
 	if path == "" {
-		c.err(toks[0], "include file not found: %s\nsearch paths:\n\t%s", nm, strings.Join(paths, "\n\t"))
+		wd, _ := os.Getwd()
+		c.err(toks[0], "include file not found: %s (wd %s)\nsearch paths:\n\t%s", nm, wd, strings.Join(paths, "\n\t"))
 		return
 	}
 

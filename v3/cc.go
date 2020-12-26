@@ -518,6 +518,7 @@ type Config struct {
 	RejectCaseRange                        bool // Pedantic: do not silently accept "case 'a'...'z':".
 	RejectEmptyCompositeLiterals           bool // Pedantic: do not silently accept "foo = (T){}".
 	RejectEmptyDeclarations                bool // Pedantic: do not silently accept "int foo(){};".
+	RejectEmptyFields                      bool // Pedantic: do not silently accept "struct {int a;;} foo;".
 	RejectEmptyInitializerList             bool // Pedantic: do not silently accept "foo f = {};".
 	RejectEmptyStructDeclaration           bool // Pedantic: do not silently accept "struct{; int i}".
 	RejectEmptyStructs                     bool // Pedantic: do not silently accept "struct foo {};".

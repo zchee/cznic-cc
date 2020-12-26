@@ -20,7 +20,7 @@ const longDoublePrec = 256
 type mode = int
 
 var (
-	idBuiltinConstantPIimpl = dict.sid("__builtin_constant_p_impl")
+	idBuiltinConstantPImpl = dict.sid("__builtin_constant_p_impl")
 	idClosure               = dict.sid("0closure") // Must be invalid indentifier.
 
 	_ fmt.State
@@ -2495,7 +2495,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		op := n.PostfixExpression.check(ctx, true)
 		args := n.ArgumentExpressionList.check(ctx)
 		switch op.Declarator().Name() {
-		case idBuiltinConstantPIimpl:
+		case idBuiltinConstantPImpl:
 			if len(args) < 2 {
 				panic(internalError())
 			}

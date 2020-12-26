@@ -1945,6 +1945,11 @@ func (p *parser) structDeclarationList() (r *StructDeclarationList) {
 			ATTRIBUTE, CONST, RESTRICT, VOLATILE,
 			ALIGNAS:
 			prev.StructDeclarationList = &StructDeclarationList{StructDeclaration: p.structDeclaration()}
+		case ';':
+			p.shift()
+			if p.ctx.cfg.RejectEmptyFields {
+				p.err("expected struct-declaration")
+			}
 		default:
 			return r
 		}

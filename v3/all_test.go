@@ -156,6 +156,7 @@ int __builtin_constant_p_impl(int, ...);
 int __printf__ ( const char * format, ... );
 int __scanf__ ( const char *format, ... );
 void *__builtin_va_arg_impl(void* ap);
+
 `
 )
 
