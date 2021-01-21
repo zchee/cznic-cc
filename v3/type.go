@@ -71,6 +71,8 @@ var (
 		ULong:     5,
 		LongLong:  6,
 		ULongLong: 6,
+		Int128:    7,
+		UInt128:   7,
 	}
 
 	complexIntegerTypes = [maxKind]bool{
@@ -166,25 +168,24 @@ var (
 	}
 
 	realTypes = [maxKind]bool{
-		Bool:              true,
-		Char:              true,
-		ComplexDouble:     true,
-		ComplexFloat:      true,
-		ComplexLongDouble: true,
-		Double:            true,
-		Enum:              true,
-		Float:             true,
-		Int:               true,
-		Long:              true,
-		LongDouble:        true,
-		LongLong:          true,
-		SChar:             true,
-		Short:             true,
-		UChar:             true,
-		UInt:              true,
-		ULong:             true,
-		ULongLong:         true,
-		UShort:            true,
+		Bool:       true,
+		Char:       true,
+		Double:     true,
+		Enum:       true,
+		Float:      true,
+		Int128:     true,
+		Int:        true,
+		Long:       true,
+		LongDouble: true,
+		LongLong:   true,
+		SChar:      true,
+		Short:      true,
+		UChar:      true,
+		UInt:       true,
+		ULong:      true,
+		ULongLong:  true,
+		UShort:     true,
+		UInt128:    true,
 	}
 )
 

@@ -21,7 +21,7 @@ type mode = int
 
 var (
 	idBuiltinConstantPImpl = dict.sid("__builtin_constant_p_impl")
-	idClosure               = dict.sid("0closure") // Must be invalid indentifier.
+	idClosure              = dict.sid("0closure") // Must be invalid indentifier.
 
 	_ fmt.State
 )
@@ -3627,12 +3627,11 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		lt := lo.Type().Decay()
 		rt := ro.Type().Decay()
 		n.promote = noType
-		ok := false
+		ok := true
 		switch {
 		case lt.IsRealType() && rt.IsRealType():
 			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
 			n.promote = op.Type()
-			ok = true
 		case lt.Kind() == Ptr && (rt.Kind() == Ptr || rt.IsIntegerType()):
 			n.promote = lt
 			//TODO
@@ -3641,6 +3640,7 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 			//TODO
 		default:
 			//TODO report error
+			ok = false
 		}
 		if n.promote.Kind() == Invalid || !ok {
 			break

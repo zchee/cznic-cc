@@ -145,6 +145,25 @@ func (a *ABI) sanityCheck(ctx *context, intMaxWidth int, s Scope) error {
 		}
 		a.types[k] = t
 	}
+	if _, ok := a.Types[Int128]; ok {
+		t := &typeBase{
+			align:      byte(a.align(Int128)),
+			fieldAlign: byte(a.fieldAlign(Int128)),
+			flags:      fSigned,
+			kind:       byte(Int128),
+			size:       uintptr(a.size(Int128)),
+		}
+		a.types[Int128] = t
+	}
+	if _, ok := a.Types[UInt128]; ok {
+		t := &typeBase{
+			align:      byte(a.align(UInt128)),
+			fieldAlign: byte(a.fieldAlign(UInt128)),
+			kind:       byte(UInt128),
+			size:       uintptr(a.size(UInt128)),
+		}
+		a.types[UInt128] = t
+	}
 	return ctx.Err()
 }
 
