@@ -256,6 +256,14 @@ type Type interface {
 	// boolean indicating if the field was found.
 	FieldByName(name StringID) (Field, bool)
 
+	// IsAggregate reports whether type is an aggregate type, [0]6.2.5.
+	//
+	// 21) Array and structure types are collectively called aggregate types.
+	//
+	// 37) Note that aggregate type does not include union type because an object
+	// with union type can only contain one member at a time.
+	IsAggregate() bool
+
 	// IsIncomplete reports whether type is incomplete.
 	IsIncomplete() bool
 
@@ -839,6 +847,9 @@ func (t *typeBase) FieldByName(StringID) (Field, bool) {
 // IsIncomplete implements Type.
 func (t *typeBase) IsIncomplete() bool { return t.flags&fIncomplete != 0 }
 
+// IsAggregate implements Type.
+func (t *typeBase) IsAggregate() bool { return t.Kind() == Array || t.Kind() == Struct }
+
 // Inline implements Type.
 func (t *typeBase) Inline() bool { return t.flags&fInline != 0 }
 
@@ -1200,6 +1211,9 @@ type aliasType struct {
 
 // IsAliasType implements Type.
 func (t *aliasType) IsAliasType() bool { return true }
+
+// IsAggregate implements Type.
+func (t *aliasType) IsAggregate() bool { return t.d.Type().IsAggregate() }
 
 func (t *aliasType) AliasDeclarator() *Declarator { return t.d }
 
