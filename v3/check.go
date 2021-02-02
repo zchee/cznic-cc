@@ -454,14 +454,17 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, cur
 	n.isZero = true
 	n0 := n
 	for ; n != nil; n = n.InitializerList {
-	out:
 		switch {
 		case n.Designation != nil:
 			if currObj == nil {
 				panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 			}
 
-			off2, f = n.Designation.checkStruct(ctx, currObj)
+			off2, f, t = n.Designation.checkStruct(ctx, currObj)
+			n.Initializer.check(ctx, list, t, off+off2+f.Offset(), f)
+			n0.isConst = n0.isConst && n.Initializer.isConst
+			n0.isZero = n0.isZero && n.Initializer.isZero
+			i[0]++
 		default:
 			// [0], 6.7.8 Initialization
 			//
@@ -477,21 +480,21 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, cur
 
 				f = t.FieldByIndex(i)
 				if f.Name() != 0 || !f.Type().IsBitFieldType() {
-					break out
+					break
 				}
 			}
+			n.Initializer.check(ctx, list, f.Type(), off+f.Offset(), f)
+			n0.isConst = n0.isConst && n.Initializer.isConst
+			n0.isZero = n0.isZero && n.Initializer.isZero
+			i[0]++
 		}
-		n.Initializer.check(ctx, list, f.Type(), off+off2+f.Offset(), f)
-		n0.isConst = n0.isConst && n.Initializer.isConst
-		n0.isZero = n0.isZero && n.Initializer.isZero
-		off2 = 0
-		i[0]++
 	}
 	return n
 }
 
-func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field) {
+func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field, dt Type) {
 	index := false
+	dt = t
 	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
 		if !index && rf != nil {
 			off += rf.Offset()
@@ -500,22 +503,22 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field) 
 		var nm StringID
 		switch d.Case {
 		case DesignatorIndex: // '[' ConstantExpression ']'
-			if t.Kind() != Array {
+			if dt.Kind() != Array {
 				panic(todo(""))
 			}
 
 			op := d.ConstantExpression.check(ctx, mIntConstExpr)
 			if op == nil || op == noOperand {
-				return 0, rf
+				return 0, rf, dt
 			}
 
 			index = true
-			t = t.Elem()
+			dt = dt.Elem()
 			switch x := op.Value().(type) {
 			case Int64Value:
-				off += uintptr(x) * t.Size()
+				off += uintptr(x) * dt.Size()
 			case Uint64Value:
-				off += uintptr(x) * t.Size()
+				off += uintptr(x) * dt.Size()
 			default:
 				panic(todo("%T", x))
 			}
@@ -527,15 +530,15 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field) 
 		default:
 			panic(internalError())
 		}
-		f, ok := t.FieldByName(nm)
+		f, ok := dt.FieldByName(nm)
 		if !ok {
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
 		rf = f
-		t = f.Type()
+		dt = f.Type()
 	}
-	return off, rf
+	return off, rf, dt
 }
 
 // [0], 6.7.8 Initialization
@@ -554,7 +557,7 @@ out:
 			panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t)) //TODO report error
 		}
 
-		off2, f = n.Designation.checkStruct(ctx, currObj)
+		off2, f, _ /*TODO DT*/ = n.Designation.checkStruct(ctx, currObj)
 	default:
 		// [0], 6.7.8 Initialization
 		//
@@ -2295,6 +2298,21 @@ func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase, inUnion bool
 			tag:      n.Token.Value,
 			typeBase: typ,
 		}).check(ctx, n)
+		if typ.Kind() == Union {
+			var k Kind
+			for _, v := range fields {
+				if k == Invalid {
+					k = v.typ.Kind()
+					continue
+				}
+
+				if v.typ.Kind() != k {
+					k = Invalid
+					break
+				}
+			}
+			t.common = k
+		}
 		n.typ = t
 		if nm := n.Token.Value; nm != 0 && n.lexicalScope.Parent() == nil {
 			ctx.structTypes[nm] = t

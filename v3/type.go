@@ -226,6 +226,20 @@ type Type interface {
 	// Attributes returns type's attributes, if any.
 	Attributes() []*AttributeSpecifier
 
+	// UnionCommon reports the kind that unifies all union members, if any,
+	// or Invalid. For example
+	//
+	//	union { int i; double d; }
+	//
+	// Has no unifying kind and will report kind Invalid, but
+	//
+	//	union { int *p; double *p; }
+	//
+	// will report kind Ptr.
+	//
+	// UnionCommon panics if the type's Kind is valid but not Enum.
+	UnionCommon() Kind
+
 	// Decay returns itself for non array types and the pointer to array
 	// element otherwise.
 	Decay() Type
@@ -698,6 +712,11 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) (r Ty
 		}
 	}
 	return typ
+}
+
+// UnionCommon implements Type.
+func (t *typeBase) UnionCommon() Kind {
+	panic(internalErrorf("%s: UnionCommon of invalid type", t.Kind()))
 }
 
 // atomic implements Type.
@@ -1209,6 +1228,9 @@ type aliasType struct {
 	d  *Declarator
 }
 
+// UnionCommon implements Type.
+func (t *aliasType) UnionCommon() Kind { return t.d.Type().UnionCommon() }
+
 // IsAliasType implements Type.
 func (t *aliasType) IsAliasType() bool { return true }
 
@@ -1404,14 +1426,24 @@ func (f *field) string(b *bytes.Buffer) {
 	f.typ.string(b)
 }
 
-type structType struct { //TODO implement Type
+type structType struct {
 	*typeBase
 
 	attr   []*AttributeSpecifier
 	fields []*field
 	m      map[StringID]*field
+	common Kind
 
 	tag StringID
+}
+
+// UnionCommon implements Type.
+func (t *structType) UnionCommon() Kind {
+	if t.Kind() != Union {
+		panic(internalErrorf("%s: UnionCommon of invalid type", t.Kind()))
+	}
+
+	return t.common
 }
 
 // Alias implements Type.
@@ -1562,6 +1594,7 @@ func (t *structType) fieldByName(name StringID, lvl int, best *int, off uintptr)
 	return nil, false
 }
 
+// NumField implements Type.
 func (t *structType) NumField() int { return len(t.fields) }
 
 type taggedType struct {
@@ -1571,6 +1604,9 @@ type taggedType struct {
 
 	tag StringID
 }
+
+// UnionCommon implements Type.
+func (t *taggedType) UnionCommon() Kind { return t.typ.UnionCommon() }
 
 // IsTaggedType implements Type.
 func (t *taggedType) IsTaggedType() bool { return true }
