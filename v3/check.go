@@ -233,7 +233,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.Declarator.hasInitializer = true
 		n.Declarator.Write++
 		n.AttributeSpecifierList.check(ctx)
-		length := n.Initializer.check(ctx, &n.Initializer.list, typ, 0, nil)
+		length := n.Initializer.check(ctx, &n.Initializer.list, typ, 0, nil, n.Declarator.StorageClass)
 		if typ.Kind() == Array && typ.Len() == 0 {
 			typ.setLen(length)
 		}
@@ -244,7 +244,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 }
 
 // [0], 6.7.8 Initialization
-func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, off uintptr, fld Field) uintptr {
+func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, off uintptr, fld Field, sc StorageClass) uintptr {
 	if n == nil {
 		return 0
 	}
@@ -281,9 +281,9 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, off uint
 		}
 		*list = append(*list, n)
 		ctx.readDelta = rd
-		return n.checkExpr(ctx, t, off)
+		return n.checkExpr(ctx, t, off, sc)
 	case InitializerInitList: // '{' InitializerList ',' '}'
-		_, l := n.InitializerList.check(ctx, list, t, t, off)
+		_, l := n.InitializerList.check(ctx, list, t, t, off, sc)
 		switch {
 		case n.InitializerList == nil:
 			n.isConst = true
@@ -300,7 +300,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, off uint
 }
 
 // [0], 6.7.8 Initialization
-func (n *InitializerList) check(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr) (*InitializerList, uintptr) {
+func (n *InitializerList) check(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr, sc StorageClass) (*InitializerList, uintptr) {
 	if n == nil {
 		return nil, 0
 	}
@@ -321,7 +321,7 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, t, currObj T
 
 		//TODO todo check assignment compatible
 
-		r := n.Initializer.check(ctx, list, t, off, nil)
+		r := n.Initializer.check(ctx, list, t, off, nil, sc)
 		n.isConst = n.Initializer.isConst
 		n.isZero = n.Initializer.isZero
 		return nil, r
@@ -335,19 +335,19 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, t, currObj T
 	// elements or named members.
 	switch t.Kind() {
 	case Struct:
-		return n.checkStruct(ctx, list, t, t, off), 0
+		return n.checkStruct(ctx, list, t, t, off, sc), 0
 	case Union:
-		return n.checkUnion(ctx, list, t, t, off), 0
+		return n.checkUnion(ctx, list, t, t, off, sc), 0
 	case Array:
-		return n.checkArray(ctx, list, t, t, off)
+		return n.checkArray(ctx, list, t, t, off, sc)
 	case Vector:
-		return n.checkVector(ctx, list, t, off)
+		return n.checkVector(ctx, list, t, off, sc)
 	}
 
 	panic(fmt.Sprintf("TODO %v: %v\n", n.Position(), t))
 }
 
-func (n *InitializerList) checkVector(ctx *context, list *[]*Initializer, t Type, off uintptr) (*InitializerList, uintptr) {
+func (n *InitializerList) checkVector(ctx *context, list *[]*Initializer, t Type, off uintptr, sc StorageClass) (*InitializerList, uintptr) {
 	elem := t.Elem()
 	esz := elem.Size()
 	length := t.Len()
@@ -369,7 +369,7 @@ func (n *InitializerList) checkVector(ctx *context, list *[]*Initializer, t Type
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		n.Initializer.check(ctx, list, t2, o, nil)
+		n.Initializer.check(ctx, list, t2, o, nil, sc)
 		n0.isConst = n0.isConst && n.Initializer.isConst
 		n0.isZero = n0.isZero && n.Initializer.isZero
 		i++
@@ -381,7 +381,7 @@ func (n *InitializerList) checkVector(ctx *context, list *[]*Initializer, t Type
 }
 
 // [0], 6.7.8 Initialization
-func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr) (*InitializerList, uintptr) {
+func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr, sc StorageClass) (*InitializerList, uintptr) {
 	elem := t.Elem()
 	esz := elem.Size()
 	length := t.Len()
@@ -408,7 +408,7 @@ func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, t, curr
 			panic(internalErrorf("%v: TODO", n.Position()))
 		}
 
-		n.Initializer.check(ctx, list, t2, o, nil)
+		n.Initializer.check(ctx, list, t2, o, nil, sc)
 		n0.isConst = n0.isConst && n.Initializer.isConst
 		n0.isZero = n0.isZero && n.Initializer.isZero
 		i++
@@ -445,7 +445,7 @@ func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, o
 }
 
 // [0], 6.7.8 Initialization
-func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr) *InitializerList {
+func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr, sc StorageClass) *InitializerList {
 	nf := t.NumField()
 	i := []int{0}
 	var f Field
@@ -461,7 +461,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, cur
 			}
 
 			off2, f, t = n.Designation.checkStruct(ctx, currObj)
-			n.Initializer.check(ctx, list, t, off+off2+f.Offset(), f)
+			n.Initializer.check(ctx, list, t, off+off2+f.Offset(), f, sc)
 			n0.isConst = n0.isConst && n.Initializer.isConst
 			n0.isZero = n0.isZero && n.Initializer.isZero
 			i[0]++
@@ -483,7 +483,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t, cur
 					break
 				}
 			}
-			n.Initializer.check(ctx, list, f.Type(), off+f.Offset(), f)
+			n.Initializer.check(ctx, list, f.Type(), off+f.Offset(), f, sc)
 			n0.isConst = n0.isConst && n.Initializer.isConst
 			n0.isZero = n0.isZero && n.Initializer.isZero
 			i[0]++
@@ -542,7 +542,7 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field, 
 }
 
 // [0], 6.7.8 Initialization
-func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr) *InitializerList {
+func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t, currObj Type, off uintptr, sc StorageClass) *InitializerList {
 	nf := t.NumField()
 	i := []int{0}
 	var f Field
@@ -578,15 +578,14 @@ out:
 			}
 		}
 	}
-	n.Initializer.check(ctx, list, f.Type(), off+off2+f.Offset(), f)
+	n.Initializer.check(ctx, list, f.Type(), off+off2+f.Offset(), f, sc)
 	n0.isConst = n0.isConst && n.Initializer.isConst
 	n0.isZero = n0.isZero && n.Initializer.isZero
 	return n
 }
 
 // [0], 6.7.8 Initialization
-func (n *Initializer) checkExpr(ctx *context, t Type, off uintptr) uintptr {
-	op := n.AssignmentExpression.Operand
+func (n *Initializer) checkExpr(ctx *context, t Type, off uintptr, sc StorageClass) uintptr {
 	// 11 - The initializer for a scalar shall be a single expression,
 	// optionally enclosed in braces. The initial value of the object is
 	// that of the expression (after conversion); the same type constraints
@@ -608,12 +607,10 @@ func (n *Initializer) checkExpr(ctx *context, t Type, off uintptr) uintptr {
 	// structure or union type. In the latter case, the initial value of
 	// the object, including unnamed members, is that of the expression.
 	case Struct, Union:
-		if op.Type().Kind() != t.Kind() && !op.IsZero() {
-			panic(fmt.Sprintf("TODO %v: %v <- %v\n", n.Position(), t, op.Type().Kind()))
+		if n.Case == InitializerExpr && sc == Automatic {
+			//TODO check op is assignment compatible
+			return 0
 		}
-
-		//TODO check op is assignment compatible
-		return 0
 
 	// 14 - An array of character type may be initialized by a character
 	// string literal, optionally enclosed in braces.  Successive
@@ -1378,7 +1375,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
-			_, len := n.InitializerList.check(ctx, &n.InitializerList.list, t, t, 0)
+			_, len := n.InitializerList.check(ctx, &n.InitializerList.list, t, t, 0, Automatic)
 			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}
@@ -2286,8 +2283,11 @@ func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase, inUnion bool
 		attr := n.AttributeSpecifierList.check(ctx)
 		fields := n.StructDeclarationList.check(ctx, inUnion || typ.Kind() == Union)
 		m := make(map[StringID]*field, len(fields))
+		x := 0
 		for _, v := range fields {
 			if v.name != 0 {
+				v.x = x
+				x++
 				m[v.name] = v
 			}
 		}
@@ -2608,7 +2608,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		t := n.TypeName.check(ctx, false)
 		var v *InitializerValue
 		if n.InitializerList != nil {
-			_, len := n.InitializerList.check(ctx, &n.InitializerList.list, t, t, 0)
+			_, len := n.InitializerList.check(ctx, &n.InitializerList.list, t, t, 0, Automatic)
 			if t.Kind() == Array && t.IsIncomplete() {
 				t.setLen(len)
 			}
