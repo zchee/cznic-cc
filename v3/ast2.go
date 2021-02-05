@@ -778,6 +778,9 @@ func (n *Initializer) IsZero() bool { return n == nil || n.isZero }
 // InitializerExpr.
 func (n *Initializer) List() []*Initializer { return n.list }
 
+// Parent returns the parent of n, if any.
+func (n *Initializer) Parent() *Initializer { return n.parent }
+
 // Type returns the type this initializer initializes.
 func (n *Initializer) Type() Type { return n.typ }
 

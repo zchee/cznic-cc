@@ -807,7 +807,7 @@ out:
 				p.err0(false, "expected initializer-list")
 			}
 		default:
-			list = p.initializerList()
+			list = p.initializerList(nil)
 			if p.rune() == ',' {
 				t4 = p.shift()
 			}
@@ -902,7 +902,7 @@ out:
 						p.err0(false, "expected initializer-list")
 					}
 				default:
-					list = p.initializerList()
+					list = p.initializerList(nil)
 					if p.rune() == ',' {
 						t4 = p.shift()
 					}
@@ -1681,7 +1681,7 @@ func (p *parser) initDeclarator(d *Declarator, isTypedefName bool) *InitDeclarat
 	switch p.rune() {
 	case '=':
 		t := p.shift()
-		return &InitDeclarator{Case: InitDeclaratorInit, Declarator: d, AttributeSpecifierList: attr, Token: t, Initializer: p.initializer()}
+		return &InitDeclarator{Case: InitDeclaratorInit, Declarator: d, AttributeSpecifierList: attr, Token: t, Initializer: p.initializer(nil)}
 	}
 
 	return &InitDeclarator{Case: InitDeclaratorDecl, Declarator: d, AttributeSpecifierList: attr}
@@ -2966,11 +2966,10 @@ func (p *parser) directAbstractDeclarator(d *DirectAbstractDeclarator) (r *Direc
 // 	assignment-expression
 // 	{ initializer-list }
 // 	{ initializer-list , }
-func (p *parser) initializer() *Initializer {
-	var t, t2, t3 Token
+func (p *parser) initializer(parent *Initializer) *Initializer {
 	switch p.rune() {
 	case '{':
-		t = p.shift()
+		t := p.shift()
 		if p.peek(false) == '}' {
 			if p.ctx.cfg.RejectEmptyInitializerList {
 				p.err("expected initializer-list")
@@ -2978,26 +2977,27 @@ func (p *parser) initializer() *Initializer {
 			return &Initializer{Case: InitializerInitList, Token: t, Token3: p.shift()}
 		}
 
-		list := p.initializerList()
+		r := &Initializer{Case: InitializerInitList, Token: t, parent: parent}
+		r.InitializerList = p.initializerList(r)
 		if p.rune() == ',' {
-			t2 = p.shift()
+			r.Token2 = p.shift()
 		}
 		switch p.rune() {
 		case '}':
-			t3 = p.shift()
+			r.Token3 = p.shift()
 		default:
 			p.err("expected }")
 		}
-		return &Initializer{Case: InitializerInitList, Token: t, InitializerList: list, Token2: t2, Token3: t3}
+		return r
 	default:
-		return &Initializer{Case: InitializerExpr, AssignmentExpression: p.assignmentExpression()}
+		return &Initializer{Case: InitializerExpr, AssignmentExpression: p.assignmentExpression(), parent: parent}
 	}
 }
 
 //  initializer-list:
 // 	designation_opt initializer
 // 	initializer-list , designation_opt initializer
-func (p *parser) initializerList() (r *InitializerList) {
+func (p *parser) initializerList(parent *Initializer) (r *InitializerList) {
 	var d *Designation
 	switch p.rune() {
 	case '[', '.':
@@ -3007,7 +3007,7 @@ func (p *parser) initializerList() (r *InitializerList) {
 			d = p.designation()
 		}
 	}
-	r = &InitializerList{Designation: d, Initializer: p.initializer()}
+	r = &InitializerList{Designation: d, Initializer: p.initializer(parent)}
 	for prev := r; ; prev = prev.InitializerList {
 		switch p.rune() {
 		case ',':
@@ -3024,7 +3024,7 @@ func (p *parser) initializerList() (r *InitializerList) {
 					d = p.designation()
 				}
 			}
-			prev.InitializerList = &InitializerList{Token: t, Designation: d, Initializer: p.initializer()}
+			prev.InitializerList = &InitializerList{Token: t, Designation: d, Initializer: p.initializer(parent)}
 		default:
 			return r
 		}
