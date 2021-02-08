@@ -21,15 +21,13 @@ import (
 )
 
 func TestTranslateSQLite(t *testing.T) {
-	cfg := &Config{ABI: testABI}
+	cfg := &Config{ABI: testABI, EnableAssignmentCompatibilityChecking: true}
 	if isTestingMingw {
 		cfg.DoNotTypecheckAsm = true
 	}
 	root := filepath.Join(testWD, filepath.FromSlash(sqliteDir))
 	t.Run("shell.c", func(t *testing.T) { testTranslate(t, cfg, testPredef, filepath.Join(root, "shell.c")) })
-	t.Run("shell.c/gnu", func(t *testing.T) { testTranslate(t, cfg, testPredefGNU, filepath.Join(root, "shell.c")) })
 	t.Run("sqlite3.c", func(t *testing.T) { testTranslate(t, cfg, testPredef, filepath.Join(root, "sqlite3.c")) })
-	t.Run("sqlite3.c/gnu", func(t *testing.T) { testTranslate(t, cfg, testPredefGNU, filepath.Join(root, "sqlite3.c")) })
 }
 
 var (
@@ -66,9 +64,7 @@ func BenchmarkTranslateSQLite(b *testing.B) {
 	cfg := &Config{ABI: testABI}
 	root := filepath.Join(testWD, filepath.FromSlash(sqliteDir))
 	b.Run("shell.c", func(b *testing.B) { benchmarkTranslateSQLite(b, cfg, testPredef, filepath.Join(root, "shell.c")) })
-	b.Run("shell.c/gnu", func(b *testing.B) { benchmarkTranslateSQLite(b, cfg, testPredefGNU, filepath.Join(root, "shell.c")) })
 	b.Run("sqlite3.c", func(b *testing.B) { benchmarkTranslateSQLite(b, cfg, testPredef, filepath.Join(root, "sqlite3.c")) })
-	b.Run("sqlite3.c/gnu", func(b *testing.B) { benchmarkTranslateSQLite(b, cfg, testPredefGNU, filepath.Join(root, "sqlite3.c")) })
 }
 
 func benchmarkTranslateSQLite(b *testing.B, cfg *Config, predef string, files ...string) {
@@ -110,17 +106,15 @@ func TestTranslateTCC(t *testing.T) {
 	}
 
 	cfg := &Config{
-		ABI:                        testABI,
-		ignoreUndefinedIdentifiers: true,
+		ABI:                                   testABI,
+		ignoreUndefinedIdentifiers:            true,
+		EnableAssignmentCompatibilityChecking: true,
 	}
 	root := filepath.Join(testWD, filepath.FromSlash(tccDir))
 	ok := 0
 	const dir = "tests/tests2"
 	t.Run(dir, func(t *testing.T) {
-		ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false, false)
-	})
-	t.Run(dir+"/gnu", func(t *testing.T) {
-		ok += testTranslateDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false, false)
+		ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false)
 	})
 	t.Logf("ok %v", h(ok))
 }
@@ -132,8 +126,9 @@ func TestTranslateGCC(t *testing.T) {
 	}
 
 	cfg := &Config{
-		ABI:                        testABI,
-		ignoreUndefinedIdentifiers: true,
+		ABI:                                   testABI,
+		ignoreUndefinedIdentifiers:            true,
+		EnableAssignmentCompatibilityChecking: true,
 	}
 	root := filepath.Join(testWD, filepath.FromSlash(gccDir))
 	ok := 0
@@ -142,137 +137,52 @@ func TestTranslateGCC(t *testing.T) {
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
 		t.Run(v, func(t *testing.T) {
-			ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true, false)
-		})
-		t.Run(v+"/gnu", func(t *testing.T) {
-			ok += testTranslateDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true, true)
+			ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true)
 		})
 	}
 	t.Logf("ok %v", h(ok))
 }
 
-func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnuc bool) (ok int) {
+func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
 		// TCC
-		"34_array_assignment.c":     {}, // gcc: 16:6: error: assignment to expression with array type
-		"75_array_in_struct_init.c": {}, //TODO initializer missing braces
+		"34_array_assignment.c": {}, // gcc: 16:6: error: assignment to expression with array type
+		"90_struct-init.c":      {}, //TODO [ x ... y ] designator
+		"94_generic.c":          {},
 
 		// GCC
 		"20000120-2.c":                 {}, //TODO function redefinition
 		"20000804-1.c":                 {}, //TODO 1: unsupported type: complex long long
-		"20020810-1.c":                 {}, //TODO :17:16: missing braces around initializer
-		"20021118-1.c":                 {}, //TODO array initializer
 		"20021120-1.c":                 {}, //TODO function redefinition
 		"20021120-2.c":                 {}, //TODO function redefinition
-		"20030305-1.c":                 {}, //TODO array initializer
-		"20030903-1.c":                 {}, //TODO 41: unsupported type: complex int
-		"20040726-2.c":                 {}, //TODO array initializer
-		"20041124-1.c":                 {}, //TODO 12: unsupported type: complex short
-		"20041201-1.c":                 {}, //TODO 18: unsupported type: complex char
-		"20050121-1.c":                 {}, //TODO 1: unsupported type: complex char
+		"20041124-1.c":                 {}, //TODO complex num
+		"20041201-1.c":                 {}, //TODO complex num
 		"20050122-2.c":                 {}, //TODO goto from nested function to outer function label
 		"20050215-1.c":                 {}, //TODO function redefinition
 		"20050215-2.c":                 {}, //TODO function redefinition
 		"20050215-3.c":                 {}, //TODO function redefinition
-		"20070919-1.c":                 {}, //TODO :39:9: missing braces around initializer
-		"20180921-1.c":                 {}, //TODO :129:27: missing braces around initializer
 		"920415-1.c":                   {}, //TODO label l undefined
 		"920428-2.c":                   {}, //TODO goto from nested function to outer function label
-		"920428-4.c":                   {}, //TODO invalid declarator type
-		"920501-16.c":                  {}, //TODO invalid declarator type
 		"920501-7.c":                   {}, //TODO goto from nested function to outer function label
-		"920611-2.c":                   {}, //TODO array initializer
 		"920721-4.c":                   {}, //TODO label default_lab undefined
-		"921017-1.c":                   {}, //TODO invalid declarator type
-		"930510-1.c":                   {}, //TODO array initializer
-		"991201-1.c":                   {}, //TODO :11:27: missing braces around initializer
-		"builtin-types-compatible-p.c": {}, //TODO invalid declarator type
+		"builtin-types-compatible-p.c": {}, //TODO
 		"comp-goto-2.c":                {}, //TODO goto from nested function to outer function label
-		"complex-1.c":                  {}, //TODO 9: unsupported type: complex int
+		"complex-1.c":                  {}, //TODO complex num
 		"complex-5.c":                  {}, //TODO 9: unsupported type: complex int
-		"complex-6.c":                  {}, //TODO 3: unsupported type: complex int
-		"limits-externdecl.c":          {}, //TODO :57:3: missing braces around initializer
+		"complex-6.c":                  {}, //TODO complex num
 		"nestfunc-5.c":                 {}, //TODO goto from nested function to outer function label
 		"nestfunc-6.c":                 {}, //TODO goto from nested function to outer function label
 		"pr21728.c":                    {}, //TODO goto from nested function to outer function label
 		"pr24135.c":                    {}, //TODO goto from nested function to outer function label
 		"pr27889.c":                    {}, //TODO 1: unsupported type: complex int
-		"pr33631.c":                    {}, //TODO :10:53: missing braces around initializer
 		"pr35431.c":                    {}, //TODO 3: unsupported type: complex int
 		"pr38151.c":                    {}, //TODO 3: unsupported type: complex int
 		"pr41987.c":                    {}, //TODO 3: unsupported type: complex char
-		"pr42196-1.c":                  {}, //TODO 3: unsupported type: complex int
-		"pr42196-2.c":                  {}, //TODO 3: unsupported type: complex int
-		"pr42196-3.c":                  {}, //TODO 3: unsupported type: complex int
-		"pr43191.c":                    {}, //TODO array initializer
-		"pr48517.c":                    {}, //TODO array initializer
-		"pr49218.c":                    {}, //TODO :11:9: missing braces around initializer
 		"pr51447.c":                    {}, //TODO goto from nested function to outer function label
-		"pr54471.c":                    {}, //TODO :15:22: missing braces around initializer
-		"pr56448.c":                    {}, // Decimal64 literals
 		"pr56837.c":                    {}, //TODO 1: unsupported type: complex int
-		"pr61375.c":                    {}, //TODO :17:19: missing braces around initializer
-		"pr63302.c":                    {}, //TODO :16:16: missing braces around initializer
-		"pr64067.c":                    {}, //TODO & of composite literal
-		"pr80692.c":                    {}, // Decimal64 literals
-		"pr85582-2.c":                  {}, //TODO :38:9: missing braces around initializer
-		"pr85582-3.c":                  {}, //TODO :32:9: missing braces around initializer
+		"pr80692.c":                    {}, //TODO strconv.ParseFloat: parsing "0.DD": invalid syntax
 		"pr86122.c":                    {}, //TODO 1: unsupported type: complex int
 		"pr86123.c":                    {}, //TODO 6: unsupported type: complex unsigned
-		"pr87647.c":                    {}, //TODO :11:20: missing braces around initializer
-		"pr89369.c":                    {}, //TODO array initializer
-		"struct-ini-1.c":               {}, //TODO array initializer
-		"pr70355.c":                    {}, /* { dg-require-effective-target int128 } */
-
-	}
-	if !gnuc { // vector extensions
-		for k, v := range map[string]struct{}{
-			"20050113-1.c":   {},
-			"20050316-1.c":   {},
-			"20050316-2.c":   {},
-			"20050316-3.c":   {},
-			"20050604-1.c":   {},
-			"20050607-1.c":   {},
-			"icfmatch.c":     {},
-			"pr23135.c":      {},
-			"pr33614.c":      {},
-			"pr33617.c":      {},
-			"pr52750.c":      {},
-			"pr53410-2.c":    {},
-			"pr53645-2.c":    {},
-			"pr53645.c":      {},
-			"pr53748.c":      {},
-			"pr54713-1.c":    {},
-			"pr54713-2.c":    {},
-			"pr54713-3.c":    {},
-			"pr60502.c":      {},
-			"pr60960.c":      {},
-			"pr65427.c":      {},
-			"pr70061.c":      {},
-			"pr70240.c":      {},
-			"pr70355.c":      {},
-			"pr70633.c":      {},
-			"pr70903.c":      {},
-			"pr71626-1.c":    {},
-			"pr71626-2.c":    {},
-			"pr72824-2.c":    {},
-			"pr85169.c":      {},
-			"pr85331.c":      {},
-			"scal-to-vec1.c": {},
-			"scal-to-vec2.c": {},
-			"scal-to-vec3.c": {},
-			"simd-1.c":       {},
-			"simd-2.c":       {},
-			"simd-3.c":       {},
-			"simd-4.c":       {},
-			"simd-5.c":       {},
-			"simd-6.c":       {},
-			"vector-3.c":     {},
-			"vector-5.c":     {},
-			"vector-6.c":     {},
-		} {
-			blacklist[k] = v
-		}
 	}
 	if isTestingMingw {
 		blacklist["loop-2f.c"] = struct{}{} // sys/mman.h
@@ -329,12 +239,10 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 		}()
 
 		if *oTrace {
-			fmt.Fprintln(os.Stderr, files, path)
+			fmt.Fprintln(os.Stderr, files, ok, path)
 		}
 		if testTranslateAST, err = parse(ctx, testIncludes, testSysIncludes, sources); err != nil {
-			if gnuc {
-				t.Error(err)
-			}
+			t.Error(err)
 			return nil
 		}
 
@@ -353,7 +261,7 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles, gnu
 	runtime.ReadMemStats(&m1)
 	t.Logf("files %v, sources %v, bytes %v, ok %v, %v, %v B/s, mem %v",
 		h(files), h(psources), h(bytes), h(ok), d, h(float64(time.Second)*float64(bytes)/float64(d)), h(m1.Alloc-m0.Alloc))
-	if files != ok && gnuc {
+	if files != ok {
 		t.Errorf("files %v, bytes %v, ok %v", files, bytes, ok)
 	}
 	return ok
@@ -369,9 +277,6 @@ func BenchmarkTranslateTCC(b *testing.B) {
 	b.Run(dir, func(b *testing.B) {
 		benchmarkTranslateDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false)
 	})
-	b.Run(dir+"/gnu", func(b *testing.B) {
-		benchmarkTranslateDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false)
-	})
 }
 
 func BenchmarkTranslateGCC(b *testing.B) {
@@ -384,8 +289,8 @@ func BenchmarkTranslateGCC(b *testing.B) {
 		"gcc/testsuite/gcc.c-torture/compile",
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
-		b.Run(v+"/gnu", func(b *testing.B) {
-			benchmarkTranslateDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true)
+		b.Run(v, func(b *testing.B) {
+			benchmarkTranslateDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true)
 		})
 	}
 }
@@ -654,7 +559,7 @@ out:
 			}
 		}
 
-		cfg := &Config{ABI: testABI, Config3: Config3{MaxSourceLine: 1 << 20}}
+		cfg := &Config{ABI: testABI, Config3: Config3{MaxSourceLine: 1 << 20}, EnableAssignmentCompatibilityChecking: true}
 		ctx := newContext(cfg)
 		files++
 		size += int64(len(out))

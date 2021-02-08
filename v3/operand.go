@@ -32,6 +32,9 @@ var (
 )
 
 type Operand interface {
+	// IsAssingmentCompatible reports whether the operand can be
+	// assigned to lhs. [0], 6.5.16.1.
+	IsAssingmentCompatible(lhs Type) bool
 	ConvertTo(Type) Operand
 	Declarator() *Declarator
 	IsLValue() bool
@@ -74,22 +77,22 @@ type Value interface {
 
 type WideStringValue StringID
 
-func (v WideStringValue) add(b Value) Value { panic(internalError()) }
-func (v WideStringValue) and(b Value) Value { panic(internalError()) }
-func (v WideStringValue) cpl() Value        { panic(internalError()) }
-func (v WideStringValue) div(b Value) Value { panic(internalError()) }
+func (v WideStringValue) add(b Value) Value { panic(todo("")) }
+func (v WideStringValue) and(b Value) Value { panic(todo("")) }
+func (v WideStringValue) cpl() Value        { panic(todo("")) }
+func (v WideStringValue) div(b Value) Value { panic(todo("")) }
 func (v WideStringValue) eq(b Value) Value  { return boolValue(v == b.(WideStringValue)) }
 func (v WideStringValue) isNonZero() bool   { return true }
 func (v WideStringValue) isZero() bool      { return false }
-func (v WideStringValue) lsh(b Value) Value { panic(internalError()) }
-func (v WideStringValue) mod(b Value) Value { panic(internalError()) }
-func (v WideStringValue) mul(b Value) Value { panic(internalError()) }
-func (v WideStringValue) neg() Value        { panic(internalError()) }
+func (v WideStringValue) lsh(b Value) Value { panic(todo("")) }
+func (v WideStringValue) mod(b Value) Value { panic(todo("")) }
+func (v WideStringValue) mul(b Value) Value { panic(todo("")) }
+func (v WideStringValue) neg() Value        { panic(todo("")) }
 func (v WideStringValue) neq(b Value) Value { return boolValue(v != b.(WideStringValue)) }
-func (v WideStringValue) or(b Value) Value  { panic(internalError()) }
-func (v WideStringValue) rsh(b Value) Value { panic(internalError()) }
-func (v WideStringValue) sub(b Value) Value { panic(internalError()) }
-func (v WideStringValue) xor(b Value) Value { panic(internalError()) }
+func (v WideStringValue) or(b Value) Value  { panic(todo("")) }
+func (v WideStringValue) rsh(b Value) Value { panic(todo("")) }
+func (v WideStringValue) sub(b Value) Value { panic(todo("")) }
+func (v WideStringValue) xor(b Value) Value { panic(todo("")) }
 
 func (v WideStringValue) le(b Value) Value {
 	return boolValue(StringID(v).String() <= StringID(b.(WideStringValue)).String())
@@ -109,22 +112,22 @@ func (v WideStringValue) lt(b Value) Value {
 
 type StringValue StringID
 
-func (v StringValue) add(b Value) Value { panic(internalError()) }
-func (v StringValue) and(b Value) Value { panic(internalError()) }
-func (v StringValue) cpl() Value        { panic(internalError()) }
-func (v StringValue) div(b Value) Value { panic(internalError()) }
+func (v StringValue) add(b Value) Value { panic(todo("")) }
+func (v StringValue) and(b Value) Value { panic(todo("")) }
+func (v StringValue) cpl() Value        { panic(todo("")) }
+func (v StringValue) div(b Value) Value { panic(todo("")) }
 func (v StringValue) eq(b Value) Value  { return boolValue(v == b.(StringValue)) }
 func (v StringValue) isNonZero() bool   { return true }
 func (v StringValue) isZero() bool      { return false }
-func (v StringValue) lsh(b Value) Value { panic(internalError()) }
-func (v StringValue) mod(b Value) Value { panic(internalError()) }
-func (v StringValue) mul(b Value) Value { panic(internalError()) }
-func (v StringValue) neg() Value        { panic(internalError()) }
+func (v StringValue) lsh(b Value) Value { panic(todo("")) }
+func (v StringValue) mod(b Value) Value { panic(todo("")) }
+func (v StringValue) mul(b Value) Value { panic(todo("")) }
+func (v StringValue) neg() Value        { panic(todo("")) }
 func (v StringValue) neq(b Value) Value { return boolValue(v != b.(StringValue)) }
-func (v StringValue) or(b Value) Value  { panic(internalError()) }
-func (v StringValue) rsh(b Value) Value { panic(internalError()) }
-func (v StringValue) sub(b Value) Value { panic(internalError()) }
-func (v StringValue) xor(b Value) Value { panic(internalError()) }
+func (v StringValue) or(b Value) Value  { panic(todo("")) }
+func (v StringValue) rsh(b Value) Value { panic(todo("")) }
+func (v StringValue) sub(b Value) Value { panic(todo("")) }
+func (v StringValue) xor(b Value) Value { panic(todo("")) }
 
 func (v StringValue) le(b Value) Value {
 	return boolValue(StringID(v).String() <= StringID(b.(StringValue)).String())
@@ -176,7 +179,7 @@ func (v Int64Value) lsh(b Value) Value {
 	case Uint64Value:
 		return v << y
 	default:
-		panic(internalError())
+		panic(todo(""))
 	}
 }
 
@@ -187,7 +190,7 @@ func (v Int64Value) rsh(b Value) Value {
 	case Uint64Value:
 		return v >> y
 	default:
-		panic(internalError())
+		panic(todo(""))
 	}
 }
 
@@ -233,7 +236,7 @@ func (v Uint64Value) lsh(b Value) Value {
 	case Uint64Value:
 		return v << y
 	default:
-		panic(internalError())
+		panic(todo(""))
 	}
 }
 
@@ -244,7 +247,7 @@ func (v Uint64Value) rsh(b Value) Value {
 	case Uint64Value:
 		return v >> y
 	default:
-		panic(internalError())
+		panic(todo(""))
 	}
 }
 
@@ -259,8 +262,8 @@ func (v Uint64Value) mod(b Value) Value {
 type Float32Value float32
 
 func (v Float32Value) add(b Value) Value { return v + b.(Float32Value) }
-func (v Float32Value) and(b Value) Value { panic(internalError()) }
-func (v Float32Value) cpl() Value        { panic(internalError()) }
+func (v Float32Value) and(b Value) Value { panic(todo("")) }
+func (v Float32Value) cpl() Value        { panic(todo("")) }
 func (v Float32Value) div(b Value) Value { return v / b.(Float32Value) }
 func (v Float32Value) eq(b Value) Value  { return boolValue(v == b.(Float32Value)) }
 func (v Float32Value) ge(b Value) Value  { return boolValue(v >= b.(Float32Value)) }
@@ -268,22 +271,22 @@ func (v Float32Value) gt(b Value) Value  { return boolValue(v > b.(Float32Value)
 func (v Float32Value) isNonZero() bool   { return v != 0 }
 func (v Float32Value) isZero() bool      { return v == 0 }
 func (v Float32Value) le(b Value) Value  { return boolValue(v <= b.(Float32Value)) }
-func (v Float32Value) lsh(b Value) Value { panic(internalError()) }
+func (v Float32Value) lsh(b Value) Value { panic(todo("")) }
 func (v Float32Value) lt(b Value) Value  { return boolValue(v < b.(Float32Value)) }
-func (v Float32Value) mod(b Value) Value { panic(internalError()) }
+func (v Float32Value) mod(b Value) Value { panic(todo("")) }
 func (v Float32Value) mul(b Value) Value { return v * b.(Float32Value) }
 func (v Float32Value) neg() Value        { return -v }
 func (v Float32Value) neq(b Value) Value { return boolValue(v != b.(Float32Value)) }
-func (v Float32Value) or(b Value) Value  { panic(internalError()) }
-func (v Float32Value) rsh(b Value) Value { panic(internalError()) }
+func (v Float32Value) or(b Value) Value  { panic(todo("")) }
+func (v Float32Value) rsh(b Value) Value { panic(todo("")) }
 func (v Float32Value) sub(b Value) Value { return v - b.(Float32Value) }
-func (v Float32Value) xor(b Value) Value { panic(internalError()) }
+func (v Float32Value) xor(b Value) Value { panic(todo("")) }
 
 type Float64Value float64
 
 func (v Float64Value) add(b Value) Value { return v + b.(Float64Value) }
-func (v Float64Value) and(b Value) Value { panic(internalError()) }
-func (v Float64Value) cpl() Value        { panic(internalError()) }
+func (v Float64Value) and(b Value) Value { panic(todo("")) }
+func (v Float64Value) cpl() Value        { panic(todo("")) }
 func (v Float64Value) div(b Value) Value { return v / b.(Float64Value) }
 func (v Float64Value) eq(b Value) Value  { return boolValue(v == b.(Float64Value)) }
 func (v Float64Value) ge(b Value) Value  { return boolValue(v >= b.(Float64Value)) }
@@ -291,16 +294,16 @@ func (v Float64Value) gt(b Value) Value  { return boolValue(v > b.(Float64Value)
 func (v Float64Value) isNonZero() bool   { return v != 0 }
 func (v Float64Value) isZero() bool      { return v == 0 }
 func (v Float64Value) le(b Value) Value  { return boolValue(v <= b.(Float64Value)) }
-func (v Float64Value) lsh(b Value) Value { panic(internalError()) }
+func (v Float64Value) lsh(b Value) Value { panic(todo("")) }
 func (v Float64Value) lt(b Value) Value  { return boolValue(v < b.(Float64Value)) }
-func (v Float64Value) mod(b Value) Value { panic(internalError()) }
+func (v Float64Value) mod(b Value) Value { panic(todo("")) }
 func (v Float64Value) mul(b Value) Value { return v * b.(Float64Value) }
 func (v Float64Value) neg() Value        { return -v }
 func (v Float64Value) neq(b Value) Value { return boolValue(v != b.(Float64Value)) }
-func (v Float64Value) or(b Value) Value  { panic(internalError()) }
-func (v Float64Value) rsh(b Value) Value { panic(internalError()) }
+func (v Float64Value) or(b Value) Value  { panic(todo("")) }
+func (v Float64Value) rsh(b Value) Value { panic(todo("")) }
 func (v Float64Value) sub(b Value) Value { return v - b.(Float64Value) }
-func (v Float64Value) xor(b Value) Value { panic(internalError()) }
+func (v Float64Value) xor(b Value) Value { panic(todo("")) }
 
 var float128Zero = &Float128Value{N: big.NewFloat(0)}
 
@@ -310,25 +313,25 @@ type Float128Value struct {
 }
 
 func (v *Float128Value) add(b Value) Value { return v.safe(b, func(x, y *big.Float) { x.Add(x, y) }) }
-func (v *Float128Value) and(b Value) Value { panic(internalError()) }
-func (v *Float128Value) cpl() Value        { panic(internalError()) }
+func (v *Float128Value) and(b Value) Value { panic(todo("")) }
+func (v *Float128Value) cpl() Value        { panic(todo("")) }
 func (v *Float128Value) div(b Value) Value { return v.safe(b, func(x, y *big.Float) { x.Quo(x, y) }) }
-func (v *Float128Value) eq(b Value) Value  { panic(internalError()) }
-func (v *Float128Value) ge(b Value) Value  { panic(internalError()) }
+func (v *Float128Value) eq(b Value) Value  { panic(todo("")) }
+func (v *Float128Value) ge(b Value) Value  { panic(todo("")) }
 func (v *Float128Value) gt(b Value) Value  { return boolValue(v.cmp(b, -1, 0)) }
-func (v *Float128Value) isNonZero() bool   { panic(internalError()) }
+func (v *Float128Value) isNonZero() bool   { panic(todo("")) }
 func (v *Float128Value) isZero() bool      { return v.cmp(float128Zero, 0) }
-func (v *Float128Value) le(b Value) Value  { panic(internalError()) }
-func (v *Float128Value) lsh(b Value) Value { panic(internalError()) }
-func (v *Float128Value) lt(b Value) Value  { panic(internalError()) }
-func (v *Float128Value) mod(b Value) Value { panic(internalError()) }
+func (v *Float128Value) le(b Value) Value  { panic(todo("")) }
+func (v *Float128Value) lsh(b Value) Value { panic(todo("")) }
+func (v *Float128Value) lt(b Value) Value  { panic(todo("")) }
+func (v *Float128Value) mod(b Value) Value { panic(todo("")) }
 func (v *Float128Value) mul(b Value) Value { return v.safe(b, func(x, y *big.Float) { x.Mul(x, y) }) }
 func (v *Float128Value) neg() Value        { return v.safe(nil, func(x, y *big.Float) { x.Neg(x) }) }
-func (v *Float128Value) neq(b Value) Value { panic(internalError()) }
-func (v *Float128Value) or(b Value) Value  { panic(internalError()) }
-func (v *Float128Value) rsh(b Value) Value { panic(internalError()) }
+func (v *Float128Value) neq(b Value) Value { panic(todo("")) }
+func (v *Float128Value) or(b Value) Value  { panic(todo("")) }
+func (v *Float128Value) rsh(b Value) Value { panic(todo("")) }
 func (v *Float128Value) sub(b Value) Value { return v.safe(b, func(x, y *big.Float) { x.Sub(x, y) }) }
-func (v *Float128Value) xor(b Value) Value { panic(internalError()) }
+func (v *Float128Value) xor(b Value) Value { panic(todo("")) }
 
 func (v *Float128Value) cmp(b Value, accept ...int) bool {
 	w := b.(*Float128Value)
@@ -392,48 +395,48 @@ func (v *Float128Value) safe(b Value, f func(*big.Float, *big.Float)) (ret Value
 type Complex64Value complex64
 
 func (v Complex64Value) add(b Value) Value { return v + b.(Complex64Value) }
-func (v Complex64Value) and(b Value) Value { panic(internalError()) }
-func (v Complex64Value) cpl() Value        { panic(internalError()) }
+func (v Complex64Value) and(b Value) Value { panic(todo("")) }
+func (v Complex64Value) cpl() Value        { panic(todo("")) }
 func (v Complex64Value) div(b Value) Value { return v / b.(Complex64Value) }
 func (v Complex64Value) eq(b Value) Value  { return boolValue(v == b.(Complex64Value)) }
-func (v Complex64Value) ge(b Value) Value  { panic(internalError()) }
-func (v Complex64Value) gt(b Value) Value  { panic(internalError()) }
+func (v Complex64Value) ge(b Value) Value  { panic(todo("")) }
+func (v Complex64Value) gt(b Value) Value  { panic(todo("")) }
 func (v Complex64Value) isNonZero() bool   { return v != 0 }
 func (v Complex64Value) isZero() bool      { return v == 0 }
-func (v Complex64Value) le(b Value) Value  { panic(internalError()) }
-func (v Complex64Value) lsh(b Value) Value { panic(internalError()) }
-func (v Complex64Value) lt(b Value) Value  { panic(internalError()) }
-func (v Complex64Value) mod(b Value) Value { panic(internalError()) }
+func (v Complex64Value) le(b Value) Value  { panic(todo("")) }
+func (v Complex64Value) lsh(b Value) Value { panic(todo("")) }
+func (v Complex64Value) lt(b Value) Value  { panic(todo("")) }
+func (v Complex64Value) mod(b Value) Value { panic(todo("")) }
 func (v Complex64Value) mul(b Value) Value { return v * b.(Complex64Value) }
 func (v Complex64Value) neg() Value        { return -v }
 func (v Complex64Value) neq(b Value) Value { return boolValue(v != b.(Complex64Value)) }
-func (v Complex64Value) or(b Value) Value  { panic(internalError()) }
-func (v Complex64Value) rsh(b Value) Value { panic(internalError()) }
+func (v Complex64Value) or(b Value) Value  { panic(todo("")) }
+func (v Complex64Value) rsh(b Value) Value { panic(todo("")) }
 func (v Complex64Value) sub(b Value) Value { return v - b.(Complex64Value) }
-func (v Complex64Value) xor(b Value) Value { panic(internalError()) }
+func (v Complex64Value) xor(b Value) Value { panic(todo("")) }
 
 type Complex128Value complex128
 
 func (v Complex128Value) add(b Value) Value { return v + b.(Complex128Value) }
-func (v Complex128Value) and(b Value) Value { panic(internalError()) }
-func (v Complex128Value) cpl() Value        { panic(internalError()) }
+func (v Complex128Value) and(b Value) Value { panic(todo("")) }
+func (v Complex128Value) cpl() Value        { panic(todo("")) }
 func (v Complex128Value) div(b Value) Value { return v / b.(Complex128Value) }
 func (v Complex128Value) eq(b Value) Value  { return boolValue(v == b.(Complex128Value)) }
-func (v Complex128Value) ge(b Value) Value  { panic(internalError()) }
-func (v Complex128Value) gt(b Value) Value  { panic(internalError()) }
+func (v Complex128Value) ge(b Value) Value  { panic(todo("")) }
+func (v Complex128Value) gt(b Value) Value  { panic(todo("")) }
 func (v Complex128Value) isNonZero() bool   { return v != 0 }
 func (v Complex128Value) isZero() bool      { return v == 0 }
-func (v Complex128Value) le(b Value) Value  { panic(internalError()) }
-func (v Complex128Value) lsh(b Value) Value { panic(internalError()) }
-func (v Complex128Value) lt(b Value) Value  { panic(internalError()) }
-func (v Complex128Value) mod(b Value) Value { panic(internalError()) }
+func (v Complex128Value) le(b Value) Value  { panic(todo("")) }
+func (v Complex128Value) lsh(b Value) Value { panic(todo("")) }
+func (v Complex128Value) lt(b Value) Value  { panic(todo("")) }
+func (v Complex128Value) mod(b Value) Value { panic(todo("")) }
 func (v Complex128Value) mul(b Value) Value { return v * b.(Complex128Value) }
 func (v Complex128Value) neg() Value        { return -v }
 func (v Complex128Value) neq(b Value) Value { return boolValue(v != b.(Complex128Value)) }
-func (v Complex128Value) or(b Value) Value  { panic(internalError()) }
-func (v Complex128Value) rsh(b Value) Value { panic(internalError()) }
+func (v Complex128Value) or(b Value) Value  { panic(todo("")) }
+func (v Complex128Value) rsh(b Value) Value { panic(todo("")) }
 func (v Complex128Value) sub(b Value) Value { return v - b.(Complex128Value) }
-func (v Complex128Value) xor(b Value) Value { panic(internalError()) }
+func (v Complex128Value) xor(b Value) Value { panic(todo("")) }
 
 type Complex256Value struct {
 	Re, Im *Float128Value
@@ -444,25 +447,25 @@ func (v Complex256Value) add(b Value) Value {
 	return Complex256Value{v.Re.add(w.Re).(*Float128Value), v.Im.add(w.Im).(*Float128Value)}
 }
 
-func (v Complex256Value) and(b Value) Value { panic(internalError()) }
-func (v Complex256Value) cpl() Value        { panic(internalError()) }
-func (v Complex256Value) div(b Value) Value { panic(internalError()) }
-func (v Complex256Value) eq(b Value) Value  { panic(internalError()) }
-func (v Complex256Value) ge(b Value) Value  { panic(internalError()) }
-func (v Complex256Value) gt(b Value) Value  { panic(internalError()) }
-func (v Complex256Value) isNonZero() bool   { panic(internalError()) }
+func (v Complex256Value) and(b Value) Value { panic(todo("")) }
+func (v Complex256Value) cpl() Value        { panic(todo("")) }
+func (v Complex256Value) div(b Value) Value { panic(todo("")) }
+func (v Complex256Value) eq(b Value) Value  { panic(todo("")) }
+func (v Complex256Value) ge(b Value) Value  { panic(todo("")) }
+func (v Complex256Value) gt(b Value) Value  { panic(todo("")) }
+func (v Complex256Value) isNonZero() bool   { panic(todo("")) }
 func (v Complex256Value) isZero() bool      { return v.Re.isZero() && v.Im.isZero() }
-func (v Complex256Value) le(b Value) Value  { panic(internalError()) }
-func (v Complex256Value) lsh(b Value) Value { panic(internalError()) }
-func (v Complex256Value) lt(b Value) Value  { panic(internalError()) }
-func (v Complex256Value) mod(b Value) Value { panic(internalError()) }
-func (v Complex256Value) mul(b Value) Value { panic(internalError()) }
-func (v Complex256Value) neg() Value        { panic(internalError()) }
-func (v Complex256Value) neq(b Value) Value { panic(internalError()) }
-func (v Complex256Value) or(b Value) Value  { panic(internalError()) }
-func (v Complex256Value) rsh(b Value) Value { panic(internalError()) }
-func (v Complex256Value) sub(b Value) Value { panic(internalError()) }
-func (v Complex256Value) xor(b Value) Value { panic(internalError()) }
+func (v Complex256Value) le(b Value) Value  { panic(todo("")) }
+func (v Complex256Value) lsh(b Value) Value { panic(todo("")) }
+func (v Complex256Value) lt(b Value) Value  { panic(todo("")) }
+func (v Complex256Value) mod(b Value) Value { panic(todo("")) }
+func (v Complex256Value) mul(b Value) Value { panic(todo("")) }
+func (v Complex256Value) neg() Value        { panic(todo("")) }
+func (v Complex256Value) neq(b Value) Value { panic(todo("")) }
+func (v Complex256Value) or(b Value) Value  { panic(todo("")) }
+func (v Complex256Value) rsh(b Value) Value { panic(todo("")) }
+func (v Complex256Value) sub(b Value) Value { panic(todo("")) }
+func (v Complex256Value) xor(b Value) Value { panic(todo("")) }
 
 type lvalue struct {
 	Operand
@@ -516,6 +519,9 @@ func (o *operand) IsZero() bool                  { return o.value != nil && o.va
 func (o *operand) Type() Type                    { return o.typ }
 func (o *operand) Value() Value                  { return o.value }
 func (o *operand) getABI() *ABI                  { return o.abi }
+
+// IsAssingmentCompatible implements Operand.
+func (o *operand) IsAssingmentCompatible(lhs Type) bool { return lhs.isAssingmentCompatibleOperand(o) }
 
 func (o *operand) isConst() bool {
 	if o.Value() != nil {
@@ -612,7 +618,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	}
 
 	if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
-		panic(internalError())
+		panic(todo(""))
 	}
 
 	// Otherwise, the integer promotions are performed on both operands.
@@ -693,7 +699,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 	case LongLong:
 		typ = abi.Type(ULongLong)
 	default:
-		panic(internalError())
+		panic(todo(""))
 	}
 	return a.convertTo(ctx, n, typ), b.convertTo(ctx, n, typ)
 }
@@ -787,7 +793,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		case Ptr:
 			return r
 		default:
-			panic("TODO653")
+			panic(todo("", n.Position()))
 		}
 	case ComplexFloat:
 		v := v.(Complex64Value)
@@ -799,9 +805,9 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		case Double:
 			r.value = Float64Value(real(v))
 		case ComplexLongDouble:
-			panic("TODO663")
+			panic(todo("", n.Position()))
 		default:
-			panic("TODO665")
+			panic(todo("", n.Position()))
 		}
 	case ComplexDouble:
 		v := v.(Complex128Value)
@@ -809,13 +815,15 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		case ComplexFloat:
 			r.value = Complex64Value(v)
 		case ComplexLongDouble:
-			panic("TODO673")
+			//TODO panic(todo("", n.Position()))
+			r.value = nil
 		case Float:
 			r.value = Float32Value(real(v))
 		case Double:
 			r.value = Float64Value(real(v))
 		default:
-			panic("TODO681")
+			//TODO panic(todo("", n.Position(), o.Type(), to))
+			r.value = nil
 		}
 	case Float:
 		v := v.(Float32Value)
@@ -827,13 +835,13 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		case Double:
 			r.value = Float64Value(v)
 		case ComplexLongDouble:
-			panic("TODO693")
+			panic(todo("", n.Position()))
 		case LongDouble:
 			r.value = &Float128Value{N: big.NewFloat(float64(v))}
 		case Decimal32, Decimal64, Decimal128:
 			// ok
 		default:
-			panic(fmt.Sprintf("TODO695 %s", to.Kind()))
+			panic(todo("695 %s", to.Kind()))
 		}
 	case Double:
 		v := v.(Float64Value)
@@ -853,7 +861,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		case Float:
 			r.value = Float32Value(v)
 		case ComplexLongDouble:
-			panic("TODO709")
+			panic(todo("", n.Position()))
 		case Vector:
 			r.value = nil
 		case Decimal32, Decimal64, Decimal128:
@@ -890,7 +898,7 @@ func (o *operand) convertTo(ctx *context, n Node, to Type) Operand {
 		case Decimal32, Decimal64, Decimal128:
 			// ok
 		default:
-			panic(fmt.Sprintf("TODO813 %v", to.Kind()))
+			panic(todo("813 %v", to.Kind()))
 		}
 	case Ptr:
 		switch to.Kind() {
@@ -979,7 +987,7 @@ func (o *operand) convertToInt(ctx *context, n Node, to Type) (r Operand) {
 			return (&operand{abi: o.abi, typ: to, value: Uint64Value(v)}).normalize(ctx, n)
 		}
 	case LongDouble:
-		panic("TODO791")
+		panic(todo("", n.Position()))
 	case Ptr:
 		var v uint64
 		switch x := o.Value().(type) {
@@ -1057,7 +1065,7 @@ func (o *operand) convertFromInt(ctx *context, n Node, to Type) (r Operand) {
 			return (&operand{abi: o.abi, typ: to, value: Float32Value(float64(v))}).normalize(ctx, n)
 		}
 	case ComplexLongDouble:
-		panic("TODO896")
+		panic(todo("", n.Position()))
 	case Double:
 		switch {
 		case o.Type().IsSignedType():
@@ -1136,28 +1144,28 @@ func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 		case Complex64Value, nil:
 			return o
 		default:
-			panic(internalError())
+			panic(todo(""))
 		}
 	case ComplexDouble:
 		switch o.Value().(type) {
 		case Complex128Value, nil:
 			return o
 		default:
-			panic(internalError())
+			panic(todo(""))
 		}
 	case ComplexLongDouble:
 		switch o.Value().(type) {
 		case Complex256Value, nil:
 			return o
 		default:
-			panic(fmt.Sprintf("TODO934 %v", o.Type().Kind()))
+			panic(todo("934 %v", o.Type().Kind()))
 		}
 	case Float:
 		switch o.Value().(type) {
 		case Float32Value, *InitializerValue, nil:
 			return o
 		default:
-			panic(internalError())
+			panic(todo(""))
 		}
 	case Double:
 		switch x := o.Value().(type) {
@@ -1178,11 +1186,12 @@ func (o *operand) normalize(ctx *context, n Node) (r Operand) {
 		case Int64Value, Uint64Value, *InitializerValue, StringValue, WideStringValue, nil:
 			return o
 		default:
-			panic(internalError())
+			panic(todo(""))
 		}
 	case Array, Void, Function, Struct, Union, Vector, Decimal32, Decimal64, Decimal128:
 		return o
 	case ComplexChar, ComplexInt, ComplexLong, ComplexLongLong, ComplexShort, ComplexUInt, ComplexUShort:
+		//TOD
 		if ctx != nil {
 			ctx.errNode(n, "unsupported type: %s", o.Type())
 		}

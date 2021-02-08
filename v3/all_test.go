@@ -74,12 +74,12 @@ const (
 #define __QI__
 #define __SI__
 #define __builtin_add_overflow(...) 0
-#define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
-#define __builtin_expect(exp, c) exp
+#define __builtin_constant_p(x) (__builtin_constant_p_impl(0, x))
+#define __builtin_expect(exp, c) (exp)
 #define __builtin_mul_overflow(...) 0
 #define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
 #define __builtin_sub_overflow(...) 0
-#define __builtin_va_arg(ap, type) (type)__builtin_va_arg_impl(ap)
+#define __builtin_va_arg(ap, type) ((type)__builtin_va_arg_impl(ap))
 #define __builtin_va_end(ap)
 #define __builtin_va_start(ap, v)
 #define __declspec(...)
@@ -107,10 +107,10 @@ typedef __SIZE_TYPE__ size_t;
 typedef __WCHAR_TYPE__ wchar_t;
 #endif
 
+typedef void *__builtin_va_list;
+
 #if __SIZEOF_POINTER__ == 8
-typedef void* __builtin_va_list[3];
 #else
-typedef void* __builtin_va_list[1];
 typedef long double __float128;
 #endif
 
@@ -155,6 +155,11 @@ int __builtin_clzll (unsigned long long);
 int __builtin_constant_p_impl(int, ...);
 int __printf__ ( const char * format, ... );
 int __scanf__ ( const char *format, ... );
+void *__builtin_alloca (size_t);
+void *__builtin_extract_return_addr (void *addr);
+void *__builtin_frame_address (unsigned int level);
+void *__builtin_malloc(size_t);
+void *__builtin_stack_save(void);
 void *__builtin_va_arg_impl(void* ap);
 
 `
@@ -184,16 +189,14 @@ var (
 		"--max-nested-struct-level", "10", // --max-nested-struct-level <num>: limit maximum nested level of structs to <num>(default 0). Only works in the exhaustive mode.
 	}, " ")
 
-	testBuiltinSource   *cachedPPFile
-	testIncludes        []string
-	testPredef          string
-	testPredefGNU       string
-	testPredefGNUSource *cachedPPFile
-	testPredefSource    *cachedPPFile
-	testSQLiteSource    *cachedPPFile
-	testShellSource     *cachedPPFile
-	testSysIncludes     []string
-	testWD              string
+	testBuiltinSource *cachedPPFile
+	testIncludes      []string
+	testPredef        string
+	testPredefSource  *cachedPPFile
+	testSQLiteSource  *cachedPPFile
+	testShellSource   *cachedPPFile
+	testSysIncludes   []string
+	testWD            string
 
 	testABI = newTestABI()
 )
@@ -230,7 +233,7 @@ func TestMain(m *testing.M) {
 		*oWalkDir = filepath.Join(testWD, s)
 	}
 
-	if testPredefGNU, testIncludes, testSysIncludes, err = HostConfig(os.Getenv("CC_TEST_CPP")); err != nil {
+	if testPredef, testIncludes, testSysIncludes, err = HostConfig(os.Getenv("CC_TEST_CPP")); err != nil {
 		log.Fatal("Cannot acquire host cpp configuration.")
 		return
 	}
@@ -238,7 +241,7 @@ func TestMain(m *testing.M) {
 	if runtime.GOOS == "darwin" {
 		switch runtime.GOARCH {
 		case "amd64":
-			testPredefGNU += `
+			testPredef += `
 				#define TARGET_CPU_X86_64 1
 				#define TARGET_OS_UNIX 1
 			`
@@ -247,7 +250,7 @@ func TestMain(m *testing.M) {
 		}
 	}
 
-	isTestingMingw = detectMingw(testPredefGNU)
+	isTestingMingw = detectMingw(testPredef)
 	if s := os.Getenv("CSMITH_PATH"); s != "" {
 		testIncludes = append(testIncludes, s) //TODO nix only
 	}
@@ -258,25 +261,6 @@ func TestMain(m *testing.M) {
 	}
 
 	cfg := &Config{}
-	if testPredefGNUSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredefGNU, false, false); err != nil {
-		log.Fatal(err)
-	}
-
-	switch {
-	case isTestingMingw:
-		testPredef = testPredefGNU
-	default:
-		a := strings.Split(testPredefGNU, "\n")
-		w := 0
-		for _, v0 := range a {
-			v := strings.TrimSpace(strings.ToLower(v0))
-			if !strings.HasPrefix(v, "#define __gnu") && !strings.HasPrefix(v, "#define __gcc") {
-				a[w] = v0
-				w++
-			}
-		}
-		testPredef = strings.Join(a[:w], "\n")
-	}
 	if testPredefSource, err = cache.getValue(newContext(cfg), "<predefined>", testPredef, false, false); err != nil {
 		log.Fatal(err)
 	}

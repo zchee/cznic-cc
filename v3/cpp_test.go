@@ -233,9 +233,7 @@ func TestTCCExpand(t *testing.T) {
 
 func TestTranslationPhase4(t *testing.T) {
 	t.Run("shell.c", func(t *testing.T) { testTranslationPhase4(t, testPredefSource, testShellSource) })
-	t.Run("shell.c/gnu", func(t *testing.T) { testTranslationPhase4(t, testPredefGNUSource, testShellSource) })
 	t.Run("sqlite3.c", func(t *testing.T) { testTranslationPhase4(t, testPredefSource, testSQLiteSource) })
-	t.Run("sqlite3.c/gnu", func(t *testing.T) { testTranslationPhase4(t, testPredefGNUSource, testSQLiteSource) })
 }
 
 func testTranslationPhase4(t *testing.T, predef, src source) {
@@ -264,9 +262,7 @@ func testTranslationPhase4(t *testing.T, predef, src source) {
 
 func BenchmarkTranslationPhase4(b *testing.B) {
 	b.Run("shell.c", func(b *testing.B) { benchmarkTranslationPhase4(b, testPredefSource, testShellSource) })
-	b.Run("shell.c/gnu", func(b *testing.B) { benchmarkTranslationPhase4(b, testPredefGNUSource, testShellSource) })
 	b.Run("sqlite3.c", func(b *testing.B) { benchmarkTranslationPhase4(b, testPredefSource, testSQLiteSource) })
-	b.Run("sqlite3.c/gnu", func(b *testing.B) { benchmarkTranslationPhase4(b, testPredefGNUSource, testSQLiteSource) })
 }
 
 func benchmarkTranslationPhase4(b *testing.B, predef, src source) {

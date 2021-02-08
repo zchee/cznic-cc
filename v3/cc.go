@@ -366,14 +366,6 @@ func (s *Scope) typedef(nm StringID, tok Token) *Declarator {
 	return nil
 }
 
-func (s *Scope) identifier(nm StringID, tok Token) *Declarator {
-	if d := s.declarator(nm, tok); d != nil && !d.IsTypedefName {
-		return d
-	}
-
-	return nil
-}
-
 func (s *Scope) declarator(nm StringID, tok Token) *Declarator {
 	seq := tok.seq
 	for s := *s; s != nil; s = s.Parent() {
@@ -445,9 +437,18 @@ type Config3 struct {
 	// evaluates to is true the include directive will be ignored completely.
 	IgnoreInclude *regexp.Regexp
 
-	ReplaceMacroFdZero                   string // Name of a macro to use instead of FD_ZERO.
-	ReplaceMacroTclDefaultDoubleRounding string // Name of a macro to use instead of TCL_DEFAULT_DOUBLE_ROUNDING.
-	ReplaceMacroTclIeeeDoubleRounding    string // Name of a macro to use instead of TCL_IEEE_DOUBLE_ROUNDING.
+	// Name of a macro to use instead of FD_ZERO.
+	//
+	// Note: Temporary solution will be removed/replaced
+	ReplaceMacroFdZero string
+	// Name of a macro to use instead of TCL_DEFAULT_DOUBLE_ROUNDING.
+	//
+	// Note: Temporary solution will be removed/replaced
+	ReplaceMacroTclDefaultDoubleRounding string // Name of a macro to use instead of TCL_DEFAULT_DOUBLE_ROUNDING. Note: Temporrary solution will be removed/replaced
+	// Name of a macro to use instead of TCL_IEEE_DOUBLE_ROUNDING.
+	//
+	// Note: Temporary solution will be removed/replaced
+	ReplaceMacroTclIeeeDoubleRounding string
 
 	WorkingDir string     // Overrides os.Getwd if non empty.
 	Filesystem Filesystem // Overrides filesystem access if not empty.
@@ -509,10 +510,11 @@ type Config struct {
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
-	LongDoubleIsDouble                     bool
 	DebugIncludePaths                      bool // Output to stderr.
 	DebugWorkingDir                        bool // Output to stderr.
+	EnableAssignmentCompatibilityChecking  bool // No such checks performed up to v3.30.0
 	InjectTracingCode                      bool // Output to stderr.
+	LongDoubleIsDouble                     bool
 	PreprocessOnly                         bool
 	RejectAnonymousFields                  bool // Pedantic: do not silently accept "struct{int;}".
 	RejectCaseRange                        bool // Pedantic: do not silently accept "case 'a'...'z':".
@@ -607,6 +609,22 @@ func (c *context) stddef(nm StringID, s Scope, tok Token) Type {
 
 	c.errNode(&tok, "front-end: undefined: %s", nm)
 	return noType
+}
+
+func (c *context) assignmentCompatibilityErrorCond(n Node, a, b Type) (stop bool) {
+	if !c.cfg.EnableAssignmentCompatibilityChecking {
+		return
+	}
+
+	return c.errNode(n, "invalid type combination of conditional operator: %v and %v", a, b)
+}
+
+func (c *context) assignmentCompatibilityError(n Node, lhs, rhs Type) (stop bool) {
+	if !c.cfg.EnableAssignmentCompatibilityChecking {
+		return
+	}
+
+	return c.errNode(n, "cannot use %v as type %v in assignment", rhs, lhs)
 }
 
 func (c *context) errNode(n Node, msg string, args ...interface{}) (stop bool) {
@@ -887,7 +905,7 @@ func tokStr(toks interface{}, sep string) string {
 }
 
 func internalError() int {
-	panic(fmt.Errorf("%v:", origin(2)))
+	panic(fmt.Errorf("%v: internal error", origin(2)))
 }
 
 func internalErrorf(s string, args ...interface{}) int {

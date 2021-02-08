@@ -40,6 +40,7 @@ var (
 
 	bytesBufferPool = sync.Pool{New: func() interface{} { return &bytes.Buffer{} }}
 
+	idBool        = dict.sid("_Bool")
 	idImag        = dict.sid("imag")
 	idReal        = dict.sid("real")
 	idVectorSize  = dict.sid("vector_size")
@@ -310,6 +311,20 @@ type Type interface {
 	//	foo x;	// The type of x reports true from IsAliasType().
 	IsAliasType() bool
 
+	// IsAssingmentCompatible reports whether a type can be assigned from rhs. [0], 6.5.16.1.
+	IsAssingmentCompatible(rhs Type) bool
+
+	// isAssingmentCompatibleOperand reports whether a type can be assigned from rhs. [0], 6.5.16.1.
+	isAssingmentCompatibleOperand(rhs Operand) bool
+
+	// IsCompatible reports whether the two types are compatible. [0], 6.2.7.
+	IsCompatible(Type) bool
+
+	isCompatibleIgnoreQualifiers(Type) bool
+
+	// IsCompatibleLayout reports whether the two types have identical layouts.
+	IsCompatibleLayout(Type) bool
+
 	// AliasDeclarator returns the typedef declarator of the alias type. It panics
 	// if the type is not an alias type.
 	AliasDeclarator() *Declarator
@@ -378,10 +393,6 @@ type Type interface {
 	// atomic reports whether type has type qualifier "_Atomic".
 	atomic() bool
 
-	// isCompatible reports whether a type is compatible with another type.
-	// See [0], 6.2.7.
-	isCompatible(Type) bool
-
 	// hasConst reports whether type has type qualifier "const".
 	hasConst() bool
 
@@ -403,6 +414,7 @@ type Type interface {
 	string(*bytes.Buffer)
 
 	base() typeBase
+	baseP() *typeBase
 
 	underlyingType() Type
 
@@ -699,7 +711,7 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) (r Ty
 		tok := ts.Token
 		nm := tok.Value
 		d := ts.resolvedIn.typedef(nm, tok)
-		typ = &aliasType{nm: nm, d: d}
+		typ = &aliasType{typeBase: t, nm: nm, d: d}
 	case Enum:
 		typ = typeSpecifiers[0].EnumSpecifier.typ
 	case Struct, Union:
@@ -713,6 +725,179 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) (r Ty
 		}
 	}
 	return typ
+}
+
+// IsAssingmentCompatible implements Type.
+func (t *typeBase) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if t == rhs {
+		return true
+	}
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+	if t.IsArithmeticType() && rhs.IsArithmeticType() {
+		return true
+	}
+
+	if x, ok := rhs.(*aliasType); ok {
+		if x.nm == idBool && rhs.Kind() == Ptr {
+			return true
+		}
+	}
+
+	if t.IsIntegerType() && rhs.Kind() == Ptr {
+		// 6.3.2.3 Pointers
+		//
+		// 6 Any pointer type may be converted to an integer type. Except as previously specified, the
+		// result is implementation-defined. If the result cannot be represented in the integer type,
+		// the behavior is undefined. The result need not be in the range of values of any integer
+		// type.
+		return true
+	}
+
+	return false
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *typeBase) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	rhsType := rhs.Type().Decay()
+	if t == rhsType {
+		return true
+	}
+
+	return t.IsAssingmentCompatible(rhsType)
+}
+
+// IsCompatible implements Type.
+func (t *typeBase) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if !t.IsScalarType() && t.Kind() != Void {
+		panic(internalErrorf("IsCompatible of invalid type: %v", t.Kind()))
+	}
+
+	v := u.base()
+	// [0], 6.7.3
+	//
+	// 9 For two qualified types to be compatible, both shall have the identically
+	// qualified version of a compatible type; the order of type qualifiers within
+	// a list of specifiers or qualifiers does not affect the specified type.
+	if t.flags&(fAtomic|fConst|fRestrict|fVolatile|fSigned) != v.flags&(fAtomic|fConst|fRestrict|fVolatile|fSigned) {
+		return false
+	}
+
+	if t.Kind() == u.Kind() {
+		return true
+	}
+
+	if t.Kind() == Enum && u.IsIntegerType() && t.Size() == u.Size() {
+		return true
+	}
+
+	return t.IsIntegerType() && u.Kind() == Enum && t.Size() == u.Size()
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *typeBase) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if !t.IsScalarType() && t.Kind() != Void {
+		panic(internalErrorf("isCompatibleIgnoreQualifiers of invalid type: %v", t.Kind()))
+	}
+
+	if t.Kind() == u.Kind() {
+		return true
+	}
+
+	if t.Kind() == Enum && u.IsIntegerType() && t.Size() == u.Size() {
+		return true
+	}
+
+	return t.IsIntegerType() && u.Kind() == Enum && t.Size() == u.Size()
+}
+
+// IsCompatibleLayout implements Type.
+func (t *typeBase) IsCompatibleLayout(u Type) bool {
+	if t == u {
+		return true
+	}
+
+	if !t.IsScalarType() {
+		panic(internalErrorf("%s: IsCompatibleLayout of invalid type", t.Kind()))
+	}
+
+	if t.Kind() == u.Kind() {
+		return true
+	}
+
+	if t.Kind() == Enum && u.IsIntegerType() && t.Size() == u.Size() {
+		return true
+	}
+
+	return t.IsIntegerType() && u.Kind() == Enum && t.Size() == u.Size()
 }
 
 // UnionCommon implements Type.
@@ -754,54 +939,12 @@ func (t *typeBase) BitField() Field {
 // base implements Type.
 func (t *typeBase) base() typeBase { return *t }
 
+// baseP implements Type.
+func (t *typeBase) baseP() *typeBase { return t }
+
 // isVectorType implements Type.
 func (t *typeBase) isVectorType() bool {
 	return false
-}
-
-// isCompatible implements Type.
-func (t *typeBase) isCompatible(u Type) bool {
-	// [0], 6.2.7
-
-	if t.Kind() == Invalid || u.Kind() == Invalid {
-		return false
-	}
-
-	// Two types have compatible type if their types are the same.
-	// Additional rules for determining whether two types are compatible
-	// are described in 6.7.2 for type specifiers, in 6.7.3 for type
-	// qualifiers, and in 6.7.5 for declarators
-	if t == u {
-		return true
-	}
-
-	switch t.Kind() {
-	case Enum:
-		return u.IsIntegerType() && t.compatibleQualifiers(u) //TODO enum sizes
-	case
-		Array,
-		Function,
-		Ptr,
-		Struct,
-		TypedefName,
-		Union:
-
-		panic(internalErrorf("%s: isCompatible of invalid type", t.Kind()))
-	}
-
-	return (t.Kind() == u.Kind() || t.IsIntegerType() && u.Kind() == Enum) && t.compatibleQualifiers(u) //TODO enum sizes
-}
-
-func (t *typeBase) compatibleQualifiers(u Type) bool {
-	const mask = fAtomic | fConst | fRestrict | fVolatile
-
-	// [0], 6.7.3
-	//
-	// For two qualified types to be compatible, both shall have the
-	// identically qualified version of a compatible type; the order of
-	// type qualifiers within a list of specifiers or qualifiers does not
-	// affect the specified type.
-	return t.flags&mask == u.base().flags&mask
 }
 
 // Decay implements Type.
@@ -1115,16 +1258,180 @@ type pointerType struct {
 	typeQualifiers Type
 }
 
+// IsAssingmentCompatible implements Type.
+func (t *pointerType) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if rhs = rhs.Alias().Decay(); t == rhs {
+		return true
+	}
+
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+
+	if rhs.Kind() == Ptr {
+		v := rhs.(*pointerType)
+		a := t.Elem().Alias().Decay()
+		b := v.Elem().Alias().Decay()
+		// — one operand is a pointer to an object or incomplete type and the other is
+		// a pointer to a qualified or unqualified version of void, and the type
+		// pointed to by the left has all the qualifiers of the type pointed to by the
+		// right;
+		if a.Kind() == Void || b.Kind() == Void {
+			return true
+		}
+
+		x := a.base().flags & (fAtomic | fConst | fRestrict | fVolatile)
+		y := b.base().flags & (fAtomic | fConst | fRestrict | fVolatile)
+		if x&y == y {
+			// — both operands are pointers to qualified or unqualified versions of
+			// compatible types, and the type pointed to by the left has all the qualifiers
+			// of the type pointed to by the right;
+			if a.underlyingType() != nil && b.underlyingType() != nil && a.isCompatibleIgnoreQualifiers(b) {
+				return true
+			}
+
+			if a.IsIncomplete() || b.IsIncomplete() && a.Kind() == b.Kind() {
+				return true
+			}
+
+			if a.IsIntegerType() && b.IsIntegerType() {
+				return true
+			}
+		}
+		// trc("a %T %[1]v, x %#x, b %T %[3]v, y %#x, x&y %#x", a, x, b, y, x&y)
+		// trc("a %+v, b%+v", a.base(), b.base())
+		return false
+	}
+	return rhs.Kind() == Function && t.Elem().IsAssingmentCompatible(rhs)
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *pointerType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	rhsType := rhs.Type()
+	if rhsType.Kind() == Function {
+		if t.Elem().Kind() == Void {
+			return true
+		}
+
+		return t.Elem().IsCompatible(rhsType)
+	}
+
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	return rhs.IsZero() || t.IsAssingmentCompatible(rhsType)
+}
+
+// IsCompatible implements Type.
+func (t *pointerType) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if u.Kind() != Ptr {
+		return false
+	}
+
+	v := u.(*pointerType)
+	// [0], 6.7.5.1
+	//
+	// 2 For two pointer types to be compatible, both shall be identically
+	// qualified and both shall be pointers to compatible types.;
+	if t.typeBase.flags&(fAtomic|fConst|fRestrict|fVolatile|fSigned) != v.typeBase.flags&(fAtomic|fConst|fRestrict|fVolatile|fSigned) {
+		return false
+	}
+
+	return t.Elem().IsCompatible(v.Elem())
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *pointerType) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if u.Kind() != Ptr {
+		return false
+	}
+
+	v := u.(*pointerType)
+	if t.Elem().Kind() == Void || v.Elem().Kind() == Void {
+		return true
+	}
+
+	return t.Elem().isCompatibleIgnoreQualifiers(v.Elem())
+}
+
 // Alias implements Type.
 func (t *pointerType) Alias() Type { return t }
 
 // Attributes implements Type.
 func (t *pointerType) Attributes() (a []*AttributeSpecifier) { return t.elem.Attributes() }
-
-// isCompatible implements Type.
-func (t *pointerType) isCompatible(u Type) bool {
-	return u.underlyingType().Kind() == Ptr && t.Elem().underlyingType().isCompatible(u.Elem().underlyingType())
-}
 
 // Decay implements Type.
 func (t *pointerType) Decay() Type { return t }
@@ -1163,16 +1470,122 @@ type arrayType struct {
 	vla bool
 }
 
+// IsAssingmentCompatible implements Type.
+func (t *arrayType) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if rhs = rhs.Alias().Decay(); t == rhs {
+		return true
+	}
+
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+	if rhs.Kind() == Array {
+		rhs = rhs.Decay()
+	}
+
+	return t.Decay().IsAssingmentCompatible(t)
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *arrayType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	return t.IsAssingmentCompatible(rhs.Type())
+}
+
+// IsCompatible implements Type.
+func (t *arrayType) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if t.vla || u.Kind() != Array {
+		return false
+	}
+
+	v := u.(*arrayType)
+	// [0], 6.7.5.2
+	//
+	// 6 For two array types to be compatible, both shall have compatible element
+	// types, and if both size specifiers are present, and are integer constant
+	// expressions, then both size specifiers shall have the same constant value.
+	// If the two array types are used in a context which requires them to be
+	// compatible, it is undefined behavior if the two size specifiers evaluate to
+	// unequal values.
+	return !t.vla && !v.vla && t.length == v.length && t.elem.IsCompatible(v.elem)
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *arrayType) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	return t.IsCompatible(u)
+}
+
+// IsCompatibleLayout implements Type.
+func (t *arrayType) IsCompatibleLayout(u Type) bool {
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if t.vla || u.Kind() != Array {
+		return false
+	}
+
+	v := u.(*arrayType)
+	return !t.vla && !v.vla && t.length == v.length && t.elem.IsCompatibleLayout(v.elem)
+}
+
 // Alias implements Type.
 func (t *arrayType) Alias() Type { return t }
 
 // IsVLA implements Type.
 func (t *arrayType) IsVLA() bool { return t.vla || t.elem.Kind() == Array && t.Elem().IsVLA() }
-
-// isCompatible implements Type.
-func (t *arrayType) isCompatible(u Type) bool {
-	panic("TODO")
-}
 
 // String implements Type.
 func (t *arrayType) String() string {
@@ -1225,8 +1638,145 @@ func (t *arrayType) setLen(n uintptr) {
 func (t *arrayType) underlyingType() Type { return t }
 
 type aliasType struct {
+	*typeBase
 	nm StringID
 	d  *Declarator
+}
+
+// IsAssingmentCompatible implements Type.
+func (t *aliasType) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if t == rhs {
+		return true
+	}
+
+	if x, ok := rhs.(*aliasType); ok && t.nm == x.nm {
+		return true
+	}
+
+	if rhs = rhs.Alias().Decay(); t == rhs {
+		return true
+	}
+
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+	return t.d.Type().IsAssingmentCompatible(rhs)
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *aliasType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if x, ok := rhs.Type().(*aliasType); ok && t.nm == x.nm {
+		return true
+	}
+
+	rhsType := rhs.Type().Decay()
+	if t == rhsType {
+		return true
+	}
+
+	return t.d.Type().isAssingmentCompatibleOperand(rhs)
+}
+
+// IsCompatible implements Type.
+func (t *aliasType) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if x, ok := u.(*aliasType); ok && t.nm == x.nm {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	return t.d.Type().IsCompatible(u)
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *aliasType) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if x, ok := u.(*aliasType); ok && t.nm == x.nm {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	return t.d.Type().isCompatibleIgnoreQualifiers(u)
+}
+
+// IsCompatibleLayout implements Type.
+func (t *aliasType) IsCompatibleLayout(u Type) bool {
+	if t == nil || u == nil {
+		return false
+	}
+
+	if x, ok := u.(*aliasType); ok && t.nm == x.nm {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	return t.d.Type().IsCompatibleLayout(u)
 }
 
 // UnionCommon implements Type.
@@ -1254,11 +1804,6 @@ func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
 
 // BitField implements Type.
 func (t *aliasType) BitField() Field { return t.d.Type().BitField() }
-
-// isCompatible implements Type.
-func (t *aliasType) isCompatible(u Type) bool {
-	return t == u || t.underlyingType().isCompatible(u.underlyingType())
-}
 
 // EnumType implements Type.
 func (t *aliasType) EnumType() Type { return t.d.Type().EnumType() }
@@ -1336,7 +1881,29 @@ func (t *aliasType) Imag() Field { return t.d.Type().Imag() }
 func (t *aliasType) Size() uintptr { return t.d.Type().Size() }
 
 // String implements Type.
-func (t *aliasType) String() string { return t.nm.String() }
+func (t *aliasType) String() string {
+	var a []string
+	if t.typeBase.atomic() {
+		a = append(a, "atomic")
+	}
+	if t.typeBase.hasConst() {
+		a = append(a, "const")
+	}
+	if t.typeBase.Inline() {
+		a = append(a, "inline")
+	}
+	if t.typeBase.noReturn() {
+		a = append(a, "_NoReturn")
+	}
+	if t.typeBase.restrict() {
+		a = append(a, "restrict")
+	}
+	if t.typeBase.IsVolatile() {
+		a = append(a, "volatile")
+	}
+	a = append(a, t.nm.String())
+	return strings.Join(a, " ")
+}
 
 // Tag implements Type.
 func (t *aliasType) Tag() StringID { return t.d.Type().Tag() }
@@ -1346,12 +1913,6 @@ func (t *aliasType) Name() StringID { return t.nm }
 
 // atomic implements Type.
 func (t *aliasType) atomic() bool { return t.d.Type().atomic() }
-
-// base implements Type.
-func (t *aliasType) base() typeBase { return t.d.Type().base() }
-
-// hasConst implements Type.
-func (t *aliasType) hasConst() bool { return t.d.Type().hasConst() }
 
 // Inline implements Type.
 func (t *aliasType) Inline() bool { return t.d.Type().Inline() }
@@ -1372,7 +1933,7 @@ func (t *aliasType) setLen(n uintptr) { t.d.Type().setLen(n) }
 func (t *aliasType) setKind(k Kind) { t.d.Type().setKind(k) }
 
 // string implements Type.
-func (t *aliasType) string(b *bytes.Buffer) { b.WriteString(t.nm.String()) }
+func (t *aliasType) string(b *bytes.Buffer) { b.WriteString(t.String()) }
 
 func (t *aliasType) underlyingType() Type { return t.d.Type().underlyingType() }
 
@@ -1440,6 +2001,183 @@ type structType struct {
 	tag StringID
 }
 
+// IsAssingmentCompatible implements Type.
+func (t *structType) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if rhs = rhs.Alias().Decay(); t == rhs {
+		return true
+	}
+
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+	return t.IsCompatible(rhs)
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *structType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	rhsType := rhs.Type().Decay()
+	if t == rhsType {
+		return true
+	}
+
+	return t.IsAssingmentCompatible(rhsType)
+}
+
+func (t *structType) firstUnionField() Field {
+	for _, f := range t.fields {
+		if f.Name() != 0 || !f.Type().IsBitFieldType() {
+			return f
+		}
+	}
+	panic(todo(""))
+}
+
+// IsCompatible implements Type.
+func (t *structType) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t.Kind() == Union {
+		return t.firstUnionField().Type().IsCompatible(u)
+	}
+
+	if t.IsComplexType() && u.IsArithmeticType() {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	v, ok := u.(*structType)
+	if !ok || t.Kind() != v.Kind() {
+		return false
+	}
+
+	if t.tag != 0 && t.tag == v.tag {
+		return true
+	}
+
+	if t.tag != v.tag || len(t.fields) != len(v.fields) {
+		return false
+	}
+
+	if (t.IsIncomplete() || v.IsIncomplete()) && t.tag == v.tag {
+		return true
+	}
+
+	for i, f1 := range t.fields {
+		f2 := v.fields[i]
+		nm := f1.Name()
+		if f2.Name() != nm {
+			return false
+		}
+
+		ft1 := f1.Type()
+		ft2 := f2.Type()
+		if ft1.Size() != ft2.Size() ||
+			f1.IsBitField() != f2.IsBitField() ||
+			f1.BitFieldOffset() != f2.BitFieldOffset() ||
+			f1.BitFieldWidth() != f2.BitFieldWidth() {
+			return false
+		}
+
+		if !ft1.IsCompatible(ft2) {
+			return false
+		}
+	}
+	return true
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *structType) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	return t.IsCompatible(u)
+}
+
+// IsCompatibleLayout implements Type.
+func (t *structType) IsCompatibleLayout(u Type) bool {
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	v, ok := u.(*structType)
+	if !ok || t.Kind() != v.Kind() {
+		return false
+	}
+
+	if t.tag != v.tag || len(t.fields) != len(v.fields) {
+		return false
+	}
+
+	for i, f1 := range t.fields {
+		f2 := v.fields[i]
+		nm := f1.Name()
+		if f2.Name() != nm {
+			return false
+		}
+
+		ft1 := f1.Type()
+		ft2 := f2.Type()
+		if ft1.Size() != ft2.Size() ||
+			f1.IsBitField() != f2.IsBitField() ||
+			f1.BitFieldOffset() != f2.BitFieldOffset() ||
+			f1.BitFieldWidth() != f2.BitFieldWidth() {
+			return false
+		}
+
+		if ft1.IsCompatible(ft2) {
+			return false
+		}
+	}
+	return true
+}
+
 // UnionCommon implements Type.
 func (t *structType) UnionCommon() Kind {
 	if t.Kind() != Union {
@@ -1454,9 +2192,6 @@ func (t *structType) Alias() Type { return t }
 
 // Tag implements Type.
 func (t *structType) Tag() StringID { return t.tag }
-
-// isCompatible implements Type.
-func (t *structType) isCompatible(u Type) bool { return t == u }
 
 func (t *structType) check(ctx *context, n Node) *structType {
 	if t == nil {
@@ -1608,6 +2343,158 @@ type taggedType struct {
 	tag StringID
 }
 
+// IsAssingmentCompatible implements Type.
+func (t *taggedType) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if t == rhs {
+		return true
+	}
+
+	if t.Kind() == rhs.Kind() && t.tag != 0 && t.tag == rhs.Tag() {
+		return true
+	}
+
+	if rhs = rhs.Alias().Decay(); t == rhs {
+		return true
+	}
+
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+	return t.typ.IsAssingmentCompatible(rhs)
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *taggedType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	rhsType := rhs.Type().Decay()
+	if t == rhsType {
+		return true
+	}
+
+	if t.Kind() == rhsType.Kind() && t.tag != 0 && t.tag == rhsType.Tag() {
+		return true
+	}
+
+	return t.IsAssingmentCompatible(rhsType)
+}
+
+// IsCompatible implements Type.
+func (t *taggedType) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if t.Kind() == u.Kind() && t.tag != 0 && t.tag == u.Tag() {
+		return true
+	}
+
+	return t.typ.IsCompatible(u)
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *taggedType) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if t.Kind() == u.Kind() && t.tag != 0 && t.tag == u.Tag() {
+		return true
+	}
+
+	return t.typ.isCompatibleIgnoreQualifiers(u)
+}
+
+// IsCompatibleLayout implements Type.
+func (t *taggedType) IsCompatibleLayout(u Type) bool {
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if t.Kind() == u.Kind() && t.tag != 0 && t.tag == u.Tag() {
+		return true
+	}
+
+	return t.typ.IsCompatibleLayout(u)
+}
+
 // UnionCommon implements Type.
 func (t *taggedType) UnionCommon() Kind { return t.typ.UnionCommon() }
 
@@ -1619,11 +2506,6 @@ func (t *taggedType) Tag() StringID { return t.tag }
 
 // Alias implements Type.
 func (t *taggedType) Alias() Type { return t.underlyingType() }
-
-// isCompatible implements Type.
-func (t *taggedType) isCompatible(u Type) bool {
-	return t == u || t.Kind() == u.Kind() && t.underlyingType().isCompatible(u.underlyingType())
-}
 
 // Decay implements Type.
 func (t *taggedType) Decay() Type { return t }
@@ -1729,13 +2611,147 @@ type functionType struct {
 	variadic bool
 }
 
+// IsAssingmentCompatible implements Type.
+func (t *functionType) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if rhs = rhs.Alias().Decay(); t == rhs {
+		return true
+	}
+
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+	if rhs.Kind() != Function {
+		return false
+	}
+
+	v := rhs.(*functionType)
+	if t.params != nil && v.params != nil || t.variadic != v.variadic {
+		if len(t.params) != len(v.params) {
+			return false
+		}
+
+		for i, x := range t.params {
+			if !x.Type().IsAssingmentCompatible(v.params[i].Type()) {
+				return false
+			}
+		}
+	}
+	return t.result.IsAssingmentCompatible(v.result)
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *functionType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	rhsType := rhs.Type().Decay()
+	if t == rhsType {
+		return true
+	}
+
+	return t.IsAssingmentCompatible(rhsType)
+}
+
+// IsCompatible implements Type.
+func (t *functionType) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if u.Kind() != Function {
+		return false
+	}
+
+	v := u.(*functionType)
+	// [0], 6.7.5.3
+	//
+	// 15 For two function types to be compatible, both shall specify compatible
+	// return types.
+	//
+	// Moreover, the parameter type lists, if both are present, shall agree in the
+	// number of parameters and in use of the ellipsis terminator; corresponding
+	// parameters shall have compatible types. If one type has a parameter type
+	// list and the other type is specified by a function declarator that is not
+	// part of a function definition and that contains an empty identifier list,
+	// the parameter list shall not have an ellipsis terminator and the type of
+	// each parameter shall be compatible with the type that results from the
+	// application of the default argument promotions. If one type has a parameter
+	// type list and the other type is specified by a function definition that
+	// contains a (possibly empty) identifier list, both shall agree in the number
+	// of parameters, and the type of each prototype parameter shall be compatible
+	// with the type that results from the application of the default argument
+	// promotions to the type of the corresponding identifier. (In the
+	// determination of type compatibility and of a composite type, each parameter
+	// declared with function or array type is taken as having the adjusted type
+	// and each parameter declared with qualified type is taken as having the
+	// unqualified version of its declared type.)
+	if t.params != nil && v.params != nil || t.variadic != v.variadic {
+		if len(t.params) != len(v.params) {
+			return false
+		}
+
+		for i, x := range t.params {
+			if !x.Type().IsCompatible(v.params[i].Type()) {
+				return false
+			}
+		}
+	}
+	return t.result.IsCompatible(v.result)
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *functionType) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	return t.IsCompatible(u)
+}
+
 // Alias implements Type.
 func (t *functionType) Alias() Type { return t }
-
-// isCompatible implements Type.
-func (t *functionType) isCompatible(u Type) bool {
-	panic("TODO")
-}
 
 // Decay implements Type.
 func (t *functionType) Decay() Type { return t }
@@ -1797,16 +2813,119 @@ type vectorType struct {
 	length uintptr
 }
 
+// IsAssingmentCompatible implements Type.
+func (t *vectorType) IsAssingmentCompatible(rhs Type) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, rhs0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	if t == rhs {
+		return true
+	}
+
+	// [0], 6.5.16.1 Simple assignment
+	//
+	// 1 One of the following shall hold:
+	//
+	// — the left operand has qualified or unqualified arithmetic type and the
+	// right has arithmetic type;
+	//
+	// — the left operand has a qualified or unqualified version of a structure or
+	// union type compatible with the type of the right;
+	//
+	// — both operands are pointers to qualified or unqualified versions of
+	// compatible types, and the type pointed to by the left has all the qualifiers
+	// of the type pointed to by the right;
+	//
+	// — one operand is a pointer to an object or incomplete type and the other is
+	// a pointer to a qualified or unqualified version of void, and the type
+	// pointed to by the left has all the qualifiers of the type pointed to by the
+	// right;
+	//
+	// — the left operand is a pointer and the right is a null pointer constant; or
+	//
+	// — the left operand has type _Bool and the right is a pointer.
+	return t.IsCompatible(rhs)
+}
+
+// isAssingmentCompatibleOperand implements Type.
+func (t *vectorType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
+	// defer func() {
+	// 	rhs0 := rhs
+	// 	if !r {
+	// 		trc("TRACE %v <- %v %v\n%s", t, rhs0.Value(), rhs0.Type(), debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || rhs == nil {
+		return false
+	}
+
+	rhsType := rhs.Type()
+	if t == rhsType {
+		return true
+	}
+
+	return t.IsAssingmentCompatible(rhsType)
+}
+
+// IsCompatible implements Type.
+func (t *vectorType) IsCompatible(u Type) (r bool) {
+	// defer func() {
+	// 	u0 := u
+	// 	if !r {
+	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
+	// 	}
+	// }()
+	if t == nil || u == nil {
+		return false
+	}
+
+	if t == u {
+		return true
+	}
+
+	if t == u {
+		return true
+	}
+
+	if u.Kind() != Vector {
+		return false
+	}
+
+	v := u.(*vectorType)
+	return t.length == v.length && t.elem.IsCompatible(v.elem)
+}
+
+// isCompatibleIgnoreQualifiers implements Type.
+func (t *vectorType) isCompatibleIgnoreQualifiers(u Type) (r bool) {
+	return t.IsCompatible(u)
+}
+
+// IsCompatibleLayout implements Type.
+func (t *vectorType) IsCompatibleLayout(u Type) bool {
+	if u = u.Alias().Decay(); t == u {
+		return true
+	}
+
+	if u.Kind() != Vector {
+		return false
+	}
+
+	v := u.(*vectorType)
+	return t.length == v.length && t.elem.IsCompatibleLayout(v.elem)
+}
+
 // Alias implements Type.
 func (t *vectorType) Alias() Type { return t }
 
 // IsVLA implements Type.
 func (t *vectorType) IsVLA() bool { return false }
-
-// isCompatible implements Type.
-func (t *vectorType) isCompatible(u Type) bool {
-	panic("TODO")
-}
 
 // String implements Type.
 func (t *vectorType) String() string {
@@ -1843,3 +2962,16 @@ func (t *vectorType) setLen(n uintptr) {
 
 // underlyingType implements Type.
 func (t *vectorType) underlyingType() Type { return t }
+
+func isCharType(t Type) bool {
+	switch t.Kind() {
+	case Char, SChar, UChar:
+		return true
+	}
+
+	return false
+}
+
+func isWCharType(t Type) bool {
+	return t.IsAliasType() && t.AliasDeclarator().Name() == idWcharT
+}

@@ -182,9 +182,7 @@ func TestParseSQLite(t *testing.T) {
 	cfg := &Config{}
 	root := filepath.Join(testWD, filepath.FromSlash(sqliteDir))
 	t.Run("shell.c", func(t *testing.T) { testParse(t, cfg, testPredef, filepath.Join(root, "shell.c")) })
-	t.Run("shell.c/gnu", func(t *testing.T) { testParse(t, cfg, testPredefGNU, filepath.Join(root, "shell.c")) })
 	t.Run("sqlite3.c", func(t *testing.T) { testParse(t, cfg, testPredef, filepath.Join(root, "sqlite3.c")) })
-	t.Run("sqlite3.c/gnu", func(t *testing.T) { testParse(t, cfg, testPredefGNU, filepath.Join(root, "sqlite3.c")) })
 }
 
 var testParseAST *AST
@@ -218,9 +216,7 @@ func BenchmarkParseSQLite(b *testing.B) {
 	cfg := &Config{}
 	root := filepath.Join(testWD, filepath.FromSlash(sqliteDir))
 	b.Run("shell.c", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredef, filepath.Join(root, "shell.c")) })
-	b.Run("shell.c/gnu", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredefGNU, filepath.Join(root, "shell.c")) })
 	b.Run("sqlite3.c", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredef, filepath.Join(root, "sqlite3.c")) })
-	b.Run("sqlite3.c/gnu", func(b *testing.B) { benchmarkParseSQLite(b, cfg, testPredefGNU, filepath.Join(root, "sqlite3.c")) })
 }
 
 func benchmarkParseSQLite(b *testing.B, cfg *Config, predef string, files ...string) {
@@ -260,9 +256,6 @@ func TestParseTCC(t *testing.T) {
 	t.Run(dir, func(t *testing.T) {
 		ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false, true)
 	})
-	t.Run(dir+"/gnu", func(t *testing.T) {
-		ok += testParseDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false, true)
-	})
 	t.Logf("ok %v", h(ok))
 }
 
@@ -282,10 +275,7 @@ func TestParseGCC(t *testing.T) {
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
 		t.Run(v, func(t *testing.T) {
-			ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true, false)
-		})
-		t.Run(v+"/gnu", func(t *testing.T) {
-			ok += testParseDir(t, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true, true)
+			ok += testParseDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true, true)
 		})
 	}
 	t.Logf("ok %v", h(ok))
@@ -293,7 +283,7 @@ func TestParseGCC(t *testing.T) {
 
 func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bool) (ok int) {
 	blacklist := map[string]struct{}{ //TODO-
-		"90_struct-init.c":  {},
+		"90_struct-init.c":  {}, //TODO [ x ... y ] designator
 		"94_generic.c":      {},
 		"95_bitfields.c":    {},
 		"95_bitfields_ms.c": {},
@@ -391,9 +381,6 @@ func BenchmarkParseTCC(b *testing.B) {
 	b.Run(dir, func(b *testing.B) {
 		benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false)
 	})
-	b.Run(dir+"/gnu", func(b *testing.B) {
-		benchmarkParseDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(dir)), false)
-	})
 }
 
 func BenchmarkParseGCC(b *testing.B) {
@@ -406,10 +393,7 @@ func BenchmarkParseGCC(b *testing.B) {
 		"gcc/testsuite/gcc.c-torture/execute",
 	} {
 		b.Run(v, func(b *testing.B) {
-			benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), false)
-		})
-		b.Run(v+"/gnu", func(b *testing.B) {
-			benchmarkParseDir(b, cfg, testPredefGNU, filepath.Join(root, filepath.FromSlash(v)), true)
+			benchmarkParseDir(b, cfg, testPredef, filepath.Join(root, filepath.FromSlash(v)), true)
 		})
 	}
 }
