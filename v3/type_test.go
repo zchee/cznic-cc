@@ -188,6 +188,10 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles bool
 		blacklist["loop-2f.c"] = struct{}{} // sys/mman.h
 		blacklist["loop-2g.c"] = struct{}{} // sys/mman.h
 	}
+	switch t := cfg.ABI.Type(Ptr); {
+	case t != nil && t.Size() == 4:
+		blacklist["pr70355.c"] = struct{}{} // /* { dg-require-effective-target int128 } */
+	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
 		re = regexp.MustCompile(s)

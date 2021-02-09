@@ -752,13 +752,14 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Func       */ |	DirectAbstractDeclarator '(' ParameterTypeList ')'
 
 			/* [0], 6.7.8 Initialization */
-			/*yy:field	Field	Field   // Where aplicable */
-			/*yy:field	Offset	uintptr // Case Expr */
-			/*yy:field	parent	*Initializer    */
-			/*yy:field	list	[]*Initializer  */
-			/*yy:field	typ	Type            */
-			/*yy:field	isConst	bool            */
-			/*yy:field	isZero	bool            */
+			/*yy:field	Field		Field   // Where aplicable	*/
+			/*yy:field	Offset		uintptr // Case Expr		*/
+			/*yy:field	list		[]*Initializer			*/
+			/*yy:field	parent		*Initializer			*/
+			/*yy:field	trailingComma	*Token				*/
+			/*yy:field	typ	Type					*/
+			/*yy:field	isConst	bool					*/
+			/*yy:field	isZero	bool					*/
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:
 				AssignmentExpression

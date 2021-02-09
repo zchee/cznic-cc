@@ -768,6 +768,9 @@ func (n *AndExpression) Promote() Type { return n.promote }
 
 func (n *InitDeclarator) Value() *InitializerValue { return n.initializer }
 
+// TrailingComma returns the comma token following n, if any.
+func (n *Initializer) TrailingComma() *Token { return n.trailingComma }
+
 // IsConst reports whether n is constant.
 func (n *Initializer) IsConst() bool { return n == nil || n.isConst }
 

@@ -3011,11 +3011,13 @@ func (p *parser) initializerList(parent *Initializer) (r *InitializerList) {
 	for prev := r; ; prev = prev.InitializerList {
 		switch p.rune() {
 		case ',':
+			t := p.tok
+			prev.Initializer.trailingComma = &t
 			if p.peek(false) == '}' {
 				return r
 			}
 
-			t := p.shift()
+			t = p.shift()
 			switch p.rune() {
 			case '[', '.':
 				d = p.designation()
