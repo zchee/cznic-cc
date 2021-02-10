@@ -352,7 +352,6 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 	// 16: Otherwise, the initializer for an object that has aggregate or union
 	// type shall be a brace-enclosed list of initializers for the elements or
 	// named members.
-
 	if n.Case == InitializerExpr {
 		if il != nil {
 			*il = (*il).check(ctx, list, t, sc, off)
@@ -408,7 +407,9 @@ loop:
 		n2 := n
 		switch {
 		case n.Designation != nil:
-			i, t2, off2 := n.Designation.checkArray(ctx, t)
+			var t2 Type
+			var off2 uintptr
+			i, t2, off2 = n.Designation.checkArray(ctx, t)
 			if !t.IsIncomplete() && i >= length {
 				panic(todo(""))
 			}
@@ -457,8 +458,15 @@ func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, o
 				elem = t.Elem()
 				off += ix * elem.Size()
 				t = elem
+			case Uint64Value:
+				if first {
+					ix = uintptr(x)
+				}
+				elem = t.Elem()
+				off += ix * elem.Size()
+				t = elem
 			default:
-				panic(internalErrorf("%v: TODO", n.Position()))
+				panic(todo("%v: %T", n.Position(), x))
 			}
 		default:
 			panic(todo(""))

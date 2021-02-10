@@ -3018,6 +3018,7 @@ func (p *parser) initializerList(parent *Initializer) (r *InitializerList) {
 			}
 
 			t = p.shift()
+			d = nil
 			switch p.rune() {
 			case '[', '.':
 				d = p.designation()
