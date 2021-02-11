@@ -226,15 +226,16 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	if f := ctx.checkFn; f != nil {
 		f.InitDeclarators = append(f.InitDeclarators, n)
 	}
+	if attr := n.AttributeSpecifierList.check(ctx); len(attr) != 0 {
+		typ = &attributedType{typ, attr}
+	}
 	switch n.Case {
 	case InitDeclaratorDecl: // Declarator AttributeSpecifierList
 		n.Declarator.check(ctx, td, typ, tld)
-		n.AttributeSpecifierList.check(ctx)
 	case InitDeclaratorInit: // Declarator AttributeSpecifierList '=' Initializer
 		typ := n.Declarator.check(ctx, td, typ, tld)
 		n.Declarator.hasInitializer = true
 		n.Declarator.Write++
-		n.AttributeSpecifierList.check(ctx)
 		n.Initializer.check(ctx, &n.Initializer.list, typ, n.Declarator.StorageClass, nil, 0, nil)
 		n.initializer = &InitializerValue{typ: typ, initializer: n.Initializer}
 	default:
@@ -4049,8 +4050,10 @@ func (n *Declarator) check(ctx *context, td typeDescriptor, typ Type, tld bool) 
 
 	typ = n.Pointer.check(ctx, typ)
 	n.td = td
+	if attr := n.AttributeSpecifierList.check(ctx); len(attr) != 0 {
+		typ = &attributedType{typ, attr}
+	}
 	n.typ = n.DirectDeclarator.check(ctx, typ)
-	n.AttributeSpecifierList.check(ctx)
 
 	hasStorageSpecifiers := td.typedef() || td.extern() || td.static() ||
 		td.auto() || td.register() || td.threadLocal()
@@ -4406,6 +4409,9 @@ func (n *AttributeValue) check(ctx *context) {
 	case AttributeValueIdent: // IDENTIFIER
 		//TODO
 	case AttributeValueExpr: // IDENTIFIER '(' ExpressionList ')'
+		v := ctx.cfg.ignoreErrors
+		ctx.cfg.ignoreErrors = true
+		defer func() { ctx.cfg.ignoreErrors = v }()
 		n.ExpressionList.check(ctx)
 	default:
 		panic(todo(""))

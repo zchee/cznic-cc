@@ -916,3 +916,38 @@ func internalErrorf(s string, args ...interface{}) int {
 func detectMingw(s string) bool {
 	return strings.Contains(s, "#define __MINGW")
 }
+
+func nodeSource(n ...Node) (r string) {
+	if len(n) == 0 {
+		return ""
+	}
+
+	var a []*Token
+	for _, v := range n {
+		Inspect(v, func(n Node, _ bool) bool {
+			if x, ok := n.(*Token); ok && x.Seq() != 0 {
+				a = append(a, x)
+			}
+			return true
+		})
+	}
+	sort.Slice(a, func(i, j int) bool {
+		return a[i].Seq() < a[j].Seq()
+	})
+	w := 0
+	seq := -1
+	for _, v := range a {
+		if n := v.Seq(); n != seq {
+			seq = n
+			a[w] = v
+			w++
+		}
+	}
+	a = a[:w]
+	var b strings.Builder
+	for _, v := range a {
+		b.WriteString(v.Sep.String())
+		b.WriteString(v.Src.String())
+	}
+	return b.String()
+}

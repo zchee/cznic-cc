@@ -1656,6 +1656,9 @@ func (p *parser) initDeclaratorList(d *Declarator, isTypedefName bool) (r *InitD
 		case ',':
 			t := p.shift()
 			attr := p.attributeSpecifierListOpt()
+			// if attr != nil {
+			// 	trc("%v: ATTRS", attr.Position())
+			// }
 			prev.InitDeclaratorList = &InitDeclaratorList{Token: t, AttributeSpecifierList: attr, InitDeclarator: p.initDeclarator(nil, isTypedefName)}
 		default:
 			return r
@@ -1678,6 +1681,9 @@ func (p *parser) initDeclarator(d *Declarator, isTypedefName bool) *InitDeclarat
 		d = p.declarator(true, isTypedefName, nil)
 	}
 	attr := p.attributeSpecifierListOpt()
+	// if attr != nil {
+	// 	trc("%v: ATTRS", attr.Position())
+	// }
 	switch p.rune() {
 	case '=':
 		t := p.shift()
@@ -1873,6 +1879,9 @@ func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
 
 	sou := p.structOrUnion()
 	attr := p.attributeSpecifierListOpt()
+	// if attr != nil {
+	// 	trc("%v: ATTRS", attr.Position())
+	// }
 	var t, t2, t3 Token
 	switch p.rune() {
 	case IDENTIFIER:
@@ -2069,6 +2078,9 @@ func (p *parser) structDeclarator(decl *StructDeclaration) (r *StructDeclarator)
 		t := p.shift()
 		r = &StructDeclarator{Case: StructDeclaratorBitField, Declarator: d, Token: t, ConstantExpression: p.constantExpression(), decl: decl}
 		r.AttributeSpecifierList = p.attributeSpecifierListOpt()
+		// if r.AttributeSpecifierList != nil {
+		// 	trc("%v: ATTRS", r.AttributeSpecifierList.Position())
+		// }
 	default:
 		r = &StructDeclarator{Case: StructDeclaratorDecl, Declarator: d, decl: decl}
 	}
@@ -2094,6 +2106,9 @@ func (p *parser) enumSpecifier() *EnumSpecifier {
 	p.typedefNameEnabled = false
 	t = p.shift()
 	attr := p.attributeSpecifierListOpt()
+	// if attr != nil {
+	// 	trc("%v: ATTRS", attr.Position())
+	// }
 	if p.rune() == IDENTIFIER {
 		t2 = p.shift()
 		if p.rune() != '{' {
@@ -2157,6 +2172,9 @@ func (p *parser) enumerator() (r *Enumerator) {
 
 	t := p.shift()
 	attr := p.attributeSpecifierListOpt()
+	// if attr != nil {
+	// 	trc("%v: ATTRS", attr.Position())
+	// }
 	if p.rune() != '=' {
 		r = &Enumerator{Case: EnumeratorIdent, Token: t, AttributeSpecifierList: attr, lexicalScope: p.declScope}
 		p.declScope.declare(t.Value, r)
@@ -2250,6 +2268,9 @@ func (p *parser) declarator(declare, isTypedefName bool, ptr *Pointer) *Declarat
 	}
 	r := &Declarator{IsTypedefName: isTypedefName, Pointer: ptr, DirectDeclarator: p.directDeclarator(nil)}
 	r.AttributeSpecifierList = p.attributeSpecifierListOpt()
+	// if r.AttributeSpecifierList != nil {
+	// 	trc("%v: ATTRS", r.AttributeSpecifierList.Position())
+	// }
 	if declare {
 		p.declScope.declare(r.Name(), r)
 	}
@@ -2324,6 +2345,9 @@ func (p *parser) directDeclarator(d *DirectDeclarator) (r *DirectDeclarator) {
 		case '(':
 			t := p.shift()
 			attr := p.attributeSpecifierListOpt()
+			// if attr != nil {
+			// 	trc("%v: ATTRS", attr.Position())
+			// }
 			d := p.declarator(false, false, nil)
 			var t2 Token
 			switch p.rune() {
@@ -2572,6 +2596,9 @@ func (p *parser) parameterDeclaration() *ParameterDeclaration {
 		case *Declarator:
 			p.declScope.declare(x.Name(), x)
 			attr := p.attributeSpecifierListOpt()
+			// if attr != nil {
+			// 	trc("%v: ATTRS", attr.Position())
+			// }
 			return &ParameterDeclaration{Case: ParameterDeclarationDecl, DeclarationSpecifiers: ds, Declarator: x, AttributeSpecifierList: attr}
 		default:
 			panic(internalError())
@@ -3173,6 +3200,9 @@ func (p *parser) labeledStatement() (r *LabeledStatement) {
 		}
 
 		attr := p.attributeSpecifierListOpt()
+		// if attr != nil {
+		// 	trc("%v: ATTRS", attr.Position())
+		// }
 		p.block.hasLabel()
 		r = &LabeledStatement{
 			Case: LabeledStatementLabel, Token: t, Token2: t2, AttributeSpecifierList: attr,
@@ -3391,6 +3421,9 @@ func (p *parser) expressionStatement() *ExpressionStatement {
 	case ATTRIBUTE:
 		p.typedefNameEnabled = true
 		attr := p.attributeSpecifierList()
+		// if attr != nil {
+		// 	trc("%v: ATTRS", attr.Position())
+		// }
 		var t Token
 		switch p.rune() {
 		case ';':
@@ -3405,6 +3438,9 @@ func (p *parser) expressionStatement() *ExpressionStatement {
 	var t Token
 	p.typedefNameEnabled = true
 	attr := p.attributeSpecifierListOpt()
+	// if attr != nil {
+	// 	trc("%v: ATTRS", attr.Position())
+	// }
 	switch p.rune() {
 	case ';':
 		t = p.shift()
@@ -3956,6 +3992,9 @@ func (p *parser) asmFunctionDefinition(ds *DeclarationSpecifiers, d *Declarator)
 func (p *parser) asmStatement() *AsmStatement {
 	a := p.asm()
 	attr := p.attributeSpecifierListOpt()
+	// if attr != nil {
+	// 	trc("%v: ATTRS", attr.Position())
+	// }
 	var t Token
 	switch p.rune() {
 	case ';':

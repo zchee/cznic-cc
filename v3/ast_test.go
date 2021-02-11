@@ -2831,9 +2831,24 @@ func ExampleDeclarationSpecifiers_attribute() {
 }
 
 func ExampleDeclarator_case0() {
-	fmt.Println(exampleAST(166, "int *p;"))
+	fmt.Println(exampleAST(166, "int *p __attribute__ ((foo));"))
 	// Output:
 	// &cc.Declarator{
+	// · AttributeSpecifierList: &cc.AttributeSpecifierList{
+	// · · AttributeSpecifier: &cc.AttributeSpecifier{
+	// · · · AttributeValueList: &cc.AttributeValueList{
+	// · · · · AttributeValue: &cc.AttributeValue{
+	// · · · · · Case: AttributeValueIdent,
+	// · · · · · Token: example.c:1:24: IDENTIFIER "foo",
+	// · · · · },
+	// · · · },
+	// · · · Token: example.c:1:8: ATTRIBUTE "__attribute__",
+	// · · · Token2: example.c:1:22: '(' "(",
+	// · · · Token3: example.c:1:23: '(' "(",
+	// · · · Token4: example.c:1:27: ')' ")",
+	// · · · Token5: example.c:1:28: ')' ")",
+	// · · },
+	// · },
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
 	// · · Token: example.c:1:6: IDENTIFIER "p",

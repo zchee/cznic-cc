@@ -1242,10 +1242,10 @@ func (t *attributedType) String() string {
 
 // string implements Type.
 func (t *attributedType) string(b *bytes.Buffer) {
-	for _, v := range t.attr {
-		panic(v.Position())
-	}
 	t.Type.string(b)
+	for _, v := range t.attr {
+		b.WriteString(nodeSource(v))
+	}
 }
 
 // Attributes implements Type.
@@ -1800,7 +1800,7 @@ func (t *aliasType) Alias() Type { return t.d.Type() }
 func (t *aliasType) Align() int { return t.d.Type().Align() }
 
 // Attributes implements Type.
-func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return nil }
+func (t *aliasType) Attributes() (a []*AttributeSpecifier) { return t.d.Type().Attributes() }
 
 // BitField implements Type.
 func (t *aliasType) BitField() Field { return t.d.Type().BitField() }

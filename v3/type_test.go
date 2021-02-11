@@ -489,7 +489,7 @@ func TestDeclarator2(t *testing.T) {
 		{"typeof(42L) x;", "long"},     // (g)
 		{"typeof(42U) x;", "unsigned"}, // (h)
 		{"typeof(42.) x;", "double"},   // (i)
-		{"#define __GNUC__\ntypedef int x __attribute__ ((vector_size (16)));", "vector of 4 int"}, // (j)
+		{"#define __GNUC__\ntypedef int x __attribute__ ((vector_size (16)));", "vector of 4 int __attribute__ ((vector_size (16)))"}, // (j)
 	} {
 		letter := string(rune('a' + i))
 		cfg := &Config{ABI: testABI, doNotSanityCheckComplexTypes: true}

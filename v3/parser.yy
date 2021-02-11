@@ -645,7 +645,7 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	SubjectOfAsgnOp	bool		*/
 			/*yy:field	fnDef		bool		*/
 			/*yy:field	hasInitializer	bool		*/
-			/*yy:example int *p; */
+			/*yy:example int *p __attribute__ ((foo)); */
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE
 
