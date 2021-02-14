@@ -754,6 +754,7 @@ package cc // import "modernc.org/cc/v3"
 			/* [0], 6.7.8 Initialization */
 			/*yy:field	Field		Field   // Where aplicable	*/
 			/*yy:field	Offset		uintptr // Case Expr		*/
+			/*yy:field	field0		Field   			*/
 			/*yy:field	list		[]*Initializer			*/
 			/*yy:field	parent		*Initializer			*/
 			/*yy:field	trailingComma	*Token				*/

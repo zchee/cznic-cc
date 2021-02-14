@@ -418,7 +418,7 @@ loop:
 			if i > maxI {
 				maxI = i
 			}
-			n.Initializer.check(ctx, list, t2, sc, nil, off+off2+i*esz, &n)
+			n.Initializer.check(ctx, list, t2, sc, nil, off+off2, &n)
 			n0.isConst = n0.isConst && n2.Initializer.isConst
 			n0.isZero = n0.isZero && n2.Initializer.isZero
 			i++
@@ -493,8 +493,9 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 		n2 := n
 		switch {
 		case n.Designation != nil:
-			off2, f, ft := n.Designation.checkStruct(ctx, t)
+			off2, f0, f, ft := n.Designation.checkStruct(ctx, t)
 			n.Initializer.check(ctx, list, ft, sc, f, off+off2+f.Offset(), &n)
+			n.Initializer.field0 = f0
 			n0.isConst = n0.isConst && n2.Initializer.isConst
 			n0.isZero = n0.isZero && n2.Initializer.isZero
 			i[0]++
@@ -554,8 +555,9 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 				panic(todo(""))
 			}
 
-			off2, f, ft := n.Designation.checkStruct(ctx, t)
+			off2, f0, f, ft := n.Designation.checkStruct(ctx, t)
 			n.Initializer.check(ctx, list, ft, sc, f, off+off2+f.Offset(), &n)
+			n.Initializer.field0 = f0
 			n0.isConst = n0.isConst && n.Initializer.isConst
 			n0.isZero = n0.isZero && n.Initializer.isZero
 			i[0]++
@@ -593,7 +595,7 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 	return n
 }
 
-func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field, dt Type) {
+func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf0, rf Field, dt Type) {
 	index := false
 	dt = t
 	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
@@ -610,7 +612,7 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field, 
 
 			op := d.ConstantExpression.check(ctx, mIntConstExpr)
 			if op == nil || op == noOperand {
-				return 0, rf, dt
+				return 0, rf0, rf, dt
 			}
 
 			index = true
@@ -637,9 +639,12 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf Field, 
 		}
 
 		rf = f
+		if rf0 == nil {
+			rf0 = rf
+		}
 		dt = f.Type()
 	}
-	return off, rf, dt
+	return off, rf0, rf, dt
 }
 
 // Accept a single initializer, optionally enclosed in braces.

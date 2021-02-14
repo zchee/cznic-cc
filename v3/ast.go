@@ -2669,6 +2669,7 @@ func (n InitializerCase) String() string {
 type Initializer struct {
 	Field                Field   // Where aplicable
 	Offset               uintptr // Case Expr
+	field0               Field
 	list                 []*Initializer
 	parent               *Initializer
 	trailingComma        *Token
