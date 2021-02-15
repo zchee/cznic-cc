@@ -1098,7 +1098,7 @@ func (n *JumpStatement) Context() Node { return n.context }
 
 // IsFunctionPrototype reports whether n is a function prototype.
 func (n *Declarator) IsFunctionPrototype() bool {
-	return n != nil && n.Type() != nil && n.Type().Kind() == Function && !n.fnDef
+	return n != nil && n.Type() != nil && n.Type().Kind() == Function && !n.fnDef && !n.IsParameter
 }
 
 // DeclarationSpecifiers returns the declaration specifiers associated with n or nil.

@@ -3904,7 +3904,9 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 					ctx.errNode(n, "difference of pointers of differently sized elements")
 				}
 			}
-			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ptrdiffT(ctx, n.lexicalScope, n.Token), value: val}
+			pt := ptrdiffT(ctx, n.lexicalScope, n.Token)
+			n.promote = pt
+			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: pt, value: val}
 			if val != nil {
 				n.Operand = n.Operand.convertTo(ctx, n, a.Type())
 			}
