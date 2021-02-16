@@ -592,6 +592,27 @@ func (n *BlockItem) FunctionDefinition() *FunctionDefinition { return n.fn }
 func (n *Declarator) IsStatic() bool          { return n.td != nil && n.td.static() }
 func (n *Declarator) isVisible(at int32) bool { return at == 0 || n.DirectDeclarator.ends() < at }
 
+func (n *Declarator) setLHS(lhs *Declarator) {
+	if n == nil {
+		return
+	}
+
+	if n.lhs == nil {
+		n.lhs = map[*Declarator]struct{}{}
+	}
+	n.lhs[lhs] = struct{}{}
+}
+
+// LHS reports which declarators n is used in assignment RHS or which function
+// declarators n is used in a function argument. To collect this information,
+// TrackAssignments in Config must be set during type checking.
+// The returned map may contain a nil key. That means that n is assigned to a
+// declarator not known at typechecking time.
+func (n *Declarator) LHS() map[*Declarator]struct{} { return n.lhs }
+
+// Called reports whether n is involved in expr in expr(callArgs).
+func (n *Declarator) Called() bool { return n.called }
+
 // FunctionDefinition returns the function definition associated with n, if any.
 func (n *Declarator) FunctionDefinition() *FunctionDefinition {
 	return n.funcDefinition

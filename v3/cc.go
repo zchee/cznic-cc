@@ -512,6 +512,7 @@ type Config struct {
 
 	DebugIncludePaths                      bool // Output to stderr.
 	DebugWorkingDir                        bool // Output to stderr.
+	DoNotTypecheckAsm                      bool
 	EnableAssignmentCompatibilityChecking  bool // No such checks performed up to v3.30.0
 	InjectTracingCode                      bool // Output to stderr.
 	LongDoubleIsDouble                     bool
@@ -535,7 +536,7 @@ type Config struct {
 	RejectStatementExpressions             bool // Pedantic: do not silently accept "i = ({foo();})".
 	RejectTypeof                           bool // Pedantic: do not silently accept "typeof foo" or "typeof(bar*)".
 	RejectUninitializedDeclarators         bool // Reject int f() { int j; return j; }
-	DoNotTypecheckAsm                      bool
+	TrackAssignments                       bool // Collect a list of LHS declarators a declarator is used in RHS or as an function argument.
 	doNotSanityCheckComplexTypes           bool // Testing only
 	fakeIncludes                           bool // Testing only.
 	ignoreErrors                           bool // Testing only.

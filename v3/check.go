@@ -238,6 +238,9 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.Declarator.Write++
 		n.Initializer.check(ctx, &n.Initializer.list, typ, n.Declarator.StorageClass, nil, 0, nil)
 		n.initializer = &InitializerValue{typ: typ, initializer: n.Initializer}
+		if ctx.cfg.TrackAssignments {
+			setLHS(map[*Declarator]struct{}{n.Declarator: {}}, n.Initializer)
+		}
 	default:
 		panic(todo(""))
 	}
@@ -698,6 +701,40 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc S
 	}
 }
 
+func setLHS(lhs map[*Declarator]struct{}, rhs Node) {
+	inCall := 0
+	Inspect(rhs, func(n Node, enter bool) bool {
+		switch x := n.(type) {
+		case *PostfixExpression:
+			switch x.Case {
+			case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
+				switch {
+				case enter:
+					inCall++
+					if d := x.Declarator(); d != nil {
+						for v := range lhs {
+							d.setLHS(v)
+						}
+					}
+				default:
+					inCall--
+				}
+			}
+		case *PrimaryExpression:
+			if inCall != 0 || !enter {
+				break
+			}
+
+			if d := x.Declarator(); d != nil {
+				for v := range lhs {
+					d.setLHS(v)
+				}
+			}
+		}
+		return true
+	})
+}
+
 func (n *AssignmentExpression) check(ctx *context) Operand {
 	if n == nil {
 		return noOperand
@@ -705,6 +742,23 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 
 	if n.Operand != nil {
 		return n.Operand
+	}
+
+	if ctx.cfg.TrackAssignments && n.AssignmentExpression != nil {
+		defer func() {
+			lhs := map[*Declarator]struct{}{}
+			Inspect(n.UnaryExpression, func(n Node, enter bool) bool {
+				if !enter {
+					return true
+				}
+
+				if x, ok := n.(*PrimaryExpression); ok {
+					lhs[x.Declarator()] = struct{}{}
+				}
+				return true
+			})
+			setLHS(lhs, n.AssignmentExpression)
+		}()
 	}
 
 	//TODO check for "modifiable lvalue" in left operand
@@ -2589,7 +2643,19 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		ctx.errNode(n, "invalid index expression %v[%v]", pe.Type(), e.Type())
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		op := n.PostfixExpression.check(ctx, true)
-		args := n.ArgumentExpressionList.check(ctx)
+		Inspect(n.PostfixExpression, func(n Node, enter bool) bool {
+			if !enter {
+				return true
+			}
+
+			if x, ok := n.(*PrimaryExpression); ok {
+				if d := x.Declarator(); d != nil {
+					d.called = true
+				}
+			}
+			return true
+		})
+		args := n.ArgumentExpressionList.check(ctx, n.PostfixExpression.Declarator())
 		switch op.Declarator().Name() {
 		case idBuiltinConstantPImpl:
 			if len(args) < 2 {
@@ -2842,7 +2908,7 @@ func defaultArgumentPromotion(ctx *context, n Node, op Operand) Operand {
 	return op
 }
 
-func (n *ArgumentExpressionList) check(ctx *context) (r []Operand) {
+func (n *ArgumentExpressionList) check(ctx *context, f *Declarator) (r []Operand) {
 	for ; n != nil; n = n.ArgumentExpressionList {
 		op := n.AssignmentExpression.check(ctx)
 		if op.Type() == nil {
@@ -2852,6 +2918,20 @@ func (n *ArgumentExpressionList) check(ctx *context) (r []Operand) {
 			ctx.checkFn.CallSiteComplexExpr = append(ctx.checkFn.CallSiteComplexExpr, n.AssignmentExpression)
 		}
 		r = append(r, op)
+		if !ctx.cfg.TrackAssignments {
+			continue
+		}
+
+		Inspect(n.AssignmentExpression, func(n Node, enter bool) bool {
+			if !enter {
+				return true
+			}
+
+			if x, ok := n.(*PrimaryExpression); ok {
+				x.Declarator().setLHS(f)
+			}
+			return true
+		})
 	}
 	return r
 }

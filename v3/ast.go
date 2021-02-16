@@ -1328,13 +1328,15 @@ type Declarator struct {
 	StorageClass           StorageClass
 	Write                  int
 	funcDefinition         *FunctionDefinition
+	lhs                    map[*Declarator]struct{}
 	td                     typeDescriptor
 	typ                    Type
 	AddressTaken           bool
 	IsParameter            bool
 	IsTypedefName          bool
-	SubjectOfIncDec        bool
 	SubjectOfAsgnOp        bool
+	SubjectOfIncDec        bool
+	called                 bool
 	fnDef                  bool
 	hasInitializer         bool
 	AttributeSpecifierList *AttributeSpecifierList

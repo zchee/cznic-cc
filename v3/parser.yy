@@ -636,13 +636,15 @@ package cc // import "modernc.org/cc/v3"
 			/*yy:field	StorageClass	StorageClass	*/
 			/*yy:field	Write		int		*/
 			/*yy:field	funcDefinition	*FunctionDefinition		*/
+			/*yy:field	lhs		map[*Declarator]struct{}	*/
 			/*yy:field	td		typeDescriptor	*/
 			/*yy:field	typ		Type		*/
 			/*yy:field	AddressTaken	bool		*/
 			/*yy:field	IsParameter	bool		*/
 			/*yy:field	IsTypedefName	bool		*/
-			/*yy:field	SubjectOfIncDec	bool		*/
 			/*yy:field	SubjectOfAsgnOp	bool		*/
+			/*yy:field	SubjectOfIncDec	bool		*/
+			/*yy:field	called		bool		*/
 			/*yy:field	fnDef		bool		*/
 			/*yy:field	hasInitializer	bool		*/
 			/*yy:example int *p __attribute__ ((foo)); */
