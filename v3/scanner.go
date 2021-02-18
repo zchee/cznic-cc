@@ -183,6 +183,7 @@ type token3 struct {
 	pos   int32
 	value StringID
 	src   StringID
+	macro StringID
 }
 
 func (t token3) Pos() token.Pos { return token.Pos(t.pos) }

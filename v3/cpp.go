@@ -582,6 +582,9 @@ start:
 				for i := range toks {
 					toks[i].pos = tok.pos
 				}
+				if len(toks) == 1 {
+					toks[0].macro = nm
+				}
 				ts.ungets(toks)
 				(*os) = (*os)[:0]
 				cppTokensPool.Put(os)

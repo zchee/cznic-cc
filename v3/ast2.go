@@ -208,6 +208,7 @@ func parse(ctx *context, includePaths, sysIncludePaths []string, sources []Sourc
 					t.Value = tok.value
 					t.Src = tok.src
 					t.file = tok.file
+					t.macro = tok.macro
 					t.pos = tok.pos
 					seq++
 					t.seq = seq
@@ -917,7 +918,11 @@ func (n *PostfixExpression) Declarator() *Declarator {
 func (n *PrimaryExpression) Declarator() *Declarator {
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
-		return n.Operand.Declarator()
+		if n.Operand != nil {
+			return n.Operand.Declarator()
+		}
+
+		return nil
 	case PrimaryExpressionExpr: // '(' Expression ')'
 		return n.Expression.Declarator()
 	default:

@@ -844,6 +844,7 @@ type Token struct {
 	Value StringID // ";" or "foo" etc.
 	Src   StringID
 	file  *tokenFile
+	macro StringID
 	pos   int32
 	seq   int32
 }
@@ -856,6 +857,9 @@ type Token struct {
 // the tokens as they are finally seen by the parser, so the usual arithmetic
 // '<', '>' operators can be used for that purpose.
 func (t Token) Seq() int { return int(t.seq) }
+
+// Macro returns the name of a macro that expanded to this token, if any.
+func (t *Token) Macro() StringID { return t.macro }
 
 // String implements fmt.Stringer.
 func (t Token) String() string { return t.Value.String() }
