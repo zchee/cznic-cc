@@ -513,7 +513,7 @@ type Config struct {
 	DebugIncludePaths                      bool // Output to stderr.
 	DebugWorkingDir                        bool // Output to stderr.
 	DoNotTypecheckAsm                      bool
-	EnableAssignmentCompatibilityChecking  bool // No such checks performed up to v3.30.0
+	EnableAssignmentCompatibilityChecking  bool // No such checks performed up to v3.31.0. Currently only partially implemented.
 	InjectTracingCode                      bool // Output to stderr.
 	LongDoubleIsDouble                     bool
 	PreprocessOnly                         bool
