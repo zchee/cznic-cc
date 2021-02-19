@@ -294,7 +294,9 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 		case t.Kind() == op.Type().Kind():
 			single.AssignmentExpression.InitializerOperand = op
 		default:
-			single.AssignmentExpression.InitializerOperand = op.convertTo(ctx, n, t)
+			if op != nil {
+				single.AssignmentExpression.InitializerOperand = op.convertTo(ctx, n, t)
+			}
 		}
 		return
 	}

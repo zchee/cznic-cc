@@ -304,6 +304,13 @@ type Type interface {
 	// IsScalarType report whether a type is a scalar type.
 	IsScalarType() bool
 
+	// HasFlexibleMember reports whether a struct has a flexible array
+	// member. It panics if the type's Kind is valid but not Struct or
+	// Union.
+	//
+	// https://en.wikipedia.org/wiki/Flexible_array_member
+	HasFlexibleMember() bool
+
 	// IsAliasType returns whether a type is an alias name of another type
 	// For eample
 	//
@@ -1039,6 +1046,15 @@ func (t *typeBase) IsScalarType() bool {
 	return (t.IsArithmeticType() || t.Kind() == Ptr) && !t.isVectorType()
 }
 
+// HasFlexibleMember implements Type.
+func (t *typeBase) HasFlexibleMember() bool {
+	if t.Kind() == Invalid {
+		return false
+	}
+
+	panic(internalErrorf("%s: HasFlexibleMember of invalid type", t.Kind()))
+}
+
 // IsSignedType implements Type.
 func (t *typeBase) IsSignedType() bool {
 	if !integerTypes[t.kind] {
@@ -1643,6 +1659,11 @@ type aliasType struct {
 	d  *Declarator
 }
 
+// HasFlexibleMember implements Type.
+func (t *aliasType) HasFlexibleMember() bool {
+	return t.d.Type().HasFlexibleMember()
+}
+
 // IsAssingmentCompatible implements Type.
 func (t *aliasType) IsAssingmentCompatible(rhs Type) (r bool) {
 	// defer func() {
@@ -1999,7 +2020,12 @@ type structType struct {
 	common Kind
 
 	tag StringID
+
+	hasFlexibleMember bool
 }
+
+// HasFlexibleMember implements Type.
+func (t *structType) HasFlexibleMember() bool { return t.hasFlexibleMember }
 
 // IsAssingmentCompatible implements Type.
 func (t *structType) IsAssingmentCompatible(rhs Type) (r bool) {
@@ -2341,6 +2367,11 @@ type taggedType struct {
 	typ             Type
 
 	tag StringID
+}
+
+// HasFlexibleMember implements Type.
+func (t *taggedType) HasFlexibleMember() bool {
+	return t.typ.HasFlexibleMember()
 }
 
 // IsAssingmentCompatible implements Type.
