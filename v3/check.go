@@ -263,6 +263,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 	defer func(d int) { ctx.readDelta = d }(ctx.readDelta)
 
 	ctx.readDelta = 1
+	n.typ = t
 	single := n.single()
 	var op Operand
 	if single != nil {
