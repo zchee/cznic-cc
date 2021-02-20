@@ -599,3 +599,43 @@ out:
 	d := time.Since(t0)
 	t.Logf("files %v, bytes %v, ok %v in %v", h(files), h(size), h(ok), d)
 }
+
+// https://gitlab.com/cznic/cc/-/issues/116
+func Test116(t *testing.T) {
+	const filename = "lib.h"
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Translate(&Config{ABI: abi}, nil, nil, []Source{
+		{Name: filename, Value: `
+typedef struct {
+ _Bool has_external_tokens;
+ _Bool is_keyword;
+
+ union {
+   struct {
+     unsigned int node_count;
+     unsigned short production_id;
+   };
+ };
+} A;
+
+void foo() {
+	A *v;
+	unsigned production_id;
+	v = (A) {
+		.is_keyword = 0,
+		{{
+		  .node_count = 0,
+		  .production_id = production_id,
+		}}
+	};
+}
+`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}

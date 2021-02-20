@@ -294,9 +294,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 		case t.Kind() == op.Type().Kind():
 			single.AssignmentExpression.InitializerOperand = op
 		default:
-			if op != nil {
-				single.AssignmentExpression.InitializerOperand = op.convertTo(ctx, n, t)
-			}
+			single.AssignmentExpression.InitializerOperand = op.convertTo(ctx, n, t)
 		}
 		return
 	}
@@ -653,7 +651,12 @@ func (n *Designation) checkStruct(ctx *context, t Type) (off uintptr, rf0, rf Fi
 	return off, rf0, rf, dt
 }
 
-// Accept a single initializer, optionally enclosed in braces.
+// Accept a single initializer, optionally enclosed in braces, but nested
+// braces. Implements eg. [0]6.7.8.11.
+//
+//	42	// ok
+//	{42}	// ok
+//	{{42}}	// not ok
 func (n *Initializer) single() *Initializer {
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
@@ -664,7 +667,9 @@ func (n *Initializer) single() *Initializer {
 		}
 
 		if n.InitializerList.InitializerList == nil {
-			return n.InitializerList.Initializer
+			if in := n.InitializerList.Initializer; in.Case == InitializerExpr {
+				return in
+			}
 		}
 	}
 	return nil
