@@ -24,6 +24,7 @@ var (
 	idBuiltinConstantPImpl = dict.sid("__builtin_constant_p_impl")
 	idClosure              = dict.sid("0closure") // Must be invalid indentifier.
 	idWcharT               = dict.sid("wchar_t")
+	idWinWchar             = dict.sid("WCHAR")
 
 	_ fmt.State
 )

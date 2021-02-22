@@ -3004,5 +3004,11 @@ func isCharType(t Type) bool {
 }
 
 func isWCharType(t Type) bool {
-	return t.IsAliasType() && t.AliasDeclarator().Name() == idWcharT
+	switch {
+	case t.IsAliasType():
+		id := t.AliasDeclarator().Name()
+		return id == idWcharT || id == idWinWchar
+	default:
+		return false
+	}
 }
