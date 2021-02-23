@@ -1,4 +1,4 @@
-# cc
+# cc/v3
 
 Package CC is a C99 compiler front end.
 

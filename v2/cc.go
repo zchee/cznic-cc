@@ -19,6 +19,10 @@
 //go:generate gofmt -l -s -w .
 
 // Package cc is a C99 compiler front end. Work In Progress. API unstable.
+//
+// This package is no longer maintained. Please see the v3 version at
+//
+// 	https://modernc.org/cc/v3
 package cc // import "modernc.org/cc/v2"
 
 import (

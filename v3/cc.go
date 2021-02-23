@@ -29,14 +29,12 @@
 //
 // Status
 //
-// This software is slowly nearing alpha status.
+// Most of the functionality is now working.
 //
 // Supported platforms
 //
-// The code is known to work on 64 bit Linux. No other operating systems or
-// architectures were tested and should be assumed to not work at all.
-//
-// Maintainers/testers for other operating systems/architectures are welcome.
+// The code is known to work on Darwin, Linux and Windows, but the supported
+// features may vary.
 //
 // Links
 //

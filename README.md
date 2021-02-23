@@ -1,5 +1,13 @@
 # cc
 
+----
+
+2020-07-13 This package is no longer maintained. Please see the v3 version at
+
+[https://modernc.org/cc/v3](https://modernc.org/cc/v3)
+
+----
+
 Package CC is a C99 compiler front end.
 
 Installation
@@ -16,10 +24,3 @@ Building with `make` requires indent(1) and the following Go packages
 * github.com/mdempsky/maligned
 * github.com/mdempsky/unconvert
 * honnef.co/go/tools/cmd/unused
-
-
-Changelog
-
-2020-07-13 This package is no longer maintained. Please see the v3 version at
-
-[https://modernc.org/cc/v3](https://modernc.org/cc/v3)
