@@ -94,6 +94,7 @@ edit:
 editor: lexer.go
 	gofmt -l -s -w *.go
 	GO111MODULE=off go test -i
+	GO111MODULE=off go test -o /dev/null -c
 	GO111MODULE=off go install 2>&1 | tee log
 
 ast.go lexer.go stringer.go: lexer.l parser.yy enum.go

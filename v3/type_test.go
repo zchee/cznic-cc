@@ -639,3 +639,98 @@ void foo() {
 		t.Fatal(err)
 	}
 }
+
+// https://gitlab.com/cznic/cc/-/issues/116
+func Test116b(t *testing.T) {
+	const filename = "lib.h"
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ast, err := Translate(&Config{ABI: abi}, nil, nil, []Source{
+		{Name: filename, Value: `
+typedef struct outer {
+ _Bool has_external_tokens;
+ _Bool is_keyword;
+
+ union inner1 {
+   struct inner2 {
+     unsigned int node_count;
+     unsigned short production_id;
+   } si2;
+ } ui1;
+} A;
+
+void foo() {
+	A *v;
+	unsigned production_id;
+	v = (A) {
+		.is_keyword = 0,
+		{{
+		  .node_count = 0,
+		  .production_id = production_id,
+		}}
+	};
+}
+`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ta := ast.StructTypes[String("outer")]
+	if ta != nil {
+		t.Logf("\n%s", dumpLayout(ta))
+	}
+
+	m := map[*Initializer]struct{}{}
+	Inspect(ast.TranslationUnit, func(n Node, entry bool) bool {
+		if !entry {
+			return true
+		}
+
+		if x, ok := n.(*Initializer); ok {
+			if _, ok := m[x]; !ok {
+				t.Logf("%v: %v", x.Position(), x.Type())
+				m[x] = struct{}{}
+			}
+		}
+		return true
+	})
+
+	for d := range ast.TLD {
+		fd := d.FunctionDefinition()
+		if fd == nil {
+			continue
+		}
+
+		list := fd.CompoundStatement.BlockItemList
+		list = list.BlockItemList
+		list = list.BlockItemList
+		list = list.BlockItemList
+		st := list.BlockItem.Statement
+		init1 := st.ExpressionStatement.Expression.
+			AssignmentExpression.AssignmentExpression.ConditionalExpression.
+			LogicalOrExpression.LogicalAndExpression.InclusiveOrExpression.
+			ExclusiveOrExpression.AndExpression.EqualityExpression.
+			RelationalExpression.ShiftExpression.AdditiveExpression.
+			MultiplicativeExpression.CastExpression.UnaryExpression.
+			PostfixExpression.InitializerList
+		for it, i := init1, 0; it != nil; it, i = it.InitializerList, i+1 {
+			if i != 1 {
+				continue
+			}
+
+			d := it.Initializer.InitializerList.
+				Initializer.InitializerList.
+				Designation.DesignatorList.Designator
+			typ := it.Initializer.Type()
+			t.Logf("%s.%s", typ, d.Token2)
+
+			if typ.Kind() == Bool {
+				t.Fatal("cannot set fields on _Bool")
+			}
+		}
+	}
+}
