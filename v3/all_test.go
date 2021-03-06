@@ -246,6 +246,10 @@ func TestMain(m *testing.M) {
 				#define TARGET_CPU_X86_64 1
 				#define TARGET_OS_UNIX 1
 			`
+		case "arm64":
+			testPredef += `
+				#define TARGET_OS_UNIX 1
+			`
 		default:
 			log.Fatalf("clang: unknown/unsupported GOARCH: %s", runtime.GOARCH)
 		}
