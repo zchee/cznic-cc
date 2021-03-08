@@ -727,9 +727,8 @@ void foo() {
 				Designation.DesignatorList.Designator
 			typ := it.Initializer.Type()
 			t.Logf("%s.%s", typ, d.Token2)
-
 			if typ.Kind() == Bool {
-				t.Logf("cannot set fields on _Bool")
+				t.Errorf("cannot set fields on _Bool")
 			}
 		}
 	}

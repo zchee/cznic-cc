@@ -499,6 +499,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 		switch {
 		case n.Designation != nil:
 			off2, f0, f, ft := n.Designation.checkStruct(ctx, t)
+			i[0] = f0.Index()
 			n.Initializer.check(ctx, list, ft, sc, f, off+off2+f.Offset(), &n)
 			n.Initializer.field0 = f0
 			n0.isConst = n0.isConst && n2.Initializer.isConst
