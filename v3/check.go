@@ -702,7 +702,7 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc S
 
 		return n.checkUnion(ctx, list, t, sc, off)
 	default:
-		if n == nil {
+		if n == nil || len(*list) == 0 || t == nil || t.Kind() == Invalid {
 			return nil
 		}
 
