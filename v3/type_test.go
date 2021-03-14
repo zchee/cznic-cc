@@ -733,3 +733,108 @@ void foo() {
 		}
 	}
 }
+
+// https://gitlab.com/cznic/cc/-/issues/117
+func TestIssue117(t *testing.T) {
+	cfg := &Config{ABI: testABI, EnableAssignmentCompatibilityChecking: true}
+	if _, err := Translate(
+		cfg,
+		nil,
+		nil,
+		[]Source{
+			{Name: "117.c", Value: `
+struct s {
+	struct 
+	{
+		int i;	// ok
+		int k;	// ambiguous
+	};
+	struct
+	{
+		int j;	// ok
+		int k;	// ambiguous
+	};
+};
+
+int main (void) {
+	struct s v;
+	v.i = 0;
+	v.j = 0;
+	v.k = 0;
+}
+`},
+		}); err == nil {
+		t.Fatal("should have failed")
+	}
+
+	if _, err := Translate(
+		cfg,
+		nil,
+		nil,
+		[]Source{
+			{Name: "117b.c", Value: `
+typedef char int8_t;
+typedef short int16_t;
+typedef int int32_t;
+typedef long long int64_t;
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned uint32_t;
+
+struct S0 {
+   signed f0 : 20;
+   unsigned f1 : 25;
+   unsigned f2 : 23;
+   signed f3 : 7;
+   signed f4 : 26;
+};
+
+struct S1 {
+   signed f0 : 10;
+   struct S0  f1;
+   unsigned : 0;
+   struct S0  f2;
+   uint32_t  f3;
+   signed f4 : 18;
+};
+
+struct S2 {
+   uint8_t  f0;
+   struct S1  f1;
+   uint32_t  f2;
+   struct S1  f3;
+   struct S0  f4;
+   struct S0  f5;
+};
+
+struct S3 {
+   uint16_t  f0;
+   struct S0  f1;
+   uint16_t  f2;
+   struct S2  f3;
+   struct S0  f4;
+   uint32_t  f5;
+   int32_t  f6;
+};
+
+struct S4 {
+   int8_t  f0;
+   int16_t  f1;
+   int64_t  f2;
+   struct S3  f3;
+   struct S3  f4;
+   int64_t  f5;
+   struct S0  f6;
+   int16_t  f7;
+   uint32_t  f8;
+};
+
+static struct S4 g_431;
+static uint16_t *g_739 = &g_431.f4.f2;
+
+int main() {}
+`},
+		}); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -19,8 +19,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-
-	"modernc.org/mathutil"
 )
 
 var (
@@ -2011,13 +2009,25 @@ func (f *field) string(b *bytes.Buffer) {
 	f.typ.string(b)
 }
 
+type fieldPath struct {
+	fld  *field
+	path []int
+
+	ambiguous bool
+}
+
+func (f *fieldPath) String() string {
+	return fmt.Sprintf("%q %v %v", f.fld.name, f.path, f.ambiguous)
+}
+
 type structType struct {
 	*typeBase
 
 	attr   []*AttributeSpecifier
+	common Kind
 	fields []*field
 	m      map[StringID]*field
-	common Kind
+	paths  map[StringID]*fieldPath
 
 	tag StringID
 
@@ -2327,35 +2337,46 @@ func (t *structType) FieldByIndex(i []int) Field {
 
 // FieldByName implements Type.
 func (t *structType) FieldByName(name StringID) (Field, bool) {
-	best := mathutil.MaxInt
-	return t.fieldByName(name, 0, &best, 0)
-}
+	if f := t.m[name]; f != nil {
+		return f, true
+	}
 
-func (t *structType) fieldByName(name StringID, lvl int, best *int, off uintptr) (Field, bool) {
-	if lvl >= *best {
+	if t.paths == nil {
+		t.paths = map[StringID]*fieldPath{}
+		t.computePaths(t.paths, nil)
+	}
+	nfo := t.paths[name]
+	if nfo == nil || nfo.ambiguous {
 		return nil, false
 	}
 
-	if f, ok := t.m[name]; ok {
-		*best = lvl
-		if off != 0 {
-			g := *f
-			g.offset += off //TODO this does not seem ok
-			f = &g
-		}
-		return f, ok
-	}
+	return nfo.fld, true
+}
 
-	for _, f := range t.fields {
-		switch x := f.Type().(type) {
-		case *structType:
-			if f, ok := x.fieldByName(name, lvl+1, best, off+f.offset); ok {
-				return f, ok
+func (t *structType) computePaths(paths map[StringID]*fieldPath, path []int) {
+	path = append(path, 0)
+	for i, f := range t.fields {
+		nm := f.Name()
+		path[len(path)-1] = i
+		if nm != 0 {
+			switch ex := paths[nm]; {
+			case ex != nil:
+				switch {
+				case len(path) < len(ex.path):
+					ex.fld = f
+					ex.path = append([]int(nil), path...)
+					ex.ambiguous = false
+				case len(path) == len(ex.path):
+					ex.ambiguous = true
+				}
+			default:
+				paths[nm] = &fieldPath{fld: f, path: append([]int(nil), path...)}
 			}
 		}
+		if x, ok := f.Type().underlyingType().(*structType); ok {
+			x.computePaths(paths, path)
+		}
 	}
-
-	return nil, false
 }
 
 // NumField implements Type.

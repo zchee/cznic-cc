@@ -1430,7 +1430,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 
 		f, ok := st.FieldByName(n.Token2.Value)
 		if !ok {
-			//TODO report error
+			ctx.errNode(&n.Token2, "unknown or ambiguous field: %s", n.Token2.Value)
 			break
 		}
 
