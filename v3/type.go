@@ -269,6 +269,10 @@ type Type interface {
 	// boolean indicating if the field was found.
 	FieldByName(name StringID) (Field, bool)
 
+	// FieldByName2 is like FieldByName but additionally returns the
+	// indices that form the path to the field.
+	FieldByName2(name StringID) (Field, []int, bool)
+
 	// IsAggregate reports whether type is an aggregate type, [0]6.2.5.
 	//
 	// 21) Array and structure types are collectively called aggregate types.
@@ -1010,6 +1014,15 @@ func (t *typeBase) FieldByName(StringID) (Field, bool) {
 	}
 
 	panic(internalErrorf("%s: FieldByName of invalid type", t.Kind()))
+}
+
+// FieldByName2 implements Type.
+func (t *typeBase) FieldByName2(StringID) (Field, []int, bool) {
+	if t.Kind() == Invalid {
+		return nil, nil, false
+	}
+
+	panic(internalErrorf("%s: FieldByName2 of invalid type", t.Kind()))
 }
 
 // IsIncomplete implements Type.
@@ -1845,6 +1858,9 @@ func (t *aliasType) FieldByIndex(i []int) Field { return t.d.Type().FieldByIndex
 // FieldByName implements Type.
 func (t *aliasType) FieldByName(s StringID) (Field, bool) { return t.d.Type().FieldByName(s) }
 
+// FieldByName2 implements Type.
+func (t *aliasType) FieldByName2(s StringID) (Field, []int, bool) { return t.d.Type().FieldByName2(s) }
+
 // IsIncomplete implements Type.
 func (t *aliasType) IsIncomplete() bool { return t.d.Type().IsIncomplete() }
 
@@ -2351,6 +2367,20 @@ func (t *structType) FieldByName(name StringID) (Field, bool) {
 	}
 
 	return nfo.fld, true
+}
+
+// FieldByName2 implements Type.
+func (t *structType) FieldByName2(name StringID) (Field, []int, bool) {
+	if t.paths == nil {
+		t.paths = map[StringID]*fieldPath{}
+		t.computePaths(t.paths, nil)
+	}
+	nfo := t.paths[name]
+	if nfo == nil || nfo.ambiguous {
+		return nil, nil, false
+	}
+
+	return nfo.fld, nfo.path, true
 }
 
 func (t *structType) computePaths(paths map[StringID]*fieldPath, path []int) {
