@@ -282,7 +282,6 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 	if t.IsScalarType() && single != nil {
 		//TODO check compatible
 		*list = append(*list, single)
-		op := n.AssignmentExpression.check(ctx)
 		switch {
 		case op == nil || op.Value() == nil:
 			n.isConst = false
@@ -702,7 +701,7 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc S
 
 		return n.checkUnion(ctx, list, t, sc, off)
 	default:
-		if n == nil || len(*list) == 0 || t == nil || t.Kind() == Invalid {
+		if n == nil || t == nil || t.Kind() == Invalid {
 			return nil
 		}
 
