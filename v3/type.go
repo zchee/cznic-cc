@@ -2005,16 +2005,17 @@ func (f *field) BitFieldBlockWidth() int       { return int(f.blockWidth) }
 func (f *field) BitFieldOffset() int           { return int(f.bitFieldOffset) }
 func (f *field) BitFieldWidth() int            { return int(f.bitFieldWidth) }
 func (f *field) Declarator() *StructDeclarator { return f.d }
+func (f *field) InUnion() bool                 { return f.inUnion }
 func (f *field) Index() int                    { return f.x }
 func (f *field) IsBitField() bool              { return f.isBitField }
 func (f *field) IsFlexible() bool              { return f.isFlexible }
-func (f *field) InUnion() bool                 { return f.inUnion }
 func (f *field) Mask() uint64                  { return f.bitFieldMask }
 func (f *field) Name() StringID                { return f.name }
 func (f *field) Offset() uintptr               { return f.offset }
 func (f *field) Padding() int                  { return int(f.pad) } // N/A for bitfields
 func (f *field) Promote() Type                 { return f.promote }
 func (f *field) Type() Type                    { return f.typ }
+func (f *field) at(offDelta uintptr) *field    { r := *f; f.offset += offDelta; return &r }
 
 func (f *field) string(b *bytes.Buffer) {
 	b.WriteString(f.name.String())
@@ -2359,7 +2360,7 @@ func (t *structType) FieldByName(name StringID) (Field, bool) {
 
 	if t.paths == nil {
 		t.paths = map[StringID]*fieldPath{}
-		t.computePaths(t.paths, nil)
+		t.computePaths(0, t.paths, nil)
 	}
 	nfo := t.paths[name]
 	if nfo == nil || nfo.ambiguous {
@@ -2373,7 +2374,7 @@ func (t *structType) FieldByName(name StringID) (Field, bool) {
 func (t *structType) FieldByName2(name StringID) (Field, []int, bool) {
 	if t.paths == nil {
 		t.paths = map[StringID]*fieldPath{}
-		t.computePaths(t.paths, nil)
+		t.computePaths(0, t.paths, nil)
 	}
 	nfo := t.paths[name]
 	if nfo == nil || nfo.ambiguous {
@@ -2383,7 +2384,7 @@ func (t *structType) FieldByName2(name StringID) (Field, []int, bool) {
 	return nfo.fld, nfo.path, true
 }
 
-func (t *structType) computePaths(paths map[StringID]*fieldPath, path []int) {
+func (t *structType) computePaths(off uintptr, paths map[StringID]*fieldPath, path []int) {
 	path = append(path, 0)
 	for i, f := range t.fields {
 		nm := f.Name()
@@ -2393,18 +2394,18 @@ func (t *structType) computePaths(paths map[StringID]*fieldPath, path []int) {
 			case ex != nil:
 				switch {
 				case len(path) < len(ex.path):
-					ex.fld = f
+					ex.fld = f.at(off)
 					ex.path = append([]int(nil), path...)
 					ex.ambiguous = false
 				case len(path) == len(ex.path):
 					ex.ambiguous = true
 				}
 			default:
-				paths[nm] = &fieldPath{fld: f, path: append([]int(nil), path...)}
+				paths[nm] = &fieldPath{fld: f.at(off), path: append([]int(nil), path...)}
 			}
 		}
 		if x, ok := f.Type().underlyingType().(*structType); ok {
-			x.computePaths(paths, path)
+			x.computePaths(off+f.Offset(), paths, path)
 		}
 	}
 }
