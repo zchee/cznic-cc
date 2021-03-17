@@ -2397,7 +2397,7 @@ func (t *structType) computePaths(off uintptr, paths map[StringID]*fieldPath, pa
 					ex.fld = f.at(off)
 					ex.path = append([]int(nil), path...)
 					ex.ambiguous = false
-				case len(path) == len(ex.path):
+				case len(path) == len(ex.path) && (off+f.Offset() != ex.fld.Offset() || f.Type().Size() != ex.fld.Type().Size()):
 					ex.ambiguous = true
 				}
 			default:

@@ -837,4 +837,35 @@ int main() {}
 		}); err != nil {
 		t.Fatal(err)
 	}
+
+	if _, err := Translate(
+		cfg,
+		nil,
+		nil,
+		[]Source{
+			{Name: "117c.c", Value: `
+
+typedef unsigned DWORD;
+typedef int LONG;
+typedef long long LONGLONG;
+typedef union _LARGE_INTEGER {
+  struct {
+    DWORD LowPart;
+    LONG  HighPart;
+  } DUMMYSTRUCTNAME;
+  struct {
+    DWORD LowPart;
+    LONG  HighPart;
+  } u;
+  LONGLONG QuadPart;
+} LARGE_INTEGER;
+
+LARGE_INTEGER l;
+DWORD d = l.LowPart;
+
+int main() {}
+`},
+		}); err != nil {
+		t.Fatal(err)
+	}
 }

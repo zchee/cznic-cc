@@ -2694,7 +2694,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 
 		f, ok := st.FieldByName(n.Token2.Value)
 		if !ok {
-			ctx.errNode(n.PostfixExpression, "unknown field %q of type %s (%s)", n.Token2.Value, st, st0)
+			ctx.errNode(n.PostfixExpression, "unknown or ambiguous field %q of type %s (%s)", n.Token2.Value, st, st0)
 			break
 		}
 
