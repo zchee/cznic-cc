@@ -2427,6 +2427,7 @@ func (n *StructOrUnionSpecifier) check(ctx *context, typ *typeBase, inUnion bool
 		for _, v := range fields {
 			if v.name != 0 {
 				v.x = x
+				v.xs = []int{x}
 				x++
 				m[v.name] = v
 			}

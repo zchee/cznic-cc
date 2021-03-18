@@ -1989,6 +1989,7 @@ type field struct {
 
 	name StringID // Can be zero.
 	x    int
+	xs   []int
 
 	isBitField bool
 	isFlexible bool // https://en.wikipedia.org/wiki/Flexible_array_member
@@ -2015,7 +2016,7 @@ func (f *field) Offset() uintptr               { return f.offset }
 func (f *field) Padding() int                  { return int(f.pad) } // N/A for bitfields
 func (f *field) Promote() Type                 { return f.promote }
 func (f *field) Type() Type                    { return f.typ }
-func (f *field) at(offDelta uintptr) *field    { r := *f; f.offset += offDelta; return &r }
+func (f *field) at(offDelta uintptr) *field    { r := *f; r.offset += offDelta; return &r }
 
 func (f *field) string(b *bytes.Buffer) {
 	b.WriteString(f.name.String())
@@ -2372,6 +2373,10 @@ func (t *structType) FieldByName(name StringID) (Field, bool) {
 
 // FieldByName2 implements Type.
 func (t *structType) FieldByName2(name StringID) (Field, []int, bool) {
+	if f := t.m[name]; f != nil {
+		return f, f.xs, true
+	}
+
 	if t.paths == nil {
 		t.paths = map[StringID]*fieldPath{}
 		t.computePaths(0, t.paths, nil)
@@ -3063,4 +3068,160 @@ func isWCharType(t Type) bool {
 	default:
 		return false
 	}
+}
+
+// Struct layout describes storage details of a struct/union type.
+type StructLayout struct {
+	Offsets        []uintptr // In field order.
+	OffsetToFields map[uintptr][]Field
+	PaddingsBefore map[Field]int
+	PaddingAfter   int
+	t              Type
+
+	NeedExplicitAlign bool
+}
+
+// NewStructLayout returns a newly created StructLayout for t, or nil if t is
+// not a struct/union type.
+func NewStructLayout(t Type) *StructLayout {
+	switch t.Kind() {
+	case Struct, Union:
+		// ok
+	default:
+		return nil
+	}
+
+	nf := t.NumField()
+	flds := map[uintptr][]Field{}
+	var maxAlign int
+	for idx := []int{0}; idx[0] < nf; idx[0]++ {
+		f := t.FieldByIndex(idx)
+		if f.IsBitField() && f.BitFieldWidth() == 0 {
+			continue
+		}
+
+		if a := f.Type().Align(); !f.IsBitField() && a > maxAlign {
+			maxAlign = a
+		}
+		off := f.Offset()
+		flds[off] = append(flds[off], f)
+	}
+	var offs []uintptr
+	for k := range flds {
+		offs = append(offs, k)
+	}
+	sort.Slice(offs, func(i, j int) bool { return offs[i] < offs[j] })
+	var pads map[Field]int
+	var pos uintptr
+	var forceAlign bool
+	for _, off := range offs {
+		f := flds[off][0]
+		ft := f.Type()
+		//trc("%q off %d pos %d %v %v %v", f.Name(), off, pos, ft, ft.Kind(), ft.IsIncomplete())
+		switch {
+		case ft.IsBitFieldType():
+			if f.BitFieldOffset() != 0 {
+				break
+			}
+
+			if p := int(off - pos); p != 0 {
+				if pads == nil {
+					pads = map[Field]int{}
+				}
+				pads[f] = p
+				pos = off
+			}
+			pos += uintptr(f.BitFieldBlockWidth()) >> 3
+		default:
+			var sz uintptr
+			switch {
+			case ft.Kind() != Array || ft.Len() != 0:
+				sz = ft.Size()
+			default:
+				forceAlign = true
+			}
+			if p := int(off - pos); p != 0 {
+				if pads == nil {
+					pads = map[Field]int{}
+				}
+				pads[f] = p
+				pos = off
+			}
+			pos += sz
+		}
+	}
+	return &StructLayout{
+		NeedExplicitAlign: forceAlign || maxAlign < t.Align(),
+		OffsetToFields:    flds,
+		Offsets:           offs,
+		PaddingAfter:      int(t.Size() - pos),
+		PaddingsBefore:    pads,
+		t:                 t,
+	}
+}
+
+func (x *StructLayout) String() string {
+	t := x.t
+	nf := t.NumField()
+	var a []string
+	w := 0
+	for i := 0; i < nf; i++ {
+		if n := len(t.FieldByIndex([]int{i}).Name().String()); n > w {
+			w = n
+		}
+	}
+	for i := 0; i < nf; i++ {
+		f := t.FieldByIndex([]int{i})
+		var bf StringID
+		if f.IsBitField() {
+			if bfbf := f.BitFieldBlockFirst(); bfbf != nil {
+				bf = bfbf.Name()
+			}
+		}
+		a = append(a, fmt.Sprintf("%3d: %*q: BitFieldOffset %3v, BitFieldWidth %3v, IsBitField %5v, Mask: %#016x, off: %3v, pad %2v, BitFieldBlockWidth: %2d, BitFieldBlockFirst: %s, %v",
+			i, w+2, f.Name(), f.BitFieldOffset(), f.BitFieldWidth(),
+			f.IsBitField(), f.Mask(), f.Offset(), f.Padding(),
+			f.BitFieldBlockWidth(), bf, f.Type(),
+		))
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "%v\n%s\n----\n", t, strings.Join(a, "\n"))
+	fmt.Fprintf(&b, "size: %v\n", t.Size())
+	fmt.Fprintf(&b, "offs: %v\n", x.Offsets)
+	a = a[:0]
+	for k, v := range x.OffsetToFields {
+		var b []string
+		for _, w := range v {
+			b = append(b, fmt.Sprintf("%q padBefore: %d ", w.Name(), x.PaddingsBefore[w]))
+		}
+		a = append(a, fmt.Sprintf("%4d %s", k, b))
+	}
+	sort.Strings(a)
+	for _, v := range a {
+		fmt.Fprintf(&b, "%s\n", v)
+	}
+	fmt.Fprintf(&b, "padAfter: %v\n", x.PaddingAfter)
+	for i := 0; i < nf; i++ {
+		f := t.FieldByIndex([]int{i})
+		if x, ok := f.Type().(*structType); ok {
+			s := dumpLayout(x)
+			a := strings.Split(s, "\n")
+			fmt.Fprintf(&b, "====\n")
+			for _, v := range a {
+				fmt.Fprintf(&b, "%s\n", v)
+			}
+		}
+	}
+	return b.String()
+}
+
+func dumpLayout(t Type) string {
+	switch t.Kind() {
+	case Struct, Union:
+		// ok
+	default:
+		return t.String()
+	}
+
+	return NewStructLayout(t).String()
 }
