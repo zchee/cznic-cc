@@ -88,6 +88,8 @@ func TestCPPExpand(t *testing.T) {
 				if i < len(b) {
 					y = b[i]
 				}
+				x = strings.ReplaceAll(x, "\r", "")
+				y = strings.ReplaceAll(y, "\r", "")
 				if x != y {
 					t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
 				}
