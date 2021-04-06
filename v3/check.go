@@ -3742,8 +3742,10 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 		case (lt.Kind() == Ptr || lt.IsIntegerType()) && rt.Kind() == Ptr:
 			n.promote = rt
 			//TODO
-		case lt.Kind() == Function || rt.Kind() == Function:
-			n.promote = ctx.cfg.ABI.Type(Ptr)
+		case lt.Kind() == Function:
+			n.promote = ctx.cfg.ABI.Ptr(n, lt)
+		case rt.Kind() == Function:
+			n.promote = ctx.cfg.ABI.Ptr(n, rt)
 		default:
 			//TODO report error
 		}

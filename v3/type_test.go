@@ -869,3 +869,53 @@ int main() {}
 		t.Fatal(err)
 	}
 }
+
+// https://gitlab.com/cznic/cc/-/issues/120
+func TestIssue120(t *testing.T) {
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ast, err := Translate(&Config{ABI: abi}, nil, nil, []Source{
+		{Name: "x.c", Value: `
+void (*x)(void*);
+void foo(void *bar){}
+
+int main () {
+    if (x == foo) {
+        return 1;
+    }
+
+    return 0;
+}
+`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ta := ast.StructTypes[String("outer")]
+	if ta != nil {
+		t.Logf("\n%s", dumpLayout(ta))
+	}
+
+	Inspect(ast.TranslationUnit, func(n Node, entry bool) bool {
+		if !entry {
+			return true
+		}
+
+		if x, ok := n.(*EqualityExpression); ok {
+			if typ := x.Promote(); typ != nil {
+				if g, e := typ.String(), "pointer to function(pointer to void)"; g != e {
+					t.Errorf("%q %q", g, e)
+				}
+				typ = typ.Elem()
+				if g, e := typ.String(), "function(pointer to void)"; g != e {
+					t.Errorf("%q %q", g, e)
+				}
+			}
+		}
+		return true
+	})
+}
