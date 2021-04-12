@@ -3820,16 +3820,15 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 
 	p.rune()
 	d := p.declarator(false, ds.typedef(), nil)
+	p.declScope.declare(d.Name(), d)
 	switch p.rune() {
 	case ',', ';', '=', ATTRIBUTE:
-		p.declScope.declare(d.Name(), d)
 		if ds == nil {
 			ds = noDeclSpecs
 		}
 		r := &ExternalDeclaration{Case: ExternalDeclarationDecl, Declaration: p.declaration(ds, d)}
 		return r
 	case ASM:
-		p.declScope.declare(d.Name(), d)
 		return &ExternalDeclaration{Case: ExternalDeclarationAsm, AsmFunctionDefinition: p.asmFunctionDefinition(ds, d)}
 	default:
 		fd := p.functionDefinition(ds, d)
@@ -3847,7 +3846,6 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 			sfd.m[p.key] = fd
 		}
 
-		p.declScope.declare(d.Name(), d)
 		r := &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: fd}
 		return r
 	}

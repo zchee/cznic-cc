@@ -3083,6 +3083,7 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 					}
 
 					n.resolvedIn = s
+					n.resolvedTo = x
 					d = x
 					t := d.Type()
 					if t != nil && t.Kind() == Function {
