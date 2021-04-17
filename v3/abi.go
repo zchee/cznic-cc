@@ -347,7 +347,7 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				}
 				group += f.bitFieldWidth
 			default:
-				if group != 0 {
+				if group%64 != 0 {
 					group %= 64
 					off += int64(normalizeBitFieldWidth(group) - group)
 				}

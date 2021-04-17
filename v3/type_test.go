@@ -919,3 +919,34 @@ int main () {
 		return true
 	})
 }
+
+// https://gitlab.com/cznic/cc/-/issues/121
+func TestIssue121(t *testing.T) {
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ast, err := Translate(&Config{ABI: abi}, nil, nil, []Source{
+		{Name: "x.c", Value: `
+struct xxx {
+    unsigned ub:3;
+    unsigned u:32;
+    unsigned long long ullb:35;
+    unsigned long long ull:64;
+    unsigned char c;
+} s;
+
+`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ta := ast.StructTypes[String("xxx")]
+	t.Logf("\n%s", dumpLayout(ta))
+	fld, _ := ta.FieldByName(String("c"))
+	if g, e := fld.Offset(), uintptr(24); g != e {
+		t.Fatalf("xxx.c offset: got %v, exp %v", g, e)
+	}
+}
