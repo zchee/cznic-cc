@@ -414,16 +414,11 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 		var off int64 // In bits.
 		align := int(t.typeBase.align)
 		for _, f := range t.fields {
-			switch {
-			case f.isBitField:
-				panic(todo("%v: ", n.Position()))
-			default:
-				f.offset = 0
-				if off2 := 8 * int64(f.Type().Size()); off2 > off {
-					off = off2
-				}
-				f.promote = integerPromotion(a, f.Type())
+			f.offset = 0
+			if off2 := 8 * int64(f.Type().Size()); off2 > off {
+				off = off2
 			}
+			f.promote = integerPromotion(a, f.Type())
 		}
 		t.align = byte(align)
 		t.fieldAlign = byte(align)
