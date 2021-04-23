@@ -414,6 +414,10 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 		var off int64 // In bits.
 		align := int(t.typeBase.align)
 		for _, f := range t.fields {
+			al := f.Type().Align()
+			if al > align {
+				align = al
+			}
 			switch {
 			case f.isBitField:
 				f.offset = 0
