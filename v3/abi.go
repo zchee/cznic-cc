@@ -13,6 +13,10 @@ import (
 )
 
 var (
+	idAligned   = String("aligned")
+	idGCCStruct = String("gcc_struct")
+	idPacked    = String("packed")
+
 	complexTypedefs = map[StringID]Kind{
 		dict.sid("__COMPLEX_CHAR_TYPE__"):               ComplexChar,
 		dict.sid("__COMPLEX_DOUBLE_TYPE__"):             ComplexDouble,
@@ -196,6 +200,10 @@ func roundup(n, to int64) int64 {
 	return n
 }
 
+func rounddown(n, to int64) int64 {
+	return n &^ (to - 1)
+}
+
 func normalizeBitFieldWidth(n byte) byte {
 	switch {
 	case n <= 8:
@@ -214,6 +222,20 @@ func normalizeBitFieldWidth(n byte) byte {
 func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 	if t == nil {
 		return nil
+	}
+
+	if t.typeBase.align < 1 {
+		t.typeBase.align = 1
+	}
+	for _, v := range t.attr {
+		if _, ok := v.Has(idGCCStruct); ok {
+			return a.gccLayout(ctx, n, t)
+		}
+	}
+
+	switch {
+	case ctx.cfg.Config3.GCCStructs:
+		return a.gccLayout(ctx, n, t)
 	}
 
 	var hasBitfields bool
@@ -250,14 +272,10 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				}
 			}
 		}
-		// trc("", t)
-		// for _, v := range t.fields {
-		// 	trc("%+v", v)
-		// }
 	}()
 
 	var off int64 // bit offset
-	align := 1
+	align := int(t.typeBase.align)
 
 	switch {
 	case t.Kind() == Union:
@@ -347,8 +365,8 @@ func (a *ABI) layout(ctx *context, n Node, t *structType) *structType {
 				}
 				group += f.bitFieldWidth
 			default:
-				if group%64 != 0 {
-					group %= 64
+				if n := group % 64; n != 0 {
+					group -= n
 					off += int64(normalizeBitFieldWidth(group) - group)
 				}
 				off0 := off
@@ -385,4 +403,177 @@ func (a *ABI) Ptr(n Node, t Type) Type {
 		elem:     t,
 		typeBase: base,
 	}
+}
+
+func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
+	if t.IsPacked() {
+		return a.gccPackedLayout(ctx, n, t)
+	}
+
+	if t.Kind() == Union {
+		var off int64 // In bits.
+		align := int(t.typeBase.align)
+		for _, f := range t.fields {
+			switch {
+			case f.isBitField:
+				panic(todo("%v: ", n.Position()))
+			default:
+				f.offset = 0
+				if off2 := 8 * int64(f.Type().Size()); off2 > off {
+					off = off2
+				}
+				f.promote = integerPromotion(a, f.Type())
+			}
+		}
+		t.align = byte(align)
+		t.fieldAlign = byte(align)
+		off = roundup(off, 8*int64(align))
+		t.size = uintptr(off >> 3)
+		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
+		return t
+	}
+
+	var off int64 // In bits.
+	align := int(t.typeBase.align)
+	for i, f := range t.fields {
+		switch {
+		case f.isBitField:
+			al := f.Type().Align()
+			if al > align {
+				align = al
+			}
+
+			// http://jkz.wtf/bit-field-packing-in-gcc-and-clang
+
+			// 1. Jump backwards to nearest address that would support this type. For
+			// example if we have an int jump to the closest address where an int could be
+			// stored according to the platform alignment rules.
+			down := rounddown(off, 8*int64(al))
+
+			// 2. Get sizeof(current field) bytes from that address.
+			alloc := int64(f.Type().Size()) * 8
+			need := int64(f.bitFieldWidth)
+			if need == 0 && i != 0 {
+				off = roundup(off, 8*int64(al))
+				continue
+			}
+
+			used := off - down
+			switch {
+			case alloc-used >= need:
+				// 3. If the number of bits that we need to store can be stored in these bits,
+				// put the bits in the lowest possible bits of this block.
+				off = down + used
+				f.offset = uintptr(down >> 3)
+				f.bitFieldOffset = byte(used)
+				f.bitFieldMask = (1<<f.bitFieldWidth - 1) << used
+				off += int64(f.bitFieldWidth)
+				f.promote = integerPromotion(a, f.Type())
+			default:
+				// 4. Otherwise, pad the rest of this block with zeros, and store the bits that
+				// make up this bit-field in the lowest bits of the next block.
+				off = roundup(off, 8*int64(al))
+				f.offset = uintptr(off >> 3)
+				f.bitFieldOffset = 0
+				f.bitFieldMask = 1<<f.bitFieldWidth - 1
+				off += int64(f.bitFieldWidth)
+				f.promote = integerPromotion(a, f.Type())
+			}
+		default:
+			al := f.Type().Align()
+			if al > align {
+				align = al
+			}
+			off = roundup(off, 8*int64(al))
+			f.offset = uintptr(off) >> 3
+			off += 8 * int64(f.Type().Size())
+			f.promote = integerPromotion(a, f.Type())
+		}
+	}
+	var lf *field
+	for _, f := range t.fields {
+		if lf != nil && !lf.isBitField && !f.isBitField {
+			lf.pad = byte(f.offset - lf.offset - lf.Type().Size())
+		}
+		lf = f
+	}
+	t.align = byte(align)
+	t.fieldAlign = byte(align)
+	off0 := off
+	off = roundup(off, 8*int64(align))
+	if lf != nil && !lf.IsBitField() {
+		lf.pad = byte(off-off0) >> 3
+	}
+	t.size = uintptr(off >> 3)
+	ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
+	return t
+}
+
+func (a *ABI) gccPackedLayout(ctx *context, n Node, t *structType) (r *structType) {
+	if t.typeBase.flags&fAligned == 0 {
+		t.align = 1
+	}
+	t.fieldAlign = t.align
+	if t.Kind() == Union {
+		var off int64 // In bits.
+		for _, f := range t.fields {
+			switch {
+			case f.isBitField:
+				panic(todo("%v: ", n.Position()))
+			default:
+				f.offset = 0
+				if off2 := 8 * int64(f.Type().Size()); off2 > off {
+					off = off2
+				}
+				f.promote = integerPromotion(a, f.Type())
+			}
+		}
+		off = roundup(off, 8)
+		t.size = uintptr(off >> 3)
+		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
+		return t
+	}
+
+	var off int64 // In bits.
+	for i, f := range t.fields {
+		switch {
+		case f.isBitField:
+			if f.bitFieldWidth == 0 {
+				if i != 0 {
+					off = roundup(off, 8*int64(f.Type().Align()))
+				}
+				continue
+			}
+
+			if b := f.Type().base(); b.flags&fAligned != 0 {
+				off = roundup(off, 8*int64(a.Types[f.Type().Kind()].Align))
+			}
+			f.offset = uintptr(off >> 3)
+			f.bitFieldOffset = byte(off & 7)
+			f.bitFieldMask = (1<<f.bitFieldWidth - 1) << f.bitFieldOffset
+			off += int64(f.bitFieldWidth)
+			f.promote = integerPromotion(a, f.Type())
+		default:
+			al := f.Type().Align()
+			off = roundup(off, 8*int64(al))
+			f.offset = uintptr(off) >> 3
+			off += 8 * int64(f.Type().Size())
+			f.promote = integerPromotion(a, f.Type())
+		}
+	}
+	var lf *field
+	for _, f := range t.fields {
+		if lf != nil && !lf.isBitField && !f.isBitField {
+			lf.pad = byte(f.offset - lf.offset - lf.Type().Size())
+		}
+		lf = f
+	}
+	off0 := off
+	off = roundup(off, 8*int64(t.Align()))
+	if lf != nil && !lf.IsBitField() {
+		lf.pad = byte(off-off0) >> 3
+	}
+	t.size = uintptr(off >> 3)
+	ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
+	return t
 }

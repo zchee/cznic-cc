@@ -281,6 +281,10 @@ type Type interface {
 	// with union type can only contain one member at a time.
 	IsAggregate() bool
 
+	// IsPacked reports whether type is packed. It panics if the type's
+	// Kind is valid but not Struct or Union.
+	IsPacked() bool
+
 	// IsIncomplete reports whether type is incomplete.
 	IsIncomplete() bool
 
@@ -447,7 +451,7 @@ type Field interface {
 	Mask() uint64
 	Name() StringID  // Can be zero.
 	Offset() uintptr // In bytes from the beginning of the struct/union.
-	Padding() int
+	Padding() int    // In bytes after the field. N/A for bit fields, fields preceding bit fields or union fields.
 	Promote() Type
 	Type() Type // Field type.
 }
@@ -564,7 +568,7 @@ const (
 	fTypedef
 )
 
-type flag uint8
+type flag uint16
 
 const (
 	// function specifier
@@ -580,6 +584,8 @@ const (
 	// other
 	fIncomplete
 	fSigned // Valid only for integer types.
+	fPacked
+	fAligned // __attribute__((aligned(n))) applied.
 )
 
 type typeBase struct {
@@ -734,6 +740,11 @@ func (t *typeBase) check(ctx *context, td typeDescriptor, defaultInt bool) (r Ty
 		}
 	}
 	return typ
+}
+
+func (t *typeBase) setAligned(n int) {
+	t.flags |= fAligned
+	t.align = byte(n)
 }
 
 // IsAssingmentCompatible implements Type.
@@ -907,6 +918,11 @@ func (t *typeBase) IsCompatibleLayout(u Type) bool {
 	}
 
 	return t.IsIntegerType() && u.Kind() == Enum && t.Size() == u.Size()
+}
+
+// IsPacked implements Type.
+func (t *typeBase) IsPacked() bool {
+	return t.flags&fPacked != 0
 }
 
 // UnionCommon implements Type.
@@ -1811,6 +1827,15 @@ func (t *aliasType) IsCompatibleLayout(u Type) bool {
 	return t.d.Type().IsCompatibleLayout(u)
 }
 
+// IsPacked implements Type.
+func (t *aliasType) IsPacked() bool {
+	if t == nil {
+		return false
+	}
+
+	return t.d.Type().IsPacked()
+}
+
 // UnionCommon implements Type.
 func (t *aliasType) UnionCommon() Kind { return t.d.Type().UnionCommon() }
 
@@ -2424,6 +2449,15 @@ type taggedType struct {
 	typ             Type
 
 	tag StringID
+}
+
+// IsPacked implements Type.
+func (t *taggedType) IsPacked() bool {
+	if t == nil {
+		return false
+	}
+
+	return t.underlyingType().IsPacked()
 }
 
 // HasFlexibleMember implements Type.
@@ -3174,7 +3208,7 @@ func (x *StructLayout) String() string {
 		f := t.FieldByIndex([]int{i})
 		var bf StringID
 		if f.IsBitField() {
-			if bfbf := f.BitFieldBlockFirst(); bfbf != nil {
+			if bfbf := f.(*field).blockStart; bfbf != nil {
 				bf = bfbf.Name()
 			}
 		}

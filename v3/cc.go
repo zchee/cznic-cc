@@ -459,6 +459,7 @@ type Config3 struct {
 	// Translate.
 	DisableBuiltinResolution bool
 
+	GCCStructs                              bool // Layout structs, unions and bit fields so they are binary compatible with GCC.
 	NoFieldAndBitfieldOverlap               bool // Only bitfields can be grouped together.
 	PreserveOnlyLastNonBlankSeparator       bool // If PreserveWhiteSpace is true, keep only the last white space, do not combine
 	PreserveWhiteSpace                      bool // Including also comments.
