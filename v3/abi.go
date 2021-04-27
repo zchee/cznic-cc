@@ -50,6 +50,8 @@ func NewABI(os, arch string) (ABI, error) {
 		Types:     make(map[Kind]ABIType, len(types)),
 		//TODO: depends on the OS?
 		SignedChar: true,
+		os:         os,
+		arch:       arch,
 	}
 	// copy the map, so it can be modified by user
 	for k, v := range types {
@@ -84,6 +86,8 @@ type ABIType struct {
 type ABI struct {
 	ByteOrder binary.ByteOrder
 	Types     map[Kind]ABIType
+	arch      string
+	os        string
 	types     map[Kind]Type
 
 	SignedChar bool
@@ -519,6 +523,11 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 }
 
 func (a *ABI) gccPackedLayout(ctx *context, n Node, t *structType) (r *structType) {
+	switch a.arch {
+	case "arm", "arm64":
+		return a.gccPackedLayoutARM(ctx, n, t)
+	}
+
 	if t.typeBase.flags&fAligned == 0 {
 		t.align = 1
 	}
@@ -576,6 +585,84 @@ func (a *ABI) gccPackedLayout(ctx *context, n Node, t *structType) (r *structTyp
 			lf.pad = byte(f.offset - lf.offset - lf.Type().Size())
 		}
 		lf = f
+	}
+	off0 := off
+	off = roundup(off, 8*int64(t.Align()))
+	if lf != nil && !lf.IsBitField() {
+		lf.pad = byte(off-off0) >> 3
+	}
+	t.size = uintptr(off >> 3)
+	ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
+	return t
+}
+
+func (a *ABI) gccPackedLayoutARM(ctx *context, n Node, t *structType) (r *structType) {
+	align := 1
+	if t.typeBase.flags&fAligned == 0 {
+		t.align = 1
+	}
+	t.fieldAlign = t.align
+	if t.Kind() == Union {
+		var off int64 // In bits.
+		for _, f := range t.fields {
+			switch {
+			case f.isBitField:
+				panic(todo("%v: ", n.Position()))
+			default:
+				f.offset = 0
+				if off2 := 8 * int64(f.Type().Size()); off2 > off {
+					off = off2
+				}
+				f.promote = integerPromotion(a, f.Type())
+			}
+		}
+		off = roundup(off, 8)
+		t.size = uintptr(off >> 3)
+		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
+		return t
+	}
+
+	var off int64 // In bits.
+	for i, f := range t.fields {
+		switch {
+		case f.isBitField:
+			if f.bitFieldWidth == 0 {
+				al := f.Type().Align()
+				if al > align {
+					align = al
+				}
+				if i != 0 {
+					off = roundup(off, 8*int64(f.Type().Align()))
+				}
+				continue
+			}
+
+			if b := f.Type().base(); b.flags&fAligned != 0 {
+				off = roundup(off, 8*int64(a.Types[f.Type().Kind()].Align))
+			}
+			f.offset = uintptr(off >> 3)
+			f.bitFieldOffset = byte(off & 7)
+			f.bitFieldMask = (1<<f.bitFieldWidth - 1) << f.bitFieldOffset
+			off += int64(f.bitFieldWidth)
+			f.promote = integerPromotion(a, f.Type())
+		default:
+			al := f.Type().Align()
+			off = roundup(off, 8*int64(al))
+			f.offset = uintptr(off) >> 3
+			off += 8 * int64(f.Type().Size())
+			f.promote = integerPromotion(a, f.Type())
+		}
+	}
+	var lf *field
+	for _, f := range t.fields {
+		if lf != nil && !lf.isBitField && !f.isBitField {
+			lf.pad = byte(f.offset - lf.offset - lf.Type().Size())
+		}
+		lf = f
+	}
+	if b := t.base(); b.flags&fAligned == 0 {
+		t.align = byte(align)
+		t.fieldAlign = byte(align)
 	}
 	off0 := off
 	off = roundup(off, 8*int64(t.Align()))
