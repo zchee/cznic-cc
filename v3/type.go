@@ -444,14 +444,15 @@ type Field interface {
 	BitFieldOffset() int
 	BitFieldWidth() int
 	Declarator() *StructDeclarator
+	InUnion() bool // Directly or indirectly
 	Index() int
 	IsBitField() bool
 	IsFlexible() bool // https://en.wikipedia.org/wiki/Flexible_array_member
-	InUnion() bool    // Directly or indirectly
 	Mask() uint64
 	Name() StringID  // Can be zero.
 	Offset() uintptr // In bytes from the beginning of the struct/union.
 	Padding() int    // In bytes after the field. N/A for bit fields, fields preceding bit fields or union fields.
+	Parent() Type    // The struct/union type that contains the field.
 	Promote() Type
 	Type() Type // Field type.
 }
@@ -2009,6 +2010,7 @@ type field struct {
 	blockStart   *field // First bit field of the block this bit field belongs to.
 	d            *StructDeclarator
 	offset       uintptr // In bytes from start of the struct.
+	parent       Type
 	promote      Type
 	typ          Type
 
@@ -2039,6 +2041,7 @@ func (f *field) Mask() uint64                  { return f.bitFieldMask }
 func (f *field) Name() StringID                { return f.name }
 func (f *field) Offset() uintptr               { return f.offset }
 func (f *field) Padding() int                  { return int(f.pad) } // N/A for bitfields
+func (f *field) Parent() Type                  { return f.parent }
 func (f *field) Promote() Type                 { return f.promote }
 func (f *field) Type() Type                    { return f.typ }
 func (f *field) at(offDelta uintptr) *field    { r := *f; r.offset += offDelta; return &r }
@@ -2279,6 +2282,7 @@ func (t *structType) check(ctx *context, n Node) *structType {
 
 	// Reject ambiguous names.
 	for _, f := range t.fields {
+		f.parent = t
 		if f.Name() != 0 {
 			continue
 		}
@@ -2658,6 +2662,11 @@ func (t *taggedType) FieldByIndex(i []int) Field { return t.underlyingType().Fie
 // FieldByName implements Type.
 func (t *taggedType) FieldByName(s StringID) (Field, bool) { return t.underlyingType().FieldByName(s) }
 
+// FieldByName2 implements Type.
+func (t *taggedType) FieldByName2(s StringID) (Field, []int, bool) {
+	return t.underlyingType().FieldByName2(s)
+}
+
 // IsSignedType implements Type.
 func (t *taggedType) IsSignedType() bool { return t.underlyingType().IsSignedType() }
 
@@ -2680,7 +2689,8 @@ func (t *taggedType) underlyingType() Type {
 	for s := t.resolutionScope; s != nil; s = s.Parent() {
 		for _, v := range s[t.tag] {
 			switch x := v.(type) {
-			case *Declarator, *StructDeclarator:
+			case *Declarator, *StructDeclarator, *LabeledStatement:
+				// nop
 			case *EnumSpecifier:
 				if k == Enum && x.Case == EnumSpecifierDef {
 					t.typ = x.Type()
@@ -2704,7 +2714,7 @@ func (t *taggedType) underlyingType() Type {
 					}
 				}
 			default:
-				panic(internalError())
+				panic(todo("internal error: %T", x))
 			}
 		}
 	}
