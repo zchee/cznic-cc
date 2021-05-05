@@ -418,10 +418,6 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 		var off int64 // In bits.
 		align := int(t.typeBase.align)
 		for _, f := range t.fields {
-			al := f.Type().Align()
-			if al > align {
-				align = al
-			}
 			switch {
 			case f.isBitField:
 				f.offset = 0
@@ -431,6 +427,10 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 					off = int64(f.bitFieldWidth)
 				}
 			default:
+				al := f.Type().Align()
+				if al > align {
+					align = al
+				}
 				f.offset = 0
 				if off2 := 8 * int64(f.Type().Size()); off2 > off {
 					off = off2
@@ -452,9 +452,6 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 		switch {
 		case f.isBitField:
 			al := f.Type().Align()
-			if al > align {
-				align = al
-			}
 
 			// http://jkz.wtf/bit-field-packing-in-gcc-and-clang
 
@@ -471,6 +468,9 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 				continue
 			}
 
+			if al > align {
+				align = al
+			}
 			used := off - down
 			switch {
 			case alloc-used >= need:
