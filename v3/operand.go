@@ -543,7 +543,7 @@ func (o *operand) isConst() bool {
 // result, whose type domain is the type domain of the operands if they are the
 // same, and complex otherwise. This pattern is called the usual arithmetic
 // conversions:
-func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Operand) {
+func usualArithmeticConversions(ctx *context, n Node, a, b Operand, normalize bool) (Operand, Operand) {
 	if a.Type().Kind() == Invalid || b.Type().Kind() == Invalid {
 		return noOperand, noOperand
 	}
@@ -567,8 +567,10 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 		return a, b
 	}
 
-	a = a.normalize(ctx, n)
-	b = b.normalize(ctx, n)
+	if normalize {
+		a = a.normalize(ctx, n)
+		b = b.normalize(ctx, n)
+	}
 	if a == noOperand || b == noOperand {
 		return noOperand, noOperand
 	}
@@ -662,7 +664,7 @@ func usualArithmeticConversions(ctx *context, n Node, a, b Operand) (Operand, Op
 			return a, b.convertTo(ctx, n, a.Type())
 		}
 	default:
-		panic(fmt.Errorf("TODO %v %v", a, b))
+		panic(fmt.Errorf("TODO %v %v", a.Type(), b.Type()))
 	}
 
 	// Otherwise, if the type of the operand with signed integer type can

@@ -852,7 +852,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		r := n.AssignmentExpression.check(ctx)
 		//TODO check assignability
 		if l.Type().IsArithmeticType() {
-			op, _ := usualArithmeticConversions(ctx, n, l, r)
+			op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 			n.promote = op.Type()
 		}
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
@@ -871,7 +871,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		r := n.AssignmentExpression.check(ctx)
 		//TODO check assignability
 		if l.Type().IsArithmeticType() {
-			op, _ := usualArithmeticConversions(ctx, n, l, r)
+			op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 			n.promote = op.Type()
 		}
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
@@ -890,7 +890,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		r := n.AssignmentExpression.check(ctx)
 		//TODO check assignability
 		if l.Type().IsArithmeticType() {
-			op, _ := usualArithmeticConversions(ctx, n, l, r)
+			op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 			n.promote = op.Type()
 		}
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
@@ -910,7 +910,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		//TODO check assignability
 		n.promote = n.UnaryExpression.Operand.Type()
 		if l.Type().IsArithmeticType() {
-			op, _ := usualArithmeticConversions(ctx, n, l, r)
+			op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 			n.promote = op.Type()
 		}
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
@@ -930,7 +930,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 		//TODO check assignability
 		n.promote = n.UnaryExpression.Operand.Type()
 		if l.Type().IsArithmeticType() {
-			op, _ := usualArithmeticConversions(ctx, n, l, r)
+			op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 			n.promote = op.Type()
 		}
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
@@ -995,7 +995,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 			break
 		}
 
-		op, _ := usualArithmeticConversions(ctx, n, l, r)
+		op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 		n.promote = op.Type()
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
 	case AssignmentExpressionXor: // UnaryExpression "^=" AssignmentExpression
@@ -1017,7 +1017,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 			break
 		}
 
-		op, _ := usualArithmeticConversions(ctx, n, l, r)
+		op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 		n.promote = op.Type()
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
 	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
@@ -1039,7 +1039,7 @@ func (n *AssignmentExpression) check(ctx *context) Operand {
 			break
 		}
 
-		op, _ := usualArithmeticConversions(ctx, n, l, r)
+		op, _ := usualArithmeticConversions(ctx, n, l, r, true)
 		n.promote = op.Type()
 		n.Operand = &operand{abi: &ctx.cfg.ABI, typ: l.Type()}
 	default:
@@ -1214,7 +1214,11 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 			break
 		}
 
-		n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(op.Type().Size())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
+		sz := op.Type().Size()
+		if d := n.UnaryExpression.Declarator(); d != nil && d.IsParameter {
+			sz = op.Type().Decay().Size()
+		}
+		n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(sz)}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
 		n.IsSideEffectsFree = true
 		rd := ctx.readDelta
@@ -3048,7 +3052,23 @@ func (n *PrimaryExpression) check(ctx *context, implicitFunc bool) Operand {
 	case PrimaryExpressionChar: // CHARCONST
 		n.IsSideEffectsFree = true
 		s := []rune(n.Token.Value.String())
-		n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(Int), value: Int64Value(s[0])}).normalize(ctx, n)
+		var v Value
+		switch {
+		case s[0] <= 255:
+			// If an integer character constant contains a single character or escape
+			// sequence, its value is the one that results when an object with type char
+			// whose value is that of the single character or escape sequence is converted
+			// to type int.
+			switch {
+			case ctx.cfg.ABI.SignedChar:
+				v = Int64Value(int8(s[0]))
+			default:
+				v = Int64Value(s[0])
+			}
+		default:
+			v = Int64Value(s[0])
+		}
+		n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(Int), value: v}).normalize(ctx, n)
 	case PrimaryExpressionLChar: // LONGCHARCONST
 		n.IsSideEffectsFree = true
 		s := []rune(n.Token.Value.String())
@@ -3519,7 +3539,7 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 			// determined by the usual arithmetic conversions, were
 			// they applied to those two operands,
 			// is the type of the result.
-			op, _ := usualArithmeticConversions(ctx, n, a, b)
+			op, _ := usualArithmeticConversions(ctx, n, a, b, true)
 			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: op.Type(), value: val}).normalize(ctx, n)
 		// — both operands are pointers to qualified or unqualified versions of compatible types;
 		case at.Kind() == Ptr && bt.Kind() == Ptr:
@@ -3643,7 +3663,7 @@ func (n *InclusiveOrExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -3669,7 +3689,7 @@ func checkBinaryVectorIntegerArtithmetic(ctx *context, n Node, a, b Operand) Ope
 		}
 		b = &operand{abi: &ctx.cfg.ABI, typ: b.Type().Elem()}
 	}
-	a, b = usualArithmeticConversions(ctx, n, a, b)
+	a, b = usualArithmeticConversions(ctx, n, a, b, true)
 	if !a.Type().IsIntegerType() || !b.Type().IsIntegerType() {
 		ctx.errNode(n, "operands must be integers")
 	}
@@ -3700,7 +3720,7 @@ func (n *ExclusiveOrExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -3738,7 +3758,7 @@ func (n *AndExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -3779,7 +3799,7 @@ func (n *EqualityExpression) check(ctx *context) Operand {
 			n.Operand = checkVectorComparison(ctx, n, lo.Type(), ro.Type())
 			return n.Operand
 		case lt.IsArithmeticType() && rt.IsArithmeticType():
-			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
+			op, _ := usualArithmeticConversions(ctx, n, lo, ro, true)
 			n.promote = op.Type()
 			ok = true
 		case lt.Kind() == Ptr && (rt.Kind() == Ptr || rt.IsIntegerType()):
@@ -3867,7 +3887,7 @@ func (n *RelationalExpression) check(ctx *context) Operand {
 		ok := true
 		switch {
 		case lt.IsRealType() && rt.IsRealType():
-			op, _ := usualArithmeticConversions(ctx, n, lo, ro)
+			op, _ := usualArithmeticConversions(ctx, n, lo, ro, true)
 			n.promote = op.Type()
 		case lt.Kind() == Ptr && (rt.Kind() == Ptr || rt.IsIntegerType()):
 			n.promote = lt
@@ -4000,7 +4020,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -4061,7 +4081,7 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -4087,7 +4107,7 @@ func checkBinaryVectorArtithmetic(ctx *context, n Node, a, b Operand) Operand {
 		}
 		b = &operand{abi: &ctx.cfg.ABI, typ: b.Type().Elem()}
 	}
-	usualArithmeticConversions(ctx, n, a, b)
+	usualArithmeticConversions(ctx, n, a, b, true)
 	return &operand{abi: &ctx.cfg.ABI, typ: rt}
 }
 
@@ -4126,7 +4146,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -4147,7 +4167,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -4173,7 +4193,7 @@ func (n *MultiplicativeExpression) check(ctx *context) Operand {
 			break
 		}
 
-		a, b = usualArithmeticConversions(ctx, &n.Token, a, b)
+		a, b = usualArithmeticConversions(ctx, &n.Token, a, b, true)
 		n.promote = a.Type()
 		if a.Value() == nil || b.Value() == nil {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: a.Type()}
@@ -4745,8 +4765,10 @@ func (n *DeclarationList) checkFn(ctx *context, typ Type, s Scope) {
 				Case:  DirectDeclaratorIdent,
 				Token: Token{Rune: IDENTIFIER, Value: nm},
 			},
-			IsParameter: true,
-			typ:         ctx.cfg.ABI.Type(Int),
+			IsParameter:  true,
+			Linkage:      None,
+			StorageClass: Automatic,
+			typ:          ctx.cfg.ABI.Type(Int),
 		}
 		s.declare(nm, d)
 		params[i] = &Parameter{d, d.typ}
