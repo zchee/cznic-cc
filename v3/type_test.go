@@ -228,8 +228,11 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles bool
 			return nil
 		}
 
+		cache = newPPCache()
+		if strings.Contains(filepath.Base(path), "limits-") {
+			debug.FreeOSMemory()
+		}
 		files++
-
 		if re != nil && !re.MatchString(path) {
 			return nil
 		}
@@ -257,6 +260,9 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles bool
 		if err = testTranslateAST.Typecheck(); err != nil {
 			t.Error(err)
 			return nil
+		}
+		if strings.Contains(filepath.Base(path), "limits-") {
+			debug.FreeOSMemory()
 		}
 
 		ok++

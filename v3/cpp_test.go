@@ -45,6 +45,7 @@ func TestCPPExpand(t *testing.T) {
 			return err
 		}
 
+		cache = newPPCache()
 		cpp := newCPP(ctx)
 		var b strings.Builder
 		expParth := path + ".expect"
@@ -131,6 +132,7 @@ func TestTCCExpand(t *testing.T) {
 			return nil
 		}
 
+		cache = newPPCache()
 		files++
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, files, path)

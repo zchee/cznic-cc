@@ -369,6 +369,7 @@ func TestScanner3(t *testing.T) {
 			return nil
 		}
 
+		cache = newPPCache()
 		limit--
 		files++
 		f, err := os.Open(path)
@@ -487,6 +488,7 @@ func TestScannerTranslationPhase3(t *testing.T) {
 			return nil
 		}
 
+		cache = newPPCache()
 		limit--
 		files++
 		f, err := os.Open(path)

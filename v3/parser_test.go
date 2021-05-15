@@ -155,6 +155,7 @@ func TestParseJhjourdan(t *testing.T) {
 			return nil
 		}
 
+		cache = newPPCache()
 		n++
 		_, expectFail := mustFail[filepath.Base(path)]
 		switch _, err := Parse(cfg, nil, nil, []Source{{Name: path, DoNotCache: true}}); {
@@ -328,6 +329,7 @@ func testParseDir(t *testing.T, cfg *Config, predef, dir string, hfiles, must bo
 			return nil
 		}
 
+		cache = newPPCache()
 		files++
 		if re != nil && !re.MatchString(path) {
 			ok++
