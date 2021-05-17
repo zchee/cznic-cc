@@ -10,6 +10,8 @@ import (
 	"math"
 	"os"
 	"runtime"
+
+	"modernc.org/mathutil"
 )
 
 var (
@@ -913,40 +915,63 @@ func (a *ABI) msPackedLayout(ctx *context, n Node, t *structType) (r *structType
 	}
 
 	var off int64 // In bits.
-	align := int(t.typeBase.align)
 	var prev *field
-	for _, f := range t.fields {
+	align := int(t.typeBase.align)
+	for i, f := range t.fields {
+	out:
 		switch {
 		case f.isBitField:
 			al := f.Type().Align()
-			if prev != nil {
-				switch {
-				case prev.isBitField && prev.Type().Size() != f.Type().Size():
-					off = roundup(off, 8*int64(prev.Type().Align()))
-				case !prev.isBitField:
-					off = roundup(off, 8*int64(al))
-				default:
-					// Adjacent bit-fields are packed into the same 1-, 2-, or 4-byte allocation
-					// unit if the integral types are the same size and if the next bit-field fits
-					// into the current allocation unit without crossing the boundary imposed by
-					// the common alignment requirements of the bit-fields.
-				}
+			switch {
+			case prev != nil && prev.IsBitField() && prev.Type().Size() != f.Type().Size():
+				off = mathutil.MaxInt64(off, int64(prev.Offset()*8)+int64(prev.BitFieldOffset()+8*prev.Type().Align()))
+				off = roundup(off, 8*int64(align))
+				f.offset = uintptr(off >> 3)
+				f.bitFieldOffset = 0
+				f.bitFieldMask = 1<<f.bitFieldWidth - 1
+				off += int64(f.bitFieldWidth)
+				f.promote = integerPromotion(a, f.Type())
+				break out
 			}
 
-			f.offset = uintptr(off >> 3)
-			f.bitFieldOffset = byte(off & 7)
-			f.bitFieldMask = (1<<f.bitFieldWidth - 1) << f.bitFieldOffset
-			off += int64(f.bitFieldWidth)
-			f.promote = integerPromotion(a, f.Type())
+			// http://jkz.wtf/bit-field-packing-in-gcc-and-clang
+
+			// 1. Jump backwards to nearest address that would support this type. For
+			// example if we have an int jump to the closest address where an int could be
+			// stored according to the platform alignment rules.
+			down := rounddown(off, 8*int64(al))
+
+			// 2. Get sizeof(current field) bytes from that address.
+			alloc := int64(f.Type().Size()) * 8
+			need := int64(f.bitFieldWidth)
+			if need == 0 && i != 0 {
+				off = roundup(off, 8*int64(al))
+				continue
+			}
+
+			used := off - down
+			switch {
+			case alloc-used >= need:
+				// 3. If the number of bits that we need to store can be stored in these bits,
+				// put the bits in the lowest possible bits of this block.
+				off = down + used
+				f.offset = uintptr(down >> 3)
+				f.bitFieldOffset = byte(used)
+				f.bitFieldMask = (1<<f.bitFieldWidth - 1) << used
+				off += int64(f.bitFieldWidth)
+				f.promote = integerPromotion(a, f.Type())
+			default:
+				// 4. Otherwise, pad the rest of this block with zeros, and store the bits that
+				// make up this bit-field in the lowest bits of the next block.
+				off = roundup(off, 8*int64(al))
+				f.offset = uintptr(off >> 3)
+				f.bitFieldOffset = 0
+				f.bitFieldMask = 1<<f.bitFieldWidth - 1
+				off += int64(f.bitFieldWidth)
+				f.promote = integerPromotion(a, f.Type())
+			}
 		default:
-			if prev != nil && prev.isBitField {
-				off = roundup(off, 8*int64(prev.Type().Align()))
-			}
-			al := f.Type().Align()
-			if al > align {
-				align = al
-			}
-			off = roundup(off, 8*int64(al))
+			off = roundup(off, 8)
 			f.offset = uintptr(off) >> 3
 			off += 8 * int64(f.Type().Size())
 			f.promote = integerPromotion(a, f.Type())
@@ -962,10 +987,16 @@ func (a *ABI) msPackedLayout(ctx *context, n Node, t *structType) (r *structType
 	}
 	t.align = byte(align)
 	t.fieldAlign = byte(align)
-	off0 := off
-	off = roundup(off, 8*int64(align))
-	if lf != nil && !lf.IsBitField() {
-		lf.pad = byte(off-off0) >> 3
+	switch {
+	case lf != nil && lf.IsBitField():
+		off = mathutil.MaxInt64(off, int64(lf.Offset()*8)+int64(lf.BitFieldOffset()+8*lf.Type().Align()))
+		off = roundup(off, 8*int64(align))
+	default:
+		off0 := off
+		off = roundup(off, 8*int64(align))
+		if lf != nil && !lf.IsBitField() {
+			lf.pad = byte(off-off0) >> 3
+		}
 	}
 	t.size = uintptr(off >> 3)
 	ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}

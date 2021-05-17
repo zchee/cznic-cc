@@ -2774,6 +2774,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 			s := t.String()
 			s = s[1 : len(s)-1]
 			c.file.AddLineInfo(int(n.toks[len(n.toks)-1].pos), s, int(ln))
+			c.fileMacro.repl[0].value = t.value
 			for len(toks) != 0 && toks[0].char == ' ' {
 				toks = toks[1:]
 			}

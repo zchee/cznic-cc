@@ -1586,15 +1586,20 @@ func (n *PostfixExpression) indexAddr(ctx *context, nd Node, pe, e Operand) Oper
 		hasx = true
 	}
 	off := x * pe.Type().Elem().Size()
-	switch pe.Value().(type) {
+	switch y := pe.Value().(type) {
 	case StringValue, WideStringValue:
 		if hasx {
 			return &lvalue{Operand: &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), value: pe.Value(), offset: off}}
 		}
+	case Uint64Value:
+		if hasx {
+			return &lvalue{Operand: &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), value: y + Uint64Value(off)}}
+		}
 	}
 
 	if d := pe.Declarator(); d != nil && hasx {
-		return &lvalue{Operand: &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), offset: pe.Offset() + off}, declarator: d}
+		r := &lvalue{Operand: &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem()), offset: pe.Offset() + off}, declarator: d}
+		return r
 	}
 
 	return &lvalue{Operand: &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, pe.Type().Elem())}}
@@ -4006,7 +4011,28 @@ func (n *AdditiveExpression) check(ctx *context) Operand {
 		}
 
 		if t := a.Type().Decay(); t.Kind() == Ptr && b.Type().IsScalarType() {
-			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: t}
+			var x uintptr
+			hasx := false
+			switch v := b.Value().(type) {
+			case Int64Value:
+				x = uintptr(v)
+				hasx = true
+			case Uint64Value:
+				x = uintptr(v)
+				hasx = true
+			}
+			off := x * a.Type().Elem().Size()
+			switch y := a.Value().(type) {
+			case StringValue:
+				n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, a.Type().Elem()), value: y, offset: a.Offset() + off}
+			default:
+				switch {
+				case a.Value() == nil && a.Declarator() != nil && hasx:
+					n.Operand = &lvalue{Operand: &operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, a.Type().Elem()), offset: a.Offset() + off}, declarator: a.Declarator()}
+				default:
+					n.Operand = &operand{abi: &ctx.cfg.ABI, typ: t}
+				}
+			}
 			break
 		}
 

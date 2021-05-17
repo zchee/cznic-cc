@@ -961,3 +961,89 @@ struct xxx {
 		t.Fatalf("xxx.c offset: got %v, exp %v", g, e)
 	}
 }
+
+func isConstInitializer(n *Initializer) bool {
+	if n.IsConst() {
+		return true
+	}
+
+	if e := n.AssignmentExpression; e != nil {
+		if x, ok := e.Operand.Value().(*InitializerValue); ok && x.IsConst() {
+			return true
+		}
+	}
+
+	for list := n.InitializerList; list != nil; list = list.InitializerList {
+		if !isConstInitializer(list.Initializer) {
+			return false
+		}
+	}
+
+	e := n.AssignmentExpression
+	if e == nil {
+		return true
+	}
+
+	switch t := e.Operand.Type().Decay(); t.Kind() {
+	case Function:
+		return true
+	case Ptr:
+		if d := e.Operand.Declarator(); d != nil && d.StorageClass == Static {
+			return true
+		}
+	}
+
+	// trc("%v: %T %v, %p", e.Position(), e.Operand.Value(), e.Operand.Type(), e.Operand.Declarator())
+	return false
+}
+
+func TestConstInitializer(t *testing.T) {
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ast, err := Translate(&Config{ABI: abi}, nil, nil, []Source{
+		{Name: "x.c", Value: `
+void *x2 = (char*)50;
+void *x3 = &((char*)50)[2];
+void *x4 = &((char*)50)[-2];
+int *x5[] = {&x2, &x2, (int *) &x3};
+int **x6[] = {&x5[1], x5 + 2};
+int x7[] = {1, 2, 3, 4, 5};
+int *x8 = x7;
+char *x9 = {"Hello" + 1};
+
+//TODO typedef float vec_t[3];
+//TODO 
+//TODO typedef struct {
+//TODO   vec_t loc;
+//TODO } point_t;
+//TODO 
+//TODO static int x17[] = {(unsigned long) &((point_t *) 0)->loc[0], (unsigned long) &((point_t *) 0)->loc[2], (unsigned long) &((vec_t *) 0)[1]};
+
+`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	Inspect(ast.TranslationUnit, func(n Node, entry bool) bool {
+		if !entry {
+			return true
+		}
+
+		if x, ok := n.(*Initializer); ok {
+			if x.Parent() != nil {
+				return true
+			}
+
+			if isConstInitializer(x) {
+				return true
+			}
+
+			t.Errorf("%v: not constant", x.Position())
+		}
+		return true
+	})
+}
