@@ -4610,6 +4610,10 @@ func (n *AttributeValue) check(ctx *context, t *typeBase) {
 			switch x := n.ExpressionList.AssignmentExpression.Operand.Value().(type) {
 			case Int64Value:
 				t.setAligned(int(x))
+				switch t.Kind() {
+				case Struct, Union:
+					ctx.structs[StructInfo{Size: t.Size(), Align: t.Align()}] = struct{}{}
+				}
 			}
 		}
 	default:
@@ -4667,8 +4671,10 @@ func (n *AlignmentSpecifier) check(ctx *context) {
 	switch n.Case {
 	case AlignmentSpecifierAlignasType: // "_Alignas" '(' TypeName ')'
 		n.TypeName.check(ctx, false, false)
+		//TODO actually set the alignment
 	case AlignmentSpecifierAlignasExpr: // "_Alignas" '(' ConstantExpression ')'
 		n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
+		//TODO actually set the alignment
 	default:
 		panic(todo(""))
 	}

@@ -11,6 +11,7 @@ import (
 	"os"
 	"runtime"
 
+	"lukechampine.com/uint128"
 	"modernc.org/mathutil"
 )
 
@@ -207,8 +208,20 @@ func roundup(n, to int64) int64 {
 	return n
 }
 
+func roundup128(n uint128.Uint128, to uint64) uint128.Uint128 {
+	if r := n.Mod(uint128.From64(to)); !r.IsZero() {
+		return n.Add64(to).Sub(r)
+	}
+
+	return n
+}
+
 func rounddown(n, to int64) int64 {
 	return n &^ (to - 1)
+}
+
+func rounddown128(n uint128.Uint128, to uint64) uint128.Uint128 {
+	return n.And(uint128.Uint128{Hi: ^uint64(0), Lo: ^(to - 1)})
 }
 
 func normalizeBitFieldWidth(n byte) byte {
@@ -424,7 +437,7 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 	}
 
 	if t.Kind() == Union {
-		var off int64 // In bits.
+		var off uint128.Uint128 // In bits.
 		align := int(t.typeBase.align)
 		for _, f := range t.fields {
 			switch {
@@ -432,8 +445,8 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 				f.offset = 0
 				f.bitFieldOffset = 0
 				f.bitFieldMask = 1<<f.bitFieldWidth - 1
-				if int64(f.bitFieldWidth) > off {
-					off = int64(f.bitFieldWidth)
+				if uint64(f.bitFieldWidth) > off.Lo {
+					off.Lo = uint64(f.bitFieldWidth)
 				}
 			default:
 				al := f.Type().Align()
@@ -441,7 +454,8 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 					align = al
 				}
 				f.offset = 0
-				if off2 := 8 * int64(f.Type().Size()); off2 > off {
+				off2 := uint128.From64(uint64(f.Type().Size())).Mul64(8)
+				if off2.Cmp(off) > 0 {
 					off = off2
 				}
 			}
@@ -449,13 +463,13 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 		}
 		t.align = byte(align)
 		t.fieldAlign = byte(align)
-		off = roundup(off, 8*int64(align))
-		t.size = uintptr(off >> 3)
+		off = roundup128(off, 8*uint64(align))
+		t.size = uintptr(off.Rsh(3).Lo)
 		ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
 		return t
 	}
 
-	var off int64 // In bits.
+	var off uint128.Uint128 // In bits.
 	align := int(t.typeBase.align)
 	for i, f := range t.fields {
 		switch {
@@ -467,38 +481,38 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 			// 1. Jump backwards to nearest address that would support this type. For
 			// example if we have an int jump to the closest address where an int could be
 			// stored according to the platform alignment rules.
-			down := rounddown(off, 8*int64(al))
+			down := rounddown128(off, 8*uint64(al))
 
 			// 2. Get sizeof(current field) bytes from that address.
 			alloc := int64(f.Type().Size()) * 8
 			need := int64(f.bitFieldWidth)
 			if need == 0 && i != 0 {
-				off = roundup(off, 8*int64(al))
+				off = roundup128(off, 8*uint64(al))
 				continue
 			}
 
 			if al > align {
 				align = al
 			}
-			used := off - down
+			used := int64(off.Sub(down).Lo)
 			switch {
 			case alloc-used >= need:
 				// 3. If the number of bits that we need to store can be stored in these bits,
 				// put the bits in the lowest possible bits of this block.
-				off = down + used
-				f.offset = uintptr(down >> 3)
+				off = down.Add64(uint64(used))
+				f.offset = uintptr(down.Rsh(3).Lo)
 				f.bitFieldOffset = byte(used)
 				f.bitFieldMask = (1<<f.bitFieldWidth - 1) << used
-				off += int64(f.bitFieldWidth)
+				off = off.Add64(uint64(f.bitFieldWidth))
 				f.promote = integerPromotion(a, f.Type())
 			default:
 				// 4. Otherwise, pad the rest of this block with zeros, and store the bits that
 				// make up this bit-field in the lowest bits of the next block.
-				off = roundup(off, 8*int64(al))
-				f.offset = uintptr(off >> 3)
+				off = roundup128(off, 8*uint64(al))
+				f.offset = uintptr(off.Rsh(3).Lo)
 				f.bitFieldOffset = 0
 				f.bitFieldMask = 1<<f.bitFieldWidth - 1
-				off += int64(f.bitFieldWidth)
+				off = off.Add64(uint64(f.bitFieldWidth))
 				f.promote = integerPromotion(a, f.Type())
 			}
 		default:
@@ -506,9 +520,10 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 			if al > align {
 				align = al
 			}
-			off = roundup(off, 8*int64(al))
-			f.offset = uintptr(off) >> 3
-			off += 8 * int64(f.Type().Size())
+			off = roundup128(off, 8*uint64(al))
+			f.offset = uintptr(off.Rsh(3).Lo)
+			sz := uint128.From64(uint64(f.Type().Size()))
+			off = off.Add(sz.Mul64(8))
 			f.promote = integerPromotion(a, f.Type())
 		}
 	}
@@ -522,11 +537,11 @@ func (a *ABI) gccLayout(ctx *context, n Node, t *structType) (r *structType) {
 	t.align = byte(align)
 	t.fieldAlign = byte(align)
 	off0 := off
-	off = roundup(off, 8*int64(align))
+	off = roundup128(off, 8*uint64(align))
 	if lf != nil && !lf.IsBitField() {
-		lf.pad = byte(off-off0) >> 3
+		lf.pad = byte(off.Sub(off0).Rsh(3).Lo)
 	}
-	t.size = uintptr(off >> 3)
+	t.size = uintptr(off.Rsh(3).Lo)
 	ctx.structs[StructInfo{Size: t.size, Align: t.Align()}] = struct{}{}
 	return t
 }
