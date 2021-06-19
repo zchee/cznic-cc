@@ -110,7 +110,7 @@ func (n *FunctionDefinition) checkBody(ctx *context) {
 	}
 
 	n.checked = true
-	if n.Declarator.isExternInline() {
+	if n.Declarator.isExternInline() && !ctx.cfg.CheckExternInlineFnBodies {
 		return
 	}
 
@@ -238,6 +238,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		n.Declarator.hasInitializer = true
 		n.Declarator.Write++
 		n.Initializer.check(ctx, &n.Initializer.list, typ, n.Declarator.StorageClass, nil, 0, nil, nil)
+		n.Initializer.setConstZero()
 		n.initializer = &InitializerValue{typ: typ, initializer: n.Initializer}
 		if ctx.cfg.TrackAssignments {
 			setLHS(map[*Declarator]struct{}{n.Declarator: {}}, n.Initializer)
@@ -247,18 +248,51 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 	}
 }
 
-// [0], 6.7.8 Initialization
-func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, fld Field, off uintptr, il **InitializerList, designation *Designation) {
+func (n *Initializer) setConstZero() {
+	switch n.Case {
+	case InitializerExpr: // AssignmentExpression
+		if op := n.AssignmentExpression.Operand; op != nil {
+			n.isConst = op.IsConst()
+			n.isZero = op.IsZero()
+		}
+	case InitializerInitList: // '{' InitializerList ',' '}'
+		li := n.InitializerList
+		li.setConstZero()
+		n.isConst = li.IsConst()
+		n.isZero = li.IsZero()
+	default:
+		panic(todo("%v:", n.Position()))
+	}
+}
+
+func (n *InitializerList) setConstZero() {
 	if n == nil {
 		return
 	}
 
+	n0 := n
+	n0.isConst = true
+	n0.isZero = true
+	for ; n != nil; n = n.InitializerList {
+		in := n.Initializer
+		in.setConstZero()
+		n0.isConst = n0.isConst && in.isConst
+		n0.isZero = n0.isZero && in.isZero
+	}
+}
+
+// [0], 6.7.8 Initialization
+func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, fld Field, off uintptr, il *InitializerList, designatorList *DesignatorList) *InitializerList {
 	// 3 - The type of the entity to be initialized shall be an array of
 	// unknown size or an object type that is not a variable length array
 	// type.
 	if t.Kind() == Array && t.IsVLA() {
 		ctx.errNode(n, "cannot initialize a variable length array: %v", t)
-		return
+		if il != nil {
+			return il.InitializerList
+		}
+
+		return nil
 	}
 
 	defer func(d int) { ctx.readDelta = d }(ctx.readDelta)
@@ -280,23 +314,23 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 	// for simple assignment apply, taking the type of the scalar to be the
 	// unqualified version of its declared type.
 	if t.IsScalarType() && single != nil {
+		if designatorList != nil {
+			panic(todo("", n.Position()))
+		}
+
 		//TODO check compatible
 		*list = append(*list, single)
-		switch {
-		case op == nil || op.Value() == nil:
-			n.isConst = false
-			n.isZero = false
-		default:
-			n.isConst = op.isConst()
-			n.isZero = op.IsZero()
-		}
 		switch {
 		case t.Kind() == op.Type().Kind():
 			single.AssignmentExpression.InitializerOperand = op
 		default:
 			single.AssignmentExpression.InitializerOperand = op.convertTo(ctx, n, t)
 		}
-		return
+		if il != nil {
+			return il.InitializerList
+		}
+
+		return nil
 	}
 
 	// 12: The rest of this subclause deals with initializers for objects that have
@@ -310,10 +344,16 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 	// latter case, the initial value of the object, including unnamed members, is
 	// that of the expression.
 	if n.Case == InitializerExpr && sc == Automatic && (k == Struct || k == Union || k == Vector) && t.IsCompatible(op.Type()) {
-		n.isConst = false
-		n.isZero = false
+		if designatorList != nil {
+			panic(todo("", n.Position()))
+		}
+
 		*list = append(*list, single)
-		return
+		if il != nil {
+			return il.InitializerList
+		}
+
+		return nil
 	}
 
 	if k == Array && single != nil {
@@ -326,14 +366,20 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 			// is room or if the array is of unknown size) initialize the elements of the
 			// array.
 			if x, ok := op.Value().(StringValue); ok {
-				n.isConst = true
-				n.isZero = false
+				if designatorList != nil {
+					panic(todo("", n.Position()))
+				}
+
 				*list = append(*list, single)
 				str := StringID(x).String()
 				if t.IsIncomplete() {
 					t.setLen(uintptr(len(str)) + 1)
 				}
-				return
+				if il != nil {
+					return il.InitializerList
+				}
+
+				return nil
 			}
 		case isWCharType(et):
 			// 15: An array with element type compatible with wchar_t may be initialized by
@@ -342,14 +388,20 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 			// character if there is room or if the array is of unknown size) initialize
 			// the elements of the array.
 			if x, ok := op.Value().(WideStringValue); ok {
-				n.isConst = true
-				n.isZero = false
+				if designatorList != nil {
+					panic(todo("", n.Position()))
+				}
+
 				*list = append(*list, single)
 				str := []rune(StringID(x).String())
 				if t.IsIncomplete() {
 					t.setLen(uintptr(len(str)) + 1)
 				}
-				return
+				if il != nil {
+					panic(todo(""))
+				}
+
+				return nil
 			}
 		}
 	}
@@ -359,8 +411,18 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 	// named members.
 	if n.Case == InitializerExpr {
 		if il != nil {
-			*il = (*il).check(ctx, list, t, sc, off, designation)
-			return
+			switch t.Kind() {
+			case Array:
+				return il.checkArray(ctx, list, t, sc, off, designatorList)
+			case Struct:
+				return il.checkStruct(ctx, list, t, sc, off, designatorList)
+			case Union:
+				return il.checkUnion(ctx, list, t, sc, off, designatorList)
+			case Vector:
+				return il.InitializerList //TODO
+			default:
+				panic(todo("", n.Position(), t, t.Kind()))
+			}
 		}
 
 		var l *InitializerList
@@ -381,51 +443,61 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 			return true
 		})
 		if l != nil {
-			if l.check(ctx, list, t, sc, off, designation) != nil {
-				panic(todo("%v: internal error: %v", n, t))
-			}
-
-			return
+			l.check(ctx, list, t, sc, off, designatorList)
+			return nil
 		}
 
 		ctx.errNode(n, "initializer for an object that has aggregate or union type shall be a brace-enclosed list of initializers for the elements or named members: %v", t)
-		return
-	}
-
-	n.InitializerList.check(ctx, list, t, sc, off, designation)
-}
-
-func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr) (r *InitializerList) {
-	if n == nil {
 		return nil
 	}
 
+	n.InitializerList.check(ctx, list, t, sc, off, designatorList)
+	if il != nil {
+		return il.InitializerList
+	}
+
+	return nil
+}
+
+func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) *InitializerList {
 	elem := t.Elem()
 	esz := elem.Size()
 	length := t.Len()
 	var i, maxI uintptr
-	n.isConst = true
-	n.isZero = true
-	n0 := n
 loop:
 	for n != nil {
-		n2 := n
 		switch {
-		case n.Designation != nil:
-			var t2 Type
-			var off2 uintptr
-			i, t2, off2 = n.Designation.checkArray(ctx, t)
-			if !t.IsIncomplete() && i >= length {
+		case designatorList == nil && n.Designation != nil:
+			designatorList = n.Designation.DesignatorList
+			fallthrough
+		case designatorList != nil:
+			d := designatorList.Designator
+			switch d.Case {
+			case DesignatorIndex: // '[' ConstantExpression ']'
+				switch x := d.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr).Value().(type) {
+				case Int64Value:
+					i = uintptr(x)
+				case Uint64Value:
+					i = uintptr(x)
+				default:
+					panic(todo("%v: %T", n.Position(), x))
+				}
+			case DesignatorField: // '.' IDENTIFIER
+				panic(todo("", n.Position(), d.Position()))
+			case DesignatorField2: // IDENTIFIER ':'
+				panic(todo("", n.Position(), d.Position()))
+			default:
 				panic(todo(""))
 			}
 
-			if i > maxI {
-				maxI = i
+			designatorList = designatorList.DesignatorList
+			next := n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, designatorList)
+			if designatorList != nil {
+				panic(todo("", n.Position(), d.Position()))
 			}
-			n.Initializer.check(ctx, list, t2, sc, nil, off+off2, &n, nil)
-			n0.isConst = n0.isConst && n2.Initializer.isConst
-			n0.isZero = n0.isZero && n2.Initializer.isZero
+
 			i++
+			n = next
 		default:
 			if !t.IsIncomplete() && i >= length {
 				break loop
@@ -434,13 +506,9 @@ loop:
 			if i > maxI {
 				maxI = i
 			}
-			n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, &n, nil)
-			n0.isConst = n0.isConst && n2.Initializer.isConst
-			n0.isZero = n0.isZero && n2.Initializer.isZero
+			next := n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, nil)
 			i++
-		}
-		if n == n2 {
-			n = n.InitializerList
+			n = next
 		}
 	}
 	if t.IsIncomplete() {
@@ -449,73 +517,49 @@ loop:
 	return n
 }
 
-func (n *Designation) checkArray(ctx *context, t Type) (ix uintptr, elem Type, off uintptr) {
-	first := true
-	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
-		d := n.Designator
-		switch d.Case {
-		case DesignatorIndex: // '[' ConstantExpression ']'
-			switch x := d.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr).Value().(type) {
-			case Int64Value:
-				if first {
-					ix = uintptr(x)
-				}
-				elem = t.Elem()
-				off += ix * elem.Size()
-				t = elem
-			case Uint64Value:
-				if first {
-					ix = uintptr(x)
-				}
-				elem = t.Elem()
-				off += ix * elem.Size()
-				t = elem
-			default:
-				panic(todo("%v: %T", n.Position(), x))
-			}
-		default:
-			panic(todo(""))
-		}
-		first = false
-	}
-	return ix, elem, off
-}
-
-func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designation *Designation) (r *InitializerList) {
-	if n == nil {
-		return nil
-	}
-
+func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) *InitializerList {
 	t = t.underlyingType()
-	//trc("==== struct %v: %v, off %v", n.Position(), t, off) //TODO-
+	// trc("==== struct %v: %v, off %v", n.Position(), t, off) //TODO-
 	nf := t.NumField()
 	i := []int{0}
 	var f Field
-	// var off2 uintptr
-	n.isConst = true
-	n.isZero = true
-	n0 := n
 	for n != nil {
-		n2 := n
 		switch {
-		case n.Designation != nil:
-			off2, f0, f, parent, ft := n.Designation.checkStruct(ctx, t, designation)
-			i[0] = f0.Index()
-			if parent == nil {
+		case designatorList == nil && n.Designation != nil:
+			designatorList = n.Designation.DesignatorList
+			fallthrough
+		case designatorList != nil:
+			d := designatorList.Designator
+			var nm StringID
+			switch d.Case {
+			case DesignatorIndex: // '[' ConstantExpression ']'
+				panic(todo("", n.Position(), d.Position()))
+			case DesignatorField: // '.' IDENTIFIER
+				nm = d.Token2.Value
+			case DesignatorField2: // IDENTIFIER ':'
+				nm = d.Token.Value
+			default:
 				panic(todo(""))
 			}
 
-			designation = n.Designation
-			if parent != t {
-				// trc("switch ft to %v", parent) //TODO-
-				ft = parent
+			f, xa, ok := t.FieldByName2(nm)
+			if !ok {
+				panic(todo("%v: %q", d.Position(), nm))
 			}
-			n.Initializer.check(ctx, list, ft, sc, f, off+off2+f.Offset(), &n, designation)
-			designation = nil
-			n2.Initializer.field0 = f0
-			n0.isConst = n0.isConst && n2.Initializer.isConst
-			n0.isZero = n0.isZero && n2.Initializer.isZero
-			i[0]++
+
+			switch {
+			case len(xa) != 1:
+				panic(todo("", d.Position()))
+			default:
+				designatorList = designatorList.DesignatorList
+				next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList)
+				if designatorList != nil && designatorList.DesignatorList != nil {
+					panic(todo("", d.Position()))
+				}
+
+				i[0] = xa[0] + 1
+				n = next
+			}
 		default:
 			// [0], 6.7.8 Initialization
 			//
@@ -524,7 +568,6 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 			// structure and union type do not participate in
 			// initialization.  Unnamed members of structure objects have
 			// indeterminate value even after initialization.
-			designation = nil
 			for ; ; i[0]++ {
 				if i[0] >= nf {
 					return n
@@ -532,16 +575,12 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 
 				f = t.FieldByIndex(i)
 				if f.Name() != 0 || !f.Type().IsBitFieldType() {
-					n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), &n, nil)
-					n0.isConst = n0.isConst && n2.Initializer.isConst
-					n0.isZero = n0.isZero && n2.Initializer.isZero
+					next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, nil)
 					i[0]++
+					n = next
 					break
 				}
 			}
-		}
-		if n == n2 {
-			n = n.InitializerList
 		}
 	}
 	return n
@@ -553,51 +592,60 @@ func spos(n Node) string {
 	return p.String()
 }
 
-func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designation *Designation) (r *InitializerList) {
-	if n == nil {
-		return nil
-	}
-
+func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) *InitializerList {
 	t = t.underlyingType()
-	//trc("==== union %v: %v, off %v", n.Position(), t, off) //TODO-
+	// trc("==== union %v: %v, off %v", n.Position(), t, off) //TODO-
 	nf := t.NumField()
 	i := []int{0}
-	// var off2 uintptr
-	n.isConst = true
-	n.isZero = true
-	n0 := n
 	for n != nil {
-		n2 := n
 		switch {
-		case n.Designation != nil:
-			off2, f0, f, parent, ft := n.Designation.checkStruct(ctx, t, designation)
-			designation = n.Designation
-			i[0] = f0.Index()
-			if parent == nil {
+		case designatorList == nil && n.Designation != nil:
+			designatorList = n.Designation.DesignatorList
+			fallthrough
+		case designatorList != nil:
+			d := designatorList.Designator
+			var nm StringID
+			switch d.Case {
+			case DesignatorIndex: // '[' ConstantExpression ']'
+				panic(todo("", n.Position(), d.Position()))
+			case DesignatorField: // '.' IDENTIFIER
+				nm = d.Token2.Value
+			case DesignatorField2: // IDENTIFIER ':'
+				nm = d.Token.Value
+			default:
 				panic(todo(""))
 			}
 
-			if parent != t {
-				// For example:
-				//
-				//	union U { // <- t
-				//		int a;
-				//		struct { // <- parent
-				//			int b;
-				//			int c;
-				//		};
-				//		int d;
-				//	};
-				//
-				// union U u = {.b = 1, 2};
-				// trc("switch ft to %v", parent) //TODO-
-				ft = parent
+			f, xa, ok := t.FieldByName2(nm)
+			if !ok {
+				panic(todo("", d.Position()))
 			}
-			n.Initializer.check(ctx, list, ft, sc, f, off+off2+f.Offset(), &n, designation)
-			n2.Initializer.field0 = f0
-			n0.isConst = n0.isConst && n2.Initializer.isConst
-			n0.isZero = n0.isZero && n2.Initializer.isZero
-			i[0]++
+
+			switch {
+			case len(xa) != 1:
+				var f2 Field
+				var off2 uintptr
+				for len(xa) != 1 {
+					f2 = t.FieldByIndex(xa[:1])
+					off2 += f2.Offset()
+					t = f2.Type()
+					xa = xa[1:]
+				}
+				next := n.Initializer.check(ctx, list, t, sc, f, off+off2+f.Offset(), n, designatorList)
+				if designatorList != nil && designatorList.DesignatorList != nil {
+					panic(todo("", n.Position(), d.Position()))
+				}
+
+				return next
+			default:
+				designatorList = designatorList.DesignatorList
+				next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList)
+				if designatorList != nil && designatorList.DesignatorList != nil {
+					panic(todo("", n.Position(), d.Position()))
+				}
+
+				return next
+			}
 		default:
 			// [0], 6.7.8 Initialization
 			//
@@ -606,7 +654,6 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 			// structure and union type do not participate in
 			// initialization.  Unnamed members of structure objects have
 			// indeterminate value even after initialization.
-			designation = nil
 			for ; ; i[0]++ {
 				if i[0] >= nf {
 					panic(todo(""))
@@ -614,82 +661,14 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 
 				f := t.FieldByIndex(i)
 				if f.Name() != 0 || !f.Type().IsBitFieldType() {
-					n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), &n, nil)
-					n0.isConst = n0.isConst && n2.Initializer.isConst
-					n0.isZero = n0.isZero && n2.Initializer.isZero
-					i[0]++
-					break
+					next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, nil)
+					return next
 				}
 			}
+			panic(todo("", n.Position()))
 		}
-		if n == n2 {
-			n = n.InitializerList
-		}
-		return n
 	}
 	return nil
-}
-
-func (n *Designation) checkStruct(ctx *context, t Type, designation *Designation) (off uintptr, rf0, rf Field, parent, dt Type) {
-	//trc("---- designation %v: %v, n %p, designation %p", n.Position(), t, n, designation) //TODO-
-	index := false
-	dt = t.underlyingType()
-	n0 := n
-	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
-		// If the designation argument equals n then use only the last designator of n.
-		if designation == n0 && n.DesignatorList != nil {
-			//trc("skipping non last item in designator list") //TODO-
-			continue
-		}
-
-		if !index && rf != nil {
-			off += rf.Offset()
-		}
-		d := n.Designator
-		var nm StringID
-		switch d.Case {
-		case DesignatorIndex: // '[' ConstantExpression ']'
-			if dt.Kind() != Array {
-				panic(todo(""))
-			}
-
-			op := d.ConstantExpression.check(ctx, mIntConstExpr)
-			if op == nil || op == noOperand {
-				return 0, rf0, rf, parent, dt
-			}
-
-			index = true
-			dt = dt.Elem()
-			switch x := op.Value().(type) {
-			case Int64Value:
-				off += uintptr(x) * dt.Size()
-			case Uint64Value:
-				off += uintptr(x) * dt.Size()
-			default:
-				panic(todo("%T", x))
-			}
-			continue
-		case DesignatorField: // '.' IDENTIFIER
-			nm = d.Token2.Value
-		case DesignatorField2: // IDENTIFIER ':'
-			nm = d.Token.Value
-		default:
-			panic(todo(""))
-		}
-		//trc("field %q", nm) //TODO-
-		f, ok := dt.FieldByName(nm)
-		if !ok {
-			panic(todo("%v: %v: %q", n.Position(), t, nm))
-		}
-
-		rf = f
-		if rf0 == nil {
-			rf0 = rf
-		}
-		dt = f.Type()
-		parent = f.Parent()
-	}
-	return off, rf0, rf, parent, dt
 }
 
 // Accept a single initializer, optionally enclosed in braces, but nested
@@ -703,7 +682,7 @@ func (n *Initializer) single() *Initializer {
 	case InitializerExpr: // AssignmentExpression
 		return n
 	case InitializerInitList: // '{' InitializerList ',' '}'
-		if n.InitializerList == nil {
+		if n.InitializerList == nil { //
 			return nil
 		}
 
@@ -717,36 +696,35 @@ func (n *Initializer) single() *Initializer {
 }
 
 // [0], 6.7.8 Initialization
-func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designation *Designation) (r *InitializerList) {
+func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) {
 	switch t.Kind() {
 	case Array, Vector:
-		if n == nil {
+		if n == nil { // {}
 			if t.IsIncomplete() {
 				t.setLen(0)
 			}
-			return nil
+			return
 		}
 
-		return n.checkArray(ctx, list, t, sc, off)
+		n.checkArray(ctx, list, t, sc, off, designatorList)
 	case Struct:
-		if n == nil {
-			return nil
+		if n == nil { // {}
+			return
 		}
 
-		return n.checkStruct(ctx, list, t, sc, off, designation)
+		n.checkStruct(ctx, list, t, sc, off, designatorList)
 	case Union:
-		if n == nil {
-			return nil
+		if n == nil { // {}
+			return
 		}
 
-		return n.checkUnion(ctx, list, t, sc, off, designation)
+		n.checkUnion(ctx, list, t, sc, off, designatorList)
 	default:
 		if n == nil || t == nil || t.Kind() == Invalid {
-			return nil
+			return
 		}
 
-		n.Initializer.check(ctx, list, t, sc, nil, off, &n, designation)
-		return n
+		n.Initializer.check(ctx, list, t, sc, nil, off, nil, designatorList)
 	}
 }
 
@@ -1486,7 +1464,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 
 		ot := ctx.cfg.ABI.Ptr(n, ft)
 		switch {
-		case op.isConst():
+		case op.IsConst():
 			switch x := op.Value().(type) {
 			case Uint64Value:
 				n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ot, value: x + Uint64Value(f.Offset())}
@@ -1534,7 +1512,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 
 		ot := ctx.cfg.ABI.Ptr(n, ft)
 		switch {
-		case op.isConst():
+		case op.IsConst():
 			switch x := op.Value().(type) {
 			case Uint64Value:
 				n.Operand = &operand{abi: &ctx.cfg.ABI, typ: ot, value: x + Uint64Value(f.Offset())}
@@ -1563,6 +1541,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
 			n.InitializerList.check(ctx, &n.InitializerList.list, t, Automatic, 0, nil)
+			n.InitializerList.setConstZero()
 			v = &InitializerValue{typ: ctx.cfg.ABI.Ptr(n, t), initializer: n.InitializerList}
 		}
 		n.Operand = &lvalue{Operand: (&operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Ptr(n, t), value: v}).normalize(ctx, n)}
@@ -2819,6 +2798,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.check(ctx, &n.InitializerList.list, t, Automatic, 0, nil)
+			n.InitializerList.setConstZero()
 			v = &InitializerValue{typ: t, initializer: n.InitializerList}
 		}
 		n.Operand = &lvalue{Operand: (&operand{abi: &ctx.cfg.ABI, typ: t, value: v}).normalize(ctx, n)}
@@ -2844,7 +2824,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 			break
 		}
 
-		if !expr1.isConst() {
+		if !expr1.IsConst() {
 			ctx.errNode(n, "first argument of __builtin_choose_expr must be a constant expression: %v %v", expr1.Value(), expr1.Type())
 			break
 		}
@@ -3013,7 +2993,7 @@ func (n *Expression) check(ctx *context) Operand {
 	case ExpressionComma: // Expression ',' AssignmentExpression
 		op := n.Expression.check(ctx)
 		n.Operand = n.AssignmentExpression.check(ctx)
-		if !op.isConst() && n.Operand.isConst() {
+		if !op.IsConst() && n.Operand.IsConst() {
 			n.Operand = &operand{abi: &ctx.cfg.ABI, typ: n.Operand.Type()}
 		}
 		n.IsSideEffectsFree = n.Expression.IsSideEffectsFree && n.AssignmentExpression.IsSideEffectsFree

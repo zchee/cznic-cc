@@ -511,6 +511,7 @@ type Config struct {
 
 	MaxErrors int // 0: default (10), < 0: unlimited, n: n.
 
+	CheckExternInlineFnBodies              bool // Translate will consider extern inline function bodies.
 	DebugIncludePaths                      bool // Output to stderr.
 	DebugWorkingDir                        bool // Output to stderr.
 	DoNotTypecheckAsm                      bool
