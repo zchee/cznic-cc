@@ -653,14 +653,21 @@ start:
 					}
 
 					arg := ap[0][0].value.String()
-					arg = arg[1 : len(arg)-1] // `"<x>"` -> `<x>`, `""y""` -> `"y"`
+					switch {
+					case strings.HasPrefix(arg, `"\"`): // `"\"stdio.h\""`
+						arg = arg[2:len(arg)-3] + `"` // -> `"stdio.h"`
+					case strings.HasPrefix(arg, `"<`): // `"<stdio.h>"`
+						arg = arg[1 : len(arg)-1] // -> `<stdio.h>`
+					default:
+						arg = ""
+					}
 					var tok3 token3
 					tok3.char = PPNUMBER
-					switch _, err := c.hasInclude(&tok, arg); {
-					case err != nil:
-						tok3.value = idZero
-					default:
-						tok3.value = idOne
+					tok3.value = idZero
+					if arg != "" {
+						if _, err := c.hasInclude(&tok, arg); err == nil {
+							tok3.value = idOne
+						}
 					}
 					tok := cppToken{token4{token3: tok3, file: c.file}, nil}
 					ts.ungets([]cppToken{tok})
@@ -702,7 +709,11 @@ start:
 	goto start
 }
 
-func (c *cpp) hasInclude(n Node, nm string) (string, error) {
+func (c *cpp) hasInclude(n Node, nm string) (rs string, err error) {
+	// nm0 := nm
+	// defer func() { //TODO-
+	// 	trc("nm0 %q nm %q rs %q err %v", nm0, nm, rs, err)
+	// }()
 	var (
 		b     byte
 		paths []string
