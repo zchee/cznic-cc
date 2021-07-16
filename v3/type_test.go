@@ -1047,3 +1047,19 @@ char *x9 = {"Hello" + 1};
 		return true
 	})
 }
+
+// https://gitlab.com/cznic/cc/-/issues/122
+func TestTranslateBug(t *testing.T) {
+	cfg := &Config{
+		ABI:                                   testABI,
+		ignoreUndefinedIdentifiers:            true,
+		EnableAssignmentCompatibilityChecking: true,
+	}
+	root := filepath.Join(testWD, filepath.FromSlash("testdata"))
+	ok := 0
+	const dir = "bug"
+	t.Run(dir, func(t *testing.T) {
+		ok += testTranslateDir(t, cfg, testPredef, filepath.Join(root, filepath.FromSlash(dir)), false)
+	})
+	t.Logf("ok %v", h(ok))
+}
