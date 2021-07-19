@@ -3097,7 +3097,7 @@ func (t *vectorType) underlyingType() Type { return t }
 
 func isCharType(t Type) bool {
 	switch t.Kind() {
-	case Char, SChar, UChar:
+	case Char, SChar, UChar, Int8, UInt8:
 		return true
 	}
 
