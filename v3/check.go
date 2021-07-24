@@ -1455,13 +1455,13 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 		panic(n.Position().String())
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-		op := n.PostfixExpression.check(ctx, false)
+		op := n.PostfixExpression.addrOf(ctx)
 		n.IsSideEffectsFree = n.PostfixExpression.IsSideEffectsFree
 		if d := n.PostfixExpression.Declarator(); d != nil {
 			setAddressTaken(n, d, "PostfixExpression '.' IDENTIFIER")
 			d.Read += ctx.readDelta
 		}
-		st := op.Type()
+		st := op.Type().Elem()
 		if k := st.Kind(); k == Invalid || k != Struct && k != Union {
 			//TODO report error
 			break
