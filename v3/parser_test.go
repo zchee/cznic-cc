@@ -488,6 +488,24 @@ func ExampleDirectDeclarator_line2() {
 	// }
 }
 
+func ExampleDirectDeclarator_line3() {
+	fmt.Println(exampleAST(0, "#line 1234\r\nint i;"))
+	// Output:
+	// &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1234:5: IDENTIFIER "i",
+	// }
+}
+
+func ExampleDirectDeclarator_line4() {
+	fmt.Println(exampleAST(0, "#line 1234 \"foo.c\"\r\nint i;"))
+	// Output:
+	// &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: foo.c:1234:5: IDENTIFIER "i",
+	// }
+}
+
 func ExamplePrimaryExpression_stringLiteral() {
 	fmt.Println(exampleAST(0, "char s[] = \"a\"\n\"b\"\n\"c\";"))
 	// Output:
