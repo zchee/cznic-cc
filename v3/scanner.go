@@ -744,7 +744,8 @@ func (s *scanner) parseLine(toks []token3) *ppLineDirective {
 		return &ppLineDirective{toks: toks}
 	default:
 		toks := s.scanLineToEOL(toks)
-		r := &ppLineDirective{toks: toks}
+		last := toks[len(toks)-1]
+		r := &ppLineDirective{toks: toks, nextPos: int(last.pos) + len(last.src.String())}
 		toks = toks[:len(toks)-1] // sans new-line
 		toks = ltrim3(toks)
 		toks = toks[1:] // Skip '#'

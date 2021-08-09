@@ -2743,8 +2743,9 @@ func (n *ppTextLine) getToks() []token3 { return n.toks }
 func (n *ppTextLine) translationPhase4(c *cpp) { c.send(n.toks) }
 
 type ppLineDirective struct {
-	toks []token3
-	args []token3
+	toks    []token3
+	args    []token3
+	nextPos int
 }
 
 func (n *ppLineDirective) getToks() []token3 { return n.toks }
@@ -2767,7 +2768,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 			toks = toks[1:]
 		}
 		if len(toks) == 1 {
-			c.file.AddLineInfo(int(n.toks[len(n.toks)-1].pos), c.file.Name(), int(ln))
+			c.file.AddLineInfo(int(n.nextPos)-1, c.file.Name(), int(ln))
 			return
 		}
 
@@ -2776,7 +2777,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 			toks = toks[1:]
 		}
 		if len(toks) == 0 {
-			c.file.AddLineInfo(int(n.toks[len(n.toks)-1].pos), c.file.Name(), int(ln))
+			c.file.AddLineInfo(int(n.nextPos)-1, c.file.Name(), int(ln))
 			return
 		}
 
@@ -2784,7 +2785,7 @@ func (n *ppLineDirective) translationPhase4(c *cpp) {
 		case STRINGLITERAL:
 			s := t.String()
 			s = s[1 : len(s)-1]
-			c.file.AddLineInfo(int(n.toks[len(n.toks)-1].pos), s, int(ln))
+			c.file.AddLineInfo(int(n.nextPos)-1, s, int(ln))
 			c.fileMacro.repl[0].value = t.value
 			for len(toks) != 0 && toks[0].char == ' ' {
 				toks = toks[1:]
