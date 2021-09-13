@@ -2444,21 +2444,7 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 				v = dir
 			}
 
-			var p string
-			switch {
-			case strings.HasPrefix(nm, "./"):
-				wd := c.ctx.cfg.WorkingDir
-				if wd == "" {
-					var err error
-					if wd, err = os.Getwd(); err != nil {
-						c.err(toks[0], "cannot determine working dir: %v", err)
-						return
-					}
-				}
-				p = filepath.Join(wd, nm)
-			default:
-				p = filepath.Join(v, nm)
-			}
+			p := filepath.Join(v, nm)
 			fi, err := c.ctx.statFile(p, sys)
 			if err != nil || fi.IsDir() {
 				continue
