@@ -305,3 +305,57 @@ func TestMacroPosition(t *testing.T) {
 		t.Errorf("bad position: %q != %q: %#v", g, e, pos)
 	}
 }
+
+// https://gitlab.com/cznic/cc/-/issues/127
+func TestIssue127(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := os.Chdir(wd); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if err := os.Chdir(filepath.FromSlash("testdata/issue127/")); err != nil {
+		t.Error(err)
+		return
+	}
+
+	cd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("working directory: %s", cd)
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	ast, err := Translate(
+		&Config{ABI: abi},
+		[]string{"include"},
+		nil,
+		[]Source{{Name: "main.c"}},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fd := ast.Scope[String("getopt")]
+	if len(fd) == 0 {
+		t.Errorf("cannot find getopt")
+		return
+	}
+
+	switch x := fd[0].(type) {
+	case *Declarator:
+		t.Logf("getopt C type: %s", x.Type())
+	default:
+		t.Errorf("unexpected getopt Go type: %T", x)
+	}
+}
