@@ -21,6 +21,10 @@ import (
 )
 
 func TestTranslateSQLite(t *testing.T) {
+	if runtime.GOOS == "netbsd" {
+		t.Skip("TODO") //TODO
+	}
+
 	cfg := &Config{ABI: testABI, EnableAssignmentCompatibilityChecking: true}
 	if isTestingMingw {
 		cfg.DoNotTypecheckAsm = true
