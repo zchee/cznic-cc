@@ -559,9 +559,9 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 				panic(todo("%v: t %v %q", d.Position(), t, nm))
 			}
 
+			t0 := t
 			switch {
 			case len(xa) != 1:
-				panic(todo("%v: t %v %q, xa %v", d.Position(), t, nm, xa))
 				var f2 Field
 				var off2 uintptr
 				for len(xa) != 1 {
@@ -571,6 +571,9 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 					xa = xa[1:]
 				}
 				n = n.Initializer.check(ctx, list, t, sc, f, off+off2+f.Offset(), n, designatorList)
+				if t.Kind() == Union {
+					t = t0
+				}
 			default:
 				n = n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList.DesignatorList)
 			}
