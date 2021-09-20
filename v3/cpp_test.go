@@ -102,6 +102,66 @@ func TestCPPExpand(t *testing.T) {
 	}
 }
 
+func TestPreprocess(t *testing.T) {
+	var re *regexp.Regexp
+	if s := *oRE; s != "" {
+		re = regexp.MustCompile(s)
+	}
+
+	if err := filepath.Walk(filepath.Join(testWD, filepath.FromSlash("testdata/preprocess")), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || (!strings.HasSuffix(path, ".c") && !strings.HasSuffix(path, ".h")) {
+			return nil
+		}
+
+		if re != nil && !re.MatchString(path) {
+			return nil
+		}
+
+		var b strings.Builder
+		if err = Preprocess(&Config{}, nil, nil, []Source{{Name: path}}, &b); err != nil {
+			return err
+		}
+
+		expParth := path + ".expect"
+		exp, err := ioutil.ReadFile(expParth)
+		if err != nil {
+			return err
+		}
+
+		if g, e := b.String(), string(exp); g != e {
+			a := strings.Split(g, "\n")
+			b := strings.Split(e, "\n")
+			n := len(a)
+			if len(b) > n {
+				n = len(b)
+			}
+			for i := 0; i < n; i++ {
+				var x, y string
+				if i < len(a) {
+					x = a[i]
+				}
+				if i < len(b) {
+					y = b[i]
+				}
+				x = strings.ReplaceAll(x, "\r", "")
+				y = strings.ReplaceAll(y, "\r", "")
+				if x != y {
+					t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
+				}
+			}
+		}
+
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+}
+
 func TestTCCExpand(t *testing.T) {
 	blacklist := map[string]struct{}{}
 	mustFail := map[string]string{
