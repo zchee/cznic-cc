@@ -412,9 +412,69 @@ func Preprocess(cfg *Config, includePaths, sysIncludePaths []string, sources []S
 }
 
 func wTok(w io.Writer, tok Token) (err error) {
-	_, err = fmt.Fprintf(w, "%s%s", tok.Sep, tok.Src)
+	switch tok.Rune {
+	case STRINGLITERAL, LONGSTRINGLITERAL:
+		_, err = fmt.Fprintf(w, `%s"%s"`, tok.Sep, cQuotedString(tok.String(), true))
+	case CHARCONST, LONGCHARCONST:
+		_, err = fmt.Fprintf(w, `%s'%s'`, tok.Sep, cQuotedString(tok.String(), false))
+	default:
+		_, err = fmt.Fprintf(w, "%s%s", tok.Sep, tok)
+	}
 	return err
 }
+
+func cQuotedString(s string, isString bool) []byte {
+	var b []byte
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch c {
+		case '\b':
+			b = append(b, '\\', 'b')
+			continue
+		case '\f':
+			b = append(b, '\\', 'f')
+			continue
+		case '\n':
+			b = append(b, '\\', 'n')
+			continue
+		case '\r':
+			b = append(b, '\\', 'r')
+			continue
+		case '\t':
+			b = append(b, '\\', 't')
+			continue
+		case '\\':
+			b = append(b, '\\', '\\')
+			continue
+		case '"':
+			switch {
+			case isString:
+				b = append(b, '\\', '"')
+			default:
+				b = append(b, '"')
+			}
+			continue
+		case '\'':
+			switch {
+			case isString:
+				b = append(b, '\'')
+			default:
+				b = append(b, '\\', '\'')
+			}
+			continue
+		}
+
+		switch {
+		case c < ' ' || c >= 0x7f:
+			b = append(b, '\\', octal(c>>6), octal(c>>3), octal(c))
+		default:
+			b = append(b, c)
+		}
+	}
+	return b
+}
+
+func octal(b byte) byte { return '0' + b&7 }
 
 var trcSource = Source{"<builtin-trc>", `
 extern void *stderr;
