@@ -570,7 +570,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 					t = f2.Type()
 					xa = xa[1:]
 				}
-				n = n.Initializer.check(ctx, list, t, sc, f, off+off2+f.Offset(), n, designatorList)
+				n = n.Initializer.check(ctx, list, t, sc, f, off+off2, n, designatorList)
 				if t.Kind() == Union {
 					t = t0
 				}
