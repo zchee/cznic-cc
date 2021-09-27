@@ -124,11 +124,6 @@ func TestTranslateTCC(t *testing.T) {
 }
 
 func TestTranslateGCC(t *testing.T) {
-	if runtime.GOARCH == "s390x" {
-		t.Skip("not enough RAM")
-		return
-	}
-
 	if testing.Short() {
 		t.Skip("-short")
 		return
