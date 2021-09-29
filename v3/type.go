@@ -3164,10 +3164,6 @@ func NewStructLayout(t Type) *StructLayout {
 		//trc("%q off %d pos %d %v %v %v", f.Name(), off, pos, ft, ft.Kind(), ft.IsIncomplete())
 		switch {
 		case ft.IsBitFieldType():
-			if f.BitFieldOffset() != 0 {
-				break
-			}
-
 			if p := int(off - pos); p != 0 {
 				if pads == nil {
 					pads = map[Field]int{}
