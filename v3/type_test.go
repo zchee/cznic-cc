@@ -1062,3 +1062,44 @@ func TestTranslateBug(t *testing.T) {
 	})
 	t.Logf("ok %v", h(ok))
 }
+
+// https://gitlab.com/cznic/ccgo/-/issues/20
+func TestEscE(t *testing.T) {
+	abi, err := NewABIFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ast, err := Translate(&Config{ABI: abi}, nil, nil, []Source{
+		{Name: "x.c", Value: `
+
+char *s = "abc\edef";
+
+`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ok := false
+	Inspect(ast.TranslationUnit, func(n Node, entry bool) bool {
+		if !entry {
+			return true
+		}
+
+		switch x := n.(type) {
+		case *Initializer:
+			switch y := x.AssignmentExpression.Operand.Value().(type) {
+			case StringValue:
+				ok = true
+				if g, e := StringID(y).String(), "abc\x1bdef"; g != e {
+					t.Fatalf("got %q, expected %q", g, e)
+				}
+			}
+		}
+		return true
+	})
+	if !ok {
+		t.Fatal(ast.Scope[String("s")])
+	}
+}

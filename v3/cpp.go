@@ -2182,6 +2182,8 @@ func decodeEscapeSequence(ctx *context, tok cppToken, s string) (rune, int) {
 		return 7, 2
 	case 'b':
 		return 8, 2
+	case 'e':
+		return 0x1b, 2
 	case 'f':
 		return 12, 2
 	case 'n':
