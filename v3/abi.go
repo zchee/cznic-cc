@@ -50,10 +50,9 @@ func NewABI(os, arch string) (ABI, error) {
 		return ABI{}, fmt.Errorf("unsupported os/arch pair: %s-%s", os, arch)
 	}
 	abi := ABI{
-		ByteOrder: order,
-		Types:     make(map[Kind]ABIType, len(types)),
-		//TODO: depends on the OS?
-		SignedChar: true,
+		ByteOrder:  order,
+		Types:      make(map[Kind]ABIType, len(types)),
+		SignedChar: abiSignedChar[[2]string{os, arch}],
 		os:         os,
 		arch:       arch,
 	}

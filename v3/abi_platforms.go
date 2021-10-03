@@ -3,13 +3,31 @@ package cc
 import "encoding/binary"
 
 // abiByteOrders contains byte order information for known architectures.
-var abiByteOrders = map[string]binary.ByteOrder{
-	"amd64": binary.LittleEndian,
-	"386":   binary.LittleEndian,
-	"arm":   binary.LittleEndian,
-	"arm64": binary.LittleEndian,
-	"s390x": binary.BigEndian,
-}
+var (
+	abiByteOrders = map[string]binary.ByteOrder{
+		"amd64": binary.LittleEndian,
+		"386":   binary.LittleEndian,
+		"arm":   binary.LittleEndian,
+		"arm64": binary.LittleEndian,
+		"s390x": binary.BigEndian,
+	}
+
+	abiSignedChar = map[[2]string]bool{
+		{"darwin", "arm64"}: false, //TODO verify
+		{"linux", "arm"}:    false,
+		{"linux", "arm64"}:  false,
+		{"linux", "s390x"}:  false,
+
+		{"darwin", "amd64"}:  true,
+		{"freebsd", "amd64"}: true,
+		{"linux", "386"}:     true,
+		{"linux", "amd64"}:   true,
+		{"netbsd", "amd64"}:  true,
+		{"openbsd", "amd64"}: true,
+		{"windows", "386"}:   true,
+		{"windows", "amd64"}: true,
+	}
+)
 
 // abiTypes contains size and alignment information for known OS/arch pairs.
 //
