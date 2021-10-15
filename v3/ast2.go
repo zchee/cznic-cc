@@ -907,6 +907,15 @@ func (n *EnumSpecifier) LexicalScope() Scope { return n.lexicalScope }
 // // TypeSpecifierTypedefName was resolved in, if any.
 // func (n *TypeSpecifier) ResolvedIn() Scope { return n.resolvedIn }
 
+func (n *TypeSpecifier) list() (r []*TypeSpecifier) {
+	switch n.Case {
+	case TypeSpecifierAtomic:
+		return n.AtomicTypeSpecifier.list
+	default:
+		return []*TypeSpecifier{n}
+	}
+}
+
 // // LexicalScope returns the lexical scope of n.
 // func (n *UnaryExpression) LexicalScope() Scope { return n.lexicalScope }
 

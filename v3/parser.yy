@@ -608,7 +608,8 @@ package cc // import "modernc.org/cc/v3"
 /*yy:case Expr       */ |	IDENTIFIER AttributeSpecifierList '=' ConstantExpression
 
 			/* [2], 6.7.2.4 Atomic type specifiers */
-			/*yy:example _Atomic(int) i; */
+			/*yy:field	list	[]*TypeSpecifier */
+			/*yy:example    _Atomic(int) i; */
 			AtomicTypeSpecifier:
 				"_Atomic" '(' TypeName ')'
 

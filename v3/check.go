@@ -1226,7 +1226,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		if ctx.mode&mIntConstExpr != 0 {
 			ctx.mode |= mIntConstExprAnyCast
 		}
-		t := n.TypeName.check(ctx, false, false)
+		t := n.TypeName.check(ctx, false, false, nil)
 		ctx.pop()
 		ctx.readDelta = rd
 		if t.IsIncomplete() {
@@ -1261,7 +1261,7 @@ func (n *UnaryExpression) check(ctx *context) Operand {
 		if ctx.mode&mIntConstExpr != 0 {
 			ctx.mode |= mIntConstExprAnyCast
 		}
-		t := n.TypeName.check(ctx, false, false)
+		t := n.TypeName.check(ctx, false, false, nil)
 		n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: ctx.cfg.ABI.Type(ULongLong), value: Uint64Value(t.Align())}).convertTo(ctx, n, sizeT(ctx, n.lexicalScope, n.Token))
 		ctx.pop()
 	case UnaryExpressionImag: // "__imag__" UnaryExpression
@@ -1557,7 +1557,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		if f := ctx.checkFn; f != nil {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
-		t := n.TypeName.check(ctx, false, false)
+		t := n.TypeName.check(ctx, false, false, nil)
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
@@ -1923,12 +1923,12 @@ func (n *MultiplicativeExpression) addrOf(ctx *context) Operand {
 	return n.Operand
 }
 
-func (n *TypeName) check(ctx *context, inUnion, isPacked bool) Type {
+func (n *TypeName) check(ctx *context, inUnion, isPacked bool, list *[]*TypeSpecifier) Type {
 	if n == nil {
 		return noType
 	}
 
-	n.typ = n.SpecifierQualifierList.check(ctx, inUnion, isPacked)
+	n.typ = n.SpecifierQualifierList.check(ctx, inUnion, isPacked, list)
 	if n.AbstractDeclarator != nil {
 		n.typ = n.AbstractDeclarator.check(ctx, n.typ)
 	}
@@ -2130,13 +2130,16 @@ func (n *TypeQualifier) check(ctx *context, typ *typeBase) {
 	}
 }
 
-func (n *SpecifierQualifierList) check(ctx *context, inUnion, isPacked bool) Type {
+func (n *SpecifierQualifierList) check(ctx *context, inUnion, isPacked bool, list *[]*TypeSpecifier) Type {
 	n0 := n
 	typ := &typeBase{}
 	for ; n != nil; n = n.SpecifierQualifierList {
 		switch n.Case {
 		case SpecifierQualifierListTypeSpec: // TypeSpecifier SpecifierQualifierList
 			n.TypeSpecifier.check(ctx, typ, inUnion)
+			if list != nil && n.TypeSpecifier.Case != TypeSpecifierAtomic {
+				*list = append(*list, n.TypeSpecifier)
+			}
 		case SpecifierQualifierListTypeQual: // TypeQualifier SpecifierQualifierList
 			n.TypeQualifier.check(ctx, typ)
 		case SpecifierQualifierListAlignSpec: // AlignmentSpecifier SpecifierQualifierList
@@ -2194,9 +2197,12 @@ func (n *TypeSpecifier) check(ctx *context, typ *typeBase, inUnion bool) {
 		op := n.Expression.check(ctx)
 		n.typ = op.Type()
 	case TypeSpecifierTypeofType: // "typeof" '(' TypeName ')'
-		n.typ = n.TypeName.check(ctx, false, false)
+		n.typ = n.TypeName.check(ctx, false, false, nil)
 	case TypeSpecifierAtomic: // AtomicTypeSpecifier
-		n.AtomicTypeSpecifier.check(ctx)
+		t := n.AtomicTypeSpecifier.check(ctx)
+		typ.kind = t.base().kind
+		typ.flags |= fAtomic
+		n.typ = typ
 	case
 		TypeSpecifierFract, // "_Fract"
 		TypeSpecifierSat,   // "_Sat"
@@ -2207,12 +2213,12 @@ func (n *TypeSpecifier) check(ctx *context, typ *typeBase, inUnion bool) {
 	}
 }
 
-func (n *AtomicTypeSpecifier) check(ctx *context) {
+func (n *AtomicTypeSpecifier) check(ctx *context) Type {
 	if n == nil {
-		return
+		return nil
 	}
 
-	n.TypeName.check(ctx, false, false)
+	return n.TypeName.check(ctx, false, false, &n.list)
 }
 
 func (n *EnumSpecifier) check(ctx *context) {
@@ -2537,7 +2543,7 @@ func (n *StructDeclaration) check(ctx *context, inUnion, isPacked bool) (s []*fi
 		return nil
 	}
 
-	typ := n.SpecifierQualifierList.check(ctx, inUnion, isPacked)
+	typ := n.SpecifierQualifierList.check(ctx, inUnion, isPacked, nil)
 	if n.StructDeclaratorList != nil {
 		return n.StructDeclaratorList.check(ctx, n.SpecifierQualifierList, typ, inUnion, isPacked)
 	}
@@ -2631,7 +2637,7 @@ func (n *CastExpression) check(ctx *context) Operand {
 		n.Operand = n.UnaryExpression.check(ctx)
 		n.IsSideEffectsFree = n.UnaryExpression.IsSideEffectsFree
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
-		t := n.TypeName.check(ctx, false, false)
+		t := n.TypeName.check(ctx, false, false, nil)
 		ctx.push(ctx.mode)
 		if m := ctx.mode; m&mIntConstExpr != 0 && m&mIntConstExprAnyCast == 0 {
 			if t := n.TypeName.Type(); t != nil && t.Kind() != Int {
@@ -2815,7 +2821,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		if f := ctx.checkFn; f != nil {
 			f.CompositeLiterals = append(f.CompositeLiterals, n)
 		}
-		t := n.TypeName.check(ctx, false, false)
+		t := n.TypeName.check(ctx, false, false, nil)
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.check(ctx, &n.InitializerList.list, t, Automatic, 0, nil, false)
@@ -2825,8 +2831,8 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		n.Operand = &lvalue{Operand: (&operand{abi: &ctx.cfg.ABI, typ: t, value: v}).normalize(ctx, n)}
 	case PostfixExpressionTypeCmp: // "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
 		n.IsSideEffectsFree = true
-		t1 := n.TypeName.check(ctx, false, false)
-		t2 := n.TypeName2.check(ctx, false, false)
+		t1 := n.TypeName.check(ctx, false, false, nil)
+		t2 := n.TypeName2.check(ctx, false, false, nil)
 		v := 0
 		switch {
 		case t1.IsArithmeticType() && t2.IsArithmeticType():
@@ -4671,7 +4677,7 @@ func (n *AlignmentSpecifier) check(ctx *context) {
 
 	switch n.Case {
 	case AlignmentSpecifierAlignasType: // "_Alignas" '(' TypeName ')'
-		n.TypeName.check(ctx, false, false)
+		n.TypeName.check(ctx, false, false, nil)
 		//TODO actually set the alignment
 	case AlignmentSpecifierAlignasExpr: // "_Alignas" '(' ConstantExpression ')'
 		n.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr)
