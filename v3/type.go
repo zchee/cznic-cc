@@ -2544,12 +2544,12 @@ func (t *taggedType) isAssingmentCompatibleOperand(rhs Operand) (r bool) {
 
 // IsCompatible implements Type.
 func (t *taggedType) IsCompatible(u Type) (r bool) {
-	// defer func() {
-	// 	u0 := u
-	// 	if !r {
-	// 		trc("TRACE %v <- %v\n%s", t, u0, debug.Stack()) //TODO-
-	// 	}
-	// }()
+	defer func() {
+		u0 := u
+		if !r {
+			trc("TRACE %v <- %v: %v (%s)", t, u0, r, origin(2)) //TODO-
+		}
+	}()
 	if t == nil || u == nil {
 		return false
 	}

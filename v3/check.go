@@ -283,7 +283,7 @@ func (n *InitializerList) setConstZero() {
 
 // [0], 6.7.8 Initialization
 func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, fld Field, off uintptr, il *InitializerList, designatorList *DesignatorList, inList bool) *InitializerList {
-	// trc("Initializer.check: %v: t %v, off %v, designatorList != nil %v", n.Position(), t, off, designatorList != nil)
+	// trc("==== %v: case %v, t %v, off %v, designatorList != nil %v, inList %v", n.Position(), n.Case, t, off, designatorList != nil, inList)
 	// if fld != nil {
 	// 	trc("\tfld %q", fld.Name())
 	// }
@@ -3547,14 +3547,6 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 			// is the type of the result.
 			op, _ := usualArithmeticConversions(ctx, n, a, b, true)
 			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: op.Type(), value: val}).normalize(ctx, n)
-		// — both operands are pointers to qualified or unqualified versions of compatible types;
-		case at.Kind() == Ptr && bt.Kind() == Ptr:
-			//TODO check compatible
-			//TODO if !at.isCompatibleIgnoreQualifiers(bt) {
-			//TODO 	trc("%v: XXXX %v ? %v", n.Token2.Position(), at, bt)
-			//TODO 	ctx.assignmentCompatibilityErrorCond(&n.Token2, at, bt)
-			//TODO }
-			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: n.Expression.Operand.Type(), value: val}).normalize(ctx, n)
 		// — both operands have void type;
 		case a.Type().Kind() == Void && b.Type().Kind() == Void:
 			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: a.Type(), value: val}).normalize(ctx, n)
@@ -3563,6 +3555,14 @@ func (n *ConditionalExpression) check(ctx *context) Operand {
 			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: a.Type(), value: val}).normalize(ctx, n)
 		case (b.Type().Kind() == Ptr || b.Type().Kind() == Function) && a.IsZero():
 			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: b.Type(), value: val}).normalize(ctx, n)
+		// — both operands are pointers to qualified or unqualified versions of compatible types;
+		case at.Kind() == Ptr && bt.Kind() == Ptr:
+			//TODO check compatible
+			//TODO if !at.isCompatibleIgnoreQualifiers(bt) {
+			//TODO 	trc("%v: XXXX %v ? %v", n.Token2.Position(), at, bt)
+			//TODO 	ctx.assignmentCompatibilityErrorCond(&n.Token2, at, bt)
+			//TODO }
+			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: n.Expression.Operand.Type(), value: val}).normalize(ctx, n)
 		case a.Type().Kind() == Ptr && a.Type().Elem().Kind() == Function && b.Type().Kind() == Function:
 			//TODO check compatible
 			n.Operand = (&operand{abi: &ctx.cfg.ABI, typ: a.Type(), value: val}).normalize(ctx, n)

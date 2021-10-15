@@ -45,4 +45,7 @@ void myfunc() {
     .child_index = next_index,
     .byte_offset = byte_offset,
   });
+  Subtree child = ((Subtree *)((tree).ptr) - (tree).ptr->child_count)[next_index];
+  Subtree child2 = ((tree).data.is_inline ? ((void *)0) : (Subtree *)((tree).ptr) - (tree).ptr->child_count)[next_index];
+  Subtree child3 = ((tree).data.is_inline ? (Subtree *)((tree).ptr) - (tree).ptr->child_count : ((void *)0))[next_index];
 }
