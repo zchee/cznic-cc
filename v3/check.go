@@ -237,7 +237,7 @@ func (n *InitDeclarator) check(ctx *context, td typeDescriptor, typ Type, tld bo
 		typ := n.Declarator.check(ctx, td, typ, tld)
 		n.Declarator.hasInitializer = true
 		n.Declarator.Write++
-		n.Initializer.check(ctx, &n.Initializer.list, typ, n.Declarator.StorageClass, nil, 0, nil, nil)
+		n.Initializer.check(ctx, &n.Initializer.list, typ, n.Declarator.StorageClass, nil, 0, nil, nil, false)
 		n.Initializer.setConstZero()
 		n.initializer = &InitializerValue{typ: typ, initializer: n.Initializer}
 		if ctx.cfg.TrackAssignments {
@@ -282,7 +282,7 @@ func (n *InitializerList) setConstZero() {
 }
 
 // [0], 6.7.8 Initialization
-func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, fld Field, off uintptr, il *InitializerList, designatorList *DesignatorList) *InitializerList {
+func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, fld Field, off uintptr, il *InitializerList, designatorList *DesignatorList, inList bool) *InitializerList {
 	// trc("Initializer.check: %v: t %v, off %v, designatorList != nil %v", n.Position(), t, off, designatorList != nil)
 	// if fld != nil {
 	// 	trc("\tfld %q", fld.Name())
@@ -418,11 +418,11 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 		if il != nil {
 			switch t.Kind() {
 			case Array:
-				return il.checkArray(ctx, list, t, sc, off, designatorList)
+				return il.checkArray(ctx, list, t, sc, off, designatorList, inList)
 			case Struct:
-				return il.checkStruct(ctx, list, t, sc, off, designatorList)
+				return il.checkStruct(ctx, list, t, sc, off, designatorList, inList)
 			case Union:
-				return il.checkUnion(ctx, list, t, sc, off, designatorList)
+				return il.checkUnion(ctx, list, t, sc, off, designatorList, inList)
 			case Vector:
 				return il.InitializerList //TODO
 			default:
@@ -448,7 +448,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 			return true
 		})
 		if l != nil {
-			l.check(ctx, list, t, sc, off, designatorList)
+			l.check(ctx, list, t, sc, off, designatorList, inList)
 			return nil
 		}
 
@@ -456,7 +456,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 		return nil
 	}
 
-	n.InitializerList.check(ctx, list, t, sc, off, designatorList)
+	n.InitializerList.check(ctx, list, t, sc, off, designatorList, inList)
 	if il != nil {
 		return il.InitializerList
 	}
@@ -464,7 +464,7 @@ func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc Stora
 	return nil
 }
 
-func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) *InitializerList {
+func (n *InitializerList) checkArray(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList, inList bool) *InitializerList {
 	elem := t.Elem()
 	esz := elem.Size()
 	length := t.Len()
@@ -476,7 +476,7 @@ loop:
 		switch {
 		case retOnDesignator && n.Designation != nil:
 			return n
-		case designatorList == nil && n.Designation != nil:
+		case designatorList == nil && !inList && n.Designation != nil:
 			designatorList = n.Designation.DesignatorList
 			fallthrough
 		case designatorList != nil:
@@ -499,7 +499,7 @@ loop:
 				panic(todo(""))
 			}
 
-			n = n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, designatorList.DesignatorList)
+			n = n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, designatorList.DesignatorList, true)
 			designatorList = nil
 			if nestedDesignator {
 				retOnDesignator = true
@@ -513,7 +513,7 @@ loop:
 			if i > maxI {
 				maxI = i
 			}
-			n = n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, nil)
+			n = n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, nil, inList)
 			i++
 		}
 	}
@@ -523,21 +523,20 @@ loop:
 	return n
 }
 
-func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) *InitializerList {
-	// trc("InitializerList.checkStruct: %v: t %v, off %v, dl %v", n.Position(), t, off, designatorList != nil)
+func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList, inList bool) *InitializerList {
+	// trc("==== %v: t %v, off %v, dl %v, inList %v", n.Position(), t, off, designatorList != nil, inList)
 	t = t.underlyingType()
-	// trc("==== struct %v: %v, off %v", n.Position(), t, off) //TODO-
+	// trc("%v: %v, off %v", n.Position(), t, off) //TODO-
 	nf := t.NumField()
 	i := []int{0}
 	var f Field
 	nestedDesignator := designatorList != nil
 	retOnDesignator := false
 	for n != nil {
-		// trc("---- %v: t %v, dl %v", n.Position(), t, designatorList != nil)
 		switch {
 		case retOnDesignator && n.Designation != nil:
 			return n
-		case designatorList == nil && n.Designation != nil:
+		case designatorList == nil && !inList && n.Designation != nil:
 			designatorList = n.Designation.DesignatorList
 			fallthrough
 		case designatorList != nil:
@@ -570,12 +569,12 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 					t = f2.Type()
 					xa = xa[1:]
 				}
-				n = n.Initializer.check(ctx, list, t, sc, f, off+off2, n, designatorList)
+				n = n.Initializer.check(ctx, list, t, sc, f, off+off2, n, designatorList, true)
 				if t.Kind() == Union {
 					t = t0
 				}
 			default:
-				n = n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList.DesignatorList)
+				n = n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList.DesignatorList, true)
 			}
 			designatorList = nil
 			if nestedDesignator {
@@ -597,7 +596,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 
 				f = t.FieldByIndex(i)
 				if f.Name() != 0 || !f.Type().IsBitFieldType() {
-					n = n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, nil)
+					n = n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, nil, inList)
 					i[0]++
 					break
 				}
@@ -613,14 +612,15 @@ func spos(n Node) string {
 	return p.String()
 }
 
-func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) *InitializerList {
+func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList, inList bool) *InitializerList {
+	// trc("==== %v: t %v, off %v, dl %v, inList %v", n.Position(), t, off, designatorList != nil, inList)
 	t = t.underlyingType()
-	// trc("==== union %v: %v, off %v", n.Position(), t, off) //TODO-
+	// trc("%v: %v, off %v", n.Position(), t, off) //TODO-
 	nf := t.NumField()
 	i := []int{0}
 	for n != nil {
 		switch {
-		case designatorList == nil && n.Designation != nil:
+		case designatorList == nil && !inList && n.Designation != nil:
 			designatorList = n.Designation.DesignatorList
 			fallthrough
 		case designatorList != nil:
@@ -652,7 +652,7 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 					t = f2.Type()
 					xa = xa[1:]
 				}
-				next := n.Initializer.check(ctx, list, t, sc, f, off+off2+f.Offset(), n, designatorList)
+				next := n.Initializer.check(ctx, list, t, sc, f, off+off2+f.Offset(), n, designatorList, true)
 				if designatorList != nil && designatorList.DesignatorList != nil {
 					panic(todo("", n.Position(), d.Position()))
 				}
@@ -660,7 +660,7 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 				return next
 			default:
 				designatorList = designatorList.DesignatorList
-				next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList)
+				next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList, true)
 				if designatorList != nil && designatorList.DesignatorList != nil {
 					panic(todo("", n.Position(), d.Position()))
 				}
@@ -682,7 +682,7 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 
 				f := t.FieldByIndex(i)
 				if f.Name() != 0 || !f.Type().IsBitFieldType() {
-					next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, nil)
+					next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, nil, inList)
 					return next
 				}
 			}
@@ -717,7 +717,7 @@ func (n *Initializer) single() *Initializer {
 }
 
 // [0], 6.7.8 Initialization
-func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList) {
+func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList, inList bool) {
 	switch t.Kind() {
 	case Array, Vector:
 		if n == nil { // {}
@@ -727,25 +727,25 @@ func (n *InitializerList) check(ctx *context, list *[]*Initializer, t Type, sc S
 			return
 		}
 
-		n.checkArray(ctx, list, t, sc, off, designatorList)
+		n.checkArray(ctx, list, t, sc, off, designatorList, inList)
 	case Struct:
 		if n == nil { // {}
 			return
 		}
 
-		n.checkStruct(ctx, list, t, sc, off, designatorList)
+		n.checkStruct(ctx, list, t, sc, off, designatorList, inList)
 	case Union:
 		if n == nil { // {}
 			return
 		}
 
-		n.checkUnion(ctx, list, t, sc, off, designatorList)
+		n.checkUnion(ctx, list, t, sc, off, designatorList, inList)
 	default:
 		if n == nil || t == nil || t.Kind() == Invalid {
 			return
 		}
 
-		n.Initializer.check(ctx, list, t, sc, nil, off, nil, designatorList)
+		n.Initializer.check(ctx, list, t, sc, nil, off, nil, designatorList, inList)
 	}
 }
 
@@ -1561,7 +1561,7 @@ func (n *PostfixExpression) addrOf(ctx *context) Operand {
 		var v *InitializerValue
 		if n.InitializerList != nil {
 			n.InitializerList.isConst = true
-			n.InitializerList.check(ctx, &n.InitializerList.list, t, Automatic, 0, nil)
+			n.InitializerList.check(ctx, &n.InitializerList.list, t, Automatic, 0, nil, false)
 			n.InitializerList.setConstZero()
 			v = &InitializerValue{typ: ctx.cfg.ABI.Ptr(n, t), initializer: n.InitializerList}
 		}
@@ -2818,7 +2818,7 @@ func (n *PostfixExpression) check(ctx *context, implicitFunc bool) Operand {
 		t := n.TypeName.check(ctx, false, false)
 		var v *InitializerValue
 		if n.InitializerList != nil {
-			n.InitializerList.check(ctx, &n.InitializerList.list, t, Automatic, 0, nil)
+			n.InitializerList.check(ctx, &n.InitializerList.list, t, Automatic, 0, nil, false)
 			n.InitializerList.setConstZero()
 			v = &InitializerValue{typ: t, initializer: n.InitializerList}
 		}
