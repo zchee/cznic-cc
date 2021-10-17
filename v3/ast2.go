@@ -803,7 +803,8 @@ func (n *AndExpression) Promote() Type { return n.promote }
 
 func (n *InitDeclarator) Value() *InitializerValue { return n.initializer }
 
-// FirstDesignatorField returns the first field a designator denotes, if any.
+// FirstDesignatorField returns the first field a designator of an union type
+// denotes, if any.
 func (n *Initializer) FirstDesignatorField() Field { return n.field0 }
 
 // TrailingComma returns the comma token following n, if any.
