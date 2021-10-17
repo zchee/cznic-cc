@@ -532,6 +532,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 	var f Field
 	nestedDesignator := designatorList != nil
 	retOnDesignator := false
+	first := true
 	for n != nil {
 		switch {
 		case retOnDesignator && n.Designation != nil:
@@ -556,6 +557,11 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 			f, xa, ok := t.FieldByName2(nm)
 			if !ok {
 				panic(todo("%v: t %v %q", d.Position(), t, nm))
+			}
+
+			if !inList && first {
+				n.Initializer.field0 = f
+				first = false
 			}
 
 			t0 := t
@@ -618,6 +624,7 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 	// trc("%v: %v, off %v", n.Position(), t, off) //TODO-
 	nf := t.NumField()
 	i := []int{0}
+	first := true
 	for n != nil {
 		switch {
 		case designatorList == nil && !inList && n.Designation != nil:
@@ -642,6 +649,10 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 				panic(todo("", d.Position()))
 			}
 
+			if !inList && first {
+				n.Initializer.field0 = f
+				first = false
+			}
 			switch {
 			case len(xa) != 1:
 				var f2 Field
