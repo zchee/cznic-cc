@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v3"
 
 import (
 	"fmt"
+	"go/token"
 	"math"
 	"math/big"
 	"math/bits"
@@ -14,6 +15,7 @@ import (
 	"strings"
 
 	"modernc.org/mathutil"
+	"modernc.org/strutil"
 )
 
 const longDoublePrec = 256
@@ -524,7 +526,8 @@ loop:
 }
 
 func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type, sc StorageClass, off uintptr, designatorList *DesignatorList, inList bool) *InitializerList {
-	// trc("==== %v: t %v, off %v, dl %v, inList %v", n.Position(), t, off, designatorList != nil, inList)
+	// trc("==== (A) %v: t %v, off %v, dl %v, inList %v", n.Position(), t, off, designatorList != nil, inList)
+	// defer trc("==== (Z) %v: t %v, off %v, dl %v, inList %v", n.Position(), t, off, designatorList != nil, inList)
 	t = t.underlyingType()
 	// trc("%v: %v, off %v", n.Position(), t, off) //TODO-
 	nf := t.NumField()
@@ -541,6 +544,7 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 			fallthrough
 		case designatorList != nil:
 			d := designatorList.Designator
+			designatorList = designatorList.DesignatorList
 			var nm StringID
 			switch d.Case {
 			case DesignatorIndex: // '[' ConstantExpression ']'
@@ -569,12 +573,12 @@ func (n *InitializerList) checkStruct(ctx *context, list *[]*Initializer, t Type
 					t = f2.Type()
 					xa = xa[1:]
 				}
-				n = n.Initializer.check(ctx, list, t, sc, f, off+off2, n, designatorList, true)
+				n = n.Initializer.check(ctx, list, t, sc, f, off+off2, n, designatorList, designatorList != nil)
 				if t.Kind() == Union {
 					t = t0
 				}
 			default:
-				n = n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList.DesignatorList, true)
+				n = n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList, designatorList != nil)
 			}
 			designatorList = nil
 			if nestedDesignator {
@@ -626,6 +630,7 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 			fallthrough
 		case designatorList != nil:
 			d := designatorList.Designator
+			designatorList = designatorList.DesignatorList
 			var nm StringID
 			switch d.Case {
 			case DesignatorIndex: // '[' ConstantExpression ']'
@@ -657,15 +662,14 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 					t = f2.Type()
 					xa = xa[1:]
 				}
-				next := n.Initializer.check(ctx, list, t, sc, f, off+off2+f.Offset(), n, designatorList, true)
+				next := n.Initializer.check(ctx, list, t, sc, f, off+off2+f.Offset(), n, designatorList, designatorList != nil)
 				if designatorList != nil && designatorList.DesignatorList != nil {
 					panic(todo("", n.Position(), d.Position()))
 				}
 
 				return next
 			default:
-				designatorList = designatorList.DesignatorList
-				next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList, true)
+				next := n.Initializer.check(ctx, list, f.Type(), sc, f, off+f.Offset(), n, designatorList, designatorList != nil)
 				if designatorList != nil && designatorList.DesignatorList != nil {
 					panic(todo("", n.Position(), d.Position()))
 				}
@@ -5134,4 +5138,102 @@ func setAddressTaken(n Node, d *Declarator, s string) {
 	// fmt.Printf("%v: %s, type %v (%v, %v), declared at %v, AddressTaken = true: %v\n",
 	// 	n.Position(), d.Name(), d.Type(), d.Type().Kind(), d.Type().Size(), d.Position(), s,
 	// ) //TODO-
+}
+
+// Dump returns a debug form of n.
+func (n *Initializer) Dump() string {
+	var b strings.Builder
+	f := strutil.IndentFormatter(&b, "\t")
+	n.dump(f)
+	return b.String()
+}
+
+func pos(n Node) (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	r = token.Position(n.Position())
+	if r.IsValid() {
+		r.Filename = filepath.Base(r.Filename)
+	}
+	return r
+}
+
+func (n *Initializer) dump(f strutil.Formatter) {
+	switch n.Case {
+	case InitializerExpr: // AssignmentExpression
+		if op := n.AssignmentExpression.Operand; op != nil {
+			n.isConst = op.IsConst()
+			n.isZero = op.IsZero()
+		}
+		var t Type
+		if n.AssignmentExpression != nil && n.AssignmentExpression.Operand != nil {
+			t = n.AssignmentExpression.Operand.Type()
+		}
+		f.Format("%v: %T@%[2]p, .Case %v, off %v,  type %v\n", pos(n), n, n.Case, n.Offset, t)
+	case InitializerInitList: // '{' InitializerList ',' '}'
+		n.InitializerList.dump(f)
+	default:
+		panic(todo("%v:", n.Position()))
+	}
+}
+
+// Dump returns a debug form of n.
+func (n *InitializerList) Dump() string {
+	var b strings.Builder
+	f := strutil.IndentFormatter(&b, "\t")
+	n.dump(f)
+	return b.String()
+}
+
+func (n *InitializerList) dump(f strutil.Formatter) {
+	if n == nil {
+		f.Format("<nil>")
+		return
+	}
+
+	f.Format("%v: %T@%[2]p, len(.List()) %v {%i\n", pos(n), n, len(n.List()))
+	list := n.List()
+	for ; n != nil; n = n.InitializerList {
+		n.Designation.dump(f)
+		n.Initializer.dump(f)
+	}
+	for i, v := range list {
+		f.Format("#%d/%d:", i, len(list))
+		v.dump(f)
+	}
+	f.Format("%u}\n")
+}
+
+func (n *Designation) dump(f strutil.Formatter) {
+	if n == nil {
+		return
+	}
+
+	cnt := 0
+	designatorField2 := false
+	for n := n.DesignatorList; n != nil; n = n.DesignatorList {
+		n.Designator.dump(f)
+		if n.Designator.Case == DesignatorField2 {
+			designatorField2 = true
+		}
+		cnt++
+	}
+	if cnt > 1 || !designatorField2 {
+		f.Format(" = ")
+	}
+}
+
+func (n *Designator) dump(f strutil.Formatter) {
+	switch n.Case {
+	case DesignatorIndex: // '[' ConstantExpression ']'
+		f.Format("[%v]", n.ConstantExpression.Operand.Value())
+	case DesignatorField: // '.' IDENTIFIER
+		f.Format(".%s", n.Token2.Value)
+	case DesignatorField2: // IDENTIFIER ':'
+		f.Format("%s:", n.Token2.Value)
+	default:
+		panic(todo(""))
+	}
 }
