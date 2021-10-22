@@ -483,6 +483,7 @@ loop:
 			fallthrough
 		case designatorList != nil:
 			d := designatorList.Designator
+			designatorList = designatorList.DesignatorList
 			switch d.Case {
 			case DesignatorIndex: // '[' ConstantExpression ']'
 				switch x := d.ConstantExpression.check(ctx, ctx.mode|mIntConstExpr).Value().(type) {
@@ -493,6 +494,9 @@ loop:
 				default:
 					panic(todo("%v: %T", n.Position(), x))
 				}
+				if !inList && i > maxI {
+					maxI = i
+				}
 			case DesignatorField: // '.' IDENTIFIER
 				panic(todo("", n.Position(), d.Position()))
 			case DesignatorField2: // IDENTIFIER ':'
@@ -501,7 +505,7 @@ loop:
 				panic(todo(""))
 			}
 
-			n = n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, designatorList.DesignatorList, true)
+			n = n.Initializer.check(ctx, list, elem, sc, nil, off+i*esz, n, designatorList, designatorList != nil)
 			designatorList = nil
 			if nestedDesignator {
 				retOnDesignator = true
