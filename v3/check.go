@@ -285,7 +285,7 @@ func (n *InitializerList) setConstZero() {
 
 // [0], 6.7.8 Initialization
 func (n *Initializer) check(ctx *context, list *[]*Initializer, t Type, sc StorageClass, fld Field, off uintptr, il *InitializerList, designatorList *DesignatorList, inList bool) *InitializerList {
-	// trc("==== %v: case %v, t %v, off %v, designatorList != nil %v, inList %v", n.Position(), n.Case, t, off, designatorList != nil, inList)
+	// trc("==== %v: case %v, t %v, off %v, designatorList != nil %v, inList %v", n.Position(), n.Case, t.Alias(), off, designatorList != nil, inList)
 	// if fld != nil {
 	// 	trc("\tfld %q", fld.Name())
 	// }
@@ -626,8 +626,7 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 	// trc("%v: %v, off %v", n.Position(), t, off) //TODO-
 	nf := t.NumField()
 	i := []int{0}
-	first := true
-	for n != nil {
+	for pass := 0; n != nil; pass++ {
 		switch {
 		case designatorList == nil && !inList && n.Designation != nil:
 			designatorList = n.Designation.DesignatorList
@@ -652,9 +651,8 @@ func (n *InitializerList) checkUnion(ctx *context, list *[]*Initializer, t Type,
 				panic(todo("", d.Position()))
 			}
 
-			if !inList && first {
+			if !inList && pass == 0 {
 				n.Initializer.field0 = f
-				first = false
 			}
 			switch {
 			case len(xa) != 1:
@@ -5165,6 +5163,19 @@ func pos(n Node) (r token.Position) {
 }
 
 func (n *Initializer) dump(f strutil.Formatter) {
+	list := n.List()
+	if len(list) != 0 {
+		for i, v := range list {
+			f.Format("Initializer.List() #%d/%d: %v: off %v type %v", i, len(list), pos(v), v.Offset, v.Type())
+			if fld := v.FirstDesignatorField(); fld != nil {
+				f.Format(" [FirstDesignatorField %q]", fld.Name())
+			}
+			f.Format("\n")
+		}
+	}
+	if f0 := n.FirstDesignatorField(); f0 != nil {
+		f.Format("[FirstDesignatorField: %q, index %v, off %v, type %v] ", f0.Name(), f0.Index(), n.Offset, n.Type().Alias())
+	}
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
 		if op := n.AssignmentExpression.Operand; op != nil {
@@ -5175,7 +5186,7 @@ func (n *Initializer) dump(f strutil.Formatter) {
 		if n.AssignmentExpression != nil && n.AssignmentExpression.Operand != nil {
 			t = n.AssignmentExpression.Operand.Type()
 		}
-		f.Format("%v: %T@%[2]p, .Case %v, off %v,  type %v\n", pos(n), n, n.Case, n.Offset, t)
+		f.Format("%v: %T@%[2]p, .Case %v, off %v,  type %v\n", pos(n), n, n.Case, n.Offset, t.Alias())
 	case InitializerInitList: // '{' InitializerList ',' '}'
 		n.InitializerList.dump(f)
 	default:
@@ -5204,7 +5215,7 @@ func (n *InitializerList) dump(f strutil.Formatter) {
 		n.Initializer.dump(f)
 	}
 	for i, v := range list {
-		f.Format("#%d/%d:", i, len(list))
+		f.Format("InitializerList.List() #%d/%d:", i, len(list))
 		v.dump(f)
 	}
 	f.Format("%u}\n")
@@ -5236,7 +5247,7 @@ func (n *Designator) dump(f strutil.Formatter) {
 	case DesignatorField: // '.' IDENTIFIER
 		f.Format(".%s", n.Token2.Value)
 	case DesignatorField2: // IDENTIFIER ':'
-		f.Format("%s:", n.Token2.Value)
+		f.Format("%s:", n.Token.Value)
 	default:
 		panic(todo(""))
 	}
