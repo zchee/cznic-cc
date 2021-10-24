@@ -528,7 +528,7 @@ func TestParserCSmith(t *testing.T) {
 	}
 
 	fixedBugs := []string{
-		"--bitfields --no-const-pointers --no-consts --no-packed-struct --no-volatile-pointers --no-volatiles --paranoid --max-nested-struct-level 10 -s 1236173074", // input buffer too small for CSmith generated programs
+		"--bitfields --no-const-pointers --no-consts --no-packed-struct --no-volatile-pointers --no-volatiles --paranoid --max-nested-struct-level 10 -s 1236173074", //TODO fails on darwin/amd64
 	}
 	ch := time.After(*oCSmith)
 	t0 := time.Now()
