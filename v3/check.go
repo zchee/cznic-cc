@@ -3212,6 +3212,7 @@ func (n *PrimaryExpression) checkIdentifier(ctx *context, implicitFunc bool) Ope
 						Token:        Token{Value: nm},
 					},
 				},
+				implicit: true,
 			}
 			ed := &ExternalDeclaration{
 				Case: ExternalDeclarationDecl,

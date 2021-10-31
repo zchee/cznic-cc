@@ -1340,6 +1340,7 @@ type Declarator struct {
 	called                 bool
 	fnDef                  bool
 	hasInitializer         bool
+	implicit               bool
 	AttributeSpecifierList *AttributeSpecifierList
 	DirectDeclarator       *DirectDeclarator
 	Pointer                *Pointer
