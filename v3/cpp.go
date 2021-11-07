@@ -7,6 +7,7 @@ package cc // import "modernc.org/cc/v3"
 import (
 	"bytes"
 	"fmt"
+	gotoken "go/token"
 	"math"
 	"os"
 	"path/filepath"
@@ -2463,6 +2464,17 @@ func (n *ppIncludeDirective) translationPhase4(c *cpp) {
 		return
 	}
 
+	if h := c.ctx.cfg.IncludeFileHandler; h != nil {
+		var position gotoken.Position
+		if p := toks[0].Pos(); p.IsValid() {
+			position = gotoken.Position(c.file.PositionFor(p, true))
+		}
+		apath, err := filepath.Abs(path)
+		if err != nil {
+			c.err(toks[0], "%s: cannot compute absolute path: %v", path, err)
+		}
+		h(position, apath)
+	}
 	cf, err := cache.getFile(c.ctx, path, sys, false)
 	if err != nil {
 		c.err(toks[0], "%s: %v", path, err)
