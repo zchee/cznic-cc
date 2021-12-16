@@ -462,81 +462,22 @@ func (c *cpp) write(tok cppToken) {
 			*b = (*b)[:0]
 			c.outBuf = b
 		case tok.char == IDENTIFIER && tok.value == idPragmaOp:
-			tok.char = '\n'
-			tok.value = 0
-			*c.outBuf = append(*c.outBuf, tok.token4)
+			if len(*c.outBuf) != 0 {
+				tok.char = '\n'
+				tok.value = 0
+				*c.outBuf = append(*c.outBuf, tok.token4)
+				c.out <- c.outBuf
+				b := token4Pool.Get().(*[]token4)
+				*b = (*b)[:0]
+				c.outBuf = b
+			}
 			c.inPragmaOp = true
 			c.pragmaOpBuf = c.pragmaOpBuf[:0]
-			c.out <- c.outBuf
-			b := token4Pool.Get().(*[]token4)
-			*b = (*b)[:0]
-			c.outBuf = b
 		default:
 			*c.outBuf = append(*c.outBuf, tok.token4)
 		}
 	}
 }
-
-//TODO- func (c *cpp) pragmaOp(toks []token4) {
-//TODO- 	var a []string
-//TODO- loop:
-//TODO- 	for {
-//TODO- 		tok := toks[0]
-//TODO- 		toks = toks[1:] // Skip "_Pragma"
-//TODO- 		toks = ltrim4(toks)
-//TODO- 		if len(toks) == 0 || toks[0].char != '(' {
-//TODO- 			c.err(tok, "expected (")
-//TODO- 			break loop
-//TODO- 		}
-//TODO-
-//TODO- 		tok = toks[0]
-//TODO- 		toks = toks[1:] // Skip '('
-//TODO- 		toks = ltrim4(toks)
-//TODO- 		if len(toks) == 0 || (toks[0].char != STRINGLITERAL && toks[0].char != LONGSTRINGLITERAL) {
-//TODO- 			c.err(toks[0], "expected string literal")
-//TODO- 			break loop
-//TODO- 		}
-//TODO-
-//TODO- 		tok = toks[0]
-//TODO- 		a = append(a, tok.String())
-//TODO- 		toks = toks[1:] // Skip string literal
-//TODO- 		toks = ltrim4(toks)
-//TODO- 		if len(toks) == 0 || toks[0].char != ')' {
-//TODO- 			c.err(toks[0], "expected )")
-//TODO- 			break loop
-//TODO- 		}
-//TODO-
-//TODO- 		toks = toks[1:] // Skip ')'
-//TODO- 		toks = ltrim4(toks)
-//TODO- 		if len(toks) == 0 {
-//TODO- 			break loop
-//TODO- 		}
-//TODO-
-//TODO- 		switch tok := toks[0]; {
-//TODO- 		case tok.char == '\n':
-//TODO- 			break loop
-//TODO- 		case tok.char == IDENTIFIER && tok.value == idPragmaOp:
-//TODO- 			// ok
-//TODO- 		default:
-//TODO- 			c.err(tok, "expected new-line")
-//TODO- 			break loop
-//TODO- 		}
-//TODO- 	}
-//TODO- 	for i, v := range a {
-//TODO- 		// [0], 6.10.9, 1
-//TODO- 		if v[0] == 'L' {
-//TODO- 			v = v[1:]
-//TODO- 		}
-//TODO- 		v = v[1 : len(v)-1]
-//TODO- 		v = strings.ReplaceAll(v, `\"`, `"`)
-//TODO- 		a[i] = "#pragma " + strings.ReplaceAll(v, `\\`, `\`) + "\n"
-//TODO- 	}
-//TODO- 	src := strings.Join(a, "")
-//TODO- 	s := newScanner0(c.ctx, strings.NewReader(src), tokenNewFile("", len(src)), 4096)
-//TODO- 	if ppf := s.translationPhase3(); ppf != nil {
-//TODO- 		ppf.translationPhase4(c)
-//TODO- 	}
-//TODO- }
 
 func ltrim4(toks []token4) []token4 {
 	for len(toks) != 0 && toks[0].char == ' ' {
