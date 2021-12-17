@@ -85,7 +85,6 @@ const (
 #define __declspec(...)
 #define __extension__
 #define __read_only__ 0
-#define __signed signed
 #define __sync_synchronize(...)
 #define __word__
 #define __write_only__ 0
