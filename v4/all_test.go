@@ -42,6 +42,7 @@ func exampleAST(rule int, src string) interface{} {
 }
 
 func TestScannerSource(t *testing.T) {
+	t.Fatal("FAIL")
 	const fn = "all_test.go"
 	exp, err := os.ReadFile(fn)
 	if err != nil {
