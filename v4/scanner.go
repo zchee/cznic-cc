@@ -189,11 +189,11 @@ func (t *Token) Src() []byte {
 
 // Set sets the values Sep and Src will report.
 func (t *Token) Set(sep, src []byte) error {
-	if len(sep)+len(src) > math.MaxUint32 {
+	if uint64(len(sep)+len(src)) > math.MaxUint32 {
 		return errorf("Token.Set: argument values too long")
 	}
 
-	if len(t.s.buf)+len(sep)+len(src) > math.MaxUint32 {
+	if uint64(len(t.s.buf)+len(sep)+len(src)) > math.MaxUint32 {
 		return errorf("Token.Set: underlying scanner source buffer overflow: size is already %v", len(t.s.buf))
 	}
 
@@ -267,7 +267,7 @@ func newScannerSource(name string, value interface{}) (s *scannerSource, err err
 	default:
 		return nil, errorf("invalid value type: %T", x)
 	}
-	if len(s.buf) >= math.MaxUint32 {
+	if uint64(len(s.buf)) >= math.MaxUint32 {
 		return nil, errorf("source too big: %v bytes", len(s.buf))
 	}
 
