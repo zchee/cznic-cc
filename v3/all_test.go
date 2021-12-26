@@ -209,6 +209,7 @@ func newTestABI() ABI {
 }
 
 func TestMain(m *testing.M) {
+	os.Exit(1)
 	defer func() {
 		os.Exit(m.Run())
 	}()
