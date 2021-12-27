@@ -143,6 +143,15 @@ func cppToksStr(toks []cppToken, sep string) string {
 	return b.String()
 }
 
+func cppToksStr2(toks [][]cppToken) string {
+	panic(todo(""))
+	var a []string
+	for _, v := range toks {
+		a = append(a, fmt.Sprintf("%q", cppToksStr(v, "|")))
+	}
+	return fmt.Sprint(a)
+}
+
 type cppReader struct {
 	buf []cppToken
 	ungetBuf
@@ -267,6 +276,10 @@ func (m *Macro) param2(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]
 }
 
 func (m *Macro) param(varArgs []cppToken, ap [][]cppToken, nm StringID, out *[]cppToken) bool {
+	// trc("select (A) varArgs %q, ap %v, nm %q, out %q", cppToksStr(varArgs, "|"), cppToksStr2(ap), nm, cppToksStr(*out, "|"))
+	// defer func() {
+	// 	trc("select (A) varArgs %q, ap %v, nm %q, out %q", cppToksStr(varArgs, "|"), cppToksStr2(ap), nm, cppToksStr(*out, "|"))
+	// }()
 	return m.param2(varArgs, ap, nm, out, nil)
 }
 
@@ -518,7 +531,7 @@ func (c *cpp) writes(toks []cppToken) {
 // 	return T^HS • expand(TS’);
 // }
 func (c *cpp) expand(ts tokenReader, w tokenWriter, expandDefined bool) {
-	// dbg("==== expand enter")
+	// trc("==== expand enter")
 start:
 	tok, ok := ts.read()
 	tok.file = c.file
@@ -526,7 +539,7 @@ start:
 	if !ok {
 		// ---------------------------------------------------------- A
 		// return {};
-		// dbg("---- expand A")
+		// trc("---- expand A")
 		return
 	}
 
@@ -546,8 +559,8 @@ start:
 		if tok.has(nm) {
 			// -------------------------------------------------- B
 			// return T^HS • expand(TS’);
-			// dbg("---- expand B")
-			// dbg("expand write %q", tok)
+			// trc("---- expand B")
+			// trc("expand write %q", tok)
 			w.write(tok)
 			goto start
 		}
@@ -579,7 +592,7 @@ start:
 			if m != nil {
 				// -------------------------------------------------- C
 				// return expand(subst(ts(T), {}, {}, HS \cup {T}, {}) • TS’ );
-				// dbg("---- expand C")
+				// trc("---- expand C")
 				hs := hideSet{nm: {}}
 				for k, v := range tok.hs {
 					hs[k] = v
@@ -610,7 +623,7 @@ start:
 				// -------------------------------------------------- D
 				// check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 				// return expand(subst(ts(T), fp(T), actuals,(HS \cap HS’) \cup {T }, {}) • TS’’);
-				// dbg("---- expand D")
+				// trc("---- expand D")
 				hs := tok.hs
 				var skip []cppToken
 			again:
@@ -691,8 +704,8 @@ start:
 	// ------------------------------------------------------------------ E
 	// note TS must be T^HS • TS’
 	// return T^HS • expand(TS’);
-	// dbg("---- expand E")
-	// dbg("expand write %q", tok)
+	// trc("---- expand E")
+	// trc("expand write %q", tok)
 	w.write(tok)
 	goto start
 }
@@ -900,28 +913,28 @@ func (c *cpp) actuals(m *Macro, r tokenReader) (varArgs []cppToken, ap [][]cppTo
 // combinations. After the entire input sequence is finished, the updated hide
 // set is applied to the output sequence, and that is the result of subst.
 func (c *cpp) subst(m *Macro, is []cppToken, fp []StringID, varArgs []cppToken, ap [][]cppToken, hs hideSet, os *[]cppToken, expandDefined bool) (r []cppToken) {
-	// var a []string
-	// for _, v := range ap {
-	// 	a = append(a, fmt.Sprintf("%q", cppToksStr(v, "|")))
-	// }
-	// dbg("==== subst: is %q, fp %v ap %v", cppToksStr(is, "|"), fp, a)
+	var ap0 [][]cppToken
+	for _, v := range ap {
+		ap0 = append(ap0, append([]cppToken(nil), v...))
+	}
+	// trc("==== subst: is %q, fp, %v ap@%p %v", cppToksStr(is, "|"), fp, &ap, cppToksStr2(ap))
 start:
-	// dbg("start: %q", cppToksStr(is, "|"))
+	// trc("start: is %q, fp %v, ap@%p %v, os %q", cppToksStr(is, "|"), fp, &ap, cppToksStr2(ap), cppToksStr(*os, "|"))
 	if len(is) == 0 {
 		// ---------------------------------------------------------- A
 		// return hsadd(HS, OS);
-		// dbg("---- A")
-		// dbg("subst returns %q", cppToksStr(os, "|"))
+		// trc("---- A")
+		// trc("subst RETURNS %q", cppToksStr(*os, "|"))
 		return c.hsAdd(hs, os)
 	}
 
 	tok := is[0]
 	var arg []cppToken
 	if tok.char == '#' {
-		if len(is) > 1 && is[1].char == IDENTIFIER && m.param(varArgs, ap, is[1].value, &arg) {
+		if len(is) > 1 && is[1].char == IDENTIFIER && m.param(varArgs, ap0, is[1].value, &arg) {
 			// -------------------------------------------------- B
 			// return subst(IS’, FP, AP, HS, OS • stringize(select(i, AP)));
-			// dbg("---- subst B")
+			// trc("---- subst B")
 			*os = append(*os, c.stringize(arg))
 			is = is[2:]
 			goto start
@@ -929,14 +942,14 @@ start:
 	}
 
 	if tok.char == PPPASTE {
-		if len(is) > 1 && is[1].char == IDENTIFIER && m.param(varArgs, ap, is[1].value, &arg) {
+		if len(is) > 1 && is[1].char == IDENTIFIER && m.param(varArgs, ap0, is[1].value, &arg) {
 			// -------------------------------------------------- C
-			// dbg("---- subst C")
+			// trc("---- subst C")
 			if len(arg) == 0 {
 				// TODO "only if actuals can be empty"
 				// ------------------------------------------ D
 				// return subst(IS’, FP, AP, HS, OS);
-				// dbg("---- D")
+				// trc("---- D")
 				if c := len(*os); c != 0 && (*os)[c-1].char == ',' {
 					*os = (*os)[:c-1]
 				}
@@ -946,7 +959,7 @@ start:
 
 			// -------------------------------------------------- E
 			// return subst(IS’, FP, AP, HS, glue(OS, select(i, AP)));
-			// dbg("---- subst E")
+			// trc("---- subst E, arg %q", cppToksStr(arg, "|"))
 			*os = c.glue(*os, arg)
 			is = is[2:]
 			goto start
@@ -955,39 +968,39 @@ start:
 		if len(is) > 1 {
 			// -------------------------------------------------- F
 			// return subst(IS’, FP, AP, HS, glue(OS, T^HS’));
-			// dbg("---- subst F")
+			// trc("---- subst F")
 			*os = c.glue(*os, is[1:2])
 			is = is[2:]
 			goto start
 		}
 	}
 
-	if tok.char == IDENTIFIER && (len(is) > 1 && is[1].char == PPPASTE) && m.param(varArgs, ap, tok.value, &arg) {
+	if tok.char == IDENTIFIER && (len(is) > 1 && is[1].char == PPPASTE) && m.param(varArgs, ap0, tok.value, &arg) {
 		// ---------------------------------------------------------- G
-		// dbg("---- subst G")
+		// trc("---- subst G")
 		if len(arg) == 0 {
 			// TODO "only if actuals can be empty"
 			// -------------------------------------------------- H
-			// dbg("---- subst H")
+			// trc("---- subst H")
 			is = is[2:] // skip T##
 			if len(is) > 0 && is[0].char == IDENTIFIER && m.param(varArgs, ap, is[0].value, &arg) {
 				// -------------------------------------------------- I
 				// return subst(IS’’, FP, AP, HS, OS • select(j, AP));
-				// dbg("---- subst I")
+				// trc("---- subst I")
 				*os = append(*os, arg...)
 				is = is[1:]
 				goto start
 			} else {
 				// -------------------------------------------------- J
 				// return subst(IS’, FP, AP, HS, OS);
-				// dbg("---- subst J")
+				// trc("---- subst J")
 				goto start
 			}
 		}
 
 		// ---------------------------------------------------------- K
 		// return subst(##^HS’ • IS’, FP, AP, HS, OS • select(i, AP));
-		// dbg("---- subst K")
+		// trc("---- subst K")
 		*os = append(*os, arg...)
 		is = is[1:]
 		goto start
@@ -997,7 +1010,7 @@ start:
 	if tok.char == IDENTIFIER && m.param2(varArgs, ap, tok.value, &arg, &ax) {
 		// ------------------------------------------ L
 		// return subst(IS’, FP, AP, HS, OS • expand(select(i, AP)));
-		// dbg("---- subst L")
+		// trc("---- subst L")
 		// if toks, ok := cache[tok.value]; ok {
 		// 	os = append(os, toks...)
 		// 	is = is[1:]
@@ -1006,7 +1019,9 @@ start:
 
 		sel := cppReader{buf: arg}
 		var w cppWriter
+		// trc("---- L(1) ap@%p %v", &ap, cppToksStr2(ap))
 		c.expand(&sel, &w, expandDefined)
+		// trc("---- L(2) ap@%p %v", &ap, cppToksStr2(ap))
 		*os = append(*os, w.toks...)
 		if ax >= 0 {
 			ap[ax] = w.toks
@@ -1018,9 +1033,9 @@ start:
 	// ------------------------------------------------------------------ M
 	// note IS must be T^HS’ • IS’
 	// return subst(IS’, FP, AP, HS, OS • T^HS’);
-	// dbg("---- subst M")
 	*os = append(*os, tok)
 	is = is[1:]
+	// trc("---- subst M: is %q, os %q", cppToksStr(is, "|"), cppToksStr(*os, "|"))
 	goto start
 }
 
@@ -1045,7 +1060,18 @@ start:
 // 43
 // 0
 // $
+//
+// ----------------------------------------------------------------------------
+//	glue(LS,RS ) /* paste last of left side with first of right side */
+//	{
+//		if LS is L^HS and RS is R^HS’ • RS’ then
+//			return L&R^(HS∩HS’) • RS’;	/* undefined if L&R is invalid */
+
+//		// note LS must be L HS • LS’
+//		return L^HS • glue(LS’,RS );
+//	}
 func (c *cpp) glue(ls, rs []cppToken) (out []cppToken) {
+	// trc("ls %q, rs %q", cppToksStr(ls, "|"), cppToksStr(rs, "|"))
 	if len(rs) == 0 {
 		return ls
 	}
