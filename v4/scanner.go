@@ -166,6 +166,9 @@ func newToken(s *scannerSource, ch rune, sep, src, len uint32) Token {
 	}
 }
 
+// String implements fmt.Stringer.
+func (t *Token) String() string { return PrettyString(t) }
+
 // Name returns a human readable representation of t.Ch.
 func (t *Token) Name() string { return runeName(t.Ch) }
 
@@ -208,8 +211,7 @@ func (t *Token) Set(sep, src []byte) error {
 // Position implements Node.
 func (t *Token) Position() token.Position { return t.s.pos(t.pos) }
 
-// scannerSource captures source code and the associated position information
-// token.File.
+// scannerSource captures source code and the associated position information.
 type scannerSource struct {
 	buf  []byte
 	file *token.File
@@ -863,51 +865,51 @@ func (s *scanner) comment(start uint32) {
 }
 
 const (
-	cppAtLineStart = iota
-	cppHash        // Returned a first token off a line and it was '#'.
-	cppOther
-	cppHeaderName
+	cppScanAtLineStart = iota
+	cppScanHash        // Returned a first token off a line and it was '#'.
+	cppScanOther
+	cppScanHeaderName
 )
 
 // cppScan returns the next preprocessing token, see [0]6.4. If s is at EOF or
 // closed, cppScan returns -1.
 func (s *scanner) cppScan() (tok Token) {
 	switch s.state {
-	case cppAtLineStart:
+	case cppScanAtLineStart:
 		switch tok = s.cppScan0(); tok.Ch {
 		case '\n':
-			s.state = cppAtLineStart
+			s.state = cppScanAtLineStart
 		case '#':
-			s.state = cppHash
+			s.state = cppScanHash
 		default:
-			s.state = cppOther
+			s.state = cppScanOther
 		}
 		return tok
-	case cppHash:
+	case cppScanHash:
 		switch tok = s.cppScan0(); {
 		case tok.Ch == rune(IDENTIFIER) && bytes.Equal(tok.Src(), []byte("include")):
-			s.state = cppHeaderName
+			s.state = cppScanHeaderName
 		default:
-			s.state = cppOther
+			s.state = cppScanOther
 		}
 		return tok
-	case cppHeaderName:
-		s.state = cppOther
+	case cppScanHeaderName:
+		s.state = cppScanOther
 		return s.headerName()
-	case cppOther:
+	case cppScanOther:
 		switch tok = s.cppScan0(); tok.Ch {
 		case '\n':
-			s.state = cppAtLineStart
+			s.state = cppScanAtLineStart
 		}
 		return tok
 	default:
 		s.errHandler(s.pos(s.off), "internal error, scanner state: %v", s.state)
-		s.state = cppOther
+		s.state = cppScanOther
 		return s.cppScan0()
 	}
 }
 
-// headerName scans preprocessor header names.
+// headerName scans preprocessor header-name.
 //
 // [0]A.1.8
 func (s *scanner) headerName() Token {
@@ -919,10 +921,10 @@ func (s *scanner) headerName() Token {
 			switch s.next() {
 			case '>':
 				s.next()
-				s.state = cppOther
+				s.state = cppScanOther
 				return s.newToken(rune(HEADER_NAME))
 			case '\n':
-				s.state = cppAtLineStart
+				s.state = cppScanAtLineStart
 				return s.fail()
 			}
 		}
@@ -931,10 +933,10 @@ func (s *scanner) headerName() Token {
 			switch s.next() {
 			case '"':
 				s.next()
-				s.state = cppOther
+				s.state = cppScanOther
 				return s.newToken(rune(HEADER_NAME))
 			case '\n':
-				s.state = cppAtLineStart
+				s.state = cppScanAtLineStart
 				return s.fail()
 			}
 		}

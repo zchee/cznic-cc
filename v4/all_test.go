@@ -61,9 +61,9 @@ func TestScannerSource(t *testing.T) {
 	testScannerSource(t, fn, 42, nil, true)
 }
 
-func testScannerSource(t *testing.T, name string, value interface{}, exp []byte, mustErr bool) {
+func testScannerSource(t *testing.T, name string, value interface{}, exp []byte, mustFail bool) {
 	ss, err := newScannerSource(name, value)
-	if err != nil != mustErr {
+	if err != nil != mustFail {
 		t.Fatalf("(%q, %T): %v", name, value, err)
 	}
 
@@ -218,4 +218,145 @@ func walk(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) 
 		}
 	}
 	return nil
+}
+
+func BenchmarkCPPScan(b *testing.B) {
+	fs := ccorpus.FileSystem()
+	for i := 0; i < b.N; i++ {
+		var chars int64
+		walk(fs, "/", func(pth string, fi os.FileInfo) error {
+			if fi.IsDir() {
+				return nil
+			}
+
+			switch filepath.Ext(pth) {
+			case ".c", ".h":
+				f, err := fs.Open(pth)
+				if err != nil {
+					b.Fatalf("%q: %v", pth, err)
+				}
+
+				fi, err := f.Stat()
+				if err != nil {
+					b.Fatalf("%q: %v", pth, err)
+				}
+
+				chars += fi.Size()
+				src, err := newScannerSource(pth, f)
+				if err != nil {
+					b.Fatalf("%q: %v", pth, err)
+				}
+
+				s := newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+				})
+				for {
+					tok := s.cppScan()
+					if tok.Ch < 0 {
+						break
+					}
+				}
+			}
+			return nil
+		})
+		b.SetBytes(chars)
+	}
+}
+
+func TestCPPLine(t *testing.T) {
+	fs := ccorpus.FileSystem()
+	var files, lines, chars int
+	walk(fs, "/", func(pth string, fi os.FileInfo) error {
+		if fi.IsDir() {
+			return nil
+		}
+
+		switch filepath.Ext(pth) {
+		case ".c", ".h":
+			f, err := fs.Open(pth)
+			if err != nil {
+				t.Fatalf("%q: %v", pth, err)
+			}
+
+			fi, err := f.Stat()
+			if err != nil {
+				t.Fatalf("%q: %v", pth, err)
+			}
+
+			chars += int(fi.Size())
+			src, err := newScannerSource(pth, f)
+			if err != nil {
+				t.Fatalf("%q: %v", pth, err)
+			}
+
+			s := newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+			})
+			p := newCppParser(s)
+			files++
+			var line []Token
+			for {
+				line = p.line()
+				if len(line) == 0 {
+					t.Fatal(pth)
+				}
+
+				if line[0].Ch < 0 {
+					break
+				}
+
+				if line[len(line)-1].Ch != '\n' {
+					t.Fatal(line[0].Position())
+				}
+
+			}
+			lines += line[0].Position().Line
+		}
+		return nil
+	})
+	t.Logf("files %v, lines %v, chars %v", files, lines, chars)
+}
+
+func BenchmarkCPPLine(b *testing.B) {
+	fs := ccorpus.FileSystem()
+	for i := 0; i < b.N; i++ {
+		var chars int64
+		walk(fs, "/", func(pth string, fi os.FileInfo) error {
+			if fi.IsDir() {
+				return nil
+			}
+
+			switch filepath.Ext(pth) {
+			case ".c", ".h":
+				f, err := fs.Open(pth)
+				if err != nil {
+					b.Fatalf("%q: %v", pth, err)
+				}
+
+				fi, err := f.Stat()
+				if err != nil {
+					b.Fatalf("%q: %v", pth, err)
+				}
+
+				chars += fi.Size()
+				src, err := newScannerSource(pth, f)
+				if err != nil {
+					b.Fatalf("%q: %v", pth, err)
+				}
+
+				s := newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+				})
+				p := newCppParser(s)
+				var line []Token
+				for {
+					if line = p.line(); line[0].Ch < 0 {
+						break
+					}
+				}
+			}
+			return nil
+		})
+		b.SetBytes(chars)
+	}
 }
