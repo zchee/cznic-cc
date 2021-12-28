@@ -111,3 +111,12 @@ func runeName(ch rune) string {
 		return fmt.Sprintf("%+q", ch)
 	}
 }
+
+// env returns os.Getenv("key") or defaultVal if getenv returns an empty string.
+func env(key, defaultVal string) string {
+	if s := os.Getenv(key); s != "" {
+		return s
+	}
+
+	return defaultVal
+}

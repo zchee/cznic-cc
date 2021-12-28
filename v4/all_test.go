@@ -8,9 +8,12 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -20,8 +23,82 @@ import (
 )
 
 var (
-	re *regexp.Regexp
+	re          *regexp.Regexp
+	corpus      = map[string][]byte{}
+	corpusIndex []string
 )
+
+func init() {
+	fs := ccorpus.FileSystem()
+	var walk func(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error
+	walk = func(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error {
+		if !strings.HasSuffix(dir, "/") {
+			dir += "/"
+		}
+		root, err := fs.Open(dir)
+		if err != nil {
+			return err
+		}
+
+		fi, err := root.Stat()
+		if err != nil {
+			return err
+		}
+
+		if !fi.IsDir() {
+			return fmt.Errorf("%s: not a directory", fi.Name())
+		}
+
+		fis, err := root.Readdir(-1)
+		if err != nil {
+			return err
+		}
+
+		for _, v := range fis {
+			switch {
+			case v.IsDir():
+				if err = walk(fs, v.Name(), f); err != nil {
+					return err
+				}
+			default:
+				if err = f(v.Name(), v); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	var chars int
+	if err := walk(ccorpus.FileSystem(), "/", func(pth string, fi os.FileInfo) error {
+		if fi.IsDir() {
+			return nil
+		}
+
+		f, err := fs.Open(pth)
+		if err != nil {
+			return errorf("%v: %v", pth, err)
+		}
+
+		b, err := io.ReadAll(f)
+		if err != nil {
+			return errorf("%v: %v", pth, err)
+		}
+
+		switch filepath.Ext(pth) {
+		case ".c", ".h":
+			if len(b) != 0 && b[len(b)-1] != '\n' {
+				b = append(b, '\n')
+			}
+		}
+		chars += len(b)
+		corpus[pth] = b
+		corpusIndex = append(corpusIndex, pth)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+}
 
 // Produce the AST used in examples documentation.
 func exampleAST(rule int, src string) interface{} {
@@ -77,7 +154,7 @@ func TestScannerSource(t *testing.T) {
 }
 
 func testScannerSource(t *testing.T, name string, value interface{}, exp []byte, mustFail bool) {
-	ss, err := newScannerSource(name, value)
+	ss, err := newScannerSource(Source{name, value})
 	if err != nil != mustFail {
 		t.Fatalf("(%q, %T): %v", name, value, err)
 	}
@@ -92,10 +169,10 @@ func testScannerSource(t *testing.T, name string, value interface{}, exp []byte,
 }
 
 func TestToken(t *testing.T) {
-	s, err := newScannerSource("test", `abc
+	s, err := newScannerSource(Source{"test", `abc
 def
  ghi
-`)
+`})
 	// abc\ndef\n ghi\n
 	//             1
 	// 0123 4567 89012
@@ -154,36 +231,25 @@ def
 }
 
 func TestScanner(t *testing.T) {
-	fs := ccorpus.FileSystem()
-	var files, tokens, chars int
-	walk(fs, "/", func(pth string, fi os.FileInfo) error {
-		if fi.IsDir() {
-			return nil
-		}
-
-		switch filepath.Ext(pth) {
+	var files, tokens int
+	var chars int64
+	var m0, m runtime.MemStats
+	debug.FreeOSMemory()
+	runtime.ReadMemStats(&m0)
+	for _, path := range corpusIndex {
+		switch filepath.Ext(path) {
 		case ".c", ".h":
-			f, err := fs.Open(pth)
-			if err != nil {
-				t.Fatalf("%q: %v", pth, err)
-			}
-
-			fi, err := f.Stat()
-			if err != nil {
-				t.Fatalf("%q: %v", pth, err)
-			}
-
-			chars += int(fi.Size())
-			src, err := newScannerSource(pth, f)
-			if err != nil {
-				t.Fatalf("%q: %v", pth, err)
-			}
-
+			buf := corpus[path]
+			chars += int64(len(buf))
 			var s *scanner
-			s = newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+			var err error
+			if s, err = newScanner(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
 				s.close()
 				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
-			})
+			}); err != nil {
+				t.Fatal(path, err)
+			}
+
 			files++
 			for {
 				tok := s.cppScan()
@@ -194,79 +260,28 @@ func TestScanner(t *testing.T) {
 				tokens++
 			}
 		}
-		return nil
-	})
-	t.Logf("files %v, tokens %v, bytes %v", files, tokens, chars)
-}
-
-func walk(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error {
-	if !strings.HasSuffix(dir, "/") {
-		dir += "/"
 	}
-	root, err := fs.Open(dir)
-	if err != nil {
-		return err
-	}
-
-	fi, err := root.Stat()
-	if err != nil {
-		return err
-	}
-
-	if !fi.IsDir() {
-		return fmt.Errorf("%s: not a directory", fi.Name())
-	}
-
-	fis, err := root.Readdir(-1)
-	if err != nil {
-		return err
-	}
-
-	for _, v := range fis {
-		switch {
-		case v.IsDir():
-			if err = walk(fs, v.Name(), f); err != nil {
-				return err
-			}
-		default:
-			if err = f(v.Name(), v); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	runtime.ReadMemStats(&m)
+	t.Logf("files %v, tokens %v, bytes %v, heap %v", files, tokens, chars, m.HeapAlloc-m0.HeapAlloc)
 }
 
 func BenchmarkScanner(b *testing.B) {
-	fs := ccorpus.FileSystem()
+	debug.FreeOSMemory()
 	for i := 0; i < b.N; i++ {
 		var chars int64
-		walk(fs, "/", func(pth string, fi os.FileInfo) error {
-			if fi.IsDir() {
-				return nil
-			}
-
-			switch filepath.Ext(pth) {
+		for _, path := range corpusIndex {
+			switch filepath.Ext(path) {
 			case ".c", ".h":
-				f, err := fs.Open(pth)
-				if err != nil {
-					b.Fatalf("%q: %v", pth, err)
-				}
-
-				fi, err := f.Stat()
-				if err != nil {
-					b.Fatalf("%q: %v", pth, err)
-				}
-
-				chars += fi.Size()
-				src, err := newScannerSource(pth, f)
-				if err != nil {
-					b.Fatalf("%q: %v", pth, err)
-				}
-
-				s := newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+				buf := corpus[path]
+				chars += int64(len(buf))
+				var s *scanner
+				var err error
+				if s, err = newScanner(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
+					s.close()
 					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
-				})
+				}); err != nil {
+					b.Fatal(path, err)
+				}
 				for {
 					tok := s.cppScan()
 					if tok.Ch == eof {
@@ -274,8 +289,7 @@ func BenchmarkScanner(b *testing.B) {
 					}
 				}
 			}
-			return nil
-		})
+		}
 		b.SetBytes(chars)
 	}
 }
@@ -285,49 +299,34 @@ var cppParseBlacklist = map[string]struct{}{
 }
 
 func TestCPPParse(t *testing.T) {
-	fs := ccorpus.FileSystem()
-	var files, lines, chars int
-	walk(fs, "/", func(pth string, fi os.FileInfo) error {
-		if fi.IsDir() {
-			return nil
+	var files, lines int
+	var chars int64
+	var asts []group
+	var m0, m runtime.MemStats
+	debug.FreeOSMemory()
+	runtime.ReadMemStats(&m0)
+	for _, path := range corpusIndex {
+		if _, ok := cppParseBlacklist[path]; ok {
+			continue
 		}
 
-		if _, ok := cppParseBlacklist[pth]; ok {
-			return nil
-		}
-
-		switch filepath.Ext(pth) {
+		switch filepath.Ext(path) {
 		case ".c", ".h":
-			f, err := fs.Open(pth)
-			if err != nil {
-				t.Fatalf("%q: %v", pth, err)
-			}
-
-			fi, err := f.Stat()
-			if err != nil {
-				t.Fatalf("%q: %v", pth, err)
-			}
-
-			chars += int(fi.Size())
-			src, err := newScannerSource(pth, f)
-			if err != nil {
-				t.Fatalf("%q: %v", pth, err)
-			}
-
-			var s *scanner
-			s = newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
-				s.close()
-				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
-			})
+			buf := corpus[path]
+			chars += int64(len(buf))
 			var p *cppParser
-			p = newCppParser(s, func(pos token.Position, msg string, args ...interface{}) {
+			var err error
+			if p, err = newCppParser(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
 				p.close()
 				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
-			})
+			}); err != nil {
+				t.Fatal(path, err)
+			}
+
 			files++
 			ast := p.preprocessingFile()
 			if len(ast) == 0 {
-				t.Fatalf("%v: empty AST", pth)
+				t.Fatalf("%v: empty AST", path)
 			}
 
 			eol := ast[len(ast)-1]
@@ -338,56 +337,38 @@ func TestCPPParse(t *testing.T) {
 
 			eof := Token(x)
 			lines += eof.Position().Line
+			asts = append(asts, ast)
 		}
-		return nil
-	})
-	t.Logf("files %v, lines %v, bytes %v", files, lines, chars)
+	}
+	runtime.ReadMemStats(&m)
+	t.Logf("files %v, lines %v, bytes %v, heap %v", files, lines, chars, m.HeapAlloc-m0.HeapAlloc)
 }
 
 func BenchmarkCPPParse(b *testing.B) {
-	fs := ccorpus.FileSystem()
+	debug.FreeOSMemory()
 	for i := 0; i < b.N; i++ {
 		var chars int64
-		walk(fs, "/", func(pth string, fi os.FileInfo) error {
-			if fi.IsDir() {
-				return nil
+		for _, path := range corpusIndex {
+			if _, ok := cppParseBlacklist[path]; ok {
+				continue
 			}
 
-			if _, ok := cppParseBlacklist[pth]; ok {
-				return nil
-			}
-
-			switch filepath.Ext(pth) {
+			switch filepath.Ext(path) {
 			case ".c", ".h":
-				f, err := fs.Open(pth)
-				if err != nil {
-					b.Fatalf("%q: %v", pth, err)
-				}
-
-				fi, err := f.Stat()
-				if err != nil {
-					b.Fatalf("%q: %v", pth, err)
-				}
-
-				chars += fi.Size()
-				src, err := newScannerSource(pth, f)
-				if err != nil {
-					b.Fatalf("%q: %v", pth, err)
-				}
-
-				var s *scanner
-				s = newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
-					s.close()
-					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
-				})
+				buf := corpus[path]
+				chars += int64(len(buf))
 				var p *cppParser
-				p = newCppParser(s, func(pos token.Position, msg string, args ...interface{}) {
+				var err error
+				if p, err = newCppParser(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
 					p.close()
 					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
-				})
+				}); err != nil {
+					b.Fatal(path, err)
+				}
+
 				ast := p.preprocessingFile()
 				if len(ast) == 0 {
-					b.Fatalf("%v: empty AST", pth)
+					b.Fatalf("%v: empty AST", path)
 				}
 
 				eol := ast[len(ast)-1]
@@ -395,8 +376,7 @@ func BenchmarkCPPParse(b *testing.B) {
 					b.Fatalf("%v: AST not terminated: %T", p.pos(), eol)
 				}
 			}
-			return nil
-		})
+		}
 		b.SetBytes(chars)
 	}
 }

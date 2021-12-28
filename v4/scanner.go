@@ -224,16 +224,10 @@ type scannerSource struct {
 	pos0 token.Pos
 }
 
-// newScannerSource returns a new scanner source. The name argument is used for
-// reporting Token positions.  The value argument can be a string, []byte,
-// fs.File, io.ReadCloser, io.Reader or nil. If the value argument is nil an
-// attempt is made to open a file using the name argument.
-//
-// When the value argument is an *os.File, io.ReadCloser or fs.File,
-// value.Close() is called before returning.
-func newScannerSource(name string, value interface{}) (s *scannerSource, err error) {
+// newScannerSource returns a new scanner source.
+func newScannerSource(src Source) (s *scannerSource, err error) {
 	s = &scannerSource{}
-	switch x := value.(type) {
+	switch x := src.Value.(type) {
 	case io.ReadCloser:
 		defer func() {
 			if e := x.Close(); e != nil && err == nil {
@@ -254,7 +248,7 @@ func newScannerSource(name string, value interface{}) (s *scannerSource, err err
 			return nil, errorf("source too big: %v bytes", sz)
 		}
 
-		return newScannerSource(name, io.ReadCloser(x))
+		return newScannerSource(Source{src.Name, io.ReadCloser(x)})
 	case []byte:
 		s.buf = x
 	case io.Reader:
@@ -262,12 +256,12 @@ func newScannerSource(name string, value interface{}) (s *scannerSource, err err
 			return nil, errorf("", err)
 		}
 	case nil:
-		f, err := os.Open(name)
+		f, err := os.Open(src.Name)
 		if err != nil {
 			return nil, errorf("", err)
 		}
 
-		return newScannerSource(name, fs.File(f))
+		return newScannerSource(Source{src.Name, fs.File(f)})
 	case string:
 		s.buf = []byte(x)
 	default:
@@ -282,7 +276,7 @@ func newScannerSource(name string, value interface{}) (s *scannerSource, err err
 		s.buf = append(s.buf, '\n')
 	}
 	s.len = uint32(len(s.buf))
-	s.file = token.NewFile(name, int(s.len))
+	s.file = token.NewFile(src.Name, int(s.len))
 	s.pos0 = s.file.Pos(0)
 	return s, nil
 }
@@ -311,12 +305,17 @@ type scanner struct {
 
 // newScanner returns a new scanner. The errHandler function is invoked on
 // scanner errors.
-func newScanner(src *scannerSource, eh errHandler) *scanner {
+func newScanner(src Source, eh errHandler) (*scanner, error) {
+	s, err := newScannerSource(src)
+	if err != nil {
+		return nil, err
+	}
+
 	return &scanner{
-		s:  src,
+		s:  s,
 		ch: eof,
 		eh: eh,
-	}
+	}, nil
 }
 
 // close causes all subsequent calls to .scan to return an EOF token.

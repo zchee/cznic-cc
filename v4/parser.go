@@ -19,8 +19,13 @@ type cppParser struct {
 
 // newCppParser returns a newly created cppParser. The errHandler function is invoked on
 // parser errors.
-func newCppParser(s *scanner, eh errHandler) *cppParser {
-	return &cppParser{s: s, eh: eh}
+func newCppParser(src Source, eh errHandler) (*cppParser, error) {
+	s, err := newScanner(src, eh)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cppParser{s: s, eh: eh}, nil
 }
 
 // close causes all subsequent calls to .line to signal EOF.
