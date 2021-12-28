@@ -6,15 +6,21 @@ package cc // import "modernc.org/cc/v4"
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
 	"modernc.org/ccorpus"
 	"modernc.org/httpfs"
 	"modernc.org/token"
+)
+
+var (
+	re *regexp.Regexp
 )
 
 // Produce the AST used in examples documentation.
@@ -39,6 +45,15 @@ func exampleAST(rule int, src string) interface{} {
 	// depth := mathutil.MaxInt
 	// findNode(typ, ast.TranslationUnit, 0, &node, &depth)
 	// return node
+}
+
+func TestMain(m *testing.M) {
+	oRE := flag.String("re", "", "")
+	flag.Parse()
+	if *oRE != "" {
+		re = regexp.MustCompile(*oRE)
+	}
+	os.Exit(m.Run())
 }
 
 func TestScannerSource(t *testing.T) {
@@ -102,7 +117,7 @@ def
 		{newToken(s, 0, 0, 0, 3), 1, 1, 0, "", "abc"},
 		{newToken(s, 1, 3, 4, 3), 2, 1, 1, "\n", "def"},
 		{newToken(s, 2, 7, 9, 3), 3, 2, 2, "\n ", "ghi"},
-		{newToken(s, -1, 13, 13, 0), 3, 6, -1, "", ""}, // EOF token
+		{newToken(s, eof, 13, 13, 0), 3, 6, eof, "", ""},
 	} {
 		tok := test.Token
 		if g, e := tok.Position().Line, test.line; g != e {
@@ -138,7 +153,7 @@ def
 	}
 }
 
-func TestCPPScan(t *testing.T) {
+func TestScanner(t *testing.T) {
 	fs := ccorpus.FileSystem()
 	var files, tokens, chars int
 	walk(fs, "/", func(pth string, fi os.FileInfo) error {
@@ -164,13 +179,15 @@ func TestCPPScan(t *testing.T) {
 				t.Fatalf("%q: %v", pth, err)
 			}
 
-			s := newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+			var s *scanner
+			s = newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+				s.close()
 				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
 			})
 			files++
 			for {
 				tok := s.cppScan()
-				if tok.Ch < 0 {
+				if tok.Ch == eof {
 					break
 				}
 
@@ -179,7 +196,7 @@ func TestCPPScan(t *testing.T) {
 		}
 		return nil
 	})
-	t.Logf("files %v, tokens %v, chars %v", files, tokens, chars)
+	t.Logf("files %v, tokens %v, bytes %v", files, tokens, chars)
 }
 
 func walk(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error {
@@ -220,7 +237,7 @@ func walk(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) 
 	return nil
 }
 
-func BenchmarkCPPScan(b *testing.B) {
+func BenchmarkScanner(b *testing.B) {
 	fs := ccorpus.FileSystem()
 	for i := 0; i < b.N; i++ {
 		var chars int64
@@ -252,7 +269,7 @@ func BenchmarkCPPScan(b *testing.B) {
 				})
 				for {
 					tok := s.cppScan()
-					if tok.Ch < 0 {
+					if tok.Ch == eof {
 						break
 					}
 				}
@@ -263,11 +280,19 @@ func BenchmarkCPPScan(b *testing.B) {
 	}
 }
 
-func TestCPPLine(t *testing.T) {
+var cppParseBlacklist = map[string]struct{}{
+	"/github.com/vnmakarov/mir/c-tests/new/endif.c": {}, // 1:1: unexpected #endif
+}
+
+func TestCPPParse(t *testing.T) {
 	fs := ccorpus.FileSystem()
 	var files, lines, chars int
 	walk(fs, "/", func(pth string, fi os.FileInfo) error {
 		if fi.IsDir() {
+			return nil
+		}
+
+		if _, ok := cppParseBlacklist[pth]; ok {
 			return nil
 		}
 
@@ -289,40 +314,46 @@ func TestCPPLine(t *testing.T) {
 				t.Fatalf("%q: %v", pth, err)
 			}
 
-			s := newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+			var s *scanner
+			s = newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+				s.close()
 				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
 			})
-			p := newCppParser(s)
+			var p *cppParser
+			p = newCppParser(s, func(pos token.Position, msg string, args ...interface{}) {
+				p.close()
+				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+			})
 			files++
-			var line []Token
-			for {
-				line = p.line()
-				if len(line) == 0 {
-					t.Fatal(pth)
-				}
-
-				if line[0].Ch < 0 {
-					break
-				}
-
-				if line[len(line)-1].Ch != '\n' {
-					t.Fatal(line[0].Position())
-				}
-
+			ast := p.preprocessingFile()
+			if len(ast) == 0 {
+				t.Fatalf("%v: empty AST", pth)
 			}
-			lines += line[0].Position().Line
+
+			eol := ast[len(ast)-1]
+			x, ok := eol.(eofLine)
+			if !ok {
+				t.Fatalf("%v: AST not terminated: %T", p.pos(), eol)
+			}
+
+			eof := Token(x)
+			lines += eof.Position().Line
 		}
 		return nil
 	})
-	t.Logf("files %v, lines %v, chars %v", files, lines, chars)
+	t.Logf("files %v, lines %v, bytes %v", files, lines, chars)
 }
 
-func BenchmarkCPPLine(b *testing.B) {
+func BenchmarkCPPParse(b *testing.B) {
 	fs := ccorpus.FileSystem()
 	for i := 0; i < b.N; i++ {
 		var chars int64
 		walk(fs, "/", func(pth string, fi os.FileInfo) error {
 			if fi.IsDir() {
+				return nil
+			}
+
+			if _, ok := cppParseBlacklist[pth]; ok {
 				return nil
 			}
 
@@ -344,15 +375,24 @@ func BenchmarkCPPLine(b *testing.B) {
 					b.Fatalf("%q: %v", pth, err)
 				}
 
-				s := newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+				var s *scanner
+				s = newScanner(src, func(pos token.Position, msg string, args ...interface{}) {
+					s.close()
 					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
 				})
-				p := newCppParser(s)
-				var line []Token
-				for {
-					if line = p.line(); line[0].Ch < 0 {
-						break
-					}
+				var p *cppParser
+				p = newCppParser(s, func(pos token.Position, msg string, args ...interface{}) {
+					p.close()
+					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+				})
+				ast := p.preprocessingFile()
+				if len(ast) == 0 {
+					b.Fatalf("%v: empty AST", pth)
+				}
+
+				eol := ast[len(ast)-1]
+				if _, ok := eol.(eofLine); !ok {
+					b.Fatalf("%v: AST not terminated: %T", p.pos(), eol)
 				}
 			}
 			return nil

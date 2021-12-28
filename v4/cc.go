@@ -11,7 +11,7 @@
 //
 // Online documentation
 //
-// See https://godoc.org/modernc.org/cc/v3.
+// See https://godoc.org/modernc.org/cc/v4.
 //
 // Links
 //

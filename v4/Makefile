@@ -2,7 +2,10 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-.PHONY:	edit editor ast.go build_all_targets
+.PHONY:	ast.go build_all_targets clean cpu edit editor mem 
+
+ast.go:
+	go generate
 
 build_all_targets:
 	GOOS=darwin GOARCH=amd64 go build -v ./...
@@ -16,6 +19,15 @@ build_all_targets:
 	GOOS=windows GOARCH=386 go build -v ./...
 	GOOS=windows GOARCH=amd64 go build -v ./...
 
+clean:
+	rm -f log-* cpu.test mem.test *.out
+	go clean
+
+cpu:
+	go test -c -o cpu.test
+	./cpu.test -test.bench . -test.cpuprofile cpu.out
+	go tool pprof --lines cpu.test cpu.out
+
 edit:
 	@touch log
 	@if [ -f "Session.vim" ]; then gvim -S & else gvim -p Makefile *.go & fi
@@ -25,5 +37,7 @@ editor: ast.go
 	go test -o /dev/null -c
 	go install 2>&1 | tee log
 
-ast.go:
-	go generate
+mem:
+	go test -c -o mem.test
+	./mem.test -test.bench . -test.memprofile mem.out
+	go tool pprof --lines --web --alloc_space mem.test mem.out

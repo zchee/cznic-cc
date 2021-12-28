@@ -23,9 +23,13 @@ var (
 
 // Rune range used for IDENTIFIER and similar non-characters.
 const (
+	eof                     = -1
 	unicodePrivateAreaFirst = 0xe000
 	unicodePrivateAreaLast  = 0xf8ff
 )
+
+// errHandler is a function called on error.
+type errHandler func(pos token.Position, msg string, args ...interface{})
 
 // tokCh enables using stringer.
 type tokCh int
@@ -146,7 +150,7 @@ type Node interface {
 // Token is the lexical token produced by the scanner.
 type Token struct { // 32 bytes on a 64 bit machine.
 	s   *scannerSource
-	Ch  rune   // 'i' or IDENTIFIER etc.
+	Ch  rune   // '*' or IDENTIFIER etc.
 	pos uint32 // Index into ss.buf of the original token.
 	seq uint32 // Sequence number, determines scope boundaries.
 	sep uint32 // Index into .ss.buf of the preceding white space, including comments. Length is .src-.sep.
@@ -273,6 +277,10 @@ func newScannerSource(name string, value interface{}) (s *scannerSource, err err
 		return nil, errorf("source too big: %v bytes", len(s.buf))
 	}
 
+	// [0]5.1.1.2, 2: A source file that is not empty shall end in a new-line character, ...
+	if len(s.buf) != 0 && s.buf[len(s.buf)-1] != '\n' {
+		s.buf = append(s.buf, '\n')
+	}
 	s.len = uint32(len(s.buf))
 	s.file = token.NewFile(name, int(s.len))
 	s.pos0 = s.file.Pos(0)
@@ -286,13 +294,13 @@ func (s *scannerSource) pos(off uint32) token.Position {
 
 // scanner tokenizes a scannerSource.
 type scanner struct {
-	s          *scannerSource
-	errHandler func(pos token.Position, msg string, args ...interface{})
+	s  *scannerSource
+	eh errHandler
 
 	chSize int
 	state  int // cppAtLineStart, ...
 
-	ch  rune // -1 at EOF or when consumed.
+	ch  rune // eof at EOF or when consumed.
 	off uint32
 	sep uint32 // .off on .cppScan invocation.
 	src uint32 // .off on .cppScan finding the start of a token after skipping the separator, if any.
@@ -303,25 +311,28 @@ type scanner struct {
 
 // newScanner returns a new scanner. The errHandler function is invoked on
 // scanner errors.
-func newScanner(src *scannerSource, errHandler func(pos token.Position, msg string, args ...interface{})) *scanner {
+func newScanner(src *scannerSource, eh errHandler) *scanner {
 	return &scanner{
-		s:          src,
-		ch:         -1,
-		errHandler: errHandler,
+		s:  src,
+		ch: eof,
+		eh: eh,
 	}
 }
 
+// close causes all subsequent calls to .scan to return an EOF token.
+func (s *scanner) close() { s.closed = true }
+
 // c returns the current rune s is positioned on. If s is at EOF or closed, c
-// returns -1.
+// returns eof.
 func (s *scanner) c() rune {
 	if s.closed {
-		return -1
+		return eof
 	}
 
 	if s.ch < 0 {
 		if s.off >= s.s.len {
 			s.closed = true
-			return -1
+			return eof
 		}
 	}
 
@@ -345,19 +356,19 @@ func (s *scanner) peek(delta uint32) int {
 		return int(s.s.buf[s.off+uint32(delta)])
 	}
 
-	return -1
+	return eof
 }
 
 // next moves s to and returns the next rune. If s is at EOF or closed, next
-// returns -1.
+// returns eof.
 func (s *scanner) next() rune {
 	if s.closed || s.ch < 0 {
-		return -1
+		return eof
 	}
 
 	s.off += uint32(s.chSize)
 	prev := s.ch
-	s.ch = -1
+	s.ch = eof
 	r := s.c()
 	if prev == '\n' {
 		s.s.file.AddLine(int(s.off))
@@ -369,7 +380,7 @@ func (s *scanner) next() rune {
 func (s *scanner) pos(off uint32) token.Position { return s.s.pos(off) }
 
 // cppScan0 returns the next preprocessing token, see [0]6.4. If s is at EOF or
-// closed, cppScan0 returns -1.
+// closed, cppScan0 returns eof.
 func (s *scanner) cppScan0() (tok Token) {
 	s.scanSep()
 	s.src = s.off
@@ -524,7 +535,7 @@ func (s *scanner) cppScan0() (tok Token) {
 		return s.stringLiteral(rune(STRINGLITERAL))
 	case '\'':
 		return s.characterConstant(rune(CHARCONST))
-	case -1:
+	case eof:
 		s.closed = true
 		return s.newToken(c)
 	}
@@ -540,27 +551,27 @@ func (s *scanner) cppScan0() (tok Token) {
 	}
 }
 
-// characters scans a character-constant.
+// characterConstant scans a character-constant.
 //
 // [0]A.1.5
 func (s *scanner) characterConstant(c rune) Token {
 	s.next() // '\''
-	for s.cchar() {
+	for s.cChar() {
 	}
 	switch s.c() {
 	case '\'':
 		s.next()
 		return s.newToken(c)
 	default:
-		s.errHandler(s.pos(s.src), "character constant not terminated")
+		s.eh(s.pos(s.src), "character constant not terminated")
 		return s.fail()
 	}
 }
 
-// cchar scans c-char.
+// cChar scans c-char.
 //
 // [0]A.1.5
-func (s *scanner) cchar() bool {
+func (s *scanner) cChar() bool {
 	switch s.c() {
 	case '\'', '\n':
 		return false
@@ -573,27 +584,27 @@ func (s *scanner) cchar() bool {
 	}
 }
 
-// stringLiteral scans a string literal.
+// stringLiteral scans a string-literal.
 //
 // [0]A.1.6
 func (s *scanner) stringLiteral(c rune) Token {
 	s.next() // '"'
-	for s.schar() {
+	for s.sChar() {
 	}
 	switch s.c() {
 	case '"':
 		s.next()
 		return s.newToken(c)
 	default:
-		s.errHandler(s.pos(s.src), "string literal not terminated")
+		s.eh(s.pos(s.src), "string literal not terminated")
 		return s.fail()
 	}
 }
 
-// schar scans s-char.
+// sChar scans s-char.
 //
 // [0]A.1.6
-func (s *scanner) schar() bool {
+func (s *scanner) sChar() bool {
 	switch s.c() {
 	case '"', '\n':
 		return false
@@ -606,7 +617,7 @@ func (s *scanner) schar() bool {
 	}
 }
 
-// schar scans escape-sequence.
+// escapeSequence scans escape-sequence.
 //
 // [0]A.1.5
 func (s *scanner) escapeSequence() bool {
@@ -635,13 +646,13 @@ func (s *scanner) universalCharacterName() bool {
 	return false
 }
 
-// hexQuad scans hexQuad.
+// hexQuad scans hex-quad.
 //
 // [0]A.1.4
 func (s *scanner) hexQuad() (r bool) {
 	for i := 0; i < 4; i++ {
 		if !s.hexadecimalDigit() {
-			s.errHandler(s.pos(s.off), "expected hexadecimal digit")
+			s.eh(s.pos(s.off), "expected hexadecimal digit")
 			return r
 		}
 
@@ -650,7 +661,7 @@ func (s *scanner) hexQuad() (r bool) {
 	return r
 }
 
-// hexadecimalOctalSequence scans hexadecimal-escape-sequence.
+// hexadecimalEscapeSequence scans hexadecimal-escape-sequence.
 //
 // [0]A.1.5
 func (s *scanner) hexadecimalEscapeSequence() bool {
@@ -663,7 +674,7 @@ func (s *scanner) hexadecimalEscapeSequence() bool {
 			ok = true
 		}
 		if !ok {
-			s.errHandler(s.pos(s.off), "expected hexadecimal digit")
+			s.eh(s.pos(s.off), "expected hexadecimal digit")
 		}
 		return true
 	}
@@ -686,7 +697,7 @@ func (s *scanner) hexadecimalDigit() bool {
 	return false
 }
 
-// simpleOctalSequence scans octal-escape-sequence.
+// octalEscapeSequence scans octal-escape-sequence.
 //
 // [0]A.1.5
 func (s *scanner) octalEscapeSequence() bool {
@@ -777,7 +788,7 @@ func (s *scanner) sign(must bool) {
 	default:
 		if must {
 			s.next()
-			s.errHandler(s.pos(s.off), "expected sign")
+			s.eh(s.pos(s.off), "expected sign")
 		}
 	}
 }
@@ -800,7 +811,7 @@ func (s *scanner) scanSep() {
 				return
 			default:
 				s.off = off
-				s.ch = -1
+				s.ch = eof
 				return
 			}
 		default:
@@ -815,7 +826,7 @@ func (s *scanner) lineComment(start uint32) {
 	s.next() // '/'
 	for {
 		switch s.c() {
-		case -1, '\n':
+		case eof, '\n':
 			return
 		}
 		s.next()
@@ -838,9 +849,9 @@ func (s *scanner) identifier() Token {
 // fail reports an error at current position, closes s and returns an EOF
 // Token.
 func (s *scanner) fail() Token {
-	s.errHandler(s.pos(s.off), "unexpected rune: %s (%s)", runeName(s.c()), origin(2))
+	s.eh(s.pos(s.off), "unexpected rune: %s (%s)", runeName(s.c()), origin(2))
 	s.closed = true
-	return newToken(s.s, -1, s.off, s.off, 0)
+	return newToken(s.s, eof, s.off, s.off, 0)
 }
 
 // comment scans until the end of a /*-style comment. The leading '/' is
@@ -849,8 +860,8 @@ func (s *scanner) comment(start uint32) {
 	s.next() // '*'
 	for {
 		switch s.c() {
-		case -1:
-			s.errHandler(s.pos(start), "comment not terminated")
+		case eof:
+			s.eh(s.pos(start), "comment not terminated")
 			return
 		case '*':
 			switch s.next() {
@@ -872,7 +883,7 @@ const (
 )
 
 // cppScan returns the next preprocessing token, see [0]6.4. If s is at EOF or
-// closed, cppScan returns -1.
+// closed, cppScan returns eof.
 func (s *scanner) cppScan() (tok Token) {
 	switch s.state {
 	case cppScanAtLineStart:
@@ -903,7 +914,7 @@ func (s *scanner) cppScan() (tok Token) {
 		}
 		return tok
 	default:
-		s.errHandler(s.pos(s.off), "internal error, scanner state: %v", s.state)
+		s.eh(s.pos(s.off), "internal error, scanner state: %v", s.state)
 		s.state = cppScanOther
 		return s.cppScan0()
 	}
