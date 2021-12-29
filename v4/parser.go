@@ -130,7 +130,7 @@ func (p *cppParser) groupPart(inIfSection bool) groupPart {
 				return nil
 			}
 
-			p.eh(p.pos(), "unexpected #%s", p.line[1].Src())
+			p.eh("%v: unexpected #%s", p.pos(), p.line[1].Src())
 			return textLine(p.consume())
 		default:
 			return nonDirective(p.consume())
@@ -192,7 +192,7 @@ func (p *cppParser) ifSection() *ifSection {
 // 	# endif new-line
 func (p *cppParser) endifLine() []Token {
 	if p.c() != '#' || string(p.line[1].Src()) != "endif" {
-		p.eh(p.pos(), "expected #endif")
+		p.eh("%v: expected #endif", p.pos())
 		return nil
 	}
 

@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,9 +18,10 @@ import (
 	"strings"
 	"testing"
 
+	// "github.com/pmezard/go-difflib/difflib"
+	"github.com/dustin/go-humanize"
 	"modernc.org/ccorpus"
 	"modernc.org/httpfs"
-	"modernc.org/token"
 )
 
 var (
@@ -231,8 +233,7 @@ def
 }
 
 func TestScanner(t *testing.T) {
-	var files, tokens int
-	var chars int64
+	var files, tokens, chars int64
 	var m0, m runtime.MemStats
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m0)
@@ -243,9 +244,9 @@ func TestScanner(t *testing.T) {
 			chars += int64(len(buf))
 			var s *scanner
 			var err error
-			if s, err = newScanner(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
+			if s, err = newScanner(Source{path, buf}, func(msg string, args ...interface{}) {
 				s.close()
-				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+				t.Fatalf(msg, args...)
 			}); err != nil {
 				t.Fatal(path, err)
 			}
@@ -262,7 +263,19 @@ func TestScanner(t *testing.T) {
 		}
 	}
 	runtime.ReadMemStats(&m)
-	t.Logf("files %v, tokens %v, bytes %v, heap %v", files, tokens, chars, m.HeapAlloc-m0.HeapAlloc)
+	t.Logf("files %v, tokens %v, bytes %v, heap %v", h(files), h(tokens), h(chars), h(m.HeapAlloc-m0.HeapAlloc))
+}
+
+func h(v interface{}) string {
+	switch x := v.(type) {
+	case int64:
+		return humanize.Comma(x)
+	case uint64:
+		if x <= math.MaxInt64 {
+			return humanize.Comma(int64(x))
+		}
+	}
+	return fmt.Sprint(v)
 }
 
 func BenchmarkScanner(b *testing.B) {
@@ -276,9 +289,9 @@ func BenchmarkScanner(b *testing.B) {
 				chars += int64(len(buf))
 				var s *scanner
 				var err error
-				if s, err = newScanner(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
+				if s, err = newScanner(Source{path, buf}, func(msg string, args ...interface{}) {
 					s.close()
-					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+					b.Fatalf(msg, args...)
 				}); err != nil {
 					b.Fatal(path, err)
 				}
@@ -299,8 +312,7 @@ var cppParseBlacklist = map[string]struct{}{
 }
 
 func TestCPPParse(t *testing.T) {
-	var files, lines int
-	var chars int64
+	var files, lines, chars int64
 	var asts []group
 	var m0, m runtime.MemStats
 	debug.FreeOSMemory()
@@ -316,9 +328,9 @@ func TestCPPParse(t *testing.T) {
 			chars += int64(len(buf))
 			var p *cppParser
 			var err error
-			if p, err = newCppParser(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
+			if p, err = newCppParser(Source{path, buf}, func(msg string, args ...interface{}) {
 				p.close()
-				t.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+				t.Fatalf(msg, args...)
 			}); err != nil {
 				t.Fatal(path, err)
 			}
@@ -336,12 +348,12 @@ func TestCPPParse(t *testing.T) {
 			}
 
 			eof := Token(x)
-			lines += eof.Position().Line
+			lines += int64(eof.Position().Line)
 			asts = append(asts, ast)
 		}
 	}
 	runtime.ReadMemStats(&m)
-	t.Logf("files %v, lines %v, bytes %v, heap %v", files, lines, chars, m.HeapAlloc-m0.HeapAlloc)
+	t.Logf("files %v, lines %v, bytes %v, heap %v", h(files), h(lines), h(chars), h(m.HeapAlloc-m0.HeapAlloc))
 }
 
 func BenchmarkCPPParse(b *testing.B) {
@@ -359,9 +371,9 @@ func BenchmarkCPPParse(b *testing.B) {
 				chars += int64(len(buf))
 				var p *cppParser
 				var err error
-				if p, err = newCppParser(Source{path, buf}, func(pos token.Position, msg string, args ...interface{}) {
+				if p, err = newCppParser(Source{path, buf}, func(msg string, args ...interface{}) {
 					p.close()
-					b.Fatalf("%v: %v", pos, fmt.Sprintf(msg, args...))
+					b.Fatalf(msg, args...)
 				}); err != nil {
 					b.Fatal(path, err)
 				}
@@ -378,5 +390,85 @@ func BenchmarkCPPParse(b *testing.B) {
 			}
 		}
 		b.SetBytes(chars)
+	}
+}
+
+func TestCPPExpand(t *testing.T) {
+	return //TODO-
+	if err := filepath.Walk(filepath.FromSlash("../v3/testdata/cpp-expand/"), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() || (!strings.HasSuffix(path, ".c") && !strings.HasSuffix(path, ".h")) {
+			return nil
+		}
+
+		if re != nil && !re.MatchString(path) {
+			return nil
+		}
+
+		cpp, err := newCPP([]Source{{path, nil}}, func(msg string, args ...interface{}) { err = fmt.Errorf(msg, args...) })
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var b strings.Builder
+		for {
+			if cpp.c() == eof {
+				break
+			}
+
+			tok := cpp.consume()
+			if tok.Ch != ' ' {
+				b.Write(tok.Src())
+			} else {
+				b.WriteByte(' ')
+			}
+		}
+		trc("\n====\n%s----", b.String())
+		if strings.Contains(filepath.ToSlash(path), "/mustfail/") {
+			if err != nil {
+				return nil
+			}
+
+			return fmt.Errorf("%v: unexpected success", path)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		panic(todo(""))
+		// exp, err := ioutil.ReadFile(path + ".expect")
+		// if err != nil {
+		// 	t.Error(err)
+		// }
+
+		// if g, e := b.String(), string(exp); g != e {
+		// 	a := strings.Split(g, "\n")
+		// 	b := strings.Split(e, "\n")
+		// 	n := len(a)
+		// 	if len(b) > n {
+		// 		n = len(b)
+		// 	}
+		// 	for i := 0; i < n; i++ {
+		// 		var x, y string
+		// 		if i < len(a) {
+		// 			x = a[i]
+		// 		}
+		// 		if i < len(b) {
+		// 			y = b[i]
+		// 		}
+		// 		x = strings.ReplaceAll(x, "\r", "")
+		// 		y = strings.ReplaceAll(y, "\r", "")
+		// 		if x != y {
+		// 			t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
+		// 		}
+		// 	}
+		// }
+		// return nil
+	}); err != nil {
+		t.Fatal(err)
 	}
 }

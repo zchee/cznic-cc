@@ -9,4 +9,7 @@ require (
 	modernc.org/token v1.0.0
 )
 
-require modernc.org/mathutil v1.4.1 // indirect
+require (
+	github.com/dustin/go-humanize v1.0.0 // indirect
+	modernc.org/mathutil v1.4.1 // indirect
+)

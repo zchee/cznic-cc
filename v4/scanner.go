@@ -29,7 +29,7 @@ const (
 )
 
 // errHandler is a function called on error.
-type errHandler func(pos token.Position, msg string, args ...interface{})
+type errHandler func(msg string, args ...interface{})
 
 // tokCh enables using stringer.
 type tokCh int
@@ -534,6 +534,15 @@ func (s *scanner) cppScan0() (tok Token) {
 		return s.stringLiteral(rune(STRINGLITERAL))
 	case '\'':
 		return s.characterConstant(rune(CHARCONST))
+	case 'L':
+		switch s.peek(1) {
+		case '\'':
+			s.next()
+			return s.characterConstant(rune(LONGCHARCONST))
+		case '"':
+			s.next()
+			return s.stringLiteral(rune(LONGSTRINGLITERAL))
+		}
 	case eof:
 		s.closed = true
 		return s.newToken(c)
@@ -562,7 +571,7 @@ func (s *scanner) characterConstant(c rune) Token {
 		s.next()
 		return s.newToken(c)
 	default:
-		s.eh(s.pos(s.src), "character constant not terminated")
+		s.eh("%v: character constant not terminated", s.pos(s.src))
 		return s.fail()
 	}
 }
@@ -595,7 +604,7 @@ func (s *scanner) stringLiteral(c rune) Token {
 		s.next()
 		return s.newToken(c)
 	default:
-		s.eh(s.pos(s.src), "string literal not terminated")
+		s.eh("%v: string literal not terminated", s.pos(s.src))
 		return s.fail()
 	}
 }
@@ -651,7 +660,7 @@ func (s *scanner) universalCharacterName() bool {
 func (s *scanner) hexQuad() (r bool) {
 	for i := 0; i < 4; i++ {
 		if !s.hexadecimalDigit() {
-			s.eh(s.pos(s.off), "expected hexadecimal digit")
+			s.eh("%v: expected hexadecimal digit", s.pos(s.off))
 			return r
 		}
 
@@ -673,7 +682,7 @@ func (s *scanner) hexadecimalEscapeSequence() bool {
 			ok = true
 		}
 		if !ok {
-			s.eh(s.pos(s.off), "expected hexadecimal digit")
+			s.eh("%v: expected hexadecimal digit", s.pos(s.off))
 		}
 		return true
 	}
@@ -787,7 +796,7 @@ func (s *scanner) sign(must bool) {
 	default:
 		if must {
 			s.next()
-			s.eh(s.pos(s.off), "expected sign")
+			s.eh("%v: expected sign", s.pos(s.off))
 		}
 	}
 }
@@ -848,7 +857,7 @@ func (s *scanner) identifier() Token {
 // fail reports an error at current position, closes s and returns an EOF
 // Token.
 func (s *scanner) fail() Token {
-	s.eh(s.pos(s.off), "unexpected rune: %s (%s)", runeName(s.c()), origin(2))
+	s.eh("%v: unexpected rune: %s (%s)", s.pos(s.off), runeName(s.c()), origin(2))
 	s.closed = true
 	return newToken(s.s, eof, s.off, s.off, 0)
 }
@@ -860,7 +869,7 @@ func (s *scanner) comment(start uint32) {
 	for {
 		switch s.c() {
 		case eof:
-			s.eh(s.pos(start), "comment not terminated")
+			s.eh("%v: comment not terminated", s.pos(start))
 			return
 		case '*':
 			switch s.next() {
@@ -913,7 +922,7 @@ func (s *scanner) cppScan() (tok Token) {
 		}
 		return tok
 	default:
-		s.eh(s.pos(s.off), "internal error, scanner state: %v", s.state)
+		s.eh("%v: internal error, scanner state: %v", s.pos(s.off), s.state)
 		s.state = cppScanOther
 		return s.cppScan0()
 	}
