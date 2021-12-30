@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/pmezard/go-difflib v1.0.0
-	modernc.org/cc/v3 v3.35.20
+	modernc.org/cc/v3 v3.35.21
 	modernc.org/ccorpus v1.11.1
 	modernc.org/httpfs v1.0.6
 	modernc.org/strutil v1.1.1
