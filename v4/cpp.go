@@ -42,9 +42,11 @@ func (p *tokens) read() (tok Token, hs hideSet, ok bool) {
 // Macro represents a preprocessor #define.
 type Macro struct {
 	Name            Token
+	Params          []Token
 	ReplacementList []Token
 
-	IsFnLike bool
+	IsFnLike  bool
+	IsVarArgs bool // #define foo(...), #define foo(bar, ...) etc.
 }
 
 func (m *Macro) ts() tokenSequence {
@@ -197,8 +199,8 @@ func (fp formalParams) is(s string) int {
 
 // cpp is the C preprocessor.
 type cpp struct {
-	cache     map[string]group
 	eh        errHandler
+	groups    map[string]group
 	macros    map[string]*Macro
 	sources   []Source
 	stack     []interface{}
@@ -220,7 +222,7 @@ func newCPP(sources []Source, eh errHandler) (*cpp, error) {
 		m[v.Name] = struct{}{}
 	}
 	c := &cpp{
-		cache:   map[string]group{},
+		groups:  map[string]group{},
 		eh:      eh,
 		macros:  map[string]*Macro{},
 		sources: sources,
@@ -248,7 +250,7 @@ func (c *cpp) nextLine() textLine {
 
 			src := c.sources[0]
 			c.sources = c.sources[1:]
-			c.push(c.getGroup(src))
+			c.push(c.group(src))
 		case group:
 			c.pop()
 			if len(x) == 0 {
@@ -291,11 +293,45 @@ func (c *cpp) define(ln controlLine) {
 	case ln[0].Ch == '(' && len(ln[0].Sep()) == 0:
 		// lparen: a ( character not immediately preceded by white-space
 		ln = ln[1:]
-		panic(todo("", ln[0].Position()))
+		c.defineFnMacro(nm, ln)
 	default:
 		// # define identifier replacement-list new-line
 		//                     ^ln[0]
 		c.defineObjectMacro(nm, ln[:len(ln)-1]) // strip new-line
+	}
+}
+
+func (c *cpp) defineFnMacro(nm Token, line []Token) {
+	fp := []Token{line[0]}
+	switch line[0].Ch {
+	case rune(DDD): // ...
+		panic(todo("", toksDump(line)))
+	case rune(IDENTIFIER):
+		line = line[1:]
+	out:
+		for {
+			switch line[0].Ch {
+			case ')':
+				line = line[1:]
+				break out
+			default:
+				panic(todo("", toksDump(line)))
+			}
+		}
+	case '(':
+		panic(todo("", toksDump(line)))
+	default:
+		panic(todo("", toksDump(line)))
+	}
+	line = line[:len(line)-1] // strip new-line
+	rl := c.replacementList(line)
+	switch {
+	case c.macros[string(nm.Src())] != nil:
+		panic(todo("", nm.Position(), &nm))
+	default:
+		trc("", toksDump(fp))
+		trc("", toksDump(rl))
+		c.macros[string(nm.Src())] = &Macro{Name: nm, Params: fp, ReplacementList: rl, IsFnLike: true}
 	}
 }
 
@@ -349,8 +385,8 @@ func (c *cpp) pop() {
 	c.tos = nil
 }
 
-func (c *cpp) getGroup(src Source) group {
-	if g, ok := c.cache[src.Name]; ok {
+func (c *cpp) group(src Source) group {
+	if g, ok := c.groups[src.Name]; ok {
 		return g
 	}
 
@@ -361,7 +397,7 @@ func (c *cpp) getGroup(src Source) group {
 	}
 
 	g := p.group(false)
-	c.cache[src.Name] = g
+	c.groups[src.Name] = g
 	return g
 }
 
@@ -374,8 +410,8 @@ func (c *cpp) push(v interface{}) {
 
 // [1], pg 1.
 func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
-	// trc("TS %v", toksDump(TS))
-	// defer func() { trc("expand -> %v", toksDump(r)) }()
+	trc("TS %v", toksDump(TS))
+	defer func() { trc("expand -> %v", toksDump(r)) }()
 	var ptok preprocessingToken
 	var ok bool
 	ptok.Token, ptok.hs, ok = TS.read()
@@ -407,7 +443,14 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 			seq := c.subst(m.ts(), nil, nil, HS.add(src), nil)
 			return c.expand(&seq)
 		case m.IsFnLike:
-			panic(todo("", T))
+			ts, args, ok := c.parseMacroArgs()
+			_ = ts
+			_ = args
+			_ = ok
+			trc("", toksDump(ts))
+			trc("", toksDump(args))
+			trc("", ok)
+			panic(todo("", &T))
 		}
 	}
 
@@ -416,10 +459,14 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 	return append(append(r, ptok), c.expand(TS)...)
 }
 
+func (c *cpp) parseMacroArgs() (consumed []Token, args [][]Token, ok bool) {
+	panic(todo(""))
+}
+
 // [1], pg 2.
 func (c *cpp) subst(IS tokenSequence, FP formalParams, AP interface{}, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
-	// trc("IS %v, HS %v, OS %v", toksDump(IS), &HS, toksDump(OS))
-	// defer func() { trc("subst -> %v", toksDump(r)) }()
+	trc("IS %v, HS %v, OS %v", toksDump(IS), &HS, toksDump(OS))
+	defer func() { trc("subst -> %v", toksDump(r)) }()
 	var ptok preprocessingToken
 	var ok bool
 	ptok.Token, ptok.hs, ok = IS.read()
@@ -484,35 +531,4 @@ func (c *cpp) c() rune {
 		c.closed = true
 	}
 	return c.tok.Ch
-}
-
-func toksDump(v interface{}) string {
-	var a []string
-	switch x := v.(type) {
-	case textLine:
-		for _, v := range x {
-			a = append(a, string(v.Sep())+string(v.Src()))
-		}
-	case preprocessingTokens:
-		for _, v := range x {
-			s := string(v.Src())
-			if hs := v.hs.String(); hs != "[]" {
-				s = fmt.Sprintf("%s^%s", s, hs)
-			}
-			a = append(a, s)
-		}
-	case *preprocessingTokens:
-		return toksDump(*x)
-	case tokens:
-		for _, v := range x {
-			a = append(a, string(v.Sep())+string(v.Src()))
-		}
-	case *tokens:
-		return toksDump(*x)
-	case *tokenizer:
-		return fmt.Sprintf("<%T>", x)
-	default:
-		panic(todo("%T", x))
-	}
-	return fmt.Sprintf("%q", a)
 }

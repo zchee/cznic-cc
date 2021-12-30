@@ -22,10 +22,15 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
+	"encoding/binary"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+
+	v3 "modernc.org/cc/v3"
 )
 
 // HostConfig returns the system C preprocessor/compiler configuration, or an
@@ -100,4 +105,72 @@ func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sy
 type Source struct {
 	Name  string
 	Value interface{}
+}
+
+// ABI describes selected parts of the Application Binary Interface.
+type ABI struct {
+	ByteOrder  binary.ByteOrder
+	SignedChar bool
+}
+
+// NewABI creates an ABI for a given OS and architecture. The OS and
+// architecture values are the same as used in Go. The ABI type map may miss
+// advanced types like complex numbers, etc.
+func NewABI(os, arch string) (*ABI, error) {
+	abi, err := v3.NewABI(os, arch)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ABI{abi.ByteOrder, abi.SignedChar}, nil
+}
+
+// Config configures the preprocessor, parser and type checker.
+//
+// Search paths listed in IncludePaths and SysIncludePaths are used to resolve
+// #include "foo.h" and #include <foo.h> preprocessing directives respectively.
+// A special search path "@" is interpreted as 'the same directory as where the
+// file with the #include directive is'.
+type Config struct {
+	ABI             *ABI
+	Predefined      string
+	IncludePaths    []string
+	SysIncludePaths []string
+}
+
+type errors []string
+
+// Error implements error.
+func (e errors) Error() string { return strings.Join(e, "\n") }
+
+// Preprocess preprocesses a translation unit, consisting of inputs in sources,
+// and writes the result to w.
+func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
+	var errors errors
+	cpp, err := newCPP(sources, func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) })
+	if err != nil {
+		return err
+	}
+
+	sp := []byte{' '}
+	var b []byte
+	var tok Token
+	for {
+		if cpp.c() == eof {
+			if errors != nil {
+				err = errors
+			}
+			return err
+		}
+
+		switch tok = cpp.consume(); {
+		case tok.Ch != ' ':
+			b = tok.Src()
+		default:
+			b = sp
+		}
+		if _, err = w.Write(b); err != nil {
+			return err
+		}
+	}
 }

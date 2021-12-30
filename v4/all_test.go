@@ -18,19 +18,29 @@ import (
 	"strings"
 	"testing"
 
-	// "github.com/pmezard/go-difflib/difflib"
 	"github.com/dustin/go-humanize"
+	"github.com/pmezard/go-difflib/difflib"
 	"modernc.org/ccorpus"
 	"modernc.org/httpfs"
 )
 
 var (
-	re          *regexp.Regexp
 	corpus      = map[string][]byte{}
 	corpusIndex []string
+	re          *regexp.Regexp
+	testCfg     = &Config{}
 )
 
 func init() {
+	var err error
+	if testCfg.Predefined, testCfg.IncludePaths, testCfg.SysIncludePaths, err = HostConfig(""); err != nil {
+		panic(errorf("cannot acquire host configuration: %v", err))
+	}
+
+	if testCfg.ABI, err = NewABI(runtime.GOOS, runtime.GOARCH); err != nil {
+		panic(errorf("cannot configure ABI: %v", err))
+	}
+
 	fs := ccorpus.FileSystem()
 	var walk func(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error
 	walk = func(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error {
@@ -394,7 +404,7 @@ func BenchmarkCPPParse(b *testing.B) {
 }
 
 func TestCPPExpand(t *testing.T) {
-	return //TODO-
+	return //TODO
 	if err := filepath.Walk(filepath.FromSlash("../v3/testdata/cpp-expand/"), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -408,25 +418,10 @@ func TestCPPExpand(t *testing.T) {
 			return nil
 		}
 
-		cpp, err := newCPP([]Source{{path, nil}}, func(msg string, args ...interface{}) { err = fmt.Errorf(msg, args...) })
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		var b strings.Builder
-		for {
-			if cpp.c() == eof {
-				break
-			}
-
-			tok := cpp.consume()
-			if tok.Ch != ' ' {
-				b.Write(tok.Src())
-			} else {
-				b.WriteByte(' ')
-			}
+		if err := Preprocess(testCfg, []Source{{path, nil}}, &b); err != nil {
+			t.Fatalf("%v: %v", path, err)
 		}
-		trc("\n====\n%s----", b.String())
 		if strings.Contains(filepath.ToSlash(path), "/mustfail/") {
 			if err != nil {
 				return nil
@@ -439,35 +434,44 @@ func TestCPPExpand(t *testing.T) {
 			return err
 		}
 
-		panic(todo(""))
-		// exp, err := ioutil.ReadFile(path + ".expect")
-		// if err != nil {
-		// 	t.Error(err)
-		// }
+		expFn := path + ".expect"
+		exp, err := os.ReadFile(expFn)
+		if err != nil {
+			t.Error(err)
+		}
 
-		// if g, e := b.String(), string(exp); g != e {
-		// 	a := strings.Split(g, "\n")
-		// 	b := strings.Split(e, "\n")
-		// 	n := len(a)
-		// 	if len(b) > n {
-		// 		n = len(b)
-		// 	}
-		// 	for i := 0; i < n; i++ {
-		// 		var x, y string
-		// 		if i < len(a) {
-		// 			x = a[i]
-		// 		}
-		// 		if i < len(b) {
-		// 			y = b[i]
-		// 		}
-		// 		x = strings.ReplaceAll(x, "\r", "")
-		// 		y = strings.ReplaceAll(y, "\r", "")
-		// 		if x != y {
-		// 			t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
-		// 		}
-		// 	}
-		// }
-		// return nil
+		if g, e := strings.ReplaceAll(b.String(), "\r", ""), strings.ReplaceAll(string(exp), "\r", ""); g != e {
+			diff := difflib.UnifiedDiff{
+				A:        difflib.SplitLines(e),
+				B:        difflib.SplitLines(g),
+				FromFile: expFn,
+				ToFile:   path,
+				Context:  0,
+			}
+			_ = diff
+			panic(todo(""))
+			// a := strings.Split(g, "\n")
+			// b := strings.Split(e, "\n")
+			// n := len(a)
+			// if len(b) > n {
+			// 	n = len(b)
+			// }
+			// for i := 0; i < n; i++ {
+			// 	var x, y string
+			// 	if i < len(a) {
+			// 		x = a[i]
+			// 	}
+			// 	if i < len(b) {
+			// 		y = b[i]
+			// 	}
+			// 	x = strings.ReplaceAll(x, "\r", "")
+			// 	y = strings.ReplaceAll(y, "\r", "")
+			// 	if x != y {
+			// 		t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
+			// 	}
+			// }
+		}
+		return nil
 	}); err != nil {
 		t.Fatal(err)
 	}

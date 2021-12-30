@@ -120,3 +120,38 @@ func env(key, defaultVal string) string {
 
 	return defaultVal
 }
+
+func toksDump(v interface{}) string {
+	var a []string
+	switch x := v.(type) {
+	case textLine:
+		for _, v := range x {
+			a = append(a, string(v.Sep())+string(v.Src()))
+		}
+	case preprocessingTokens:
+		for _, v := range x {
+			s := string(v.Src())
+			if hs := v.hs.String(); hs != "[]" {
+				s = fmt.Sprintf("%s^%s", s, hs)
+			}
+			a = append(a, s)
+		}
+	case *preprocessingTokens:
+		return toksDump(*x)
+	case tokens:
+		for _, v := range x {
+			a = append(a, string(v.Sep())+string(v.Src()))
+		}
+	case *tokens:
+		return toksDump(*x)
+	case *tokenizer:
+		return fmt.Sprintf("<%T>", x)
+	case []Token:
+		for _, v := range x {
+			a = append(a, string(v.Sep())+string(v.Src()))
+		}
+	default:
+		panic(todo("%T", x))
+	}
+	return fmt.Sprintf("%q", a)
+}
