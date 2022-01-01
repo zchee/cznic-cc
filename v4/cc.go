@@ -155,6 +155,7 @@ func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 	sp := []byte{' '}
 	var b []byte
 	var tok Token
+	var prev rune
 	for {
 		if cpp.c() == eof {
 			if errors != nil {
@@ -163,12 +164,43 @@ func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 			return err
 		}
 
-		switch tok = cpp.consume(); {
-		case tok.Ch != ' ':
+		tok = cpp.consume()
+		c := tok.Ch
+		switch {
+		case c != ' ':
+			switch {
+			case
+				c == '#' && prev == '#',
+				c == '+' && prev == '+',
+				c == '+' && prev == rune(PPNUMBER),
+				c == '-' && prev == '-',
+				c == '-' && prev == rune(PPNUMBER),
+				c == '.' && prev == '.',
+				c == '.' && prev == rune(PPNUMBER),
+				c == '<' && prev == '<',
+				c == '=' && prev == '!',
+				c == '=' && prev == '%',
+				c == '=' && prev == '&',
+				c == '=' && prev == '*',
+				c == '=' && prev == '+',
+				c == '=' && prev == '/',
+				c == '=' && prev == '<',
+				c == '=' && prev == '=',
+				c == '=' && prev == '^',
+				c == '=' && prev == '|',
+				c == '>' && prev == '-',
+				c == '>' && prev == '>':
+
+				// Prevent the textual form of adjacent tokens to form a "false" token.
+				if _, err := w.Write(sp); err != nil {
+					return err
+				}
+			}
 			b = tok.Src()
 		default:
 			b = sp
 		}
+		prev = c
 		if _, err = w.Write(b); err != nil {
 			return err
 		}

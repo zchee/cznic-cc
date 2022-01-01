@@ -29,6 +29,8 @@ var (
 	corpusIndex []string
 	re          *regexp.Regexp
 	testCfg     = &Config{}
+
+	oTrace = flag.Bool("trc", false, "Print tested paths.")
 )
 
 func init() {
@@ -404,8 +406,37 @@ func BenchmarkCPPParse(b *testing.B) {
 }
 
 func TestCPPExpand(t *testing.T) {
-	return //TODO
-	if err := filepath.Walk(filepath.FromSlash("../v3/testdata/cpp-expand/"), func(path string, info os.FileInfo, err error) error {
+	blacklist := map[string]struct{}{
+		"006.c":                 {}, //TODO
+		"008.c":                 {}, //TODO
+		"009.c":                 {}, //TODO
+		"010.c":                 {}, //TODO
+		"011.c":                 {}, //TODO
+		"012.c":                 {}, //TODO
+		"013.c":                 {}, //TODO
+		"014.c":                 {}, //TODO
+		"015.c":                 {}, //TODO
+		"example-6.10-8.h":      {}, //TODO
+		"example-6.10.2-7.h":    {}, //TODO
+		"example-6.10.2-8.h":    {}, //TODO
+		"example-6.10.3.3-4.h":  {}, //TODO
+		"example-6.10.3.5-3.h":  {}, //TODO
+		"example-6.10.3.5-4.h":  {}, //TODO
+		"example-6.10.3.5-5.h":  {}, //TODO
+		"example-6.10.3.5-6.h":  {}, //TODO
+		"example-6.10.3.5-7.h":  {}, //TODO
+		"example-6.10.3.5-8.h":  {}, //TODO
+		"example-6.10.3.5-9.h":  {}, //TODO
+		"example-6.10.3.5-9a.h": {}, //TODO
+		"example-6.10.3.5-9b.h": {}, //TODO
+		"example-6.10.3.5-9c.h": {}, //TODO
+		"example-6.10.3.5-9d.h": {}, //TODO
+		"issue131.c":            {}, //TODO
+
+	}
+	var fails []string
+	var files, ok, skip int
+	err := filepath.Walk(filepath.FromSlash("../v3/testdata/cpp-expand/"), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -414,12 +445,26 @@ func TestCPPExpand(t *testing.T) {
 			return nil
 		}
 
-		if re != nil && !re.MatchString(path) {
-			return nil
+		files++
+		switch {
+		case re != nil:
+			if !re.MatchString(path) {
+				skip++
+				return nil
+			}
+		default:
+			if _, ok := blacklist[filepath.Base(path)]; ok {
+				skip++
+				return nil
+			}
 		}
 
+		if *oTrace {
+			fmt.Fprintln(os.Stderr, path)
+		}
 		var b strings.Builder
 		if err := Preprocess(testCfg, []Source{{path, nil}}, &b); err != nil {
+			fails = append(fails, path)
 			t.Fatalf("%v: %v", path, err)
 		}
 		if strings.Contains(filepath.ToSlash(path), "/mustfail/") {
@@ -427,20 +472,24 @@ func TestCPPExpand(t *testing.T) {
 				return nil
 			}
 
+			fails = append(fails, path)
 			return fmt.Errorf("%v: unexpected success", path)
 		}
 
 		if err != nil {
+			fails = append(fails, path)
 			return err
 		}
 
 		expFn := path + ".expect"
 		exp, err := os.ReadFile(expFn)
 		if err != nil {
+			fails = append(fails, path)
 			t.Error(err)
 		}
 
 		if g, e := strings.ReplaceAll(b.String(), "\r", ""), strings.ReplaceAll(string(exp), "\r", ""); g != e {
+			fails = append(fails, path)
 			diff := difflib.UnifiedDiff{
 				A:        difflib.SplitLines(e),
 				B:        difflib.SplitLines(g),
@@ -448,31 +497,22 @@ func TestCPPExpand(t *testing.T) {
 				ToFile:   path,
 				Context:  0,
 			}
-			_ = diff
-			panic(todo(""))
-			// a := strings.Split(g, "\n")
-			// b := strings.Split(e, "\n")
-			// n := len(a)
-			// if len(b) > n {
-			// 	n = len(b)
-			// }
-			// for i := 0; i < n; i++ {
-			// 	var x, y string
-			// 	if i < len(a) {
-			// 		x = a[i]
-			// 	}
-			// 	if i < len(b) {
-			// 		y = b[i]
-			// 	}
-			// 	x = strings.ReplaceAll(x, "\r", "")
-			// 	y = strings.ReplaceAll(y, "\r", "")
-			// 	if x != y {
-			// 		t.Errorf("%s:%v: %v", path, i+1, cmp.Diff(y, x))
-			// 	}
-			// }
+			s, err := difflib.GetUnifiedDiffString(diff)
+			if err != nil {
+				t.Fatalf("%v: %v", path, err)
+			}
+
+			t.Errorf("%v", s)
+			return nil
 		}
+		ok++
 		return nil
-	}); err != nil {
+	})
+	for _, v := range fails {
+		t.Log(v)
+	}
+	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
+	if err != nil {
 		t.Fatal(err)
 	}
 }

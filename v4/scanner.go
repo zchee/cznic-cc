@@ -523,6 +523,13 @@ func (s *scanner) cppScan0() (tok Token) {
 			return s.newToken(c)
 		}
 	case '.':
+		if s.peek(1) == '.' && s.peek(2) == '.' {
+			s.next()
+			s.next()
+			s.next()
+			return s.newToken(rune(DDD))
+		}
+
 		s.next()
 		switch c2 := s.c(); {
 		case c2 >= '0' && c2 <= '9':
