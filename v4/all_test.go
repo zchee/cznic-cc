@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v4"
 
 import (
 	"bytes"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"io"
@@ -407,8 +408,6 @@ func BenchmarkCPPParse(b *testing.B) {
 
 func TestCPPExpand(t *testing.T) {
 	blacklist := map[string]struct{}{
-		"006.c":                 {}, //TODO
-		"008.c":                 {}, //TODO
 		"009.c":                 {}, //TODO
 		"010.c":                 {}, //TODO
 		"011.c":                 {}, //TODO
@@ -488,7 +487,11 @@ func TestCPPExpand(t *testing.T) {
 			t.Error(err)
 		}
 
-		if g, e := strings.ReplaceAll(b.String(), "\r", ""), strings.ReplaceAll(string(exp), "\r", ""); g != e {
+		g := strings.ReplaceAll(b.String(), "\r", "")
+		g = strings.TrimSpace(g)
+		e := strings.ReplaceAll(string(exp), "\r", "")
+		e = strings.TrimSpace(e)
+		if g != e {
 			fails = append(fails, path)
 			diff := difflib.UnifiedDiff{
 				A:        difflib.SplitLines(e),
@@ -502,7 +505,7 @@ func TestCPPExpand(t *testing.T) {
 				t.Fatalf("%v: %v", path, err)
 			}
 
-			t.Errorf("%v", s)
+			t.Errorf("%v\ngot\n%s\nexp\n%s\ngot\n%s\nexp\n%s", s, g, e, hex.Dump([]byte(g)), hex.Dump([]byte(e)))
 			return nil
 		}
 		ok++

@@ -48,13 +48,13 @@ type Macro struct {
 	ReplacementList []Token
 	params          formalParams
 
-	minArgs int
+	MinArgs int // m x: 0, m() x: 0, m(...): 0, m(a) a: 1, m(a, ...): 1, m(a, b): 2, m(a, b, ...): 2.
+	VarArg  int // m(a): -1, m(...): 0, m(a, ...): 1, m(a...): 0, m(a, b...): 1.
 
-	IsFnLike  bool
-	IsVarArgs bool // #define foo(...), #define foo(bar, ...) etc.
+	IsFnLike bool // m: false, m(): true, m(x): true.
 }
 
-func newMacro(nm Token, params, replList []Token, minArgs int, isFnLike, isVarArgs bool) (*Macro, error) {
+func newMacro(nm Token, params, replList []Token, minArgs, varArg int, isFnLike bool) (*Macro, error) {
 	var fp formalParams
 	for _, v := range params {
 		fp = append(fp, string(v.Src()))
@@ -69,11 +69,11 @@ func newMacro(nm Token, params, replList []Token, minArgs int, isFnLike, isVarAr
 	}
 	return &Macro{
 		IsFnLike:        isFnLike,
-		IsVarArgs:       isVarArgs,
+		MinArgs:         minArgs,
 		Name:            nm,
 		Params:          params,
 		ReplacementList: replList,
-		minArgs:         minArgs,
+		VarArg:          varArg,
 		params:          fp,
 	}, nil
 }
@@ -419,10 +419,9 @@ func (c *cpp) define(ln controlLine) {
 	switch {
 	case ln[0].Ch == '(' && len(ln[0].Sep()) == 0:
 		// lparen: a ( character not immediately preceded by white-space
-		ln = ln[1:] // '('
 		// # define identifier ( args_opt ) replacement-list new-line
-		//                       ^ln[0]
-		c.defineFnMacro(nm, ln)
+		//                     ^ln[0]
+		c.defineFnMacro(nm, ln[:len(ln)-1]) // strip new-line
 	default:
 		// # define identifier replacement-list new-line
 		//                     ^ln[0]
@@ -430,76 +429,103 @@ func (c *cpp) define(ln controlLine) {
 	}
 }
 
-func (c *cpp) defineFnMacro(nm Token, line []Token) {
-	minArgs := 0
-	var fp []Token
-	isVarArgs := false
-	switch line[0].Ch {
-	case rune(DDD): // ...
-		panic(todo("", toksDump(line)))
-	case rune(IDENTIFIER):
-		fp = append(fp, line[0])
-		minArgs++
-		line = line[1:] // remove the FP
-	out:
-		for {
-			switch line[0].Ch {
-			case ',':
-				line = line[1:] // ','
-			case rune(IDENTIFIER):
-				fp = append(fp, line[0])
-				minArgs++
-				line = line[1:] // remove the FP
-			case ')':
-				line = line[1:] // remove the final FP list paren
-				break out
-			case rune(DDD):
-				ddd := line[0]
-				line = line[1:] // ...
-				isVarArgs = true
-				for len(line) != 0 && line[0].Ch == ' ' {
-					line = line[1:]
-				}
-				if len(line) == 0 || line[0].Ch != ')' {
-					c.eh("%v: ... must be followd by ')'", ddd.Position())
-					return
-				}
-
-				line = line[1:] // ')'
-				break out
-			default:
-				panic(todo("", toksDump(line)))
-			}
-		}
-	case ')':
-		panic(todo("", toksDump(line)))
-	default:
-		panic(todo("", toksDump(line)))
-	}
-	line = line[:len(line)-1] // strip new-line
-	rl := c.parseReplacementList(line)
+func (c *cpp) defineFnMacro(nm Token, ln []Token) {
+	fp, rl, minArgs, varArg := c.parseMacroParams(ln)
+	rl = c.parseReplacementList(rl)
 	switch {
 	case c.macros[string(nm.Src())] != nil:
 		panic(todo("", nm.Position(), &nm))
 	}
-	c.macros[string(nm.Src())] = c.newMacro(nm, fp, rl, minArgs, true, isVarArgs)
+	c.macros[string(nm.Src())] = c.newMacro(nm, fp, rl, minArgs, varArg, true)
 }
 
-func (c *cpp) newMacro(nm Token, params, replList []Token, minArgs int, isFnLike, isVarArgs bool) *Macro {
-	m, err := newMacro(nm, params, replList, minArgs, isFnLike, isVarArgs)
+func (c *cpp) parseMacroParams(ln []Token) (fp, rl []Token, minArgs, vaArg int) {
+	if len(ln) == 0 || ln[0].Ch != '(' {
+		c.eh("internal error")
+		return nil, nil, -1, -1
+	}
+
+	lpar := ln[0]
+	ln = ln[1:] // remove '('
+	vaArg = -1
+	for {
+		if len(ln) == 0 {
+			// (A)
+			c.eh("%v: macro paramater list is missing final ')'", lpar.Position())
+			return nil, nil, -1, -1
+		}
+
+		switch ln[0].Ch {
+		case ')':
+			// (B)
+			ln = ln[1:]
+			return fp, ln, minArgs, vaArg
+		case rune(IDENTIFIER):
+			fp = append(fp, ln[0])
+			minArgs++
+			ln = ln[1:]
+			if len(ln) == 0 {
+				break // -> (A)
+			}
+
+			switch ln[0].Ch {
+			case ')':
+				// ok -> (B)
+			case ',':
+				ln = ln[1:]
+			case rune(DDD):
+				if vaArg >= 0 {
+					c.eh("%v: multiple var arguments", ln[0].Position())
+					return nil, nil, -1, -1
+				}
+
+				vaArg = len(fp) - 1
+				ln = ln[1:]
+			default:
+				c.eh("%v: unexpected %v", ln[0].Position(), runeName(ln[0].Ch))
+				return nil, nil, -1, -1
+			}
+		case rune(DDD):
+			if vaArg >= 0 {
+				c.eh("%v: multiple var arguments", ln[0].Position())
+				return nil, nil, -1, -1
+			}
+
+			vaArg = len(fp)
+			ln = ln[1:]
+			if len(ln) == 0 {
+				break // -> (A)
+			}
+
+			switch ln[0].Ch {
+			case ')':
+				// ok -> (B)
+			default:
+				ln = nil // -> (A)
+			}
+		default:
+			c.eh("%v: unexpected %v", ln[0].Position(), runeName(ln[0].Ch))
+			return nil, nil, -1, -1
+		}
+	}
+}
+
+func (c *cpp) newMacro(nm Token, params, replList []Token, minArgs, varArg int, isFnLike bool) *Macro {
+	// trc("nm %q, params %v, replList %v, minArgs %v, varArg %v, isFnLike %v", nm.Src(), toksDump(params), toksDump(replList), minArgs, varArg, isFnLike)
+	m, err := newMacro(nm, params, replList, minArgs, varArg, isFnLike)
 	if err != nil {
 		c.eh("", err)
 	}
 	return m
 }
 
-func (c *cpp) defineObjectMacro(nm Token, replacementList []Token) {
-	rl := c.parseReplacementList(replacementList)
+func (c *cpp) defineObjectMacro(nm Token, ln []Token) {
+	rl := c.parseReplacementList(ln)
 	switch {
 	case c.macros[string(nm.Src())] != nil:
 		panic(todo("", nm.Position(), &nm))
 	default:
-		c.macros[string(nm.Src())] = c.newMacro(nm, nil, rl, -1, false, false)
+		c.macros[string(nm.Src())] = c.newMacro(nm, nil, rl, -1, -1, false)
 	}
 }
 
@@ -628,7 +654,6 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 	}
 
 	if m := c.macros[src]; m != nil {
-		va := -1
 	out:
 		switch {
 		default:
@@ -636,7 +661,7 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
 			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.ts()))
 			// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-			seq := c.subst(m.ts(), nil, nil, va, HS.add(src), nil)
+			seq := c.subst(m, m.ts(), nil, nil, HS.add(src), nil)
 			return c.expand(newCat(seq, TS))
 		case m.IsFnLike:
 			if TS.peek(0).Ch == '(' {
@@ -651,18 +676,15 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 				}
 
 				switch {
-				case len(args) < m.minArgs:
+				case len(args) < m.MinArgs:
 					c.eh("%v: not enough macro arguments", rparen.Position())
 					break out
-				case len(args) > m.minArgs && !m.IsVarArgs:
+				case len(args) > m.MinArgs && m.VarArg < 0:
 					c.eh("%v: too many macro arguments", rparen.Position())
 					break out
 				}
-				if m.IsVarArgs {
-					va = m.minArgs
-				}
 
-				return c.expand(newCat(c.subst(m.ts(), m.fp(), args, va, HS.cap(rparen.hs).add(src), nil), TS))
+				return c.expand(newCat(c.subst(m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
 			}
 		}
 	}
@@ -673,7 +695,7 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 }
 
 // [1], pg 2.
-func (c *cpp) subst(IS tokenSequence, FP formalParams, AP []preprocessingTokens, va int, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
+func (c *cpp) subst(m *Macro, IS tokenSequence, FP formalParams, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
 	// trc("  %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	var ptok preprocessingToken
@@ -692,7 +714,7 @@ func (c *cpp) subst(IS tokenSequence, FP formalParams, AP []preprocessingTokens,
 				// if IS is # • T • IS’ and T is FP[i] then
 				//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
 				c.skip(IS, skip+1)
-				return c.subst(IS, FP, AP, va, HS, append(OS, c.stringize(AP[i])))
+				return c.subst(m, IS, FP, AP, HS, append(OS, c.stringize(c.apSelect(m, ptok, AP, i))))
 			}
 		}
 	}
@@ -710,7 +732,7 @@ func (c *cpp) subst(IS tokenSequence, FP formalParams, AP []preprocessingTokens,
 					//	else
 					//		return subst(IS’,FP,AP,HS,glue(OS,select(i,AP )));
 					c.skip(IS, skip+1)
-					return c.subst(IS, FP, AP, va, HS, c.glue(OS, AP[i]))
+					return c.subst(m, IS, FP, AP, HS, c.glue(OS, c.apSelect(m, ptok, AP, i)))
 				}
 			}
 		}
@@ -719,7 +741,7 @@ func (c *cpp) subst(IS tokenSequence, FP formalParams, AP []preprocessingTokens,
 		if IS.peek(0).Ch != eof {
 			var t2 preprocessingToken
 			t2.Token, t2.hs, _ = IS.read()
-			return c.subst(IS, FP, AP, va, HS, c.glue(OS, preprocessingTokens{t2}))
+			return c.subst(m, IS, FP, AP, HS, c.glue(OS, preprocessingTokens{t2}))
 		}
 	}
 
@@ -741,7 +763,7 @@ func (c *cpp) subst(IS tokenSequence, FP formalParams, AP []preprocessingTokens,
 					//	else
 					//		return subst(##^HS’ • IS’,FP,AP,HS,OS • select(i,AP));
 					c.skip(IS, skip)
-					return c.subst(IS, FP, AP, va, HS, append(OS, AP[i]...))
+					return c.subst(m, IS, FP, AP, HS, append(OS, c.apSelect(m, ptok, AP, i)...))
 				}
 			}
 		}
@@ -751,34 +773,46 @@ func (c *cpp) subst(IS tokenSequence, FP formalParams, AP []preprocessingTokens,
 		if i := FP.is(string(ptok.Src())); i >= 0 {
 			// if IS is T • IS’ and T is FP[i] then
 			//	return subst(IS’,FP,AP,HS,OS • expand(select(i,AP )));
-			return c.subst(IS, FP, AP, va, HS, append(OS, c.expand(&AP[i])...))
+			sel := c.apSelect(m, ptok, AP, i)
+			return c.subst(m, IS, FP, AP, HS, append(OS, c.expand(&sel)...))
 		}
 	}
 
-	if ptok.Ch == rune(IDENTIFIER) && string(ptok.Src()) == "__VA_ARGS__" && va < len(AP) {
-		var comma preprocessingTokens
-		if len(AP)-va > 1 {
-			t := ptok
-			t.Set(nil, []byte{','})
-			t.Ch = ','
-			t2 := t
-			t2.Set(nil, []byte{' '})
-			t2.Ch = ' '
-			comma = preprocessingTokens{t, t2}
-		}
-		var a preprocessingTokens
-		for i, v := range AP[va:] {
-			if i != 0 {
-				a = append(a, comma...)
-			}
-			a = append(a, v...)
-		}
-		return c.subst(IS, FP, AP, va, HS, append(OS, c.expand(&a)...))
+	if va := m.VarArg; ptok.Ch == rune(IDENTIFIER) && va >= 0 && string(ptok.Src()) == "__VA_ARGS__" && va <= len(AP) {
+		return c.subst(m, IS, FP, AP, HS, append(OS, c.expand(c.varArgs(ptok, AP[va:]))...))
 	}
 
 	// note IS must be T HS’ • IS’
 	// return subst(IS’,FP,AP,HS,OS • T HS’ );
-	return c.subst(IS, FP, AP, va, HS, append(OS, ptok))
+	return c.subst(m, IS, FP, AP, HS, append(OS, ptok))
+}
+
+func (c *cpp) apSelect(m *Macro, t preprocessingToken, AP []preprocessingTokens, i int) preprocessingTokens {
+	if m.VarArg < 0 || m.VarArg != i {
+		return AP[i]
+	}
+
+	return *c.varArgs(t, AP[i:])
+}
+
+func (c *cpp) varArgs(t preprocessingToken, AP []preprocessingTokens) *preprocessingTokens {
+	var comma preprocessingTokens
+	if len(AP) > 1 {
+		t.Set(nil, []byte{','})
+		t.Ch = ','
+		t2 := t
+		t2.Set(nil, []byte{' '})
+		t2.Ch = ' '
+		comma = preprocessingTokens{t, t2}
+	}
+	var a preprocessingTokens
+	for i, v := range AP {
+		if i != 0 {
+			a = append(a, comma...)
+		}
+		a = append(a, v...)
+	}
+	return &a
 }
 
 func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
@@ -994,7 +1028,7 @@ func (c *cpp) hsAdd(HS hideSet, TS preprocessingTokens) (r preprocessingTokens) 
 	}
 
 	// note TS must be T^HS’ • TS’
-	// return T^(HS∪HS’) • hsadd(HS,TS’ );
+	// return T^(HS∪HS’) • hsadd(HS,TS’);
 	for _, v := range TS {
 		v.hs = v.hs.cup(HS)
 		r = append(r, v)
