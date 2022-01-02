@@ -170,7 +170,7 @@ type nonDirective []Token
 // if-section:
 //	if-group elif-groups_opt else-group_opt endif-line
 type ifSection struct {
-	ifGroup    ifGroup
+	ifGroup    *ifGroup
 	elifGroups []elifGroup
 	elseGroup  *elseGroup
 	endifLine  []Token
@@ -244,4 +244,4 @@ type ifGroup struct {
 }
 
 // ifGroup parses an if-group.
-func (p *cppParser) ifGroup() (r ifGroup) { return ifGroup{p.consume(), p.group(true)} }
+func (p *cppParser) ifGroup() (r *ifGroup) { return &ifGroup{p.consume(), p.group(true)} }

@@ -433,6 +433,9 @@ func (s *scanner) cppScan0() (tok Token) {
 		case '=':
 			s.next()
 			return s.newToken(rune(ANDASSIGN))
+		case '&':
+			s.next()
+			return s.newToken(rune(ANDAND))
 		default:
 			return s.newToken(c)
 		}
@@ -455,6 +458,9 @@ func (s *scanner) cppScan0() (tok Token) {
 		case '=':
 			s.next()
 			return s.newToken(rune(ORASSIGN))
+		case '|':
+			s.next()
+			return s.newToken(rune(OROR))
 		default:
 			return s.newToken(c)
 		}

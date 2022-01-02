@@ -169,8 +169,13 @@ func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 		switch {
 		case c != ' ':
 			switch {
+			case prev != ' ' && len(tok.Sep()) != 0:
+				if _, err := w.Write(sp); err != nil {
+					return err
+				}
 			case
 				c == '#' && prev == '#',
+				c == '&' && prev == '&',
 				c == '+' && prev == '+',
 				c == '+' && prev == rune(PPNUMBER),
 				c == '-' && prev == '-',
@@ -189,7 +194,8 @@ func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 				c == '=' && prev == '^',
 				c == '=' && prev == '|',
 				c == '>' && prev == '-',
-				c == '>' && prev == '>':
+				c == '>' && prev == '>',
+				c == '|' && prev == '|':
 
 				// Prevent the textual form of adjacent tokens to form a "false" token.
 				if _, err := w.Write(sp); err != nil {

@@ -14,6 +14,9 @@ var (
 	_ tokenSequence = (*preprocessingTokens)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 	_ tokenSequence = (*tokens)(nil)
+
+	comma = []byte{','}
+	sp    = []byte{' '}
 )
 
 type tokens []Token
@@ -78,8 +81,13 @@ func newMacro(nm Token, params, replList []Token, minArgs, varArg int, isFnLike 
 	}, nil
 }
 
-func (m *Macro) ts() tokenSequence {
+func (m *Macro) ts(t Token) tokenSequence {
 	r := m.ReplacementList
+	if len(t.Sep()) != 0 {
+		t.Ch = ' '
+		t.Set(nil, sp)
+		r = append([]Token{t}, r...)
+	}
 	return (*tokens)(&r)
 }
 
@@ -253,6 +261,12 @@ func newCat(head preprocessingTokens, tail tokenSequence) tokenSequence {
 
 		head = append(head[:len(head):len(head)], t...)
 		return &head
+	case *tokens:
+		if len(*x) == 0 {
+			return &head
+		}
+
+		return &cat{head, x}
 	default:
 		panic(todo("%T", x))
 	}
@@ -357,8 +371,14 @@ func (c *cpp) consume() (r Token) {
 // nextLine returns the next input textLine.
 func (c *cpp) nextLine() textLine {
 	for {
+		// a := []string{fmt.Sprintf("%T", c.tos)}
+		// for _, v := range c.stack {
+		// 	a = append(a, fmt.Sprintf("%T", v))
+		// }
+		// trc("STACK %v", a)
 		switch x := c.tos.(type) {
 		case nil:
+			// trc("<nil>")
 			if len(c.sources) == 0 {
 				return nil
 			}
@@ -367,14 +387,16 @@ func (c *cpp) nextLine() textLine {
 			c.sources = c.sources[1:]
 			c.push(c.group(src))
 		case group:
-			c.pop()
+			// trc("group len %v", len(x))
 			if len(x) == 0 {
+				c.pop()
 				break
 			}
 
 			c.tos = x[1:]
 			c.push(x[0])
 		case controlLine:
+			// trc("controlLine %v", toksDump([]Token(x)))
 			c.pop()
 			switch string(x[1].Src()) {
 			case "define":
@@ -385,14 +407,79 @@ func (c *cpp) nextLine() textLine {
 				panic(todo("%v: %q", x[0].Position(), x[1].Src()))
 			}
 		case textLine:
+			// trc("textLine %v", toksDump([]Token(x)))
 			c.pop()
 			return x
 		case eofLine:
-			// Don't pop it, EOF is sticky
+			// trc("eofLine")
+			// Keep it on stack, EOF is sticky
 			return textLine([]Token{Token(x)})
+		case *ifSection:
+			// trc("ifSection")
+			switch {
+			case x.ifGroup != nil:
+				switch {
+				case c.ifGroup(x.ifGroup):
+					c.pop()
+					c.push(x.ifGroup.group)
+				default:
+					panic(todo(""))
+				}
+			default:
+				panic(todo(""))
+			}
 		default:
 			panic(todo("internal error: %T", x))
 		}
+	}
+}
+
+func (c *cpp) ifGroup(ig *ifGroup) bool {
+	ln := ig.line[:len(ig.line)-1] // Remove new-line
+	switch string(ln[1].Src()) {
+	case "ifndef":
+		if len(ln) < 3 { // '#' "ifndef" IDENTIFIER
+			c.eh("%v: expected identifier", ln[1].Position())
+			return false
+		}
+
+		_, ok := c.macros[string(ln[2].Src())]
+		return !ok
+	case "if":
+		if len(ln) < 3 { // '#' "if" <expr>
+			c.eh("%v: expected expression", ln[1].Position())
+			return false
+		}
+
+		return c.isNonZero(c.eval(tokens(ln[2:])))
+	default:
+		panic(todo("", toksDump(ln)))
+	}
+}
+
+func (c *cpp) eval(s tokens) interface{} {
+	trc("", toksDump(s))
+	s2 := c.expand(&s)
+	s = s[:0]
+	for _, v := range s2 {
+		if v.Ch != ' ' {
+			s = append(s, v.Token)
+		}
+	}
+	panic(todo("", toksDump(s)))
+}
+
+func (c *cpp) isNonZero(val interface{}) bool {
+	switch x := val.(type) {
+	case nil:
+		return false
+	case int64:
+		return x != 0
+	case uint64:
+		return x != 0
+	default:
+		c.eh("", errorf("internal error: %T", x))
+		return false
 	}
 }
 
@@ -512,6 +599,11 @@ func (c *cpp) parseMacroParams(ln []Token) (fp, rl []Token, minArgs, vaArg int) 
 
 func (c *cpp) newMacro(nm Token, params, replList []Token, minArgs, varArg int, isFnLike bool) *Macro {
 	// trc("nm %q, params %v, replList %v, minArgs %v, varArg %v, isFnLike %v", nm.Src(), toksDump(params), toksDump(replList), minArgs, varArg, isFnLike)
+	if string(nm.Src()) == "defined" {
+		c.eh("%v: \"defined\" cannot be used as a macro name", nm.Position) // gcc says so.
+		return nil
+	}
+
 	m, err := newMacro(nm, params, replList, minArgs, varArg, isFnLike)
 	if err != nil {
 		c.eh("", err)
@@ -659,16 +751,16 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 		default:
 			// if TS is T^HS • TS’ and T is a "()-less macro" then
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
-			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.ts()))
+			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.ts(T)))
 			// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-			seq := c.subst(m, m.ts(), nil, nil, HS.add(src), nil)
+			seq := c.subst(m, m.ts(T), nil, nil, HS.add(src), nil)
 			return c.expand(newCat(seq, TS))
 		case m.IsFnLike:
 			if TS.peek(0).Ch == '(' {
 				// if TS is T^HS • ( • TS’ and T is a "()’d macro" then
 				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 				//	return expand(subst(ts(T),fp(T),actuals,(HS∩HS’)∪{T},{}) • TS’’);
-				// trc("  %s<%s is a ()'d macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.ts()))
+				// trc("  %s<%s is a ()'d macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.ts(T)))
 				// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
 				args, rparen, ok := c.parseMacroArgs(TS)
 				if !ok {
@@ -684,7 +776,7 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 					break out
 				}
 
-				return c.expand(newCat(c.subst(m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
+				return c.expand(newCat(c.subst(m, m.ts(T), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
 			}
 		}
 	}
@@ -796,19 +888,19 @@ func (c *cpp) apSelect(m *Macro, t preprocessingToken, AP []preprocessingTokens,
 }
 
 func (c *cpp) varArgs(t preprocessingToken, AP []preprocessingTokens) *preprocessingTokens {
-	var comma preprocessingTokens
+	var commaSP preprocessingTokens
 	if len(AP) > 1 {
-		t.Set(nil, []byte{','})
+		t.Set(nil, comma)
 		t.Ch = ','
 		t2 := t
-		t2.Set(nil, []byte{' '})
+		t2.Set(nil, sp)
 		t2.Ch = ' '
-		comma = preprocessingTokens{t, t2}
+		commaSP = preprocessingTokens{t, t2}
 	}
 	var a preprocessingTokens
 	for i, v := range AP {
 		if i != 0 {
-			a = append(a, comma...)
+			a = append(a, commaSP...)
 		}
 		a = append(a, v...)
 	}

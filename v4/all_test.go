@@ -408,7 +408,6 @@ func BenchmarkCPPParse(b *testing.B) {
 
 func TestCPPExpand(t *testing.T) {
 	blacklist := map[string]struct{}{
-		"009.c":                 {}, //TODO
 		"010.c":                 {}, //TODO
 		"011.c":                 {}, //TODO
 		"012.c":                 {}, //TODO
