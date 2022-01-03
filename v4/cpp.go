@@ -753,8 +753,7 @@ func (c *cpp) expand(TS tokenSequence) (r preprocessingTokens) {
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
 			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.ts(T)))
 			// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-			seq := c.subst(m, m.ts(T), nil, nil, HS.add(src), nil)
-			return c.expand(newCat(seq, TS))
+			return c.expand(newCat(c.subst(m, m.ts(T), nil, nil, HS.add(src), nil), TS))
 		case m.IsFnLike:
 			if TS.peek(0).Ch == '(' {
 				// if TS is T^HS • ( • TS’ and T is a "()’d macro" then
