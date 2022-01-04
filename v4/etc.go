@@ -136,10 +136,14 @@ func env(key, defaultVal string) string {
 func toksDump(v interface{}) string {
 	var a []string
 	switch x := v.(type) {
-	case textLine:
-		for _, v := range x {
-			a = append(a, string(v.Sep())+string(v.Src()))
-		}
+	//TODO case textLine:
+	//TODO 	for _, v := range x {
+	//TODO 		a = append(a, string(v.Sep())+string(v.Src()))
+	//TODO 	}
+	case []preprocessingToken:
+		return toksDump(preprocessingTokens(x))
+	case *preprocessingTokens:
+		return toksDump(*x)
 	case preprocessingTokens:
 		for _, v := range x {
 			s := string(v.Src())
@@ -153,36 +157,23 @@ func toksDump(v interface{}) string {
 		for _, v := range x {
 			a = append(a, toksDump(v))
 		}
-		return fmt.Sprint(a)
-	case controlLine:
-		return toksDump([]Token(x))
-	case *preprocessingTokens:
-		return toksDump(*x)
-	case tokens:
-		for _, v := range x {
-			a = append(a, string(v.Sep())+string(v.Src()))
-		}
-	case *tokens:
-		return toksDump(*x)
+		return fmt.Sprintf("%v.%d", a, len(a))
+	//TODO case controlLine:
+	//TODO 	return toksDump([]Token(x))
+	//TODO case *preprocessingTokens:
+	//TODO 	return toksDump(*x)
+	//TODO case tokens:
+	//TODO 	for _, v := range x {
+	//TODO 		a = append(a, string(v.Sep())+string(v.Src()))
+	//TODO 	}
+	//TODO case *tokens:
+	//TODO 	return toksDump(*x)
 	case *tokenizer:
-		const max = 20
-		terminated := false
-		var a []Token
-		for i := 0; i < max; i++ {
-			tok := x.peek(i)
-			if a = append(a, tok); tok.Ch == eof {
-				terminated = true
-				break
-			}
-		}
-		s := toksDump(a)
-		if !terminated {
-			s += "..."
-		}
-		return s
+		return fmt.Sprintf("[%T]", x)
+	//TODO 	return s
 	case []Token:
 		for _, v := range x {
-			a = append(a, string(v.Sep())+string(v.Src()))
+			a = append(a, string(v.Src()))
 		}
 	case *cat:
 		return fmt.Sprintf("(%s · %s)", toksDump(x.head), toksDump(x.tail))
@@ -190,4 +181,49 @@ func toksDump(v interface{}) string {
 		panic(todo("%T", x))
 	}
 	return fmt.Sprintf("%q.%d", a, len(a))
+}
+
+func tokens2preprocessingTokens(s []Token) (r []preprocessingToken) {
+	for i, v := range s {
+		if i != 0 && len(v.Sep()) != 0 {
+			r = append(r, preprocessingToken{spTok, nil})
+		}
+		r = append(r, preprocessingToken{v, nil})
+	}
+	return r
+}
+
+// Remove ' ' after '#' and before and after "##". Works in-place.
+func normalizeHashWhitespace(s []preprocessingToken) (r []preprocessingToken) {
+	w := 0
+	for i, v := range s {
+		switch {
+		case v.Ch == ' ':
+			if w != 0 {
+				if ch := s[w-1].Ch; ch == '#' || ch == rune(PPPASTE) {
+					continue
+				}
+			}
+
+			if i+1 < len(s) {
+				if ch := s[i+1].Ch; ch == '#' || ch == rune(PPPASTE) {
+					continue
+				}
+			}
+		}
+
+		s[w] = v
+		w++
+	}
+	return s[:w]
+}
+
+func toksTrim(s preprocessingTokens) preprocessingTokens {
+	for len(s) != 0 && s[0].Ch == ' ' {
+		s = s[1:]
+	}
+	for len(s) != 0 && s[len(s)-1].Ch == ' ' {
+		s = s[:len(s)-1]
+	}
+	return s
 }

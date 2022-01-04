@@ -245,7 +245,11 @@ def
 	}
 }
 
+var toks []Token
+
 func TestScanner(t *testing.T) {
+	defer func() { toks = nil }()
+
 	var files, tokens, chars int64
 	var m0, m runtime.MemStats
 	debug.FreeOSMemory()
@@ -271,10 +275,12 @@ func TestScanner(t *testing.T) {
 					break
 				}
 
+				toks = append(toks, tok)
 				tokens++
 			}
 		}
 	}
+	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m)
 	t.Logf("files %v, tokens %v, bytes %v, heap %v", h(files), h(tokens), h(chars), h(m.HeapAlloc-m0.HeapAlloc))
 }
@@ -320,13 +326,17 @@ func BenchmarkScanner(b *testing.B) {
 	}
 }
 
-var cppParseBlacklist = map[string]struct{}{
-	"/github.com/vnmakarov/mir/c-tests/new/endif.c": {}, // 1:1: unexpected #endif
-}
+var (
+	cppParseBlacklist = map[string]struct{}{
+		"/github.com/vnmakarov/mir/c-tests/new/endif.c": {}, // 1:1: unexpected #endif
+	}
+	asts []group
+)
 
 func TestCPPParse(t *testing.T) {
+	defer func() { asts = nil }()
+
 	var files, lines, chars int64
-	var asts []group
 	var m0, m runtime.MemStats
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m0)
@@ -365,7 +375,9 @@ func TestCPPParse(t *testing.T) {
 			asts = append(asts, ast)
 		}
 	}
+	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m)
+	asts = nil
 	t.Logf("files %v, lines %v, bytes %v, heap %v", h(files), h(lines), h(chars), h(m.HeapAlloc-m0.HeapAlloc))
 }
 

@@ -152,9 +152,6 @@ func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 		return err
 	}
 
-	sp := []byte{' '}
-	var b []byte
-	var tok Token
 	var prev rune
 	for {
 		if cpp.c() == eof {
@@ -164,50 +161,39 @@ func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 			return err
 		}
 
-		tok = cpp.consume()
-		c := tok.Ch
-		switch {
-		case c != ' ':
-			switch {
-			case prev != ' ' && len(tok.Sep()) != 0:
-				if _, err := w.Write(sp); err != nil {
-					return err
-				}
-			case
-				c == '#' && prev == '#',
-				c == '&' && prev == '&',
-				c == '+' && prev == '+',
-				c == '+' && prev == rune(PPNUMBER),
-				c == '-' && prev == '-',
-				c == '-' && prev == rune(PPNUMBER),
-				c == '.' && prev == '.',
-				c == '.' && prev == rune(PPNUMBER),
-				c == '<' && prev == '<',
-				c == '=' && prev == '!',
-				c == '=' && prev == '%',
-				c == '=' && prev == '&',
-				c == '=' && prev == '*',
-				c == '=' && prev == '+',
-				c == '=' && prev == '/',
-				c == '=' && prev == '<',
-				c == '=' && prev == '=',
-				c == '=' && prev == '^',
-				c == '=' && prev == '|',
-				c == '>' && prev == '-',
-				c == '>' && prev == '>',
-				c == '|' && prev == '|':
+		tok := cpp.consume()
+		switch c := tok.Ch; {
+		case
+			// Prevent the textual form of certain adjacent tokens to form a "false" token.
+			c == '#' && prev == '#',
+			c == '&' && prev == '&',
+			c == '+' && prev == '+',
+			c == '+' && prev == rune(PPNUMBER),
+			c == '-' && prev == '-',
+			c == '-' && prev == rune(PPNUMBER),
+			c == '.' && prev == '.',
+			c == '.' && prev == rune(PPNUMBER),
+			c == '<' && prev == '<',
+			c == '=' && prev == '!',
+			c == '=' && prev == '%',
+			c == '=' && prev == '&',
+			c == '=' && prev == '*',
+			c == '=' && prev == '+',
+			c == '=' && prev == '/',
+			c == '=' && prev == '<',
+			c == '=' && prev == '=',
+			c == '=' && prev == '^',
+			c == '=' && prev == '|',
+			c == '>' && prev == '-',
+			c == '>' && prev == '>',
+			c == '|' && prev == '|':
 
-				// Prevent the textual form of adjacent tokens to form a "false" token.
-				if _, err := w.Write(sp); err != nil {
-					return err
-				}
+			if _, err := w.Write(sp); err != nil {
+				return err
 			}
-			b = tok.Src()
-		default:
-			b = sp
 		}
-		prev = c
-		if _, err = w.Write(b); err != nil {
+		prev = tok.Ch
+		if _, err = w.Write(tok.Src()); err != nil {
 			return err
 		}
 	}
