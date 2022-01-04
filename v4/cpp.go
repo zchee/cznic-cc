@@ -6,7 +6,13 @@ package cc // import "modernc.org/cc/v4"
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
+)
+
+const (
+	maxIncludeLevel = 200 // gcc, std is at least 15.
 )
 
 var (
@@ -14,11 +20,13 @@ var (
 	_ tokenSequence = (*preprocessingTokens)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 
+	eofTok, oneTok, spTok, zeroTok Token
+
 	comma              = []byte{','}
 	eofPreprocessToken preprocessingToken
-	eofTok             Token
+	one                = []byte{'1'}
 	sp                 = []byte{' '}
-	spTok              Token
+	zero               = []byte{'0'}
 )
 
 func init() {
@@ -27,12 +35,22 @@ func init() {
 		panic(errorf("initialization error"))
 	}
 
-	spTok.s = s
-	spTok.Ch = ' '
-	spTok.Set(nil, sp)
 	eofTok.s = s
 	eofTok.Ch = eof
 	eofTok.Set(nil, nil)
+
+	oneTok.s = s
+	oneTok.Ch = rune(PPNUMBER)
+	oneTok.Set(nil, one)
+
+	spTok.s = s
+	spTok.Ch = ' '
+	spTok.Set(nil, sp)
+
+	zeroTok.s = s
+	zeroTok.Ch = rune(PPNUMBER)
+	zeroTok.Set(nil, zero)
+
 	eofPreprocessToken = preprocessingToken{eofTok, nil}
 }
 
@@ -204,7 +222,7 @@ func (t *tokenizer) peek(index int) (tok Token) {
 
 func (t *tokenizer) read() (tok preprocessingToken) {
 	if len(t.in) == 0 {
-		t.in = tokens2preprocessingTokens(t.c.nextLine())
+		t.in = tokens2PreprocessingTokens(t.c.nextLine(), false)
 	}
 
 	tok = t.in[0]
@@ -217,7 +235,7 @@ func (t *tokenizer) read() (tok preprocessingToken) {
 
 func (t *tokenizer) token() (tok Token) {
 	for len(t.out) == 0 {
-		t.out = t.c.expand(true, t)
+		t.out = t.c.expand(true, false, t)
 	}
 	tok = t.out[0].Token
 	if tok.Ch != eof {
@@ -249,6 +267,19 @@ func (p *preprocessingTokens) read() (tok preprocessingToken) {
 		*p = s
 	}
 	return tok
+}
+
+func (p *preprocessingTokens) skipBlank() {
+	s := *p
+	for len(s) != 0 && s[0].Ch == ' ' {
+		s = s[1:]
+	}
+	*p = s
+}
+
+func (p *preprocessingTokens) c() Token {
+	p.skipBlank()
+	return p.peek(0)
 }
 
 type cat struct {
@@ -307,6 +338,7 @@ func (c *cat) read() preprocessingToken {
 
 // cpp is the C preprocessor.
 type cpp struct {
+	cfg         *Config
 	eh          errHandler
 	groups      map[string]group
 	indentLevel int // debug dumps
@@ -317,11 +349,13 @@ type cpp struct {
 	tokenizer   *tokenizer
 	tos         interface{}
 
+	includeLevel int
+
 	closed bool
 }
 
 // newCPP returns a newly created cpp.
-func newCPP(sources []Source, eh errHandler) (*cpp, error) {
+func newCPP(cfg *Config, sources []Source, eh errHandler) (*cpp, error) {
 	m := map[string]struct{}{}
 	for _, v := range sources {
 		if _, ok := m[v.Name]; ok {
@@ -331,6 +365,7 @@ func newCPP(sources []Source, eh errHandler) (*cpp, error) {
 		m[v.Name] = struct{}{}
 	}
 	c := &cpp{
+		cfg:     cfg,
 		groups:  map[string]group{},
 		eh:      eh,
 		macros:  map[string]*Macro{},
@@ -371,10 +406,12 @@ func (c *cpp) undent() string {
 }
 
 // [1], pg 1.
-func (c *cpp) expand(outer bool, TS tokenSequence) (r preprocessingTokens) {
+func (c *cpp) expand(outer, eval bool, TS tokenSequence) (r preprocessingTokens) {
 	// trc("  %s%v (%v)", c.indent(), toksDump(TS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
+more:
 	t := TS.read()
+	// trc("", &t)
 	if t.Ch == eof {
 		// if TS is {} then
 		//	return {};
@@ -388,6 +425,11 @@ func (c *cpp) expand(outer bool, TS tokenSequence) (r preprocessingTokens) {
 	T := t.Token
 	HS := t.hs
 	src := string(T.Src())
+	if eval && src == "defined" {
+		TS = c.parseDefined(TS)
+		goto more
+	}
+
 	if HS.has(src) {
 		// if TS is T^HS • TS’ and T is in HS then
 		//	return T^HS • expand(TS’);
@@ -402,7 +444,7 @@ func (c *cpp) expand(outer bool, TS tokenSequence) (r preprocessingTokens) {
 			}
 		}
 
-		return append(preprocessingTokens{t}, c.expand(false, TS)...)
+		return append(preprocessingTokens{t}, c.expand(false, eval, TS)...)
 	}
 
 	if m := c.macros[src]; m != nil {
@@ -414,7 +456,7 @@ func (c *cpp) expand(outer bool, TS tokenSequence) (r preprocessingTokens) {
 
 			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.replacementList))
 			// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-			return c.expand(false, newCat(c.subst(m, m.ts(), nil, nil, HS.add(src), nil), TS))
+			return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil), TS))
 		case m.IsFnLike:
 			t2 := TS.peek(0)
 			if t2.Ch == ' ' {
@@ -443,7 +485,7 @@ func (c *cpp) expand(outer bool, TS tokenSequence) (r preprocessingTokens) {
 					break out
 				}
 
-				return c.expand(false, newCat(c.subst(m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
+				return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
 			}
 		}
 
@@ -461,11 +503,11 @@ func (c *cpp) expand(outer bool, TS tokenSequence) (r preprocessingTokens) {
 		}
 	}
 
-	return append(preprocessingTokens{t}, c.expand(false, TS)...)
+	return append(preprocessingTokens{t}, c.expand(false, eval, TS)...)
 }
 
 // [1], pg 2.
-func (c *cpp) subst(m *Macro, IS tokenSequence, FP formalParams, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
+func (c *cpp) subst(eval bool, m *Macro, IS tokenSequence, FP formalParams, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
 	// trc("  %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	t := IS.read()
@@ -480,10 +522,8 @@ func (c *cpp) subst(m *Macro, IS tokenSequence, FP formalParams, AP []preprocess
 		if i := FP.is(string(t2.Src())); i >= 0 {
 			// if IS is # • T • IS’ and T is FP[i] then
 			//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
-			return c.subst(m, IS, FP, AP, HS, append(OS, c.stringize(c.apSelect(m, t, AP, i))))
+			return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.stringize(c.apSelect(m, t, AP, i))))
 		}
-
-		panic(todo("", &t2))
 	}
 
 	if t.Ch == rune(PPPASTE) {
@@ -497,13 +537,13 @@ func (c *cpp) subst(m *Macro, IS tokenSequence, FP formalParams, AP []preprocess
 			} else {
 				//	else
 				//		return subst(IS’,FP,AP,HS,glue(OS,select(i,AP )));
-				return c.subst(m, IS, FP, AP, HS, c.glue(OS, c.apSelect(m, t2, AP, i)))
+				return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, c.apSelect(m, t2, AP, i)))
 			}
 		}
 
 		// else if IS is ## • T HS’ • IS’ then
 		//	return subst(IS’,FP,AP,HS,glue(OS,T^HS’));
-		return c.subst(m, IS, FP, AP, HS, c.glue(OS, preprocessingTokens{t2}))
+		return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, preprocessingTokens{t2}))
 	}
 
 	if IS.peek(0).Ch == rune(PPPASTE) {
@@ -512,17 +552,21 @@ func (c *cpp) subst(m *Macro, IS tokenSequence, FP formalParams, AP []preprocess
 				// if IS is T • ##^HS’ • IS’ and T is FP[i] then
 				//	if select(i,AP ) is {} then /* only if actuals can be empty */
 				if len(AP[i]) == 0 {
-					//	{
-					//		if IS’ is T’ • IS’’ and T’ is FP[j] then
-					//			return subst(IS’’,FP,AP,HS,OS • select(j,AP));
-					//		else
-					//			return subst(IS’,FP,AP,HS,OS);
-					//	}
-					panic(todo("", toksDump(IS)))
+					IS.read() // PPPASTE
+					t2 := IS.read()
+					if j := FP.is(string(t2.Src())); j >= 0 {
+						//		if IS’ is T’ • IS’’ and T’ is FP[j] then
+						//			return subst(IS’’,FP,AP,HS,OS • select(j,AP));
+						return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.apSelect(m, t, AP, j)...))
+					} else {
+						//		else
+						//			return subst(IS’,FP,AP,HS,OS);
+						panic(todo(""))
+					}
 				} else {
 					//	else
 					//		return subst(##^HS’ • IS’,FP,AP,HS,OS • select(i,AP));
-					return c.subst(m, IS, FP, AP, HS, append(OS, c.apSelect(m, t, AP, i)...))
+					return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.apSelect(m, t, AP, i)...))
 				}
 			}
 		}
@@ -532,18 +576,61 @@ func (c *cpp) subst(m *Macro, IS tokenSequence, FP formalParams, AP []preprocess
 		if i := FP.is(string(t.Src())); i >= 0 {
 			// if IS is T • IS’ and T is FP[i] then
 			//	return subst(IS’,FP,AP,HS,OS • expand(select(i,AP )));
-			return c.subst(m, IS, FP, AP, HS, append(OS, c.expand(false, c.apSelectP(m, t, AP, i))...))
+			return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.expand(false, eval, c.apSelectP(m, t, AP, i))...))
 		}
 	}
 
 	if va := m.VarArg; t.Ch == rune(IDENTIFIER) && va >= 0 && string(t.Src()) == "__VA_ARGS__" && va <= len(AP) {
-		return c.subst(m, IS, FP, AP, HS, append(OS, c.expand(false, c.varArgsP(t, AP[va:]))...))
+		return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.expand(false, eval, c.varArgsP(t, AP[va:]))...))
 	}
 
 	// note IS must be T HS’ • IS’
 	// return subst(IS’,FP,AP,HS,OS • T HS’ );
-	return c.subst(m, IS, FP, AP, HS, append(OS, t))
+	return c.subst(eval, m, IS, FP, AP, HS, append(OS, t))
 
+}
+
+func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
+	c.skipBlank(ts)
+	var t preprocessingToken
+	switch p := ts.peek(0); p.Ch {
+	case '(':
+		ts.read()
+		c.skipBlank(ts)
+		switch p = ts.peek(0); p.Ch {
+		case rune(IDENTIFIER):
+			t = ts.read()
+			if paren := ts.read(); paren.Ch != ')' {
+				c.eh("%v: expected ')'", paren.Position())
+			}
+		default:
+			c.eh("%v: operator \"defined\" requires an identifier", p.Position())
+			ts.read()
+			return ts
+		}
+	case rune(IDENTIFIER):
+		panic(todo("", toksDump(ts)))
+	default:
+		c.eh("%v: operator \"defined\" requires an identifier", p.Position())
+		ts.read()
+		return ts
+	}
+
+	switch _, ok := c.macros[string(t.Src())]; {
+	case ok:
+		t.Token = oneTok
+	default:
+		t.Token = zeroTok
+	}
+
+	s := preprocessingTokens(append([]preprocessingToken{t}, *ts.(*preprocessingTokens)...))
+	return &s
+}
+
+func (c *cpp) skipBlank(ts tokenSequence) {
+	for ts.peek(0).Ch == ' ' {
+		ts.read()
+	}
 }
 
 func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
@@ -552,10 +639,10 @@ func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
 	// if LS is L^HS and RS is R^HS’ • RS’ then
 	//	return L&R^(HS∩HS’) • RS’; /* undefined if L&R is invalid */
 	if len(LS) == 1 {
-		tok := LS[0]
-		tok.Set(nil, append(tok.Src(), RS[0].Src()...))
-		tok.hs = tok.hs.cap(RS[0].hs)
-		return append(preprocessingTokens{tok}, RS[1:]...)
+		t := LS[0]
+		t.Set(nil, append(t.Src(), RS[0].Src()...))
+		t.hs = t.hs.cap(RS[0].hs)
+		return append(preprocessingTokens{t}, RS[1:]...)
 	}
 
 	// note LS must be L^HS • LS’
@@ -752,18 +839,20 @@ func (c *cpp) nextLine() textLine {
 			c.tos = x[1:]
 			c.push(x[0])
 		case controlLine:
-			// trc("controlLine %v", toksDump([]Token(x)))
+			// trc("controlLine %v", toksDump(x)
 			c.pop()
 			switch string(x[1].Src()) {
 			case "define":
 				c.define(x)
 			case "undef":
 				c.undef(x)
+			case "include":
+				c.include(x)
 			default:
 				panic(todo("%v: %q", x[0].Position(), x[1].Src()))
 			}
 		case textLine:
-			// trc("textLine %v", toksDump([]Token(x)))
+			// trc("textLine %v", toksDump(x))
 			c.pop()
 			return x
 		case eofLine:
@@ -778,9 +867,24 @@ func (c *cpp) nextLine() textLine {
 				case c.ifGroup(x.ifGroup):
 					c.pop()
 					c.push(x.ifGroup.group)
+				case x.elifGroups != nil:
+					y := *x
+					y.ifGroup = nil
+					c.tos = &y
+				case x.elseGroup != nil:
+					panic(todo(""))
 				default:
+					c.pop()
+				}
+			case len(x.elifGroups) != 0:
+				if c.elifGroup(x.elifGroups[0]) {
 					panic(todo(""))
 				}
+
+				x.elifGroups = x.elifGroups[1:]
+			case x.elseGroup != nil:
+				//	# else new-line group_opt
+				c.tos = x.elseGroup.group
 			default:
 				panic(todo(""))
 			}
@@ -788,6 +892,38 @@ func (c *cpp) nextLine() textLine {
 			panic(todo("internal error: %T", x))
 		}
 	}
+}
+
+func (c *cpp) elifGroup(eg elifGroup) bool {
+	//	# elif constant-expression new-line group_opt
+	ln := eg.line[:len(eg.line)-1] // Remove new-line
+	if len(ln) < 3 {
+		c.eh("%v: expected expression", ln[1].Position())
+		return false
+	}
+
+	return c.isNonZero(c.eval(ln[2:]))
+}
+
+// include executes an #include control-line, [0]6.10.
+func (c *cpp) include(ln controlLine) {
+	// eg. ["#" "include" "<stdio.h>" "\n"]
+	if len(ln) < 3 {
+		c.eh("%v: missing argument", ln[1].Position())
+		return
+	}
+
+	if c.cfg.fakeIncludes {
+		t := ln[2]
+		t.Set(nil, t.Src())
+		c.push(textLine([]Token{
+			t,
+			ln[len(ln)-1],
+		}))
+		return
+	}
+
+	panic(todo(""))
 }
 
 func (c *cpp) ifGroup(ig *ifGroup) bool {
@@ -807,10 +943,842 @@ func (c *cpp) ifGroup(ig *ifGroup) bool {
 			return false
 		}
 
-		panic(todo(""))
-		// return c.isNonZero(c.eval(tokens(ln[2:])))
+		return c.isNonZero(c.eval(ln[2:]))
 	default:
 		panic(todo("", toksDump(ln)))
+	}
+}
+
+func (c *cpp) eval(s0 []Token) interface{} {
+	s := preprocessingTokens(tokens2PreprocessingTokens(s0, false))
+	s = c.expand(false, true, &s)
+	p := &s
+	val := c.expression(p, true)
+	switch t := p.c(); t.Ch {
+	case eof, '#':
+		// ok
+	default:
+		c.eh("%v: unexpected %s", t.Position(), runeName(t.Ch))
+		return nil
+	}
+
+	return val
+}
+
+// [0], 6.5.17 Comma operator
+//
+//  expression:
+// 	assignment-expression
+// 	expression , assignment-expression
+func (c *cpp) expression(s *preprocessingTokens, eval bool) interface{} {
+	for {
+		r := c.assignmentExpression(s, eval)
+		if s.c().Ch != ',' {
+			return r
+		}
+
+		s.read()
+	}
+}
+
+// [0], 6.5.16 Assignment operators
+//
+//  assignment-expression:
+// 	conditional-expression
+// 	unary-expression assignment-operator assignment-expression
+//
+//  assignment-operator: one of
+// 	= *= /= %= += -= <<= >>= &= ^= |=
+func (c *cpp) assignmentExpression(s *preprocessingTokens, eval bool) interface{} {
+	return c.conditionalExpression(s, eval)
+}
+
+// [0], 6.5.15 Conditional operator
+//
+//  conditional-expression:
+//		logical-OR-expression
+//		logical-OR-expression ? expression : conditional-expression
+func (c *cpp) conditionalExpression(s *preprocessingTokens, eval bool) interface{} {
+	expr := c.logicalOrExpression(s, eval)
+	if s.c().Ch == '?' {
+		s.read()
+		exprIsNonZero := c.isNonZero(expr)
+		expr2 := c.conditionalExpression(s, exprIsNonZero)
+		if t := s.c(); t.Ch != ':' {
+			c.eh("%v: expected ':'", t.Position())
+			return expr
+		}
+
+		s.read()
+		expr3 := c.conditionalExpression(s, !exprIsNonZero)
+
+		// [0] 6.5.15
+		//
+		// 5. If both the second and third operands have arithmetic type, the result
+		// type that would be determined by the usual arithmetic conversions, were they
+		// applied to those two operands, is the type of the result.
+		switch x := expr2.(type) {
+		case int64:
+			switch expr3.(type) {
+			case uint64:
+				expr2 = uint64(x)
+			}
+		case uint64:
+			switch y := expr3.(type) {
+			case int64:
+				expr3 = uint64(y)
+			}
+		}
+		switch {
+		case exprIsNonZero:
+			expr = expr2
+		default:
+			expr = expr3
+		}
+	}
+	return expr
+}
+
+// [0], 6.5.14 Logical OR operator
+//
+//  logical-OR-expression:
+//		logical-AND-expression
+//		logical-OR-expression || logical-AND-expression
+func (c *cpp) logicalOrExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.logicalAndExpression(s, eval)
+	for s.c().Ch == rune(OROR) {
+		s.read()
+		if c.isNonZero(lhs) {
+			eval = false
+		}
+		rhs := c.logicalAndExpression(s, eval)
+		if c.isNonZero(lhs) || c.isNonZero(rhs) {
+			lhs = int64(1)
+		}
+	}
+	return lhs
+}
+
+// [0], 6.5.13 Logical AND operator
+//
+//  logical-AND-expression:
+//		inclusive-OR-expression
+//		logical-AND-expression && inclusive-OR-expression
+func (c *cpp) logicalAndExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.inclusiveOrExpression(s, eval)
+	for s.c().Ch == rune(ANDAND) {
+		s.read()
+		if c.isZero(lhs) {
+			eval = false
+		}
+		rhs := c.inclusiveOrExpression(s, eval)
+		if c.isZero(lhs) || c.isZero(rhs) {
+			lhs = int64(0)
+		}
+	}
+	return lhs
+}
+
+// [0], 6.5.12 Bitwise inclusive OR operator
+//
+//  inclusive-OR-expression:
+//		exclusive-OR-expression
+//		inclusive-OR-expression | exclusive-OR-expression
+func (c *cpp) inclusiveOrExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.exclusiveOrExpression(s, eval)
+	for s.c().Ch == '|' {
+		panic(todo(""))
+		// s.next()
+		// rhs := c.exclusiveOrExpression(s, eval)
+		// if eval {
+		// 	switch x := lhs.(type) {
+		// 	case int64:
+		// 		switch y := rhs.(type) {
+		// 		case int64:
+		// 			lhs = x | y
+		// 		case uint64:
+		// 			lhs = uint64(x) | y
+		// 		}
+		// 	case uint64:
+		// 		switch y := rhs.(type) {
+		// 		case int64:
+		// 			lhs = x | uint64(y)
+		// 		case uint64:
+		// 			lhs = x | y
+		// 		}
+		// 	}
+		// }
+	}
+	return lhs
+}
+
+// [0], 6.5.11 Bitwise exclusive OR operator
+//
+//  exclusive-OR-expression:
+//		AND-expression
+//		exclusive-OR-expression ^ AND-expression
+func (c *cpp) exclusiveOrExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.andExpression(s, eval)
+	for s.c().Ch == '^' {
+		panic(todo(""))
+		// s.next()
+		// rhs := c.andExpression(s, eval)
+		// if eval {
+		// 	switch x := lhs.(type) {
+		// 	case int64:
+		// 		switch y := rhs.(type) {
+		// 		case int64:
+		// 			lhs = x ^ y
+		// 		case uint64:
+		// 			lhs = uint64(x) ^ y
+		// 		}
+		// 	case uint64:
+		// 		switch y := rhs.(type) {
+		// 		case int64:
+		// 			lhs = x ^ uint64(y)
+		// 		case uint64:
+		// 			lhs = x ^ y
+		// 		}
+		// 	}
+		// }
+	}
+	return lhs
+}
+
+// [0], 6.5.10 Bitwise AND operator
+//
+//  AND-expression:
+// 		equality-expression
+// 		AND-expression & equality-expression
+func (c *cpp) andExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.equalityExpression(s, eval)
+	for s.c().Ch == '&' {
+		panic(todo(""))
+		// s.next()
+		// rhs := c.equalityExpression(s, eval)
+		// if eval {
+		// 	switch x := lhs.(type) {
+		// 	case int64:
+		// 		switch y := rhs.(type) {
+		// 		case int64:
+		// 			lhs = x & y
+		// 		case uint64:
+		// 			lhs = uint64(x) & y
+		// 		}
+		// 	case uint64:
+		// 		switch y := rhs.(type) {
+		// 		case int64:
+		// 			lhs = x & uint64(y)
+		// 		case uint64:
+		// 			lhs = x & y
+		// 		}
+		// 	}
+		// }
+	}
+	return lhs
+}
+
+// [0], 6.5.9 Equality operators
+//
+//  equality-expression:
+//		relational-expression
+//		equality-expression == relational-expression
+//		equality-expression != relational-expression
+func (c *cpp) equalityExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.relationalExpression(s, eval)
+	for {
+		var v bool
+		switch s.c().Ch {
+		case rune(EQ):
+			s.read()
+			rhs := c.relationalExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x == y
+					case uint64:
+						v = uint64(x) == y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x == uint64(y)
+					case uint64:
+						v = x == y
+					}
+				}
+			}
+		case rune(NEQ):
+			s.read()
+			rhs := c.relationalExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x != y
+					case uint64:
+						v = uint64(x) != y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x != uint64(y)
+					case uint64:
+						v = x != y
+					}
+				}
+			}
+		default:
+			return lhs
+		}
+		switch {
+		case v:
+			lhs = int64(1)
+		default:
+			lhs = int64(0)
+		}
+	}
+}
+
+// [0], 6.5.8 Relational operators
+//
+//  relational-expression:
+//		shift-expression
+//		relational-expression <  shift-expression
+//		relational-expression >  shift-expression
+//		relational-expression <= shift-expression
+//		relational-expression >= shift-expression
+func (c *cpp) relationalExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.shiftExpression(s, eval)
+	for {
+		var v bool
+		switch s.c().Ch {
+		case '<':
+			panic(todo(""))
+			// s.next()
+			// rhs := c.shiftExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			v = x < y
+			// 		case uint64:
+			// 			v = uint64(x) < y
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			v = x < uint64(y)
+			// 		case uint64:
+			// 			v = x < y
+			// 		}
+			// 	}
+			// }
+		case '>':
+			panic(todo(""))
+			// s.next()
+			// rhs := c.shiftExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			v = x > y
+			// 		case uint64:
+			// 			v = uint64(x) > y
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			v = x > uint64(y)
+			// 		case uint64:
+			// 			v = x > y
+			// 		}
+			// 	}
+			// }
+		case rune(LEQ):
+			panic(todo(""))
+			// s.next()
+			// rhs := c.shiftExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			v = x <= y
+			// 		case uint64:
+			// 			v = uint64(x) <= y
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			v = x <= uint64(y)
+			// 		case uint64:
+			// 			v = x <= y
+			// 		}
+			// 	}
+			// }
+		case rune(GEQ):
+			s.read()
+			rhs := c.shiftExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x >= y
+					case uint64:
+						v = uint64(x) >= y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x >= uint64(y)
+					case uint64:
+						v = x >= y
+					}
+				}
+			}
+		default:
+			return lhs
+		}
+		switch {
+		case v:
+			lhs = int64(1)
+		default:
+			lhs = int64(0)
+		}
+	}
+}
+
+// [0], 6.5.7 Bitwise shift operators
+//
+//  shift-expression:
+//		additive-expression
+//		shift-expression << additive-expression
+//		shift-expression >> additive-expression
+func (c *cpp) shiftExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.additiveExpression(s, eval)
+	for {
+		switch s.c().Ch {
+		case rune(LSH):
+			panic(todo(""))
+			// s.next()
+			// rhs := c.additiveExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x << uint(y)
+			// 		case uint64:
+			// 			lhs = uint64(x) << uint(y)
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x << uint(y)
+			// 		case uint64:
+			// 			lhs = x << uint(y)
+			// 		}
+			// 	}
+			// }
+		case rune(RSH):
+			panic(todo(""))
+			// s.next()
+			// rhs := c.additiveExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x >> uint(y)
+			// 		case uint64:
+			// 			lhs = uint64(x) >> uint(y)
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x >> uint(y)
+			// 		case uint64:
+			// 			lhs = x >> uint(y)
+			// 		}
+			// 	}
+			// }
+		default:
+			return lhs
+		}
+	}
+}
+
+// [0], 6.5.6 Additive operators
+//
+//  additive-expression:
+//		multiplicative-expression
+//		additive-expression + multiplicative-expression
+//		additive-expression - multiplicative-expression
+func (c *cpp) additiveExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.multiplicativeExpression(s, eval)
+	for {
+		switch s.c().Ch {
+		case '+':
+			panic(todo(""))
+			// s.next()
+			// rhs := c.multiplicativeExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x + y
+			// 		case uint64:
+			// 			lhs = uint64(x) + y
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x + uint64(y)
+			// 		case uint64:
+			// 			lhs = x + y
+			// 		}
+			// 	}
+			// }
+		case '-':
+			panic(todo(""))
+			// s.next()
+			// rhs := c.multiplicativeExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x - y
+			// 		case uint64:
+			// 			lhs = uint64(x) - y
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x - uint64(y)
+			// 		case uint64:
+			// 			lhs = x - y
+			// 		}
+			// 	}
+			// }
+		default:
+			return lhs
+		}
+	}
+}
+
+// [0], 6.5.5 Multiplicative operators
+//
+//  multiplicative-expression:
+//		unary-expression // [0], 6.10.1, 1.
+//		multiplicative-expression * unary-expression
+//		multiplicative-expression / unary-expression
+//		multiplicative-expression % unary-expression
+func (c *cpp) multiplicativeExpression(s *preprocessingTokens, eval bool) interface{} {
+	lhs := c.unaryExpression(s, eval)
+	for {
+		switch s.c().Ch {
+		case '*':
+			panic(todo(""))
+			// s.next()
+			// rhs := c.unaryExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x * y
+			// 		case uint64:
+			// 			lhs = uint64(x) * y
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			lhs = x * uint64(y)
+			// 		case uint64:
+			// 			lhs = x * y
+			// 		}
+			// 	}
+			// }
+		case '/':
+			t := s.read()
+			rhs := c.unaryExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
+
+						lhs = x / y
+					case uint64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
+
+						lhs = uint64(x) / y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
+
+						lhs = x / uint64(y)
+					case uint64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
+
+						lhs = x / y
+					}
+				}
+			}
+		case '%':
+			panic(todo(""))
+			// t := s.next()
+			// rhs := c.unaryExpression(s, eval)
+			// if eval {
+			// 	switch x := lhs.(type) {
+			// 	case int64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			if y == 0 {
+			// 				c.err(t, "division by zero")
+			// 				break
+			// 			}
+
+			// 			lhs = x % y
+			// 		case uint64:
+			// 			if y == 0 {
+			// 				c.err(t, "division by zero")
+			// 				break
+			// 			}
+
+			// 			lhs = uint64(x) % y
+			// 		}
+			// 	case uint64:
+			// 		switch y := rhs.(type) {
+			// 		case int64:
+			// 			if y == 0 {
+			// 				c.err(t, "division by zero")
+			// 				break
+			// 			}
+
+			// 			lhs = x % uint64(y)
+			// 		case uint64:
+			// 			if y == 0 {
+			// 				c.err(t, "division by zero")
+			// 				break
+			// 			}
+
+			// 			lhs = x % y
+			// 		}
+			// 	}
+			// }
+		default:
+			return lhs
+		}
+	}
+}
+
+// [0], 6.5.3 Unary operators
+//
+//  unary-expression:
+//		primary-expression
+//		unary-operator unary-expression
+//
+//  unary-operator: one of
+//		+ - ~ !
+func (c *cpp) unaryExpression(s *preprocessingTokens, eval bool) interface{} {
+	switch s.c().Ch {
+	case '+':
+		panic(todo(""))
+		// s.next()
+		// return c.unaryExpression(s, eval)
+	case '-':
+		s.read()
+		expr := c.unaryExpression(s, eval)
+		if eval {
+			switch x := expr.(type) {
+			case int64:
+				expr = -x
+			case uint64:
+				expr = -x
+			}
+		}
+		return expr
+	case '~':
+		panic(todo(""))
+		// s.next()
+		// expr := c.unaryExpression(s, eval)
+		// if eval {
+		// 	switch x := expr.(type) {
+		// 	case int64:
+		// 		expr = ^x
+		// 	case uint64:
+		// 		expr = ^x
+		// 	}
+		// }
+		// return expr
+	case '!':
+		s.read()
+		expr := c.unaryExpression(s, eval)
+		if eval {
+			var v bool
+			switch x := expr.(type) {
+			case int64:
+				v = x == 0
+			case uint64:
+				v = x == 0
+			}
+			switch {
+			case v:
+				expr = int64(1)
+			default:
+				expr = int64(0)
+			}
+		}
+		return expr
+	default:
+		return c.primaryExpression(s, eval)
+	}
+}
+
+// [0], 6.5.1 Primary expressions
+//
+//  primary-expression:
+//		identifier
+//		constant
+//		( expression )
+func (c *cpp) primaryExpression(s *preprocessingTokens, eval bool) interface{} {
+	switch t := s.c(); t.Ch {
+	case rune(CHARCONST), rune(LONGCHARCONST):
+		panic(todo(""))
+		// s.next()
+		// r := charConst(c.ctx, t)
+		// return int64(r)
+	case rune(IDENTIFIER):
+		s.read()
+		// if s.peek().char == '(' {
+		// 	s.next()
+		// 	n := 1
+		// loop:
+		// 	for n != 0 {
+		// 		switch s.peek().char {
+		// 		case '(':
+		// 			n++
+		// 		case ')':
+		// 			n--
+		// 		case -1:
+		// 			c.err(s.peek(), "expected )")
+		// 			break loop
+		// 		}
+		// 		s.next()
+		// 	}
+		// }
+		return int64(0)
+	case rune(PPNUMBER):
+		s.read()
+		return c.intConst(t)
+	case '(':
+		s.read()
+		expr := c.expression(s, eval)
+		if s.c().Ch == ')' {
+			s.read()
+		} else {
+			panic(todo(""))
+		}
+		return expr
+	default:
+		panic(todo(""))
+		// return int64(0)
+	}
+}
+
+// [0], 6.4.4.1 Integer constants
+//
+//  integer-constant:
+//		decimal-constant integer-suffix_opt
+//		octal-constant integer-suffix_opt
+//		hexadecimal-constant integer-suffix_opt
+//
+//  decimal-constant:
+//		nonzero-digit
+//		decimal-constant digit
+//
+//  octal-constant:
+//		0
+//		octal-constant octal-digit
+//
+//  hexadecimal-prefix: one of
+//		0x 0X
+//
+//  integer-suffix_opt: one of
+//		u ul ull l lu ll llu
+func (c *cpp) intConst(t Token) (r interface{}) {
+	var n uint64
+	s0 := string(t.Src())
+	s := strings.TrimRight(s0, "uUlL")
+	var err error
+	switch {
+	case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
+		if n, err = strconv.ParseUint(s[2:], 16, 64); err != nil {
+			c.eh("%v: %v", t.Position(), err)
+			return int64(0)
+		}
+	case strings.HasPrefix(s, "0"):
+		if n, err = strconv.ParseUint(s, 8, 64); err != nil {
+			c.eh("%v: %v", t.Position(), err)
+			return int64(0)
+		}
+	default:
+		if n, err = strconv.ParseUint(s, 10, 64); err != nil {
+			c.eh("%v: %v", t.Position(), err)
+			return int64(0)
+		}
+	}
+
+	switch suffix := strings.ToLower(s0[len(s):]); suffix {
+	case "", "l", "ll":
+		if n > math.MaxInt64 {
+			return n
+		}
+
+		return int64(n)
+	default:
+		panic(todo(""))
+		// c.err(t, "invalid suffix: %v", s0)
+		// fallthrough
+	case "llu", "lu", "u", "ul", "ull":
+		return n
+	}
+}
+
+func (c *cpp) isZero(val interface{}) bool {
+	switch x := val.(type) {
+	case int64:
+		return x == 0
+	case uint64:
+		return x == 0
+	default:
+		c.eh("", errorf("internal error: %T", x))
+		return false
 	}
 }
 
@@ -970,7 +1938,7 @@ func (c *cpp) newMacro(nm Token, params []Token, replList []preprocessingToken, 
 // parseReplacementList transforms s into preprocessing tokens that have separate
 // tokens for white space.
 func (c *cpp) parseReplacementList(s []Token) (r []preprocessingToken) {
-	return normalizeHashWhitespace(tokens2preprocessingTokens(c.toksTrim(s)))
+	return normalizeHashWhitespace(tokens2PreprocessingTokens(c.toksTrim(s), true))
 }
 
 func (c *cpp) toksTrim(s []Token) []Token {

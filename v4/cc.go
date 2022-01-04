@@ -136,6 +136,8 @@ type Config struct {
 	Predefined      string
 	IncludePaths    []string
 	SysIncludePaths []string
+
+	fakeIncludes bool // testing
 }
 
 type errors []string
@@ -147,7 +149,7 @@ func (e errors) Error() string { return strings.Join(e, "\n") }
 // and writes the result to w.
 func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 	var errors errors
-	cpp, err := newCPP(sources, func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) })
+	cpp, err := newCPP(cfg, sources, func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) })
 	if err != nil {
 		return err
 	}

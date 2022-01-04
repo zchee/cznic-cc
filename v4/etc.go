@@ -136,10 +136,6 @@ func env(key, defaultVal string) string {
 func toksDump(v interface{}) string {
 	var a []string
 	switch x := v.(type) {
-	//TODO case textLine:
-	//TODO 	for _, v := range x {
-	//TODO 		a = append(a, string(v.Sep())+string(v.Src()))
-	//TODO 	}
 	case []preprocessingToken:
 		return toksDump(preprocessingTokens(x))
 	case *preprocessingTokens:
@@ -158,19 +154,10 @@ func toksDump(v interface{}) string {
 			a = append(a, toksDump(v))
 		}
 		return fmt.Sprintf("%v.%d", a, len(a))
-	//TODO case controlLine:
-	//TODO 	return toksDump([]Token(x))
-	//TODO case *preprocessingTokens:
-	//TODO 	return toksDump(*x)
-	//TODO case tokens:
-	//TODO 	for _, v := range x {
-	//TODO 		a = append(a, string(v.Sep())+string(v.Src()))
-	//TODO 	}
-	//TODO case *tokens:
-	//TODO 	return toksDump(*x)
+	case controlLine:
+		return toksDump([]Token(x))
 	case *tokenizer:
 		return fmt.Sprintf("[%T]", x)
-	//TODO 	return s
 	case []Token:
 		for _, v := range x {
 			a = append(a, string(v.Src()))
@@ -183,12 +170,21 @@ func toksDump(v interface{}) string {
 	return fmt.Sprintf("%q.%d", a, len(a))
 }
 
-func tokens2preprocessingTokens(s []Token) (r []preprocessingToken) {
+func tokens2PreprocessingTokens(s []Token, skipFirstSep bool) (r []preprocessingToken) {
 	for i, v := range s {
-		if i != 0 && len(v.Sep()) != 0 {
+		if (i != 0 || !skipFirstSep) && len(v.Sep()) != 0 {
 			r = append(r, preprocessingToken{spTok, nil})
 		}
 		r = append(r, preprocessingToken{v, nil})
+	}
+	return r
+}
+
+func preprocessingTokens2Tokens(s []preprocessingToken) (r []Token) {
+	for _, v := range s {
+		if v.Ch != ' ' {
+			r = append(r, v.Token)
+		}
 	}
 	return r
 }
@@ -226,4 +222,8 @@ func toksTrim(s preprocessingTokens) preprocessingTokens {
 		s = s[:len(s)-1]
 	}
 	return s
+}
+
+func skipBlank(x interface{}) {
+	panic(todo("%T", x))
 }

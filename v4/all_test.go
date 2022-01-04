@@ -420,18 +420,10 @@ func BenchmarkCPPParse(b *testing.B) {
 
 func TestCPPExpand(t *testing.T) {
 	blacklist := map[string]struct{}{
-		"010.c":                 {}, //TODO
-		"011.c":                 {}, //TODO
-		"012.c":                 {}, //TODO
-		"013.c":                 {}, //TODO
-		"014.c":                 {}, //TODO
-		"015.c":                 {}, //TODO
-		"example-6.10-8.h":      {}, //TODO
-		"example-6.10.2-7.h":    {}, //TODO
-		"example-6.10.2-8.h":    {}, //TODO
+		"013.c": {}, //TODO _Pragma
+		"014.c": {}, //TODO _Pragma
+
 		"example-6.10.3.3-4.h":  {}, //TODO
-		"example-6.10.3.5-3.h":  {}, //TODO
-		"example-6.10.3.5-4.h":  {}, //TODO
 		"example-6.10.3.5-5.h":  {}, //TODO
 		"example-6.10.3.5-6.h":  {}, //TODO
 		"example-6.10.3.5-7.h":  {}, //TODO
@@ -441,11 +433,12 @@ func TestCPPExpand(t *testing.T) {
 		"example-6.10.3.5-9b.h": {}, //TODO
 		"example-6.10.3.5-9c.h": {}, //TODO
 		"example-6.10.3.5-9d.h": {}, //TODO
-		"issue131.c":            {}, //TODO
 
 	}
 	var fails []string
 	var files, ok, skip int
+	cfg := *testCfg
+	cfg.fakeIncludes = true
 	err := filepath.Walk(filepath.FromSlash("../v3/testdata/cpp-expand/"), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -473,7 +466,7 @@ func TestCPPExpand(t *testing.T) {
 			fmt.Fprintln(os.Stderr, path)
 		}
 		var b strings.Builder
-		if err := Preprocess(testCfg, []Source{{path, nil}}, &b); err != nil {
+		if err := Preprocess(&cfg, []Source{{path, nil}}, &b); err != nil {
 			fails = append(fails, path)
 			t.Fatalf("%v: %v", path, err)
 		}
