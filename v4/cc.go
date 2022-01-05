@@ -132,10 +132,13 @@ func NewABI(os, arch string) (*ABI, error) {
 // A special search path "@" is interpreted as 'the same directory as where the
 // file with the #include directive is'.
 type Config struct {
-	ABI             *ABI
+	ABI *ABI
+
 	Predefined      string
 	IncludePaths    []string
 	SysIncludePaths []string
+
+	PragmaHandler func([]Token) error
 
 	fakeIncludes bool // testing
 }
@@ -148,12 +151,17 @@ func (e errors) Error() string { return strings.Join(e, "\n") }
 // Preprocess preprocesses a translation unit, consisting of inputs in sources,
 // and writes the result to w.
 func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
-	var errors errors
-	cpp, err := newCPP(cfg, sources, func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) })
+	cpp, err := newCPP(cfg, sources, nil)
 	if err != nil {
 		return err
 	}
 
+	return preprocess(cpp, w)
+}
+
+func preprocess(cpp *cpp, w io.Writer) (err error) {
+	var errors errors
+	cpp.eh = func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) }
 	var prev rune
 	for {
 		if cpp.c() == eof {

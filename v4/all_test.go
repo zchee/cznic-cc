@@ -420,20 +420,30 @@ func BenchmarkCPPParse(b *testing.B) {
 
 func TestCPPExpand(t *testing.T) {
 	blacklist := map[string]struct{}{
+		"014.c": {}, // v4 pragmas come in reverse order
+
 		// v4 follows gcc in that macro redefinition is never an error.
 		"example-6.10.3.5-9a.h": {},
 		"example-6.10.3.5-9b.h": {},
 		"example-6.10.3.5-9c.h": {},
 		"example-6.10.3.5-9d.h": {},
-
-		"013.c": {}, //TODO _Pragma
-		"014.c": {}, //TODO _Pragma
-
 	}
 	var fails []string
 	var files, ok, skip int
+	var c *cpp
 	cfg := *testCfg
 	cfg.fakeIncludes = true
+	cfg.PragmaHandler = func(s []Token) error {
+		a := textLine{pragmaSTDCTestTok}
+		for i, v := range s {
+			if i == 0 {
+				v.Set(sp, v.Src())
+			}
+			a = append(a, v)
+		}
+		c.push(append(a, nlTok))
+		return nil
+	}
 	err := filepath.Walk(filepath.FromSlash("../v3/testdata/cpp-expand/"), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -461,10 +471,15 @@ func TestCPPExpand(t *testing.T) {
 			fmt.Fprintln(os.Stderr, path)
 		}
 		var b strings.Builder
-		if err := Preprocess(&cfg, []Source{{path, nil}}, &b); err != nil {
+		if c, err = newCPP(&cfg, []Source{{path, nil}}, nil); err != nil {
+			t.Fatalf("%v: %v", path, err)
+		}
+
+		if err := preprocess(c, &b); err != nil {
 			fails = append(fails, path)
 			t.Fatalf("%v: %v", path, err)
 		}
+
 		if strings.Contains(filepath.ToSlash(path), "/mustfail/") {
 			if err != nil {
 				return nil
