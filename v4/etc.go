@@ -189,31 +189,6 @@ func preprocessingTokens2Tokens(s []preprocessingToken) (r []Token) {
 	return r
 }
 
-// Remove ' ' after '#' and before and after "##". Works in-place.
-func normalizeHashWhitespace(s []preprocessingToken) (r []preprocessingToken) {
-	w := 0
-	for i, v := range s {
-		switch {
-		case v.Ch == ' ':
-			if w != 0 {
-				if ch := s[w-1].Ch; ch == '#' || ch == rune(PPPASTE) {
-					continue
-				}
-			}
-
-			if i+1 < len(s) {
-				if ch := s[i+1].Ch; ch == '#' || ch == rune(PPPASTE) {
-					continue
-				}
-			}
-		}
-
-		s[w] = v
-		w++
-	}
-	return s[:w]
-}
-
 func toksTrim(s preprocessingTokens) preprocessingTokens {
 	for len(s) != 0 && s[0].Ch == ' ' {
 		s = s[1:]
@@ -222,8 +197,4 @@ func toksTrim(s preprocessingTokens) preprocessingTokens {
 		s = s[:len(s)-1]
 	}
 	return s
-}
-
-func skipBlank(x interface{}) {
-	panic(todo("%T", x))
 }

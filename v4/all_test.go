@@ -420,19 +420,14 @@ func BenchmarkCPPParse(b *testing.B) {
 
 func TestCPPExpand(t *testing.T) {
 	blacklist := map[string]struct{}{
+		// v4 follows gcc in that macro redefinition is never an error.
+		"example-6.10.3.5-9a.h": {},
+		"example-6.10.3.5-9b.h": {},
+		"example-6.10.3.5-9c.h": {},
+		"example-6.10.3.5-9d.h": {},
+
 		"013.c": {}, //TODO _Pragma
 		"014.c": {}, //TODO _Pragma
-
-		"example-6.10.3.3-4.h":  {}, //TODO
-		"example-6.10.3.5-5.h":  {}, //TODO
-		"example-6.10.3.5-6.h":  {}, //TODO
-		"example-6.10.3.5-7.h":  {}, //TODO
-		"example-6.10.3.5-8.h":  {}, //TODO
-		"example-6.10.3.5-9.h":  {}, //TODO
-		"example-6.10.3.5-9a.h": {}, //TODO
-		"example-6.10.3.5-9b.h": {}, //TODO
-		"example-6.10.3.5-9c.h": {}, //TODO
-		"example-6.10.3.5-9d.h": {}, //TODO
 
 	}
 	var fails []string

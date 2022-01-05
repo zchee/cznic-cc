@@ -20,13 +20,16 @@ var (
 	_ tokenSequence = (*preprocessingTokens)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 
-	eofTok, oneTok, spTok, zeroTok Token
+	eofTok, oneTok, spTok, zeroTok, emptyStringTok Token
 
-	comma              = []byte{','}
-	eofPreprocessToken preprocessingToken
-	one                = []byte{'1'}
-	sp                 = []byte{' '}
-	zero               = []byte{'0'}
+	emptyStringPreprocessingTok preprocessingToken
+	eofPreprocessToken          preprocessingToken
+
+	comma = []byte{','}
+	one   = []byte{'1'}
+	sp    = []byte{' '}
+	zero  = []byte{'0'}
+	qq    = []byte(`""`)
 )
 
 func init() {
@@ -34,6 +37,10 @@ func init() {
 	if err != nil {
 		panic(errorf("initialization error"))
 	}
+
+	emptyStringTok.s = s
+	emptyStringTok.Ch = rune(STRINGLITERAL)
+	emptyStringTok.Set(nil, qq)
 
 	eofTok.s = s
 	eofTok.Ch = eof
@@ -51,6 +58,7 @@ func init() {
 	zeroTok.Ch = rune(PPNUMBER)
 	zeroTok.Set(nil, zero)
 
+	emptyStringPreprocessingTok = preprocessingToken{emptyStringTok, nil}
 	eofPreprocessToken = preprocessingToken{eofTok, nil}
 }
 
@@ -197,8 +205,10 @@ func (m *Macro) ts() *preprocessingTokens {
 }
 
 type tokenSequence interface {
-	peek(int) Token
+	peek(int) preprocessingToken
+	peekNonBlank() (preprocessingToken, int)
 	read() preprocessingToken
+	skip(int)
 }
 
 type tokenizer struct {
@@ -211,13 +221,26 @@ func newTokenizer(c *cpp) *tokenizer {
 	return &tokenizer{c: c}
 }
 
-func (t *tokenizer) peek(index int) (tok Token) {
-	if index < len(t.in) {
-		return t.in[index].Token
+func (t *tokenizer) peek(index int) (tok preprocessingToken) {
+	for {
+		if index < len(t.in) {
+			return t.in[index]
+		}
+
+		t.in = append(t.in, tokens2PreprocessingTokens(t.c.nextLine(), false)...)
+		continue
 	}
 
 	t.c.eh("%v", errorf("internal error"))
-	return eofTok
+	return eofPreprocessToken
+}
+
+func (t *tokenizer) peekNonBlank() (preprocessingToken, int) {
+	for i := 0; ; i++ {
+		if tok := t.peek(i); tok.Ch != ' ' && tok.Ch != '\n' {
+			return tok, i
+		}
+	}
 }
 
 func (t *tokenizer) read() (tok preprocessingToken) {
@@ -233,6 +256,12 @@ func (t *tokenizer) read() (tok preprocessingToken) {
 
 }
 
+func (t *tokenizer) skip(n int) {
+	for ; n != 0; n-- {
+		t.read()
+	}
+}
+
 func (t *tokenizer) token() (tok Token) {
 	for len(t.out) == 0 {
 		t.out = t.c.expand(true, false, t)
@@ -246,13 +275,12 @@ func (t *tokenizer) token() (tok Token) {
 
 type preprocessingTokens []preprocessingToken
 
-func (p *preprocessingTokens) peek(index int) (tok Token) {
+func (p *preprocessingTokens) peek(index int) preprocessingToken {
 	if index < len(*p) {
-		return (*p)[index].Token
+		return (*p)[index]
 	}
 
-	tok.Ch = eof
-	return tok
+	return eofPreprocessToken
 }
 
 func (p *preprocessingTokens) read() (tok preprocessingToken) {
@@ -277,9 +305,23 @@ func (p *preprocessingTokens) skipBlank() {
 	*p = s
 }
 
+func (p *preprocessingTokens) peekNonBlank() (preprocessingToken, int) {
+	for i, v := range *p {
+		if v.Ch != ' ' && v.Ch != '\n' {
+			return v, i
+		}
+	}
+
+	return eofPreprocessToken, -1
+}
+
+func (p *preprocessingTokens) skip(n int) {
+	*p = (*p)[n:]
+}
+
 func (p *preprocessingTokens) c() Token {
 	p.skipBlank()
-	return p.peek(0)
+	return p.peek(0).Token
 }
 
 type cat struct {
@@ -320,12 +362,20 @@ func newCat(head preprocessingTokens, tail tokenSequence) tokenSequence {
 	}
 }
 
-func (c *cat) peek(index int) (tok Token) {
+func (c *cat) peek(index int) preprocessingToken {
 	if index < len(c.head) {
 		return c.head.peek(index)
 	}
 
 	return c.tail.peek(index - len(c.head))
+}
+
+func (c *cat) peekNonBlank() (preprocessingToken, int) {
+	for i := 0; ; i++ {
+		if t := c.peek(i); t.Ch != ' ' && t.Ch != '\n' {
+			return t, i
+		}
+	}
 }
 
 func (c *cat) read() preprocessingToken {
@@ -334,6 +384,12 @@ func (c *cat) read() preprocessingToken {
 	}
 
 	return c.tail.read()
+}
+
+func (c *cat) skip(n int) {
+	for ; n != 0; n-- {
+		c.read()
+	}
 }
 
 // cpp is the C preprocessor.
@@ -411,7 +467,7 @@ func (c *cpp) expand(outer, eval bool, TS tokenSequence) (r preprocessingTokens)
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 more:
 	t := TS.read()
-	// trc("", &t)
+	// trc("  %[2]s%v", c.undent(), c.indent(), &t)
 	if t.Ch == eof {
 		// if TS is {} then
 		//	return {};
@@ -458,11 +514,7 @@ more:
 			// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
 			return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil), TS))
 		case m.IsFnLike:
-			t2 := TS.peek(0)
-			if t2.Ch == ' ' {
-				TS.read()
-				t2 = TS.peek(0)
-			}
+			t2, skip := TS.peekNonBlank()
 			if t2.Ch == '(' {
 				// if TS is T^HS • ( • TS’ and T is a "()’d macro" then
 				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
@@ -470,17 +522,13 @@ more:
 
 				// trc("  %s<%s is a ()'d macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.replacementList))
 				// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-				TS.read() // '('
+				TS.skip(skip + 1)
 				args, rparen, ok := c.parseMacroArgs(TS)
 				if !ok {
 					return nil
 				}
 
-				switch {
-				case len(args) < m.MinArgs:
-					c.eh("%v: not enough macro arguments", rparen.Position())
-					break out
-				case len(args) > m.MinArgs && m.VarArg < 0:
+				if len(args) > m.MinArgs && m.VarArg < 0 {
 					c.eh("%v: too many macro arguments", rparen.Position())
 					break out
 				}
@@ -507,10 +555,11 @@ more:
 }
 
 // [1], pg 2.
-func (c *cpp) subst(eval bool, m *Macro, IS tokenSequence, FP formalParams, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
-	// trc("  %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
-	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
+func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP formalParams, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
+	// ;trc("  %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
+	// ;defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	t := IS.read()
+	// trc("  %[2]s%v", c.undent(), c.indent(), &t)
 	if t.Ch == eof {
 		// if IS is {} then
 		//	return hsadd(HS,OS);
@@ -518,45 +567,61 @@ func (c *cpp) subst(eval bool, m *Macro, IS tokenSequence, FP formalParams, AP [
 	}
 
 	if t.Ch == '#' {
-		t2 := IS.read()
-		if i := FP.is(string(t2.Src())); i >= 0 {
-			// if IS is # • T • IS’ and T is FP[i] then
-			//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
-			return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.stringize(c.apSelect(m, t, AP, i))))
+		if t2, skip := IS.peekNonBlank(); t2.Ch == rune(IDENTIFIER) {
+			if i := FP.is(string(t2.Src())); i >= 0 {
+				// if IS is # • T • IS’ and T is FP[i] then
+				//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
+				IS.skip(skip + 1)
+				return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.stringize(c.apSelect(m, t2, AP, i))))
+			}
+
+			if va := m.VarArg; va >= 0 && string(t2.Src()) == "__VA_ARGS__" && va <= len(AP) {
+				IS.skip(skip + 1)
+				return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.stringize(c.expand(false, eval, c.varArgsP(t, AP[va:])))))
+			}
 		}
 	}
 
+	if t.Ch == ' ' && IS.peek(0).Ch == rune(PPPASTE) {
+		t = IS.read()
+	}
 	if t.Ch == rune(PPPASTE) {
-		t2 := IS.read()
-		if i := FP.is(string(t2.Src())); i >= 0 {
-			// if IS is ## • T • IS’ and T is FP[i] then
-			if len(AP[i]) == 0 {
-				//	if select(i,AP ) is {} then /* only if actuals can be empty */
-				//		return subst(IS’,FP,AP,HS,OS );
-				panic(todo("%v %v %v", toksDump(IS), &t2, i))
-			} else {
-				//	else
-				//		return subst(IS’,FP,AP,HS,glue(OS,select(i,AP )));
-				return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, c.apSelect(m, t2, AP, i)))
+		t2, skip := IS.peekNonBlank()
+		if t2.Ch == rune(IDENTIFIER) {
+			if i := FP.is(string(t2.Src())); i >= 0 {
+				// if IS is ## • T • IS’ and T is FP[i] then
+				if len(AP[i]) == 0 {
+					//	if select(i,AP ) is {} then /* only if actuals can be empty */
+					//		return subst(IS’,FP,AP,HS,OS );
+					IS.skip(skip + 1)
+					return c.subst(eval, m, IS, FP, AP, HS, OS)
+				} else {
+					//	else
+					//		return subst(IS’,FP,AP,HS,glue(OS,select(i,AP )));
+					IS.skip(skip + 1)
+					return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, c.apSelect(m, t2, AP, i)))
+				}
 			}
 		}
 
 		// else if IS is ## • T HS’ • IS’ then
 		//	return subst(IS’,FP,AP,HS,glue(OS,T^HS’));
+		IS.skip(skip + 1)
 		return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, preprocessingTokens{t2}))
 	}
 
-	if IS.peek(0).Ch == rune(PPPASTE) {
-		if t.Ch == rune(IDENTIFIER) {
+	if t.Ch == rune(IDENTIFIER) {
+		if t2, skip := IS.peekNonBlank(); t2.Ch == rune(PPPASTE) {
 			if i := FP.is(string(t.Src())); i >= 0 {
 				// if IS is T • ##^HS’ • IS’ and T is FP[i] then
 				//	if select(i,AP ) is {} then /* only if actuals can be empty */
 				if len(AP[i]) == 0 {
-					IS.read() // PPPASTE
-					t2 := IS.read()
+					IS.skip(skip + 1) // ##
+					t2, skip := IS.peekNonBlank()
 					if j := FP.is(string(t2.Src())); j >= 0 {
 						//		if IS’ is T’ • IS’’ and T’ is FP[j] then
 						//			return subst(IS’’,FP,AP,HS,OS • select(j,AP));
+						IS.skip(skip + 1)
 						return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.apSelect(m, t, AP, j)...))
 					} else {
 						//		else
@@ -634,11 +699,15 @@ func (c *cpp) skipBlank(ts tokenSequence) {
 }
 
 func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
-	// trc("  %sLS %v, RS %v (%v)", c.indent(), toksDump(LS), toksDump(RS), origin(2))
-	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
+	// trc("  \t%sLS %v, RS %v (%v)", c.indent(), toksDump(LS), toksDump(RS), origin(2))
+	// defer func() { trc("->\t%s%v", c.undent(), toksDump(r)) }()
+
 	// if LS is L^HS and RS is R^HS’ • RS’ then
 	//	return L&R^(HS∩HS’) • RS’; /* undefined if L&R is invalid */
-	if len(LS) == 1 {
+	switch len(LS) {
+	case 0:
+		return RS
+	case 1:
 		t := LS[0]
 		t.Set(nil, append(t.Src(), RS[0].Src()...))
 		t.hs = t.hs.cap(RS[0].hs)
@@ -658,7 +727,7 @@ func (c *cpp) stringize(s0 preprocessingTokens) (r preprocessingToken) {
 	// trc("  %s%v (%v)", c.indent(), toksDump(s0), origin(2))
 	// defer func() { trc("->%s%v: %s", c.undent(), toksDump(preprocessingTokens{r}), r.Src()) }()
 	if len(s0) == 0 {
-		c.eh("", errorf("internal error"))
+		return emptyStringPreprocessingTok
 	}
 
 	r = s0[0]
@@ -671,6 +740,10 @@ func (c *cpp) stringize(s0 preprocessingTokens) (r preprocessingToken) {
 	s := make([]Token, 0, len(s0))
 	var last rune
 	for _, v := range s0 {
+		if v.Ch == '\n' {
+			v.Ch = ' '
+			v.Set(nil, sp)
+		}
 		if v.Ch == ' ' {
 			if last == ' ' {
 				continue
@@ -723,7 +796,11 @@ func (c *cpp) apSelectP(m *Macro, t preprocessingToken, AP []preprocessingTokens
 
 func (c *cpp) apSelect(m *Macro, t preprocessingToken, AP []preprocessingTokens, i int) preprocessingTokens {
 	if m.VarArg < 0 || m.VarArg != i {
-		return AP[i]
+		if i < len(AP) {
+			return AP[i]
+		}
+
+		return nil
 	}
 
 	return c.varArgs(t, AP[i:])
@@ -762,7 +839,8 @@ func (c *cpp) parseMacroArgs(TS tokenSequence) (args []preprocessingTokens, rpar
 	var t preprocessingToken
 out:
 	for {
-		switch t = TS.read(); t.Ch {
+		t = TS.read()
+		switch t.Ch {
 		case ',':
 			if level != 0 {
 				arg = append(arg, t)
@@ -790,7 +868,10 @@ out:
 		}
 	}
 	for i, arg := range args {
-		args[i] = normalizeHashWhitespace(toksTrim(arg))
+		args[i] = toksTrim(arg)
+	}
+	if len(args) == 1 && len(args[0]) == 0 {
+		args = nil
 	}
 	return args, t, true
 }
@@ -913,8 +994,10 @@ func (c *cpp) include(ln controlLine) {
 		return
 	}
 
+	s := preprocessingTokens(tokens2PreprocessingTokens(ln[2:], true))
+	s = c.expand(false, true, &s)
 	if c.cfg.fakeIncludes {
-		t := ln[2]
+		t := s[0].Token
 		t.Set(nil, t.Src())
 		c.push(textLine([]Token{
 			t,
@@ -1833,10 +1916,6 @@ func (c *cpp) define(ln controlLine) {
 func (c *cpp) defineFnMacro(nm Token, ln []Token) {
 	fp, rl0, minArgs, varArg := c.parseMacroParams(ln)
 	rl := c.parseReplacementList(rl0)
-	switch {
-	case c.macros[string(nm.Src())] != nil:
-		panic(todo("", nm.Position(), &nm))
-	}
 	c.macros[string(nm.Src())] = c.newMacro(nm, fp, rl, minArgs, varArg, true)
 }
 
@@ -1913,12 +1992,7 @@ func (c *cpp) parseMacroParams(ln []Token) (fp, rl []Token, minArgs, vaArg int) 
 
 func (c *cpp) defineObjectMacro(nm Token, ln []Token) {
 	rl := c.parseReplacementList(ln)
-	switch {
-	case c.macros[string(nm.Src())] != nil:
-		panic(todo("", nm.Position(), &nm))
-	default:
-		c.macros[string(nm.Src())] = c.newMacro(nm, nil, rl, -1, -1, false)
-	}
+	c.macros[string(nm.Src())] = c.newMacro(nm, nil, rl, -1, -1, false)
 }
 
 func (c *cpp) newMacro(nm Token, params []Token, replList []preprocessingToken, minArgs, varArg int, isFnLike bool) *Macro {
@@ -1938,7 +2012,7 @@ func (c *cpp) newMacro(nm Token, params []Token, replList []preprocessingToken, 
 // parseReplacementList transforms s into preprocessing tokens that have separate
 // tokens for white space.
 func (c *cpp) parseReplacementList(s []Token) (r []preprocessingToken) {
-	return normalizeHashWhitespace(tokens2PreprocessingTokens(c.toksTrim(s), true))
+	return tokens2PreprocessingTokens(c.toksTrim(s), true)
 }
 
 func (c *cpp) toksTrim(s []Token) []Token {

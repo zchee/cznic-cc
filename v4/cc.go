@@ -194,6 +194,10 @@ func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
 				return err
 			}
 		}
+		if prev == ' ' && tok.Ch == ' ' {
+			continue
+		}
+
 		prev = tok.Ch
 		if _, err = w.Write(tok.Src()); err != nil {
 			return err
