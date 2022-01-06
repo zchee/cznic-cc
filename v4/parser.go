@@ -5,6 +5,8 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
+	"io/fs"
+
 	"modernc.org/token"
 )
 
@@ -19,8 +21,8 @@ type cppParser struct {
 
 // newCppParser returns a newly created cppParser. The errHandler function is invoked on
 // parser errors.
-func newCppParser(src Source, eh errHandler) (*cppParser, error) {
-	s, err := newScanner(src, eh)
+func newCppParser(src Source, opener fs.FS, eh errHandler) (*cppParser, error) {
+	s, err := newScanner(src, opener, eh)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +125,7 @@ func (p *cppParser) groupPart(inIfSection bool) groupPart {
 		switch string(p.line[1].Src()) {
 		case "if", "ifdef", "ifndef":
 			return p.ifSection()
-		case "include", "define", "undef", "line", "error", "pragma", "\n":
+		case "include", "include_next", "define", "undef", "line", "error", "pragma", "\n":
 			return controlLine(p.consume())
 		case "elif", "else", "endif":
 			if inIfSection {

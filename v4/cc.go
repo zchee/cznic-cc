@@ -25,6 +25,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"runtime"
@@ -102,9 +103,12 @@ func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sy
 //
 // When the value argument is an *os.File, io.ReadCloser or fs.File,
 // value.Close() is called before returning.
+//
+// If FS is not nil it overrides the Opener from Config.
 type Source struct {
 	Name  string
 	Value interface{}
+	FS    fs.FS
 }
 
 // ABI describes selected parts of the Application Binary Interface.
@@ -131,14 +135,15 @@ func NewABI(os, arch string) (*ABI, error) {
 // #include "foo.h" and #include <foo.h> preprocessing directives respectively.
 // A special search path "@" is interpreted as 'the same directory as where the
 // file with the #include directive is'.
+//
+// If FS is nil, os.Open is used to open named files.
 type Config struct {
-	ABI *ABI
-
-	Predefined      string
+	ABI             *ABI
 	IncludePaths    []string
+	FS              fs.FS
+	PragmaHandler   func([]Token) error
+	Predefined      string
 	SysIncludePaths []string
-
-	PragmaHandler func([]Token) error
 
 	fakeIncludes bool // testing
 }
@@ -174,7 +179,8 @@ func preprocess(cpp *cpp, w io.Writer) (err error) {
 		tok := cpp.consume()
 		switch c := tok.Ch; {
 		case
-			// Prevent the textual form of certain adjacent tokens to form a "false" token.
+			// Prevent the textual form of certain adjacent tokens to form a "false" token,
+			// not present in the source.
 			c == '#' && prev == '#',
 			c == '&' && prev == '&',
 			c == '+' && prev == '+',
@@ -196,7 +202,10 @@ func preprocess(cpp *cpp, w io.Writer) (err error) {
 			c == '=' && prev == '|',
 			c == '>' && prev == '-',
 			c == '>' && prev == '>',
-			c == '|' && prev == '|':
+			c == '|' && prev == '|',
+			c == rune(DEC) && prev == '-',
+			c == rune(IDENTIFIER) && prev == rune(IDENTIFIER),
+			c == rune(INC) && prev == '+':
 
 			if _, err := w.Write(sp); err != nil {
 				return err

@@ -7,6 +7,7 @@ package cc // import "modernc.org/cc/v4"
 import (
 	"fmt"
 	"math"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -20,7 +21,7 @@ var (
 	_ tokenSequence = (*preprocessingTokens)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 
-	eofTok, hashTok, nlTok, oneTok, pragmaTok, pragmaSTDCTestTok, spTok, zeroTok, emptyStringTok Token
+	commaTok, eofTok, hashTok, nlTok, oneTok, pragmaTok, pragmaTestTok, spTok, zeroTok, emptyStringTok Token
 
 	emptyStringPreprocessingTok preprocessingToken
 	eofPreprocessToken          preprocessingToken
@@ -48,10 +49,14 @@ var (
 )
 
 func init() {
-	s, err := newScannerSource(Source{"", []byte(nil)})
+	s, err := newScannerSource(Source{"", []byte(nil), nil}, nil)
 	if err != nil {
 		panic(errorf("initialization error"))
 	}
+
+	commaTok.s = s
+	commaTok.Ch = ','
+	commaTok.Set(nil, comma)
 
 	emptyStringTok.s = s
 	emptyStringTok.Ch = rune(STRINGLITERAL)
@@ -73,9 +78,9 @@ func init() {
 	pragmaTok.Ch = rune(IDENTIFIER)
 	pragmaTok.Set(nil, pragma)
 
-	pragmaSTDCTestTok.s = s
-	pragmaSTDCTestTok.Ch = rune(IDENTIFIER)
-	pragmaSTDCTestTok.Set(nil, []byte("__pragma_stdc"))
+	pragmaTestTok.s = s
+	pragmaTestTok.Ch = rune(IDENTIFIER)
+	pragmaTestTok.Set(nil, []byte("__pragma"))
 
 	oneTok.s = s
 	oneTok.Ch = rune(PPNUMBER)
@@ -163,23 +168,11 @@ type preprocessingToken struct {
 	hs hideSet
 }
 
-type formalParams []string
-
-func (fp formalParams) is(s string) int {
-	for i, v := range fp {
-		if s == v {
-			return i
-		}
-	}
-
-	return -1
-}
-
 // Macro represents a preprocessor #define.
 type Macro struct {
 	Name            Token
 	Params          []Token
-	params          formalParams
+	params          []string
 	replacementList preprocessingTokens
 
 	MinArgs int // m x: 0, m() x: 0, m(...): 0, m(a) a: 1, m(a, ...): 1, m(a, b): 2, m(a, b, ...): 2.
@@ -189,7 +182,7 @@ type Macro struct {
 }
 
 func newMacro(nm Token, params []Token, replList []preprocessingToken, minArgs, varArg int, isFnLike bool) (*Macro, error) {
-	var fp formalParams
+	var fp []string
 	for _, v := range params {
 		fp = append(fp, string(v.Src()))
 	}
@@ -212,6 +205,20 @@ func newMacro(nm Token, params []Token, replList []preprocessingToken, minArgs, 
 	}, nil
 }
 
+func (m *Macro) is(s string) int {
+	for i, v := range m.params {
+		if s == v {
+			return i
+		}
+	}
+
+	if m.VarArg >= 0 && s == "__VA_ARGS__" {
+		return m.VarArg
+	}
+
+	return -1
+}
+
 // ReplacementList returns the tokens m is substitued with.
 func (m *Macro) ReplacementList() (r []Token) {
 	for _, v := range m.replacementList {
@@ -222,7 +229,7 @@ func (m *Macro) ReplacementList() (r []Token) {
 	return r
 }
 
-func (m *Macro) fp() formalParams {
+func (m *Macro) fp() []string {
 	if !m.IsFnLike {
 		return nil
 	}
@@ -530,7 +537,7 @@ more:
 		return append(preprocessingTokens{t}, c.expand(false, eval, TS)...)
 	}
 
-	if m := c.macro(src); m != nil {
+	if m := c.macro(&T, src); m != nil {
 	out:
 		switch {
 		default:
@@ -547,8 +554,6 @@ more:
 				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 				//	return expand(subst(ts(T),fp(T),actuals,(HS∩HS’)∪{T},{}) • TS’’);
 
-				// trc("  %s<%s is a ()'d macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.replacementList))
-				// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
 				TS.skip(skip + 1)
 				args, rparen, ok := c.parseMacroArgs(TS)
 				if !ok {
@@ -560,6 +565,8 @@ more:
 					break out
 				}
 
+				// trc("  %s<%s is a (%v)'d macro, expanding to %s> using args %v", c.indent(), T.Src(), m.fp(), toksDump(m.replacementList), toksDump(args))
+				// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
 				return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
 			}
 		}
@@ -582,9 +589,9 @@ more:
 }
 
 // [1], pg 2.
-func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP formalParams, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
-	// ;trc("  %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
-	// ;defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
+func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP []string, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
+	// trc("  %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
+	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	t := IS.read()
 	// trc("  %[2]s%v", c.undent(), c.indent(), &t)
 	if t.Ch == eof {
@@ -595,16 +602,11 @@ func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP formalParam
 
 	if t.Ch == '#' {
 		if t2, skip := IS.peekNonBlank(); t2.Ch == rune(IDENTIFIER) {
-			if i := FP.is(string(t2.Src())); i >= 0 {
+			if i := m.is(string(t2.Src())); i >= 0 {
 				// if IS is # • T • IS’ and T is FP[i] then
 				//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
 				IS.skip(skip + 1)
 				return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.stringize(c.apSelect(m, t2, AP, i))))
-			}
-
-			if va := m.VarArg; va >= 0 && string(t2.Src()) == "__VA_ARGS__" && va <= len(AP) {
-				IS.skip(skip + 1)
-				return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.stringize(c.expand(false, eval, c.varArgsP(t, AP[va:])))))
 			}
 		}
 	}
@@ -615,9 +617,9 @@ func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP formalParam
 	if t.Ch == rune(PPPASTE) {
 		t2, skip := IS.peekNonBlank()
 		if t2.Ch == rune(IDENTIFIER) {
-			if i := FP.is(string(t2.Src())); i >= 0 {
+			if i := m.is(string(t2.Src())); i >= 0 {
 				// if IS is ## • T • IS’ and T is FP[i] then
-				if len(AP[i]) == 0 {
+				if i >= len(AP) || len(AP[i]) == 0 {
 					//	if select(i,AP ) is {} then /* only if actuals can be empty */
 					//		return subst(IS’,FP,AP,HS,OS );
 					IS.skip(skip + 1)
@@ -640,13 +642,13 @@ func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP formalParam
 
 	if t.Ch == rune(IDENTIFIER) {
 		if t2, skip := IS.peekNonBlank(); t2.Ch == rune(PPPASTE) {
-			if i := FP.is(string(t.Src())); i >= 0 {
+			if i := m.is(string(t.Src())); i >= 0 {
 				// if IS is T • ##^HS’ • IS’ and T is FP[i] then
 				//	if select(i,AP ) is {} then /* only if actuals can be empty */
-				if len(AP[i]) == 0 {
+				if i >= len(AP) || len(AP[i]) == 0 {
 					IS.skip(skip + 1) // ##
 					t2, skip := IS.peekNonBlank()
-					if j := FP.is(string(t2.Src())); j >= 0 {
+					if j := m.is(string(t2.Src())); j >= 0 {
 						//		if IS’ is T’ • IS’’ and T’ is FP[j] then
 						//			return subst(IS’’,FP,AP,HS,OS • select(j,AP));
 						IS.skip(skip + 1)
@@ -665,130 +667,18 @@ func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP formalParam
 		}
 	}
 
-	if len(FP) != 0 {
-		if i := FP.is(string(t.Src())); i >= 0 {
+	if len(FP) != 0 || m.VarArg >= 0 {
+		if i := m.is(string(t.Src())); i >= 0 {
 			// if IS is T • IS’ and T is FP[i] then
 			//	return subst(IS’,FP,AP,HS,OS • expand(select(i,AP )));
 			return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.expand(false, eval, c.apSelectP(m, t, AP, i))...))
 		}
 	}
 
-	if va := m.VarArg; t.Ch == rune(IDENTIFIER) && va >= 0 && string(t.Src()) == "__VA_ARGS__" && va <= len(AP) {
-		return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.expand(false, eval, c.varArgsP(t, AP[va:]))...))
-	}
-
 	// note IS must be T HS’ • IS’
 	// return subst(IS’,FP,AP,HS,OS • T HS’ );
 	return c.subst(eval, m, IS, FP, AP, HS, append(OS, t))
 
-}
-
-func (c *cpp) parsePragma(ts tokenSequence) {
-	t, skip := ts.peekNonBlank()
-	ts.skip(skip + 1)
-	if t.Ch != '(' {
-		c.eh("%v: expected '('", t.Position())
-		return
-	}
-
-	t2, skip := ts.peekNonBlank()
-	ts.skip(skip + 1)
-	s := string(t2.Src())
-	switch t2.Ch {
-	case rune(STRINGLITERAL):
-		// ok
-	case rune(LONGSTRINGLITERAL):
-		s = s[1:] // Remove leading 'L'
-	default:
-		c.eh("%v: expected string-literal", t2.Position())
-		return
-	}
-
-	t, skip = ts.peekNonBlank()
-	ts.skip(skip + 1)
-	if t.Ch != ')' {
-		c.eh("%v: expected '('", t.Position())
-	}
-
-	// [0]6.10.9 The string literal is destringized by deleting the L prefix, if
-	// present, deleting the leading and trailing double-quotes, replacing each
-	// escape sequence \" by a double-quote, and replacing each escape sequence \\
-	// by a single backslash. The resulting sequence of characters is processed
-	// through translation phase 3 to produce preprocessing tokens that are
-	// executed as if they were the pp-tokens in a pragma directive.
-	s = s[1 : len(s)-1]
-	s = strings.ReplaceAll(s, `\"`, `"`)
-	s = strings.ReplaceAll(s, `\\`, `\`)
-	sc, err := newScanner(Source{"_Pragma_", s}, c.eh)
-	if err != nil {
-		c.eh("%v: %v", t2.Position(), err)
-		return
-	}
-
-	a := controlLine{hashTok, pragmaTok}
-	for {
-		t := sc.cppScan0()
-		a = append(a, t)
-		if t.Ch == '\n' {
-			break
-		}
-	}
-	c.push(a)
-}
-
-func (c *cpp) macro(nm string) *Macro {
-	if m := c.macros[nm]; m != nil {
-		return m
-	}
-
-	if _, ok := protectedMacros[nm]; !ok {
-		return nil
-	}
-
-	panic(todo("", nm))
-}
-
-func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
-	c.skipBlank(ts)
-	var t preprocessingToken
-	switch p := ts.peek(0); p.Ch {
-	case '(':
-		ts.read()
-		c.skipBlank(ts)
-		switch p = ts.peek(0); p.Ch {
-		case rune(IDENTIFIER):
-			t = ts.read()
-			if paren := ts.read(); paren.Ch != ')' {
-				c.eh("%v: expected ')'", paren.Position())
-			}
-		default:
-			c.eh("%v: operator \"defined\" requires an identifier", p.Position())
-			ts.read()
-			return ts
-		}
-	case rune(IDENTIFIER):
-		panic(todo("", toksDump(ts)))
-	default:
-		c.eh("%v: operator \"defined\" requires an identifier", p.Position())
-		ts.read()
-		return ts
-	}
-
-	switch c.macro(string(t.Src())) {
-	case nil:
-		t.Token = zeroTok
-	default:
-		t.Token = oneTok
-	}
-
-	s := preprocessingTokens(append([]preprocessingToken{t}, *ts.(*preprocessingTokens)...))
-	return &s
-}
-
-func (c *cpp) skipBlank(ts tokenSequence) {
-	for ts.peek(0).Ch == ' ' {
-		ts.read()
-	}
 }
 
 func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
@@ -882,6 +772,115 @@ func (c *cpp) stringize(s0 preprocessingTokens) (r preprocessingToken) {
 	return r
 }
 
+func (c *cpp) parsePragma(ts tokenSequence) {
+	t, skip := ts.peekNonBlank()
+	ts.skip(skip + 1)
+	if t.Ch != '(' {
+		c.eh("%v: expected '('", t.Position())
+		return
+	}
+
+	t2, skip := ts.peekNonBlank()
+	ts.skip(skip + 1)
+	s := string(t2.Src())
+	switch t2.Ch {
+	case rune(STRINGLITERAL):
+		// ok
+	case rune(LONGSTRINGLITERAL):
+		s = s[1:] // Remove leading 'L'
+	default:
+		c.eh("%v: expected string-literal", t2.Position())
+		return
+	}
+
+	t, skip = ts.peekNonBlank()
+	ts.skip(skip + 1)
+	if t.Ch != ')' {
+		c.eh("%v: expected '('", t.Position())
+	}
+
+	// [0]6.10.9 The string literal is destringized by deleting the L prefix, if
+	// present, deleting the leading and trailing double-quotes, replacing each
+	// escape sequence \" by a double-quote, and replacing each escape sequence \\
+	// by a single backslash. The resulting sequence of characters is processed
+	// through translation phase 3 to produce preprocessing tokens that are
+	// executed as if they were the pp-tokens in a pragma directive.
+	s = s[1 : len(s)-1]
+	s = strings.ReplaceAll(s, `\"`, `"`)
+	s = strings.ReplaceAll(s, `\\`, `\`)
+	sc, err := newScanner(Source{"_Pragma_", s, nil}, nil, c.eh)
+	if err != nil {
+		c.eh("%v: %v", t2.Position(), err)
+		return
+	}
+
+	a := controlLine{hashTok, pragmaTok}
+	for {
+		t := sc.cppScan0()
+		a = append(a, t)
+		if t.Ch == '\n' {
+			break
+		}
+	}
+	c.push(a)
+}
+
+func (c *cpp) macro(n Node, nm string) *Macro {
+	if m := c.macros[nm]; m != nil {
+		return m
+	}
+
+	if _, ok := protectedMacros[nm]; !ok {
+		return nil
+	}
+
+	panic(todo("%v: %q", n.Position(), nm))
+}
+
+func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
+	c.skipBlank(ts)
+	var t preprocessingToken
+	switch p := ts.peek(0); p.Ch {
+	case '(':
+		ts.read()
+		c.skipBlank(ts)
+		switch p = ts.peek(0); p.Ch {
+		case rune(IDENTIFIER):
+			t = ts.read()
+			c.skipBlank(ts)
+			if paren := ts.read(); paren.Ch != ')' {
+				c.eh("%v: expected ')'", paren.Position())
+			}
+		default:
+			c.eh("%v: operator \"defined\" requires an identifier", p.Position())
+			ts.read()
+			return ts
+		}
+	case rune(IDENTIFIER):
+		t = ts.read()
+	default:
+		c.eh("%v: operator \"defined\" requires an identifier", p.Position())
+		ts.read()
+		return ts
+	}
+
+	switch c.macro(&t.Token, string(t.Src())) {
+	case nil:
+		t.Token = zeroTok
+	default:
+		t.Token = oneTok
+	}
+
+	s := preprocessingTokens(append([]preprocessingToken{t}, *ts.(*preprocessingTokens)...))
+	return &s
+}
+
+func (c *cpp) skipBlank(ts tokenSequence) {
+	for ts.peek(0).Ch == ' ' {
+		ts.read()
+	}
+}
+
 func (c *cpp) apSelectP(m *Macro, t preprocessingToken, AP []preprocessingTokens, i int) *preprocessingTokens {
 	r := c.apSelect(m, t, AP, i)
 	return &r
@@ -904,24 +903,19 @@ func (c *cpp) varArgsP(t preprocessingToken, AP []preprocessingTokens) *preproce
 	return &r
 }
 
-func (c *cpp) varArgs(t preprocessingToken, AP []preprocessingTokens) preprocessingTokens {
-	var commaSP preprocessingTokens
-	if len(AP) > 1 {
-		t.Set(nil, comma)
-		t.Ch = ','
-		t2 := t
-		t2.Set(nil, sp)
-		t2.Ch = ' '
-		commaSP = preprocessingTokens{t, t2}
-	}
-	var a preprocessingTokens
+func (c *cpp) varArgs(t preprocessingToken, AP []preprocessingTokens) (r preprocessingTokens) {
+	// trc("  %s%v %v (%v)", c.indent(), &t, toksDump(AP), origin(2))
+	// defer func() { trc("->%sout %v", c.undent(), toksDump(r)) }()
 	for i, v := range AP {
 		if i != 0 {
-			a = append(a, commaSP...)
+			r = append(r, preprocessingToken{commaTok, nil})
+			if len(v) != 0 && len(v[0].Sep()) != 0 {
+				r = append(r, preprocessingToken{spTok, nil})
+			}
 		}
-		a = append(a, v...)
+		r = append(r, v...)
 	}
-	return a
+	return r
 }
 
 func (c *cpp) parseMacroArgs(TS tokenSequence) (args []preprocessingTokens, rparen preprocessingToken, ok bool) {
@@ -1002,7 +996,13 @@ func (c *cpp) nextLine() textLine {
 
 			src := c.sources[0]
 			c.sources = c.sources[1:]
-			c.push(c.group(src))
+			g, err := c.group(src)
+			if err != nil {
+				c.eh("%v", err)
+				break
+			}
+
+			c.push(g)
 		case group:
 			// trc("group len %v", len(x))
 			if len(x) == 0 {
@@ -1046,14 +1046,13 @@ func (c *cpp) nextLine() textLine {
 			case x.ifGroup != nil:
 				switch {
 				case c.ifGroup(x.ifGroup):
-					c.pop()
-					c.push(x.ifGroup.group)
+					c.tos = x.ifGroup.group
 				case x.elifGroups != nil:
 					y := *x
 					y.ifGroup = nil
 					c.tos = &y
 				case x.elseGroup != nil:
-					panic(todo(""))
+					c.tos = x.elseGroup.group
 				default:
 					c.pop()
 				}
@@ -1094,6 +1093,14 @@ func (c *cpp) include(ln controlLine) {
 		return
 	}
 
+	if c.includeLevel == maxIncludeLevel {
+		c.eh("%v: too many include levels", ln[1].Position())
+		return
+	}
+
+	c.includeLevel++
+	defer func() { c.includeLevel-- }()
+
 	s := preprocessingTokens(tokens2PreprocessingTokens(ln[2:], true))
 	s = c.expand(false, true, &s)
 	if c.cfg.fakeIncludes {
@@ -1106,7 +1113,28 @@ func (c *cpp) include(ln controlLine) {
 		return
 	}
 
-	panic(todo(""))
+	switch raw := string(s[0].Src()); {
+	case strings.HasPrefix(raw, `"`):
+		panic(todo("%v: %q", s[0].Position(), raw))
+	case strings.HasPrefix(raw, `<`):
+		c.sysInclue(&s[0], raw[1:len(raw)-1])
+	default:
+		c.eh("%v: invalid argument", s[0].Position())
+	}
+}
+
+func (c *cpp) sysInclue(n Node, nm string) {
+	var err error
+	var g group
+	for _, v := range c.cfg.SysIncludePaths {
+		pth := filepath.Join(v, nm)
+		if g, err = c.group(Source{pth, nil, c.cfg.FS}); err == nil {
+			c.push(g)
+			return
+		}
+	}
+
+	c.eh("%v: include file not found: %s", n.Position(), nm)
 }
 
 func (c *cpp) ifGroup(ig *ifGroup) bool {
@@ -1118,7 +1146,8 @@ func (c *cpp) ifGroup(ig *ifGroup) bool {
 			return false
 		}
 
-		return c.macro(string(ln[2].Src())) == nil
+		t := ln[2]
+		return c.macro(&t, string(t.Src())) == nil
 	case "if":
 		if len(ln) < 3 { // '#' "if" <expr>
 			c.eh("%v: expected expression", ln[1].Position())
@@ -1461,27 +1490,26 @@ func (c *cpp) relationalExpression(s *preprocessingTokens, eval bool) interface{
 			// 	}
 			// }
 		case '>':
-			panic(todo(""))
-			// s.next()
-			// rhs := c.shiftExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			v = x > y
-			// 		case uint64:
-			// 			v = uint64(x) > y
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			v = x > uint64(y)
-			// 		case uint64:
-			// 			v = x > y
-			// 		}
-			// 	}
-			// }
+			s.read()
+			rhs := c.shiftExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x > y
+					case uint64:
+						v = uint64(x) > y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x > uint64(y)
+					case uint64:
+						v = x > y
+					}
+				}
+			}
 		case rune(LEQ):
 			panic(todo(""))
 			// s.next()
@@ -2146,18 +2174,17 @@ func (c *cpp) push(v interface{}) {
 	c.tos = v
 }
 
-func (c *cpp) group(src Source) group {
+func (c *cpp) group(src Source) (group, error) {
 	if g, ok := c.groups[src.Name]; ok {
-		return g
+		return g, nil
 	}
 
-	p, err := newCppParser(src, c.eh)
+	p, err := newCppParser(src, c.cfg.FS, c.eh)
 	if err != nil {
-		c.eh("", err)
-		return nil
+		return nil, err
 	}
 
 	g := p.group(false)
 	c.groups[src.Name] = g
-	return g
+	return g, nil
 }

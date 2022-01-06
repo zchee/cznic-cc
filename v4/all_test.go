@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
@@ -26,6 +27,8 @@ import (
 )
 
 var (
+	cfs         = ccorpus.FileSystem()
+	cFS         = &corpusFS{cfs}
 	corpus      = map[string][]byte{}
 	corpusIndex []string
 	re          *regexp.Regexp
@@ -40,57 +43,19 @@ func init() {
 		panic(errorf("cannot acquire host configuration: %v", err))
 	}
 
+	testCfg.IncludePaths = testCfg.IncludePaths[:len(testCfg.IncludePaths):len(testCfg.IncludePaths)]
+	testCfg.SysIncludePaths = testCfg.SysIncludePaths[:len(testCfg.SysIncludePaths):len(testCfg.SysIncludePaths)]
 	if testCfg.ABI, err = NewABI(runtime.GOOS, runtime.GOARCH); err != nil {
 		panic(errorf("cannot configure ABI: %v", err))
 	}
 
-	fs := ccorpus.FileSystem()
-	var walk func(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error
-	walk = func(fs *httpfs.FileSystem, dir string, f func(pth string, fi os.FileInfo) error) error {
-		if !strings.HasSuffix(dir, "/") {
-			dir += "/"
-		}
-		root, err := fs.Open(dir)
-		if err != nil {
-			return err
-		}
-
-		fi, err := root.Stat()
-		if err != nil {
-			return err
-		}
-
-		if !fi.IsDir() {
-			return fmt.Errorf("%s: not a directory", fi.Name())
-		}
-
-		fis, err := root.Readdir(-1)
-		if err != nil {
-			return err
-		}
-
-		for _, v := range fis {
-			switch {
-			case v.IsDir():
-				if err = walk(fs, v.Name(), f); err != nil {
-					return err
-				}
-			default:
-				if err = f(v.Name(), v); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	}
-
 	var chars int
-	if err := walk(ccorpus.FileSystem(), "/", func(pth string, fi os.FileInfo) error {
+	if err := walk("/", func(pth string, fi os.FileInfo) error {
 		if fi.IsDir() {
 			return nil
 		}
 
-		f, err := fs.Open(pth)
+		f, err := cfs.Open(pth)
 		if err != nil {
 			return errorf("%v: %v", pth, err)
 		}
@@ -113,6 +78,61 @@ func init() {
 	}); err != nil {
 		panic(err)
 	}
+}
+
+type corpusFS struct {
+	*httpfs.FileSystem
+}
+
+func (c *corpusFS) Open(name string) (fs.File, error) {
+	name = filepath.ToSlash(name)
+	if !strings.HasPrefix(name, "/") {
+		name = "/" + name
+	}
+	f, err := c.FileSystem.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.File(f), nil
+}
+
+func walk(dir string, f func(pth string, fi os.FileInfo) error) error {
+	if !strings.HasSuffix(dir, "/") {
+		dir += "/"
+	}
+	root, err := cfs.Open(dir)
+	if err != nil {
+		return err
+	}
+
+	fi, err := root.Stat()
+	if err != nil {
+		return err
+	}
+
+	if !fi.IsDir() {
+		return fmt.Errorf("%s: not a directory", fi.Name())
+	}
+
+	fis, err := root.Readdir(-1)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range fis {
+		switch {
+		case v.IsDir():
+			if err = walk(v.Name(), f); err != nil {
+				return err
+			}
+		default:
+			if err = f(v.Name(), v); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // Produce the AST used in examples documentation.
@@ -169,7 +189,7 @@ func TestScannerSource(t *testing.T) {
 }
 
 func testScannerSource(t *testing.T, name string, value interface{}, exp []byte, mustFail bool) {
-	ss, err := newScannerSource(Source{name, value})
+	ss, err := newScannerSource(Source{name, value, nil}, nil)
 	if err != nil != mustFail {
 		t.Fatalf("(%q, %T): %v", name, value, err)
 	}
@@ -187,7 +207,7 @@ func TestToken(t *testing.T) {
 	s, err := newScannerSource(Source{"test", `abc
 def
  ghi
-`})
+`, nil}, nil)
 	// abc\ndef\n ghi\n
 	//             1
 	// 0123 4567 89012
@@ -261,7 +281,7 @@ func TestScanner(t *testing.T) {
 			chars += int64(len(buf))
 			var s *scanner
 			var err error
-			if s, err = newScanner(Source{path, buf}, func(msg string, args ...interface{}) {
+			if s, err = newScanner(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
 				s.close()
 				t.Fatalf(msg, args...)
 			}); err != nil {
@@ -308,7 +328,7 @@ func BenchmarkScanner(b *testing.B) {
 				chars += int64(len(buf))
 				var s *scanner
 				var err error
-				if s, err = newScanner(Source{path, buf}, func(msg string, args ...interface{}) {
+				if s, err = newScanner(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
 					s.close()
 					b.Fatalf(msg, args...)
 				}); err != nil {
@@ -351,7 +371,7 @@ func TestCPPParse(t *testing.T) {
 			chars += int64(len(buf))
 			var p *cppParser
 			var err error
-			if p, err = newCppParser(Source{path, buf}, func(msg string, args ...interface{}) {
+			if p, err = newCppParser(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
 				p.close()
 				t.Fatalf(msg, args...)
 			}); err != nil {
@@ -396,7 +416,7 @@ func BenchmarkCPPParse(b *testing.B) {
 				chars += int64(len(buf))
 				var p *cppParser
 				var err error
-				if p, err = newCppParser(Source{path, buf}, func(msg string, args ...interface{}) {
+				if p, err = newCppParser(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
 					p.close()
 					b.Fatalf(msg, args...)
 				}); err != nil {
@@ -419,22 +439,17 @@ func BenchmarkCPPParse(b *testing.B) {
 }
 
 func TestCPPExpand(t *testing.T) {
-	blacklist := map[string]struct{}{
-		"014.c": {}, // v4 pragmas come in reverse order
+	testCPPExpand(t, "testdata/cpp-expand/", nil)
+}
 
-		// v4 follows gcc in that macro redefinition is never an error.
-		"example-6.10.3.5-9a.h": {},
-		"example-6.10.3.5-9b.h": {},
-		"example-6.10.3.5-9c.h": {},
-		"example-6.10.3.5-9d.h": {},
-	}
+func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}) {
 	var fails []string
 	var files, ok, skip int
 	var c *cpp
 	cfg := *testCfg
 	cfg.fakeIncludes = true
 	cfg.PragmaHandler = func(s []Token) error {
-		a := textLine{pragmaSTDCTestTok}
+		a := textLine{pragmaTestTok}
 		for i, v := range s {
 			if i == 0 {
 				v.Set(sp, v.Src())
@@ -444,7 +459,7 @@ func TestCPPExpand(t *testing.T) {
 		c.push(append(a, nlTok))
 		return nil
 	}
-	err := filepath.Walk(filepath.FromSlash("../v3/testdata/cpp-expand/"), func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(filepath.FromSlash(dir), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -471,7 +486,7 @@ func TestCPPExpand(t *testing.T) {
 			fmt.Fprintln(os.Stderr, path)
 		}
 		var b strings.Builder
-		if c, err = newCPP(&cfg, []Source{{path, nil}}, nil); err != nil {
+		if c, err = newCPP(&cfg, []Source{{path, nil, nil}}, nil); err != nil {
 			t.Fatalf("%v: %v", path, err)
 		}
 
@@ -531,5 +546,48 @@ func TestCPPExpand(t *testing.T) {
 	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestPreprocess(t *testing.T) {
+	testCPPExpand(t, "testdata/preprocess/", nil)
+}
+
+func TestTCCExpand(t *testing.T) {
+	testCPPExpand(t, "testdata/tcc-0.9.27/tests/pp/", map[string]struct{}{
+		"11.c":         {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
+		"16.c":         {}, // We don't produce warnings on macro redefinition.
+		"pp-counter.c": {}, // __COUNTER__ not supported
+	})
+}
+
+func TestTranslationPhase4(t *testing.T) {
+	for _, v := range []struct {
+		dir string
+	}{
+		//TODO- {"benchmarksgame-team.pages.debian.net"},
+	} {
+		t.Run(v.dir, func(t *testing.T) { testTranslationPhase4(t, "/"+v.dir) })
+	}
+}
+
+func testTranslationPhase4(t *testing.T, dir string) {
+	err := walk(dir, func(pth string, fi os.FileInfo) error {
+		if fi.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(pth) != ".c" {
+			return nil
+		}
+
+		if *oTrace {
+			fmt.Fprintln(os.Stderr, pth)
+		}
+
+		return Preprocess(testCfg, []Source{{pth, nil, cFS}}, io.Discard)
+	})
+	if err != nil {
+		t.Error(err)
 	}
 }

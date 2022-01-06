@@ -143,9 +143,9 @@ func toksDump(v interface{}) string {
 	case preprocessingTokens:
 		for _, v := range x {
 			s := string(v.Src())
-			if hs := v.hs.String(); hs != "[]" {
-				s = fmt.Sprintf("%s^%s", s, hs)
-			}
+			// if hs := v.hs.String(); hs != "[]" {
+			// 	s = fmt.Sprintf("%s^%s", s, hs)
+			// }
 			a = append(a, s)
 		}
 	case []preprocessingTokens:
@@ -164,6 +164,8 @@ func toksDump(v interface{}) string {
 		}
 	case *cat:
 		return fmt.Sprintf("(%s · %s)", toksDump(x.head), toksDump(x.tail))
+	case textLine:
+		return toksDump([]Token(x))
 	default:
 		panic(todo("%T", x))
 	}
