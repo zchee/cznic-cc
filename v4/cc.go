@@ -104,7 +104,7 @@ func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sy
 // When the value argument is an *os.File, io.ReadCloser or fs.File,
 // value.Close() is called before returning.
 //
-// If FS is not nil it overrides the Opener from Config.
+// If FS is not nil it overrides the FS from Config.
 type Source struct {
 	Name  string
 	Value interface{}
@@ -142,7 +142,6 @@ type Config struct {
 	IncludePaths    []string
 	FS              fs.FS
 	PragmaHandler   func([]Token) error
-	Predefined      string
 	SysIncludePaths []string
 
 	fakeIncludes bool // testing

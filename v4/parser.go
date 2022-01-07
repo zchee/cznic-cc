@@ -5,8 +5,6 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
-	"io/fs"
-
 	"modernc.org/token"
 )
 
@@ -21,8 +19,8 @@ type cppParser struct {
 
 // newCppParser returns a newly created cppParser. The errHandler function is invoked on
 // parser errors.
-func newCppParser(src Source, opener fs.FS, eh errHandler) (*cppParser, error) {
-	s, err := newScanner(src, opener, eh)
+func newCppParser(src Source, eh errHandler) (*cppParser, error) {
+	s, err := newScanner(src, eh)
 	if err != nil {
 		return nil, err
 	}

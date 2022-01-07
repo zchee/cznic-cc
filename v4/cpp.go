@@ -49,7 +49,7 @@ var (
 )
 
 func init() {
-	s, err := newScannerSource(Source{"", []byte(nil), nil}, nil)
+	s, err := newScannerSource(Source{"", []byte(nil), nil})
 	if err != nil {
 		panic(errorf("initialization error"))
 	}
@@ -425,10 +425,12 @@ func (c *cat) skip(n int) {
 type cpp struct {
 	cfg         *Config
 	eh          errHandler
+	eof         eofLine
 	groups      map[string]group
 	indentLevel int // debug dumps
 	macros      map[string]*Macro
 	sources     []Source
+	srcStack    []string
 	stack       []interface{}
 	tok         Token
 	tokenizer   *tokenizer
@@ -447,6 +449,9 @@ func newCPP(cfg *Config, sources []Source, eh errHandler) (*cpp, error) {
 			return nil, errorf("duplicate source name: %q", v.Name)
 		}
 
+		if v.FS == nil {
+			v.FS = cfg.FS
+		}
 		m[v.Name] = struct{}{}
 	}
 	c := &cpp{
@@ -492,7 +497,7 @@ func (c *cpp) undent() string {
 
 // [1], pg 1.
 func (c *cpp) expand(outer, eval bool, TS tokenSequence) (r preprocessingTokens) {
-	// trc("  %s%v (%v)", c.indent(), toksDump(TS), origin(2))
+	// trc("* %s%v outer %v (%v)", c.indent(), toksDump(TS), outer, origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 more:
 	t := TS.read()
@@ -546,7 +551,16 @@ more:
 
 			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.replacementList))
 			// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-			return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil), TS))
+			subst := c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil)
+			if len(subst) == 0 {
+				if outer {
+					return nil
+				}
+
+				return c.expand(false, eval, TS)
+			}
+
+			return c.expand(false, eval, newCat(subst, TS))
 		case m.IsFnLike:
 			t2, skip := TS.peekNonBlank()
 			if t2.Ch == '(' {
@@ -590,7 +604,7 @@ more:
 
 // [1], pg 2.
 func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP []string, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
-	// trc("  %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
+	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	t := IS.read()
 	// trc("  %[2]s%v", c.undent(), c.indent(), &t)
@@ -808,7 +822,7 @@ func (c *cpp) parsePragma(ts tokenSequence) {
 	s = s[1 : len(s)-1]
 	s = strings.ReplaceAll(s, `\"`, `"`)
 	s = strings.ReplaceAll(s, `\\`, `\`)
-	sc, err := newScanner(Source{"_Pragma_", s, nil}, nil, c.eh)
+	sc, err := newScanner(Source{"_Pragma_", s, nil}, c.eh)
 	if err != nil {
 		c.eh("%v: %v", t2.Position(), err)
 		return
@@ -989,9 +1003,9 @@ func (c *cpp) nextLine() textLine {
 		// trc("STACK %v", a)
 		switch x := c.tos.(type) {
 		case nil:
-			// trc("<nil>")
+			// trc("<nil>, len(c.sources): %v", len(c.sources))
 			if len(c.sources) == 0 {
-				return nil
+				return textLine{Token(c.eof)}
 			}
 
 			src := c.sources[0]
@@ -1013,7 +1027,7 @@ func (c *cpp) nextLine() textLine {
 			c.tos = x[1:]
 			c.push(x[0])
 		case controlLine:
-			// trc("controlLine %v", toksDump(x)
+			// trc("%v: controlLine %v", x[0].Position(), toksDump(x))
 			c.pop()
 			switch string(x[1].Src()) {
 			case "define":
@@ -1033,21 +1047,27 @@ func (c *cpp) nextLine() textLine {
 				panic(todo("%v: %q", x[0].Position(), x[1].Src()))
 			}
 		case textLine:
-			// trc("textLine %v", toksDump(x))
+			// trc("%v: textLine %v", x[0].Position(), toksDump(x))
 			c.pop()
 			return x
 		case eofLine:
-			// trc("eofLine")
-			// Keep it on stack, EOF is sticky
-			return textLine([]Token{Token(x)})
+			c.eof = x
+			c.srcStack = c.srcStack[:len(c.srcStack)-1]
+			// trc("%v: eofLine, len(c.stack): %v", (*Token)(&x).Position(), len(c.stack))
+			if len(c.stack) == 0 {
+				trc("EOF")
+				return textLine{Token(x)}
+			}
+
+			c.pop()
 		case *ifSection:
-			// trc("ifSection")
 			switch {
 			case x.ifGroup != nil:
+				// trc("%v: ifSection/if %v", x.ifGroup.line[0].Position, toksDump(x.ifGroup.line))
 				switch {
 				case c.ifGroup(x.ifGroup):
 					c.tos = x.ifGroup.group
-				case x.elifGroups != nil:
+				case len(x.elifGroups) != 0:
 					y := *x
 					y.ifGroup = nil
 					c.tos = &y
@@ -1057,8 +1077,10 @@ func (c *cpp) nextLine() textLine {
 					c.pop()
 				}
 			case len(x.elifGroups) != 0:
-				if c.elifGroup(x.elifGroups[0]) {
-					panic(todo(""))
+				// trc("%v: ifSection/elif %v", x.elifGroups[0].line[0].Position, toksDump(x.elifGroups[0].line))
+				if eg := x.elifGroups[0]; c.elifGroup(eg) {
+					c.tos = eg.group
+					break
 				}
 
 				x.elifGroups = x.elifGroups[1:]
@@ -1066,7 +1088,7 @@ func (c *cpp) nextLine() textLine {
 				//	# else new-line group_opt
 				c.tos = x.elseGroup.group
 			default:
-				panic(todo(""))
+				c.pop()
 			}
 		default:
 			panic(todo("internal error: %T", x))
@@ -1115,9 +1137,30 @@ func (c *cpp) include(ln controlLine) {
 
 	switch raw := string(s[0].Src()); {
 	case strings.HasPrefix(raw, `"`):
-		panic(todo("%v: %q", s[0].Position(), raw))
+		nm := raw[1 : len(raw)-1]
+		for _, v := range c.cfg.IncludePaths {
+			if v == "" {
+				v, _ = filepath.Split(c.srcStack[len(c.srcStack)-1])
+			}
+			pth := filepath.Join(v, nm)
+			if g, err := c.group(Source{pth, nil, c.cfg.FS}); err == nil {
+				c.push(g)
+				return
+			}
+		}
+
+		c.eh("%v: include file not found: %s", s[0].Position(), raw)
 	case strings.HasPrefix(raw, `<`):
-		c.sysInclue(&s[0], raw[1:len(raw)-1])
+		nm := raw[1 : len(raw)-1]
+		for _, v := range c.cfg.SysIncludePaths {
+			pth := filepath.Join(v, nm)
+			if g, err := c.group(Source{pth, nil, c.cfg.FS}); err == nil {
+				c.push(g)
+				return
+			}
+		}
+
+		c.eh("%v: include file not found: %s", s[0].Position(), raw)
 	default:
 		c.eh("%v: invalid argument", s[0].Position())
 	}
@@ -1140,6 +1183,14 @@ func (c *cpp) sysInclue(n Node, nm string) {
 func (c *cpp) ifGroup(ig *ifGroup) bool {
 	ln := ig.line[:len(ig.line)-1] // Remove new-line
 	switch string(ln[1].Src()) {
+	case "ifdef":
+		if len(ln) < 3 { // '#' "ifdef" IDENTIFIER
+			c.eh("%v: expected identifier", ln[1].Position())
+			return false
+		}
+
+		t := ln[2]
+		return c.macro(&t, string(t.Src())) != nil
 	case "ifndef":
 		if len(ln) < 3 { // '#' "ifndef" IDENTIFIER
 			c.eh("%v: expected identifier", ln[1].Position())
@@ -1468,27 +1519,26 @@ func (c *cpp) relationalExpression(s *preprocessingTokens, eval bool) interface{
 		var v bool
 		switch s.c().Ch {
 		case '<':
-			panic(todo(""))
-			// s.next()
-			// rhs := c.shiftExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			v = x < y
-			// 		case uint64:
-			// 			v = uint64(x) < y
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			v = x < uint64(y)
-			// 		case uint64:
-			// 			v = x < y
-			// 		}
-			// 	}
-			// }
+			s.read()
+			rhs := c.shiftExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x < y
+					case uint64:
+						v = uint64(x) < y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x < uint64(y)
+					case uint64:
+						v = x < y
+					}
+				}
+			}
 		case '>':
 			s.read()
 			rhs := c.shiftExpression(s, eval)
@@ -1576,27 +1626,26 @@ func (c *cpp) shiftExpression(s *preprocessingTokens, eval bool) interface{} {
 	for {
 		switch s.c().Ch {
 		case rune(LSH):
-			panic(todo(""))
-			// s.next()
-			// rhs := c.additiveExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x << uint(y)
-			// 		case uint64:
-			// 			lhs = uint64(x) << uint(y)
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x << uint(y)
-			// 		case uint64:
-			// 			lhs = x << uint(y)
-			// 		}
-			// 	}
-			// }
+			s.read()
+			rhs := c.additiveExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x << uint(y)
+					case uint64:
+						lhs = uint64(x) << uint(y)
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x << uint(y)
+					case uint64:
+						lhs = x << uint(y)
+					}
+				}
+			}
 		case rune(RSH):
 			panic(todo(""))
 			// s.next()
@@ -1636,49 +1685,47 @@ func (c *cpp) additiveExpression(s *preprocessingTokens, eval bool) interface{} 
 	for {
 		switch s.c().Ch {
 		case '+':
-			panic(todo(""))
-			// s.next()
-			// rhs := c.multiplicativeExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x + y
-			// 		case uint64:
-			// 			lhs = uint64(x) + y
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x + uint64(y)
-			// 		case uint64:
-			// 			lhs = x + y
-			// 		}
-			// 	}
-			// }
+			s.read()
+			rhs := c.multiplicativeExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x + y
+					case uint64:
+						lhs = uint64(x) + y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x + uint64(y)
+					case uint64:
+						lhs = x + y
+					}
+				}
+			}
 		case '-':
-			panic(todo(""))
-			// s.next()
-			// rhs := c.multiplicativeExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x - y
-			// 		case uint64:
-			// 			lhs = uint64(x) - y
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x - uint64(y)
-			// 		case uint64:
-			// 			lhs = x - y
-			// 		}
-			// 	}
-			// }
+			s.read()
+			rhs := c.multiplicativeExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x - y
+					case uint64:
+						lhs = uint64(x) - y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x - uint64(y)
+					case uint64:
+						lhs = x - y
+					}
+				}
+			}
 		default:
 			return lhs
 		}
@@ -2129,7 +2176,9 @@ func (c *cpp) newMacro(nm Token, params []Token, replList []preprocessingToken, 
 	// trc("nm %q, params %v, replList %v, minArgs %v, varArg %v, isFnLike %v", nm.Src(), toksDump(params), toksDump(replList), minArgs, varArg, isFnLike)
 	s := string(nm.Src())
 	if _, ok := protectedMacros[s]; ok {
-		return
+		if nm.Position().Filename != "<predefined>" {
+			return
+		}
 	}
 
 	m, err := newMacro(nm, params, replList, minArgs, varArg, isFnLike)
@@ -2175,11 +2224,12 @@ func (c *cpp) push(v interface{}) {
 }
 
 func (c *cpp) group(src Source) (group, error) {
+	c.srcStack = append(c.srcStack, src.Name)
 	if g, ok := c.groups[src.Name]; ok {
 		return g, nil
 	}
 
-	p, err := newCppParser(src, c.cfg.FS, c.eh)
+	p, err := newCppParser(src, c.eh)
 	if err != nil {
 		return nil, err
 	}

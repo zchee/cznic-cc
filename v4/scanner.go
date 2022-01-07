@@ -225,7 +225,7 @@ type scannerSource struct {
 }
 
 // newScannerSource returns a new scanner source.
-func newScannerSource(src Source, opener fs.FS) (s *scannerSource, err error) {
+func newScannerSource(src Source) (s *scannerSource, err error) {
 	s = &scannerSource{}
 	switch x := src.Value.(type) {
 	case io.ReadCloser:
@@ -248,7 +248,7 @@ func newScannerSource(src Source, opener fs.FS) (s *scannerSource, err error) {
 			return nil, errorf("source too big: %v bytes", sz)
 		}
 
-		return newScannerSource(Source{src.Name, io.ReadCloser(x), nil}, nil)
+		return newScannerSource(Source{src.Name, io.ReadCloser(x), nil})
 	case []byte:
 		s.buf = x
 	case io.Reader:
@@ -256,25 +256,18 @@ func newScannerSource(src Source, opener fs.FS) (s *scannerSource, err error) {
 			return nil, errorf("", err)
 		}
 	case nil:
-		var f fs.File
-		if fs := opener; fs != nil {
-			if f, err = fs.Open(src.Name); err == nil {
-				return newScannerSource(Source{src.Name, f, nil}, nil)
-			}
-		}
-
 		if fs := src.FS; fs != nil {
-			if f, err = fs.Open(src.Name); err == nil {
-				return newScannerSource(Source{src.Name, f, nil}, nil)
+			if f, err := fs.Open(src.Name); err == nil {
+				return newScannerSource(Source{src.Name, f, nil})
 			}
 		}
 
-		f0, err := os.Open(src.Name)
+		f, err := os.Open(src.Name)
 		if err != nil {
 			return nil, errorf("", err)
 		}
 
-		return newScannerSource(Source{src.Name, fs.File(f0), nil}, nil)
+		return newScannerSource(Source{src.Name, fs.File(f), nil})
 	case string:
 		s.buf = []byte(x)
 	default:
@@ -318,8 +311,8 @@ type scanner struct {
 
 // newScanner returns a new scanner. The errHandler function is invoked on
 // scanner errors.
-func newScanner(src Source, opener fs.FS, eh errHandler) (*scanner, error) {
-	s, err := newScannerSource(src, opener)
+func newScanner(src Source, eh errHandler) (*scanner, error) {
+	s, err := newScannerSource(src)
 	if err != nil {
 		return nil, err
 	}

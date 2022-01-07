@@ -33,13 +33,14 @@ var (
 	corpusIndex []string
 	re          *regexp.Regexp
 	testCfg     = &Config{}
+	predefined  string
 
 	oTrace = flag.Bool("trc", false, "Print tested paths.")
 )
 
 func init() {
 	var err error
-	if testCfg.Predefined, testCfg.IncludePaths, testCfg.SysIncludePaths, err = HostConfig(""); err != nil {
+	if predefined, testCfg.IncludePaths, testCfg.SysIncludePaths, err = HostConfig(""); err != nil {
 		panic(errorf("cannot acquire host configuration: %v", err))
 	}
 
@@ -189,7 +190,7 @@ func TestScannerSource(t *testing.T) {
 }
 
 func testScannerSource(t *testing.T, name string, value interface{}, exp []byte, mustFail bool) {
-	ss, err := newScannerSource(Source{name, value, nil}, nil)
+	ss, err := newScannerSource(Source{name, value, nil})
 	if err != nil != mustFail {
 		t.Fatalf("(%q, %T): %v", name, value, err)
 	}
@@ -207,7 +208,7 @@ func TestToken(t *testing.T) {
 	s, err := newScannerSource(Source{"test", `abc
 def
  ghi
-`, nil}, nil)
+`, nil})
 	// abc\ndef\n ghi\n
 	//             1
 	// 0123 4567 89012
@@ -281,7 +282,7 @@ func TestScanner(t *testing.T) {
 			chars += int64(len(buf))
 			var s *scanner
 			var err error
-			if s, err = newScanner(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
+			if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
 				s.close()
 				t.Fatalf(msg, args...)
 			}); err != nil {
@@ -328,7 +329,7 @@ func BenchmarkScanner(b *testing.B) {
 				chars += int64(len(buf))
 				var s *scanner
 				var err error
-				if s, err = newScanner(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
+				if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
 					s.close()
 					b.Fatalf(msg, args...)
 				}); err != nil {
@@ -371,7 +372,7 @@ func TestCPPParse(t *testing.T) {
 			chars += int64(len(buf))
 			var p *cppParser
 			var err error
-			if p, err = newCppParser(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
+			if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
 				p.close()
 				t.Fatalf(msg, args...)
 			}); err != nil {
@@ -416,7 +417,7 @@ func BenchmarkCPPParse(b *testing.B) {
 				chars += int64(len(buf))
 				var p *cppParser
 				var err error
-				if p, err = newCppParser(Source{path, buf, nil}, nil, func(msg string, args ...interface{}) {
+				if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
 					p.close()
 					b.Fatalf(msg, args...)
 				}); err != nil {
@@ -439,15 +440,16 @@ func BenchmarkCPPParse(b *testing.B) {
 }
 
 func TestCPPExpand(t *testing.T) {
-	testCPPExpand(t, "testdata/cpp-expand/", nil)
+	testCPPExpand(t, "testdata/cpp-expand/", nil, true)
 }
 
-func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}) {
+func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}, fakeIncludes bool) {
 	var fails []string
 	var files, ok, skip int
 	var c *cpp
 	cfg := *testCfg
-	cfg.fakeIncludes = true
+	cfg.fakeIncludes = fakeIncludes
+	cfg.IncludePaths = append([]string{""}, cfg.IncludePaths...)
 	cfg.PragmaHandler = func(s []Token) error {
 		a := textLine{pragmaTestTok}
 		for i, v := range s {
@@ -550,7 +552,7 @@ func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}) {
 }
 
 func TestPreprocess(t *testing.T) {
-	testCPPExpand(t, "testdata/preprocess/", nil)
+	testCPPExpand(t, "testdata/preprocess/", nil, true)
 }
 
 func TestTCCExpand(t *testing.T) {
@@ -558,20 +560,26 @@ func TestTCCExpand(t *testing.T) {
 		"11.c":         {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
 		"16.c":         {}, // We don't produce warnings on macro redefinition.
 		"pp-counter.c": {}, // __COUNTER__ not supported
-	})
+	}, true)
+}
+
+func TestInclude(t *testing.T) {
+	testCPPExpand(t, "testdata/include/", nil, false)
 }
 
 func TestTranslationPhase4(t *testing.T) {
 	for _, v := range []struct {
 		dir string
 	}{
-		//TODO- {"benchmarksgame-team.pages.debian.net"},
+		//{"benchmarksgame-team.pages.debian.net"},
 	} {
-		t.Run(v.dir, func(t *testing.T) { testTranslationPhase4(t, "/"+v.dir) })
+		t.Run(v.dir, func(t *testing.T) { testTranslationPhase4(t, "/"+v.dir, nil) })
 	}
 }
 
-func testTranslationPhase4(t *testing.T, dir string) {
+func testTranslationPhase4(t *testing.T, dir string, blacklist map[string]struct{}) {
+	var fails []string
+	var files, ok, skip int
 	err := walk(dir, func(pth string, fi os.FileInfo) error {
 		if fi.IsDir() {
 			return nil
@@ -581,13 +589,46 @@ func testTranslationPhase4(t *testing.T, dir string) {
 			return nil
 		}
 
+		files++
+		switch {
+		case re != nil:
+			if !re.MatchString(pth) {
+				skip++
+				return nil
+			}
+		default:
+			if _, ok := blacklist[filepath.Base(pth)]; ok {
+				skip++
+				return nil
+			}
+		}
+
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, pth)
 		}
 
-		return Preprocess(testCfg, []Source{{pth, nil, cFS}}, io.Discard)
+		if err := Preprocess(
+			testCfg,
+			[]Source{
+				{Name: "<predefined>", Value: predefined},
+				{Name: pth, FS: cFS},
+			},
+			io.Discard,
+			//os.Stdout,
+		); err != nil {
+			fails = append(fails, pth)
+			t.Errorf("%v: %v", pth, err)
+		} else {
+			ok++
+		}
+		return nil
 	})
 	if err != nil {
 		t.Error(err)
 	}
+
+	for _, v := range fails {
+		t.Log(v)
+	}
+	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
 }

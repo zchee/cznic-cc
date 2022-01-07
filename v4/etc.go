@@ -141,6 +141,11 @@ func toksDump(v interface{}) string {
 	case *preprocessingTokens:
 		return toksDump(*x)
 	case preprocessingTokens:
+		if len(x) != 0 {
+			p := x[0].Position()
+			p.Filename = filepath.Base(p.Filename)
+			a = append(a, p.String())
+		}
 		for _, v := range x {
 			s := string(v.Src())
 			// if hs := v.hs.String(); hs != "[]" {
@@ -157,7 +162,8 @@ func toksDump(v interface{}) string {
 	case controlLine:
 		return toksDump([]Token(x))
 	case *tokenizer:
-		return fmt.Sprintf("[%T]", x)
+		t := x.peek(0)
+		return fmt.Sprintf("[%T %v]", x, &t)
 	case []Token:
 		for _, v := range x {
 			a = append(a, string(v.Src()))
