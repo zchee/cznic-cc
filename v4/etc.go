@@ -136,11 +136,11 @@ func env(key, defaultVal string) string {
 func toksDump(v interface{}) string {
 	var a []string
 	switch x := v.(type) {
-	case []preprocessingToken:
-		return toksDump(preprocessingTokens(x))
-	case *preprocessingTokens:
+	case []cppToken:
+		return toksDump(cppTokens(x))
+	case *cppTokens:
 		return toksDump(*x)
-	case preprocessingTokens:
+	case cppTokens:
 		if len(x) != 0 {
 			p := x[0].Position()
 			p.Filename = filepath.Base(p.Filename)
@@ -153,7 +153,7 @@ func toksDump(v interface{}) string {
 			// }
 			a = append(a, s)
 		}
-	case []preprocessingTokens:
+	case []cppTokens:
 		var a []string
 		for _, v := range x {
 			a = append(a, toksDump(v))
@@ -178,17 +178,17 @@ func toksDump(v interface{}) string {
 	return fmt.Sprintf("%q.%d", a, len(a))
 }
 
-func tokens2PreprocessingTokens(s []Token, skipFirstSep bool) (r []preprocessingToken) {
+func tokens2CppTokens(s []Token, skipFirstSep bool) (r []cppToken) {
 	for i, v := range s {
 		if (i != 0 || !skipFirstSep) && len(v.Sep()) != 0 {
-			r = append(r, preprocessingToken{spTok, nil})
+			r = append(r, cppToken{spTok, nil})
 		}
-		r = append(r, preprocessingToken{v, nil})
+		r = append(r, cppToken{v, nil})
 	}
 	return r
 }
 
-func preprocessingTokens2Tokens(s []preprocessingToken) (r []Token) {
+func preprocessingTokens2Tokens(s []cppToken) (r []Token) {
 	for _, v := range s {
 		if v.Ch != ' ' {
 			r = append(r, v.Token)
@@ -197,7 +197,7 @@ func preprocessingTokens2Tokens(s []preprocessingToken) (r []Token) {
 	return r
 }
 
-func toksTrim(s preprocessingTokens) preprocessingTokens {
+func toksTrim(s cppTokens) cppTokens {
 	for len(s) != 0 && s[0].Ch == ' ' {
 		s = s[1:]
 	}

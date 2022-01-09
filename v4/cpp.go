@@ -18,13 +18,13 @@ const (
 
 var (
 	_ tokenSequence = (*cat)(nil)
-	_ tokenSequence = (*preprocessingTokens)(nil)
+	_ tokenSequence = (*cppTokens)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 
 	commaTok, eofTok, hashTok, nlTok, oneTok, pragmaTok, pragmaTestTok, spTok, zeroTok, emptyStringTok Token
 
-	emptyStringPreprocessingTok preprocessingToken
-	eofPreprocessToken          preprocessingToken
+	emptyStringCppToken cppToken
+	eofCppToken         cppToken
 
 	comma  = []byte{','}
 	hash   = []byte{'#'}
@@ -94,8 +94,8 @@ func init() {
 	zeroTok.Ch = rune(PPNUMBER)
 	zeroTok.Set(nil, zero)
 
-	emptyStringPreprocessingTok = preprocessingToken{emptyStringTok, nil}
-	eofPreprocessToken = preprocessingToken{eofTok, nil}
+	emptyStringCppToken = cppToken{emptyStringTok, nil}
+	eofCppToken = cppToken{eofTok, nil}
 }
 
 type hideSet map[string]struct{}
@@ -163,7 +163,7 @@ func (h hideSet) cap(src hideSet) hideSet {
 	return r
 }
 
-type preprocessingToken struct {
+type cppToken struct {
 	Token
 	hs hideSet
 }
@@ -173,7 +173,7 @@ type Macro struct {
 	Name            Token
 	Params          []Token
 	params          []string
-	replacementList preprocessingTokens
+	replacementList cppTokens
 
 	MinArgs int // m x: 0, m() x: 0, m(...): 0, m(a) a: 1, m(a, ...): 1, m(a, b): 2, m(a, b, ...): 2.
 	VarArg  int // m(a): -1, m(...): 0, m(a, ...): 1, m(a...): 0, m(a, b...): 1.
@@ -181,7 +181,7 @@ type Macro struct {
 	IsFnLike bool // m: false, m(): true, m(x): true.
 }
 
-func newMacro(nm Token, params []Token, replList []preprocessingToken, minArgs, varArg int, isFnLike bool) (*Macro, error) {
+func newMacro(nm Token, params []Token, replList []cppToken, minArgs, varArg int, isFnLike bool) (*Macro, error) {
 	var fp []string
 	for _, v := range params {
 		fp = append(fp, string(v.Src()))
@@ -237,40 +237,40 @@ func (m *Macro) fp() []string {
 	return m.params
 }
 
-func (m *Macro) ts() *preprocessingTokens {
+func (m *Macro) ts() *cppTokens {
 	r := m.replacementList
 	return &r
 }
 
 type tokenSequence interface {
-	peek(int) preprocessingToken
-	peekNonBlank() (preprocessingToken, int)
-	read() preprocessingToken
+	peek(int) cppToken
+	peekNonBlank() (cppToken, int)
+	read() cppToken
 	skip(int)
 }
 
 type tokenizer struct {
 	c   *cpp
-	in  []preprocessingToken
-	out []preprocessingToken
+	in  []cppToken
+	out []cppToken
 }
 
 func newTokenizer(c *cpp) *tokenizer {
 	return &tokenizer{c: c}
 }
 
-func (t *tokenizer) peek(index int) (tok preprocessingToken) {
+func (t *tokenizer) peek(index int) (tok cppToken) {
 	for {
 		if index < len(t.in) {
 			return t.in[index]
 		}
 
-		t.in = append(t.in, tokens2PreprocessingTokens(t.c.nextLine(), false)...)
+		t.in = append(t.in, tokens2CppTokens(t.c.nextLine(), false)...)
 		continue
 	}
 }
 
-func (t *tokenizer) peekNonBlank() (preprocessingToken, int) {
+func (t *tokenizer) peekNonBlank() (cppToken, int) {
 	for i := 0; ; i++ {
 		if tok := t.peek(i); tok.Ch != ' ' && tok.Ch != '\n' {
 			return tok, i
@@ -278,9 +278,9 @@ func (t *tokenizer) peekNonBlank() (preprocessingToken, int) {
 	}
 }
 
-func (t *tokenizer) read() (tok preprocessingToken) {
+func (t *tokenizer) read() (tok cppToken) {
 	if len(t.in) == 0 {
-		t.in = tokens2PreprocessingTokens(t.c.nextLine(), false)
+		t.in = tokens2CppTokens(t.c.nextLine(), false)
 	}
 
 	tok = t.in[0]
@@ -308,20 +308,20 @@ func (t *tokenizer) token() (tok Token) {
 	return tok
 }
 
-type preprocessingTokens []preprocessingToken
+type cppTokens []cppToken
 
-func (p *preprocessingTokens) peek(index int) preprocessingToken {
+func (p *cppTokens) peek(index int) cppToken {
 	if index < len(*p) {
 		return (*p)[index]
 	}
 
-	return eofPreprocessToken
+	return eofCppToken
 }
 
-func (p *preprocessingTokens) read() (tok preprocessingToken) {
+func (p *cppTokens) read() (tok cppToken) {
 	s := *p
 	if len(s) == 0 {
-		return eofPreprocessToken
+		return eofCppToken
 	}
 
 	tok = s[0]
@@ -332,7 +332,7 @@ func (p *preprocessingTokens) read() (tok preprocessingToken) {
 	return tok
 }
 
-func (p *preprocessingTokens) skipBlank() {
+func (p *cppTokens) skipBlank() {
 	s := *p
 	for len(s) != 0 && s[0].Ch == ' ' {
 		s = s[1:]
@@ -340,31 +340,31 @@ func (p *preprocessingTokens) skipBlank() {
 	*p = s
 }
 
-func (p *preprocessingTokens) peekNonBlank() (preprocessingToken, int) {
+func (p *cppTokens) peekNonBlank() (cppToken, int) {
 	for i, v := range *p {
 		if v.Ch != ' ' && v.Ch != '\n' {
 			return v, i
 		}
 	}
 
-	return eofPreprocessToken, -1
+	return eofCppToken, -1
 }
 
-func (p *preprocessingTokens) skip(n int) {
+func (p *cppTokens) skip(n int) {
 	*p = (*p)[n:]
 }
 
-func (p *preprocessingTokens) c() Token {
+func (p *cppTokens) c() Token {
 	p.skipBlank()
 	return p.peek(0).Token
 }
 
 type cat struct {
-	head preprocessingTokens
+	head cppTokens
 	tail tokenSequence
 }
 
-func newCat(head preprocessingTokens, tail tokenSequence) tokenSequence {
+func newCat(head cppTokens, tail tokenSequence) tokenSequence {
 	if len(head) == 0 {
 		return tail
 	}
@@ -378,7 +378,7 @@ func newCat(head preprocessingTokens, tail tokenSequence) tokenSequence {
 		}
 
 		return &cat{head, tail}
-	case *preprocessingTokens:
+	case *cppTokens:
 		t := *x
 		if len(t) == 0 {
 			return &head
@@ -391,7 +391,7 @@ func newCat(head preprocessingTokens, tail tokenSequence) tokenSequence {
 	}
 }
 
-func (c *cat) peek(index int) preprocessingToken {
+func (c *cat) peek(index int) cppToken {
 	if index < len(c.head) {
 		return c.head.peek(index)
 	}
@@ -399,7 +399,7 @@ func (c *cat) peek(index int) preprocessingToken {
 	return c.tail.peek(index - len(c.head))
 }
 
-func (c *cat) peekNonBlank() (preprocessingToken, int) {
+func (c *cat) peekNonBlank() (cppToken, int) {
 	for i := 0; ; i++ {
 		if t := c.peek(i); t.Ch != ' ' && t.Ch != '\n' {
 			return t, i
@@ -407,7 +407,7 @@ func (c *cat) peekNonBlank() (preprocessingToken, int) {
 	}
 }
 
-func (c *cat) read() preprocessingToken {
+func (c *cat) read() cppToken {
 	if len(c.head) != 0 {
 		return c.head.read()
 	}
@@ -496,7 +496,7 @@ func (c *cpp) undent() string {
 }
 
 // [1], pg 1.
-func (c *cpp) expand(outer, eval bool, TS tokenSequence) (r preprocessingTokens) {
+func (c *cpp) expand(outer, eval bool, TS tokenSequence) (r cppTokens) {
 	// trc("* %s%v outer %v (%v)", c.indent(), toksDump(TS), outer, origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 more:
@@ -506,7 +506,7 @@ more:
 		// if TS is {} then
 		//	return {};
 		if outer {
-			return []preprocessingToken{t}
+			return []cppToken{t}
 		}
 
 		return nil
@@ -539,7 +539,7 @@ more:
 			}
 		}
 
-		return append(preprocessingTokens{t}, c.expand(false, eval, TS)...)
+		return append(cppTokens{t}, c.expand(false, eval, TS)...)
 	}
 
 	if m := c.macro(&T, src); m != nil {
@@ -557,7 +557,7 @@ more:
 					return nil
 				}
 
-				return c.expand(false, eval, TS)
+				goto more
 			}
 
 			return c.expand(false, eval, newCat(subst, TS))
@@ -581,7 +581,16 @@ more:
 
 				// trc("  %s<%s is a (%v)'d macro, expanding to %s> using args %v", c.indent(), T.Src(), m.fp(), toksDump(m.replacementList), toksDump(args))
 				// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-				return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
+				subst := c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil)
+				if len(subst) == 0 {
+					if outer {
+						return nil
+					}
+
+					goto more
+				}
+
+				return c.expand(false, eval, newCat(subst, TS))
 			}
 		}
 
@@ -590,20 +599,20 @@ more:
 	// note TS must be T HS • TS’
 	// return T HS • expand(TS’);
 	if outer {
-		return preprocessingTokens{t}
+		return cppTokens{t}
 	}
 
 	if x, ok := TS.(*cat); ok && len(x.head) == 0 {
 		if _, ok := x.tail.(*tokenizer); ok {
-			return preprocessingTokens{t}
+			return cppTokens{t}
 		}
 	}
 
-	return append(preprocessingTokens{t}, c.expand(false, eval, TS)...)
+	return append(cppTokens{t}, c.expand(false, eval, TS)...)
 }
 
 // [1], pg 2.
-func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP []string, AP []preprocessingTokens, HS hideSet, OS preprocessingTokens) (r preprocessingTokens) {
+func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTokens, HS hideSet, OS cppTokens) (r cppTokens) {
 	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	t := IS.read()
@@ -651,7 +660,7 @@ func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP []string, A
 		// else if IS is ## • T HS’ • IS’ then
 		//	return subst(IS’,FP,AP,HS,glue(OS,T^HS’));
 		IS.skip(skip + 1)
-		return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, preprocessingTokens{t2}))
+		return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, cppTokens{t2}))
 	}
 
 	if t.Ch == rune(IDENTIFIER) {
@@ -695,7 +704,7 @@ func (c *cpp) subst(eval bool, m *Macro, IS *preprocessingTokens, FP []string, A
 
 }
 
-func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
+func (c *cpp) glue(LS, RS cppTokens) (r cppTokens) {
 	// trc("  \t%sLS %v, RS %v (%v)", c.indent(), toksDump(LS), toksDump(RS), origin(2))
 	// defer func() { trc("->\t%s%v", c.undent(), toksDump(r)) }()
 
@@ -708,7 +717,7 @@ func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
 		t := LS[0]
 		t.Set(nil, append(t.Src(), RS[0].Src()...))
 		t.hs = t.hs.cap(RS[0].hs)
-		return append(preprocessingTokens{t}, RS[1:]...)
+		return append(cppTokens{t}, RS[1:]...)
 	}
 
 	// note LS must be L^HS • LS’
@@ -720,11 +729,11 @@ func (c *cpp) glue(LS, RS preprocessingTokens) (r preprocessingTokens) {
 // containing the concatenated spellings of the tokens.
 //
 // [1] pg. 3
-func (c *cpp) stringize(s0 preprocessingTokens) (r preprocessingToken) {
+func (c *cpp) stringize(s0 cppTokens) (r cppToken) {
 	// trc("  %s%v (%v)", c.indent(), toksDump(s0), origin(2))
-	// defer func() { trc("->%s%v: %s", c.undent(), toksDump(preprocessingTokens{r}), r.Src()) }()
+	// defer func() { trc("->%s%v: %s", c.undent(), toksDump(cppTokens{r}), r.Src()) }()
 	if len(s0) == 0 {
-		return emptyStringPreprocessingTok
+		return emptyStringCppToken
 	}
 
 	r = s0[0]
@@ -853,7 +862,7 @@ func (c *cpp) macro(n Node, nm string) *Macro {
 
 func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
 	c.skipBlank(ts)
-	var t preprocessingToken
+	var t cppToken
 	switch p := ts.peek(0); p.Ch {
 	case '(':
 		ts.read()
@@ -885,7 +894,7 @@ func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
 		t.Token = oneTok
 	}
 
-	s := preprocessingTokens(append([]preprocessingToken{t}, *ts.(*preprocessingTokens)...))
+	s := cppTokens(append([]cppToken{t}, *ts.(*cppTokens)...))
 	return &s
 }
 
@@ -895,12 +904,12 @@ func (c *cpp) skipBlank(ts tokenSequence) {
 	}
 }
 
-func (c *cpp) apSelectP(m *Macro, t preprocessingToken, AP []preprocessingTokens, i int) *preprocessingTokens {
+func (c *cpp) apSelectP(m *Macro, t cppToken, AP []cppTokens, i int) *cppTokens {
 	r := c.apSelect(m, t, AP, i)
 	return &r
 }
 
-func (c *cpp) apSelect(m *Macro, t preprocessingToken, AP []preprocessingTokens, i int) preprocessingTokens {
+func (c *cpp) apSelect(m *Macro, t cppToken, AP []cppTokens, i int) cppTokens {
 	if m.VarArg < 0 || m.VarArg != i {
 		if i < len(AP) {
 			return AP[i]
@@ -912,19 +921,19 @@ func (c *cpp) apSelect(m *Macro, t preprocessingToken, AP []preprocessingTokens,
 	return c.varArgs(t, AP[i:])
 }
 
-func (c *cpp) varArgsP(t preprocessingToken, AP []preprocessingTokens) *preprocessingTokens {
+func (c *cpp) varArgsP(t cppToken, AP []cppTokens) *cppTokens {
 	r := c.varArgs(t, AP)
 	return &r
 }
 
-func (c *cpp) varArgs(t preprocessingToken, AP []preprocessingTokens) (r preprocessingTokens) {
+func (c *cpp) varArgs(t cppToken, AP []cppTokens) (r cppTokens) {
 	// trc("  %s%v %v (%v)", c.indent(), &t, toksDump(AP), origin(2))
 	// defer func() { trc("->%sout %v", c.undent(), toksDump(r)) }()
 	for i, v := range AP {
 		if i != 0 {
-			r = append(r, preprocessingToken{commaTok, nil})
+			r = append(r, cppToken{commaTok, nil})
 			if len(v) != 0 && len(v[0].Sep()) != 0 {
-				r = append(r, preprocessingToken{spTok, nil})
+				r = append(r, cppToken{spTok, nil})
 			}
 		}
 		r = append(r, v...)
@@ -932,12 +941,12 @@ func (c *cpp) varArgs(t preprocessingToken, AP []preprocessingTokens) (r preproc
 	return r
 }
 
-func (c *cpp) parseMacroArgs(TS tokenSequence) (args []preprocessingTokens, rparen preprocessingToken, ok bool) {
+func (c *cpp) parseMacroArgs(TS tokenSequence) (args []cppTokens, rparen cppToken, ok bool) {
 	// trc("  %sin  %v (%v)", c.indent(), toksDump(TS), origin(2))
 	// defer func() { trc("->%sout %v", c.undent(), toksDump(args)) }()
-	var arg preprocessingTokens
+	var arg cppTokens
 	level := 0
-	var t preprocessingToken
+	var t cppToken
 out:
 	for {
 		t = TS.read()
@@ -977,7 +986,7 @@ out:
 	return args, t, true
 }
 
-func (c *cpp) hsAdd(HS hideSet, TS preprocessingTokens) (r preprocessingTokens) {
+func (c *cpp) hsAdd(HS hideSet, TS cppTokens) (r cppTokens) {
 	if len(TS) == 0 {
 		// if TS is {} then
 		//	return {};
@@ -1123,7 +1132,7 @@ func (c *cpp) include(ln controlLine) {
 	c.includeLevel++
 	defer func() { c.includeLevel-- }()
 
-	s := preprocessingTokens(tokens2PreprocessingTokens(ln[2:], true))
+	s := cppTokens(tokens2CppTokens(ln[2:], true))
 	s = c.expand(false, true, &s)
 	if c.cfg.fakeIncludes {
 		t := s[0].Token
@@ -1212,7 +1221,7 @@ func (c *cpp) ifGroup(ig *ifGroup) bool {
 }
 
 func (c *cpp) eval(s0 []Token) interface{} {
-	s := preprocessingTokens(tokens2PreprocessingTokens(s0, false))
+	s := cppTokens(tokens2CppTokens(s0, false))
 	s = c.expand(false, true, &s)
 	p := &s
 	val := c.expression(p, true)
@@ -1232,7 +1241,7 @@ func (c *cpp) eval(s0 []Token) interface{} {
 //  expression:
 // 	assignment-expression
 // 	expression , assignment-expression
-func (c *cpp) expression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) expression(s *cppTokens, eval bool) interface{} {
 	for {
 		r := c.assignmentExpression(s, eval)
 		if s.c().Ch != ',' {
@@ -1251,7 +1260,7 @@ func (c *cpp) expression(s *preprocessingTokens, eval bool) interface{} {
 //
 //  assignment-operator: one of
 // 	= *= /= %= += -= <<= >>= &= ^= |=
-func (c *cpp) assignmentExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) assignmentExpression(s *cppTokens, eval bool) interface{} {
 	return c.conditionalExpression(s, eval)
 }
 
@@ -1260,7 +1269,7 @@ func (c *cpp) assignmentExpression(s *preprocessingTokens, eval bool) interface{
 //  conditional-expression:
 //		logical-OR-expression
 //		logical-OR-expression ? expression : conditional-expression
-func (c *cpp) conditionalExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) conditionalExpression(s *cppTokens, eval bool) interface{} {
 	expr := c.logicalOrExpression(s, eval)
 	if s.c().Ch == '?' {
 		s.read()
@@ -1306,7 +1315,7 @@ func (c *cpp) conditionalExpression(s *preprocessingTokens, eval bool) interface
 //  logical-OR-expression:
 //		logical-AND-expression
 //		logical-OR-expression || logical-AND-expression
-func (c *cpp) logicalOrExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) logicalOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.logicalAndExpression(s, eval)
 	for s.c().Ch == rune(OROR) {
 		s.read()
@@ -1326,7 +1335,7 @@ func (c *cpp) logicalOrExpression(s *preprocessingTokens, eval bool) interface{}
 //  logical-AND-expression:
 //		inclusive-OR-expression
 //		logical-AND-expression && inclusive-OR-expression
-func (c *cpp) logicalAndExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) logicalAndExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.inclusiveOrExpression(s, eval)
 	for s.c().Ch == rune(ANDAND) {
 		s.read()
@@ -1346,7 +1355,7 @@ func (c *cpp) logicalAndExpression(s *preprocessingTokens, eval bool) interface{
 //  inclusive-OR-expression:
 //		exclusive-OR-expression
 //		inclusive-OR-expression | exclusive-OR-expression
-func (c *cpp) inclusiveOrExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) inclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.exclusiveOrExpression(s, eval)
 	for s.c().Ch == '|' {
 		panic(todo(""))
@@ -1379,7 +1388,7 @@ func (c *cpp) inclusiveOrExpression(s *preprocessingTokens, eval bool) interface
 //  exclusive-OR-expression:
 //		AND-expression
 //		exclusive-OR-expression ^ AND-expression
-func (c *cpp) exclusiveOrExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) exclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.andExpression(s, eval)
 	for s.c().Ch == '^' {
 		panic(todo(""))
@@ -1412,7 +1421,7 @@ func (c *cpp) exclusiveOrExpression(s *preprocessingTokens, eval bool) interface
 //  AND-expression:
 // 		equality-expression
 // 		AND-expression & equality-expression
-func (c *cpp) andExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) andExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.equalityExpression(s, eval)
 	for s.c().Ch == '&' {
 		panic(todo(""))
@@ -1446,7 +1455,7 @@ func (c *cpp) andExpression(s *preprocessingTokens, eval bool) interface{} {
 //		relational-expression
 //		equality-expression == relational-expression
 //		equality-expression != relational-expression
-func (c *cpp) equalityExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) equalityExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.relationalExpression(s, eval)
 	for {
 		var v bool
@@ -1513,7 +1522,7 @@ func (c *cpp) equalityExpression(s *preprocessingTokens, eval bool) interface{} 
 //		relational-expression >  shift-expression
 //		relational-expression <= shift-expression
 //		relational-expression >= shift-expression
-func (c *cpp) relationalExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) relationalExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.shiftExpression(s, eval)
 	for {
 		var v bool
@@ -1621,7 +1630,7 @@ func (c *cpp) relationalExpression(s *preprocessingTokens, eval bool) interface{
 //		additive-expression
 //		shift-expression << additive-expression
 //		shift-expression >> additive-expression
-func (c *cpp) shiftExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) shiftExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.additiveExpression(s, eval)
 	for {
 		switch s.c().Ch {
@@ -1680,7 +1689,7 @@ func (c *cpp) shiftExpression(s *preprocessingTokens, eval bool) interface{} {
 //		multiplicative-expression
 //		additive-expression + multiplicative-expression
 //		additive-expression - multiplicative-expression
-func (c *cpp) additiveExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) additiveExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.multiplicativeExpression(s, eval)
 	for {
 		switch s.c().Ch {
@@ -1739,7 +1748,7 @@ func (c *cpp) additiveExpression(s *preprocessingTokens, eval bool) interface{} 
 //		multiplicative-expression * unary-expression
 //		multiplicative-expression / unary-expression
 //		multiplicative-expression % unary-expression
-func (c *cpp) multiplicativeExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) multiplicativeExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.unaryExpression(s, eval)
 	for {
 		switch s.c().Ch {
@@ -1862,7 +1871,7 @@ func (c *cpp) multiplicativeExpression(s *preprocessingTokens, eval bool) interf
 //
 //  unary-operator: one of
 //		+ - ~ !
-func (c *cpp) unaryExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
 	switch s.c().Ch {
 	case '+':
 		panic(todo(""))
@@ -1923,7 +1932,7 @@ func (c *cpp) unaryExpression(s *preprocessingTokens, eval bool) interface{} {
 //		identifier
 //		constant
 //		( expression )
-func (c *cpp) primaryExpression(s *preprocessingTokens, eval bool) interface{} {
+func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 	switch t := s.c(); t.Ch {
 	case rune(CHARCONST), rune(LONGCHARCONST):
 		panic(todo(""))
@@ -2172,7 +2181,7 @@ func (c *cpp) defineObjectMacro(nm Token, ln []Token) {
 	c.newMacro(nm, nil, rl, -1, -1, false)
 }
 
-func (c *cpp) newMacro(nm Token, params []Token, replList []preprocessingToken, minArgs, varArg int, isFnLike bool) {
+func (c *cpp) newMacro(nm Token, params []Token, replList []cppToken, minArgs, varArg int, isFnLike bool) {
 	// trc("nm %q, params %v, replList %v, minArgs %v, varArg %v, isFnLike %v", nm.Src(), toksDump(params), toksDump(replList), minArgs, varArg, isFnLike)
 	s := string(nm.Src())
 	if _, ok := protectedMacros[s]; ok {
@@ -2192,8 +2201,8 @@ func (c *cpp) newMacro(nm Token, params []Token, replList []preprocessingToken, 
 
 // parseReplacementList transforms s into preprocessing tokens that have separate
 // tokens for white space.
-func (c *cpp) parseReplacementList(s []Token) (r []preprocessingToken) {
-	return tokens2PreprocessingTokens(c.toksTrim(s), true)
+func (c *cpp) parseReplacementList(s []Token) (r []cppToken) {
+	return tokens2CppTokens(c.toksTrim(s), true)
 }
 
 func (c *cpp) toksTrim(s []Token) []Token {
