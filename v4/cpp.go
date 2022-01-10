@@ -18,8 +18,8 @@ const (
 )
 
 var (
-	_ tokenSequence = (*cat)(nil)
 	_ tokenSequence = (*cppTokens)(nil)
+	_ tokenSequence = (*dequeue)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 
 	commaTok, eofTok, hashTok, nlTok, oneTok, pragmaTok, pragmaTestTok, spTok, zeroTok, emptyStringTok Token
@@ -244,10 +244,86 @@ func (m *Macro) ts() *cppTokens {
 }
 
 type tokenSequence interface {
+	prepend(tokenSequence) tokenSequence
 	peek(int) cppToken
 	peekNonBlank() (cppToken, int)
 	read() cppToken
 	skip(int)
+}
+
+type dequeue []tokenSequence
+
+func (d *dequeue) prepend(ts tokenSequence) tokenSequence {
+	switch x := ts.(type) {
+	case *cppTokens:
+		if len(*x) != 0 {
+			*d = append(*d, ts)
+		}
+		return d
+	default:
+		panic(todo("%T", x))
+	}
+}
+
+func (d *dequeue) peek(index int) (tok cppToken) {
+	panic(todo(""))
+}
+
+func (d *dequeue) peekNonBlank() (cppToken, int) {
+	q := *d
+	if len(q) == 0 {
+		panic(todo(""))
+	}
+
+	switch e := q[len(q)-1]; x := e.(type) {
+	case *tokenizer:
+		return x.peekNonBlank()
+	case *cppTokens:
+		for i, v := range *x {
+			if v.Ch != ' ' && v.Ch != '\n' {
+				return v, i
+			}
+		}
+
+		q2 := q[:len(q)-1]
+		return q2[len(q2)-1].peekNonBlank()
+	default:
+		panic(todo("%T", x))
+	}
+}
+
+func (d *dequeue) read() (t cppToken) {
+	q := *d
+	if len(q) == 0 {
+		panic(todo(""))
+	}
+
+	switch e := q[len(q)-1]; x := e.(type) {
+	case *tokenizer:
+		if t = x.read(); t.Ch != eof {
+			return t
+		}
+
+		*d = q[:len(q)-1]
+		return t
+	case *cppTokens:
+		if t = x.read(); t.Ch != eof {
+			if len(*x) != 0 {
+				return t
+			}
+		}
+
+		*d = q[:len(q)-1]
+		return t
+	default:
+		panic(todo("%T", x))
+	}
+}
+
+func (d *dequeue) skip(n int) {
+	for ; n != 0; n-- {
+		d.read()
+	}
 }
 
 type tokenizer struct {
@@ -258,6 +334,10 @@ type tokenizer struct {
 
 func newTokenizer(c *cpp) *tokenizer {
 	return &tokenizer{c: c}
+}
+
+func (t *tokenizer) prepend(tokenSequence) tokenSequence {
+	panic(todo(""))
 }
 
 func (t *tokenizer) peek(index int) (tok cppToken) {
@@ -300,7 +380,7 @@ func (t *tokenizer) skip(n int) {
 
 func (t *tokenizer) token() (tok Token) {
 	for len(t.out) == 0 {
-		t.out = t.c.expand(true, false, t)
+		t.out = t.c.expand(true, false, &dequeue{t})
 	}
 	tok = t.out[0].Token
 	if tok.Ch != eof {
@@ -310,6 +390,16 @@ func (t *tokenizer) token() (tok Token) {
 }
 
 type cppTokens []cppToken
+
+func (p *cppTokens) prepend(ts tokenSequence) tokenSequence {
+	switch x := ts.(type) {
+	case *cppTokens:
+		*p = append(*x, *p...)
+		return p
+	default:
+		panic(todo("%T", x))
+	}
+}
 
 func (p *cppTokens) peek(index int) cppToken {
 	if index < len(*p) {
@@ -358,68 +448,6 @@ func (p *cppTokens) skip(n int) {
 func (p *cppTokens) c() Token {
 	p.skipBlank()
 	return p.peek(0).Token
-}
-
-type cat struct {
-	head cppTokens
-	tail tokenSequence
-}
-
-func newCat(head cppTokens, tail tokenSequence) tokenSequence {
-	if len(head) == 0 {
-		return tail
-	}
-
-	switch x := tail.(type) {
-	case *tokenizer:
-		return &cat{head, tail}
-	case *cat:
-		if len(x.head) == 0 {
-			return &cat{head, x.tail}
-		}
-
-		return &cat{head, tail}
-	case *cppTokens:
-		t := *x
-		if len(t) == 0 {
-			return &head
-		}
-
-		head = append(head[:len(head):len(head)], t...)
-		return &head
-	default:
-		panic(todo("%T", x))
-	}
-}
-
-func (c *cat) peek(index int) cppToken {
-	if index < len(c.head) {
-		return c.head.peek(index)
-	}
-
-	return c.tail.peek(index - len(c.head))
-}
-
-func (c *cat) peekNonBlank() (cppToken, int) {
-	for i := 0; ; i++ {
-		if t := c.peek(i); t.Ch != ' ' && t.Ch != '\n' {
-			return t, i
-		}
-	}
-}
-
-func (c *cat) read() cppToken {
-	if len(c.head) != 0 {
-		return c.head.read()
-	}
-
-	return c.tail.read()
-}
-
-func (c *cat) skip(n int) {
-	for ; n != 0; n-- {
-		c.read()
-	}
 }
 
 // cpp is the C preprocessor.
@@ -502,7 +530,7 @@ func (c *cpp) expand(outer, eval bool, TS tokenSequence) (r cppTokens) {
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 more:
 	t := TS.read()
-	// trc("  %[2]s%v", c.undent(), c.indent(), &t)
+	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(TS))
 	if t.Ch == eof {
 		// if TS is {} then
 		//	return {};
@@ -533,6 +561,7 @@ more:
 	}
 
 	if m := c.macro(T, src); m != nil {
+		var subst cppTokens
 	out:
 		switch {
 		default:
@@ -540,8 +569,9 @@ more:
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
 
 			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.replacementList))
-			// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-			return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil), TS))
+			// defer func() { trc("  %s<%s expanded> %s", c.undent(), T.Src(), toksDump(subst)) }()
+			subst = c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil)
+			return c.expand(false, eval, TS.prepend(&subst))
 		case m.IsFnLike:
 			t2, skip := TS.peekNonBlank()
 			if t2.Ch == '(' {
@@ -561,8 +591,9 @@ more:
 				}
 
 				// trc("  %s<%s is a (%v)'d macro, expanding to %s> using args %v", c.indent(), T.Src(), m.fp(), toksDump(m.replacementList), toksDump(args))
-				// defer func() { trc("  %s<%s expanded>", c.undent(), T.Src()) }()
-				return c.expand(false, eval, newCat(c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil), TS))
+				// defer func() { trc("  %s<%s expanded> %s", c.undent(), T.Src(), toksDump(subst)) }()
+				subst = c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil)
+				return c.expand(false, eval, TS.prepend(&subst))
 			}
 		}
 

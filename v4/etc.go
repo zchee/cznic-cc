@@ -168,10 +168,14 @@ func toksDump(v interface{}) string {
 		for _, v := range x {
 			a = append(a, string(v.Src()))
 		}
-	case *cat:
-		return fmt.Sprintf("(%s · %s)", toksDump(x.head), toksDump(x.tail))
 	case textLine:
 		return toksDump([]Token(x))
+	case *dequeue:
+		d := *x
+		for i := len(d) - 1; i >= 0; i-- {
+			a = append(a, toksDump(d[i]))
+		}
+		return fmt.Sprintf("[%v].%d", strings.Join(a, " · "), len(a))
 	default:
 		panic(todo("%T", x))
 	}
