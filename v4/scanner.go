@@ -346,9 +346,11 @@ func (s *scanner) c() rune {
 		case s.peek(1) == '\n':
 			s.joinedLines = true
 			s.off += 2
+			s.s.file.AddLine(int(s.off))
 		case s.peek(1) == '\r' && s.peek(2) == '\n':
 			s.joinedLines = true
 			s.off += 3
+			s.s.file.AddLine(int(s.off))
 		}
 	}
 
@@ -925,7 +927,7 @@ func (s *scanner) cppScan() (tok Token) {
 		return tok
 	case cppScanHash:
 		switch tok = s.cppScan0(); {
-		case tok.Ch == rune(IDENTIFIER) && bytes.Equal(tok.Src(), []byte("include")):
+		case tok.Ch == rune(IDENTIFIER) && (bytes.Equal(tok.Src(), []byte("include")) || bytes.Equal(tok.Src(), []byte("include_next"))):
 			s.state = cppScanHeaderName
 		default:
 			s.state = cppScanOther

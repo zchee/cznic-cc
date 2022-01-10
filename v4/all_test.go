@@ -32,7 +32,7 @@ var (
 	corpus      = map[string][]byte{}
 	corpusIndex []string
 	re          *regexp.Regexp
-	testCfg     = &Config{}
+	testCfg0    = &Config{}
 	predefined  string
 
 	oTrace = flag.Bool("trc", false, "Print tested paths.")
@@ -40,13 +40,15 @@ var (
 
 func init() {
 	var err error
-	if predefined, testCfg.IncludePaths, testCfg.SysIncludePaths, err = HostConfig(""); err != nil {
+	if predefined, testCfg0.IncludePaths, testCfg0.SysIncludePaths, err = HostConfig(""); err != nil {
 		panic(errorf("cannot acquire host configuration: %v", err))
 	}
 
-	testCfg.IncludePaths = testCfg.IncludePaths[:len(testCfg.IncludePaths):len(testCfg.IncludePaths)]
-	testCfg.SysIncludePaths = testCfg.SysIncludePaths[:len(testCfg.SysIncludePaths):len(testCfg.SysIncludePaths)]
-	if testCfg.ABI, err = NewABI(runtime.GOOS, runtime.GOARCH); err != nil {
+	testCfg0.IncludePaths = append([]string{""}, testCfg0.IncludePaths...)
+	testCfg0.IncludePaths = append(testCfg0.IncludePaths, testCfg0.SysIncludePaths...)
+	testCfg0.IncludePaths = testCfg0.IncludePaths[:len(testCfg0.IncludePaths):len(testCfg0.IncludePaths)]
+	testCfg0.SysIncludePaths = testCfg0.SysIncludePaths[:len(testCfg0.SysIncludePaths):len(testCfg0.SysIncludePaths)]
+	if testCfg0.ABI, err = NewABI(runtime.GOOS, runtime.GOARCH); err != nil {
 		panic(errorf("cannot configure ABI: %v", err))
 	}
 
@@ -439,6 +441,11 @@ func BenchmarkCPPParse(b *testing.B) {
 	}
 }
 
+func testCfg() *Config {
+	c := *testCfg0
+	return &c
+}
+
 func TestCPPExpand(t *testing.T) {
 	testCPPExpand(t, "testdata/cpp-expand/", nil, true)
 }
@@ -447,9 +454,8 @@ func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}, fake
 	var fails []string
 	var files, ok, skip int
 	var c *cpp
-	cfg := *testCfg
+	cfg := testCfg()
 	cfg.fakeIncludes = fakeIncludes
-	cfg.IncludePaths = append([]string{""}, cfg.IncludePaths...)
 	cfg.PragmaHandler = func(s []Token) error {
 		a := textLine{pragmaTestTok}
 		for i, v := range s {
@@ -488,7 +494,7 @@ func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}, fake
 			fmt.Fprintln(os.Stderr, path)
 		}
 		var b strings.Builder
-		if c, err = newCPP(&cfg, []Source{{path, nil, nil}}, nil); err != nil {
+		if c, err = newCPP(cfg, []Source{{path, nil, nil}}, nil); err != nil {
 			t.Fatalf("%v: %v", path, err)
 		}
 
@@ -568,16 +574,33 @@ func TestInclude(t *testing.T) {
 }
 
 func TestTranslationPhase4(t *testing.T) {
+	cfgGame := testCfg()
+	cfgGame.FS = cFS
+	cfgGame.SysIncludePaths = append(cfgGame.SysIncludePaths, "/benchmarksgame-team.pages.debian.net/Include")
 	for _, v := range []struct {
-		dir string
+		cfg       *Config
+		dir       string
+		blacklist map[string]struct{}
 	}{
-		//{"benchmarksgame-team.pages.debian.net"},
+		{cfgGame, "benchmarksgame-team.pages.debian.net", map[string]struct{}{
+			// Missing <apr_pools.h>
+			"binary-trees-2.c": {}, //
+			"binary-trees-3.c": {}, //
+
+			//TODO hangs
+			"nbody-4.c":         {},
+			"nbody-8.c":         {},
+			"nbody-9.c":         {},
+			"spectral-norm-6.c": {},
+		}},
 	} {
-		t.Run(v.dir, func(t *testing.T) { testTranslationPhase4(t, "/"+v.dir, nil) })
+		t.Run(v.dir, func(t *testing.T) {
+			testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
+		})
 	}
 }
 
-func testTranslationPhase4(t *testing.T, dir string, blacklist map[string]struct{}) {
+func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) {
 	var fails []string
 	var files, ok, skip int
 	err := walk(dir, func(pth string, fi os.FileInfo) error {
@@ -606,9 +629,8 @@ func testTranslationPhase4(t *testing.T, dir string, blacklist map[string]struct
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, pth)
 		}
-
 		if err := Preprocess(
-			testCfg,
+			cfg,
 			[]Source{
 				{Name: "<predefined>", Value: predefined},
 				{Name: pth, FS: cFS},
