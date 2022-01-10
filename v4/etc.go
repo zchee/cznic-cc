@@ -135,6 +135,7 @@ func env(key, defaultVal string) string {
 
 func toksDump(v interface{}) string {
 	var a []string
+	delta := 0
 	switch x := v.(type) {
 	case []cppToken:
 		return toksDump(cppTokens(x))
@@ -145,6 +146,7 @@ func toksDump(v interface{}) string {
 			p := x[0].Position()
 			p.Filename = filepath.Base(p.Filename)
 			a = append(a, p.String())
+			delta = -1
 		}
 		for _, v := range x {
 			s := string(v.Src())
@@ -179,7 +181,7 @@ func toksDump(v interface{}) string {
 	default:
 		panic(todo("%T", x))
 	}
-	return fmt.Sprintf("%q.%d", a, len(a))
+	return fmt.Sprintf("%q.%d", a, len(a)+delta)
 }
 
 func tokens2CppTokens(s []Token, skipFirstSep bool) (r []cppToken) {

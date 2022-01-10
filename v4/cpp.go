@@ -535,7 +535,7 @@ more:
 		// if TS is {} then
 		//	return {};
 		if outer {
-			return []cppToken{t}
+			return cppTokens{t}
 		}
 
 		return nil
@@ -557,7 +557,7 @@ more:
 	if HS.has(src) {
 		// if TS is T^HS • TS’ and T is in HS then
 		//	return T^HS • expand(TS’);
-		return append(cppTokens{t}, c.expand(false, eval, TS)...)
+		goto ret
 	}
 
 	if m := c.macro(T, src); m != nil {
@@ -582,7 +582,7 @@ more:
 				TS.skip(skip + 1)
 				args, rparen, ok := c.parseMacroArgs(TS)
 				if !ok {
-					return nil
+					return r
 				}
 
 				if len(args) > m.MinArgs && m.VarArg < 0 {
@@ -599,8 +599,23 @@ more:
 
 	}
 
+ret:
 	// note TS must be T HS • TS’
 	// return T HS • expand(TS’);
+	if outer {
+		return cppTokens{t}
+	}
+
+	if d, ok := TS.(*dequeue); ok {
+		q := *d
+		if len(q) != 0 {
+			switch q[len(q)-1].(type) {
+			case *tokenizer:
+				return cppTokens{t}
+			}
+		}
+	}
+
 	return append(cppTokens{t}, c.expand(false, eval, TS)...)
 }
 
@@ -609,7 +624,7 @@ func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTok
 	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	t := IS.read()
-	// trc("  %[2]s%v", c.undent(), c.indent(), &t)
+	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(IS))
 	if t.Ch == eof {
 		// if IS is {} then
 		//	return hsadd(HS,OS);

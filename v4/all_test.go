@@ -586,12 +586,6 @@ func TestTranslationPhase4(t *testing.T) {
 			// Missing <apr_pools.h>
 			"binary-trees-2.c": {}, //
 			"binary-trees-3.c": {}, //
-
-			//TODO hangs
-			"nbody-4.c":         {},
-			"nbody-8.c":         {},
-			"nbody-9.c":         {},
-			"spectral-norm-6.c": {},
 		}},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
@@ -636,7 +630,6 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 				{Name: pth, FS: cFS},
 			},
 			io.Discard,
-			//os.Stdout,
 		); err != nil {
 			fails = append(fails, pth)
 			t.Errorf("%v: %v", pth, err)
