@@ -577,16 +577,28 @@ func TestTranslationPhase4(t *testing.T) {
 	cfgGame := testCfg()
 	cfgGame.FS = cFS
 	cfgGame.SysIncludePaths = append(cfgGame.SysIncludePaths, "/benchmarksgame-team.pages.debian.net/Include")
+	blacklistGame := map[string]struct{}{
+		// Missing <apr_pools.h>
+		"binary-trees-2.c": {},
+		"binary-trees-3.c": {},
+	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/arm", "linux/arm64":
+		// Uses sse2 headers.
+		blacklistGame["fannkuchredux-4.c"] = struct{}{}
+		blacklistGame["mandelbrot-6.c"] = struct{}{}
+		blacklistGame["nbody-4.c"] = struct{}{}
+		blacklistGame["nbody-8.c"] = struct{}{}
+		blacklistGame["nbody-9.c"] = struct{}{}
+		blacklistGame["spectral-norm-5.c"] = struct{}{}
+		blacklistGame["spectral-norm-6.c"] = struct{}{}
+	}
 	for _, v := range []struct {
 		cfg       *Config
 		dir       string
 		blacklist map[string]struct{}
 	}{
-		{cfgGame, "benchmarksgame-team.pages.debian.net", map[string]struct{}{
-			// Missing <apr_pools.h>
-			"binary-trees-2.c": {}, //
-			"binary-trees-3.c": {}, //
-		}},
+		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
 			testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
