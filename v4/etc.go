@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 
 	"modernc.org/strutil"
 )
@@ -211,4 +212,145 @@ func toksTrim(s cppTokens) cppTokens {
 		s = s[:len(s)-1]
 	}
 	return s
+}
+
+func charConst(eh errHandler, tok Token) rune {
+	s := string(tok.Src())
+	switch tok.Ch {
+	case rune(LONGCHARCONST):
+		s = s[1:] // Remove leading 'L'.
+		fallthrough
+	case rune(CHARCONST):
+		s = s[1 : len(s)-1] // Remove outer 's.
+		if len(s) == 1 {
+			return rune(s[0])
+		}
+
+		var r rune
+		var n int
+		switch s[0] {
+		case '\\':
+			r, n = decodeEscapeSequence(eh, tok, s)
+			if r < 0 {
+				r = -r
+			}
+		default:
+			r, n = utf8.DecodeRuneInString(s)
+		}
+		if n != len(s) {
+			eh("%v: invalid character constant", tok.Position())
+		}
+		return r
+	}
+	panic(todo("internal error"))
+}
+
+// escape-sequence		{simple-sequence}|{octal-escape-sequence}|{hexadecimal-escape-sequence}|{universal-character-name}
+// simple-sequence		\\['\x22?\\abfnrtv]
+// octal-escape-sequence	\\{octal-digit}{octal-digit}?{octal-digit}?
+// hexadecimal-escape-sequence	\\x{hexadecimal-digit}+
+func decodeEscapeSequence(eh errHandler, tok Token, s string) (rune, int) {
+	if s[0] != '\\' {
+		panic(todo("internal error"))
+	}
+
+	if len(s) == 1 {
+		return rune(s[0]), 1
+	}
+
+	r := rune(s[1])
+	switch r {
+	case '\'', '"', '?', '\\':
+		return r, 2
+	case 'a':
+		return 7, 2
+	case 'b':
+		return 8, 2
+	case 'e':
+		return 0x1b, 2
+	case 'f':
+		return 12, 2
+	case 'n':
+		return 10, 2
+	case 'r':
+		return 13, 2
+	case 't':
+		return 9, 2
+	case 'v':
+		return 11, 2
+	case 'x':
+		v, n := 0, 2
+	loop2:
+		for i := 2; i < len(s); i++ {
+			r := s[i]
+			switch {
+			case r >= '0' && r <= '9', r >= 'a' && r <= 'f', r >= 'A' && r <= 'F':
+				v = v<<4 | decodeHex(r)
+				n++
+			default:
+				break loop2
+			}
+		}
+		return -rune(v & 0xff), n
+	case 'u', 'U':
+		return decodeUCN(s)
+	}
+
+	if r < '0' || r > '7' {
+		panic(todo(""))
+	}
+
+	v, n := 0, 1
+	ok := false
+loop:
+	for i := 1; i < len(s); i++ {
+		r := s[i]
+		switch {
+		case i < 4 && r >= '0' && r <= '7':
+			ok = true
+			v = v<<3 | (int(r) - '0')
+			n++
+		default:
+			break loop
+		}
+	}
+	if !ok {
+		eh("%v: invalid octal sequence", tok.Position())
+	}
+	return -rune(v), n
+}
+
+// universal-character-name	\\u{hex-quad}|\\U{hex-quad}{hex-quad}
+func decodeUCN(s string) (rune, int) {
+	if s[0] != '\\' {
+		panic(todo(""))
+	}
+
+	s = s[1:]
+	switch s[0] {
+	case 'u':
+		return rune(decodeHexQuad(s[1:])), 6
+	case 'U':
+		return rune(decodeHexQuad(s[1:])<<16 | decodeHexQuad(s[5:])), 10
+	}
+	panic(todo(""))
+}
+
+// hex-quad	{hexadecimal-digit}{hexadecimal-digit}{hexadecimal-digit}{hexadecimal-digit}
+func decodeHexQuad(s string) int {
+	n := 0
+	for i := 0; i < 4; i++ {
+		n = n<<4 | decodeHex(s[i])
+	}
+	return n
+}
+
+func decodeHex(r byte) int {
+	switch {
+	case r >= '0' && r <= '9':
+		return int(r) - '0'
+	default:
+		x := int(r) &^ 0x20
+		return x - 'A' + 10
+	}
 }

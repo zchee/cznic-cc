@@ -5,6 +5,8 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
+	"strconv"
+
 	"modernc.org/token"
 )
 
@@ -120,11 +122,34 @@ type groupPart interface{}
 func (p *cppParser) groupPart(inIfSection bool) groupPart {
 	switch p.c() {
 	case '#':
-		switch string(p.line[1].Src()) {
+		switch verb := string(p.line[1].Src()); verb {
 		case "if", "ifdef", "ifndef":
 			return p.ifSection()
 		case "include", "include_next", "define", "undef", "line", "error", "pragma", "\n":
-			return controlLine(p.consume())
+			gp := p.consume()
+			switch {
+			case verb == "line":
+				// eg. ["#" "line" "1" "\"20010206-1.c\"" "\n"].5
+				if len(gp) < 3 {
+					break
+				}
+
+				ln, err := strconv.ParseUint(string(gp[2].Src()), 10, 31)
+				if err != nil {
+					break
+				}
+
+				fn := gp[0].Position().Filename
+				if len(gp) >= 4 && gp[3].Ch == rune(STRINGLITERAL) {
+					fn = string(gp[3].Src())
+					fn = fn[1 : len(fn)-1]
+				}
+
+				nl := gp[len(gp)-1]
+				pos := nl.Position()
+				p.s.s.file.AddLineInfo(int(pos.Offset+1), fn, int(ln))
+			}
+			return controlLine(gp)
 		case "elif", "else", "endif":
 			if inIfSection {
 				return nil

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -459,7 +460,6 @@ type cpp struct {
 	indentLevel int // debug dumps
 	macros      map[string]*Macro
 	sources     []Source
-	srcStack    []string
 	stack       []interface{}
 	tok         Token
 	tokenizer   *tokenizer
@@ -565,20 +565,15 @@ more:
 	out:
 		switch {
 		default:
-			// if TS is T^HS • TS’ and T is a "()-less macro" then
-			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
-
 			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.replacementList))
 			// defer func() { trc("  %s<%s expanded> %s", c.undent(), T.Src(), toksDump(subst)) }()
+			// if TS is T^HS • TS’ and T is a "()-less macro" then
+			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
 			subst = c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil)
 			return c.expand(false, eval, TS.prepend(&subst))
 		case m.IsFnLike:
 			t2, skip := TS.peekNonBlank()
 			if t2.Ch == '(' {
-				// if TS is T^HS • ( • TS’ and T is a "()’d macro" then
-				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
-				//	return expand(subst(ts(T),fp(T),actuals,(HS∩HS’)∪{T},{}) • TS’’);
-
 				TS.skip(skip + 1)
 				args, rparen, ok := c.parseMacroArgs(TS)
 				if !ok {
@@ -592,6 +587,9 @@ more:
 
 				// trc("  %s<%s is a (%v)'d macro, expanding to %s> using args %v", c.indent(), T.Src(), m.fp(), toksDump(m.replacementList), toksDump(args))
 				// defer func() { trc("  %s<%s expanded> %s", c.undent(), T.Src(), toksDump(subst)) }()
+				// if TS is T^HS • ( • TS’ and T is a "()’d macro" then
+				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
+				//	return expand(subst(ts(T),fp(T),actuals,(HS∩HS’)∪{T},{}) • TS’’);
 				subst = c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil)
 				return c.expand(false, eval, TS.prepend(&subst))
 			}
@@ -616,13 +614,23 @@ ret:
 		}
 	}
 
-	return append(cppTokens{t}, c.expand(false, eval, TS)...)
+	// Correct but slow (1191MB of 3184MB allocs):
+	// 	return append(cppTokens{t}, c.expand(false, eval, TS)...)
+	//
+	// Optimized to (95MB of 2031MB allocs):
+	r = append(c.expand(false, eval, TS), cppToken{})
+	copy(r[1:], r)
+	r[0] = t
+	return r
 }
 
 // [1], pg 2.
 func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTokens, HS hideSet, OS cppTokens) (r cppTokens) {
 	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
+	if len(OS) == 0 {
+		OS = make(cppTokens, 0, len(*IS))
+	}
 	t := IS.read()
 	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(IS))
 	if t.Ch == eof {
@@ -730,7 +738,15 @@ func (c *cpp) glue(LS, RS cppTokens) (r cppTokens) {
 
 	// note LS must be L^HS • LS’
 	// return L^HS • glue(LS’,RS );
-	return append(LS[:1:1], c.glue(LS[1:], RS)...)
+
+	// Correct but slow (562MB of 2061MB allocs)
+	//	return append(LS[:1:1], c.glue(LS[1:], RS)...)
+	//
+	// Optimized to (? of 1502MB allocs):
+	r = append(c.glue(LS[1:], RS), cppToken{})
+	copy(r[1:], r)
+	r[0] = LS[0]
+	return r
 }
 
 // Given a token sequence, stringize returns a single string literal token
@@ -900,6 +916,30 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 
 		c.macros[nm] = m
 		return m
+	case "__DATE__":
+		nmt := t
+		t.Set(t.Sep(), []byte(time.Now().Format("\"Jan _2 2006\"")))
+		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
+		if err != nil {
+			c.eh("%v", errorf("", err))
+			return nil
+		}
+
+		c.macros[nm] = m
+		return m
+		panic(todo(""))
+	case "__TIME__":
+		nmt := t
+		t.Set(t.Sep(), []byte(time.Now().Format("\"15:04:05\"")))
+		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
+		if err != nil {
+			c.eh("%v", errorf("", err))
+			return nil
+		}
+
+		c.macros[nm] = m
+		return m
+		panic(todo(""))
 	default:
 		panic(todo("%v: %q", t.Position(), nm))
 	}
@@ -1040,9 +1080,10 @@ func (c *cpp) hsAdd(HS hideSet, TS cppTokens) (r cppTokens) {
 
 	// note TS must be T^HS’ • TS’
 	// return T^(HS∪HS’) • hsadd(HS,TS’);
-	for _, v := range TS {
+	r = make(cppTokens, len(TS))
+	for i, v := range TS {
 		v.hs = v.hs.cup(HS)
-		r = append(r, v)
+		r[i] = v
 	}
 	return r
 }
@@ -1099,6 +1140,8 @@ func (c *cpp) nextLine() (r textLine) {
 						c.eh("%v:", err)
 					}
 				}
+			case "line":
+				// Handled in cppParser.
 			default:
 				panic(todo("%v: %q", x[0].Position(), x[1].Src()))
 			}
@@ -1108,7 +1151,6 @@ func (c *cpp) nextLine() (r textLine) {
 			return x
 		case eofLine:
 			c.eof = x
-			c.srcStack = c.srcStack[:len(c.srcStack)-1]
 			// trc("%v: eofLine, len(c.stack): %v", (*Token)(&x).Position(), len(c.stack))
 			if len(c.stack) == 0 {
 				trc("EOF")
@@ -1146,6 +1188,8 @@ func (c *cpp) nextLine() (r textLine) {
 			default:
 				c.pop()
 			}
+		case nonDirective:
+			c.pop()
 		default:
 			panic(todo("internal error: %T", x))
 		}
@@ -1258,7 +1302,7 @@ func (c *cpp) include(ln controlLine) {
 		nm := raw[1 : len(raw)-1]
 		for _, v := range c.cfg.IncludePaths {
 			if v == "" {
-				v, _ = filepath.Split(c.srcStack[len(c.srcStack)-1])
+				v, _ = filepath.Split(ln[2].Position().Filename)
 			}
 			pth := filepath.Join(v, nm)
 			if g, err := c.group(Source{pth, nil, c.cfg.FS}); err == nil {
@@ -2042,29 +2086,14 @@ func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 	switch t := s.c(); t.Ch {
 	case rune(CHARCONST), rune(LONGCHARCONST):
-		panic(todo(""))
-		// s.next()
-		// r := charConst(c.ctx, t)
-		// return int64(r)
+		s.read()
+		r := charConst(c.eh, t)
+		if r < 0 {
+			r = -r
+		}
+		return int64(r)
 	case rune(IDENTIFIER):
 		s.read()
-		// if s.peek().char == '(' {
-		// 	s.next()
-		// 	n := 1
-		// loop:
-		// 	for n != 0 {
-		// 		switch s.peek().char {
-		// 		case '(':
-		// 			n++
-		// 		case ')':
-		// 			n--
-		// 		case -1:
-		// 			c.err(s.peek(), "expected )")
-		// 			break loop
-		// 		}
-		// 		s.next()
-		// 	}
-		// }
 		return int64(0)
 	case rune(PPNUMBER):
 		s.read()
@@ -2079,7 +2108,7 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 		}
 		return expr
 	default:
-		panic(todo(""))
+		panic(todo("", &t))
 		// return int64(0)
 	}
 }
@@ -2340,7 +2369,6 @@ func (c *cpp) push(v interface{}) {
 }
 
 func (c *cpp) group(src Source) (group, error) {
-	c.srcStack = append(c.srcStack, src.Name)
 	if g, ok := c.groups[src.Name]; ok {
 		return g, nil
 	}

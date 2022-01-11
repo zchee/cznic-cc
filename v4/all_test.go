@@ -305,7 +305,7 @@ func TestScanner(t *testing.T) {
 	}
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m)
-	t.Logf("files %v, tokens %v, bytes %v, heap %v", h(files), h(tokens), h(chars), h(m.HeapAlloc-m0.HeapAlloc))
+	t.Logf("files %v; tokens %v; bytes %v; heap %v; alloc %v", h(files), h(tokens), h(chars), h(m.HeapAlloc-m0.HeapAlloc), h(m.TotalAlloc-m0.TotalAlloc))
 }
 
 func h(v interface{}) string {
@@ -401,7 +401,7 @@ func TestCPPParse(t *testing.T) {
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m)
 	asts = nil
-	t.Logf("files %v, lines %v, bytes %v, heap %v", h(files), h(lines), h(chars), h(m.HeapAlloc-m0.HeapAlloc))
+	t.Logf("files %v; lines %v bytes %v; heap %v; alloc %v", h(files), h(lines), h(chars), h(m.HeapAlloc-m0.HeapAlloc), h(m.TotalAlloc-m0.TotalAlloc))
 }
 
 func BenchmarkCPPParse(b *testing.B) {
@@ -582,6 +582,28 @@ func TestTranslationPhase4(t *testing.T) {
 		"binary-trees-2.c": {},
 		"binary-trees-3.c": {},
 	}
+	cfg := testCfg()
+	cfg.FS = cFS
+	blacklistGCC := map[string]struct{}{
+		// assertions are deprecated.
+		"950919-1.c": {},
+
+		// Needs include files not in ccorpus.
+		"pr88347.c": {},
+		"pr88423.c": {},
+
+		// Hangs
+		"20001226-1.c":        {}, //TODO
+		"limits-blockid.c":    {}, //TODO
+		"limits-caselabels.c": {}, //TODO
+		"limits-enumconst.c":  {}, //TODO
+		"limits-externalid.c": {}, //TODO
+		"limits-externdecl.c": {}, //TODO
+		"limits-fndefn.c":     {}, //TODO
+
+		// Crashes
+		"pr46534.c": {}, //TODO
+	}
 	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
 	case "linux/arm", "linux/arm64", "linux/s390x":
 		// Uses sse2 headers.
@@ -599,6 +621,12 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklist map[string]struct{}
 	}{
 		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
+		{cfg, "CompCert-3.6/test/c", nil},
+		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
+		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
+		{cfg, "github.com/cxgo", nil},
+		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
+		// {cfg, "github.com/vnmakarov", nil},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
 			testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
