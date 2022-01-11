@@ -1679,27 +1679,26 @@ func (c *cpp) relationalExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case rune(LEQ):
-			panic(todo(""))
-			// s.next()
-			// rhs := c.shiftExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			v = x <= y
-			// 		case uint64:
-			// 			v = uint64(x) <= y
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			v = x <= uint64(y)
-			// 		case uint64:
-			// 			v = x <= y
-			// 		}
-			// 	}
-			// }
+			s.read()
+			rhs := c.shiftExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x <= y
+					case uint64:
+						v = uint64(x) <= y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						v = x <= uint64(y)
+					case uint64:
+						v = x <= y
+					}
+				}
+			}
 		case rune(GEQ):
 			s.read()
 			rhs := c.shiftExpression(s, eval)

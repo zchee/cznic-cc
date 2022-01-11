@@ -583,7 +583,7 @@ func TestTranslationPhase4(t *testing.T) {
 		"binary-trees-3.c": {},
 	}
 	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "linux/arm", "linux/arm64":
+	case "linux/arm", "linux/arm64", "linux/s390x":
 		// Uses sse2 headers.
 		blacklistGame["fannkuchredux-4.c"] = struct{}{}
 		blacklistGame["mandelbrot-6.c"] = struct{}{}
