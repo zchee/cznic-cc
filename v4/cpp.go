@@ -1124,6 +1124,11 @@ func (c *cpp) nextLine() (r textLine) {
 		case controlLine:
 			// trc("%v: controlLine %v", x[0].Position(), toksDump(x))
 			c.pop()
+			if len(x) == 2 {
+				// eg. ["#" "\n"].2
+				break
+			}
+
 			switch string(x[1].Src()) {
 			case "define":
 				c.define(x)

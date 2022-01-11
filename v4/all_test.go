@@ -615,6 +615,14 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
 	}
+	blacklistVM := map[string]struct{}{
+		"var-size-in-var-initializer.c": {}, //TODO
+		"include.c":                     {}, //TODO
+		"endif.c":                       {}, //TODO
+		"issue36-2.c":                   {}, //TODO
+		"issue36.c":                     {}, //TODO
+		"test1.c":                       {}, //TODO
+	}
 	for _, v := range []struct {
 		cfg       *Config
 		dir       string
@@ -626,7 +634,7 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
-		// {cfg, "github.com/vnmakarov", nil},
+		{cfg, "github.com/vnmakarov", blacklistVM},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
 			testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
