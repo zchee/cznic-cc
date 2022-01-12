@@ -330,7 +330,7 @@ func (d *dequeue) skip(n int) {
 type tokenizer struct {
 	c   *cpp
 	in  []cppToken
-	out []cppToken
+	out cppTokens
 }
 
 func newTokenizer(c *cpp) *tokenizer {
@@ -381,7 +381,7 @@ func (t *tokenizer) skip(n int) {
 
 func (t *tokenizer) token() (tok Token) {
 	for len(t.out) == 0 {
-		t.out = t.c.expand(true, false, &dequeue{t})
+		t.c.expand(true, false, &dequeue{t}, &t.out)
 	}
 	tok = t.out[0].Token
 	if tok.Ch != eof {
@@ -525,7 +525,7 @@ func (c *cpp) undent() string {
 }
 
 // [1], pg 1.
-func (c *cpp) expand(outer, eval bool, TS tokenSequence) (r cppTokens) {
+func (c *cpp) expand(outer, eval bool, TS tokenSequence, w *cppTokens) {
 	// trc("* %s%v outer %v (%v)", c.indent(), toksDump(TS), outer, origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 more:
@@ -535,10 +535,9 @@ more:
 		// if TS is {} then
 		//	return {};
 		if outer {
-			return cppTokens{t}
+			*w = append(*w, t)
 		}
-
-		return nil
+		return
 	}
 
 	T := t.Token
@@ -570,14 +569,16 @@ more:
 			// if TS is T^HS • TS’ and T is a "()-less macro" then
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
 			subst = c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil)
-			return c.expand(false, eval, TS.prepend(&subst))
+			c.expand(false, eval, TS.prepend(&subst), w)
+			return
 		case m.IsFnLike:
 			t2, skip := TS.peekNonBlank()
 			if t2.Ch == '(' {
 				TS.skip(skip + 1)
 				args, rparen, ok := c.parseMacroArgs(TS)
 				if !ok {
-					return r
+					panic(todo(""))
+					// return r
 				}
 
 				if len(args) > m.MinArgs && m.VarArg < 0 {
@@ -591,7 +592,8 @@ more:
 				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 				//	return expand(subst(ts(T),fp(T),actuals,(HS∩HS’)∪{T},{}) • TS’’);
 				subst = c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil)
-				return c.expand(false, eval, TS.prepend(&subst))
+				c.expand(false, eval, TS.prepend(&subst), w)
+				return
 			}
 		}
 
@@ -601,7 +603,8 @@ ret:
 	// note TS must be T HS • TS’
 	// return T HS • expand(TS’);
 	if outer {
-		return cppTokens{t}
+		*w = append(*w, t)
+		return
 	}
 
 	if d, ok := TS.(*dequeue); ok {
@@ -609,28 +612,22 @@ ret:
 		if len(q) != 0 {
 			switch q[len(q)-1].(type) {
 			case *tokenizer:
-				return cppTokens{t}
+				*w = append(*w, t)
+				return
 			}
 		}
 	}
 
-	// Correct but slow (1191MB of 3184MB allocs):
-	// 	return append(cppTokens{t}, c.expand(false, eval, TS)...)
-	//
-	// Optimized to (95MB of 2031MB allocs):
-	r = append(c.expand(false, eval, TS), cppToken{})
-	copy(r[1:], r)
-	r[0] = t
-	return r
+	*w = append(*w, t)
+	c.expand(false, eval, TS, w)
+	return
 }
 
 // [1], pg 2.
 func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTokens, HS hideSet, OS cppTokens) (r cppTokens) {
 	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
-	if len(OS) == 0 {
-		OS = make(cppTokens, 0, len(*IS))
-	}
+more:
 	t := IS.read()
 	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(IS))
 	if t.Ch == eof {
@@ -645,7 +642,8 @@ func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTok
 				// if IS is # • T • IS’ and T is FP[i] then
 				//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
 				IS.skip(skip + 1)
-				return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.stringize(c.apSelect(m, t2, AP, i))))
+				OS = append(OS, c.stringize(c.apSelect(m, t2, AP, i)))
+				goto more
 			}
 		}
 	}
@@ -662,21 +660,22 @@ func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTok
 					//	if select(i,AP ) is {} then /* only if actuals can be empty */
 					//		return subst(IS’,FP,AP,HS,OS );
 					IS.skip(skip + 1)
-					return c.subst(eval, m, IS, FP, AP, HS, OS)
+					goto more
 				}
 
 				//	else
 				//		return subst(IS’,FP,AP,HS,glue(OS,select(i,AP )));
 				IS.skip(skip + 1)
-				return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, c.apSelect(m, t2, AP, i)))
-
+				OS = c.glue(OS, c.apSelect(m, t2, AP, i))
+				goto more
 			}
 		}
 
 		// else if IS is ## • T HS’ • IS’ then
 		//	return subst(IS’,FP,AP,HS,glue(OS,T^HS’));
 		IS.skip(skip + 1)
-		return c.subst(eval, m, IS, FP, AP, HS, c.glue(OS, cppTokens{t2}))
+		OS = c.glue(OS, cppTokens{t2})
+		goto more
 	}
 
 	if t.Ch == rune(IDENTIFIER) {
@@ -691,7 +690,8 @@ func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTok
 						//		if IS’ is T’ • IS’’ and T’ is FP[j] then
 						//			return subst(IS’’,FP,AP,HS,OS • select(j,AP));
 						IS.skip(skip + 1)
-						return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.apSelect(m, t, AP, j)...))
+						OS = append(OS, c.apSelect(m, t, AP, j)...)
+						goto more
 					}
 
 					//		else
@@ -700,7 +700,8 @@ func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTok
 				} else {
 					//	else
 					//		return subst(##^HS’ • IS’,FP,AP,HS,OS • select(i,AP));
-					return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.apSelect(m, t, AP, i)...))
+					OS = append(OS, c.apSelect(m, t, AP, i)...)
+					goto more
 				}
 			}
 		}
@@ -710,14 +711,15 @@ func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTok
 		if i := m.is(string(t.Src())); i >= 0 {
 			// if IS is T • IS’ and T is FP[i] then
 			//	return subst(IS’,FP,AP,HS,OS • expand(select(i,AP )));
-			return c.subst(eval, m, IS, FP, AP, HS, append(OS, c.expand(false, eval, c.apSelectP(m, t, AP, i))...))
+			c.expand(false, eval, c.apSelectP(m, t, AP, i), &OS)
+			goto more
 		}
 	}
 
 	// note IS must be T HS’ • IS’
 	// return subst(IS’,FP,AP,HS,OS • T HS’ );
-	return c.subst(eval, m, IS, FP, AP, HS, append(OS, t))
-
+	OS = append(OS, t)
+	goto more
 }
 
 func (c *cpp) glue(LS, RS cppTokens) (r cppTokens) {
@@ -738,11 +740,6 @@ func (c *cpp) glue(LS, RS cppTokens) (r cppTokens) {
 
 	// note LS must be L^HS • LS’
 	// return L^HS • glue(LS’,RS );
-
-	// Correct but slow (562MB of 2061MB allocs)
-	//	return append(LS[:1:1], c.glue(LS[1:], RS)...)
-	//
-	// Optimized to (? of 1502MB allocs):
 	r = append(c.glue(LS[1:], RS), cppToken{})
 	copy(r[1:], r)
 	r[0] = LS[0]
@@ -1228,8 +1225,9 @@ func (c *cpp) includeNext(ln controlLine) {
 	c.includeLevel++
 	defer func() { c.includeLevel-- }()
 
-	s := cppTokens(tokens2CppTokens(ln[2:], true))
-	s = c.expand(false, true, &s)
+	s0 := cppTokens(tokens2CppTokens(ln[2:], true))
+	var s cppTokens
+	c.expand(false, true, &s0, &s)
 	if c.cfg.fakeIncludes {
 		t := s[0].Token
 		t.Set(nil, t.Src())
@@ -1290,8 +1288,9 @@ func (c *cpp) include(ln controlLine) {
 	c.includeLevel++
 	defer func() { c.includeLevel-- }()
 
-	s := cppTokens(tokens2CppTokens(ln[2:], true))
-	s = c.expand(false, true, &s)
+	s0 := cppTokens(tokens2CppTokens(ln[2:], true))
+	var s cppTokens
+	c.expand(false, true, &s0, &s)
 	if c.cfg.fakeIncludes {
 		t := s[0].Token
 		t.Set(nil, t.Src())
@@ -1379,9 +1378,9 @@ func (c *cpp) ifGroup(ig *ifGroup) bool {
 }
 
 func (c *cpp) eval(s0 []Token) interface{} {
-	s := cppTokens(tokens2CppTokens(s0, false))
-	s = c.expand(false, true, &s)
-	p := &s
+	s1 := cppTokens(tokens2CppTokens(s0, false))
+	p := &cppTokens{}
+	c.expand(false, true, &s1, p)
 	val := c.expression(p, true)
 	switch t := p.c(); t.Ch {
 	case eof, '#':

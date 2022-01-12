@@ -603,17 +603,9 @@ func TestTranslationPhase4(t *testing.T) {
 		"pr88347.c": {},
 		"pr88423.c": {},
 
-		// Hangs
-		"20001226-1.c":        {}, //TODO
-		"limits-blockid.c":    {}, //TODO
-		"limits-caselabels.c": {}, //TODO
-		"limits-enumconst.c":  {}, //TODO
-		"limits-externalid.c": {}, //TODO
-		"limits-externdecl.c": {}, //TODO
-		"limits-fndefn.c":     {}, //TODO
-
 		// Crashes
-		"pr46534.c": {}, //TODO
+		"pr46534.c":           {}, //TODO
+		"limits-externdecl.c": {}, //TODO
 	}
 	blacklistVM := map[string]struct{}{
 		"var-size-in-var-initializer.c": {}, //TODO
