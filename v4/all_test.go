@@ -582,6 +582,17 @@ func TestTranslationPhase4(t *testing.T) {
 		"binary-trees-2.c": {},
 		"binary-trees-3.c": {},
 	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/arm", "linux/arm64", "linux/s390x":
+		// Uses sse2 headers.
+		blacklistGame["fannkuchredux-4.c"] = struct{}{}
+		blacklistGame["mandelbrot-6.c"] = struct{}{}
+		blacklistGame["nbody-4.c"] = struct{}{}
+		blacklistGame["nbody-8.c"] = struct{}{}
+		blacklistGame["nbody-9.c"] = struct{}{}
+		blacklistGame["spectral-norm-5.c"] = struct{}{}
+		blacklistGame["spectral-norm-6.c"] = struct{}{}
+	}
 	cfg := testCfg()
 	cfg.FS = cFS
 	blacklistGCC := map[string]struct{}{
@@ -604,17 +615,6 @@ func TestTranslationPhase4(t *testing.T) {
 		// Crashes
 		"pr46534.c": {}, //TODO
 	}
-	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "linux/arm", "linux/arm64", "linux/s390x":
-		// Uses sse2 headers.
-		blacklistGame["fannkuchredux-4.c"] = struct{}{}
-		blacklistGame["mandelbrot-6.c"] = struct{}{}
-		blacklistGame["nbody-4.c"] = struct{}{}
-		blacklistGame["nbody-8.c"] = struct{}{}
-		blacklistGame["nbody-9.c"] = struct{}{}
-		blacklistGame["spectral-norm-5.c"] = struct{}{}
-		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	}
 	blacklistVM := map[string]struct{}{
 		"var-size-in-var-initializer.c": {}, //TODO
 		"include.c":                     {}, //TODO
@@ -622,6 +622,9 @@ func TestTranslationPhase4(t *testing.T) {
 		"issue36-2.c":                   {}, //TODO
 		"issue36.c":                     {}, //TODO
 		"test1.c":                       {}, //TODO
+	}
+	blacklictTCC := map[string]struct{}{
+		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
 	}
 	for _, v := range []struct {
 		cfg       *Config
@@ -635,6 +638,8 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", blacklistVM},
+		{cfg, "sqlite-amalgamation-3370200", nil},
+		{cfg, "tcc-0.9.27/tests", blacklictTCC},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
 			testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)

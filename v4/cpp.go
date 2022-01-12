@@ -1516,27 +1516,26 @@ func (c *cpp) logicalAndExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) inclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.exclusiveOrExpression(s, eval)
 	for s.c().Ch == '|' {
-		panic(todo(""))
-		// s.next()
-		// rhs := c.exclusiveOrExpression(s, eval)
-		// if eval {
-		// 	switch x := lhs.(type) {
-		// 	case int64:
-		// 		switch y := rhs.(type) {
-		// 		case int64:
-		// 			lhs = x | y
-		// 		case uint64:
-		// 			lhs = uint64(x) | y
-		// 		}
-		// 	case uint64:
-		// 		switch y := rhs.(type) {
-		// 		case int64:
-		// 			lhs = x | uint64(y)
-		// 		case uint64:
-		// 			lhs = x | y
-		// 		}
-		// 	}
-		// }
+		s.read()
+		rhs := c.exclusiveOrExpression(s, eval)
+		if eval {
+			switch x := lhs.(type) {
+			case int64:
+				switch y := rhs.(type) {
+				case int64:
+					lhs = x | y
+				case uint64:
+					lhs = uint64(x) | y
+				}
+			case uint64:
+				switch y := rhs.(type) {
+				case int64:
+					lhs = x | uint64(y)
+				case uint64:
+					lhs = x | y
+				}
+			}
+		}
 	}
 	return lhs
 }
@@ -1549,27 +1548,26 @@ func (c *cpp) inclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) exclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.andExpression(s, eval)
 	for s.c().Ch == '^' {
-		panic(todo(""))
-		// s.next()
-		// rhs := c.andExpression(s, eval)
-		// if eval {
-		// 	switch x := lhs.(type) {
-		// 	case int64:
-		// 		switch y := rhs.(type) {
-		// 		case int64:
-		// 			lhs = x ^ y
-		// 		case uint64:
-		// 			lhs = uint64(x) ^ y
-		// 		}
-		// 	case uint64:
-		// 		switch y := rhs.(type) {
-		// 		case int64:
-		// 			lhs = x ^ uint64(y)
-		// 		case uint64:
-		// 			lhs = x ^ y
-		// 		}
-		// 	}
-		// }
+		s.read()
+		rhs := c.andExpression(s, eval)
+		if eval {
+			switch x := lhs.(type) {
+			case int64:
+				switch y := rhs.(type) {
+				case int64:
+					lhs = x ^ y
+				case uint64:
+					lhs = uint64(x) ^ y
+				}
+			case uint64:
+				switch y := rhs.(type) {
+				case int64:
+					lhs = x ^ uint64(y)
+				case uint64:
+					lhs = x ^ y
+				}
+			}
+		}
 	}
 	return lhs
 }
@@ -1582,27 +1580,26 @@ func (c *cpp) exclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) andExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.equalityExpression(s, eval)
 	for s.c().Ch == '&' {
-		panic(todo(""))
-		// s.next()
-		// rhs := c.equalityExpression(s, eval)
-		// if eval {
-		// 	switch x := lhs.(type) {
-		// 	case int64:
-		// 		switch y := rhs.(type) {
-		// 		case int64:
-		// 			lhs = x & y
-		// 		case uint64:
-		// 			lhs = uint64(x) & y
-		// 		}
-		// 	case uint64:
-		// 		switch y := rhs.(type) {
-		// 		case int64:
-		// 			lhs = x & uint64(y)
-		// 		case uint64:
-		// 			lhs = x & y
-		// 		}
-		// 	}
-		// }
+		s.read()
+		rhs := c.equalityExpression(s, eval)
+		if eval {
+			switch x := lhs.(type) {
+			case int64:
+				switch y := rhs.(type) {
+				case int64:
+					lhs = x & y
+				case uint64:
+					lhs = uint64(x) & y
+				}
+			case uint64:
+				switch y := rhs.(type) {
+				case int64:
+					lhs = x & uint64(y)
+				case uint64:
+					lhs = x & y
+				}
+			}
+		}
 	}
 	return lhs
 }
@@ -1813,27 +1810,26 @@ func (c *cpp) shiftExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case rune(RSH):
-			panic(todo(""))
-			// s.next()
-			// rhs := c.additiveExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x >> uint(y)
-			// 		case uint64:
-			// 			lhs = uint64(x) >> uint(y)
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			lhs = x >> uint(y)
-			// 		case uint64:
-			// 			lhs = x >> uint(y)
-			// 		}
-			// 	}
-			// }
+			s.read()
+			rhs := c.additiveExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x >> uint(y)
+					case uint64:
+						lhs = uint64(x) >> uint(y)
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						lhs = x >> uint(y)
+					case uint64:
+						lhs = x >> uint(y)
+					}
+				}
+			}
 		default:
 			return lhs
 		}
@@ -1972,47 +1968,46 @@ func (c *cpp) multiplicativeExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case '%':
-			panic(todo(""))
-			// t := s.next()
-			// rhs := c.unaryExpression(s, eval)
-			// if eval {
-			// 	switch x := lhs.(type) {
-			// 	case int64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			if y == 0 {
-			// 				c.err(t, "division by zero")
-			// 				break
-			// 			}
+			t := s.read()
+			rhs := c.unaryExpression(s, eval)
+			if eval {
+				switch x := lhs.(type) {
+				case int64:
+					switch y := rhs.(type) {
+					case int64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
 
-			// 			lhs = x % y
-			// 		case uint64:
-			// 			if y == 0 {
-			// 				c.err(t, "division by zero")
-			// 				break
-			// 			}
+						lhs = x % y
+					case uint64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
 
-			// 			lhs = uint64(x) % y
-			// 		}
-			// 	case uint64:
-			// 		switch y := rhs.(type) {
-			// 		case int64:
-			// 			if y == 0 {
-			// 				c.err(t, "division by zero")
-			// 				break
-			// 			}
+						lhs = uint64(x) % y
+					}
+				case uint64:
+					switch y := rhs.(type) {
+					case int64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
 
-			// 			lhs = x % uint64(y)
-			// 		case uint64:
-			// 			if y == 0 {
-			// 				c.err(t, "division by zero")
-			// 				break
-			// 			}
+						lhs = x % uint64(y)
+					case uint64:
+						if y == 0 {
+							c.eh("%v: division by zero", t.Position())
+							break
+						}
 
-			// 			lhs = x % y
-			// 		}
-			// 	}
-			// }
+						lhs = x % y
+					}
+				}
+			}
 		default:
 			return lhs
 		}
@@ -2030,9 +2025,8 @@ func (c *cpp) multiplicativeExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
 	switch s.c().Ch {
 	case '+':
-		panic(todo(""))
-		// s.next()
-		// return c.unaryExpression(s, eval)
+		s.read()
+		return c.unaryExpression(s, eval)
 	case '-':
 		s.read()
 		expr := c.unaryExpression(s, eval)
@@ -2046,18 +2040,17 @@ func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
 		}
 		return expr
 	case '~':
-		panic(todo(""))
-		// s.next()
-		// expr := c.unaryExpression(s, eval)
-		// if eval {
-		// 	switch x := expr.(type) {
-		// 	case int64:
-		// 		expr = ^x
-		// 	case uint64:
-		// 		expr = ^x
-		// 	}
-		// }
-		// return expr
+		s.read()
+		expr := c.unaryExpression(s, eval)
+		if eval {
+			switch x := expr.(type) {
+			case int64:
+				expr = ^x
+			case uint64:
+				expr = ^x
+			}
+		}
+		return expr
 	case '!':
 		s.read()
 		expr := c.unaryExpression(s, eval)

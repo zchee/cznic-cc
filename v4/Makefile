@@ -25,7 +25,7 @@ clean:
 
 cpu:
 	go test -c -o cpu.test
-	./cpu.test -test.run TestTranslationPhase4 -test.cpuprofile cpu.out
+	./cpu.test -test.run TestTranslationPhase4 -re 20001226-1.c -test.cpuprofile cpu.out
 	go tool pprof --lines cpu.test cpu.out
 
 edit:
@@ -39,5 +39,5 @@ editor: ast.go
 
 mem:
 	go test -c -o mem.test
-	./mem.test -test.run TestTranslationPhase4 -test.memprofile mem.out
+	./mem.test -test.run TestTranslationPhase4 -re 20001226-1.c -test.memprofile mem.out
 	go tool pprof --lines --web --alloc_space mem.test mem.out
