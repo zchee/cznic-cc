@@ -590,10 +590,12 @@ func TestTranslationPhase4(t *testing.T) {
 		"/benchmarksgame-team.pages.debian.net/Include",
 		"/opt/homebrew/include",
 		"/usr/local/Cellar/gcc/11.2.0_1/lib/gcc/11/gcc/x86_64-apple-darwin19/11.2.0/include",
+		"/usr/local/include",
 	)
 	cfgGame.IncludePaths = append(
 		cfgGame.IncludePaths, 
 		"/opt/homebrew/include",
+		"/usr/local/include",
 	)
 	blacklistGame := map[string]struct{}{
 		// Missing <apr_pools.h>
@@ -614,7 +616,7 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklistGame["nbody-9.c"] = struct{}{}
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "darwin/amd64", "darwin/arm64":
+	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // aes.c:30:10: include file not found: "../endian.h"
 	}
 	cfg := testCfg()
