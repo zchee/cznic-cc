@@ -47,6 +47,8 @@ func init() {
 	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
 	case "netbsd/amd64":
 		testCfg0.SysIncludePaths = append(testCfg0.SysIncludePaths, "/usr/pkg/include")
+	case "freebsd/386":
+		testCfg0.SysIncludePaths = append(testCfg0.SysIncludePaths, "/usr/local/include")
 	}
 	testCfg0.SysIncludePaths = testCfg0.SysIncludePaths[:len(testCfg0.SysIncludePaths):len(testCfg0.SysIncludePaths)]
 	testCfg0.IncludePaths = append([]string{""}, testCfg0.IncludePaths...)
@@ -588,7 +590,7 @@ func TestTranslationPhase4(t *testing.T) {
 	var blacklistCompCert map[string]struct{}
 	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
 	case "linux/s390x":
-		blacklistCompCert = map[string]struct{}{"aes.c": {}}
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // Unsupported endianness.
 		fallthrough
 	case "linux/arm", "linux/arm64":
 		// Uses sse2 headers.
@@ -599,6 +601,8 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklistGame["nbody-9.c"] = struct{}{}
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
+	case "freebsd/386":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // aes.c:30:10: include file not found: "../endian.h"
 	}
 	cfg := testCfg()
 	cfg.FS = cFS
@@ -625,7 +629,7 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
 		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
-		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
+		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
