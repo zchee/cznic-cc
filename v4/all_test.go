@@ -583,10 +583,17 @@ func TestTranslationPhase4(t *testing.T) {
 	cfgGame.FS = cFS
 	cfgGame.SysIncludePaths = append(
 		cfgGame.SysIncludePaths, 
-		"/benchmarksgame-team.pages.debian.net/Include",
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/malloc",
-		"/usr/local/Cellar/gcc/11.2.0_1/lib/gcc/11/gcc/x86_64-apple-darwin19/11.2.0/include",
 		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/libxml",
+		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/malloc",
+		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/libxml",
+		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/malloc",
+		"/benchmarksgame-team.pages.debian.net/Include",
+		"/opt/homebrew/include",
+		"/usr/local/Cellar/gcc/11.2.0_1/lib/gcc/11/gcc/x86_64-apple-darwin19/11.2.0/include",
+	)
+	cfgGame.IncludePaths = append(
+		cfgGame.IncludePaths, 
+		"/opt/homebrew/include",
 	)
 	blacklistGame := map[string]struct{}{
 		// Missing <apr_pools.h>
@@ -607,7 +614,7 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklistGame["nbody-9.c"] = struct{}{}
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "darwin/amd64":
+	case "freebsd/386", "darwin/amd64", "darwin/arm64":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // aes.c:30:10: include file not found: "../endian.h"
 	}
 	cfg := testCfg()
