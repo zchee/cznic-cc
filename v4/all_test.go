@@ -563,9 +563,8 @@ func TestPreprocess(t *testing.T) {
 
 func TestTCCExpand(t *testing.T) {
 	testCPPExpand(t, "testdata/tcc-0.9.27/tests/pp/", map[string]struct{}{
-		"11.c":         {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
-		"16.c":         {}, // We don't produce warnings on macro redefinition.
-		"pp-counter.c": {}, // __COUNTER__ not supported
+		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
+		"16.c": {}, // We don't produce warnings on macro redefinition.
 	}, true)
 }
 
@@ -599,21 +598,13 @@ func TestTranslationPhase4(t *testing.T) {
 		// assertions are deprecated.
 		"950919-1.c": {},
 
-		// Needs include files not in ccorpus.
+		// Need include files not in ccorpus.
 		"pr88347.c": {},
 		"pr88423.c": {},
-
-		// Crashes
-		"pr46534.c":           {}, //TODO
-		"limits-externdecl.c": {}, //TODO
 	}
-	blacklistVM := map[string]struct{}{
-		"var-size-in-var-initializer.c": {}, //TODO
-		"include.c":                     {}, //TODO
-		"endif.c":                       {}, //TODO
-		"issue36-2.c":                   {}, //TODO
-		"issue36.c":                     {}, //TODO
-		"test1.c":                       {}, //TODO
+	blacklistVNMakarov := map[string]struct{}{
+		// #endif without #if
+		"endif.c": {},
 	}
 	blacklictTCC := map[string]struct{}{
 		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
@@ -629,7 +620,7 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
-		{cfg, "github.com/vnmakarov", blacklistVM},
+		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
 		{cfg, "sqlite-amalgamation-3370200", nil},
 		{cfg, "tcc-0.9.27/tests", blacklictTCC},
 	} {

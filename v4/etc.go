@@ -135,6 +135,8 @@ func env(key, defaultVal string) string {
 }
 
 func toksDump(v interface{}) string {
+	// s0 := fmt.Sprintf("%T(%[1]p)", v)
+	s0 := ""
 	var a []string
 	delta := 0
 	switch x := v.(type) {
@@ -143,12 +145,12 @@ func toksDump(v interface{}) string {
 	case *cppTokens:
 		return toksDump(*x)
 	case cppTokens:
-		if len(x) != 0 {
-			p := x[0].Position()
-			p.Filename = filepath.Base(p.Filename)
-			a = append(a, p.String())
-			delta = -1
-		}
+		// if len(x) != 0 {
+		// 	p := x[0].Position()
+		// 	p.Filename = filepath.Base(p.Filename)
+		// 	a = append(a, p.String())
+		// 	delta = -1
+		// }
 		for _, v := range x {
 			s := string(v.Src())
 			// if hs := v.hs.String(); hs != "[]" {
@@ -161,12 +163,12 @@ func toksDump(v interface{}) string {
 		for _, v := range x {
 			a = append(a, toksDump(v))
 		}
-		return fmt.Sprintf("%v.%d", a, len(a))
+		return fmt.Sprintf("%s%v.%d", s0, a, len(a))
 	case controlLine:
 		return toksDump([]Token(x))
 	case *tokenizer:
 		t := x.peek(0)
-		return fmt.Sprintf("[%T %v]", x, &t)
+		return fmt.Sprintf("%s[%T %v]", s0, x, &t)
 	case []Token:
 		for _, v := range x {
 			a = append(a, string(v.Src()))
@@ -178,11 +180,11 @@ func toksDump(v interface{}) string {
 		for i := len(d) - 1; i >= 0; i-- {
 			a = append(a, toksDump(d[i]))
 		}
-		return fmt.Sprintf("[%v].%d", strings.Join(a, " · "), len(a))
+		return fmt.Sprintf("%s[%v].%d", s0, strings.Join(a, " · "), len(a))
 	default:
 		panic(todo("%T", x))
 	}
-	return fmt.Sprintf("%q.%d", a, len(a)+delta)
+	return fmt.Sprintf("%s%q.%d", s0, a, len(a)+delta)
 }
 
 func tokens2CppTokens(s []Token, skipFirstSep bool) (r []cppToken) {

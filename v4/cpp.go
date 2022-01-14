@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -239,10 +240,7 @@ func (m *Macro) fp() []string {
 	return m.params
 }
 
-func (m *Macro) ts() *cppTokens {
-	r := m.replacementList
-	return &r
-}
+func (m *Macro) ts() cppTokens { return m.replacementList }
 
 type tokenSequence interface {
 	prepend(tokenSequence) tokenSequence
@@ -331,10 +329,13 @@ type tokenizer struct {
 	c   *cpp
 	in  []cppToken
 	out cppTokens
+	q   *dequeue
 }
 
 func newTokenizer(c *cpp) *tokenizer {
-	return &tokenizer{c: c}
+	t := &tokenizer{c: c}
+	t.q = &dequeue{t}
+	return t
 }
 
 func (t *tokenizer) prepend(tokenSequence) tokenSequence {
@@ -381,7 +382,7 @@ func (t *tokenizer) skip(n int) {
 
 func (t *tokenizer) token() (tok Token) {
 	for len(t.out) == 0 {
-		t.c.expand(true, false, &dequeue{t}, &t.out)
+		t.c.expand(true, false, t.q, &t.out)
 	}
 	tok = t.out[0].Token
 	if tok.Ch != eof {
@@ -465,6 +466,7 @@ type cpp struct {
 	tokenizer   *tokenizer
 	tos         interface{}
 
+	counter      int // __COUNTER__
 	includeLevel int
 
 	closed bool
@@ -527,10 +529,10 @@ func (c *cpp) undent() string {
 // [1], pg 1.
 func (c *cpp) expand(outer, eval bool, TS tokenSequence, w *cppTokens) {
 	// trc("* %s%v outer %v (%v)", c.indent(), toksDump(TS), outer, origin(2))
-	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
+	// defer func() { trc("->%s%v (%v)", c.undent(), toksDump(w), origin(2)) }()
 more:
 	t := TS.read()
-	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(TS))
+	// trc("@ %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(TS))
 	if t.Ch == eof {
 		// if TS is {} then
 		//	return {};
@@ -564,13 +566,21 @@ more:
 	out:
 		switch {
 		default:
-			// trc("  %s<%s is a ()-less macro, expanding to %s>", c.indent(), T.Src(), toksDump(m.replacementList))
-			// defer func() { trc("  %s<%s expanded> %s", c.undent(), T.Src(), toksDump(subst)) }()
+			// trc("  %s<%s is a ()-less macro, replacing by %s>", c.indent(), T.Src(), toksDump(m.replacementList))
+			// defer func(n int) { trc("  %s<%s expanded to> %s", c.undent(), T.Src(), toksDump((*w)[n:])) }(len(*w))
+			if src == "__COUNTER__" {
+				r := m.replacementList[0]
+				r.s = t.s
+				r.pos = t.pos
+				r.Set(t.Sep(), []byte(fmt.Sprint(c.counter)))
+				c.counter++
+				m.replacementList[0] = r
+			}
 			// if TS is T^HS • TS’ and T is a "()-less macro" then
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
 			subst = c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil)
-			c.expand(false, eval, TS.prepend(&subst), w)
-			return
+			TS.prepend(&subst)
+			goto more
 		case m.IsFnLike:
 			t2, skip := TS.peekNonBlank()
 			if t2.Ch == '(' {
@@ -586,14 +596,14 @@ more:
 					break out
 				}
 
-				// trc("  %s<%s is a (%v)'d macro, expanding to %s> using args %v", c.indent(), T.Src(), m.fp(), toksDump(m.replacementList), toksDump(args))
-				// defer func() { trc("  %s<%s expanded> %s", c.undent(), T.Src(), toksDump(subst)) }()
+				// trc("  %s<%s is a (%v)'d macro, replacing by %s> using args %v", c.indent(), T.Src(), m.fp(), toksDump(m.replacementList), toksDump(args))
+				// defer func(n int) { trc("  %s<%s expanded to> %s", c.undent(), T.Src(), toksDump((*w)[n:])) }(len(*w))
 				// if TS is T^HS • ( • TS’ and T is a "()’d macro" then
 				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 				//	return expand(subst(ts(T),fp(T),actuals,(HS∩HS’)∪{T},{}) • TS’’);
 				subst = c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil)
-				c.expand(false, eval, TS.prepend(&subst), w)
-				return
+				TS.prepend(&subst)
+				goto more
 			}
 		}
 
@@ -602,54 +612,44 @@ more:
 ret:
 	// note TS must be T HS • TS’
 	// return T HS • expand(TS’);
-	if outer {
-		*w = append(*w, t)
-		return
-	}
-
-	if d, ok := TS.(*dequeue); ok {
-		q := *d
-		if len(q) != 0 {
-			switch q[len(q)-1].(type) {
-			case *tokenizer:
-				*w = append(*w, t)
-				return
-			}
-		}
-	}
-
 	*w = append(*w, t)
-	c.expand(false, eval, TS, w)
+	if !outer {
+		goto more
+	}
+
 	return
 }
 
 // [1], pg 2.
-func (c *cpp) subst(eval bool, m *Macro, IS *cppTokens, FP []string, AP []cppTokens, HS hideSet, OS cppTokens) (r cppTokens) {
+func (c *cpp) subst(eval bool, m *Macro, IS cppTokens, FP []string, AP []cppTokens, HS hideSet, OS cppTokens) (r cppTokens) {
 	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
+	var expandedArgs map[int]cppTokens
 more:
-	t := IS.read()
 	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(IS))
-	if t.Ch == eof {
+	if len(IS) == 0 {
 		// if IS is {} then
 		//	return hsadd(HS,OS);
 		return c.hsAdd(HS, OS)
 	}
 
+	t := IS[0]
+	IS = IS[1:]
 	if t.Ch == '#' {
 		if t2, skip := IS.peekNonBlank(); t2.Ch == rune(IDENTIFIER) {
 			if i := m.is(string(t2.Src())); i >= 0 {
 				// if IS is # • T • IS’ and T is FP[i] then
 				//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
-				IS.skip(skip + 1)
+				IS = IS[skip+1:]
 				OS = append(OS, c.stringize(c.apSelect(m, t2, AP, i)))
 				goto more
 			}
 		}
 	}
 
-	if t.Ch == ' ' && IS.peek(0).Ch == rune(PPPASTE) {
-		t = IS.read()
+	if t.Ch == ' ' && len(IS) != 0 && IS[0].Ch == rune(PPPASTE) {
+		t = IS[0]
+		IS = IS[1:]
 	}
 	if t.Ch == rune(PPPASTE) {
 		t2, skip := IS.peekNonBlank()
@@ -665,7 +665,7 @@ more:
 
 				//	else
 				//		return subst(IS’,FP,AP,HS,glue(OS,select(i,AP )));
-				IS.skip(skip + 1)
+				IS = IS[skip+1:]
 				OS = c.glue(OS, c.apSelect(m, t2, AP, i))
 				goto more
 			}
@@ -673,7 +673,7 @@ more:
 
 		// else if IS is ## • T HS’ • IS’ then
 		//	return subst(IS’,FP,AP,HS,glue(OS,T^HS’));
-		IS.skip(skip + 1)
+		IS = IS[skip+1:]
 		OS = c.glue(OS, cppTokens{t2})
 		goto more
 	}
@@ -684,12 +684,12 @@ more:
 				// if IS is T • ##^HS’ • IS’ and T is FP[i] then
 				//	if select(i,AP ) is {} then /* only if actuals can be empty */
 				if i >= len(AP) || len(AP[i]) == 0 {
-					IS.skip(skip + 1) // ##
+					IS = IS[skip+1:] // ##
 					t2, skip := IS.peekNonBlank()
 					if j := m.is(string(t2.Src())); j >= 0 {
 						//		if IS’ is T’ • IS’’ and T’ is FP[j] then
 						//			return subst(IS’’,FP,AP,HS,OS • select(j,AP));
-						IS.skip(skip + 1)
+						IS = IS[skip+1:]
 						OS = append(OS, c.apSelect(m, t, AP, j)...)
 						goto more
 					}
@@ -711,7 +711,17 @@ more:
 		if i := m.is(string(t.Src())); i >= 0 {
 			// if IS is T • IS’ and T is FP[i] then
 			//	return subst(IS’,FP,AP,HS,OS • expand(select(i,AP )));
-			c.expand(false, eval, c.apSelectP(m, t, AP, i), &OS)
+			switch arg, ok := expandedArgs[i]; {
+			case ok:
+				OS = append(OS, arg...)
+			default:
+				n := len(OS)
+				c.expand(false, eval, c.apSelectP(m, t, AP, i), &OS)
+				if expandedArgs == nil {
+					expandedArgs = map[int]cppTokens{}
+				}
+				expandedArgs[i] = OS[n:]
+			}
 			goto more
 		}
 	}
@@ -873,16 +883,38 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 	if m := c.macros[nm]; m != nil {
 		switch nm {
 		case "__FILE__":
+			r := m.replacementList[0]
+			r.s = t.s
+			r.pos = t.pos
 			s := fmt.Sprintf(`"%s"`, t.Position().Filename)
-			if !bytes.Equal(t.Sep(), m.replacementList[0].Sep()) || string(m.replacementList[0].Src()) != s {
-				m.replacementList[0].Set(t.Sep(), []byte(s))
+			if !bytes.Equal(t.Sep(), r.Sep()) || string(r.Src()) != s {
+				r.Set(t.Sep(), []byte(s))
+				m.replacementList[0] = r
 			}
 		case "__LINE__":
+			r := m.replacementList[0]
+			r.s = t.s
+			r.pos = t.pos
 			s := fmt.Sprintf(`"%d"`, t.Position().Line)
-			if !bytes.Equal(t.Sep(), m.replacementList[0].Sep()) || string(m.replacementList[0].Src()) != s {
-				m.replacementList[0].Set(t.Sep(), []byte(s))
+			if !bytes.Equal(t.Sep(), r.Sep()) || string(r.Src()) != s {
+				r.Set(t.Sep(), []byte(s))
+				m.replacementList[0] = r
 			}
 		}
+		return m
+	}
+
+	switch nm {
+	case "__COUNTER__":
+		nmt := t
+		t.Ch = rune(PPNUMBER)
+		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
+		if err != nil {
+			c.eh("%v", errorf("", err))
+			return nil
+		}
+
+		c.macros[nm] = m
 		return m
 	}
 
@@ -924,7 +956,6 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 
 		c.macros[nm] = m
 		return m
-		panic(todo(""))
 	case "__TIME__":
 		nmt := t
 		t.Set(t.Sep(), []byte(time.Now().Format("\"15:04:05\"")))
@@ -936,7 +967,6 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 
 		c.macros[nm] = m
 		return m
-		panic(todo(""))
 	default:
 		panic(todo("%v: %q", t.Position(), nm))
 	}
@@ -969,9 +999,15 @@ func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
 		return ts
 	}
 
-	switch c.macro(t.Token, string(t.Src())) {
+	nm := string(t.Src())
+	switch c.macro(t.Token, nm) {
 	case nil:
-		t.Token = zeroTok
+		switch nm {
+		case "__has_include":
+			t.Token = oneTok
+		default:
+			t.Token = zeroTok
+		}
 	default:
 		t.Token = oneTok
 	}
@@ -1239,7 +1275,7 @@ func (c *cpp) includeNext(ln controlLine) {
 	}
 
 	var nm string
-	raw := string(s[0].Src())
+	raw := c.includeArg(s)
 	switch {
 	case strings.HasPrefix(raw, `"`) && strings.HasSuffix(raw, `"`):
 		nm = raw[1 : len(raw)-1]
@@ -1301,7 +1337,7 @@ func (c *cpp) include(ln controlLine) {
 		return
 	}
 
-	switch raw := string(s[0].Src()); {
+	switch raw := c.includeArg(s); {
 	case strings.HasPrefix(raw, `"`) && strings.HasSuffix(raw, `"`):
 		nm := raw[1 : len(raw)-1]
 		for _, v := range c.cfg.IncludePaths {
@@ -1329,6 +1365,79 @@ func (c *cpp) include(ln controlLine) {
 		c.eh("%v: include file not found: %s", s[0].Position(), raw)
 	default:
 		c.eh("%v: invalid argument", s[0].Position())
+	}
+}
+
+func (c *cpp) hasInclude(t Token, raw string) bool {
+	switch {
+	case strings.HasPrefix(raw, `"`) && strings.HasSuffix(raw, `"`):
+		nm := raw[1 : len(raw)-1]
+		for _, v := range c.cfg.IncludePaths {
+			if v == "" {
+				v, _ = filepath.Split(t.Position().Filename)
+			}
+			pth := filepath.Join(v, nm)
+			if c.hasFile(t, pth) {
+				return true
+			}
+		}
+	case strings.HasPrefix(raw, "<") && strings.HasSuffix(raw, ">"):
+		nm := raw[1 : len(raw)-1]
+		for _, v := range c.cfg.SysIncludePaths {
+			pth := filepath.Join(v, nm)
+			if c.hasFile(t, pth) {
+				return true
+			}
+		}
+	default:
+		c.eh("%v: invalid argument", t.Position())
+	}
+	return false
+}
+
+func (c *cpp) hasFile(t Token, fn string) bool {
+	var fi os.FileInfo
+	var err error
+	switch fs := c.cfg.FS; {
+	case fs != nil:
+		f, err := fs.Open(fn)
+		if err != nil {
+			return false
+		}
+
+		defer f.Close()
+		if fi, err = f.Stat(); err != nil {
+			return false
+		}
+	default:
+		if fi, err = os.Stat(fn); err != nil {
+			return false
+		}
+	}
+
+	return !fi.IsDir()
+}
+
+func (c *cpp) includeArg(s cppTokens) string {
+	switch t := s[0]; t.Ch {
+	case rune(STRINGLITERAL), rune(HEADER_NAME):
+		return string(t.Src())
+	case '<':
+		b := t.Src()
+		s = s[1:]
+	out:
+		for len(s) != 0 {
+			t = s[0]
+			s = s[1:]
+			b = append(b, t.Src()...)
+			switch t.Ch {
+			case '>':
+				break out
+			}
+		}
+		return string(b)
+	default:
+		return ""
 	}
 }
 
@@ -2091,6 +2200,66 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 		return int64(r)
 	case rune(IDENTIFIER):
 		s.read()
+		switch string(t.Src()) {
+		case "__has_include":
+			t0 := t
+			var arg string
+			if t := s.c(); t.Ch != '(' {
+				c.eh("%v: expected '('", t.Position())
+				for {
+					s.read()
+					switch s.c().Ch {
+					case ')':
+						s.read()
+						return 0
+					case eof:
+						return 0
+					}
+				}
+				return 0
+			}
+			s.read()
+			var b []byte
+		out:
+			switch t := s.c(); t.Ch {
+			case rune(STRINGLITERAL):
+				s.read()
+				arg = string(t.Src())
+			default:
+				for {
+					b = append(b, t.Src()...)
+					s.read()
+					switch t = s.c(); t.Ch {
+					case ')', eof:
+						arg = string(b)
+						break out
+					}
+				}
+			}
+			switch t = s.c(); t.Ch {
+			case ')':
+				s.read()
+				if c.hasInclude(t0, arg) {
+					return int64(1)
+				}
+
+				return int64(0)
+			default:
+				c.eh("%v: expected ')'", t.Position())
+				return int64(0)
+			}
+		}
+
+		if s.c().Ch == '(' {
+			for {
+				s.read()
+				switch s.c().Ch {
+				case ')', eof:
+					s.read()
+					return 0
+				}
+			}
+		}
 		return int64(0)
 	case rune(PPNUMBER):
 		s.read()
