@@ -44,10 +44,14 @@ func init() {
 		panic(errorf("cannot acquire host configuration: %v", err))
 	}
 
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "netbsd/amd64":
+		testCfg0.SysIncludePaths = append(testCfg0.SysIncludePaths, "/usr/pkg/include")
+	}
+	testCfg0.SysIncludePaths = testCfg0.SysIncludePaths[:len(testCfg0.SysIncludePaths):len(testCfg0.SysIncludePaths)]
 	testCfg0.IncludePaths = append([]string{""}, testCfg0.IncludePaths...)
 	testCfg0.IncludePaths = append(testCfg0.IncludePaths, testCfg0.SysIncludePaths...)
 	testCfg0.IncludePaths = testCfg0.IncludePaths[:len(testCfg0.IncludePaths):len(testCfg0.IncludePaths)]
-	testCfg0.SysIncludePaths = testCfg0.SysIncludePaths[:len(testCfg0.SysIncludePaths):len(testCfg0.SysIncludePaths)]
 	if testCfg0.ABI, err = NewABI(runtime.GOOS, runtime.GOARCH); err != nil {
 		panic(errorf("cannot configure ABI: %v", err))
 	}
