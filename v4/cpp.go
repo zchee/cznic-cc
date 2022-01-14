@@ -967,6 +967,8 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 
 		c.macros[nm] = m
 		return m
+	case "__STDC__":
+		return nil
 	default:
 		panic(todo("%v: %q", t.Position(), nm))
 	}
