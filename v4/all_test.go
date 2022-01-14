@@ -581,8 +581,12 @@ func TestTranslationPhase4(t *testing.T) {
 		"binary-trees-2.c": {},
 		"binary-trees-3.c": {},
 	}
+	var blacklistCompCert map[string]struct{}
 	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "linux/arm", "linux/arm64", "linux/s390x":
+	case "linux/s390x":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}}
+		fallthrough
+	case "linux/arm", "linux/arm64":
 		// Uses sse2 headers.
 		blacklistGame["fannkuchredux-4.c"] = struct{}{}
 		blacklistGame["mandelbrot-6.c"] = struct{}{}
@@ -615,7 +619,7 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklist map[string]struct{}
 	}{
 		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
-		{cfg, "CompCert-3.6/test/c", nil},
+		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
 		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
 		{cfg, "github.com/cxgo", nil},

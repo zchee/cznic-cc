@@ -1180,6 +1180,16 @@ func (c *cpp) nextLine() (r textLine) {
 				}
 			case "line":
 				// Handled in cppParser.
+			case "error":
+				x = x[:len(x)-1] // '\n'
+				var b []byte
+				for i, v := range x[2:] {
+					if i != 0 && len(v.Sep()) != 0 {
+						b = append(b, ' ')
+					}
+					b = append(b, v.Src()...)
+				}
+				c.eh("%v: %s", x[1].Position(), b)
 			default:
 				panic(todo("%v: %q", x[0].Position(), x[1].Src()))
 			}
@@ -2211,12 +2221,12 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 					switch s.c().Ch {
 					case ')':
 						s.read()
-						return 0
+						return int64(0)
 					case eof:
-						return 0
+						return int64(0)
 					}
 				}
-				return 0
+				return int64(0)
 			}
 			s.read()
 			var b []byte
@@ -2256,7 +2266,7 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 				switch s.c().Ch {
 				case ')', eof:
 					s.read()
-					return 0
+					return int64(0)
 				}
 			}
 		}
