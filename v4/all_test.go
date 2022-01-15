@@ -589,6 +589,8 @@ func TestTranslationPhase4(t *testing.T) {
 		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/malloc",
 		"/benchmarksgame-team.pages.debian.net/Include",
 		"/opt/homebrew/include",
+		"/usr/include/sys",
+		"/usr/lib/clang/11.1.0/include",
 		"/usr/local/Cellar/gcc/11.2.0_1/lib/gcc/11/gcc/x86_64-apple-darwin19/11.2.0/include",
 		"/usr/local/include",
 	)
@@ -649,6 +651,12 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklistGame["regex-redux-3.c"] = struct{}{}        // include file not found: <pcre.h>
 		blacklistGame["regex-redux-4.c"] = struct{}{}        // include file not found: <pcre.h>
 		blacklistGame["regex-redux-5.c"] = struct{}{}        // include file not found: <pcre2.h>
+	case "openbsd/amd64":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
+		blacklistGame["mandelbrot-7.c"] = struct{}{}         // include file not found: <omp.h>
+		blacklistGame["pidigits-6.c"] = struct{}{}           // include file not found: <threads.h>
+		blacklistGame["regex-redux-3.c"] = struct{}{}        // include file not found: <omp.h>
+		blacklistGame["spectral-norm-4.c"] = struct{}{}      // include file not found: <omp.h>
 	}
 	var files, ok, skip, fails int
 	for _, v := range []struct {
