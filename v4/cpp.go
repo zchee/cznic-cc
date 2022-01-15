@@ -1303,6 +1303,7 @@ func (c *cpp) includeNext(ln controlLine) {
 	dir = filepath.Clean(dir)
 	ok := false
 	for _, v := range c.cfg.SysIncludePaths {
+		v = filepath.Clean(v)
 		if !ok {
 			if dir == v {
 				ok = true

@@ -597,30 +597,14 @@ func TestTranslationPhase4(t *testing.T) {
 		"/opt/homebrew/include",
 		"/usr/local/include",
 	)
+	cfg := testCfg()
+	cfg.FS = cFS
+	var blacklistCompCert, blacklistCxgo map[string]struct{}
 	blacklistGame := map[string]struct{}{
 		// Missing <apr_pools.h>
 		"binary-trees-2.c": {},
 		"binary-trees-3.c": {},
 	}
-	var blacklistCompCert map[string]struct{}
-	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "linux/s390x":
-		blacklistCompCert = map[string]struct{}{"aes.c": {}} // Unsupported endianness.
-		fallthrough
-	case "linux/arm", "linux/arm64":
-		// Uses sse2 headers.
-		blacklistGame["fannkuchredux-4.c"] = struct{}{}
-		blacklistGame["mandelbrot-6.c"] = struct{}{}
-		blacklistGame["nbody-4.c"] = struct{}{}
-		blacklistGame["nbody-8.c"] = struct{}{}
-		blacklistGame["nbody-9.c"] = struct{}{}
-		blacklistGame["spectral-norm-5.c"] = struct{}{}
-		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64":
-		blacklistCompCert = map[string]struct{}{"aes.c": {}} // aes.c:30:10: include file not found: "../endian.h"
-	}
-	cfg := testCfg()
-	cfg.FS = cFS
 	blacklistGCC := map[string]struct{}{
 		// assertions are deprecated.
 		"950919-1.c": {},
@@ -636,6 +620,36 @@ func TestTranslationPhase4(t *testing.T) {
 	blacklictTCC := map[string]struct{}{
 		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
 	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/s390x":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // Unsupported endianness.
+		fallthrough
+	case "linux/arm", "linux/arm64":
+		// Uses sse2 headers.
+		blacklistGame["fannkuchredux-4.c"] = struct{}{}
+		blacklistGame["mandelbrot-6.c"] = struct{}{}
+		blacklistGame["nbody-4.c"] = struct{}{}
+		blacklistGame["nbody-8.c"] = struct{}{}
+		blacklistGame["nbody-9.c"] = struct{}{}
+		blacklistGame["spectral-norm-5.c"] = struct{}{}
+		blacklistGame["spectral-norm-6.c"] = struct{}{}
+	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
+	case "windows/amd64", "windows/386":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
+		blacklistCxgo = map[string]struct{}{"inet.c": {}} // include file not found: <arpa/inet.h>
+		blacklistGCC["loop-2f.c"] = struct{}{} // include file not found: <sys/mman.h>
+		blacklistGCC["loop-2g.c"] = struct{}{} // include file not found: <sys/mman.h>
+		blacklistGame["fasta-4.c"] = struct{}{} // include file not found: <err.h>
+		blacklistGame["pidigits-2.c"] = struct{}{} // include file not found: <gmp.h>
+		blacklistGame["pidigits-6.c"] = struct{}{} // include file not found: <threads.h>
+		blacklistGame["pidigits-9.c"] = struct{}{} // include file not found: <gmp.h>
+		blacklistGame["pidigits.c"] = struct{}{} // include file not found: <gmp.h>
+		blacklistGame["regex-redux-2.c"] = struct{}{} // include file not found: <pcre.h>
+		blacklistGame["regex-redux-3.c"] = struct{}{} // include file not found: <pcre.h>
+		blacklistGame["regex-redux-4.c"] = struct{}{} // include file not found: <pcre.h>
+		blacklistGame["regex-redux-5.c"] = struct{}{} // include file not found: <pcre2.h>
+	}
 	for _, v := range []struct {
 		cfg       *Config
 		dir       string
@@ -645,7 +659,7 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
 		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
-		{cfg, "github.com/cxgo", nil},
+		{cfg, "github.com/cxgo", blacklistCxgo},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
 		{cfg, "sqlite-amalgamation-3370200", nil},
