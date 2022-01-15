@@ -582,7 +582,7 @@ func TestTranslationPhase4(t *testing.T) {
 	cfgGame := testCfg()
 	cfgGame.FS = cFS
 	cfgGame.SysIncludePaths = append(
-		cfgGame.SysIncludePaths, 
+		cfgGame.SysIncludePaths,
 		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/libxml",
 		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/malloc",
 		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/libxml",
@@ -593,7 +593,7 @@ func TestTranslationPhase4(t *testing.T) {
 		"/usr/local/include",
 	)
 	cfgGame.IncludePaths = append(
-		cfgGame.IncludePaths, 
+		cfgGame.IncludePaths,
 		"/opt/homebrew/include",
 		"/usr/local/include",
 	)
@@ -637,26 +637,27 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
 	case "windows/amd64", "windows/386":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
-		blacklistCxgo = map[string]struct{}{"inet.c": {}} // include file not found: <arpa/inet.h>
-		blacklistGCC["loop-2f.c"] = struct{}{} // include file not found: <sys/mman.h>
-		blacklistGCC["loop-2g.c"] = struct{}{} // include file not found: <sys/mman.h>
-		blacklistGame["fasta-4.c"] = struct{}{} // include file not found: <err.h>
-		blacklistGame["pidigits-2.c"] = struct{}{} // include file not found: <gmp.h>
-		blacklistGame["pidigits-6.c"] = struct{}{} // include file not found: <threads.h>
-		blacklistGame["pidigits-9.c"] = struct{}{} // include file not found: <gmp.h>
-		blacklistGame["pidigits.c"] = struct{}{} // include file not found: <gmp.h>
-		blacklistGame["regex-redux-2.c"] = struct{}{} // include file not found: <pcre.h>
-		blacklistGame["regex-redux-3.c"] = struct{}{} // include file not found: <pcre.h>
-		blacklistGame["regex-redux-4.c"] = struct{}{} // include file not found: <pcre.h>
-		blacklistGame["regex-redux-5.c"] = struct{}{} // include file not found: <pcre2.h>
+		blacklistCxgo = map[string]struct{}{"inet.c": {}}    // include file not found: <arpa/inet.h>
+		blacklistGCC["loop-2f.c"] = struct{}{}               // include file not found: <sys/mman.h>
+		blacklistGCC["loop-2g.c"] = struct{}{}               // include file not found: <sys/mman.h>
+		blacklistGame["fasta-4.c"] = struct{}{}              // include file not found: <err.h>
+		blacklistGame["pidigits-2.c"] = struct{}{}           // include file not found: <gmp.h>
+		blacklistGame["pidigits-6.c"] = struct{}{}           // include file not found: <threads.h>
+		blacklistGame["pidigits-9.c"] = struct{}{}           // include file not found: <gmp.h>
+		blacklistGame["pidigits.c"] = struct{}{}             // include file not found: <gmp.h>
+		blacklistGame["regex-redux-2.c"] = struct{}{}        // include file not found: <pcre.h>
+		blacklistGame["regex-redux-3.c"] = struct{}{}        // include file not found: <pcre.h>
+		blacklistGame["regex-redux-4.c"] = struct{}{}        // include file not found: <pcre.h>
+		blacklistGame["regex-redux-5.c"] = struct{}{}        // include file not found: <pcre2.h>
 	}
+	var files, ok, skip, fails int
 	for _, v := range []struct {
 		cfg       *Config
 		dir       string
 		blacklist map[string]struct{}
 	}{
-		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
 		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
+		{cfg, "ccgo", nil},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
 		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
 		{cfg, "github.com/cxgo", blacklistCxgo},
@@ -664,16 +665,21 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
 		{cfg, "sqlite-amalgamation-3370200", nil},
 		{cfg, "tcc-0.9.27/tests", blacklictTCC},
+		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
-			testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
+			f, o, s, n := testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
+			files += f
+			ok += o
+			skip += s
+			fails += n
 		})
 	}
+	t.Logf("TOTAL: files %v, skip %v, ok %v, fails %v", files, skip, ok, fails)
 }
 
-func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) {
+func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int) {
 	var fails []string
-	var files, ok, skip int
 	err := walk(dir, func(pth string, fi os.FileInfo) error {
 		if fi.IsDir() {
 			return nil
@@ -723,4 +729,40 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 		t.Log(v)
 	}
 	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
+	return files, ok, skip, len(fails)
+}
+
+// https://gitlab.com/cznic/cc/-/issues/127
+func TestIssue127(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := os.Chdir(wd); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if err := os.Chdir(filepath.FromSlash("testdata/issue127/")); err != nil {
+		t.Error(err)
+		return
+	}
+
+	cd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("working directory: %s", cd)
+	cfg := testCfg()
+	cfg.IncludePaths = append(cfg.IncludePaths, "include")
+	if err := Preprocess(
+		cfg,
+		[]Source{{Name: "main.c"}},
+		io.Discard,
+	); err != nil {
+		t.Fatalf("%v", err)
+	}
 }
