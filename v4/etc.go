@@ -93,6 +93,19 @@ func errorf(s string, args ...interface{}) error {
 
 // printHooks configure strutil.PrettyString for pretty printing Token values.
 var printHooks = strutil.PrettyPrintHooks{
+	reflect.TypeOf(Token{}): func(f strutil.Formatter, v interface{}, prefix, suffix string) {
+		t := v.(Token)
+		if t == (Token{}) {
+			return
+		}
+
+		f.Format(prefix)
+		if p := t.Position(); p.IsValid() {
+			f.Format("%v: ", p)
+		}
+		f.Format("%s %q", t.Name(), t.Src())
+		f.Format(suffix)
+	},
 	reflect.TypeOf((*Token)(nil)): func(f strutil.Formatter, v interface{}, prefix, suffix string) {
 		t := v.(*Token)
 		if t == nil {

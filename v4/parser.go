@@ -5,268 +5,357 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
-	"strconv"
-
-	"modernc.org/token"
+	"fmt"
 )
 
-// cppParser produces a preprocessingFile.
-type cppParser struct {
-	s    *scanner
-	eh   errHandler
-	line []Token // nil when consumed
-
-	closed bool
+var keywords = map[string]rune{
+	"_Bool":      rune(BOOL),
+	"_Complex":   rune(COMPLEX),
+	"_Imaginary": rune(IMAGINARY),
+	"auto":       rune(AUTO),
+	"break":      rune(BREAK),
+	"case":       rune(CASE),
+	"char":       rune(CHAR),
+	"const":      rune(CONST),
+	"continue":   rune(CONTINUE),
+	"default":    rune(DEFAULT),
+	"do":         rune(DO),
+	"double":     rune(DOUBLE),
+	"else":       rune(ELSE),
+	"enum":       rune(ENUM),
+	"extern":     rune(EXTERN),
+	"float":      rune(FLOAT),
+	"for":        rune(FOR),
+	"goto":       rune(GOTO),
+	"if":         rune(IF),
+	"inline":     rune(INLINE),
+	"int":        rune(INT),
+	"long":       rune(LONG),
+	"register":   rune(REGISTER),
+	"restrict":   rune(RESTRICT),
+	"return":     rune(RETURN),
+	"short":      rune(SHORT),
+	"signed":     rune(SIGNED),
+	"sizeof":     rune(SIZEOF),
+	"static":     rune(STATIC),
+	"struct":     rune(STRUCT),
+	"switch":     rune(SWITCH),
+	"typedef":    rune(TYPEDEF),
+	"union":      rune(UNION),
+	"unsigned":   rune(UNSIGNED),
+	"void":       rune(VOID),
+	"volatile":   rune(VOLATILE),
+	"while":      rune(WHILE),
 }
 
-// newCppParser returns a newly created cppParser. The errHandler function is invoked on
-// parser errors.
-func newCppParser(src Source, eh errHandler) (*cppParser, error) {
-	s, err := newScanner(src, eh)
+type parser struct {
+	cpp *cpp
+}
+
+func newParser(cfg *Config, sources []Source) (*parser, error) {
+	cpp, err := newCPP(cfg, sources, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &cppParser{s: s, eh: eh}, nil
+	cpp.rune()
+	return &parser{cpp: cpp}, nil
 }
 
-// close causes all subsequent calls to .line to signal EOF.
-func (p *cppParser) close() {
-	if p.closed {
-		return
-	}
-
-	if len(p.line) == 0 || p.line[0].Ch != eof {
-		p.line = []Token{p.s.newToken(eof)}
-	}
-	p.closed = true
+func (p *parser) isKeyword(s []byte) (r rune, ok bool) {
+	r, ok = keywords[string(s)]
+	return r, ok
 }
 
-func (p *cppParser) pos() token.Position {
-	p.c()
-	return p.line[0].Position()
-}
-
-// c sets p.line to the line p is currently positioned on, up to and including
-// its final '\n' token. After all lines are produced or p is closed, c always
-// returns line consisting of a single EOF token, with .Ch set to eof.  This
-// EOF token still has proper position and separator information if the end of
-// file was reached normally, while parsing.
-//
-// c returns p.line[0].Ch.
-func (p *cppParser) c() rune {
-	if p.line != nil || p.closed {
-		return p.line[0].Ch
-	}
-
-	var tok Token
-	for tok.Ch != '\n' {
-		tok = p.s.cppScan()
-		if tok.Ch == eof {
-			p.line = []Token{tok}
-			p.closed = true
-			break
+func (p *parser) rune() (r rune) {
+more:
+	switch r = p.cpp.rune(); r {
+	case rune(IDENTIFIER):
+		if r2, ok := p.isKeyword(p.cpp.tok.Src()); ok {
+			p.cpp.tok.Ch = r2
+			r = r2
 		}
-
-		p.line = append(p.line, tok)
-	}
-	return p.line[0].Ch
-}
-
-// consume returns p.line and if p is not closed, sets p.line to nil
-func (p *cppParser) consume() (r []Token) {
-	r = p.line
-	if !p.closed {
-		p.line = nil
+	case ' ':
+		p.shift()
+		goto more
 	}
 	return r
 }
 
-// preprocessingFile produces the AST based on [0]6.10.
+func (p *parser) shift() Token { return p.cpp.shift() }
+
+func (p *parser) must(r rune) Token {
+	c := p.rune()
+	t := p.shift()
+	if c != r {
+		p.cpp.eh("%v: expected %v", t.Position(), runeName(r))
+	}
+	return t
+}
+
+func (p *parser) ast() (*AST, error) {
+	var errors errors
+	p.cpp.eh = func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) }
+	tu := p.translationUnit()
+	_ = tu
+	p.rune()
+	panic(todo(""))
+}
+
+// [0], 6.9 External definitions
 //
-// preprocessing-file: group_opt
-func (p *cppParser) preprocessingFile() group { return p.group(false) }
-
-// group:
-//	group-part
-//	group group-part
-type group []groupPart
-
-// group:
-//	group-part
-//	group group-part
-func (p *cppParser) group(inIfSection bool) (r group) {
-	for {
-		g := p.groupPart(inIfSection)
-		if g == nil {
-			break
-		}
-
-		r = append(r, g)
-		if _, ok := g.(eofLine); ok {
-			break
-		}
+//  translation-unit:
+// 	external-declaration
+// 	translation-unit external-declaration
+func (p *parser) translationUnit() (r *TranslationUnit) {
+	r = &TranslationUnit{ExternalDeclaration: p.externalDeclaration()}
+	for prev := r; p.rune() != eof; {
+		tu := &TranslationUnit{ExternalDeclaration: p.externalDeclaration()}
+		prev.TranslationUnit = tu
+		prev = tu
 	}
 	return r
 }
 
-// group-part:
-// 	if-section
-// 	control-line
-// 	text-line
-// 	# non-directive
-// 	eof-line
-type groupPart interface{}
-
-// groupPart parses a group-part.
-func (p *cppParser) groupPart(inIfSection bool) groupPart {
-	switch p.c() {
-	case '#':
-		switch verb := string(p.line[1].Src()); verb {
-		case "if", "ifdef", "ifndef":
-			return p.ifSection()
-		case "include", "include_next", "define", "undef", "line", "error", "pragma", "\n":
-			gp := p.consume()
-			switch {
-			case verb == "line":
-				// eg. ["#" "line" "1" "\"20010206-1.c\"" "\n"].5
-				if len(gp) < 3 {
-					break
-				}
-
-				ln, err := strconv.ParseUint(string(gp[2].Src()), 10, 31)
-				if err != nil {
-					break
-				}
-
-				fn := gp[0].Position().Filename
-				if len(gp) >= 4 && gp[3].Ch == rune(STRINGLITERAL) {
-					fn = string(gp[3].Src())
-					fn = fn[1 : len(fn)-1]
-				}
-
-				nl := gp[len(gp)-1]
-				pos := nl.Position()
-				p.s.s.file.AddLineInfo(int(pos.Offset+1), fn, int(ln))
-			}
-			return controlLine(gp)
-		case "elif", "else", "endif":
-			if inIfSection {
-				return nil
-			}
-
-			p.eh("%v: unexpected #%s", p.pos(), p.line[1].Src())
-			return textLine(p.consume())
-		default:
-			return nonDirective(p.consume())
-		}
-	case eof:
-		return eofLine(p.consume()[0])
+//  external-declaration:
+// 	function-definition
+// 	declaration
+// 	asm-function-definition
+// 	;
+func (p *parser) externalDeclaration() (r *ExternalDeclaration) {
+	switch p.rune() {
 	default:
-		return textLine(p.consume())
+		ds := p.declarationSpecifiers()
+		_ = ds
+		switch p.rune() {
+		case rune(IDENTIFIER):
+			d := p.declarator()
+			p.rune()
+			panic(todo("", d, &p.cpp.tok))
+		default:
+			p.rune()
+			panic(todo("", &p.cpp.tok))
+		}
 	}
 }
 
-// controlLine parses an control-line. At unexpected eof it returns ok == false.
+// [0], 6.7.5 Declarators
 //
-// control-line:
-// 	# include pp-tokens new-line
-// 	# define identifier replacement-list new-line
-// 	# define identifier lparen identifier-list_opt ) replacement-list new-line
-// 	# define identifier lparen ... ) replacement-list new-line
-// 	# define identifier lparen identifier-list , ... ) replacement-list new-line
-// 	# undef identifier new-line
-// 	# line pp-tokens new-line
-// 	# error pp-tokens_opt new-line
-// 	# pragma pp-tokens_opt new-line
-// 	# new-line
-type controlLine []Token
-
-// textLine is a groupPart representing a source line not starting with '#'.
-type textLine []Token
-
-// eofLine is a groupPart representing the end of a file
-type eofLine Token
-
-// non-directive is a groupPart representing a source line starting with '#'
-// but not followed by any recognized token.
-type nonDirective []Token
-
-// if-section:
-//	if-group elif-groups_opt else-group_opt endif-line
-type ifSection struct {
-	ifGroup    *ifGroup
-	elifGroups []elifGroup
-	elseGroup  *elseGroup
-	endifLine  []Token
+//  declarator:
+// 	pointer_opt direct-declarator attribute-specifier-list_opt
+func (p *parser) declarator() (r *Declarator) {
+	ptr := p.pointer()
+	dd := p.directDeclarator()
+	_ = dd
+	_ = ptr
+	p.rune()
+	panic(todo("", &p.cpp.tok))
 }
 
-// ifSection parses an if-section.
-func (p *cppParser) ifSection() *ifSection {
-	return &ifSection{
-		ifGroup:    p.ifGroup(),
-		elifGroups: p.elifGroups(),
-		elseGroup:  p.elseGroup(),
-		endifLine:  p.endifLine(),
-	}
-}
-
-// endifLine parses:
-
-// endif-line:
-// 	# endif new-line
-func (p *cppParser) endifLine() []Token {
-	if p.c() != '#' || string(p.line[1].Src()) != "endif" {
-		p.eh("%v: expected #endif", p.pos())
+//  pointer:
+// 	* type-qualifier-list_opt
+// 	* type-qualifier-list_opt pointer
+//      ^ type-qualifier-list_opt
+func (p *parser) pointer() (r *Pointer) {
+	if p.rune() != '*' {
 		return nil
 	}
 
-	return p.consume()
-}
-
-// else-group:
-//	# else new-line group_opt
-type elseGroup struct {
-	line  []Token
-	group group
-}
-
-// elseGroup parses else-group.
-func (p *cppParser) elseGroup() (r *elseGroup) {
-	if p.c() == '#' && string(p.line[1].Src()) == "else" {
-		return &elseGroup{p.consume(), p.group(true)}
-	}
-
-	return nil
-}
-
-// elif-group:
-//	# elif constant-expression new-line group_opt
-type elifGroup struct {
-	line  []Token
-	group group
-}
-
-// elifGroups parses:
-//
-// elif-groups:
-//	elif-group
-//	elif-groups elif-group
-func (p *cppParser) elifGroups() (r []elifGroup) {
-	for p.c() == '#' && string(p.line[1].Src()) == "elif" {
-		r = append(r, elifGroup{p.consume(), p.group(true)})
+	r = &Pointer{Token: p.shift(), TypeQualifiers: p.typeQualifierList()}
+	for prev := r; p.rune() == '*'; {
+		_ = prev
+		panic(todo("", &p.cpp.tok))
 	}
 	return r
 }
 
-// if-group:
-//	# if constant-expression new-line group_opt
-//	# ifdef identifier new-line group_opt
-//	# ifndef identifier new-line group_opt
-type ifGroup struct {
-	line  []Token
-	group group
+//  type-qualifier-list:
+// 	type-qualifier
+// 	attribute-specifier
+// 	type-qualifier-list type-qualifier
+// 	type-qualifier-list attribute-specifier
+func (p *parser) typeQualifierList() (r *TypeQualifiers) {
+	tq := p.typeQualifier()
+	if tq == nil {
+		return nil
+	}
+
+	panic(todo("", &p.cpp.tok))
 }
 
-// ifGroup parses an if-group.
-func (p *cppParser) ifGroup() (r *ifGroup) { return &ifGroup{p.consume(), p.group(true)} }
+// [0], 6.7.3 Type qualifiers
+//
+//  type-qualifier:
+// 	const
+// 	restrict
+// 	volatile
+// 	_Atomic
+func (p *parser) typeQualifier() *TypeQualifier {
+	switch p.rune() {
+	case rune(CONST):
+		return &TypeQualifier{Case: TypeQualifierConst, Token: p.shift()}
+	case rune(RESTRICT):
+		return &TypeQualifier{Case: TypeQualifierRestrict, Token: p.shift()}
+	case rune(VOLATILE):
+		return &TypeQualifier{Case: TypeQualifierVolatile, Token: p.shift()}
+	default:
+		return nil
+	}
+}
+
+//  direct-declarator:
+// 	identifier asm_opt
+// 	( attribute-specifier-list_opt declarator )
+// 	direct-declarator [ type-qualifier-list_opt assignment-expression_opt ]
+// 	direct-declarator [ static type-qualifier-list_opt assignment-expression ]
+// 	direct-declarator [ type-qualifier-list static assignment-expression ]
+// 	direct-declarator [ type-qualifier-list_opt * ]
+// 	direct-declarator ( parameter-type-list )
+// 	direct-declarator ( identifier-list_opt )
+func (p *parser) directDeclarator() (r *DirectDeclarator) {
+	switch p.rune() {
+	case rune(IDENTIFIER):
+		r = &DirectDeclarator{Case: DirectDeclaratorIdent, Token: p.shift()}
+	case '(':
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	default:
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	}
+	for prev := r; ; {
+		switch p.rune() {
+		case '(':
+			paren := p.shift()
+			switch p.rune() {
+			case rune(IDENTIFIER):
+				panic(todo("", r, &p.cpp.tok))
+			default:
+				d := &DirectDeclarator{Case: DirectDeclaratorFuncParam, Token: paren, ParameterTypeList: p.parameterTypeList(), Token2: p.must(')')}
+				panic(todo("", d, &p.cpp.tok))
+			}
+		default:
+			_ = prev
+			panic(todo("", r, &p.cpp.tok))
+		}
+	}
+}
+
+//  parameter-type-list:
+// 	parameter-list
+// 	parameter-list , ...
+func (p *parser) parameterTypeList() (r *ParameterTypeList) {
+	r = &ParameterTypeList{Case: ParameterTypeListList, ParameterList: p.parameterList()}
+	if p.rune() == ',' {
+		panic(todo("", &p.cpp.tok))
+	}
+	return r
+}
+
+//  parameter-list:
+// 	parameter-declaration
+// 	parameter-list , parameter-declaration
+func (p *parser) parameterList() (r *ParameterList) {
+	if p.rune() == ')' {
+		return nil
+	}
+
+	r = &ParameterList{ParameterDeclaration: p.parameterDeclaration()}
+	for prev := r; p.rune() == ','; {
+		_ = prev
+		panic(todo("", &p.cpp.tok))
+	}
+	return r
+}
+
+//  parameter-declaration:
+// 	declaration-specifiers declarator attribute-specifier-list_opt
+// 	declaration-specifiers abstract-declarator_opt
+func (p *parser) parameterDeclaration() (r *ParameterDeclaration) {
+	ds := p.declarationSpecifiers()
+	ptr := p.pointer()
+	p.rune()
+	panic(todo("", ds, ptr, &p.cpp.tok))
+}
+
+//  declaration-specifiers:
+// 	storage-class-specifier declaration-specifiers_opt
+// 	type-specifier declaration-specifiers_opt
+// 	type-qualifier declaration-specifiers_opt
+// 	function-specifier declaration-specifiers_opt
+//	alignment-specifier declaration-specifiers_opt
+//	attribute-specifier declaration-specifiers_opt
+func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
+	if r = p.declarationSpecifier(); r == nil {
+		return nil
+	}
+
+	for prev := r; ; {
+		ds := p.declarationSpecifier()
+		if ds == nil {
+			return r
+		}
+
+		prev.DeclarationSpecifiers = ds
+		prev = ds
+	}
+}
+
+func (p *parser) declarationSpecifier() (r *DeclarationSpecifiers) {
+	switch p.rune() {
+	case
+		rune(AUTO),
+		rune(EXTERN),
+		rune(REGISTER),
+		rune(STATIC),
+		rune(TYPEDEF):
+
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	case
+		rune(CONST),
+		rune(RESTRICT),
+		rune(VOLATILE):
+
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	case rune(INLINE):
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	case rune(BOOL):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierBool, Token: p.shift()}}
+	case rune(CHAR):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierChar, Token: p.shift()}}
+	case rune(COMPLEX):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierComplex, Token: p.shift()}}
+	case rune(DOUBLE):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierDouble, Token: p.shift()}}
+	case rune(ENUM):
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	case rune(FLOAT):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierFloat, Token: p.shift()}}
+	case rune(IMAGINARY):
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	case rune(INT):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierInt, Token: p.shift()}}
+	case rune(LONG):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierLong, Token: p.shift()}}
+	case rune(SHORT):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierShort, Token: p.shift()}}
+	case rune(SIGNED):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierSigned, Token: p.shift()}}
+	case rune(STRUCT):
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	case rune(TYPENAME):
+		p.rune()
+		panic(todo("", &p.cpp.tok))
+	case rune(UNSIGNED):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierUnsigned, Token: p.shift()}}
+	case rune(VOID):
+		return &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: &TypeSpecifier{Case: TypeSpecifierVoid, Token: p.shift()}}
+	}
+	return nil
+}

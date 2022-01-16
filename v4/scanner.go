@@ -90,6 +90,7 @@ const (
 	IDENTIFIER             // foo
 	IF                     // if
 	IMAG                   // __imag__
+	IMAGINARY              // _Imaginary
 	INC                    // ++
 	INLINE                 // inline
 	INT                    // int
@@ -327,9 +328,9 @@ func newScanner(src Source, eh errHandler) (*scanner, error) {
 // close causes all subsequent calls to .scan to return an EOF token.
 func (s *scanner) close() { s.closed = true }
 
-// c returns the current rune s is positioned on. If s is at EOF or closed, c
-// returns eof.
-func (s *scanner) c() rune {
+// rune returns the current rune s is positioned on. If s is at EOF or closed,
+// rune returns eof.
+func (s *scanner) rune() rune {
 	if s.closed {
 		return eof
 	}
@@ -366,9 +367,9 @@ func (s *scanner) peek(delta uint32) int {
 	return eof
 }
 
-// next moves s to and returns the next rune. If s is at EOF or closed, next
+// shift moves s to and returns the shift rune. If s is at EOF or closed, shift
 // returns eof.
-func (s *scanner) next() rune {
+func (s *scanner) shift() rune {
 	if s.closed || s.ch < 0 {
 		return eof
 	}
@@ -376,7 +377,7 @@ func (s *scanner) next() rune {
 	s.off += uint32(s.chSize)
 	prev := s.ch
 	s.ch = eof
-	r := s.c()
+	r := s.rune()
 	if prev == '\n' {
 		s.s.file.AddLine(int(s.off))
 	}
@@ -391,7 +392,7 @@ func (s *scanner) pos(off uint32) token.Position { return s.s.pos(off) }
 func (s *scanner) cppScan0() (tok Token) {
 	s.scanSep()
 	s.src = s.off
-	c := s.c()
+	c := s.rune()
 	switch c {
 	case
 
@@ -399,153 +400,153 @@ func (s *scanner) cppScan0() (tok Token) {
 		'?', '[', '\n', ']', '{',
 		'}', '~':
 
-		s.next()
+		s.shift()
 		return s.newToken(c)
 	case '*':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(MULASSIGN))
 		default:
 			return s.newToken(c)
 		}
 	case '=':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(EQ))
 		default:
 			return s.newToken(c)
 		}
 	case '^':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(XORASSIGN))
 		default:
 			return s.newToken(c)
 		}
 	case '+':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(ADDASSIGN))
 		case '+':
-			s.next()
+			s.shift()
 			return s.newToken(rune(INC))
 		default:
 			return s.newToken(c)
 		}
 	case '&':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(ANDASSIGN))
 		case '&':
-			s.next()
+			s.shift()
 			return s.newToken(rune(ANDAND))
 		default:
 			return s.newToken(c)
 		}
 	case '-':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(SUBASSIGN))
 		case '-':
-			s.next()
+			s.shift()
 			return s.newToken(rune(DEC))
 		case '>':
-			s.next()
+			s.shift()
 			return s.newToken(rune(ARROW))
 		default:
 			return s.newToken(c)
 		}
 	case '|':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(ORASSIGN))
 		case '|':
-			s.next()
+			s.shift()
 			return s.newToken(rune(OROR))
 		default:
 			return s.newToken(c)
 		}
 	case '%':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(MODASSIGN))
 		default:
 			return s.newToken(c)
 		}
 	case '/':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(DIVASSIGN))
 		default:
 			return s.newToken(c)
 		}
 	case '!':
-		switch s.next() {
+		switch s.shift() {
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(NEQ))
 		default:
 			return s.newToken(c)
 		}
 	case '#':
-		switch s.next() {
+		switch s.shift() {
 		case '#':
-			s.next()
+			s.shift()
 			return s.newToken(rune(PPPASTE))
 		default:
 			return s.newToken(c)
 		}
 	case '<':
-		switch s.next() {
+		switch s.shift() {
 		case '<':
-			switch s.next() {
+			switch s.shift() {
 			case '=':
-				s.next()
+				s.shift()
 				return s.newToken(rune(LSHASSIGN))
 			default:
 				return s.newToken(rune(LSH))
 			}
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(LEQ))
 		default:
 			return s.newToken(c)
 		}
 	case '>':
-		switch s.next() {
+		switch s.shift() {
 		case '>':
-			switch s.next() {
+			switch s.shift() {
 			case '=':
-				s.next()
+				s.shift()
 				return s.newToken(rune(RSHASSIGN))
 			default:
 				return s.newToken(rune(RSH))
 			}
 		case '=':
-			s.next()
+			s.shift()
 			return s.newToken(rune(GEQ))
 		default:
 			return s.newToken(c)
 		}
 	case '.':
 		if s.peek(1) == '.' && s.peek(2) == '.' {
-			s.next()
-			s.next()
-			s.next()
+			s.shift()
+			s.shift()
+			s.shift()
 			return s.newToken(rune(DDD))
 		}
 
-		s.next()
-		switch c2 := s.c(); {
+		s.shift()
+		switch c2 := s.rune(); {
 		case c2 >= '0' && c2 <= '9':
 			return s.ppnumber()
 		default:
@@ -558,10 +559,10 @@ func (s *scanner) cppScan0() (tok Token) {
 	case 'L':
 		switch s.peek(1) {
 		case '\'':
-			s.next()
+			s.shift()
 			return s.characterConstant(rune(LONGCHARCONST))
 		case '"':
-			s.next()
+			s.shift()
 			return s.stringLiteral(rune(LONGSTRINGLITERAL))
 		}
 	case eof:
@@ -575,7 +576,7 @@ func (s *scanner) cppScan0() (tok Token) {
 	case c >= '0' && c <= '9':
 		return s.ppnumber()
 	default:
-		s.next()
+		s.shift()
 		return s.newToken(c)
 	}
 }
@@ -584,12 +585,12 @@ func (s *scanner) cppScan0() (tok Token) {
 //
 // [0]A.1.5
 func (s *scanner) characterConstant(c rune) Token {
-	s.next() // '\''
+	s.shift() // '\''
 	for s.cChar() {
 	}
-	switch s.c() {
+	switch s.rune() {
 	case '\'':
-		s.next()
+		s.shift()
 		return s.newToken(c)
 	default:
 		s.eh("%v: character constant not terminated", s.pos(s.src))
@@ -601,14 +602,14 @@ func (s *scanner) characterConstant(c rune) Token {
 //
 // [0]A.1.5
 func (s *scanner) cChar() bool {
-	switch s.c() {
+	switch s.rune() {
 	case '\'', '\n':
 		return false
 	case '\\':
-		s.next()
+		s.shift()
 		return s.escapeSequence()
 	default:
-		s.next()
+		s.shift()
 		return true
 	}
 }
@@ -617,12 +618,12 @@ func (s *scanner) cChar() bool {
 //
 // [0]A.1.6
 func (s *scanner) stringLiteral(c rune) Token {
-	s.next() // '"'
+	s.shift() // '"'
 	for s.sChar() {
 	}
-	switch s.c() {
+	switch s.rune() {
 	case '"':
-		s.next()
+		s.shift()
 		return s.newToken(c)
 	default:
 		s.eh("%v: string literal not terminated", s.pos(s.src))
@@ -634,14 +635,14 @@ func (s *scanner) stringLiteral(c rune) Token {
 //
 // [0]A.1.6
 func (s *scanner) sChar() bool {
-	switch s.c() {
+	switch s.rune() {
 	case '"', '\n':
 		return false
 	case '\\':
-		s.next()
+		s.shift()
 		return s.escapeSequence()
 	default:
-		s.next()
+		s.shift()
 		return true
 	}
 }
@@ -662,7 +663,7 @@ func (s *scanner) escapeSequence() bool {
 // [0]A.1.4
 func (s *scanner) universalCharacterName() bool {
 	// '\\' already consumed
-	switch s.c() {
+	switch s.rune() {
 	case 'u':
 		s.hexQuad()
 		return true
@@ -695,9 +696,9 @@ func (s *scanner) hexQuad() (r bool) {
 // [0]A.1.5
 func (s *scanner) hexadecimalEscapeSequence() bool {
 	// '\\' already consumed
-	switch s.c() {
+	switch s.rune() {
 	case 'x', 'X':
-		s.next()
+		s.shift()
 		ok := false
 		for s.hexadecimalDigit() {
 			ok = true
@@ -714,13 +715,13 @@ func (s *scanner) hexadecimalEscapeSequence() bool {
 //
 // [0]A.1.5
 func (s *scanner) hexadecimalDigit() bool {
-	switch c := s.c(); {
+	switch c := s.rune(); {
 	case
 		c >= '0' && c <= '9',
 		c >= 'a' && c <= 'f',
 		c >= 'A' && c <= 'F':
 
-		s.next()
+		s.shift()
 		return true
 	}
 	return false
@@ -731,7 +732,7 @@ func (s *scanner) hexadecimalDigit() bool {
 // [0]A.1.5
 func (s *scanner) octalEscapeSequence() bool {
 	// '\\' already consumed
-	switch c := s.c(); {
+	switch c := s.rune(); {
 	case c >= '0' && c <= '7':
 		for s.octalDigit() {
 		}
@@ -744,9 +745,9 @@ func (s *scanner) octalEscapeSequence() bool {
 //
 // [0]A.1.5
 func (s *scanner) octalDigit() bool {
-	switch c := s.c(); {
+	switch c := s.rune(); {
 	case c >= '0' && c <= '7':
-		s.next()
+		s.shift()
 		return true
 	}
 	return false
@@ -757,9 +758,9 @@ func (s *scanner) octalDigit() bool {
 // [0]A.1.5
 func (s *scanner) simpleEscapeSequence() bool {
 	// '\\' already consumed
-	switch s.c() {
+	switch s.rune() {
 	case '\'', '"', '?', '\\', 'a', 'b', 'e', 'f', 'n', 'r', 't', 'v':
-		s.next()
+		s.shift()
 		return true
 	}
 	return false
@@ -786,18 +787,18 @@ func (s *scanner) newToken(c rune) Token {
 //
 // [0]A.1.9
 func (s *scanner) ppnumber() Token {
-	s.next()
+	s.shift()
 	for {
-		switch c := s.c(); c {
+		switch c := s.rune(); c {
 		case '.':
-			s.next()
+			s.shift()
 		case 'e', 'E', 'p', 'P':
-			s.next()
+			s.shift()
 			s.sign(false)
 		default:
 			switch {
 			case c >= '0' && c <= '9':
-				s.next()
+				s.shift()
 			case unicode.IsLetter(c):
 				s.identifier()
 			default:
@@ -811,12 +812,12 @@ func (s *scanner) ppnumber() Token {
 //
 // [0]A.1.5
 func (s *scanner) sign(must bool) {
-	switch s.c() {
+	switch s.rune() {
 	case '+', '-':
-		s.next()
+		s.shift()
 	default:
 		if must {
-			s.next()
+			s.shift()
 			s.eh("%v: expected sign", s.pos(s.off))
 		}
 	}
@@ -827,12 +828,12 @@ func (s *scanner) sign(must bool) {
 func (s *scanner) scanSep() {
 	s.sep = s.off
 	for {
-		switch s.c() {
+		switch s.rune() {
 		case ' ', '\t', '\f', '\v', '\r':
-			s.next()
+			s.shift()
 		case '/':
 			off := s.off
-			switch s.next() {
+			switch s.shift() {
 			case '*':
 				s.comment(off)
 			case '/':
@@ -852,23 +853,23 @@ func (s *scanner) scanSep() {
 // lineComment scans until the end of a //-style comment. The leading '/' is
 // already consumed.
 func (s *scanner) lineComment(start uint32) {
-	s.next() // '/'
+	s.shift() // '/'
 	for {
-		switch s.c() {
+		switch s.rune() {
 		case eof, '\n':
 			return
 		}
-		s.next()
+		s.shift()
 	}
 }
 
 // identifier scans an identifier
 func (s *scanner) identifier() Token {
-	s.next()
+	s.shift()
 	for {
-		switch c := s.c(); {
+		switch c := s.rune(); {
 		case unicode.IsLetter(c) || c == '_' || unicode.IsDigit(c):
-			s.next()
+			s.shift()
 		default:
 			return s.newToken(rune(IDENTIFIER))
 		}
@@ -878,7 +879,7 @@ func (s *scanner) identifier() Token {
 // fail reports an error at current position, closes s and returns an EOF
 // Token.
 func (s *scanner) fail() Token {
-	s.eh("%v: unexpected rune: %s (%s)", s.pos(s.off), runeName(s.c()), origin(2))
+	s.eh("%v: unexpected rune: %s (%s)", s.pos(s.off), runeName(s.rune()), origin(2))
 	s.closed = true
 	return newToken(s.s, eof, s.off, s.off, 0)
 }
@@ -886,20 +887,20 @@ func (s *scanner) fail() Token {
 // comment scans until the end of a /*-style comment. The leading '/' is
 // already consumed.
 func (s *scanner) comment(start uint32) {
-	s.next() // '*'
+	s.shift() // '*'
 	for {
-		switch s.c() {
+		switch s.rune() {
 		case eof:
 			s.eh("%v: comment not terminated", s.pos(start))
 			return
 		case '*':
-			switch s.next() {
+			switch s.shift() {
 			case '/':
-				s.next()
+				s.shift()
 				return
 			}
 		default:
-			s.next()
+			s.shift()
 		}
 	}
 }
@@ -955,12 +956,12 @@ func (s *scanner) cppScan() (tok Token) {
 func (s *scanner) headerName() Token {
 	s.scanSep()
 	s.src = s.off
-	switch s.c() {
+	switch s.rune() {
 	case '<':
 		for {
-			switch s.next() {
+			switch s.shift() {
 			case '>':
-				s.next()
+				s.shift()
 				s.state = cppScanOther
 				return s.newToken(rune(HEADER_NAME))
 			case '\n':
@@ -970,9 +971,9 @@ func (s *scanner) headerName() Token {
 		}
 	case '"':
 		for {
-			switch s.next() {
+			switch s.shift() {
 			case '"':
-				s.next()
+				s.shift()
 				s.state = cppScanOther
 				return s.newToken(rune(HEADER_NAME))
 			case '\n':

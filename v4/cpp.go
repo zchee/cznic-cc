@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"modernc.org/token"
 )
 
 const (
@@ -100,6 +102,267 @@ func init() {
 	emptyStringCppToken = cppToken{emptyStringTok, nil}
 	eofCppToken = cppToken{eofTok, nil}
 }
+
+// cppParser produces a preprocessingFile.
+type cppParser struct {
+	s    *scanner
+	eh   errHandler
+	line []Token // nil when consumed
+
+	closed bool
+}
+
+// newCppParser returns a newly created cppParser. The errHandler function is invoked on
+// parser errors.
+func newCppParser(src Source, eh errHandler) (*cppParser, error) {
+	s, err := newScanner(src, eh)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cppParser{s: s, eh: eh}, nil
+}
+
+// close causes all subsequent calls to .line to signal EOF.
+func (p *cppParser) close() {
+	if p.closed {
+		return
+	}
+
+	if len(p.line) == 0 || p.line[0].Ch != eof {
+		p.line = []Token{p.s.newToken(eof)}
+	}
+	p.closed = true
+}
+
+func (p *cppParser) pos() token.Position {
+	p.rune()
+	return p.line[0].Position()
+}
+
+// rune sets p.line to the line p is currently positioned on, up to and
+// including its final '\n' token. After all lines are produced or p is closed,
+// rune always returns line consisting of a single EOF token, with .Ch set to
+// eof.  This EOF token still has proper position and separator information if
+// the end of file was reached normally, while parsing.
+//
+// rune returns p.line[0].Ch.
+func (p *cppParser) rune() rune {
+	if p.line != nil || p.closed {
+		return p.line[0].Ch
+	}
+
+	var tok Token
+	for tok.Ch != '\n' {
+		tok = p.s.cppScan()
+		if tok.Ch == eof {
+			p.line = []Token{tok}
+			p.closed = true
+			break
+		}
+
+		p.line = append(p.line, tok)
+	}
+	return p.line[0].Ch
+}
+
+// shift returns p.line and if p is not closed, sets p.line to nil
+func (p *cppParser) shift() (r []Token) {
+	r = p.line
+	if !p.closed {
+		p.line = nil
+	}
+	return r
+}
+
+// preprocessingFile produces the AST based on [0]6.10.
+//
+// preprocessing-file: group_opt
+func (p *cppParser) preprocessingFile() group { return p.group(false) }
+
+// group:
+//	group-part
+//	group group-part
+type group []groupPart
+
+// group:
+//	group-part
+//	group group-part
+func (p *cppParser) group(inIfSection bool) (r group) {
+	for {
+		g := p.groupPart(inIfSection)
+		if g == nil {
+			break
+		}
+
+		r = append(r, g)
+		if _, ok := g.(eofLine); ok {
+			break
+		}
+	}
+	return r
+}
+
+// group-part:
+// 	if-section
+// 	control-line
+// 	text-line
+// 	# non-directive
+// 	eof-line
+type groupPart interface{}
+
+// groupPart parses a group-part.
+func (p *cppParser) groupPart(inIfSection bool) groupPart {
+	switch p.rune() {
+	case '#':
+		switch verb := string(p.line[1].Src()); verb {
+		case "if", "ifdef", "ifndef":
+			return p.ifSection()
+		case "include", "include_next", "define", "undef", "line", "error", "pragma", "\n":
+			gp := p.shift()
+			switch {
+			case verb == "line":
+				// eg. ["#" "line" "1" "\"20010206-1.c\"" "\n"].5
+				if len(gp) < 3 {
+					break
+				}
+
+				ln, err := strconv.ParseUint(string(gp[2].Src()), 10, 31)
+				if err != nil {
+					break
+				}
+
+				fn := gp[0].Position().Filename
+				if len(gp) >= 4 && gp[3].Ch == rune(STRINGLITERAL) {
+					fn = string(gp[3].Src())
+					fn = fn[1 : len(fn)-1]
+				}
+
+				nl := gp[len(gp)-1]
+				pos := nl.Position()
+				p.s.s.file.AddLineInfo(int(pos.Offset+1), fn, int(ln))
+			}
+			return controlLine(gp)
+		case "elif", "else", "endif":
+			if inIfSection {
+				return nil
+			}
+
+			p.eh("%v: unexpected #%s", p.pos(), p.line[1].Src())
+			return textLine(p.shift())
+		default:
+			return nonDirective(p.shift())
+		}
+	case eof:
+		return eofLine(p.shift()[0])
+	default:
+		return textLine(p.shift())
+	}
+}
+
+// controlLine parses an control-line. At unexpected eof it returns ok == false.
+//
+// control-line:
+// 	# include pp-tokens new-line
+// 	# define identifier replacement-list new-line
+// 	# define identifier lparen identifier-list_opt ) replacement-list new-line
+// 	# define identifier lparen ... ) replacement-list new-line
+// 	# define identifier lparen identifier-list , ... ) replacement-list new-line
+// 	# undef identifier new-line
+// 	# line pp-tokens new-line
+// 	# error pp-tokens_opt new-line
+// 	# pragma pp-tokens_opt new-line
+// 	# new-line
+type controlLine []Token
+
+// textLine is a groupPart representing a source line not starting with '#'.
+type textLine []Token
+
+// eofLine is a groupPart representing the end of a file
+type eofLine Token
+
+// non-directive is a groupPart representing a source line starting with '#'
+// but not followed by any recognized token.
+type nonDirective []Token
+
+// if-section:
+//	if-group elif-groups_opt else-group_opt endif-line
+type ifSection struct {
+	ifGroup    *ifGroup
+	elifGroups []elifGroup
+	elseGroup  *elseGroup
+	endifLine  []Token
+}
+
+// ifSection parses an if-section.
+func (p *cppParser) ifSection() *ifSection {
+	return &ifSection{
+		ifGroup:    p.ifGroup(),
+		elifGroups: p.elifGroups(),
+		elseGroup:  p.elseGroup(),
+		endifLine:  p.endifLine(),
+	}
+}
+
+// endifLine parses:
+
+// endif-line:
+// 	# endif new-line
+func (p *cppParser) endifLine() []Token {
+	if p.rune() != '#' || string(p.line[1].Src()) != "endif" {
+		p.eh("%v: expected #endif", p.pos())
+		return nil
+	}
+
+	return p.shift()
+}
+
+// else-group:
+//	# else new-line group_opt
+type elseGroup struct {
+	line  []Token
+	group group
+}
+
+// elseGroup parses else-group.
+func (p *cppParser) elseGroup() (r *elseGroup) {
+	if p.rune() == '#' && string(p.line[1].Src()) == "else" {
+		return &elseGroup{p.shift(), p.group(true)}
+	}
+
+	return nil
+}
+
+// elif-group:
+//	# elif constant-expression new-line group_opt
+type elifGroup struct {
+	line  []Token
+	group group
+}
+
+// elifGroups parses:
+//
+// elif-groups:
+//	elif-group
+//	elif-groups elif-group
+func (p *cppParser) elifGroups() (r []elifGroup) {
+	for p.rune() == '#' && string(p.line[1].Src()) == "elif" {
+		r = append(r, elifGroup{p.shift(), p.group(true)})
+	}
+	return r
+}
+
+// if-group:
+//	# if constant-expression new-line group_opt
+//	# ifdef identifier new-line group_opt
+//	# ifndef identifier new-line group_opt
+type ifGroup struct {
+	line  []Token
+	group group
+}
+
+// ifGroup parses an if-group.
+func (p *cppParser) ifGroup() (r *ifGroup) { return &ifGroup{p.shift(), p.group(true)} }
 
 type hideSet map[string]struct{}
 
@@ -243,10 +506,10 @@ func (m *Macro) fp() []string {
 func (m *Macro) ts() cppTokens { return m.replacementList }
 
 type tokenSequence interface {
-	prepend(tokenSequence) tokenSequence
 	peek(int) cppToken
 	peekNonBlank() (cppToken, int)
-	read() cppToken
+	prepend(tokenSequence) tokenSequence
+	shift() cppToken
 	skip(int)
 }
 
@@ -291,7 +554,7 @@ func (d *dequeue) peekNonBlank() (cppToken, int) {
 	}
 }
 
-func (d *dequeue) read() (t cppToken) {
+func (d *dequeue) shift() (t cppToken) {
 	q := *d
 	if len(q) == 0 {
 		panic(todo(""))
@@ -299,14 +562,14 @@ func (d *dequeue) read() (t cppToken) {
 
 	switch e := q[len(q)-1]; x := e.(type) {
 	case *tokenizer:
-		if t = x.read(); t.Ch != eof {
+		if t = x.shift(); t.Ch != eof {
 			return t
 		}
 
 		*d = q[:len(q)-1]
 		return t
 	case *cppTokens:
-		if t = x.read(); t.Ch != eof {
+		if t = x.shift(); t.Ch != eof {
 			if len(*x) != 0 {
 				return t
 			}
@@ -321,7 +584,7 @@ func (d *dequeue) read() (t cppToken) {
 
 func (d *dequeue) skip(n int) {
 	for ; n != 0; n-- {
-		d.read()
+		d.shift()
 	}
 }
 
@@ -361,7 +624,7 @@ func (t *tokenizer) peekNonBlank() (cppToken, int) {
 	}
 }
 
-func (t *tokenizer) read() (tok cppToken) {
+func (t *tokenizer) shift() (tok cppToken) {
 	if len(t.in) == 0 {
 		t.in = tokens2CppTokens(t.c.nextLine(), false)
 	}
@@ -376,7 +639,7 @@ func (t *tokenizer) read() (tok cppToken) {
 
 func (t *tokenizer) skip(n int) {
 	for ; n != 0; n-- {
-		t.read()
+		t.shift()
 	}
 }
 
@@ -411,7 +674,7 @@ func (p *cppTokens) peek(index int) cppToken {
 	return eofCppToken
 }
 
-func (p *cppTokens) read() (tok cppToken) {
+func (p *cppTokens) shift() (tok cppToken) {
 	s := *p
 	if len(s) == 0 {
 		return eofCppToken
@@ -447,9 +710,14 @@ func (p *cppTokens) skip(n int) {
 	*p = (*p)[n:]
 }
 
-func (p *cppTokens) c() Token {
+func (p *cppTokens) token() Token {
 	p.skipBlank()
 	return p.peek(0).Token
+}
+
+func (p *cppTokens) rune() rune {
+	p.skipBlank()
+	return p.peek(0).Ch
 }
 
 // cpp is the C preprocessor.
@@ -497,8 +765,8 @@ func newCPP(cfg *Config, sources []Source, eh errHandler) (*cpp, error) {
 	return c, nil
 }
 
-// c returns the current token rune the preprocessor is positioned on.
-func (c *cpp) c() rune {
+// rune returns the current token rune the preprocessor is positioned on.
+func (c *cpp) rune() rune {
 	if c.closed || c.tok.Ch != eof {
 		return c.tok.Ch
 	}
@@ -509,8 +777,8 @@ func (c *cpp) c() rune {
 	return c.tok.Ch
 }
 
-// consume returns c.tok and invalidates c.tok.Ch.
-func (c *cpp) consume() (r Token) {
+// shift returns c.tok and invalidates c.tok.Ch.
+func (c *cpp) shift() (r Token) {
 	r = c.tok
 	c.tok.Ch = eof
 	return r
@@ -531,7 +799,7 @@ func (c *cpp) expand(outer, eval bool, TS tokenSequence, w *cppTokens) {
 	// trc("* %s%v outer %v (%v)", c.indent(), toksDump(TS), outer, origin(2))
 	// defer func() { trc("->%s%v (%v)", c.undent(), toksDump(w), origin(2)) }()
 more:
-	t := TS.read()
+	t := TS.shift()
 	// trc("@ %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(TS))
 	if t.Ch == eof {
 		// if TS is {} then
@@ -979,25 +1247,25 @@ func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
 	var t cppToken
 	switch p := ts.peek(0); p.Ch {
 	case '(':
-		ts.read()
+		ts.shift()
 		c.skipBlank(ts)
 		switch p = ts.peek(0); p.Ch {
 		case rune(IDENTIFIER):
-			t = ts.read()
+			t = ts.shift()
 			c.skipBlank(ts)
-			if paren := ts.read(); paren.Ch != ')' {
+			if paren := ts.shift(); paren.Ch != ')' {
 				c.eh("%v: expected ')'", paren.Position())
 			}
 		default:
 			c.eh("%v: operator \"defined\" requires an identifier", p.Position())
-			ts.read()
+			ts.shift()
 			return ts
 		}
 	case rune(IDENTIFIER):
-		t = ts.read()
+		t = ts.shift()
 	default:
 		c.eh("%v: operator \"defined\" requires an identifier", p.Position())
-		ts.read()
+		ts.shift()
 		return ts
 	}
 
@@ -1020,7 +1288,7 @@ func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
 
 func (c *cpp) skipBlank(ts tokenSequence) {
 	for ts.peek(0).Ch == ' ' {
-		ts.read()
+		ts.shift()
 	}
 }
 
@@ -1069,7 +1337,7 @@ func (c *cpp) parseMacroArgs(TS tokenSequence) (args []cppTokens, rparen cppToke
 	var t cppToken
 out:
 	for {
-		t = TS.read()
+		t = TS.shift()
 		switch t.Ch {
 		case ',':
 			if level != 0 {
@@ -1504,7 +1772,7 @@ func (c *cpp) eval(s0 []Token) interface{} {
 	p := &cppTokens{}
 	c.expand(false, true, &s1, p)
 	val := c.expression(p, true)
-	switch t := p.c(); t.Ch {
+	switch t := p.token(); t.Ch {
 	case eof, '#':
 		// ok
 	default:
@@ -1523,11 +1791,11 @@ func (c *cpp) eval(s0 []Token) interface{} {
 func (c *cpp) expression(s *cppTokens, eval bool) interface{} {
 	for {
 		r := c.assignmentExpression(s, eval)
-		if s.c().Ch != ',' {
+		if s.rune() != ',' {
 			return r
 		}
 
-		s.read()
+		s.shift()
 	}
 }
 
@@ -1550,16 +1818,16 @@ func (c *cpp) assignmentExpression(s *cppTokens, eval bool) interface{} {
 //		logical-OR-expression ? expression : conditional-expression
 func (c *cpp) conditionalExpression(s *cppTokens, eval bool) interface{} {
 	expr := c.logicalOrExpression(s, eval)
-	if s.c().Ch == '?' {
-		s.read()
+	if s.rune() == '?' {
+		s.shift()
 		exprIsNonZero := c.isNonZero(expr)
 		expr2 := c.conditionalExpression(s, exprIsNonZero)
-		if t := s.c(); t.Ch != ':' {
+		if t := s.token(); t.Ch != ':' {
 			c.eh("%v: expected ':'", t.Position())
 			return expr
 		}
 
-		s.read()
+		s.shift()
 		expr3 := c.conditionalExpression(s, !exprIsNonZero)
 
 		// [0] 6.5.15
@@ -1596,8 +1864,8 @@ func (c *cpp) conditionalExpression(s *cppTokens, eval bool) interface{} {
 //		logical-OR-expression || logical-AND-expression
 func (c *cpp) logicalOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.logicalAndExpression(s, eval)
-	for s.c().Ch == rune(OROR) {
-		s.read()
+	for s.rune() == rune(OROR) {
+		s.shift()
 		if c.isNonZero(lhs) {
 			eval = false
 		}
@@ -1616,8 +1884,8 @@ func (c *cpp) logicalOrExpression(s *cppTokens, eval bool) interface{} {
 //		logical-AND-expression && inclusive-OR-expression
 func (c *cpp) logicalAndExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.inclusiveOrExpression(s, eval)
-	for s.c().Ch == rune(ANDAND) {
-		s.read()
+	for s.rune() == rune(ANDAND) {
+		s.shift()
 		if c.isZero(lhs) {
 			eval = false
 		}
@@ -1636,8 +1904,8 @@ func (c *cpp) logicalAndExpression(s *cppTokens, eval bool) interface{} {
 //		inclusive-OR-expression | exclusive-OR-expression
 func (c *cpp) inclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.exclusiveOrExpression(s, eval)
-	for s.c().Ch == '|' {
-		s.read()
+	for s.rune() == '|' {
+		s.shift()
 		rhs := c.exclusiveOrExpression(s, eval)
 		if eval {
 			switch x := lhs.(type) {
@@ -1668,8 +1936,8 @@ func (c *cpp) inclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 //		exclusive-OR-expression ^ AND-expression
 func (c *cpp) exclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.andExpression(s, eval)
-	for s.c().Ch == '^' {
-		s.read()
+	for s.rune() == '^' {
+		s.shift()
 		rhs := c.andExpression(s, eval)
 		if eval {
 			switch x := lhs.(type) {
@@ -1700,8 +1968,8 @@ func (c *cpp) exclusiveOrExpression(s *cppTokens, eval bool) interface{} {
 // 		AND-expression & equality-expression
 func (c *cpp) andExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.equalityExpression(s, eval)
-	for s.c().Ch == '&' {
-		s.read()
+	for s.rune() == '&' {
+		s.shift()
 		rhs := c.equalityExpression(s, eval)
 		if eval {
 			switch x := lhs.(type) {
@@ -1735,9 +2003,9 @@ func (c *cpp) equalityExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.relationalExpression(s, eval)
 	for {
 		var v bool
-		switch s.c().Ch {
+		switch s.token().Ch {
 		case rune(EQ):
-			s.read()
+			s.shift()
 			rhs := c.relationalExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1758,7 +2026,7 @@ func (c *cpp) equalityExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case rune(NEQ):
-			s.read()
+			s.shift()
 			rhs := c.relationalExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1802,9 +2070,9 @@ func (c *cpp) relationalExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.shiftExpression(s, eval)
 	for {
 		var v bool
-		switch s.c().Ch {
+		switch s.token().Ch {
 		case '<':
-			s.read()
+			s.shift()
 			rhs := c.shiftExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1825,7 +2093,7 @@ func (c *cpp) relationalExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case '>':
-			s.read()
+			s.shift()
 			rhs := c.shiftExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1846,7 +2114,7 @@ func (c *cpp) relationalExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case rune(LEQ):
-			s.read()
+			s.shift()
 			rhs := c.shiftExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1867,7 +2135,7 @@ func (c *cpp) relationalExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case rune(GEQ):
-			s.read()
+			s.shift()
 			rhs := c.shiftExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1908,9 +2176,9 @@ func (c *cpp) relationalExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) shiftExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.additiveExpression(s, eval)
 	for {
-		switch s.c().Ch {
+		switch s.token().Ch {
 		case rune(LSH):
-			s.read()
+			s.shift()
 			rhs := c.additiveExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1931,7 +2199,7 @@ func (c *cpp) shiftExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case rune(RSH):
-			s.read()
+			s.shift()
 			rhs := c.additiveExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1966,9 +2234,9 @@ func (c *cpp) shiftExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) additiveExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.multiplicativeExpression(s, eval)
 	for {
-		switch s.c().Ch {
+		switch s.token().Ch {
 		case '+':
-			s.read()
+			s.shift()
 			rhs := c.multiplicativeExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -1989,7 +2257,7 @@ func (c *cpp) additiveExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case '-':
-			s.read()
+			s.shift()
 			rhs := c.multiplicativeExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -2025,9 +2293,9 @@ func (c *cpp) additiveExpression(s *cppTokens, eval bool) interface{} {
 func (c *cpp) multiplicativeExpression(s *cppTokens, eval bool) interface{} {
 	lhs := c.unaryExpression(s, eval)
 	for {
-		switch s.c().Ch {
+		switch s.token().Ch {
 		case '*':
-			s.read()
+			s.shift()
 			rhs := c.unaryExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -2048,7 +2316,7 @@ func (c *cpp) multiplicativeExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case '/':
-			t := s.read()
+			t := s.shift()
 			rhs := c.unaryExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -2089,7 +2357,7 @@ func (c *cpp) multiplicativeExpression(s *cppTokens, eval bool) interface{} {
 				}
 			}
 		case '%':
-			t := s.read()
+			t := s.shift()
 			rhs := c.unaryExpression(s, eval)
 			if eval {
 				switch x := lhs.(type) {
@@ -2144,12 +2412,12 @@ func (c *cpp) multiplicativeExpression(s *cppTokens, eval bool) interface{} {
 //  unary-operator: one of
 //		+ - ~ !
 func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
-	switch s.c().Ch {
+	switch s.token().Ch {
 	case '+':
-		s.read()
+		s.shift()
 		return c.unaryExpression(s, eval)
 	case '-':
-		s.read()
+		s.shift()
 		expr := c.unaryExpression(s, eval)
 		if eval {
 			switch x := expr.(type) {
@@ -2161,7 +2429,7 @@ func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
 		}
 		return expr
 	case '~':
-		s.read()
+		s.shift()
 		expr := c.unaryExpression(s, eval)
 		if eval {
 			switch x := expr.(type) {
@@ -2173,7 +2441,7 @@ func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
 		}
 		return expr
 	case '!':
-		s.read()
+		s.shift()
 		expr := c.unaryExpression(s, eval)
 		if eval {
 			var v bool
@@ -2203,27 +2471,27 @@ func (c *cpp) unaryExpression(s *cppTokens, eval bool) interface{} {
 //		constant
 //		( expression )
 func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
-	switch t := s.c(); t.Ch {
+	switch t := s.token(); t.Ch {
 	case rune(CHARCONST), rune(LONGCHARCONST):
-		s.read()
+		s.shift()
 		r := charConst(c.eh, t)
 		if r < 0 {
 			r = -r
 		}
 		return int64(r)
 	case rune(IDENTIFIER):
-		s.read()
+		s.shift()
 		switch string(t.Src()) {
 		case "__has_include":
 			t0 := t
 			var arg string
-			if t := s.c(); t.Ch != '(' {
+			if t := s.token(); t.Ch != '(' {
 				c.eh("%v: expected '('", t.Position())
 				for {
-					s.read()
-					switch s.c().Ch {
+					s.shift()
+					switch s.token().Ch {
 					case ')':
-						s.read()
+						s.shift()
 						return int64(0)
 					case eof:
 						return int64(0)
@@ -2231,27 +2499,27 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 				}
 				return int64(0)
 			}
-			s.read()
+			s.shift()
 			var b []byte
 		out:
-			switch t := s.c(); t.Ch {
+			switch t := s.token(); t.Ch {
 			case rune(STRINGLITERAL):
-				s.read()
+				s.shift()
 				arg = string(t.Src())
 			default:
 				for {
 					b = append(b, t.Src()...)
-					s.read()
-					switch t = s.c(); t.Ch {
+					s.shift()
+					switch t = s.token(); t.Ch {
 					case ')', eof:
 						arg = string(b)
 						break out
 					}
 				}
 			}
-			switch t = s.c(); t.Ch {
+			switch t = s.token(); t.Ch {
 			case ')':
-				s.read()
+				s.shift()
 				if c.hasInclude(t0, arg) {
 					return int64(1)
 				}
@@ -2263,25 +2531,25 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 			}
 		}
 
-		if s.c().Ch == '(' {
+		if s.rune() == '(' {
 			for {
-				s.read()
-				switch s.c().Ch {
+				s.shift()
+				switch s.token().Ch {
 				case ')', eof:
-					s.read()
+					s.shift()
 					return int64(0)
 				}
 			}
 		}
 		return int64(0)
 	case rune(PPNUMBER):
-		s.read()
+		s.shift()
 		return c.intConst(t)
 	case '(':
-		s.read()
+		s.shift()
 		expr := c.expression(s, eval)
-		if s.c().Ch == ')' {
-			s.read()
+		if s.rune() == ')' {
+			s.shift()
 		} else {
 			panic(todo(""))
 		}

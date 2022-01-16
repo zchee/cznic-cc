@@ -168,14 +168,14 @@ func preprocess(cpp *cpp, w io.Writer) (err error) {
 	cpp.eh = func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) }
 	var prev rune
 	for {
-		if cpp.c() == eof {
+		if cpp.rune() == eof {
 			if errors != nil {
 				err = errors
 			}
 			return err
 		}
 
-		tok := cpp.consume()
+		tok := cpp.shift()
 		switch c := tok.Ch; {
 		case
 			// Prevent the textual form of certain adjacent tokens to form a "false" token,
@@ -219,4 +219,15 @@ func preprocess(cpp *cpp, w io.Writer) (err error) {
 			return err
 		}
 	}
+}
+
+// Parse preprocesses and parsees a translation unit, consisting of inputs in
+// sources, and writes the result to w.
+func Parse(cfg *Config, sources []Source) (*AST, error) {
+	p, err := newParser(cfg, sources)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.ast()
 }

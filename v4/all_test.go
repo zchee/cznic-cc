@@ -14,6 +14,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -24,6 +25,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 	"modernc.org/ccorpus"
 	"modernc.org/httpfs"
+	"modernc.org/mathutil"
 )
 
 var (
@@ -145,27 +147,66 @@ func walk(dir string, f func(pth string, fi os.FileInfo) error) error {
 }
 
 // Produce the AST used in examples documentation.
-func exampleAST(rule int, src string) interface{} {
+func exampleAST(rule int, src string) (r interface{}) {
 	return "TODO"
-	// src = strings.Replace(src, "\\n", "\n", -1)
-	// cfg := &Config{ignoreErrors: true, PreprocessOnly: true}
-	// ctx := newContext(cfg)
-	// ctx.keywords = gccKeywords
-	// ast, _ := parse(ctx, nil, nil, []Source{{Name: "example.c", Value: src, DoNotCache: true}})
-	// if ast == nil {
-	// 	return "FAIL"
-	// }
+	defer func() {
+		if err := recover(); err != nil {
+			s := fmt.Sprintf("%v", err)
+			r = s
+		}
+	}()
 
-	// pc, _, _, _ := runtime.Caller(1)
-	// typ := runtime.FuncForPC(pc - 1).Name()
-	// i := strings.LastIndexByte(typ, '.')
-	// typ = typ[i+1+len("Example"):]
-	// i = strings.LastIndexByte(typ, '_')
-	// typ = typ[:i]
-	// var node Node
-	// depth := mathutil.MaxInt
-	// findNode(typ, ast.TranslationUnit, 0, &node, &depth)
-	// return node
+	src = strings.Replace(src, "\\n", "\n", -1)
+	cfg := &Config{}
+	ast, _ := Parse(cfg, []Source{{Name: "example.c", Value: src}})
+	if ast == nil {
+		return "FAIL"
+	}
+
+	pc, _, _, _ := runtime.Caller(1)
+	typ := runtime.FuncForPC(pc - 1).Name()
+	i := strings.LastIndexByte(typ, '.')
+	typ = typ[i+1+len("Example"):]
+	i = strings.LastIndexByte(typ, '_')
+	typ = typ[:i]
+	var node Node
+	depth := mathutil.MaxInt
+	findNode(typ, ast.TranslationUnit, 0, &node, &depth)
+	return node
+}
+
+func findNode(typ string, n Node, depth int, out *Node, pdepth *int) {
+	if depth >= *pdepth {
+		return
+	}
+
+	v := reflect.ValueOf(n)
+	if v.Kind() != reflect.Ptr {
+		return
+	}
+
+	elem := v.Elem()
+	if elem.Kind() != reflect.Struct {
+		return
+	}
+
+	t := reflect.TypeOf(elem.Interface())
+	if t.Name() == typ {
+		*pdepth = depth
+		*out = n
+		return
+	}
+
+	for i := 0; i < elem.NumField(); i++ {
+		fld := t.Field(i)
+		if nm := fld.Name[0]; nm < 'A' || nm > 'Z' {
+			continue
+		}
+
+		if x, ok := elem.FieldByIndex([]int{i}).Interface().(Node); ok {
+			findNode(typ, x, depth+1, out, pdepth)
+		}
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -772,5 +813,27 @@ func TestIssue127(t *testing.T) {
 		io.Discard,
 	); err != nil {
 		t.Fatalf("%v", err)
+	}
+}
+
+func TestBOM(t *testing.T) {
+	return //TODO-
+	for i, v := range []struct {
+		src string
+		err string
+	}{
+		{"int main() {}", ""},
+		{"\xEF\xBB\xBFint main() {}", ""},
+	} {
+		switch _, err := Parse(testCfg(), []Source{{Value: v.src}}); {
+		case v.err == "" && err != nil:
+			t.Errorf("%v: unexpected error %v", i, err)
+		case v.err != "" && err == nil:
+			t.Errorf("%v: unexpected success, expected error matching %v", i, v.err)
+		case v.err != "":
+			if !regexp.MustCompile(v.err).MatchString(err.Error()) {
+				t.Errorf("%v: error %v does not match %v", i, err, v.err)
+			}
+		}
 	}
 }
