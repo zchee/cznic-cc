@@ -13,1661 +13,2920 @@ import (
 func ExampleAbstractDeclarator_ptr() {
 	fmt.Println(exampleAST(193, "void f(int*);"))
 	// Output:
-	// TODO
+	// &cc.AbstractDeclarator{
+	// · Case: AbstractDeclaratorPtr,
+	// · Pointer: &cc.Pointer{
+	// · · Case: PointerPtr,
+	// · · Token: example.c:1:11: '*' "*",
+	// · },
+	// }
 }
 
 func ExampleAbstractDeclarator_decl() {
 	fmt.Println(exampleAST(194, "void f(int());"))
 	// Output:
-	// TODO
+	// parser.go:322:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: '(' "(" example.c:1:12: ')' ")"
 }
 
 func ExampleAdditiveExpression_mul() {
 	fmt.Println(exampleAST(45, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleAdditiveExpression_add() {
 	fmt.Println(exampleAST(46, "int i = x+y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleAdditiveExpression_sub() {
 	fmt.Println(exampleAST(47, "int i = x-y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleAlignmentSpecifier_alignasType() {
 	fmt.Println(exampleAST(167, "_Alignas(double) char c;"))
 	// Output:
-	// TODO
+	// parser.go:297:parameterDeclaration
+	// 	TODO &cc.DeclarationSpecifiers{
+	// · Case: DeclarationSpecifiersTypeSpec,
+	// · TypeSpecifier: &cc.TypeSpecifier{
+	// · · Case: TypeSpecifierDouble,
+	// · · Token: example.c:1:10: DOUBLE "double",
+	// · },
+	// } example.c:1:16: ')' ")"
 }
 
 func ExampleAlignmentSpecifier_alignasExpr() {
 	fmt.Println(exampleAST(168, "_Alignas(0ll) char c;"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:10: PPNUMBER "0ll"
 }
 
 func ExampleAndExpression_eq() {
 	fmt.Println(exampleAST(59, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleAndExpression_and() {
 	fmt.Println(exampleAST(60, "int i = x & y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleArgumentExpressionList_case0() {
 	fmt.Println(exampleAST(21, "int i = f(x);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleArgumentExpressionList_case1() {
 	fmt.Println(exampleAST(22, "int i = f(x, y);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleAsm_case0() {
 	fmt.Println(exampleAST(259, "__asm__(\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:9: STRINGLITERAL "\"nop\""
 }
 
 func ExampleAsmArgList_case0() {
 	fmt.Println(exampleAST(257, "__asm__(\"nop\": a);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:9: STRINGLITERAL "\"nop\""
 }
 
 func ExampleAsmArgList_case1() {
 	fmt.Println(exampleAST(258, "__asm__(\"nop\": a : b);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:9: STRINGLITERAL "\"nop\""
 }
 
 func ExampleAsmExpressionList_case0() {
 	fmt.Println(exampleAST(255, "__asm__(\"nop\": a);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:9: STRINGLITERAL "\"nop\""
 }
 
 func ExampleAsmExpressionList_case1() {
 	fmt.Println(exampleAST(256, "__asm__(\"nop\": a, b);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:9: STRINGLITERAL "\"nop\""
 }
 
 func ExampleAsmFunctionDefinition_case0() {
 	fmt.Println(exampleAST(261, "int f() __asm__(\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: IDENTIFIER "__asm__"
 }
 
 func ExampleAsmIndex_case0() {
 	fmt.Println(exampleAST(254, "__asm__(\"nop\": [a] b);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:9: STRINGLITERAL "\"nop\""
 }
 
 func ExampleAsmQualifier_volatile() {
 	fmt.Println(exampleAST(262, "__asm__ volatile (\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__asm__",
+	// } example.c:1:9: VOLATILE "volatile"
 }
 
 func ExampleAsmQualifier_inline() {
 	fmt.Println(exampleAST(263, "__asm__ inline (\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__asm__",
+	// } example.c:1:9: INLINE "inline"
 }
 
 func ExampleAsmQualifier_goto() {
 	fmt.Println(exampleAST(264, "__asm__ goto (\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__asm__",
+	// } example.c:1:9: GOTO "goto"
 }
 
 func ExampleAsmQualifierList_case0() {
 	fmt.Println(exampleAST(265, "__asm__ inline (\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__asm__",
+	// } example.c:1:9: INLINE "inline"
 }
 
 func ExampleAsmQualifierList_case1() {
 	fmt.Println(exampleAST(266, "__asm__ inline volatile (\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__asm__",
+	// } example.c:1:9: INLINE "inline"
 }
 
 func ExampleAsmStatement_case0() {
 	fmt.Println(exampleAST(260, "void f() { __asm__(\"nop\"); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:7: '(' "(",
+	// · · Token2: example.c:1:8: ')' ")",
+	// · },
+	// · Token: example.c:1:6: IDENTIFIER "f",
+	// } example.c:1:10: '{' "{"
 }
 
 func ExampleAssignmentExpression_cond() {
 	fmt.Println(exampleAST(71, "int i = x; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleAssignmentExpression_assign() {
 	fmt.Println(exampleAST(72, "int f() { x = y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_mul() {
 	fmt.Println(exampleAST(73, "int f() { x *= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_div() {
 	fmt.Println(exampleAST(74, "int f() { x /= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_mod() {
 	fmt.Println(exampleAST(75, "int f() { x %= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_add() {
 	fmt.Println(exampleAST(76, "int f() { x += y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_sub() {
 	fmt.Println(exampleAST(77, "int f() { x -= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_lsh() {
 	fmt.Println(exampleAST(78, "int f() { x <<= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_rsh() {
 	fmt.Println(exampleAST(79, "int f() { x >>= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_and() {
 	fmt.Println(exampleAST(80, "int f() { x &= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_xor() {
 	fmt.Println(exampleAST(81, "int f() { x ^= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAssignmentExpression_or() {
 	fmt.Println(exampleAST(82, "int f() { x |= y; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleAtomicTypeSpecifier_case0() {
 	fmt.Println(exampleAST(159, "_Atomic(int) i;"))
 	// Output:
-	// TODO
+	// parser.go:297:parameterDeclaration
+	// 	TODO &cc.DeclarationSpecifiers{
+	// · Case: DeclarationSpecifiersTypeSpec,
+	// · TypeSpecifier: &cc.TypeSpecifier{
+	// · · Case: TypeSpecifierInt,
+	// · · Token: example.c:1:9: INT "int",
+	// · },
+	// } example.c:1:12: ')' ")"
 }
 
 func ExampleAttributeSpecifier_case0() {
 	fmt.Println(exampleAST(274, "int i __attribute__((a));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleAttributeSpecifierList_case0() {
 	fmt.Println(exampleAST(275, "int i __attribute__((a));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleAttributeSpecifierList_case1() {
 	fmt.Println(exampleAST(276, "int i __attribute__((a)) __attribute((b));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleAttributeValue_ident() {
 	fmt.Println(exampleAST(270, "int i __attribute__((a));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleAttributeValue_expr() {
 	fmt.Println(exampleAST(271, "int i __attribute__((a(b)));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleAttributeValueList_case0() {
 	fmt.Println(exampleAST(272, "int i __attribute__((a));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleAttributeValueList_case1() {
 	fmt.Println(exampleAST(273, "int i __attribute__((a, b));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleBlockItem_decl() {
 	fmt.Println(exampleAST(225, "int f() { int i; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleBlockItem_stmt() {
 	fmt.Println(exampleAST(226, "int f() { g(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleBlockItem_label() {
 	fmt.Println(exampleAST(227, "int f() { __label__ L; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleBlockItem_funcDef() {
 	fmt.Println(exampleAST(228, "int f() { int g() {} }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleBlockItem_pragma() {
 	fmt.Println(exampleAST(229, "int f() {\\n#pragma STDC FENV_ACCESS OFF\\n}"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleBlockItemList_case0() {
 	fmt.Println(exampleAST(223, "int f() { int i; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleBlockItemList_case1() {
 	fmt.Println(exampleAST(224, "int f() { int i; double j; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleCastExpression_unary() {
 	fmt.Println(exampleAST(39, "int i = 42;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleCastExpression_cast() {
 	fmt.Println(exampleAST(40, "int i = (int)3.14;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleCompoundStatement_case0() {
 	fmt.Println(exampleAST(222, "int f() { int i; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleConditionalExpression_lOr() {
 	fmt.Println(exampleAST(69, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleConditionalExpression_cond() {
 	fmt.Println(exampleAST(70, "int i = x ? y : z;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleConstantExpression_case0() {
 	fmt.Println(exampleAST(85, "struct { int i:3; };"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleDeclaration_case0() {
 	fmt.Println(exampleAST(86, "int i, j;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: ',' ","
 }
 
 func ExampleDeclarationList_case0() {
 	fmt.Println(exampleAST(252, "int f(i) int i; {}"))
 	// Output:
-	// TODO
+	// parser.go:249:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:7: IDENTIFIER "i"
 }
 
 func ExampleDeclarationList_case1() {
 	fmt.Println(exampleAST(253, "int f(i, j) int i; int j; {}"))
 	// Output:
-	// TODO
+	// parser.go:249:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:7: IDENTIFIER "i"
 }
 
 func ExampleDeclarationSpecifiers_storage() {
 	fmt.Println(exampleAST(87, "static int i;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: STATIC "static"
 }
 
 func ExampleDeclarationSpecifiers_typeSpec() {
 	fmt.Println(exampleAST(88, "int i;"))
 	// Output:
-	// TODO
+	// &cc.DeclarationSpecifiers{
+	// · Case: DeclarationSpecifiersTypeSpec,
+	// · TypeSpecifier: &cc.TypeSpecifier{
+	// · · Case: TypeSpecifierInt,
+	// · · Token: example.c:1:1: INT "int",
+	// · },
+	// }
 }
 
 func ExampleDeclarationSpecifiers_typeQual() {
 	fmt.Println(exampleAST(89, "volatile int i;"))
 	// Output:
-	// TODO
+	// parser.go:368:declarationSpecifier
+	// 	TODO example.c:1:1: VOLATILE "volatile"
 }
 
 func ExampleDeclarationSpecifiers_func() {
 	fmt.Println(exampleAST(90, "inline int f() {}"))
 	// Output:
-	// TODO
+	// parser.go:371:declarationSpecifier
+	// 	TODO example.c:1:1: INLINE "inline"
 }
 
 func ExampleDeclarationSpecifiers_alignSpec() {
 	fmt.Println(exampleAST(91, "_Alignas(double) int i;"))
 	// Output:
-	// TODO
+	// parser.go:297:parameterDeclaration
+	// 	TODO &cc.DeclarationSpecifiers{
+	// · Case: DeclarationSpecifiersTypeSpec,
+	// · TypeSpecifier: &cc.TypeSpecifier{
+	// · · Case: TypeSpecifierDouble,
+	// · · Token: example.c:1:10: DOUBLE "double",
+	// · },
+	// } example.c:1:16: ')' ")"
 }
 
 func ExampleDeclarationSpecifiers_attribute() {
 	fmt.Println(exampleAST(92, "int __attribute__((a)) i;"))
 	// Output:
-	// TODO
+	// parser.go:322:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:19: '(' "(" example.c:1:20: IDENTIFIER "a"
 }
 
 func ExampleDeclarator_case0() {
 	fmt.Println(exampleAST(166, "int *p __attribute__ ((foo));"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExampleDesignation_case0() {
 	fmt.Println(exampleAST(205, "int a[] = { [42] = 314 };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "a",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDesignator_index() {
 	fmt.Println(exampleAST(208, "int a[] = { [42] = 314 };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "a",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDesignator_field() {
 	fmt.Println(exampleAST(209, "struct t s = { .fld = 314 };"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleDesignator_field2() {
 	fmt.Println(exampleAST(210, "struct t s = { fld: 314 };"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleDesignatorList_case0() {
 	fmt.Println(exampleAST(206, "int a[] = { [42] = 314 };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "a",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDesignatorList_case1() {
 	fmt.Println(exampleAST(207, "int a[100][] = { [42][12] = 314 };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "a",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDirectAbstractDeclarator_decl() {
 	fmt.Println(exampleAST(195, "void f(int());"))
 	// Output:
-	// TODO
+	// parser.go:322:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: '(' "(" example.c:1:12: ')' ")"
 }
 
 func ExampleDirectAbstractDeclarator_arr() {
 	fmt.Println(exampleAST(196, "void f(int[const 42]);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: '[' "["
 }
 
 func ExampleDirectAbstractDeclarator_staticArr() {
 	fmt.Println(exampleAST(197, "void f(int[static const 42]);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: '[' "["
 }
 
 func ExampleDirectAbstractDeclarator_arrStatic() {
 	fmt.Println(exampleAST(198, "void f(int[const static 42]);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: '[' "["
 }
 
 func ExampleDirectAbstractDeclarator_arrStar() {
 	fmt.Println(exampleAST(199, "void f(int[*]);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: '[' "["
 }
 
 func ExampleDirectAbstractDeclarator_func() {
 	fmt.Println(exampleAST(200, "void f(int(char));"))
 	// Output:
-	// TODO
+	// parser.go:322:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: '(' "(" example.c:1:12: CHAR "char"
 }
 
 func ExampleDirectDeclarator_ident() {
 	fmt.Println(exampleAST(169, "int i;"))
 	// Output:
-	// TODO
+	// &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// }
 }
 
 func ExampleDirectDeclarator_decl() {
 	fmt.Println(exampleAST(170, "int (f);"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '(' "("
 }
 
 func ExampleDirectDeclarator_arr() {
 	fmt.Println(exampleAST(171, "int i[const 42];"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDirectDeclarator_staticArr() {
 	fmt.Println(exampleAST(172, "int i[static const 42];"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDirectDeclarator_arrStatic() {
 	fmt.Println(exampleAST(173, "int i[const static 42];"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDirectDeclarator_star() {
 	fmt.Println(exampleAST(174, "int i[const *];"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleDirectDeclarator_funcParam() {
 	fmt.Println(exampleAST(175, "int f(int i);"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleDirectDeclarator_funcIdent() {
 	fmt.Println(exampleAST(176, "int f(a);"))
 	// Output:
-	// TODO
+	// parser.go:249:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:7: IDENTIFIER "a"
 }
 
 func ExampleEnumSpecifier_def() {
 	fmt.Println(exampleAST(153, "enum e {a};"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExampleEnumSpecifier_tag() {
 	fmt.Println(exampleAST(154, "enum e i;"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExampleEnumerator_ident() {
 	fmt.Println(exampleAST(157, "enum e {a};"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExampleEnumerator_expr() {
 	fmt.Println(exampleAST(158, "enum e {a = 42};"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExampleEnumeratorList_case0() {
 	fmt.Println(exampleAST(155, "enum e {a};"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExampleEnumeratorList_case1() {
 	fmt.Println(exampleAST(156, "enum e {a, b};"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExampleEqualityExpression_rel() {
 	fmt.Println(exampleAST(56, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleEqualityExpression_eq() {
 	fmt.Println(exampleAST(57, "int i = x == y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleEqualityExpression_neq() {
 	fmt.Println(exampleAST(58, "int i = x != y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleExclusiveOrExpression_and() {
 	fmt.Println(exampleAST(61, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleExclusiveOrExpression_xor() {
 	fmt.Println(exampleAST(62, "int i = x^y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleExpression_assign() {
 	fmt.Println(exampleAST(83, "int f() { i = x; };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleExpression_comma() {
 	fmt.Println(exampleAST(84, "int f() { x, y; };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleExpressionList_case0() {
 	fmt.Println(exampleAST(268, "int i __attribute__((a(b)));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleExpressionList_case1() {
 	fmt.Println(exampleAST(269, "int i __attribute__((a(b, c)));"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: IDENTIFIER "__attribute__"
 }
 
 func ExampleExpressionStatement_case0() {
 	fmt.Println(exampleAST(230, "int f() { g(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleExternalDeclaration_funcDef() {
 	fmt.Println(exampleAST(245, "int f() {}"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleExternalDeclaration_decl() {
 	fmt.Println(exampleAST(246, "int i;"))
 	// Output:
-	// TODO
+	// &cc.ExternalDeclaration{
+	// · Case: ExternalDeclarationDecl,
+	// · Declaration: &cc.Declaration{
+	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · Case: TypeSpecifierInt,
+	// · · · · Token: example.c:1:1: INT "int",
+	// · · · },
+	// · · },
+	// · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · Case: InitDeclaratorDecl,
+	// · · · · Declarator: &cc.Declarator{
+	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · · },
+	// · · · · },
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:6: ';' ";",
+	// · },
+	// }
 }
 
 func ExampleExternalDeclaration_asm() {
 	fmt.Println(exampleAST(247, "int f() __asm__(\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: IDENTIFIER "__asm__"
 }
 
 func ExampleExternalDeclaration_asmStmt() {
 	fmt.Println(exampleAST(248, "__asm__(\"nop\");"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:9: STRINGLITERAL "\"nop\""
 }
 
 func ExampleExternalDeclaration_empty() {
 	fmt.Println(exampleAST(249, ";"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:1: ';' ";"
 }
 
 func ExampleExternalDeclaration_pragma() {
 	fmt.Println(exampleAST(250, "#pragma STDC CX_LIMITED_RANGE DEFAULT"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:39: <EOF> ""
 }
 
 func ExampleFunctionDefinition_case0() {
 	fmt.Println(exampleAST(251, "int f() {}"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleFunctionSpecifier_inline() {
 	fmt.Println(exampleAST(164, "inline int f() {}"))
 	// Output:
-	// TODO
+	// parser.go:371:declarationSpecifier
+	// 	TODO example.c:1:1: INLINE "inline"
 }
 
 func ExampleFunctionSpecifier_noreturn() {
 	fmt.Println(exampleAST(165, "_Noreturn int f() {}"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Noreturn",
+	// } example.c:1:11: INT "int"
 }
 
 func ExampleIdentifierList_case0() {
 	fmt.Println(exampleAST(190, "int f(i) int i; {}"))
 	// Output:
-	// TODO
+	// parser.go:249:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:7: IDENTIFIER "i"
 }
 
 func ExampleIdentifierList_case1() {
 	fmt.Println(exampleAST(191, "int f(i, j) int i, j; {}"))
 	// Output:
-	// TODO
+	// parser.go:249:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:7: IDENTIFIER "i"
 }
 
 func ExampleInclusiveOrExpression_xor() {
 	fmt.Println(exampleAST(63, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleInclusiveOrExpression_or() {
 	fmt.Println(exampleAST(64, "int i = x|y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleInitDeclarator_decl() {
 	fmt.Println(exampleAST(95, "int i;"))
 	// Output:
-	// TODO
+	// &cc.InitDeclarator{
+	// · Case: InitDeclaratorDecl,
+	// · Declarator: &cc.Declarator{
+	// · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · Case: DirectDeclaratorIdent,
+	// · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · },
+	// · },
+	// }
 }
 
 func ExampleInitDeclarator_init() {
 	fmt.Println(exampleAST(96, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleInitDeclaratorList_case0() {
 	fmt.Println(exampleAST(93, "int i;"))
 	// Output:
-	// TODO
+	// &cc.InitDeclaratorList{
+	// · InitDeclarator: &cc.InitDeclarator{
+	// · · Case: InitDeclaratorDecl,
+	// · · Declarator: &cc.Declarator{
+	// · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · Case: DirectDeclaratorIdent,
+	// · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · },
+	// · · },
+	// · },
+	// }
 }
 
 func ExampleInitDeclaratorList_case1() {
 	fmt.Println(exampleAST(94, "int i, j;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: ',' ","
 }
 
 func ExampleInitializer_expr() {
 	fmt.Println(exampleAST(201, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleInitializer_initList() {
 	fmt.Println(exampleAST(202, "int i[] = { x };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleInitializerList_case0() {
 	fmt.Println(exampleAST(203, "int i[] = { [10] = x };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleInitializerList_case1() {
 	fmt.Println(exampleAST(204, "int i[] = { [10] = x, [20] = y };"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:6: '[' "["
 }
 
 func ExampleIterationStatement_while() {
 	fmt.Println(exampleAST(234, "int f() { while(x) y(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleIterationStatement_do() {
 	fmt.Println(exampleAST(235, "int f() { do x(); while(y); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleIterationStatement_for() {
 	fmt.Println(exampleAST(236, "int f() { for( i = 0; i < 10; i++) x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleIterationStatement_forDecl() {
 	fmt.Println(exampleAST(237, "int f() { for( int i = 0; i < 10; i++) x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleJumpStatement_goto() {
 	fmt.Println(exampleAST(238, "int f() { L: goto L; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleJumpStatement_gotoExpr() {
 	fmt.Println(exampleAST(239, "int f() { L: x(); void *p = &&L; goto *p; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleJumpStatement_continue() {
 	fmt.Println(exampleAST(240, "int f() { for(;;) if (i) continue; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleJumpStatement_break() {
 	fmt.Println(exampleAST(241, "int f() { for(;;) if (i) break; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleJumpStatement_return() {
 	fmt.Println(exampleAST(242, "int f() { if (i) return x; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleLabelDeclaration_case0() {
 	fmt.Println(exampleAST(267, "int f() { __label__ L; L: x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleLabeledStatement_label() {
 	fmt.Println(exampleAST(218, "int f() { L: goto L; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleLabeledStatement_caseLabel() {
 	fmt.Println(exampleAST(219, "int f() { switch(i) case 42: x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleLabeledStatement_range() {
 	fmt.Println(exampleAST(220, "int f() { switch(i) case 42 ... 56: x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleLabeledStatement_default() {
 	fmt.Println(exampleAST(221, "int f() { switch(i) default: x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleLogicalAndExpression_or() {
 	fmt.Println(exampleAST(65, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleLogicalAndExpression_lAnd() {
 	fmt.Println(exampleAST(66, "int i = x && y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleLogicalOrExpression_lAnd() {
 	fmt.Println(exampleAST(67, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleLogicalOrExpression_lOr() {
 	fmt.Println(exampleAST(68, "int i = x || y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleMultiplicativeExpression_cast() {
 	fmt.Println(exampleAST(41, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleMultiplicativeExpression_mul() {
 	fmt.Println(exampleAST(42, "int i = x * y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleMultiplicativeExpression_div() {
 	fmt.Println(exampleAST(43, "int i = x / y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleMultiplicativeExpression_mod() {
 	fmt.Println(exampleAST(44, "int i = x % y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleParameterDeclaration_decl() {
 	fmt.Println(exampleAST(188, "int f(int i) {}"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleParameterDeclaration_abstract() {
 	fmt.Println(exampleAST(189, "int f(int*) {}"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · ParameterTypeList: &cc.ParameterTypeList{
+	// · · · Case: ParameterTypeListList,
+	// · · · ParameterList: &cc.ParameterList{
+	// · · · · ParameterDeclaration: &cc.ParameterDeclaration{
+	// · · · · · AbstractDeclarator: &cc.AbstractDeclarator{
+	// · · · · · · Case: AbstractDeclaratorPtr,
+	// · · · · · · Pointer: &cc.Pointer{
+	// · · · · · · · Case: PointerPtr,
+	// · · · · · · · Token: example.c:1:10: '*' "*",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · Case: ParameterDeclarationAbstract,
+	// · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · Case: TypeSpecifierInt,
+	// · · · · · · · Token: example.c:1:7: INT "int",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · },
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:11: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:13: '{' "{"
 }
 
 func ExampleParameterList_case0() {
 	fmt.Println(exampleAST(186, "int f(int i) {}"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleParameterList_case1() {
 	fmt.Println(exampleAST(187, "int f(int i, int j) {}"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleParameterTypeList_list() {
 	fmt.Println(exampleAST(184, "int f(int i) {}"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleParameterTypeList_var() {
 	fmt.Println(exampleAST(185, "int f(int i, ...) {}"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:11: IDENTIFIER "i"
 }
 
 func ExamplePointer_typeQual() {
 	fmt.Println(exampleAST(177, "int *p;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExamplePointer_ptr() {
 	fmt.Println(exampleAST(178, "int **p;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExamplePointer_block() {
 	fmt.Println(exampleAST(179, "int atexit_b(void (^ _Nonnull)(void));"))
 	// Output:
-	// TODO
+	// parser.go:322:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:19: '(' "(" example.c:1:20: '^' "^"
 }
 
 func ExamplePostfixExpression_primary() {
 	fmt.Println(exampleAST(11, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_index() {
 	fmt.Println(exampleAST(12, "int i = x[y];"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_call() {
 	fmt.Println(exampleAST(13, "int i = x(y);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_select() {
 	fmt.Println(exampleAST(14, "int i = x.y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_pSelect() {
 	fmt.Println(exampleAST(15, "int i = x->y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_inc() {
 	fmt.Println(exampleAST(16, "int i = x++;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_dec() {
 	fmt.Println(exampleAST(17, "int i = x--;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_complit() {
 	fmt.Println(exampleAST(18, "int i = (int[]){y};"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_typeCmp() {
 	fmt.Println(exampleAST(19, "int i = __builtin_types_compatible_p(int, double);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePostfixExpression_chooseExpr() {
 	fmt.Println(exampleAST(20, "int i = __builtin_choose_expr(1, 2, \"foo\");"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePragmaSTDC_case0() {
 	fmt.Println(exampleAST(277, "_Pragma(\"STDC FP_CONTRACT ON\")"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:32: <EOF> ""
 }
 
 func ExamplePrimaryExpression_ident() {
 	fmt.Println(exampleAST(1, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePrimaryExpression_int() {
 	fmt.Println(exampleAST(2, "int i = 42;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePrimaryExpression_float() {
 	fmt.Println(exampleAST(3, "int i = 3.14;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePrimaryExpression_enum() {
 	fmt.Println(exampleAST(4, "enum e {a}; int i = a;"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExamplePrimaryExpression_char() {
 	fmt.Println(exampleAST(5, "int i = 'x';"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePrimaryExpression_lChar() {
 	fmt.Println(exampleAST(6, "int i = L'x';"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePrimaryExpression_string() {
 	fmt.Println(exampleAST(7, "char *c = \"x\";"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:6: '*' "*"
 }
 
 func ExamplePrimaryExpression_lString() {
 	fmt.Println(exampleAST(8, "char *c = L\"x\";"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:6: '*' "*"
 }
 
 func ExamplePrimaryExpression_expr() {
 	fmt.Println(exampleAST(9, "int i = (x+y);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExamplePrimaryExpression_stmt() {
 	fmt.Println(exampleAST(10, "int i = ({x();});"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleRelationalExpression_shift() {
 	fmt.Println(exampleAST(51, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleRelationalExpression_lt() {
 	fmt.Println(exampleAST(52, "int i = x < y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleRelationalExpression_gt() {
 	fmt.Println(exampleAST(53, "int i = x > y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleRelationalExpression_leq() {
 	fmt.Println(exampleAST(54, "int i = x <= y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleRelationalExpression_geq() {
 	fmt.Println(exampleAST(55, "int i = x >= y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleSelectionStatement_if() {
 	fmt.Println(exampleAST(231, "int f() { if(x) y(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleSelectionStatement_ifElse() {
 	fmt.Println(exampleAST(232, "int f() { if(x) y(); else z(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleSelectionStatement_switch() {
 	fmt.Println(exampleAST(233, "int f() { switch(i) case 42: x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleShiftExpression_add() {
 	fmt.Println(exampleAST(48, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleShiftExpression_lsh() {
 	fmt.Println(exampleAST(49, "int i = x << y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleShiftExpression_rsh() {
 	fmt.Println(exampleAST(50, "int i = x >> y;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleSpecifierQualifierList_typeSpec() {
 	fmt.Println(exampleAST(145, "struct {int i;};"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleSpecifierQualifierList_typeQual() {
 	fmt.Println(exampleAST(146, "struct {const int i;};"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleSpecifierQualifierList_alignSpec() {
 	fmt.Println(exampleAST(147, "struct {_Alignas(double) int i;};"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleSpecifierQualifierList_attribute() {
 	fmt.Println(exampleAST(148, "struct {__attribute__((a)) int i;};"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStatement_labeled() {
 	fmt.Println(exampleAST(211, "int f() { L: x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleStatement_compound() {
 	fmt.Println(exampleAST(212, "int f() { { y(); } }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleStatement_expr() {
 	fmt.Println(exampleAST(213, "int f() { x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleStatement_selection() {
 	fmt.Println(exampleAST(214, "int f() { if(x) y(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleStatement_iteration() {
 	fmt.Println(exampleAST(215, "int f() { for(;;) x(); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleStatement_jump() {
 	fmt.Println(exampleAST(216, "int f() { return x; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleStatement_asm() {
 	fmt.Println(exampleAST(217, "int f() { __asm__(\"nop\"); }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleStorageClassSpecifier_typedef() {
 	fmt.Println(exampleAST(97, "typedef int int_t;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: TYPEDEF "typedef"
 }
 
 func ExampleStorageClassSpecifier_extern() {
 	fmt.Println(exampleAST(98, "extern int i;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: EXTERN "extern"
 }
 
 func ExampleStorageClassSpecifier_static() {
 	fmt.Println(exampleAST(99, "static int i;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: STATIC "static"
 }
 
 func ExampleStorageClassSpecifier_auto() {
 	fmt.Println(exampleAST(100, "auto int i;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: AUTO "auto"
 }
 
 func ExampleStorageClassSpecifier_register() {
 	fmt.Println(exampleAST(101, "register int i;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: REGISTER "register"
 }
 
 func ExampleStorageClassSpecifier_threadLocal() {
 	fmt.Println(exampleAST(102, "_Thread_local int i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Thread_local",
+	// } example.c:1:15: INT "int"
 }
 
 func ExampleStructDeclaration_case0() {
 	fmt.Println(exampleAST(144, "struct{ int i; }"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructDeclarationList_case0() {
 	fmt.Println(exampleAST(142, "struct{ int i; }"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructDeclarationList_case1() {
 	fmt.Println(exampleAST(143, "struct{ int i; double d; }"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructDeclarator_decl() {
 	fmt.Println(exampleAST(151, "struct{ int i; }"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructDeclarator_bitField() {
 	fmt.Println(exampleAST(152, "struct{ int i:3; }"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructDeclaratorList_case0() {
 	fmt.Println(exampleAST(149, "struct{ int i; }"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructDeclaratorList_case1() {
 	fmt.Println(exampleAST(150, "struct{ int i, j; }"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructOrUnion_struct() {
 	fmt.Println(exampleAST(140, "struct { int i; } s;"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructOrUnion_union() {
 	fmt.Println(exampleAST(141, "union { int i; double d; } u;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:1: UNION "union"
 }
 
 func ExampleStructOrUnionSpecifier_def() {
 	fmt.Println(exampleAST(138, "struct s { int i; };"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleStructOrUnionSpecifier_tag() {
 	fmt.Println(exampleAST(139, "struct s v;"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleTranslationUnit_case0() {
 	fmt.Println(exampleAST(243, "int i;"))
 	// Output:
-	// TODO
+	// &cc.TranslationUnit{
+	// · ExternalDeclaration: &cc.ExternalDeclaration{
+	// · · Case: ExternalDeclarationDecl,
+	// · · Declaration: &cc.Declaration{
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · Case: TypeSpecifierInt,
+	// · · · · · Token: example.c:1:1: INT "int",
+	// · · · · },
+	// · · · },
+	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · Case: InitDeclaratorDecl,
+	// · · · · · Declarator: &cc.Declarator{
+	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · },
+	// · · · },
+	// · · · Token: example.c:1:6: ';' ";",
+	// · · },
+	// · },
+	// }
 }
 
 func ExampleTranslationUnit_case1() {
 	fmt.Println(exampleAST(244, "int i; int j;"))
 	// Output:
-	// TODO
+	// &cc.TranslationUnit{
+	// · ExternalDeclaration: &cc.ExternalDeclaration{
+	// · · Case: ExternalDeclarationDecl,
+	// · · Declaration: &cc.Declaration{
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · Case: TypeSpecifierInt,
+	// · · · · · Token: example.c:1:1: INT "int",
+	// · · · · },
+	// · · · },
+	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · Case: InitDeclaratorDecl,
+	// · · · · · Declarator: &cc.Declarator{
+	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · },
+	// · · · },
+	// · · · Token: example.c:1:6: ';' ";",
+	// · · },
+	// · },
+	// · TranslationUnit: &cc.TranslationUnit{
+	// · · ExternalDeclaration: &cc.ExternalDeclaration{
+	// · · · Case: ExternalDeclarationDecl,
+	// · · · Declaration: &cc.Declaration{
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · Case: TypeSpecifierInt,
+	// · · · · · · Token: example.c:1:8: INT "int",
+	// · · · · · },
+	// · · · · },
+	// · · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · · Case: InitDeclaratorDecl,
+	// · · · · · · Declarator: &cc.Declarator{
+	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · Token: example.c:1:12: IDENTIFIER "j",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · },
+	// · · · · },
+	// · · · · Token: example.c:1:13: ';' ";",
+	// · · · },
+	// · · },
+	// · },
+	// }
 }
 
 func ExampleTypeName_case0() {
 	fmt.Println(exampleAST(192, "int i = (int)x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleTypeQualifier_const() {
 	fmt.Println(exampleAST(160, "const int i;"))
 	// Output:
-	// TODO
+	// parser.go:368:declarationSpecifier
+	// 	TODO example.c:1:1: CONST "const"
 }
 
 func ExampleTypeQualifier_restrict() {
 	fmt.Println(exampleAST(161, "restrict int i;"))
 	// Output:
-	// TODO
+	// parser.go:368:declarationSpecifier
+	// 	TODO example.c:1:1: RESTRICT "restrict"
 }
 
 func ExampleTypeQualifier_volatile() {
 	fmt.Println(exampleAST(162, "volatile int i;"))
 	// Output:
-	// TODO
+	// parser.go:368:declarationSpecifier
+	// 	TODO example.c:1:1: VOLATILE "volatile"
 }
 
 func ExampleTypeQualifier_atomic() {
 	fmt.Println(exampleAST(163, "_Atomic int i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Atomic",
+	// } example.c:1:9: INT "int"
 }
 
 func ExampleTypeQualifiers_typeQual() {
 	fmt.Println(exampleAST(180, "int * const i;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExampleTypeQualifiers_attribute() {
 	fmt.Println(exampleAST(181, "int * __attribute__((a)) i;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExampleTypeQualifiers_case2() {
 	fmt.Println(exampleAST(182, "int * const volatile i;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExampleTypeQualifiers_case3() {
 	fmt.Println(exampleAST(183, "int * __attribute__((a)) __attribute__((b)) i;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExampleTypeSpecifier_void() {
 	fmt.Println(exampleAST(103, "void i();"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierVoid,
+	// · Token: example.c:1:1: VOID "void",
+	// }
 }
 
 func ExampleTypeSpecifier_char() {
 	fmt.Println(exampleAST(104, "char i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierChar,
+	// · Token: example.c:1:1: CHAR "char",
+	// }
 }
 
 func ExampleTypeSpecifier_short() {
 	fmt.Println(exampleAST(105, "short i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierShort,
+	// · Token: example.c:1:1: SHORT "short",
+	// }
 }
 
 func ExampleTypeSpecifier_int() {
 	fmt.Println(exampleAST(106, "int i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierInt,
+	// · Token: example.c:1:1: INT "int",
+	// }
 }
 
 func ExampleTypeSpecifier_int8() {
 	fmt.Println(exampleAST(107, "__int8 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__int8",
+	// } example.c:1:8: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_int16() {
 	fmt.Println(exampleAST(108, "__int16 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__int16",
+	// } example.c:1:9: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_int32() {
 	fmt.Println(exampleAST(109, "__int32 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__int32",
+	// } example.c:1:9: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_int64() {
 	fmt.Println(exampleAST(110, "__int64 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__int64",
+	// } example.c:1:9: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_int128() {
 	fmt.Println(exampleAST(111, "__int128 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__int128",
+	// } example.c:1:10: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_long() {
 	fmt.Println(exampleAST(112, "long i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierLong,
+	// · Token: example.c:1:1: LONG "long",
+	// }
 }
 
 func ExampleTypeSpecifier_float() {
 	fmt.Println(exampleAST(113, "float i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierFloat,
+	// · Token: example.c:1:1: FLOAT "float",
+	// }
 }
 
 func ExampleTypeSpecifier_float16() {
 	fmt.Println(exampleAST(114, "__fp16 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__fp16",
+	// } example.c:1:8: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_decimal32() {
 	fmt.Println(exampleAST(115, "_Decimal32 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Decimal32",
+	// } example.c:1:12: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_decimal64() {
 	fmt.Println(exampleAST(116, "_Decimal64 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Decimal64",
+	// } example.c:1:12: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_decimal128() {
 	fmt.Println(exampleAST(117, "_Decimal128 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Decimal128",
+	// } example.c:1:13: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_float128() {
 	fmt.Println(exampleAST(118, "_Float128 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Float128",
+	// } example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_float80() {
 	fmt.Println(exampleAST(119, "__float80 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "__float80",
+	// } example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_double() {
 	fmt.Println(exampleAST(120, "double i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierDouble,
+	// · Token: example.c:1:1: DOUBLE "double",
+	// }
 }
 
 func ExampleTypeSpecifier_signed() {
 	fmt.Println(exampleAST(121, "signed i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierSigned,
+	// · Token: example.c:1:1: SIGNED "signed",
+	// }
 }
 
 func ExampleTypeSpecifier_unsigned() {
 	fmt.Println(exampleAST(122, "unsigned i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierUnsigned,
+	// · Token: example.c:1:1: UNSIGNED "unsigned",
+	// }
 }
 
 func ExampleTypeSpecifier_bool() {
 	fmt.Println(exampleAST(123, "_Bool i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierBool,
+	// · Token: example.c:1:1: BOOL "_Bool",
+	// }
 }
 
 func ExampleTypeSpecifier_complex() {
 	fmt.Println(exampleAST(124, "_Complex i;"))
 	// Output:
-	// TODO
+	// &cc.TypeSpecifier{
+	// · Case: TypeSpecifierComplex,
+	// · Token: example.c:1:1: COMPLEX "_Complex",
+	// }
 }
 
 func ExampleTypeSpecifier_structOrUnion() {
 	fmt.Println(exampleAST(125, "struct s i;"))
 	// Output:
-	// TODO
+	// parser.go:398:declarationSpecifier
+	// 	TODO example.c:1:1: STRUCT "struct"
 }
 
 func ExampleTypeSpecifier_enum() {
 	fmt.Println(exampleAST(126, "enum e i;"))
 	// Output:
-	// TODO
+	// parser.go:382:declarationSpecifier
+	// 	TODO example.c:1:1: ENUM "enum"
 }
 
 func ExampleTypeSpecifier_typedefName() {
 	fmt.Println(exampleAST(127, "typedef const T; T i;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: TYPEDEF "typedef"
 }
 
 func ExampleTypeSpecifier_typeofExpr() {
 	fmt.Println(exampleAST(128, "typeof(42) i;"))
 	// Output:
-	// TODO
+	// parser.go:324:declaratorOrAbtractDeclarator
+	// 	TODO example.c:1:8: PPNUMBER "42"
 }
 
 func ExampleTypeSpecifier_typeofType() {
 	fmt.Println(exampleAST(129, "typedef const T; typeof(T) i;"))
 	// Output:
-	// TODO
+	// parser.go:361:declarationSpecifier
+	// 	TODO example.c:1:1: TYPEDEF "typedef"
 }
 
 func ExampleTypeSpecifier_atomic() {
 	fmt.Println(exampleAST(130, "_Atomic(int) i;"))
 	// Output:
-	// TODO
+	// parser.go:297:parameterDeclaration
+	// 	TODO &cc.DeclarationSpecifiers{
+	// · Case: DeclarationSpecifiersTypeSpec,
+	// · TypeSpecifier: &cc.TypeSpecifier{
+	// · · Case: TypeSpecifierInt,
+	// · · Token: example.c:1:9: INT "int",
+	// · },
+	// } example.c:1:12: ')' ")"
 }
 
 func ExampleTypeSpecifier_fract() {
 	fmt.Println(exampleAST(131, "_Fract i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Fract",
+	// } example.c:1:8: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_sat() {
 	fmt.Println(exampleAST(132, "_Sat i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Sat",
+	// } example.c:1:6: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_accum() {
 	fmt.Println(exampleAST(133, "_Accum i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Accum",
+	// } example.c:1:8: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_float32() {
 	fmt.Println(exampleAST(134, "_Float32 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Float32",
+	// } example.c:1:10: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_float64() {
 	fmt.Println(exampleAST(135, "_Float64 i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Float64",
+	// } example.c:1:10: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_float32x() {
 	fmt.Println(exampleAST(136, "_Float32x i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Float32x",
+	// } example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleTypeSpecifier_float64x() {
 	fmt.Println(exampleAST(137, "_Float64x i;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:1: IDENTIFIER "_Float64x",
+	// } example.c:1:11: IDENTIFIER "i"
 }
 
 func ExampleUnaryExpression_postfix() {
 	fmt.Println(exampleAST(23, "int i = x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_inc() {
 	fmt.Println(exampleAST(24, "int i = ++x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_dec() {
 	fmt.Println(exampleAST(25, "int i = --x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_addrof() {
 	fmt.Println(exampleAST(26, "int *i = &x;"))
 	// Output:
-	// TODO
+	// parser.go:159:externalDeclaration
+	// 	TODO example.c:1:5: '*' "*"
 }
 
 func ExampleUnaryExpression_deref() {
 	fmt.Println(exampleAST(27, "int i = *x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_plus() {
 	fmt.Println(exampleAST(28, "int i = +x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_minus() {
 	fmt.Println(exampleAST(29, "int i = -x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_cpl() {
 	fmt.Println(exampleAST(30, "int i = ~x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_not() {
 	fmt.Println(exampleAST(31, "int i = !x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_sizeofExpr() {
 	fmt.Println(exampleAST(32, "int i = sizeof x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_sizeofType() {
 	fmt.Println(exampleAST(33, "int i = sizeof(int);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_labelAddr() {
 	fmt.Println(exampleAST(34, "int f() { L: &&L; }"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · DirectDeclarator: &cc.DirectDeclarator{
+	// · · Case: DirectDeclaratorFuncParam,
+	// · · Token: example.c:1:6: '(' "(",
+	// · · Token2: example.c:1:7: ')' ")",
+	// · },
+	// · Token: example.c:1:5: IDENTIFIER "f",
+	// } example.c:1:9: '{' "{"
 }
 
 func ExampleUnaryExpression_alignofExpr() {
 	fmt.Println(exampleAST(35, "int i = _Alignof(x);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_alignofType() {
 	fmt.Println(exampleAST(36, "int i = _Alignof(int);"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:5: IDENTIFIER "i",
+	// } example.c:1:7: '=' "="
 }
 
 func ExampleUnaryExpression_imag() {
 	fmt.Println(exampleAST(37, "double i = __imag__ x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:8: IDENTIFIER "i",
+	// } example.c:1:10: '=' "="
 }
 
 func ExampleUnaryExpression_real() {
 	fmt.Println(exampleAST(38, "double i = __real__ x;"))
 	// Output:
-	// TODO
+	// parser.go:258:directDeclarator
+	// 	TODO &cc.DirectDeclarator{
+	// · Case: DirectDeclaratorIdent,
+	// · Token: example.c:1:8: IDENTIFIER "i",
+	// } example.c:1:10: '=' "="
 }

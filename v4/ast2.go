@@ -6,4 +6,5 @@ package cc // import "modernc.org/cc/v4"
 
 type AST struct {
 	TranslationUnit *TranslationUnit
+	EOF             Token
 }

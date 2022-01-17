@@ -75,7 +75,7 @@ more:
 			p.cpp.tok.Ch = r2
 			r = r2
 		}
-	case ' ':
+	case ' ', '\n':
 		p.shift()
 		goto more
 	}
@@ -97,9 +97,15 @@ func (p *parser) ast() (*AST, error) {
 	var errors errors
 	p.cpp.eh = func(msg string, args ...interface{}) { errors = append(errors, fmt.Sprintf(msg, args...)) }
 	tu := p.translationUnit()
-	_ = tu
-	p.rune()
-	panic(todo(""))
+	switch p.rune() {
+	case eof:
+		return &AST{
+			TranslationUnit: tu,
+			EOF:             p.shift(),
+		}, nil
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
 }
 
 // [0], 6.9 External definitions
@@ -130,8 +136,24 @@ func (p *parser) externalDeclaration() (r *ExternalDeclaration) {
 		switch p.rune() {
 		case rune(IDENTIFIER):
 			d := p.declarator()
-			p.rune()
-			panic(todo("", d, &p.cpp.tok))
+			switch p.rune() {
+			case ';':
+				return &ExternalDeclaration{
+					Case: ExternalDeclarationDecl,
+					Declaration: &Declaration{
+						DeclarationSpecifiers: ds,
+						InitDeclaratorList: &InitDeclaratorList{
+							InitDeclarator: &InitDeclarator{
+								Case:       InitDeclaratorDecl,
+								Declarator: d,
+							},
+						},
+						Token: p.shift(),
+					},
+				}
+			default:
+				panic(todo("", d, &p.cpp.tok))
+			}
 		default:
 			p.rune()
 			panic(todo("", &p.cpp.tok))
@@ -144,12 +166,7 @@ func (p *parser) externalDeclaration() (r *ExternalDeclaration) {
 //  declarator:
 // 	pointer_opt direct-declarator attribute-specifier-list_opt
 func (p *parser) declarator() (r *Declarator) {
-	ptr := p.pointer()
-	dd := p.directDeclarator()
-	_ = dd
-	_ = ptr
-	p.rune()
-	panic(todo("", &p.cpp.tok))
+	return &Declarator{Pointer: p.pointer(), DirectDeclarator: p.directDeclarator()}
 }
 
 //  pointer:
@@ -161,7 +178,7 @@ func (p *parser) pointer() (r *Pointer) {
 		return nil
 	}
 
-	r = &Pointer{Token: p.shift(), TypeQualifiers: p.typeQualifierList()}
+	r = &Pointer{Case: PointerPtr, Token: p.shift(), TypeQualifiers: p.typeQualifierList()}
 	for prev := r; p.rune() == '*'; {
 		_ = prev
 		panic(todo("", &p.cpp.tok))
@@ -232,10 +249,12 @@ func (p *parser) directDeclarator() (r *DirectDeclarator) {
 				panic(todo("", r, &p.cpp.tok))
 			default:
 				d := &DirectDeclarator{Case: DirectDeclaratorFuncParam, Token: paren, ParameterTypeList: p.parameterTypeList(), Token2: p.must(')')}
-				panic(todo("", d, &p.cpp.tok))
+				prev.DirectDeclarator = d
+				prev = d
 			}
+		case ';':
+			return r
 		default:
-			_ = prev
 			panic(todo("", r, &p.cpp.tok))
 		}
 	}
@@ -273,9 +292,37 @@ func (p *parser) parameterList() (r *ParameterList) {
 // 	declaration-specifiers abstract-declarator_opt
 func (p *parser) parameterDeclaration() (r *ParameterDeclaration) {
 	ds := p.declarationSpecifiers()
-	ptr := p.pointer()
-	p.rune()
-	panic(todo("", ds, ptr, &p.cpp.tok))
+	switch p.rune() {
+	case ',', ')':
+		panic(todo("", ds, &p.cpp.tok))
+	}
+
+	switch x := p.declaratorOrAbtractDeclarator().(type) {
+	case *AbstractDeclarator:
+		return &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds, AbstractDeclarator: x}
+	default:
+		panic(todo("%v %v %T", ds, &p.cpp.tok, x))
+	}
+}
+
+func (p *parser) declaratorOrAbtractDeclarator() (r Node) {
+	var ptr *Pointer
+	switch p.rune() {
+	case '*':
+		ptr = p.pointer()
+		switch p.rune() {
+		case ')':
+			return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr}
+		default:
+			panic(todo("", &p.cpp.tok))
+		}
+	case '(':
+		paren := p.shift()
+		p.rune()
+		panic(todo("", &paren, &p.cpp.tok))
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
 }
 
 //  declaration-specifiers:

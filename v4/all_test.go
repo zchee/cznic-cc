@@ -148,11 +148,9 @@ func walk(dir string, f func(pth string, fi os.FileInfo) error) error {
 
 // Produce the AST used in examples documentation.
 func exampleAST(rule int, src string) (r interface{}) {
-	return "TODO"
 	defer func() {
 		if err := recover(); err != nil {
-			s := fmt.Sprintf("%v", err)
-			r = s
+			r = fmt.Sprintf("%v", err)
 		}
 	}()
 
