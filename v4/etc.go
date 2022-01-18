@@ -55,8 +55,8 @@ func todo(s string, args ...interface{}) string {
 		s = fmt.Sprintf(s, args...)
 	}
 	r := fmt.Sprintf("%s\n\tTODO %s", origin(2), s)
-	fmt.Fprintf(os.Stderr, "%s\n", r)
-	os.Stdout.Sync()
+	// fmt.Fprintf(os.Stderr, "%s\n", r)
+	// os.Stdout.Sync()
 	return r
 }
 

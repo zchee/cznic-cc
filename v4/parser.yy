@@ -369,8 +369,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case TypeQual   */ |	TypeQualifier DeclarationSpecifiers
 			/*yy:example inline int f() {} */
 /*yy:case Func       */ |	FunctionSpecifier DeclarationSpecifiers
-			/*yy:example _Alignas(double) int i; */
-/*yy:case AlignSpec  */ |	AlignmentSpecifier DeclarationSpecifiers
+// 			/*yy:example _Alignas(double) int i; */
+// /*yy:case AlignSpec  */ |	AlignmentSpecifier DeclarationSpecifiers
 			/*yy:example int __attribute__((a)) i; */
 /*yy:case Attribute  */ |	AttributeSpecifier DeclarationSpecifiers
 
@@ -503,8 +503,8 @@ package cc // import "modernc.org/cc/v4"
 				TypeSpecifier SpecifierQualifierList
 			/*yy:example struct {const int i;};*/
 /*yy:case TypeQual   */ |	TypeQualifier SpecifierQualifierList
-			/*yy:example struct {_Alignas(double) int i;};*/
-/*yy:case AlignSpec  */ |	AlignmentSpecifier SpecifierQualifierList
+// 			/*yy:example struct {_Alignas(double) int i;};*/
+// /*yy:case AlignSpec  */ |	AlignmentSpecifier SpecifierQualifierList
 			/*yy:example struct {__attribute__((a)) int i;};*/
 /*yy:case Attribute  */ |	AttributeSpecifier SpecifierQualifierList
 
@@ -567,12 +567,12 @@ package cc // import "modernc.org/cc/v4"
 			Declarator:
 				Pointer DirectDeclarator AttributeSpecifierList %prec BELOW_ATTRIBUTE
 
-			/* [2], 6.7.5 Alignment specifier */
-			/*yy:example _Alignas(double) char c; */
-/*yy:case AlignasType*/ AlignmentSpecifier:
-				"_Alignas" '(' TypeName ')'
-			/*yy:example _Alignas(0ll) char c; */
-/*yy:case AlignasExpr*/ |	"_Alignas" '(' ConstantExpression ')'
+// 			/* [2], 6.7.5 Alignment specifier */
+// 			/*yy:example _Alignas(double) char c; */
+// /*yy:case AlignasType*/ AlignmentSpecifier:
+// 				"_Alignas" '(' TypeName ')'
+// 			/*yy:example _Alignas(0ll) char c; */
+// /*yy:case AlignasExpr*/ |	"_Alignas" '(' ConstantExpression ')'
 
 			/*yy:example int i; */
 /*yy:case Ident      */ DirectDeclarator:

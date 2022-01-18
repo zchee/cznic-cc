@@ -131,84 +131,6 @@ func (n *AdditiveExpression) Position() (r token.Position) {
 	}
 }
 
-// AlignmentSpecifierCase represents case numbers of production AlignmentSpecifier
-type AlignmentSpecifierCase int
-
-// Values of type AlignmentSpecifierCase
-const (
-	AlignmentSpecifierAlignasType AlignmentSpecifierCase = iota
-	AlignmentSpecifierAlignasExpr
-)
-
-// String implements fmt.Stringer
-func (n AlignmentSpecifierCase) String() string {
-	switch n {
-	case AlignmentSpecifierAlignasType:
-		return "AlignmentSpecifierAlignasType"
-	case AlignmentSpecifierAlignasExpr:
-		return "AlignmentSpecifierAlignasExpr"
-	default:
-		return fmt.Sprintf("AlignmentSpecifierCase(%v)", int(n))
-	}
-}
-
-// AlignmentSpecifier represents data reduced by productions:
-//
-//	AlignmentSpecifier:
-//	        "_Alignas" '(' TypeName ')'            // Case AlignmentSpecifierAlignasType
-//	|       "_Alignas" '(' ConstantExpression ')'  // Case AlignmentSpecifierAlignasExpr
-type AlignmentSpecifier struct {
-	Case               AlignmentSpecifierCase `PrettyPrint:"stringer,zero"`
-	ConstantExpression *ConstantExpression
-	Token              Token
-	Token2             Token
-	Token3             Token
-	TypeName           *TypeName
-}
-
-// String implements fmt.Stringer.
-func (n *AlignmentSpecifier) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *AlignmentSpecifier) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	switch n.Case {
-	case 1:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.ConstantExpression.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token3.Position()
-	case 0:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.TypeName.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token3.Position()
-	default:
-		panic("internal error")
-	}
-}
-
 // AndExpressionCase represents case numbers of production AndExpression
 type AndExpressionCase int
 
@@ -1193,7 +1115,6 @@ const (
 	DeclarationSpecifiersTypeSpec
 	DeclarationSpecifiersTypeQual
 	DeclarationSpecifiersFunc
-	DeclarationSpecifiersAlignSpec
 	DeclarationSpecifiersAttribute
 )
 
@@ -1208,8 +1129,6 @@ func (n DeclarationSpecifiersCase) String() string {
 		return "DeclarationSpecifiersTypeQual"
 	case DeclarationSpecifiersFunc:
 		return "DeclarationSpecifiersFunc"
-	case DeclarationSpecifiersAlignSpec:
-		return "DeclarationSpecifiersAlignSpec"
 	case DeclarationSpecifiersAttribute:
 		return "DeclarationSpecifiersAttribute"
 	default:
@@ -1224,10 +1143,8 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       TypeSpecifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeSpec
 //	|       TypeQualifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeQual
 //	|       FunctionSpecifier DeclarationSpecifiers      // Case DeclarationSpecifiersFunc
-//	|       AlignmentSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAlignSpec
 //	|       AttributeSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAttribute
 type DeclarationSpecifiers struct {
-	AlignmentSpecifier    *AlignmentSpecifier
 	AttributeSpecifier    *AttributeSpecifier
 	Case                  DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
 	DeclarationSpecifiers *DeclarationSpecifiers
@@ -1248,12 +1165,6 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 
 	switch n.Case {
 	case 4:
-		if p := n.AlignmentSpecifier.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.DeclarationSpecifiers.Position()
-	case 5:
 		if p := n.AttributeSpecifier.Position(); p.IsValid() {
 			return p
 		}
@@ -4077,7 +3988,6 @@ type SpecifierQualifierListCase int
 const (
 	SpecifierQualifierListTypeSpec SpecifierQualifierListCase = iota
 	SpecifierQualifierListTypeQual
-	SpecifierQualifierListAlignSpec
 	SpecifierQualifierListAttribute
 )
 
@@ -4088,8 +3998,6 @@ func (n SpecifierQualifierListCase) String() string {
 		return "SpecifierQualifierListTypeSpec"
 	case SpecifierQualifierListTypeQual:
 		return "SpecifierQualifierListTypeQual"
-	case SpecifierQualifierListAlignSpec:
-		return "SpecifierQualifierListAlignSpec"
 	case SpecifierQualifierListAttribute:
 		return "SpecifierQualifierListAttribute"
 	default:
@@ -4102,10 +4010,8 @@ func (n SpecifierQualifierListCase) String() string {
 //	SpecifierQualifierList:
 //	        TypeSpecifier SpecifierQualifierList       // Case SpecifierQualifierListTypeSpec
 //	|       TypeQualifier SpecifierQualifierList       // Case SpecifierQualifierListTypeQual
-//	|       AlignmentSpecifier SpecifierQualifierList  // Case SpecifierQualifierListAlignSpec
 //	|       AttributeSpecifier SpecifierQualifierList  // Case SpecifierQualifierListAttribute
 type SpecifierQualifierList struct {
-	AlignmentSpecifier     *AlignmentSpecifier
 	AttributeSpecifier     *AttributeSpecifier
 	Case                   SpecifierQualifierListCase `PrettyPrint:"stringer,zero"`
 	SpecifierQualifierList *SpecifierQualifierList
@@ -4124,12 +4030,6 @@ func (n *SpecifierQualifierList) Position() (r token.Position) {
 
 	switch n.Case {
 	case 2:
-		if p := n.AlignmentSpecifier.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.SpecifierQualifierList.Position()
-	case 3:
 		if p := n.AttributeSpecifier.Position(); p.IsValid() {
 			return p
 		}

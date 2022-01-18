@@ -229,5 +229,5 @@ func Parse(cfg *Config, sources []Source) (*AST, error) {
 		return nil, err
 	}
 
-	return p.ast()
+	return p.parse()
 }
