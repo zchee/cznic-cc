@@ -217,7 +217,7 @@ func (n *ArgumentExpressionList) Position() (r token.Position) {
 // Asm represents data reduced by production:
 //
 //	Asm:
-//	        "__asm__" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
+//	        "asm" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
 type Asm struct {
 	AsmArgList       *AsmArgList
 	AsmQualifierList *AsmQualifierList
@@ -446,11 +446,10 @@ func (n *AsmQualifierList) Position() (r token.Position) {
 // AsmStatement represents data reduced by production:
 //
 //	AsmStatement:
-//	        Asm AttributeSpecifierList ';'
+//	        Asm ';'
 type AsmStatement struct {
-	Asm                    *Asm
-	AttributeSpecifierList *AttributeSpecifierList
-	Token                  Token
+	Asm   *Asm
+	Token Token
 }
 
 // String implements fmt.Stringer.
@@ -463,10 +462,6 @@ func (n *AsmStatement) Position() (r token.Position) {
 	}
 
 	if p := n.Asm.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 		return p
 	}
 
@@ -574,196 +569,6 @@ func (n *AssignmentExpression) Position() (r token.Position) {
 	}
 }
 
-// AtomicTypeSpecifier represents data reduced by production:
-//
-//	AtomicTypeSpecifier:
-//	        "_Atomic" '(' TypeName ')'
-type AtomicTypeSpecifier struct {
-	Token    Token
-	Token2   Token
-	Token3   Token
-	TypeName *TypeName
-}
-
-// String implements fmt.Stringer.
-func (n *AtomicTypeSpecifier) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *AtomicTypeSpecifier) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	if p := n.Token.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.Token2.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.TypeName.Position(); p.IsValid() {
-		return p
-	}
-
-	return n.Token3.Position()
-}
-
-// AttributeSpecifier represents data reduced by production:
-//
-//	AttributeSpecifier:
-//	        "__attribute__" '(' '(' AttributeValueList ')' ')'
-type AttributeSpecifier struct {
-	AttributeValueList *AttributeValueList
-	Token              Token
-	Token2             Token
-	Token3             Token
-	Token4             Token
-	Token5             Token
-}
-
-// String implements fmt.Stringer.
-func (n *AttributeSpecifier) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *AttributeSpecifier) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	if p := n.Token.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.Token2.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.Token3.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.AttributeValueList.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.Token4.Position(); p.IsValid() {
-		return p
-	}
-
-	return n.Token5.Position()
-}
-
-// AttributeSpecifierList represents data reduced by productions:
-//
-//	AttributeSpecifierList:
-//	        AttributeSpecifier
-//	|       AttributeSpecifierList AttributeSpecifier
-type AttributeSpecifierList struct {
-	AttributeSpecifier     *AttributeSpecifier
-	AttributeSpecifierList *AttributeSpecifierList
-}
-
-// String implements fmt.Stringer.
-func (n *AttributeSpecifierList) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *AttributeSpecifierList) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	return n.AttributeSpecifier.Position()
-}
-
-// AttributeValueCase represents case numbers of production AttributeValue
-type AttributeValueCase int
-
-// Values of type AttributeValueCase
-const (
-	AttributeValueIdent AttributeValueCase = iota
-	AttributeValueExpr
-)
-
-// String implements fmt.Stringer
-func (n AttributeValueCase) String() string {
-	switch n {
-	case AttributeValueIdent:
-		return "AttributeValueIdent"
-	case AttributeValueExpr:
-		return "AttributeValueExpr"
-	default:
-		return fmt.Sprintf("AttributeValueCase(%v)", int(n))
-	}
-}
-
-// AttributeValue represents data reduced by productions:
-//
-//	AttributeValue:
-//	        IDENTIFIER                         // Case AttributeValueIdent
-//	|       IDENTIFIER '(' ExpressionList ')'  // Case AttributeValueExpr
-type AttributeValue struct {
-	Case           AttributeValueCase `PrettyPrint:"stringer,zero"`
-	ExpressionList *ExpressionList
-	Token          Token
-	Token2         Token
-	Token3         Token
-}
-
-// String implements fmt.Stringer.
-func (n *AttributeValue) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *AttributeValue) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	switch n.Case {
-	case 0:
-		return n.Token.Position()
-	case 1:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.ExpressionList.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token3.Position()
-	default:
-		panic("internal error")
-	}
-}
-
-// AttributeValueList represents data reduced by productions:
-//
-//	AttributeValueList:
-//	        AttributeValue
-//	|       AttributeValueList ',' AttributeValue
-type AttributeValueList struct {
-	AttributeValue     *AttributeValue
-	AttributeValueList *AttributeValueList
-	Token              Token
-}
-
-// String implements fmt.Stringer.
-func (n *AttributeValueList) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *AttributeValueList) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	return n.AttributeValue.Position()
-}
-
 // BlockItemCase represents case numbers of production BlockItem
 type BlockItemCase int
 
@@ -771,9 +576,7 @@ type BlockItemCase int
 const (
 	BlockItemDecl BlockItemCase = iota
 	BlockItemStmt
-	BlockItemLabel
 	BlockItemFuncDef
-	BlockItemPragma
 )
 
 // String implements fmt.Stringer
@@ -783,12 +586,8 @@ func (n BlockItemCase) String() string {
 		return "BlockItemDecl"
 	case BlockItemStmt:
 		return "BlockItemStmt"
-	case BlockItemLabel:
-		return "BlockItemLabel"
 	case BlockItemFuncDef:
 		return "BlockItemFuncDef"
-	case BlockItemPragma:
-		return "BlockItemPragma"
 	default:
 		return fmt.Sprintf("BlockItemCase(%v)", int(n))
 	}
@@ -799,17 +598,13 @@ func (n BlockItemCase) String() string {
 //	BlockItem:
 //	        Declaration                                         // Case BlockItemDecl
 //	|       Statement                                           // Case BlockItemStmt
-//	|       LabelDeclaration                                    // Case BlockItemLabel
 //	|       DeclarationSpecifiers Declarator CompoundStatement  // Case BlockItemFuncDef
-//	|       PragmaSTDC                                          // Case BlockItemPragma
 type BlockItem struct {
 	Case                  BlockItemCase `PrettyPrint:"stringer,zero"`
 	CompoundStatement     *CompoundStatement
 	Declaration           *Declaration
 	DeclarationSpecifiers *DeclarationSpecifiers
 	Declarator            *Declarator
-	LabelDeclaration      *LabelDeclaration
-	PragmaSTDC            *PragmaSTDC
 	Statement             *Statement
 }
 
@@ -825,7 +620,7 @@ func (n *BlockItem) Position() (r token.Position) {
 	switch n.Case {
 	case 0:
 		return n.Declaration.Position()
-	case 3:
+	case 2:
 		if p := n.DeclarationSpecifiers.Position(); p.IsValid() {
 			return p
 		}
@@ -835,10 +630,6 @@ func (n *BlockItem) Position() (r token.Position) {
 		}
 
 		return n.CompoundStatement.Position()
-	case 2:
-		return n.LabelDeclaration.Position()
-	case 4:
-		return n.PragmaSTDC.Position()
 	case 1:
 		return n.Statement.Position()
 	default:
@@ -1115,7 +906,6 @@ const (
 	DeclarationSpecifiersTypeSpec
 	DeclarationSpecifiersTypeQual
 	DeclarationSpecifiersFunc
-	DeclarationSpecifiersAttribute
 )
 
 // String implements fmt.Stringer
@@ -1129,8 +919,6 @@ func (n DeclarationSpecifiersCase) String() string {
 		return "DeclarationSpecifiersTypeQual"
 	case DeclarationSpecifiersFunc:
 		return "DeclarationSpecifiersFunc"
-	case DeclarationSpecifiersAttribute:
-		return "DeclarationSpecifiersAttribute"
 	default:
 		return fmt.Sprintf("DeclarationSpecifiersCase(%v)", int(n))
 	}
@@ -1143,9 +931,7 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       TypeSpecifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeSpec
 //	|       TypeQualifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeQual
 //	|       FunctionSpecifier DeclarationSpecifiers      // Case DeclarationSpecifiersFunc
-//	|       AttributeSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAttribute
 type DeclarationSpecifiers struct {
-	AttributeSpecifier    *AttributeSpecifier
 	Case                  DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
 	DeclarationSpecifiers *DeclarationSpecifiers
 	FunctionSpecifier     *FunctionSpecifier
@@ -1164,12 +950,6 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 4:
-		if p := n.AttributeSpecifier.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.DeclarationSpecifiers.Position()
 	case 3:
 		if p := n.FunctionSpecifier.Position(); p.IsValid() {
 			return p
@@ -1202,11 +982,10 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 // Declarator represents data reduced by production:
 //
 //	Declarator:
-//	        Pointer DirectDeclarator AttributeSpecifierList
+//	        Pointer DirectDeclarator
 type Declarator struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	DirectDeclarator       *DirectDeclarator
-	Pointer                *Pointer
+	DirectDeclarator *DirectDeclarator
+	Pointer          *Pointer
 }
 
 // String implements fmt.Stringer.
@@ -1222,11 +1001,7 @@ func (n *Declarator) Position() (r token.Position) {
 		return p
 	}
 
-	if p := n.DirectDeclarator.Position(); p.IsValid() {
-		return p
-	}
-
-	return n.AttributeSpecifierList.Position()
+	return n.DirectDeclarator.Position()
 }
 
 // Designation represents data reduced by production:
@@ -1556,7 +1331,7 @@ func (n DirectDeclaratorCase) String() string {
 //
 //	DirectDeclarator:
 //	        IDENTIFIER Asm                                                         // Case DirectDeclaratorIdent
-//	|       '(' AttributeSpecifierList Declarator ')'                              // Case DirectDeclaratorDecl
+//	|       '(' Declarator ')'                                                     // Case DirectDeclaratorDecl
 //	|       DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'           // Case DirectDeclaratorArr
 //	|       DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'  // Case DirectDeclaratorStaticArr
 //	|       DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'  // Case DirectDeclaratorArrStatic
@@ -1564,18 +1339,17 @@ func (n DirectDeclaratorCase) String() string {
 //	|       DirectDeclarator '(' ParameterTypeList ')'                             // Case DirectDeclaratorFuncParam
 //	|       DirectDeclarator '(' IdentifierList ')'                                // Case DirectDeclaratorFuncIdent
 type DirectDeclarator struct {
-	Asm                    *Asm
-	AssignmentExpression   *AssignmentExpression
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   DirectDeclaratorCase `PrettyPrint:"stringer,zero"`
-	Declarator             *Declarator
-	DirectDeclarator       *DirectDeclarator
-	IdentifierList         *IdentifierList
-	ParameterTypeList      *ParameterTypeList
-	Token                  Token
-	Token2                 Token
-	Token3                 Token
-	TypeQualifiers         *TypeQualifiers
+	Asm                  *Asm
+	AssignmentExpression *AssignmentExpression
+	Case                 DirectDeclaratorCase `PrettyPrint:"stringer,zero"`
+	Declarator           *Declarator
+	DirectDeclarator     *DirectDeclarator
+	IdentifierList       *IdentifierList
+	ParameterTypeList    *ParameterTypeList
+	Token                Token
+	Token2               Token
+	Token3               Token
+	TypeQualifiers       *TypeQualifiers
 }
 
 // String implements fmt.Stringer.
@@ -1707,10 +1481,6 @@ func (n *DirectDeclarator) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
-			return p
-		}
-
 		if p := n.Declarator.Position(); p.IsValid() {
 			return p
 		}
@@ -1745,17 +1515,16 @@ func (n EnumSpecifierCase) String() string {
 // EnumSpecifier represents data reduced by productions:
 //
 //	EnumSpecifier:
-//	        "enum" AttributeSpecifierList IDENTIFIER '{' EnumeratorList ',' '}'  // Case EnumSpecifierDef
-//	|       "enum" AttributeSpecifierList IDENTIFIER                             // Case EnumSpecifierTag
+//	        "enum" IDENTIFIER '{' EnumeratorList ',' '}'  // Case EnumSpecifierDef
+//	|       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 type EnumSpecifier struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   EnumSpecifierCase `PrettyPrint:"stringer,zero"`
-	EnumeratorList         *EnumeratorList
-	Token                  Token
-	Token2                 Token
-	Token3                 Token
-	Token4                 Token
-	Token5                 Token
+	Case           EnumSpecifierCase `PrettyPrint:"stringer,zero"`
+	EnumeratorList *EnumeratorList
+	Token          Token
+	Token2         Token
+	Token3         Token
+	Token4         Token
+	Token5         Token
 }
 
 // String implements fmt.Stringer.
@@ -1773,17 +1542,9 @@ func (n *EnumSpecifier) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
-			return p
-		}
-
 		return n.Token2.Position()
 	case 0:
 		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 			return p
 		}
 
@@ -1833,14 +1594,13 @@ func (n EnumeratorCase) String() string {
 // Enumerator represents data reduced by productions:
 //
 //	Enumerator:
-//	        IDENTIFIER AttributeSpecifierList                         // Case EnumeratorIdent
-//	|       IDENTIFIER AttributeSpecifierList '=' ConstantExpression  // Case EnumeratorExpr
+//	        IDENTIFIER                         // Case EnumeratorIdent
+//	|       IDENTIFIER '=' ConstantExpression  // Case EnumeratorExpr
 type Enumerator struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   EnumeratorCase `PrettyPrint:"stringer,zero"`
-	ConstantExpression     *ConstantExpression
-	Token                  Token
-	Token2                 Token
+	Case               EnumeratorCase `PrettyPrint:"stringer,zero"`
+	ConstantExpression *ConstantExpression
+	Token              Token
+	Token2             Token
 }
 
 // String implements fmt.Stringer.
@@ -1854,17 +1614,9 @@ func (n *Enumerator) Position() (r token.Position) {
 
 	switch n.Case {
 	case 0:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.AttributeSpecifierList.Position()
+		return n.Token.Position()
 	case 1:
 		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 			return p
 		}
 
@@ -2049,11 +1801,10 @@ func (n ExpressionCase) String() string {
 // Expression represents data reduced by productions:
 //
 //	Expression:
-//	        AssignmentExpression                 // Case ExpressionAssign
-//	|       Expression ',' AssignmentExpression  // Case ExpressionComma
+//	        AssignmentExpression
+//	|       Expression ',' AssignmentExpression
 type Expression struct {
 	AssignmentExpression *AssignmentExpression
-	Case                 ExpressionCase `PrettyPrint:"stringer,zero"`
 	Expression           *Expression
 	Token                Token
 }
@@ -2067,55 +1818,16 @@ func (n *Expression) Position() (r token.Position) {
 		return r
 	}
 
-	switch n.Case {
-	case 0:
-		return n.AssignmentExpression.Position()
-	case 1:
-		if p := n.Expression.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.AssignmentExpression.Position()
-	default:
-		panic("internal error")
-	}
-}
-
-// ExpressionList represents data reduced by productions:
-//
-//	ExpressionList:
-//	        AssignmentExpression
-//	|       ExpressionList ',' AssignmentExpression
-type ExpressionList struct {
-	AssignmentExpression *AssignmentExpression
-	ExpressionList       *ExpressionList
-	Token                Token
-}
-
-// String implements fmt.Stringer.
-func (n *ExpressionList) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *ExpressionList) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
 	return n.AssignmentExpression.Position()
 }
 
 // ExpressionStatement represents data reduced by production:
 //
 //	ExpressionStatement:
-//	        Expression AttributeSpecifierList ';'
+//	        Expression ';'
 type ExpressionStatement struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	Expression             *Expression
-	Token                  Token
+	Expression *Expression
+	Token      Token
 }
 
 // String implements fmt.Stringer.
@@ -2128,10 +1840,6 @@ func (n *ExpressionStatement) Position() (r token.Position) {
 	}
 
 	if p := n.Expression.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 		return p
 	}
 
@@ -2148,7 +1856,6 @@ const (
 	ExternalDeclarationAsm
 	ExternalDeclarationAsmStmt
 	ExternalDeclarationEmpty
-	ExternalDeclarationPragma
 )
 
 // String implements fmt.Stringer
@@ -2164,8 +1871,6 @@ func (n ExternalDeclarationCase) String() string {
 		return "ExternalDeclarationAsmStmt"
 	case ExternalDeclarationEmpty:
 		return "ExternalDeclarationEmpty"
-	case ExternalDeclarationPragma:
-		return "ExternalDeclarationPragma"
 	default:
 		return fmt.Sprintf("ExternalDeclarationCase(%v)", int(n))
 	}
@@ -2179,14 +1884,12 @@ func (n ExternalDeclarationCase) String() string {
 //	|       AsmFunctionDefinition  // Case ExternalDeclarationAsm
 //	|       AsmStatement           // Case ExternalDeclarationAsmStmt
 //	|       ';'                    // Case ExternalDeclarationEmpty
-//	|       PragmaSTDC             // Case ExternalDeclarationPragma
 type ExternalDeclaration struct {
 	AsmFunctionDefinition *AsmFunctionDefinition
 	AsmStatement          *AsmStatement
 	Case                  ExternalDeclarationCase `PrettyPrint:"stringer,zero"`
 	Declaration           *Declaration
 	FunctionDefinition    *FunctionDefinition
-	PragmaSTDC            *PragmaSTDC
 	Token                 Token
 }
 
@@ -2208,8 +1911,6 @@ func (n *ExternalDeclaration) Position() (r token.Position) {
 		return n.Declaration.Position()
 	case 0:
 		return n.FunctionDefinition.Position()
-	case 5:
-		return n.PragmaSTDC.Position()
 	case 4:
 		return n.Token.Position()
 	default:
@@ -2402,14 +2103,13 @@ func (n InitDeclaratorCase) String() string {
 // InitDeclarator represents data reduced by productions:
 //
 //	InitDeclarator:
-//	        Declarator AttributeSpecifierList                  // Case InitDeclaratorDecl
-//	|       Declarator AttributeSpecifierList '=' Initializer  // Case InitDeclaratorInit
+//	        Declarator                  // Case InitDeclaratorDecl
+//	|       Declarator '=' Initializer  // Case InitDeclaratorInit
 type InitDeclarator struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   InitDeclaratorCase `PrettyPrint:"stringer,zero"`
-	Declarator             *Declarator
-	Initializer            *Initializer
-	Token                  Token
+	Case        InitDeclaratorCase `PrettyPrint:"stringer,zero"`
+	Declarator  *Declarator
+	Initializer *Initializer
+	Token       Token
 }
 
 // String implements fmt.Stringer.
@@ -2423,17 +2123,9 @@ func (n *InitDeclarator) Position() (r token.Position) {
 
 	switch n.Case {
 	case 0:
-		if p := n.Declarator.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.AttributeSpecifierList.Position()
+		return n.Declarator.Position()
 	case 1:
 		if p := n.Declarator.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 			return p
 		}
 
@@ -2451,12 +2143,11 @@ func (n *InitDeclarator) Position() (r token.Position) {
 //
 //	InitDeclaratorList:
 //	        InitDeclarator
-//	|       InitDeclaratorList ',' AttributeSpecifierList InitDeclarator
+//	|       InitDeclaratorList ',' InitDeclarator
 type InitDeclaratorList struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	InitDeclarator         *InitDeclarator
-	InitDeclaratorList     *InitDeclaratorList
-	Token                  Token
+	InitDeclarator     *InitDeclarator
+	InitDeclaratorList *InitDeclaratorList
+	Token              Token
 }
 
 // String implements fmt.Stringer.
@@ -2837,36 +2528,6 @@ func (n *JumpStatement) Position() (r token.Position) {
 	}
 }
 
-// LabelDeclaration represents data reduced by production:
-//
-//	LabelDeclaration:
-//	        "__label__" IdentifierList ';'
-type LabelDeclaration struct {
-	IdentifierList *IdentifierList
-	Token          Token
-	Token2         Token
-}
-
-// String implements fmt.Stringer.
-func (n *LabelDeclaration) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *LabelDeclaration) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	if p := n.Token.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.IdentifierList.Position(); p.IsValid() {
-		return p
-	}
-
-	return n.Token2.Position()
-}
-
 // LabeledStatementCase represents case numbers of production LabeledStatement
 type LabeledStatementCase int
 
@@ -2897,19 +2558,18 @@ func (n LabeledStatementCase) String() string {
 // LabeledStatement represents data reduced by productions:
 //
 //	LabeledStatement:
-//	        IDENTIFIER ':' AttributeSpecifierList Statement                   // Case LabeledStatementLabel
+//	        IDENTIFIER ':' Statement                                          // Case LabeledStatementLabel
 //	|       "case" ConstantExpression ':' Statement                           // Case LabeledStatementCaseLabel
 //	|       "case" ConstantExpression "..." ConstantExpression ':' Statement  // Case LabeledStatementRange
 //	|       "default" ':' Statement                                           // Case LabeledStatementDefault
 type LabeledStatement struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   LabeledStatementCase `PrettyPrint:"stringer,zero"`
-	ConstantExpression     *ConstantExpression
-	ConstantExpression2    *ConstantExpression
-	Statement              *Statement
-	Token                  Token
-	Token2                 Token
-	Token3                 Token
+	Case                LabeledStatementCase `PrettyPrint:"stringer,zero"`
+	ConstantExpression  *ConstantExpression
+	ConstantExpression2 *ConstantExpression
+	Statement           *Statement
+	Token               Token
+	Token2              Token
+	Token3              Token
 }
 
 // String implements fmt.Stringer.
@@ -2958,21 +2618,7 @@ func (n *LabeledStatement) Position() (r token.Position) {
 		}
 
 		return n.Statement.Position()
-	case 0:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Statement.Position()
-	case 3:
+	case 0, 3:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -3199,14 +2845,13 @@ func (n ParameterDeclarationCase) String() string {
 // ParameterDeclaration represents data reduced by productions:
 //
 //	ParameterDeclaration:
-//	        DeclarationSpecifiers Declarator AttributeSpecifierList  // Case ParameterDeclarationDecl
-//	|       DeclarationSpecifiers AbstractDeclarator                 // Case ParameterDeclarationAbstract
+//	        DeclarationSpecifiers Declarator          // Case ParameterDeclarationDecl
+//	|       DeclarationSpecifiers AbstractDeclarator  // Case ParameterDeclarationAbstract
 type ParameterDeclaration struct {
-	AbstractDeclarator     *AbstractDeclarator
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   ParameterDeclarationCase `PrettyPrint:"stringer,zero"`
-	DeclarationSpecifiers  *DeclarationSpecifiers
-	Declarator             *Declarator
+	AbstractDeclarator    *AbstractDeclarator
+	Case                  ParameterDeclarationCase `PrettyPrint:"stringer,zero"`
+	DeclarationSpecifiers *DeclarationSpecifiers
+	Declarator            *Declarator
 }
 
 // String implements fmt.Stringer.
@@ -3230,11 +2875,7 @@ func (n *ParameterDeclaration) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.Declarator.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.AttributeSpecifierList.Position()
+		return n.Declarator.Position()
 	default:
 		panic("internal error")
 	}
@@ -3607,41 +3248,6 @@ func (n *PostfixExpression) Position() (r token.Position) {
 	}
 }
 
-// PragmaSTDC represents data reduced by production:
-//
-//	PragmaSTDC:
-//	        "__pragma_stdc" IDENTIFIER IDENTIFIER IDENTIFIER
-type PragmaSTDC struct {
-	Token  Token
-	Token2 Token
-	Token3 Token
-	Token4 Token
-}
-
-// String implements fmt.Stringer.
-func (n *PragmaSTDC) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *PragmaSTDC) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	if p := n.Token.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.Token2.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.Token3.Position(); p.IsValid() {
-		return p
-	}
-
-	return n.Token4.Position()
-}
-
 // PrimaryExpressionCase represents case numbers of production PrimaryExpression
 type PrimaryExpressionCase int
 
@@ -3988,7 +3594,6 @@ type SpecifierQualifierListCase int
 const (
 	SpecifierQualifierListTypeSpec SpecifierQualifierListCase = iota
 	SpecifierQualifierListTypeQual
-	SpecifierQualifierListAttribute
 )
 
 // String implements fmt.Stringer
@@ -3998,8 +3603,6 @@ func (n SpecifierQualifierListCase) String() string {
 		return "SpecifierQualifierListTypeSpec"
 	case SpecifierQualifierListTypeQual:
 		return "SpecifierQualifierListTypeQual"
-	case SpecifierQualifierListAttribute:
-		return "SpecifierQualifierListAttribute"
 	default:
 		return fmt.Sprintf("SpecifierQualifierListCase(%v)", int(n))
 	}
@@ -4008,11 +3611,9 @@ func (n SpecifierQualifierListCase) String() string {
 // SpecifierQualifierList represents data reduced by productions:
 //
 //	SpecifierQualifierList:
-//	        TypeSpecifier SpecifierQualifierList       // Case SpecifierQualifierListTypeSpec
-//	|       TypeQualifier SpecifierQualifierList       // Case SpecifierQualifierListTypeQual
-//	|       AttributeSpecifier SpecifierQualifierList  // Case SpecifierQualifierListAttribute
+//	        TypeSpecifier SpecifierQualifierList  // Case SpecifierQualifierListTypeSpec
+//	|       TypeQualifier SpecifierQualifierList  // Case SpecifierQualifierListTypeQual
 type SpecifierQualifierList struct {
-	AttributeSpecifier     *AttributeSpecifier
 	Case                   SpecifierQualifierListCase `PrettyPrint:"stringer,zero"`
 	SpecifierQualifierList *SpecifierQualifierList
 	TypeQualifier          *TypeQualifier
@@ -4029,12 +3630,6 @@ func (n *SpecifierQualifierList) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 2:
-		if p := n.AttributeSpecifier.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.SpecifierQualifierList.Position()
 	case 1:
 		if p := n.TypeQualifier.Position(); p.IsValid() {
 			return p
@@ -4273,14 +3868,13 @@ func (n StructDeclaratorCase) String() string {
 // StructDeclarator represents data reduced by productions:
 //
 //	StructDeclarator:
-//	        Declarator                                                // Case StructDeclaratorDecl
-//	|       Declarator ':' ConstantExpression AttributeSpecifierList  // Case StructDeclaratorBitField
+//	        Declarator                         // Case StructDeclaratorDecl
+//	|       Declarator ':' ConstantExpression  // Case StructDeclaratorBitField
 type StructDeclarator struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   StructDeclaratorCase `PrettyPrint:"stringer,zero"`
-	ConstantExpression     *ConstantExpression
-	Declarator             *Declarator
-	Token                  Token
+	Case               StructDeclaratorCase `PrettyPrint:"stringer,zero"`
+	ConstantExpression *ConstantExpression
+	Declarator         *Declarator
+	Token              Token
 }
 
 // String implements fmt.Stringer.
@@ -4304,11 +3898,7 @@ func (n *StructDeclarator) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.ConstantExpression.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.AttributeSpecifierList.Position()
+		return n.ConstantExpression.Position()
 	default:
 		panic("internal error")
 	}
@@ -4404,16 +3994,15 @@ func (n StructOrUnionSpecifierCase) String() string {
 // StructOrUnionSpecifier represents data reduced by productions:
 //
 //	StructOrUnionSpecifier:
-//	        StructOrUnion AttributeSpecifierList IDENTIFIER '{' StructDeclarationList '}'  // Case StructOrUnionSpecifierDef
-//	|       StructOrUnion AttributeSpecifierList IDENTIFIER                                // Case StructOrUnionSpecifierTag
+//	        StructOrUnion IDENTIFIER '{' StructDeclarationList '}'  // Case StructOrUnionSpecifierDef
+//	|       StructOrUnion IDENTIFIER                                // Case StructOrUnionSpecifierTag
 type StructOrUnionSpecifier struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	Case                   StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
-	StructDeclarationList  *StructDeclarationList
-	StructOrUnion          *StructOrUnion
-	Token                  Token
-	Token2                 Token
-	Token3                 Token
+	Case                  StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
+	StructDeclarationList *StructDeclarationList
+	StructOrUnion         *StructOrUnion
+	Token                 Token
+	Token2                Token
+	Token3                Token
 }
 
 // String implements fmt.Stringer.
@@ -4431,17 +4020,9 @@ func (n *StructOrUnionSpecifier) Position() (r token.Position) {
 			return p
 		}
 
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
-			return p
-		}
-
 		return n.Token.Position()
 	case 0:
 		if p := n.StructOrUnion.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 			return p
 		}
 
@@ -4518,7 +4099,6 @@ const (
 	TypeQualifierConst TypeQualifierCase = iota
 	TypeQualifierRestrict
 	TypeQualifierVolatile
-	TypeQualifierAtomic
 )
 
 // String implements fmt.Stringer
@@ -4530,8 +4110,6 @@ func (n TypeQualifierCase) String() string {
 		return "TypeQualifierRestrict"
 	case TypeQualifierVolatile:
 		return "TypeQualifierVolatile"
-	case TypeQualifierAtomic:
-		return "TypeQualifierAtomic"
 	default:
 		return fmt.Sprintf("TypeQualifierCase(%v)", int(n))
 	}
@@ -4543,7 +4121,6 @@ func (n TypeQualifierCase) String() string {
 //	        "const"     // Case TypeQualifierConst
 //	|       "restrict"  // Case TypeQualifierRestrict
 //	|       "volatile"  // Case TypeQualifierVolatile
-//	|       "_Atomic"   // Case TypeQualifierAtomic
 type TypeQualifier struct {
 	Case  TypeQualifierCase `PrettyPrint:"stringer,zero"`
 	Token Token
@@ -4567,8 +4144,6 @@ type TypeQualifiersCase int
 // Values of type TypeQualifiersCase
 const (
 	TypeQualifiersTypeQual TypeQualifiersCase = iota
-	TypeQualifiersAttribute
-	_
 	_
 )
 
@@ -4577,8 +4152,6 @@ func (n TypeQualifiersCase) String() string {
 	switch n {
 	case TypeQualifiersTypeQual:
 		return "TypeQualifiersTypeQual"
-	case TypeQualifiersAttribute:
-		return "TypeQualifiersAttribute"
 	default:
 		return fmt.Sprintf("TypeQualifiersCase(%v)", int(n))
 	}
@@ -4587,15 +4160,12 @@ func (n TypeQualifiersCase) String() string {
 // TypeQualifiers represents data reduced by productions:
 //
 //	TypeQualifiers:
-//	        TypeQualifier                      // Case TypeQualifiersTypeQual
-//	|       AttributeSpecifier                 // Case TypeQualifiersAttribute
-//	|       TypeQualifiers TypeQualifier       // Case 2
-//	|       TypeQualifiers AttributeSpecifier  // Case 3
+//	        TypeQualifier                 // Case TypeQualifiersTypeQual
+//	|       TypeQualifiers TypeQualifier  // Case 1
 type TypeQualifiers struct {
-	AttributeSpecifier *AttributeSpecifier
-	Case               TypeQualifiersCase `PrettyPrint:"stringer,zero"`
-	TypeQualifier      *TypeQualifier
-	TypeQualifiers     *TypeQualifiers
+	Case           TypeQualifiersCase `PrettyPrint:"stringer,zero"`
+	TypeQualifier  *TypeQualifier
+	TypeQualifiers *TypeQualifiers
 }
 
 // String implements fmt.Stringer.
@@ -4608,17 +4178,9 @@ func (n *TypeQualifiers) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 1:
-		return n.AttributeSpecifier.Position()
 	case 0:
 		return n.TypeQualifier.Position()
-	case 3:
-		if p := n.TypeQualifiers.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.AttributeSpecifier.Position()
-	case 2:
+	case 1:
 		if p := n.TypeQualifiers.Position(); p.IsValid() {
 			return p
 		}
@@ -4661,7 +4223,6 @@ const (
 	TypeSpecifierTypedefName
 	TypeSpecifierTypeofExpr
 	TypeSpecifierTypeofType
-	TypeSpecifierAtomic
 	TypeSpecifierFract
 	TypeSpecifierSat
 	TypeSpecifierAccum
@@ -4728,8 +4289,6 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierTypeofExpr"
 	case TypeSpecifierTypeofType:
 		return "TypeSpecifierTypeofType"
-	case TypeSpecifierAtomic:
-		return "TypeSpecifierAtomic"
 	case TypeSpecifierFract:
 		return "TypeSpecifierFract"
 	case TypeSpecifierSat:
@@ -4779,7 +4338,6 @@ func (n TypeSpecifierCase) String() string {
 //	|       TYPENAME                     // Case TypeSpecifierTypedefName
 //	|       "typeof" '(' Expression ')'  // Case TypeSpecifierTypeofExpr
 //	|       "typeof" '(' TypeName ')'    // Case TypeSpecifierTypeofType
-//	|       AtomicTypeSpecifier          // Case TypeSpecifierAtomic
 //	|       "_Fract"                     // Case TypeSpecifierFract
 //	|       "_Sat"                       // Case TypeSpecifierSat
 //	|       "_Accum"                     // Case TypeSpecifierAccum
@@ -4788,7 +4346,6 @@ func (n TypeSpecifierCase) String() string {
 //	|       "_Float32x"                  // Case TypeSpecifierFloat32x
 //	|       "_Float64x"                  // Case TypeSpecifierFloat64x
 type TypeSpecifier struct {
-	AtomicTypeSpecifier    *AtomicTypeSpecifier
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier
 	Expression             *Expression
@@ -4809,13 +4366,11 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 27:
-		return n.AtomicTypeSpecifier.Position()
 	case 23:
 		return n.EnumSpecifier.Position()
 	case 22:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 24, 28, 29, 30, 31, 32, 33, 34:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 24, 27, 28, 29, 30, 31, 32, 33:
 		return n.Token.Position()
 	case 25:
 		if p := n.Token.Position(); p.IsValid() {
