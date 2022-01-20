@@ -564,7 +564,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:example int *p __attribute__ ((foo)); */
+			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator /* AttributeSpecifierList */ %prec BELOW_ATTRIBUTE
 

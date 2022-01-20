@@ -75,32 +75,64 @@ func (p *parser) isKeyword(s []byte) (r rune, ok bool) {
 
 func (p *parser) rune() (r rune) {
 more:
-	switch r = p.cpp.rune(); r {
-	case rune(IDENTIFIER):
-		if r2, ok := p.isKeyword(p.cpp.tok.Src()); ok {
-			p.cpp.tok.Ch = r2
-			r = r2
-		}
-	case rune(PPNUMBER):
-		switch s := string(p.cpp.tok.Src()); {
-		case strings.ContainsAny(s, ".+-ijpIJP"):
-			r = rune(FLOATCONST)
-		case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
-			r = rune(INTCONST)
-		case strings.ContainsAny(s, "Ee"):
-			r = rune(FLOATCONST)
-		default:
-			r = rune(INTCONST)
-		}
-		p.cpp.tok.Ch = r
+	p.cpp.rune()
+	p.cpp.tok = p.tok(p.cpp.tok)
+	switch p.cpp.tok.Ch {
 	case ' ', '\n':
 		p.shift()
 		goto more
+	default:
+		return p.cpp.tok.Ch
+	}
+
+}
+
+func (p *parser) tok(t Token) (r Token) {
+	r = t
+	switch t.Ch {
+	case rune(IDENTIFIER):
+		if c, ok := p.isKeyword(r.Src()); ok {
+			r.Ch = c
+		}
+	case rune(PPNUMBER):
+		switch s := string(r.Src()); {
+		case strings.ContainsAny(s, ".+-ijpIJP"):
+			r.Ch = rune(FLOATCONST)
+		case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
+			r.Ch = rune(INTCONST)
+		case strings.ContainsAny(s, "Ee"):
+			r.Ch = rune(FLOATCONST)
+		default:
+			r.Ch = rune(INTCONST)
+		}
 	}
 	return r
 }
 
-func (p *parser) shift() Token { return p.cpp.shift() }
+func (p *parser) shift() (r Token) {
+	r = p.tok(p.cpp.shift())
+	p.rune()
+	return r
+}
+
+func (p *parser) peek(i int) (r Token) {
+	n := 0
+	for {
+		r = p.tok(p.cpp.tokenizer.peek(n).Token)
+		switch r.Ch {
+		case ' ', '\n':
+			n++
+		case eof:
+			return r
+		default:
+			if i--; i == 0 {
+				return r
+			}
+
+			n++
+		}
+	}
+}
 
 func (p *parser) must(r rune) Token {
 	c := p.rune()
@@ -180,7 +212,7 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 	case '{':
 		return &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
 	default:
-		panic(todo("", ds, d, &p.cpp.tok))
+		return &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
 	}
 }
 
@@ -189,7 +221,25 @@ func (p *parser) externalDeclaration() *ExternalDeclaration {
 //  function-definition:
 // 	declaration-specifiers declarator declaration-list_opt compound-statement
 func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) (r *FunctionDefinition) {
-	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, CompoundStatement: p.compoundStatement()}
+	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: p.declarationListOpt(), CompoundStatement: p.compoundStatement()}
+}
+
+//  declaration-list:
+// 	declaration
+// 	declaration-list declaration
+func (p *parser) declarationListOpt() (r *DeclarationList) {
+	var prev *DeclarationList
+	for p.rune() != '{' {
+		dl := &DeclarationList{Declaration: p.declaration(nil, nil)}
+		switch {
+		case r == nil:
+			r = dl
+		default:
+			prev.DeclarationList = dl
+		}
+		prev = dl
+	}
+	return r
 }
 
 // [0], 6.8.2 Compound statement
@@ -266,8 +316,8 @@ func (p *parser) statement() *Statement {
 	case rune(ASM):
 		return &Statement{Case: StatementAsm, AsmStatement: p.asmStatement()}
 	case rune(IDENTIFIER):
-		switch t, _ := p.cpp.tokenizer.peekNonBlank(); {
-		case t.Ch == ':':
+		switch p.peek(1).Ch {
+		case ':':
 			panic(todo("", &p.cpp.tok))
 		default:
 			return &Statement{Case: StatementExpr, ExpressionStatement: p.expressionStatement()}
@@ -404,7 +454,7 @@ func (p *parser) expression() (r *Expression) {
 // 	declaration-specifiers init-declarator-list_opt attribute-specifier-list_opt ;
 func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Declaration) {
 	if ds == nil {
-		panic(todo("", &p.cpp.tok))
+		ds = p.declarationSpecifiers()
 	}
 	return &Declaration{DeclarationSpecifiers: ds, InitDeclaratorList: p.initDeclaratorListOpt(d), Token: p.must(';')}
 }
@@ -418,6 +468,8 @@ func (p *parser) initDeclaratorListOpt(d *Declarator) (r *InitDeclaratorList) {
 		switch p.rune() {
 		case ';':
 			return nil
+		case rune(IDENTIFIER):
+			d = p.declarator()
 		default:
 			panic(todo("", &p.cpp.tok))
 		}
@@ -453,12 +505,103 @@ func (p *parser) initDeclarator(d *Declarator) *InitDeclarator {
 // 	assignment-expression
 // 	{ initializer-list }
 // 	{ initializer-list , }
-func (p *parser) initializer() *Initializer {
+func (p *parser) initializer() (r *Initializer) {
 	switch p.rune() {
 	case '{':
-		panic(todo("", &p.cpp.tok))
+		r = &Initializer{Token: p.shift(), InitializerList: p.initializerList()}
+		if p.rune() == ',' {
+			panic(todo("", &p.cpp.tok))
+		}
+
+		r.Token2 = p.must('}')
+		return r
 	default:
 		return &Initializer{Case: InitializerExpr, AssignmentExpression: p.assignmentExpression()}
+	}
+}
+
+//  initializer-list:
+// 	designation_opt initializer
+// 	initializer-list , designation_opt initializer
+func (p *parser) initializerList() (r *InitializerList) {
+	switch p.rune() {
+	case '[', '.':
+		r = &InitializerList{Designation: p.designation(), Initializer: p.initializer()}
+	case rune(IDENTIFIER):
+		switch p.peek(1).Ch {
+		case ':':
+			r = &InitializerList{Designation: p.designation(), Initializer: p.initializer()}
+		default:
+			panic(todo("", &p.cpp.tok))
+		}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+	for p.rune() == ',' {
+		panic(todo("", &p.cpp.tok))
+	}
+	return r
+}
+
+//  designation:
+// 	designator-list =
+func (p *parser) designation() (r *Designation) {
+	r = &Designation{DesignatorList: p.designatorList()}
+	if r.DesignatorList.Designator.Case != DesignatorField2 {
+		r.Token = p.must('=')
+	}
+	return r
+}
+
+//  designator-list:
+// 	designator
+// 	designator-list designator
+func (p *parser) designatorList() (r *DesignatorList) {
+	var prev *DesignatorList
+	for {
+		var dl *DesignatorList
+		switch p.rune() {
+		case '[', '.':
+			dl = &DesignatorList{Designator: p.designator()}
+		case rune(IDENTIFIER):
+			switch p.peek(1).Ch {
+			case ':':
+				dl = &DesignatorList{Designator: p.designator()}
+			default:
+				panic(todo("", &p.cpp.tok))
+			}
+		default:
+			return r
+		}
+		switch {
+		case r == nil:
+			r = dl
+		default:
+			prev.DesignatorList = dl
+		}
+		prev = dl
+	}
+}
+
+//  designator:
+// 	[ constant-expression ]
+// 	. identifier
+//	identifier :
+func (p *parser) designator() (r *Designator) {
+	switch p.rune() {
+	case '[':
+		return &Designator{Case: DesignatorIndex, Token: p.shift(), ConstantExpression: p.constantExpression(), Token2: p.must(']')}
+	case '.':
+		return &Designator{Case: DesignatorField, Token: p.shift(), Token2: p.must(rune(IDENTIFIER))}
+	case rune(IDENTIFIER):
+		switch p.peek(1).Ch {
+		case ':':
+			return &Designator{Case: DesignatorField2, Token: p.shift(), Token2: p.shift()}
+		default:
+			panic(todo("", &p.cpp.tok))
+		}
+	default:
+		panic(todo("", &p.cpp.tok))
 	}
 }
 
@@ -734,11 +877,82 @@ func (p *parser) typeName() *TypeName {
 // 	pointer_opt direct-abstract-declarator
 func (p *parser) abstractDeclarator(opt bool) *AbstractDeclarator {
 	switch p.rune() {
-	default:
+	case
+		'(',
+		'[':
+
+		return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: p.directAbstractDeclarator()}
+	case ')':
 		if opt {
 			return nil
 		}
 
+		panic(todo("", opt, &p.cpp.tok))
+	default:
+		panic(todo("", opt, &p.cpp.tok))
+	}
+}
+
+//  direct-abstract-declarator:
+// 	( abstract-declarator )
+// 	direct-abstract-declarator_opt [ type-qualifier-list_opt assignment-expression_opt ]
+// 	direct-abstract-declarator_opt [ static type-qualifier-list_opt assignment-expression ]
+// 	direct-abstract-declarator_opt [ type-qualifier-list static assignment-expression ]
+// 	direct-abstract-declarator_opt [ * ]
+// 	direct-abstract-declarator_opt ( parameter-type-list_opt )
+func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
+	switch p.rune() {
+	case '(':
+		switch p.peek(1).Ch {
+		case ')': // ()
+			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: p.shift(), Token2: p.shift()}
+		case rune(CHAR):
+			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: p.shift(), ParameterTypeList: p.parameterTypeList(), Token2: p.must(')')}
+		default:
+			t := p.peek(1)
+			panic(todo("", &p.cpp.tok, &t))
+		}
+	case '[':
+		switch p.peek(1).Ch {
+		case rune(CONST):
+			lbracket := p.shift()
+			tql := p.typeQualifierList()
+			switch p.rune() {
+			case rune(INTCONST):
+				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, Token: lbracket, TypeQualifiers: tql, AssignmentExpression: p.assignmentExpression(), Token2: p.must(']')}
+			case rune(STATIC):
+				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, Token: lbracket, TypeQualifiers: tql, Token2: p.shift(), AssignmentExpression: p.assignmentExpression(), Token3: p.must(']')}
+			default:
+				panic(todo("", &lbracket, tql, &p.cpp.tok))
+			}
+		case rune(STATIC):
+			lbracket := p.shift()
+			switch p.peek(1).Ch {
+			case rune(CONST):
+				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorStaticArr, Token: lbracket, Token2: p.shift(), TypeQualifiers: p.typeQualifierList(), AssignmentExpression: p.assignmentExpression(), Token3: p.must(']')}
+			default:
+				t := p.peek(1)
+				panic(todo("", &lbracket, &t))
+			}
+		case '*':
+			switch p.peek(2).Ch {
+			case ']':
+				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArrStar, Token: p.shift(), Token2: p.shift(), Token3: p.shift()}
+			default:
+				t := p.peek(2)
+				panic(todo("", &t))
+			}
+		default:
+			t := p.peek(1)
+			panic(todo("", &t))
+		}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+	switch p.rune() {
+	case ')':
+		return r
+	default:
 		panic(todo("", &p.cpp.tok))
 	}
 }
@@ -905,24 +1119,51 @@ func (p *parser) directDeclarator() (r *DirectDeclarator) {
 	case rune(IDENTIFIER):
 		r = &DirectDeclarator{Case: DirectDeclaratorIdent, Token: p.shift()}
 	default:
-		panic(todo("%v\n%s", &p.cpp.tok))
+		panic(todo("", &p.cpp.tok))
 	}
 	for {
 		switch p.rune() {
 		case '[':
-			panic(todo("", r, &p.cpp.tok))
-		case '(':
-			lparen := p.shift()
-			switch p.rune() {
-			case rune(IDENTIFIER):
-				panic(todo("", r, &p.cpp.tok))
+			switch p.peek(1).Ch {
+			case ']':
+				r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: p.shift(), Token2: p.shift()}
+			case rune(INTCONST):
+				r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: p.shift(), AssignmentExpression: p.assignmentExpression(), Token2: p.shift()}
 			default:
-				r = &DirectDeclarator{Case: DirectDeclaratorFuncParam, DirectDeclarator: r, Token: lparen, ParameterTypeList: p.parameterTypeList(), Token2: p.must(')')}
+				t := p.peek(1)
+				panic(todo("", &p.cpp.tok, &t))
+			}
+		case '(':
+			switch p.peek(1).Ch {
+			case rune(IDENTIFIER):
+				r = &DirectDeclarator{Case: DirectDeclaratorFuncIdent, DirectDeclarator: r, Token: p.shift(), IdentifierList: p.identifierList(), Token2: p.must(')')}
+			default:
+				r = &DirectDeclarator{Case: DirectDeclaratorFuncParam, DirectDeclarator: r, Token: p.shift(), ParameterTypeList: p.parameterTypeList(), Token2: p.must(')')}
 			}
 		default:
 			return r
 		}
 	}
+}
+
+//  identifier-list:
+// 	identifier
+// 	identifier-list , identifier
+func (p *parser) identifierList() (r *IdentifierList) {
+	switch p.rune() {
+	case rune(IDENTIFIER):
+		r = &IdentifierList{Token: p.shift()}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+
+	prev := r
+	for p.rune() == ',' {
+		il := &IdentifierList{Token: p.shift(), Token2: p.must(rune(IDENTIFIER))}
+		prev.IdentifierList = il
+		prev = il
+	}
+	return r
 }
 
 //  parameter-type-list:
@@ -948,8 +1189,7 @@ func (p *parser) parameterTypeList() (r *ParameterTypeList) {
 func (p *parser) parameterList() (r *ParameterList, t Token) {
 	r = &ParameterList{ParameterDeclaration: p.parameterDeclaration()}
 	for p.rune() == ',' {
-		comma := p.shift()
-		if p.rune() == rune(DDD) {
+		if p.peek(1).Ch == rune(DDD) {
 			panic(todo("", &comma, &p.cpp.tok))
 		}
 
@@ -966,6 +1206,8 @@ func (p *parser) parameterDeclaration() *ParameterDeclaration {
 	switch x := p.declaratorOrAbstractDeclaratorOpt().(type) {
 	case *AbstractDeclarator:
 		return &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds, AbstractDeclarator: x}
+	case nil:
+		return &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds}
 	default:
 		panic(todo("%T %v %v", x, ds, &p.cpp.tok))
 	}
@@ -981,38 +1223,45 @@ func (p *parser) declaratorOrAbstractDeclaratorOpt() Node {
 		default:
 			panic(todo("", ptr, &p.cpp.tok))
 		}
-	case '(':
-		return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: p.directAbstractDeclarator()}
+	case
+		'(',
+		'[':
+
+		return p.abstractDeclarator(false)
+	case ')':
+		return nil
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
 }
 
-//  direct-abstract-declarator:
-// 	( abstract-declarator )
-// 	direct-abstract-declarator_opt [ type-qualifier-list_opt assignment-expression_opt ]
-// 	direct-abstract-declarator_opt [ static type-qualifier-list_opt assignment-expression ]
-// 	direct-abstract-declarator_opt [ type-qualifier-list static assignment-expression ]
-// 	direct-abstract-declarator_opt [ * ]
-// 	direct-abstract-declarator_opt ( parameter-type-list_opt )
-func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
-	switch p.rune() {
-	case '(':
-		lparen := p.shift()
+//  type-qualifier-list:
+// 	type-qualifier
+// 	attribute-specifier
+// 	type-qualifier-list type-qualifier
+// 	type-qualifier-list attribute-specifier
+func (p *parser) typeQualifierList() (r *TypeQualifiers) {
+	var prev *TypeQualifiers
+	for {
+		var tq *TypeQualifiers
 		switch p.rune() {
-		case ')': // ()
-			return &DirectAbstractDeclarator{
-				Case:   DirectAbstractDeclaratorFunc,
-				Token:  lparen,
-				Token2: p.shift(),
-			}
+		case rune(CONST):
+			tq = &TypeQualifiers{TypeQualifier: p.typeQualifier()}
+		case
+			rune(INTCONST),
+			rune(STATIC):
+
+			return r
 		default:
-			panic(todo("", &lparen, &p.cpp.tok))
+			panic(todo("", &p.cpp.tok))
 		}
-	case '[':
-		panic(todo("", &p.cpp.tok))
-	default:
-		panic(todo("", &p.cpp.tok))
+		switch {
+		case r == nil:
+			r = tq
+		default:
+			prev.TypeQualifiers = tq
+		}
+		prev = tq
 	}
 }
 
@@ -1023,12 +1272,14 @@ func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
 func (p *parser) pointerOpt() (r *Pointer) {
 	switch p.rune() {
 	case '*':
-		star := p.shift()
-		switch p.rune() {
-		case ')':
-			return &Pointer{Case: PointerTypeQual, Token: star}
+		switch p.peek(1).Ch {
+		case
+			')',
+			rune(IDENTIFIER):
+
+			return &Pointer{Case: PointerTypeQual, Token: p.shift()}
 		default:
-			panic(todo("", &star, &p.cpp.tok))
+			panic(todo("", &p.cpp.tok))
 		}
 	default:
 		return nil
@@ -1047,19 +1298,25 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 	for {
 		switch p.rune() {
 		case
+			rune(CHAR),
 			rune(DOUBLE),
 			rune(INT),
 			rune(STRUCT),
 			rune(VOID):
 
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
-		// case rune(VOLATILE):
-		// 	ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
+		case rune(STATIC):
+			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
+		case rune(VOLATILE):
+			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
+		case rune(INLINE):
+			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersFunc, FunctionSpecifier: p.functionSpecifier()}
 		case
 			'(',
 			')',
 			'*',
 			';',
+			'[',
 			'}',
 			rune(IDENTIFIER):
 
@@ -1077,6 +1334,20 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 	}
 }
 
+// [0], 6.7.4 Function specifiers
+//
+//  function-specifier:
+// 	inline
+// 	_Noreturn
+func (p *parser) functionSpecifier() *FunctionSpecifier {
+	switch p.rune() {
+	case rune(INLINE):
+		return &FunctionSpecifier{Case: FunctionSpecifierInline, Token: p.shift()}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+}
+
 // [0], 6.7.3 Type qualifiers
 //
 //  type-qualifier:
@@ -1086,6 +1357,27 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 // 	_Atomic
 func (p *parser) typeQualifier() *TypeQualifier {
 	switch p.rune() {
+	case rune(CONST):
+		return &TypeQualifier{Case: TypeQualifierConst, Token: p.shift()}
+	case rune(VOLATILE):
+		return &TypeQualifier{Case: TypeQualifierVolatile, Token: p.shift()}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+}
+
+// [0], 6.7.1 Storage-class specifiers
+//
+//  storage-class-specifier:
+// 	typedef
+// 	extern
+// 	static
+// 	auto
+// 	register
+func (p *parser) storageClassSpecifier() *StorageClassSpecifier {
+	switch p.rune() {
+	case rune(STATIC):
+		return &StorageClassSpecifier{Case: StorageClassSpecifierStatic, Token: p.shift()}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1120,6 +1412,8 @@ func (p *parser) typeQualifier() *TypeQualifier {
 // 	_Float32
 func (p *parser) typeSpecifier() *TypeSpecifier {
 	switch p.rune() {
+	case rune(CHAR):
+		return &TypeSpecifier{Case: TypeSpecifierChar, Token: p.shift()}
 	case rune(DOUBLE):
 		return &TypeSpecifier{Case: TypeSpecifierDouble, Token: p.shift()}
 	case rune(INT):
@@ -1138,11 +1432,20 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 //  struct-or-union-specifier:
 // 	struct-or-union attribute-specifier-list_opt identifier_opt { struct-declaration-list }
 // 	struct-or-union attribute-specifier-list_opt identifier
-func (p *parser) structOrUnionSpecifier() *StructOrUnionSpecifier {
+func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 	sou := p.structOrUnion()
 	switch p.rune() {
 	case '{':
 		return &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, Token2: p.shift(), StructDeclarationList: p.structDeclarationList(), Token3: p.must('}')}
+	case rune(IDENTIFIER):
+		r = &StructOrUnionSpecifier{StructOrUnion: sou, Token2: p.shift()}
+		switch p.rune() {
+		case rune(IDENTIFIER):
+			r.Case = StructOrUnionSpecifierTag
+			return r
+		default:
+			panic(todo("", &p.cpp.tok))
+		}
 	default:
 		panic(todo("", sou, &p.cpp.tok))
 	}
