@@ -170,10 +170,10 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Dec        */ |	PostfixExpression "--"
 			/*yy:example int i = (int[]){y}; */
 /*yy:case Complit    */ |	'(' TypeName ')' '{' InitializerList ',' '}'
-			/*yy:example int i = __builtin_types_compatible_p(int, double); */
-/*yy:case TypeCmp   */  |	"__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
-			/*yy:example int i = __builtin_choose_expr(1, 2, "foo"); */
-/*yy:case ChooseExpr*/  |	"__builtin_choose_expr" '(' AssignmentExpression ',' AssignmentExpression ',' AssignmentExpression ')'
+// 			/*yy:example int i = __builtin_types_compatible_p(int, double); */
+// /*yy:case TypeCmp   */  |	"__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'
+// 			/*yy:example int i = __builtin_choose_expr(1, 2, "foo"); */
+// /*yy:case ChooseExpr*/  |	"__builtin_choose_expr" '(' AssignmentExpression ',' AssignmentExpression ',' AssignmentExpression ')'
 
 			/*yy:example int i = f(x); */
 			ArgumentExpressionList:
@@ -205,8 +205,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case SizeofExpr */ |	"sizeof" UnaryExpression
 			/*yy:example int i = sizeof(int); */
 /*yy:case SizeofType */ |	"sizeof" '(' TypeName ')'
-			/*yy:example int f() { L: &&L; }*/
-/*yy:case LabelAddr  */ |	"&&" IDENTIFIER
+// 			/*yy:example int f() { L: &&L; }*/
+// /*yy:case LabelAddr  */ |	"&&" IDENTIFIER
 			/*yy:example int i = _Alignof(x); */
 /*yy:case AlignofExpr*/ |	"_Alignof" UnaryExpression
 			/*yy:example int i = _Alignof(int); */
@@ -598,8 +598,8 @@ package cc // import "modernc.org/cc/v4"
 				'*' TypeQualifiers
 			/*yy:example int **p; */
 /*yy:case Ptr        */ |	'*' TypeQualifiers Pointer
-			/*yy:example int atexit_b(void (^ _Nonnull)(void)); */
-/*yy:case Block      */ |	'^' TypeQualifiers
+// 			/*yy:example int atexit_b(void (^ _Nonnull)(void)); */
+// /*yy:case Block      */ |	'^' TypeQualifiers
 
 			/*yy:example int * const i; */
 /*yy:case TypeQual   */ TypeQualifiers:
@@ -714,8 +714,8 @@ package cc // import "modernc.org/cc/v4"
 				IDENTIFIER ':' /* AttributeSpecifierList */ Statement
 			/*yy:example int f() { switch(i) case 42: x(); } */
 /*yy:case CaseLabel  */ |	"case" ConstantExpression ':' Statement
-			/*yy:example int f() { switch(i) case 42 ... 56: x(); } */
-/*yy:case Range      */ |	"case" ConstantExpression "..." ConstantExpression ':' Statement
+// 			/*yy:example int f() { switch(i) case 42 ... 56: x(); } */
+// /*yy:case Range      */ |	"case" ConstantExpression "..." ConstantExpression ':' Statement
 			/*yy:example int f() { switch(i) default: x(); } */
 /*yy:case Default    */ |	"default" ':' Statement
 
@@ -769,8 +769,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int f() { L: goto L; } */
 /*yy:case Goto       */ JumpStatement:
 				"goto" IDENTIFIER ';'
-			/*yy:example int f() { L: x(); void *p = &&L; goto *p; } */
-/*yy:case GotoExpr   */ |	"goto" '*' Expression ';'
+// 			/*yy:example int f() { L: x(); void *p = &&L; goto *p; } */
+// /*yy:case GotoExpr   */ |	"goto" '*' Expression ';'
 			/*yy:example int f() { for(;;) if (i) continue; } */
 /*yy:case Continue   */ |	"continue" ';'
 			/*yy:example int f() { for(;;) if (i) break; } */

@@ -2433,7 +2433,6 @@ type JumpStatementCase int
 // Values of type JumpStatementCase
 const (
 	JumpStatementGoto JumpStatementCase = iota
-	JumpStatementGotoExpr
 	JumpStatementContinue
 	JumpStatementBreak
 	JumpStatementReturn
@@ -2444,8 +2443,6 @@ func (n JumpStatementCase) String() string {
 	switch n {
 	case JumpStatementGoto:
 		return "JumpStatementGoto"
-	case JumpStatementGotoExpr:
-		return "JumpStatementGotoExpr"
 	case JumpStatementContinue:
 		return "JumpStatementContinue"
 	case JumpStatementBreak:
@@ -2460,11 +2457,10 @@ func (n JumpStatementCase) String() string {
 // JumpStatement represents data reduced by productions:
 //
 //	JumpStatement:
-//	        "goto" IDENTIFIER ';'      // Case JumpStatementGoto
-//	|       "goto" '*' Expression ';'  // Case JumpStatementGotoExpr
-//	|       "continue" ';'             // Case JumpStatementContinue
-//	|       "break" ';'                // Case JumpStatementBreak
-//	|       "return" Expression ';'    // Case JumpStatementReturn
+//	        "goto" IDENTIFIER ';'    // Case JumpStatementGoto
+//	|       "continue" ';'           // Case JumpStatementContinue
+//	|       "break" ';'              // Case JumpStatementBreak
+//	|       "return" Expression ';'  // Case JumpStatementReturn
 type JumpStatement struct {
 	Case       JumpStatementCase `PrettyPrint:"stringer,zero"`
 	Expression *Expression
@@ -2483,7 +2479,7 @@ func (n *JumpStatement) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 4:
+	case 3:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -2493,26 +2489,12 @@ func (n *JumpStatement) Position() (r token.Position) {
 		}
 
 		return n.Token2.Position()
-	case 2, 3:
+	case 1, 2:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
 
 		return n.Token2.Position()
-	case 1:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Expression.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token3.Position()
 	case 0:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
@@ -2535,7 +2517,6 @@ type LabeledStatementCase int
 const (
 	LabeledStatementLabel LabeledStatementCase = iota
 	LabeledStatementCaseLabel
-	LabeledStatementRange
 	LabeledStatementDefault
 )
 
@@ -2546,8 +2527,6 @@ func (n LabeledStatementCase) String() string {
 		return "LabeledStatementLabel"
 	case LabeledStatementCaseLabel:
 		return "LabeledStatementCaseLabel"
-	case LabeledStatementRange:
-		return "LabeledStatementRange"
 	case LabeledStatementDefault:
 		return "LabeledStatementDefault"
 	default:
@@ -2558,18 +2537,15 @@ func (n LabeledStatementCase) String() string {
 // LabeledStatement represents data reduced by productions:
 //
 //	LabeledStatement:
-//	        IDENTIFIER ':' Statement                                          // Case LabeledStatementLabel
-//	|       "case" ConstantExpression ':' Statement                           // Case LabeledStatementCaseLabel
-//	|       "case" ConstantExpression "..." ConstantExpression ':' Statement  // Case LabeledStatementRange
-//	|       "default" ':' Statement                                           // Case LabeledStatementDefault
+//	        IDENTIFIER ':' Statement                 // Case LabeledStatementLabel
+//	|       "case" ConstantExpression ':' Statement  // Case LabeledStatementCaseLabel
+//	|       "default" ':' Statement                  // Case LabeledStatementDefault
 type LabeledStatement struct {
-	Case                LabeledStatementCase `PrettyPrint:"stringer,zero"`
-	ConstantExpression  *ConstantExpression
-	ConstantExpression2 *ConstantExpression
-	Statement           *Statement
-	Token               Token
-	Token2              Token
-	Token3              Token
+	Case               LabeledStatementCase `PrettyPrint:"stringer,zero"`
+	ConstantExpression *ConstantExpression
+	Statement          *Statement
+	Token              Token
+	Token2             Token
 }
 
 // String implements fmt.Stringer.
@@ -2582,28 +2558,6 @@ func (n *LabeledStatement) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 2:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.ConstantExpression.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.ConstantExpression2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token3.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Statement.Position()
 	case 1:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
@@ -2618,7 +2572,7 @@ func (n *LabeledStatement) Position() (r token.Position) {
 		}
 
 		return n.Statement.Position()
-	case 0, 3:
+	case 0, 2:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -2971,7 +2925,6 @@ type PointerCase int
 const (
 	PointerTypeQual PointerCase = iota
 	PointerPtr
-	PointerBlock
 )
 
 // String implements fmt.Stringer
@@ -2981,8 +2934,6 @@ func (n PointerCase) String() string {
 		return "PointerTypeQual"
 	case PointerPtr:
 		return "PointerPtr"
-	case PointerBlock:
-		return "PointerBlock"
 	default:
 		return fmt.Sprintf("PointerCase(%v)", int(n))
 	}
@@ -2993,7 +2944,6 @@ func (n PointerCase) String() string {
 //	Pointer:
 //	        '*' TypeQualifiers          // Case PointerTypeQual
 //	|       '*' TypeQualifiers Pointer  // Case PointerPtr
-//	|       '^' TypeQualifiers          // Case PointerBlock
 type Pointer struct {
 	Case           PointerCase `PrettyPrint:"stringer,zero"`
 	Pointer        *Pointer
@@ -3011,7 +2961,7 @@ func (n *Pointer) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 0, 2:
+	case 0:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -3045,8 +2995,6 @@ const (
 	PostfixExpressionInc
 	PostfixExpressionDec
 	PostfixExpressionComplit
-	PostfixExpressionTypeCmp
-	PostfixExpressionChooseExpr
 )
 
 // String implements fmt.Stringer
@@ -3068,10 +3016,6 @@ func (n PostfixExpressionCase) String() string {
 		return "PostfixExpressionDec"
 	case PostfixExpressionComplit:
 		return "PostfixExpressionComplit"
-	case PostfixExpressionTypeCmp:
-		return "PostfixExpressionTypeCmp"
-	case PostfixExpressionChooseExpr:
-		return "PostfixExpressionChooseExpr"
 	default:
 		return fmt.Sprintf("PostfixExpressionCase(%v)", int(n))
 	}
@@ -3080,21 +3024,16 @@ func (n PostfixExpressionCase) String() string {
 // PostfixExpression represents data reduced by productions:
 //
 //	PostfixExpression:
-//	        PrimaryExpression                                                                                       // Case PostfixExpressionPrimary
-//	|       PostfixExpression '[' Expression ']'                                                                    // Case PostfixExpressionIndex
-//	|       PostfixExpression '(' ArgumentExpressionList ')'                                                        // Case PostfixExpressionCall
-//	|       PostfixExpression '.' IDENTIFIER                                                                        // Case PostfixExpressionSelect
-//	|       PostfixExpression "->" IDENTIFIER                                                                       // Case PostfixExpressionPSelect
-//	|       PostfixExpression "++"                                                                                  // Case PostfixExpressionInc
-//	|       PostfixExpression "--"                                                                                  // Case PostfixExpressionDec
-//	|       '(' TypeName ')' '{' InitializerList ',' '}'                                                            // Case PostfixExpressionComplit
-//	|       "__builtin_types_compatible_p" '(' TypeName ',' TypeName ')'                                            // Case PostfixExpressionTypeCmp
-//	|       "__builtin_choose_expr" '(' AssignmentExpression ',' AssignmentExpression ',' AssignmentExpression ')'  // Case PostfixExpressionChooseExpr
+//	        PrimaryExpression                                 // Case PostfixExpressionPrimary
+//	|       PostfixExpression '[' Expression ']'              // Case PostfixExpressionIndex
+//	|       PostfixExpression '(' ArgumentExpressionList ')'  // Case PostfixExpressionCall
+//	|       PostfixExpression '.' IDENTIFIER                  // Case PostfixExpressionSelect
+//	|       PostfixExpression "->" IDENTIFIER                 // Case PostfixExpressionPSelect
+//	|       PostfixExpression "++"                            // Case PostfixExpressionInc
+//	|       PostfixExpression "--"                            // Case PostfixExpressionDec
+//	|       '(' TypeName ')' '{' InitializerList ',' '}'      // Case PostfixExpressionComplit
 type PostfixExpression struct {
 	ArgumentExpressionList *ArgumentExpressionList
-	AssignmentExpression   *AssignmentExpression
-	AssignmentExpression2  *AssignmentExpression
-	AssignmentExpression3  *AssignmentExpression
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
 	Expression             *Expression
 	InitializerList        *InitializerList
@@ -3106,7 +3045,6 @@ type PostfixExpression struct {
 	Token4                 Token
 	Token5                 Token
 	TypeName               *TypeName
-	TypeName2              *TypeName
 }
 
 // String implements fmt.Stringer.
@@ -3165,58 +3103,6 @@ func (n *PostfixExpression) Position() (r token.Position) {
 		return n.Token2.Position()
 	case 0:
 		return n.PrimaryExpression.Position()
-	case 9:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AssignmentExpression.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token3.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AssignmentExpression2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token4.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.AssignmentExpression3.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token5.Position()
-	case 8:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.TypeName.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token3.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.TypeName2.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token4.Position()
 	case 7:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
@@ -4421,7 +4307,6 @@ const (
 	UnaryExpressionNot
 	UnaryExpressionSizeofExpr
 	UnaryExpressionSizeofType
-	UnaryExpressionLabelAddr
 	UnaryExpressionAlignofExpr
 	UnaryExpressionAlignofType
 	UnaryExpressionImag
@@ -4453,8 +4338,6 @@ func (n UnaryExpressionCase) String() string {
 		return "UnaryExpressionSizeofExpr"
 	case UnaryExpressionSizeofType:
 		return "UnaryExpressionSizeofType"
-	case UnaryExpressionLabelAddr:
-		return "UnaryExpressionLabelAddr"
 	case UnaryExpressionAlignofExpr:
 		return "UnaryExpressionAlignofExpr"
 	case UnaryExpressionAlignofType:
@@ -4482,7 +4365,6 @@ func (n UnaryExpressionCase) String() string {
 //	|       '!' CastExpression           // Case UnaryExpressionNot
 //	|       "sizeof" UnaryExpression     // Case UnaryExpressionSizeofExpr
 //	|       "sizeof" '(' TypeName ')'    // Case UnaryExpressionSizeofType
-//	|       "&&" IDENTIFIER              // Case UnaryExpressionLabelAddr
 //	|       "_Alignof" UnaryExpression   // Case UnaryExpressionAlignofExpr
 //	|       "_Alignof" '(' TypeName ')'  // Case UnaryExpressionAlignofType
 //	|       "__imag__" UnaryExpression   // Case UnaryExpressionImag
@@ -4516,13 +4398,7 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.CastExpression.Position()
-	case 11:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token2.Position()
-	case 10, 13:
+	case 10, 12:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -4536,7 +4412,7 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.Token3.Position()
-	case 1, 2, 9, 12, 14, 15:
+	case 1, 2, 9, 11, 13, 14:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}

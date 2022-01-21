@@ -153,7 +153,7 @@ type Token struct { // 32 bytes on a 64 bit machine.
 	s   *scannerSource
 	Ch  rune   // '*' or IDENTIFIER etc.
 	pos uint32 // Index into ss.buf of the original token.
-	seq uint32 // Sequence number, determines scope boundaries.
+	seq int32  // Sequence number, determines scope boundaries.
 	sep uint32 // Index into .ss.buf of the preceding white space, including comments. Length is .src-.sep.
 	src uint32 // Index into .ss.buf, length is in .len.
 	len uint32 // Length of the source representation (.src).

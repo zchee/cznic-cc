@@ -50,12 +50,14 @@ var keywords = map[string]rune{
 	"while":      rune(WHILE),
 
 	// More
-	"__asm__": rune(ASM),
-	"asm":     rune(ASM),
+	"_Noreturn": rune(NORETURN),
+	"__asm__":   rune(ASM),
+	"asm":       rune(ASM),
 }
 
 type parser struct {
 	cpp *cpp
+	seq int32
 }
 
 func newParser(cfg *Config, sources []Source) (*parser, error) {
@@ -111,6 +113,8 @@ func (p *parser) tok(t Token) (r Token) {
 
 func (p *parser) shift() (r Token) {
 	r = p.tok(p.cpp.shift())
+	p.seq++
+	r.seq = p.seq
 	p.rune()
 	return r
 }
@@ -281,12 +285,18 @@ func (p *parser) blockItem() *BlockItem {
 	switch p.rune() {
 	case
 		rune(ASM),
-		rune(IDENTIFIER):
+		rune(DO),
+		rune(FOR),
+		rune(IDENTIFIER),
+		rune(IF),
+		rune(SWITCH),
+		rune(WHILE):
 
 		return &BlockItem{Case: BlockItemStmt, Statement: p.statement()}
 	case
 		rune(DOUBLE),
-		rune(INT):
+		rune(INT),
+		rune(VOID):
 
 		ds := p.declarationSpecifiers()
 		d := p.declarator()
@@ -318,9 +328,129 @@ func (p *parser) statement() *Statement {
 	case rune(IDENTIFIER):
 		switch p.peek(1).Ch {
 		case ':':
-			panic(todo("", &p.cpp.tok))
+			return &Statement{Case: StatementLabeled, LabeledStatement: p.labeledStatement()}
 		default:
 			return &Statement{Case: StatementExpr, ExpressionStatement: p.expressionStatement()}
+		}
+	case
+		rune(DO),
+		rune(FOR),
+		rune(WHILE):
+
+		return &Statement{Case: StatementIteration, IterationStatement: p.iterationStatement()}
+	case
+		rune(BREAK),
+		rune(CONTINUE),
+		rune(GOTO),
+		rune(RETURN):
+
+		return &Statement{Case: StatementJump, JumpStatement: p.jumpStatement()}
+	case
+		rune(IF),
+		rune(SWITCH):
+
+		return &Statement{Case: StatementSelection, SelectionStatement: p.selectionStatement()}
+	case
+		rune(CASE),
+		rune(DEFAULT):
+
+		return &Statement{Case: StatementLabeled, LabeledStatement: p.labeledStatement()}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+}
+
+// [0], 6.8.4 Selection statements
+//
+//  selection-statement:
+//  	if ( expression ) statement
+//  	if ( expression ) statement else statement
+//  	switch ( expression ) statement
+func (p *parser) selectionStatement() (r *SelectionStatement) {
+	switch p.rune() {
+	case rune(IF):
+		r = &SelectionStatement{Case: SelectionStatementIf, Token: p.shift(), Token2: p.must('('), Expression: p.expression(false), Token3: p.must(')'), Statement: p.statement()}
+		switch p.rune() {
+		case rune(ELSE):
+			panic(todo("", &p.cpp.tok))
+		default:
+			return r
+		}
+	case rune(SWITCH):
+		return &SelectionStatement{Case: SelectionStatementSwitch, Token: p.shift(), Token2: p.must('('), Expression: p.expression(false), Token3: p.must(')'), Statement: p.statement()}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+}
+
+// [0], 6.8.6 Jump statements
+//
+//  jump-statement:
+// 	goto identifier ;
+// 	goto * expression ;
+// 	continue ;
+// 	break ;
+// 	return expression_opt ;
+func (p *parser) jumpStatement() *JumpStatement {
+	switch p.rune() {
+	case rune(BREAK):
+		return &JumpStatement{Case: JumpStatementBreak, Token: p.shift(), Token2: p.must(';')}
+	case rune(CONTINUE):
+		return &JumpStatement{Case: JumpStatementContinue, Token: p.shift(), Token2: p.must(';')}
+	case rune(GOTO):
+		return &JumpStatement{Case: JumpStatementGoto, Token: p.shift(), Token2: p.must(rune(IDENTIFIER)), Token3: p.must(';')}
+	case rune(RETURN):
+		return &JumpStatement{Case: JumpStatementReturn, Token: p.shift(), Expression: p.expression(true), Token2: p.must(';')}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+}
+
+// [0], 6.8.1 Labeled statements
+//
+//  labeled-statement:
+// 	identifier : statement
+// 	case constant-expression : statement
+// 	case constant-expression ... constant-expression : statement
+// 	default : statement
+func (p *parser) labeledStatement() (r *LabeledStatement) {
+	switch p.rune() {
+	case rune(CASE):
+		return &LabeledStatement{Case: LabeledStatementCaseLabel, Token: p.shift(), ConstantExpression: p.constantExpression(), Token2: p.must(':'), Statement: p.statement()}
+	case rune(DEFAULT):
+		return &LabeledStatement{Case: LabeledStatementDefault, Token: p.shift(), Token2: p.must(':'), Statement: p.statement()}
+	case rune(IDENTIFIER):
+		return &LabeledStatement{Case: LabeledStatementLabel, Token: p.shift(), Token2: p.must(':'), Statement: p.statement()}
+	default:
+		panic(todo("", &p.cpp.tok))
+	}
+}
+
+// [0], 6.8.5 Iteration statements
+//
+//  iteration-statement:
+// 	while ( expression ) statement
+// 	do statement while ( expression ) ;
+// 	for ( expression_opt ; expression_opt ; expression_opt ) statement
+// 	for ( declaration expression_opt ; expression_opt ) statement
+func (p *parser) iterationStatement() (r *IterationStatement) {
+	switch p.rune() {
+	case rune(WHILE):
+		return &IterationStatement{Case: IterationStatementWhile, Token: p.shift(), Token2: p.must('('), Expression: p.expression(false), Token3: p.must(')'), Statement: p.statement()}
+	case rune(DO):
+		return &IterationStatement{Case: IterationStatementDo, Token: p.shift(), Statement: p.statement(), Token2: p.must(rune(WHILE)), Token3: p.must('('), Expression: p.expression(false), Token4: p.must(')'), Token5: p.must(';')}
+	case rune(FOR):
+		switch p.peek(2).Ch {
+		case
+			';',
+			rune(IDENTIFIER):
+
+			return &IterationStatement{Case: IterationStatementFor, Token: p.shift(), Token2: p.must('('), Expression: p.expression(true), Token3: p.must(';'), Expression2: p.expression(true), Token4: p.must(';'), Expression3: p.expression(true), Token5: p.must(')'), Statement: p.statement()}
+		case rune(INT):
+			return &IterationStatement{Case: IterationStatementForDecl, Token: p.shift(), Token2: p.must('('), Declaration: p.declaration(nil, nil), Expression: p.expression(true), Token3: p.must(';'), Expression2: p.expression(true), Token4: p.must(')'), Statement: p.statement()}
+		default:
+			t := p.peek(2)
+			panic(todo("", &t))
 		}
 	default:
 		panic(todo("", &p.cpp.tok))
@@ -332,11 +462,7 @@ func (p *parser) statement() *Statement {
 //  expression-statement:
 // 	expression_opt attribute-specifier-list_opt;
 func (p *parser) expressionStatement() *ExpressionStatement {
-	if p.rune() == ';' {
-		return &ExpressionStatement{Token: p.shift()}
-	}
-
-	return &ExpressionStatement{Expression: p.expression(), Token: p.must(';')}
+	return &ExpressionStatement{Expression: p.expression(true), Token: p.must(';')}
 }
 
 //  asm-statement:
@@ -429,7 +555,7 @@ func (p *parser) asmIndexOpt() *AsmIndex {
 		return nil
 	}
 
-	return &AsmIndex{Token: p.shift(), Expression: p.expression(), Token2: p.must(']')}
+	return &AsmIndex{Token: p.shift(), Expression: p.expression(false), Token2: p.must(']')}
 }
 
 // [0], 6.5.17 Comma operator
@@ -437,15 +563,30 @@ func (p *parser) asmIndexOpt() *AsmIndex {
 //  expression:
 // 	assignment-expression
 // 	expression , assignment-expression
-func (p *parser) expression() (r *Expression) {
-	r = &Expression{AssignmentExpression: p.assignmentExpression()}
-	prev := r
-	for p.rune() == ',' {
-		ae := &Expression{Token: p.shift(), AssignmentExpression: p.assignmentExpression()}
-		prev.Expression = ae
-		prev = ae
+func (p *parser) expression(opt bool) (r *Expression) {
+	switch p.rune() {
+	case rune(IDENTIFIER):
+		// ok
+	case
+		')',
+		';':
+		if opt {
+			return nil
+		}
+
+		panic(todo("", &p.cpp.tok, opt))
+	default:
+		panic(todo("", &p.cpp.tok, opt))
 	}
-	return r
+	r = &Expression{AssignmentExpression: p.assignmentExpression()}
+	for {
+		switch p.rune() {
+		case ',':
+			r = &Expression{Expression: r, Token: p.shift(), AssignmentExpression: p.assignmentExpression()}
+		default:
+			return r
+		}
+	}
 }
 
 // [0], 6.7 Declarations
@@ -531,14 +672,27 @@ func (p *parser) initializerList() (r *InitializerList) {
 		switch p.peek(1).Ch {
 		case ':':
 			r = &InitializerList{Designation: p.designation(), Initializer: p.initializer()}
+		case '}':
+			return &InitializerList{Initializer: p.initializer()}
 		default:
-			panic(todo("", &p.cpp.tok))
+			t := p.peek(1)
+			panic(todo("", &t))
 		}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
+	prev := r
 	for p.rune() == ',' {
-		panic(todo("", &p.cpp.tok))
+		var il *InitializerList
+		switch p.peek(1).Ch {
+		case '[':
+			il = &InitializerList{Designation: p.designation(), Initializer: p.initializer()}
+		default:
+			t := p.peek(1)
+			panic(todo("", &t))
+		}
+		prev.InitializerList = il
+		prev = il
 	}
 	return r
 }
@@ -656,7 +810,7 @@ func (p *parser) conditionalExpression() (r *ConditionalExpression, u *UnaryExpr
 	lhs, u := p.logicalOrExpression()
 	switch p.rune() {
 	case '?':
-		r = &ConditionalExpression{Case: ConditionalExpressionCond, LogicalOrExpression: lhs, Token: p.shift(), Expression: p.expression(), Token2: p.must(':')}
+		r = &ConditionalExpression{Case: ConditionalExpressionCond, LogicalOrExpression: lhs, Token: p.shift(), Expression: p.expression(false), Token2: p.must(':')}
 		r.ConditionalExpression, _ = p.conditionalExpression()
 		return r, nil
 	default:
@@ -671,11 +825,16 @@ func (p *parser) conditionalExpression() (r *ConditionalExpression, u *UnaryExpr
 // 	logical-OR-expression || logical-AND-expression
 func (p *parser) logicalOrExpression() (r *LogicalOrExpression, u *UnaryExpression) {
 	lhs, u := p.logicalAndExpression()
-	switch p.rune() {
-	case rune(ANDAND):
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &LogicalOrExpression{Case: LogicalOrExpressionLAnd, LogicalAndExpression: lhs}, u
+	r = &LogicalOrExpression{Case: LogicalOrExpressionLAnd, LogicalAndExpression: lhs}
+	for {
+		switch p.rune() {
+		case rune(OROR):
+			r = &LogicalOrExpression{Case: LogicalOrExpressionLOr, LogicalOrExpression: r, Token: p.shift()}
+			r.LogicalAndExpression, _ = p.logicalAndExpression()
+			u = nil
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -686,11 +845,16 @@ func (p *parser) logicalOrExpression() (r *LogicalOrExpression, u *UnaryExpressi
 // 	logical-AND-expression && inclusive-OR-expression
 func (p *parser) logicalAndExpression() (r *LogicalAndExpression, u *UnaryExpression) {
 	lhs, u := p.inclusiveOrExpression()
-	switch p.rune() {
-	case rune(OROR):
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &LogicalAndExpression{Case: LogicalAndExpressionOr, InclusiveOrExpression: lhs}, u
+	r = &LogicalAndExpression{Case: LogicalAndExpressionOr, InclusiveOrExpression: lhs}
+	for {
+		switch p.rune() {
+		case rune(ANDAND):
+			r = &LogicalAndExpression{Case: LogicalAndExpressionLAnd, LogicalAndExpression: r, Token: p.shift()}
+			r.InclusiveOrExpression, _ = p.inclusiveOrExpression()
+			u = nil
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -701,11 +865,16 @@ func (p *parser) logicalAndExpression() (r *LogicalAndExpression, u *UnaryExpres
 // 	inclusive-OR-expression | exclusive-OR-expression
 func (p *parser) inclusiveOrExpression() (r *InclusiveOrExpression, u *UnaryExpression) {
 	lhs, u := p.exclusiveOrExpression()
-	switch p.rune() {
-	case '|':
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &InclusiveOrExpression{Case: InclusiveOrExpressionXor, ExclusiveOrExpression: lhs}, u
+	r = &InclusiveOrExpression{Case: InclusiveOrExpressionXor, ExclusiveOrExpression: lhs}
+	for {
+		switch p.rune() {
+		case '|':
+			r = &InclusiveOrExpression{Case: InclusiveOrExpressionOr, InclusiveOrExpression: r, Token: p.shift()}
+			r.ExclusiveOrExpression, _ = p.exclusiveOrExpression()
+			u = nil
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -716,11 +885,16 @@ func (p *parser) inclusiveOrExpression() (r *InclusiveOrExpression, u *UnaryExpr
 // 	exclusive-OR-expression ^ AND-expression
 func (p *parser) exclusiveOrExpression() (r *ExclusiveOrExpression, u *UnaryExpression) {
 	lhs, u := p.andExpression()
-	switch p.rune() {
-	case '^':
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &ExclusiveOrExpression{Case: ExclusiveOrExpressionAnd, AndExpression: lhs}, u
+	r = &ExclusiveOrExpression{Case: ExclusiveOrExpressionAnd, AndExpression: lhs}
+	for {
+		switch p.rune() {
+		case '^':
+			r = &ExclusiveOrExpression{Case: ExclusiveOrExpressionXor, ExclusiveOrExpression: r, Token: p.shift()}
+			r.AndExpression, _ = p.andExpression()
+			u = nil
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -737,6 +911,7 @@ func (p *parser) andExpression() (r *AndExpression, u *UnaryExpression) {
 		case '&':
 			r = &AndExpression{Case: AndExpressionAnd, AndExpression: r, Token: p.shift()}
 			r.EqualityExpression, _ = p.equalityExpression()
+			u = nil
 		default:
 			return r, u
 		}
@@ -751,13 +926,20 @@ func (p *parser) andExpression() (r *AndExpression, u *UnaryExpression) {
 // 	equality-expression != relational-expression
 func (p *parser) equalityExpression() (r *EqualityExpression, u *UnaryExpression) {
 	lhs, u := p.relationalExpression()
-	switch p.rune() {
-	case rune(EQ):
-		panic(todo("", lhs, &p.cpp.tok))
-	case rune(NEQ):
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &EqualityExpression{Case: EqualityExpressionRel, RelationalExpression: lhs}, u
+	r = &EqualityExpression{Case: EqualityExpressionRel, RelationalExpression: lhs}
+	for {
+		switch p.rune() {
+		case rune(EQ):
+			r = &EqualityExpression{Case: EqualityExpressionEq, EqualityExpression: r, Token: p.shift()}
+			r.RelationalExpression, _ = p.relationalExpression()
+			u = nil
+		case rune(NEQ):
+			r = &EqualityExpression{Case: EqualityExpressionNeq, EqualityExpression: r, Token: p.shift()}
+			r.RelationalExpression, _ = p.relationalExpression()
+			u = nil
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -771,17 +953,22 @@ func (p *parser) equalityExpression() (r *EqualityExpression, u *UnaryExpression
 // 	relational-expression >= shift-expression
 func (p *parser) relationalExpression() (r *RelationalExpression, u *UnaryExpression) {
 	lhs, u := p.shiftExpression()
-	switch p.rune() {
-	case '<':
-		panic(todo("", lhs, &p.cpp.tok))
-	case '>':
-		panic(todo("", lhs, &p.cpp.tok))
-	case rune(LEQ):
-		panic(todo("", lhs, &p.cpp.tok))
-	case rune(GEQ):
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &RelationalExpression{Case: RelationalExpressionShift, ShiftExpression: lhs}, u
+	r = &RelationalExpression{Case: RelationalExpressionShift, ShiftExpression: lhs}
+	for {
+		switch p.rune() {
+		case '<':
+			r = &RelationalExpression{Case: RelationalExpressionLt, RelationalExpression: r, Token: p.shift()}
+			r.ShiftExpression, _ = p.shiftExpression()
+			u = nil
+		case '>':
+			panic(todo("", lhs, &p.cpp.tok))
+		case rune(LEQ):
+			panic(todo("", lhs, &p.cpp.tok))
+		case rune(GEQ):
+			panic(todo("", lhs, &p.cpp.tok))
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -793,13 +980,16 @@ func (p *parser) relationalExpression() (r *RelationalExpression, u *UnaryExpres
 // 	shift-expression >> additive-expression
 func (p *parser) shiftExpression() (r *ShiftExpression, u *UnaryExpression) {
 	lhs, u := p.additiveExpression()
-	switch p.rune() {
-	case rune(LSH):
-		panic(todo("", lhs, &p.cpp.tok))
-	case rune(RSH):
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &ShiftExpression{Case: ShiftExpressionAdd, AdditiveExpression: lhs}, u
+	r = &ShiftExpression{Case: ShiftExpressionAdd, AdditiveExpression: lhs}
+	for {
+		switch p.rune() {
+		case rune(LSH):
+			panic(todo("", lhs, &p.cpp.tok))
+		case rune(RSH):
+			panic(todo("", lhs, &p.cpp.tok))
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -816,13 +1006,15 @@ func (p *parser) additiveExpression() (r *AdditiveExpression, u *UnaryExpression
 		switch p.rune() {
 		case '+':
 			r = &AdditiveExpression{Case: AdditiveExpressionAdd, AdditiveExpression: r, Token: p.shift()}
+			r.MultiplicativeExpression, _ = p.multiplicativeExpression()
+			u = nil
 		case '-':
 			r = &AdditiveExpression{Case: AdditiveExpressionSub, AdditiveExpression: r, Token: p.shift()}
+			r.MultiplicativeExpression, _ = p.multiplicativeExpression()
+			u = nil
 		default:
 			return r, u
 		}
-		r.MultiplicativeExpression, _ = p.multiplicativeExpression()
-		u = nil
 	}
 }
 
@@ -835,15 +1027,24 @@ func (p *parser) additiveExpression() (r *AdditiveExpression, u *UnaryExpression
 // 	multiplicative-expression % cast-expression
 func (p *parser) multiplicativeExpression() (r *MultiplicativeExpression, u *UnaryExpression) {
 	lhs, u := p.castExpression()
-	switch p.rune() {
-	case '*':
-		panic(todo("", lhs, &p.cpp.tok))
-	case '/':
-		panic(todo("", lhs, &p.cpp.tok))
-	case '%':
-		panic(todo("", lhs, &p.cpp.tok))
-	default:
-		return &MultiplicativeExpression{Case: MultiplicativeExpressionCast, CastExpression: lhs}, u
+	r = &MultiplicativeExpression{Case: MultiplicativeExpressionCast, CastExpression: lhs}
+	for {
+		switch p.rune() {
+		case '*':
+			r = &MultiplicativeExpression{Case: MultiplicativeExpressionMul, MultiplicativeExpression: r, Token: p.shift()}
+			r.CastExpression, _ = p.castExpression()
+			u = nil
+		case '/':
+			r = &MultiplicativeExpression{Case: MultiplicativeExpressionDiv, MultiplicativeExpression: r, Token: p.shift()}
+			r.CastExpression, _ = p.castExpression()
+			u = nil
+		case '%':
+			r = &MultiplicativeExpression{Case: MultiplicativeExpressionMod, MultiplicativeExpression: r, Token: p.shift()}
+			r.CastExpression, _ = p.castExpression()
+			u = nil
+		default:
+			return r, u
+		}
 	}
 }
 
@@ -855,11 +1056,20 @@ func (p *parser) multiplicativeExpression() (r *MultiplicativeExpression, u *Una
 func (p *parser) castExpression() (r *CastExpression, u *UnaryExpression) {
 	switch p.rune() {
 	case '(':
-		r = &CastExpression{Case: CastExpressionCast, Token: p.shift(), TypeName: p.typeName(), Token2: p.shift()}
-		r.CastExpression, _ = p.castExpression()
-		return r, nil
+		lparen := p.shift()
+		tn := p.typeName()
+		rparen := p.shift()
+		switch p.rune() {
+		case '{':
+			u = p.unaryExpression(lparen, tn, rparen)
+			return &CastExpression{Case: CastExpressionUnary, UnaryExpression: u}, u
+		default:
+			r = &CastExpression{Case: CastExpressionCast, Token: lparen, TypeName: tn, Token2: rparen}
+			r.CastExpression, _ = p.castExpression()
+			return r, nil
+		}
 	default:
-		r = &CastExpression{Case: CastExpressionUnary, UnaryExpression: p.unaryExpression()}
+		r = &CastExpression{Case: CastExpressionUnary, UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
 		return r, r.UnaryExpression
 	}
 }
@@ -914,9 +1124,11 @@ func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
 		}
 	case '[':
 		switch p.peek(1).Ch {
+		case ']':
+			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, Token: p.shift(), Token2: p.shift()}
 		case rune(CONST):
 			lbracket := p.shift()
-			tql := p.typeQualifierList()
+			tql := p.typeQualifierList(false)
 			switch p.rune() {
 			case rune(INTCONST):
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, Token: lbracket, TypeQualifiers: tql, AssignmentExpression: p.assignmentExpression(), Token2: p.must(']')}
@@ -929,7 +1141,7 @@ func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
 			lbracket := p.shift()
 			switch p.peek(1).Ch {
 			case rune(CONST):
-				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorStaticArr, Token: lbracket, Token2: p.shift(), TypeQualifiers: p.typeQualifierList(), AssignmentExpression: p.assignmentExpression(), Token3: p.must(']')}
+				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorStaticArr, Token: lbracket, Token2: p.shift(), TypeQualifiers: p.typeQualifierList(false), AssignmentExpression: p.assignmentExpression(), Token3: p.must(']')}
 			default:
 				t := p.peek(1)
 				panic(todo("", &lbracket, &t))
@@ -949,11 +1161,13 @@ func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
-	switch p.rune() {
-	case ')':
-		return r
-	default:
-		panic(todo("", &p.cpp.tok))
+	for {
+		switch p.rune() {
+		case ')':
+			return r
+		default:
+			panic(todo("", &p.cpp.tok))
+		}
 	}
 }
 
@@ -970,6 +1184,7 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeSpecifier: p.typeSpecifier()}
 		case
 			')',
+			'[',
 			rune(IDENTIFIER):
 
 			return r
@@ -1003,14 +1218,19 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 //
 //  unary-operator: one of
 // 	& * + - ~ !
-func (p *parser) unaryExpression() (r *UnaryExpression) {
+func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token) (r *UnaryExpression) {
+	if tn != nil {
+		return &UnaryExpression{Case: UnaryExpressionPostfix, PostfixExpression: p.postfixExpression(lp, tn, rp)}
+	}
+
 	switch p.rune() {
 	case
+		rune(CHARCONST),
 		rune(FLOATCONST),
 		rune(IDENTIFIER),
 		rune(INTCONST):
 
-		return &UnaryExpression{Case: UnaryExpressionPostfix, PostfixExpression: p.postfixExpression()}
+		return &UnaryExpression{Case: UnaryExpressionPostfix, PostfixExpression: p.postfixExpression(Token{}, nil, Token{})}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1029,33 +1249,74 @@ func (p *parser) unaryExpression() (r *UnaryExpression) {
 // 	( type-name ) { initializer-list }
 // 	( type-name ) { initializer-list , }
 // 	__builtin_types_compatible_p ( type-name , type-name )
-func (p *parser) postfixExpression() (r *PostfixExpression) {
-	switch p.rune() {
-	case
-		rune(FLOATCONST),
-		rune(IDENTIFIER),
-		rune(INTCONST):
-
-		r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression()}
+func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token) (r *PostfixExpression) {
+	switch {
+	case tn != nil:
+		r = &PostfixExpression{Case: PostfixExpressionComplit, Token: lp, TypeName: tn, Token2: rp, Token3: p.must('{'), InitializerList: p.initializerList()}
+		switch p.rune() {
+		case ',':
+			panic(todo("", &p.cpp.tok))
+		default:
+			r.Token5 = p.must('}')
+		}
 	default:
-		panic(todo("", &p.cpp.tok))
+		switch p.rune() {
+		case '(':
+			panic(todo("", &p.cpp.tok))
+		default:
+			r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression()}
+		}
 	}
 	for {
 		switch p.rune() {
 		case '[':
-			panic(todo("", &p.cpp.tok))
+			r = &PostfixExpression{Case: PostfixExpressionIndex, PostfixExpression: r, Token: p.shift(), Expression: p.expression(false), Token2: p.must(']')}
 		case '(':
 			r = &PostfixExpression{Case: PostfixExpressionCall, PostfixExpression: r, Token: p.shift(), ArgumentExpressionList: p.argumentExpressionListOpt(), Token2: p.must(')')}
 		case '.':
-			panic(todo("", &p.cpp.tok))
+			r = &PostfixExpression{Case: PostfixExpressionSelect, PostfixExpression: r, Token: p.shift(), Token2: p.must(rune(IDENTIFIER))}
 		case rune(ARROW):
-			panic(todo("", &p.cpp.tok))
+			r = &PostfixExpression{Case: PostfixExpressionPSelect, PostfixExpression: r, Token: p.shift(), Token2: p.must(rune(IDENTIFIER))}
 		case rune(INC):
-			panic(todo("", &p.cpp.tok))
+			r = &PostfixExpression{Case: PostfixExpressionInc, PostfixExpression: r, Token: p.shift()}
 		case rune(DEC):
-			panic(todo("", &p.cpp.tok))
-		default:
+			r = &PostfixExpression{Case: PostfixExpressionDec, PostfixExpression: r, Token: p.shift()}
+		case
+			'%',
+			'&',
+			')',
+			'*',
+			'+',
+			',',
+			'-',
+			'/',
+			':',
+			';',
+			'<',
+			'=',
+			'?',
+			']',
+			'^',
+			'|',
+			'}',
+			rune(ADDASSIGN),
+			rune(ANDAND),
+			rune(ANDASSIGN),
+			rune(DIVASSIGN),
+			rune(EQ),
+			rune(LSHASSIGN),
+			rune(MODASSIGN),
+			rune(MULASSIGN),
+			rune(NEQ),
+			rune(ORASSIGN),
+			rune(OROR),
+			rune(RSHASSIGN),
+			rune(SUBASSIGN),
+			rune(XORASSIGN):
+
 			return r
+		default:
+			panic(todo("", &p.cpp.tok))
 		}
 	}
 }
@@ -1086,6 +1347,8 @@ func (p *parser) argumentExpressionListOpt() (r *ArgumentExpressionList) {
 // 	( compound-statement )
 func (p *parser) primaryExpression() *PrimaryExpression {
 	switch p.rune() {
+	case rune(CHARCONST):
+		return &PrimaryExpression{Case: PrimaryExpressionChar, Token: p.shift()}
 	case rune(FLOATCONST):
 		return &PrimaryExpression{Case: PrimaryExpressionFloat, Token: p.shift()}
 	case rune(IDENTIFIER):
@@ -1102,7 +1365,7 @@ func (p *parser) primaryExpression() *PrimaryExpression {
 //  declarator:
 // 	pointer_opt direct-declarator attribute-specifier-list_opt
 func (p *parser) declarator() *Declarator {
-	return &Declarator{Pointer: p.pointerOpt(), DirectDeclarator: p.directDeclarator()}
+	return &Declarator{Pointer: p.pointer(true), DirectDeclarator: p.directDeclarator()}
 }
 
 //  direct-declarator:
@@ -1118,6 +1381,8 @@ func (p *parser) directDeclarator() (r *DirectDeclarator) {
 	switch p.rune() {
 	case rune(IDENTIFIER):
 		r = &DirectDeclarator{Case: DirectDeclaratorIdent, Token: p.shift()}
+	case '(':
+		r = &DirectDeclarator{Case: DirectDeclaratorDecl, Token: p.shift(), Declarator: p.declarator(), Token2: p.must(')')}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1129,6 +1394,27 @@ func (p *parser) directDeclarator() (r *DirectDeclarator) {
 				r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: p.shift(), Token2: p.shift()}
 			case rune(INTCONST):
 				r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: p.shift(), AssignmentExpression: p.assignmentExpression(), Token2: p.shift()}
+			case rune(CONST):
+				lbracket := p.shift()
+				tql := p.typeQualifierList(false)
+				switch p.rune() {
+				case rune(INTCONST):
+					r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, AssignmentExpression: p.assignmentExpression(), Token2: p.must(']')}
+				case rune(STATIC):
+					r = &DirectDeclarator{Case: DirectDeclaratorArrStatic, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, Token2: p.shift(), AssignmentExpression: p.assignmentExpression(), Token3: p.must(']')}
+				case '*':
+					r = &DirectDeclarator{Case: DirectDeclaratorStar, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, Token2: p.shift(), Token3: p.must(']')}
+				default:
+					panic(todo("", &p.cpp.tok))
+				}
+			case rune(STATIC):
+				switch p.peek(2).Ch {
+				case rune(CONST):
+					r = &DirectDeclarator{Case: DirectDeclaratorStaticArr, DirectDeclarator: r, Token: p.shift(), Token2: p.shift(), TypeQualifiers: p.typeQualifierList(false), AssignmentExpression: p.assignmentExpression(), Token3: p.must(']')}
+				default:
+					t := p.peek(2)
+					panic(todo("", &t))
+				}
 			default:
 				t := p.peek(1)
 				panic(todo("", &p.cpp.tok, &t))
@@ -1174,10 +1460,10 @@ func (p *parser) parameterTypeList() (r *ParameterTypeList) {
 		return nil
 	}
 
-	pl, comma := p.parameterList()
-	switch comma.Ch {
+	pl := p.parameterList()
+	switch p.rune() {
 	case ',':
-		panic(todo("", pl, &p.cpp.tok))
+		return &ParameterTypeList{Case: ParameterTypeListVar, ParameterList: pl, Token: p.shift(), Token2: p.must(rune(DDD))}
 	default:
 		return &ParameterTypeList{Case: ParameterTypeListList, ParameterList: pl}
 	}
@@ -1186,16 +1472,19 @@ func (p *parser) parameterTypeList() (r *ParameterTypeList) {
 //  parameter-list:
 // 	parameter-declaration
 // 	parameter-list , parameter-declaration
-func (p *parser) parameterList() (r *ParameterList, t Token) {
+func (p *parser) parameterList() (r *ParameterList) {
 	r = &ParameterList{ParameterDeclaration: p.parameterDeclaration()}
+	prev := r
 	for p.rune() == ',' {
 		if p.peek(1).Ch == rune(DDD) {
-			panic(todo("", &comma, &p.cpp.tok))
+			return r
 		}
 
-		panic(todo("", &p.cpp.tok))
+		pl := &ParameterList{Token: p.shift(), ParameterDeclaration: p.parameterDeclaration()}
+		prev.ParameterList = pl
+		prev = pl
 	}
-	return r, t
+	return r
 }
 
 //  parameter-declaration:
@@ -1206,6 +1495,8 @@ func (p *parser) parameterDeclaration() *ParameterDeclaration {
 	switch x := p.declaratorOrAbstractDeclaratorOpt().(type) {
 	case *AbstractDeclarator:
 		return &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds, AbstractDeclarator: x}
+	case *Declarator:
+		return &ParameterDeclaration{Case: ParameterDeclarationDecl, DeclarationSpecifiers: ds, Declarator: x}
 	case nil:
 		return &ParameterDeclaration{Case: ParameterDeclarationAbstract, DeclarationSpecifiers: ds}
 	default:
@@ -1216,7 +1507,7 @@ func (p *parser) parameterDeclaration() *ParameterDeclaration {
 func (p *parser) declaratorOrAbstractDeclaratorOpt() Node {
 	switch p.rune() {
 	case '*':
-		ptr := p.pointerOpt()
+		ptr := p.pointer(false)
 		switch p.rune() {
 		case ')':
 			return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr}
@@ -1230,6 +1521,8 @@ func (p *parser) declaratorOrAbstractDeclaratorOpt() Node {
 		return p.abstractDeclarator(false)
 	case ')':
 		return nil
+	case rune(IDENTIFIER):
+		return p.declarator()
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1240,14 +1533,27 @@ func (p *parser) declaratorOrAbstractDeclaratorOpt() Node {
 // 	attribute-specifier
 // 	type-qualifier-list type-qualifier
 // 	type-qualifier-list attribute-specifier
-func (p *parser) typeQualifierList() (r *TypeQualifiers) {
-	var prev *TypeQualifiers
+func (p *parser) typeQualifierList(opt bool) (r *TypeQualifiers) {
+	switch p.rune() {
+	case rune(CONST):
+		r = &TypeQualifiers{TypeQualifier: p.typeQualifier()}
+	case
+		')',
+		'*',
+		rune(IDENTIFIER):
+
+		if opt {
+			return nil
+		}
+
+		panic(todo("", &p.cpp.tok))
+	default:
+		panic(todo("", &p.cpp.tok, opt))
+	}
 	for {
-		var tq *TypeQualifiers
 		switch p.rune() {
-		case rune(CONST):
-			tq = &TypeQualifiers{TypeQualifier: p.typeQualifier()}
 		case
+			'*',
 			rune(INTCONST),
 			rune(STATIC):
 
@@ -1255,13 +1561,6 @@ func (p *parser) typeQualifierList() (r *TypeQualifiers) {
 		default:
 			panic(todo("", &p.cpp.tok))
 		}
-		switch {
-		case r == nil:
-			r = tq
-		default:
-			prev.TypeQualifiers = tq
-		}
-		prev = tq
 	}
 }
 
@@ -1269,21 +1568,24 @@ func (p *parser) typeQualifierList() (r *TypeQualifiers) {
 // 	* type-qualifier-list_opt
 // 	* type-qualifier-list_opt pointer
 //      ^ type-qualifier-list_opt
-func (p *parser) pointerOpt() (r *Pointer) {
+func (p *parser) pointer(opt bool) (r *Pointer) {
 	switch p.rune() {
 	case '*':
-		switch p.peek(1).Ch {
-		case
-			')',
-			rune(IDENTIFIER):
-
-			return &Pointer{Case: PointerTypeQual, Token: p.shift()}
-		default:
-			panic(todo("", &p.cpp.tok))
-		}
+		r = &Pointer{Case: PointerTypeQual, Token: p.shift(), TypeQualifiers: p.typeQualifierList(true)}
 	default:
-		return nil
+		if opt {
+			return nil
+		}
+
+		panic(todo("", &p.cpp.tok))
 	}
+	prev := r
+	for p.rune() == '*' {
+		p := p.pointer(false)
+		prev.Pointer = p
+		prev = p
+	}
+	return r
 }
 
 //  declaration-specifiers:
@@ -1300,6 +1602,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 		case
 			rune(CHAR),
 			rune(DOUBLE),
+			rune(ENUM),
 			rune(INT),
 			rune(STRUCT),
 			rune(VOID):
@@ -1309,7 +1612,10 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
 		case rune(VOLATILE):
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
-		case rune(INLINE):
+		case
+			rune(INLINE),
+			rune(NORETURN):
+
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersFunc, FunctionSpecifier: p.functionSpecifier()}
 		case
 			'(',
@@ -1343,6 +1649,8 @@ func (p *parser) functionSpecifier() *FunctionSpecifier {
 	switch p.rune() {
 	case rune(INLINE):
 		return &FunctionSpecifier{Case: FunctionSpecifierInline, Token: p.shift()}
+	case rune(NORETURN):
+		return &FunctionSpecifier{Case: FunctionSpecifierNoreturn, Token: p.shift()}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1416,6 +1724,8 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		return &TypeSpecifier{Case: TypeSpecifierChar, Token: p.shift()}
 	case rune(DOUBLE):
 		return &TypeSpecifier{Case: TypeSpecifierDouble, Token: p.shift()}
+	case rune(ENUM):
+		return &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier()}
 	case rune(INT):
 		return &TypeSpecifier{Case: TypeSpecifierInt, Token: p.shift()}
 	case rune(STRUCT):
@@ -1424,6 +1734,78 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		return &TypeSpecifier{Case: TypeSpecifierVoid, Token: p.shift()}
 	default:
 		panic(todo("", &p.cpp.tok))
+	}
+}
+
+// [0], 6.7.2.2 Enumeration specifiers
+//
+//  enum-specifier:
+// 	enum attribute-specifier-list_opt identifier_opt { enumerator-list }
+// 	enum attribute-specifier-list_opt identifier_opt { enumerator-list , }
+// 	enum attribute-specifier-list_opt identifier
+func (p *parser) enumSpecifier() (r *EnumSpecifier) {
+	switch p.peek(1).Ch {
+	case rune(IDENTIFIER):
+		switch p.peek(2).Ch {
+		case '{':
+			r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(), Token2: p.shift(), Token3: p.shift(), EnumeratorList: p.enumeratorList()}
+			switch p.rune() {
+			case '}':
+				r.Token3 = p.shift()
+				return r
+			default:
+				panic(todo("", &p.cpp.tok))
+			}
+		case rune(IDENTIFIER):
+			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(), Token2: p.shift()}
+		default:
+			t := p.peek(2)
+			panic(todo("", &t))
+		}
+	default:
+		t := p.peek(1)
+		panic(todo("", &t))
+	}
+}
+
+//  enumerator-list:
+// 	enumerator
+// 	enumerator-list , enumerator
+func (p *parser) enumeratorList() (r *EnumeratorList) {
+	r = &EnumeratorList{Enumerator: p.enumerator()}
+	prev := r
+	for {
+		switch p.rune() {
+		case '}':
+			return r
+		case ',':
+			switch p.peek(1).Ch {
+			case rune(IDENTIFIER):
+				e := &EnumeratorList{Token: p.shift(), Enumerator: p.enumerator()}
+				prev.EnumeratorList = e
+				prev = e
+			default:
+				t := p.peek(1)
+				panic(todo("", &t))
+			}
+		default:
+			panic(todo("", &p.cpp.tok))
+		}
+	}
+}
+
+//  enumerator:
+// 	enumeration-constant attribute-specifier-list_opt
+// 	enumeration-constant attribute-specifier-list_opt = constant-expression
+func (p *parser) enumerator() (r *Enumerator) {
+	switch p.peek(1).Ch {
+	case '}', ',':
+		return &Enumerator{Case: EnumeratorIdent, Token: p.must(rune(IDENTIFIER))}
+	case '=':
+		return &Enumerator{Case: EnumeratorExpr, Token: p.must(rune(IDENTIFIER)), Token2: p.shift(), ConstantExpression: p.constantExpression()}
+	default:
+		t := p.peek(1)
+		panic(todo("", &t))
 	}
 }
 
