@@ -361,6 +361,7 @@ package cc // import "modernc.org/cc/v4"
 			Declaration:
 				DeclarationSpecifiers InitDeclaratorList ';'
 
+			/*yy:field	typedef	bool	*/
 			/*yy:example static int i; */
 /*yy:case Storage    */ DeclarationSpecifiers:
 				StorageClassSpecifier DeclarationSpecifiers
@@ -454,7 +455,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example enum e i; */
 /*yy:case Enum       */ |	EnumSpecifier
 			/*yy:example typedef const T; T i; */
-/*yy:case TypedefName*/ |	TYPENAME
+/*yy:case TypeName*/	|	TYPENAME
 // 			/*yy:example typeof(42) i; */
 // /*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
 // 			/*yy:example typedef const T; typeof(T) i; */
@@ -564,6 +565,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
+			/*yy:field	typedef	bool	*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator /* AttributeSpecifierList */ %prec BELOW_ATTRIBUTE
@@ -575,6 +577,7 @@ package cc // import "modernc.org/cc/v4"
 // 			/*yy:example _Alignas(0ll) char c; */
 // /*yy:case AlignasExpr*/ |	"_Alignas" '(' ConstantExpression ')'
 
+			/*yy:field	params	*Scope	*/
 			/*yy:example int i; */
 /*yy:case Ident      */ DirectDeclarator:
 				IDENTIFIER Asm
@@ -646,6 +649,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example void f(int()); */
 /*yy:case Decl       */ |	Pointer DirectAbstractDeclarator
 
+			/*yy:field	params	*Scope	*/
 			/*yy:example void f(int()); */
 /*yy:case Decl       */ DirectAbstractDeclarator:
 				'(' AbstractDeclarator ')'

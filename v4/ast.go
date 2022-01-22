@@ -932,6 +932,7 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       TypeQualifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeQual
 //	|       FunctionSpecifier DeclarationSpecifiers      // Case DeclarationSpecifiersFunc
 type DeclarationSpecifiers struct {
+	typedef               bool
 	Case                  DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
 	DeclarationSpecifiers *DeclarationSpecifiers
 	FunctionSpecifier     *FunctionSpecifier
@@ -984,6 +985,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	Declarator:
 //	        Pointer DirectDeclarator
 type Declarator struct {
+	typedef          bool
 	DirectDeclarator *DirectDeclarator
 	Pointer          *Pointer
 }
@@ -1162,6 +1164,7 @@ func (n DirectAbstractDeclaratorCase) String() string {
 //	|       DirectAbstractDeclarator '[' '*' ']'                                           // Case DirectAbstractDeclaratorArrStar
 //	|       DirectAbstractDeclarator '(' ParameterTypeList ')'                             // Case DirectAbstractDeclaratorFunc
 type DirectAbstractDeclarator struct {
+	params                   *Scope
 	AbstractDeclarator       *AbstractDeclarator
 	AssignmentExpression     *AssignmentExpression
 	Case                     DirectAbstractDeclaratorCase `PrettyPrint:"stringer,zero"`
@@ -1339,6 +1342,7 @@ func (n DirectDeclaratorCase) String() string {
 //	|       DirectDeclarator '(' ParameterTypeList ')'                             // Case DirectDeclaratorFuncParam
 //	|       DirectDeclarator '(' IdentifierList ')'                                // Case DirectDeclaratorFuncIdent
 type DirectDeclarator struct {
+	params               *Scope
 	Asm                  *Asm
 	AssignmentExpression *AssignmentExpression
 	Case                 DirectDeclaratorCase `PrettyPrint:"stringer,zero"`
@@ -4089,7 +4093,7 @@ const (
 	TypeSpecifierUnsigned
 	TypeSpecifierStructOrUnion
 	TypeSpecifierEnum
-	TypeSpecifierTypedefName
+	TypeSpecifierTypeName
 )
 
 // String implements fmt.Stringer
@@ -4117,8 +4121,8 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierStructOrUnion"
 	case TypeSpecifierEnum:
 		return "TypeSpecifierEnum"
-	case TypeSpecifierTypedefName:
-		return "TypeSpecifierTypedefName"
+	case TypeSpecifierTypeName:
+		return "TypeSpecifierTypeName"
 	default:
 		return fmt.Sprintf("TypeSpecifierCase(%v)", int(n))
 	}
@@ -4138,7 +4142,7 @@ func (n TypeSpecifierCase) String() string {
 //	|       "unsigned"              // Case TypeSpecifierUnsigned
 //	|       StructOrUnionSpecifier  // Case TypeSpecifierStructOrUnion
 //	|       EnumSpecifier           // Case TypeSpecifierEnum
-//	|       TYPENAME                // Case TypeSpecifierTypedefName
+//	|       TYPENAME                // Case TypeSpecifierTypeName
 type TypeSpecifier struct {
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier

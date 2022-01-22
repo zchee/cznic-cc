@@ -6,6 +6,7 @@
 
 ast.go:
 	go generate
+	grep 'panic\|runtime\|TODO' ast_test.go || true
 
 build_all_targets:
 	GOOS=darwin GOARCH=amd64 go build -v ./...

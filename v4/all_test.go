@@ -150,7 +150,7 @@ func walk(dir string, f func(pth string, fi os.FileInfo) error) error {
 func exampleAST(rule int, src string) (r interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			r = fmt.Sprintf("%v", err)
+			r = fmt.Sprintf("%v (%v:)", err, origin(5))
 		}
 	}()
 
