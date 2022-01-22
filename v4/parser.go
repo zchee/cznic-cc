@@ -284,11 +284,13 @@ func (p *parser) blockItemListOpt() (r *BlockItemList) {
 func (p *parser) blockItem() *BlockItem {
 	switch p.rune() {
 	case
+		'{',
 		rune(ASM),
 		rune(DO),
 		rune(FOR),
 		rune(IDENTIFIER),
 		rune(IF),
+		rune(RETURN),
 		rune(SWITCH),
 		rune(WHILE):
 
@@ -323,6 +325,8 @@ func (p *parser) blockItem() *BlockItem {
 //	asm-statement
 func (p *parser) statement() *Statement {
 	switch p.rune() {
+	case '{':
+		return &Statement{Case: StatementCompound, CompoundStatement: p.compoundStatement()}
 	case rune(ASM):
 		return &Statement{Case: StatementAsm, AsmStatement: p.asmStatement()}
 	case rune(IDENTIFIER):
@@ -372,7 +376,10 @@ func (p *parser) selectionStatement() (r *SelectionStatement) {
 		r = &SelectionStatement{Case: SelectionStatementIf, Token: p.shift(), Token2: p.must('('), Expression: p.expression(false), Token3: p.must(')'), Statement: p.statement()}
 		switch p.rune() {
 		case rune(ELSE):
-			panic(todo("", &p.cpp.tok))
+			r.Case = SelectionStatementIfElse
+			r.Token4 = p.shift()
+			r.Statement2 = p.statement()
+			return r
 		default:
 			return r
 		}
@@ -961,11 +968,17 @@ func (p *parser) relationalExpression() (r *RelationalExpression, u *UnaryExpres
 			r.ShiftExpression, _ = p.shiftExpression()
 			u = nil
 		case '>':
-			panic(todo("", lhs, &p.cpp.tok))
+			r = &RelationalExpression{Case: RelationalExpressionGt, RelationalExpression: r, Token: p.shift()}
+			r.ShiftExpression, _ = p.shiftExpression()
+			u = nil
 		case rune(LEQ):
-			panic(todo("", lhs, &p.cpp.tok))
+			r = &RelationalExpression{Case: RelationalExpressionLeq, RelationalExpression: r, Token: p.shift()}
+			r.ShiftExpression, _ = p.shiftExpression()
+			u = nil
 		case rune(GEQ):
-			panic(todo("", lhs, &p.cpp.tok))
+			r = &RelationalExpression{Case: RelationalExpressionGeq, RelationalExpression: r, Token: p.shift()}
+			r.ShiftExpression, _ = p.shiftExpression()
+			u = nil
 		default:
 			return r, u
 		}
@@ -984,9 +997,13 @@ func (p *parser) shiftExpression() (r *ShiftExpression, u *UnaryExpression) {
 	for {
 		switch p.rune() {
 		case rune(LSH):
-			panic(todo("", lhs, &p.cpp.tok))
+			r = &ShiftExpression{Case: ShiftExpressionLsh, ShiftExpression: r, Token: p.shift()}
+			r.AdditiveExpression, _ = p.additiveExpression()
+			u = nil
 		case rune(RSH):
-			panic(todo("", lhs, &p.cpp.tok))
+			r = &ShiftExpression{Case: ShiftExpressionRsh, ShiftExpression: r, Token: p.shift()}
+			r.AdditiveExpression, _ = p.additiveExpression()
+			u = nil
 		default:
 			return r, u
 		}
@@ -1056,17 +1073,29 @@ func (p *parser) multiplicativeExpression() (r *MultiplicativeExpression, u *Una
 func (p *parser) castExpression() (r *CastExpression, u *UnaryExpression) {
 	switch p.rune() {
 	case '(':
-		lparen := p.shift()
-		tn := p.typeName()
-		rparen := p.shift()
-		switch p.rune() {
-		case '{':
-			u = p.unaryExpression(lparen, tn, rparen)
-			return &CastExpression{Case: CastExpressionUnary, UnaryExpression: u}, u
+		switch p.peek(1).Ch {
+		case rune(INT):
+			lparen := p.shift()
+			tn := p.typeName()
+			rparen := p.shift()
+			switch p.rune() {
+			case '{':
+				u = p.unaryExpression(lparen, tn, rparen)
+				return &CastExpression{Case: CastExpressionUnary, UnaryExpression: u}, u
+			default:
+				r = &CastExpression{Case: CastExpressionCast, Token: lparen, TypeName: tn, Token2: rparen}
+				r.CastExpression, _ = p.castExpression()
+				return r, nil
+			}
+		case
+			'{',
+			rune(IDENTIFIER):
+
+			r = &CastExpression{Case: CastExpressionUnary, UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
+			return r, r.UnaryExpression
 		default:
-			r = &CastExpression{Case: CastExpressionCast, Token: lparen, TypeName: tn, Token2: rparen}
-			r.CastExpression, _ = p.castExpression()
-			return r, nil
+			t := p.peek(1)
+			panic(todo("", &t))
 		}
 	default:
 		r = &CastExpression{Case: CastExpressionUnary, UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
@@ -1092,7 +1121,10 @@ func (p *parser) abstractDeclarator(opt bool) *AbstractDeclarator {
 		'[':
 
 		return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: p.directAbstractDeclarator()}
-	case ')':
+	case
+		')',
+		rune(IDENTIFIER):
+
 		if opt {
 			return nil
 		}
@@ -1180,8 +1212,13 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 	for {
 		var sql *SpecifierQualifierList
 		switch p.rune() {
-		case rune(INT):
+		case
+			rune(DOUBLE),
+			rune(INT):
+
 			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeSpecifier: p.typeSpecifier()}
+		case rune(CONST):
+			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeQualifier: p.typeQualifier()}
 		case
 			')',
 			'[',
@@ -1224,13 +1261,52 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token) (r *UnaryExpr
 	}
 
 	switch p.rune() {
+	case '&':
+		r = &UnaryExpression{Case: UnaryExpressionAddrof, Token: p.shift()}
+		r.CastExpression, _ = p.castExpression()
+		return r
+	case '*':
+		r = &UnaryExpression{Case: UnaryExpressionDeref, Token: p.shift()}
+		r.CastExpression, _ = p.castExpression()
+		return r
+	case '+':
+		r = &UnaryExpression{Case: UnaryExpressionPlus, Token: p.shift()}
+		r.CastExpression, _ = p.castExpression()
+		return r
+	case '-':
+		r = &UnaryExpression{Case: UnaryExpressionMinus, Token: p.shift()}
+		r.CastExpression, _ = p.castExpression()
+		return r
+	case '~':
+		r = &UnaryExpression{Case: UnaryExpressionCpl, Token: p.shift()}
+		r.CastExpression, _ = p.castExpression()
+		return r
+	case '!':
+		r = &UnaryExpression{Case: UnaryExpressionNot, Token: p.shift()}
+		r.CastExpression, _ = p.castExpression()
+		return r
+	case rune(SIZEOF):
+		switch p.peek(1).Ch {
+		case '(':
+			return &UnaryExpression{Case: UnaryExpressionSizeofType, Token: p.shift(), Token2: p.shift(), TypeName: p.typeName(), Token3: p.must(')')}
+		default:
+			return &UnaryExpression{Case: UnaryExpressionSizeofExpr, Token: p.shift(), UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
+		}
 	case
+		'(',
 		rune(CHARCONST),
 		rune(FLOATCONST),
 		rune(IDENTIFIER),
-		rune(INTCONST):
+		rune(INTCONST),
+		rune(LONGCHARCONST),
+		rune(LONGSTRINGLITERAL),
+		rune(STRINGLITERAL):
 
 		return &UnaryExpression{Case: UnaryExpressionPostfix, PostfixExpression: p.postfixExpression(Token{}, nil, Token{})}
+	case rune(INC):
+		return &UnaryExpression{Case: UnaryExpressionInc, Token: p.shift(), UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
+	case rune(DEC):
+		return &UnaryExpression{Case: UnaryExpressionDec, Token: p.shift(), UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1262,7 +1338,16 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token) (r *Postfix
 	default:
 		switch p.rune() {
 		case '(':
-			panic(todo("", &p.cpp.tok))
+			switch p.peek(1).Ch {
+			case
+				'{',
+				rune(IDENTIFIER):
+
+				r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression()}
+			default:
+				t := p.peek(1)
+				panic(todo("", &t))
+			}
 		default:
 			r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression()}
 		}
@@ -1294,6 +1379,7 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token) (r *Postfix
 			';',
 			'<',
 			'=',
+			'>',
 			'?',
 			']',
 			'^',
@@ -1304,12 +1390,16 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token) (r *Postfix
 			rune(ANDASSIGN),
 			rune(DIVASSIGN),
 			rune(EQ),
+			rune(GEQ),
+			rune(LEQ),
+			rune(LSH),
 			rune(LSHASSIGN),
 			rune(MODASSIGN),
 			rune(MULASSIGN),
 			rune(NEQ),
 			rune(ORASSIGN),
 			rune(OROR),
+			rune(RSH),
 			rune(RSHASSIGN),
 			rune(SUBASSIGN),
 			rune(XORASSIGN):
@@ -1355,6 +1445,22 @@ func (p *parser) primaryExpression() *PrimaryExpression {
 		return &PrimaryExpression{Case: PrimaryExpressionIdent, Token: p.shift()}
 	case rune(INTCONST):
 		return &PrimaryExpression{Case: PrimaryExpressionInt, Token: p.shift()}
+	case rune(LONGCHARCONST):
+		return &PrimaryExpression{Case: PrimaryExpressionLChar, Token: p.shift()}
+	case rune(LONGSTRINGLITERAL):
+		return &PrimaryExpression{Case: PrimaryExpressionLString, Token: p.shift()}
+	case rune(STRINGLITERAL):
+		return &PrimaryExpression{Case: PrimaryExpressionString, Token: p.shift()}
+	case '(':
+		switch p.peek(1).Ch {
+		case rune(IDENTIFIER):
+			return &PrimaryExpression{Case: PrimaryExpressionExpr, Token: p.shift(), Expression: p.expression(false), Token2: p.must(')')}
+		case '{':
+			return &PrimaryExpression{Case: PrimaryExpressionStmt, Token: p.shift(), CompoundStatement: p.compoundStatement(), Token2: p.must(')')}
+		default:
+			t := p.peek(1)
+			panic(todo("", &t))
+		}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1536,7 +1642,7 @@ func (p *parser) declaratorOrAbstractDeclaratorOpt() Node {
 func (p *parser) typeQualifierList(opt bool) (r *TypeQualifiers) {
 	switch p.rune() {
 	case rune(CONST):
-		r = &TypeQualifiers{TypeQualifier: p.typeQualifier()}
+		r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifier: p.typeQualifier()}
 	case
 		')',
 		'*',
@@ -1554,10 +1660,13 @@ func (p *parser) typeQualifierList(opt bool) (r *TypeQualifiers) {
 		switch p.rune() {
 		case
 			'*',
+			rune(IDENTIFIER),
 			rune(INTCONST),
 			rune(STATIC):
 
 			return r
+		case rune(VOLATILE):
+			r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifiers: r, TypeQualifier: p.typeQualifier()}
 		default:
 			panic(todo("", &p.cpp.tok))
 		}
@@ -1603,14 +1712,30 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 			rune(CHAR),
 			rune(DOUBLE),
 			rune(ENUM),
+			rune(FLOAT),
 			rune(INT),
+			rune(LONG),
+			rune(SHORT),
+			rune(SIGNED),
 			rune(STRUCT),
+			rune(UNION),
+			rune(UNSIGNED),
 			rune(VOID):
 
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
-		case rune(STATIC):
+		case
+			rune(AUTO),
+			rune(EXTERN),
+			rune(REGISTER),
+			rune(STATIC),
+			rune(TYPEDEF):
+
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
-		case rune(VOLATILE):
+		case
+			rune(CONST),
+			rune(RESTRICT),
+			rune(VOLATILE):
+
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier()}
 		case
 			rune(INLINE),
@@ -1621,6 +1746,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers) {
 			'(',
 			')',
 			'*',
+			':',
 			';',
 			'[',
 			'}',
@@ -1667,6 +1793,8 @@ func (p *parser) typeQualifier() *TypeQualifier {
 	switch p.rune() {
 	case rune(CONST):
 		return &TypeQualifier{Case: TypeQualifierConst, Token: p.shift()}
+	case rune(RESTRICT):
+		return &TypeQualifier{Case: TypeQualifierRestrict, Token: p.shift()}
 	case rune(VOLATILE):
 		return &TypeQualifier{Case: TypeQualifierVolatile, Token: p.shift()}
 	default:
@@ -1684,8 +1812,16 @@ func (p *parser) typeQualifier() *TypeQualifier {
 // 	register
 func (p *parser) storageClassSpecifier() *StorageClassSpecifier {
 	switch p.rune() {
+	case rune(AUTO):
+		return &StorageClassSpecifier{Case: StorageClassSpecifierAuto, Token: p.shift()}
+	case rune(EXTERN):
+		return &StorageClassSpecifier{Case: StorageClassSpecifierExtern, Token: p.shift()}
+	case rune(REGISTER):
+		return &StorageClassSpecifier{Case: StorageClassSpecifierRegister, Token: p.shift()}
 	case rune(STATIC):
 		return &StorageClassSpecifier{Case: StorageClassSpecifierStatic, Token: p.shift()}
+	case rune(TYPEDEF):
+		return &StorageClassSpecifier{Case: StorageClassSpecifierTypedef, Token: p.shift()}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}
@@ -1726,9 +1862,22 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		return &TypeSpecifier{Case: TypeSpecifierDouble, Token: p.shift()}
 	case rune(ENUM):
 		return &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier()}
+	case rune(FLOAT):
+		return &TypeSpecifier{Case: TypeSpecifierFloat, Token: p.shift()}
 	case rune(INT):
 		return &TypeSpecifier{Case: TypeSpecifierInt, Token: p.shift()}
-	case rune(STRUCT):
+	case rune(LONG):
+		return &TypeSpecifier{Case: TypeSpecifierLong, Token: p.shift()}
+	case rune(SIGNED):
+		return &TypeSpecifier{Case: TypeSpecifierSigned, Token: p.shift()}
+	case rune(SHORT):
+		return &TypeSpecifier{Case: TypeSpecifierShort, Token: p.shift()}
+	case rune(UNSIGNED):
+		return &TypeSpecifier{Case: TypeSpecifierUnsigned, Token: p.shift()}
+	case
+		rune(STRUCT),
+		rune(UNION):
+
 		return &TypeSpecifier{Case: TypeSpecifierStructOrUnion, StructOrUnionSpecifier: p.structOrUnionSpecifier()}
 	case rune(VOID):
 		return &TypeSpecifier{Case: TypeSpecifierVoid, Token: p.shift()}
@@ -1820,10 +1969,16 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 	case '{':
 		return &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, Token2: p.shift(), StructDeclarationList: p.structDeclarationList(), Token3: p.must('}')}
 	case rune(IDENTIFIER):
-		r = &StructOrUnionSpecifier{StructOrUnion: sou, Token2: p.shift()}
+		r = &StructOrUnionSpecifier{StructOrUnion: sou, Token: p.shift()}
 		switch p.rune() {
 		case rune(IDENTIFIER):
 			r.Case = StructOrUnionSpecifierTag
+			return r
+		case '{':
+			r.Case = StructOrUnionSpecifierDef
+			r.Token2 = p.shift()
+			r.StructDeclarationList = p.structDeclarationList()
+			r.Token3 = p.must('}')
 			return r
 		default:
 			panic(todo("", &p.cpp.tok))
@@ -1866,8 +2021,11 @@ func (p *parser) structDeclaration() (r *StructDeclaration) {
 // 	struct-declarator-list , struct-declarator
 func (p *parser) structDeclaratorList() (r *StructDeclaratorList) {
 	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator()}
+	prev := r
 	for p.rune() == ',' {
-		panic(todo("", &p.cpp.tok))
+		sdl := &StructDeclaratorList{Token: p.shift(), StructDeclarator: p.structDeclarator()}
+		prev.StructDeclaratorList = sdl
+		prev = sdl
 	}
 	return r
 }
@@ -1907,6 +2065,8 @@ func (p *parser) structOrUnion() *StructOrUnion {
 	switch p.rune() {
 	case rune(STRUCT):
 		return &StructOrUnion{Case: StructOrUnionStruct, Token: p.shift()}
+	case rune(UNION):
+		return &StructOrUnion{Case: StructOrUnionUnion, Token: p.shift()}
 	default:
 		panic(todo("", &p.cpp.tok))
 	}

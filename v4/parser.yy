@@ -207,14 +207,14 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case SizeofType */ |	"sizeof" '(' TypeName ')'
 // 			/*yy:example int f() { L: &&L; }*/
 // /*yy:case LabelAddr  */ |	"&&" IDENTIFIER
-			/*yy:example int i = _Alignof(x); */
-/*yy:case AlignofExpr*/ |	"_Alignof" UnaryExpression
-			/*yy:example int i = _Alignof(int); */
-/*yy:case AlignofType*/ |	"_Alignof" '(' TypeName ')'
-			/*yy:example double i = __imag__ x; */
-/*yy:case Imag       */ |	"__imag__" UnaryExpression
-			/*yy:example double i = __real__ x; */
-/*yy:case Real       */ |	"__real__" UnaryExpression
+// 			/*yy:example int i = _Alignof(x); */
+// /*yy:case AlignofExpr*/ |	"_Alignof" UnaryExpression
+// 			/*yy:example int i = _Alignof(int); */
+// /*yy:case AlignofType*/ |	"_Alignof" '(' TypeName ')'
+// 			/*yy:example double i = __imag__ x; */
+// /*yy:case Imag       */ |	"__imag__" UnaryExpression
+// 			/*yy:example double i = __real__ x; */
+// /*yy:case Real       */ |	"__real__" UnaryExpression
 
 			/* [0], 6.5.4 Cast operators */
 			/*yy:example int i = 42; */
@@ -399,8 +399,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Auto       */ |	"auto"
 			/*yy:example register int i;*/
 /*yy:case Register   */ |	"register"
-			/*yy:example _Thread_local int i;*/
-/*yy:case ThreadLocal*/ |	"_Thread_local"
+// 			/*yy:example _Thread_local int i;*/
+// /*yy:case ThreadLocal*/ |	"_Thread_local"
 
 			/* [0], 6.7.2 Type specifiers */
 			/*yy:example void i(); */
@@ -412,42 +412,42 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Short      */ |	"short"
 			/*yy:example int i; */
 /*yy:case Int        */ |	"int"
-			/*yy:example __int8 i; */
-/*yy:case Int8     */ |	"__int8"
-			/*yy:example __int16 i; */
-/*yy:case Int16     */ |	"__int16"
-			/*yy:example __int32 i; */
-/*yy:case Int32     */ |	"__int32"
-			/*yy:example __int64 i; */
-/*yy:case Int64     */ |	"__int64"
-			/*yy:example __int128 i; */
-/*yy:case Int128     */ |	"__int128"
+// 			/*yy:example __int8 i; */
+// /*yy:case Int8     */ |	"__int8"
+// 			/*yy:example __int16 i; */
+// /*yy:case Int16     */ |	"__int16"
+// 			/*yy:example __int32 i; */
+// /*yy:case Int32     */ |	"__int32"
+// 			/*yy:example __int64 i; */
+// /*yy:case Int64     */ |	"__int64"
+// 			/*yy:example __int128 i; */
+// /*yy:case Int128     */ |	"__int128"
 			/*yy:example long i; */
 /*yy:case Long       */ |	"long"
 			/*yy:example float i; */
 /*yy:case Float      */ |	"float"
-			/*yy:example __fp16 i; */
-/*yy:case Float16    */ |	"__fp16"
-			/*yy:example _Decimal32 i; */
-/*yy:case Decimal32  */ |	"_Decimal32"
-			/*yy:example _Decimal64 i; */
-/*yy:case Decimal64  */ |	"_Decimal64"
-			/*yy:example _Decimal128 i; */
-/*yy:case Decimal128 */ |	"_Decimal128"
-			/*yy:example _Float128 i; */
-/*yy:case Float128   */ |	"_Float128"
-			/*yy:example __float80 i; */
-/*yy:case Float80    */ |	"__float80"
+// 			/*yy:example __fp16 i; */
+// /*yy:case Float16    */ |	"__fp16"
+// 			/*yy:example _Decimal32 i; */
+// /*yy:case Decimal32  */ |	"_Decimal32"
+// 			/*yy:example _Decimal64 i; */
+// /*yy:case Decimal64  */ |	"_Decimal64"
+// 			/*yy:example _Decimal128 i; */
+// /*yy:case Decimal128 */ |	"_Decimal128"
+// 			/*yy:example _Float128 i; */
+// /*yy:case Float128   */ |	"_Float128"
+// 			/*yy:example __float80 i; */
+// /*yy:case Float80    */ |	"__float80"
 			/*yy:example double i; */
 /*yy:case Double     */ |	"double"
 			/*yy:example signed i; */
 /*yy:case Signed     */ |	"signed"
 			/*yy:example unsigned i; */
 /*yy:case Unsigned   */ |	"unsigned"
-			/*yy:example _Bool i; */
-/*yy:case Bool       */ |	"_Bool"
-			/*yy:example _Complex i; */
-/*yy:case Complex    */ |	"_Complex"
+// 			/*yy:example _Bool i; */
+// /*yy:case Bool       */ |	"_Bool"
+// 			/*yy:example _Complex i; */
+// /*yy:case Complex    */ |	"_Complex"
 			/*yy:example struct s i; */
 /*yy:case StructOrUnion */
 			|	StructOrUnionSpecifier
@@ -455,26 +455,26 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Enum       */ |	EnumSpecifier
 			/*yy:example typedef const T; T i; */
 /*yy:case TypedefName*/ |	TYPENAME
-			/*yy:example typeof(42) i; */
-/*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
-			/*yy:example typedef const T; typeof(T) i; */
-/*yy:case TypeofType */ |	"typeof" '(' TypeName ')'
+// 			/*yy:example typeof(42) i; */
+// /*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
+// 			/*yy:example typedef const T; typeof(T) i; */
+// /*yy:case TypeofType */ |	"typeof" '(' TypeName ')'
 // 			/*yy:example _Atomic(int) i; */
 // /*yy:case Atomic     */ |	AtomicTypeSpecifier
-			/*yy:example _Fract i; */
-/*yy:case Fract      */ |	"_Fract"
-			/*yy:example _Sat i; */
-/*yy:case Sat        */ |	"_Sat"
-			/*yy:example _Accum i; */
-/*yy:case Accum      */ |	"_Accum"
-			/*yy:example _Float32 i; */
-/*yy:case Float32    */ |	"_Float32"
-			/*yy:example _Float64 i; */
-/*yy:case Float64    */ |	"_Float64"
-			/*yy:example _Float32x i; */
-/*yy:case Float32x    */ |	"_Float32x"
-			/*yy:example _Float64x i; */
-/*yy:case Float64x    */ |	"_Float64x"
+// 			/*yy:example _Fract i; */
+// /*yy:case Fract      */ |	"_Fract"
+// 			/*yy:example _Sat i; */
+// /*yy:case Sat        */ |	"_Sat"
+// 			/*yy:example _Accum i; */
+// /*yy:case Accum      */ |	"_Accum"
+// 			/*yy:example _Float32 i; */
+// /*yy:case Float32    */ |	"_Float32"
+// 			/*yy:example _Float64 i; */
+// /*yy:case Float64    */ |	"_Float64"
+// 			/*yy:example _Float32x i; */
+// /*yy:case Float32x    */ |	"_Float32x"
+// 			/*yy:example _Float64x i; */
+// /*yy:case Float64x    */ |	"_Float64x"
 
 			/* [0], 6.7.2.1 Structure and union specifiers */
 			/*yy:example struct s { int i; }; */
@@ -489,13 +489,13 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example union { int i; double d; } u; */
 /*yy:case Union      */ |	"union"
 		
-			/*yy:example struct{ int i; } */
+			/*yy:example struct{ int i; }; */
 			StructDeclarationList:
 				StructDeclaration
-			/*yy:example struct{ int i; double d; } */
+			/*yy:example struct{ int i; double d; }; */
 			|	StructDeclarationList StructDeclaration
 		
-			/*yy:example struct{ int i; } */
+			/*yy:example struct{ int i; }; */
 			StructDeclaration:
 				SpecifierQualifierList StructDeclaratorList ';'
 		
@@ -509,16 +509,16 @@ package cc // import "modernc.org/cc/v4"
 // 			/*yy:example struct {__attribute__((a)) int i;};*/
 // /*yy:case Attribute  */ |	AttributeSpecifier SpecifierQualifierList
 
-			/*yy:example struct{ int i; } */
+			/*yy:example struct{ int i; }; */
 			StructDeclaratorList:
 				StructDeclarator
-			/*yy:example struct{ int i, j; } */
+			/*yy:example struct{ int i, j; }; */
 			|	StructDeclaratorList ',' StructDeclarator
 		
-			/*yy:example struct{ int i; } */
+			/*yy:example struct{ int i; }; */
 /*yy:case Decl       */ StructDeclarator:
 				Declarator
-			/*yy:example struct{ int i:3; } */
+			/*yy:example struct{ int i:3; }; */
 /*yy:case BitField   */ |	Declarator ':' ConstantExpression /* AttributeSpecifierList */
 
 			/* [0], 6.7.2.2 Enumeration specifiers */

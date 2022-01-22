@@ -3629,7 +3629,6 @@ const (
 	StorageClassSpecifierStatic
 	StorageClassSpecifierAuto
 	StorageClassSpecifierRegister
-	StorageClassSpecifierThreadLocal
 )
 
 // String implements fmt.Stringer
@@ -3645,8 +3644,6 @@ func (n StorageClassSpecifierCase) String() string {
 		return "StorageClassSpecifierAuto"
 	case StorageClassSpecifierRegister:
 		return "StorageClassSpecifierRegister"
-	case StorageClassSpecifierThreadLocal:
-		return "StorageClassSpecifierThreadLocal"
 	default:
 		return fmt.Sprintf("StorageClassSpecifierCase(%v)", int(n))
 	}
@@ -3655,12 +3652,11 @@ func (n StorageClassSpecifierCase) String() string {
 // StorageClassSpecifier represents data reduced by productions:
 //
 //	StorageClassSpecifier:
-//	        "typedef"        // Case StorageClassSpecifierTypedef
-//	|       "extern"         // Case StorageClassSpecifierExtern
-//	|       "static"         // Case StorageClassSpecifierStatic
-//	|       "auto"           // Case StorageClassSpecifierAuto
-//	|       "register"       // Case StorageClassSpecifierRegister
-//	|       "_Thread_local"  // Case StorageClassSpecifierThreadLocal
+//	        "typedef"   // Case StorageClassSpecifierTypedef
+//	|       "extern"    // Case StorageClassSpecifierExtern
+//	|       "static"    // Case StorageClassSpecifierStatic
+//	|       "auto"      // Case StorageClassSpecifierAuto
+//	|       "register"  // Case StorageClassSpecifierRegister
 type StorageClassSpecifier struct {
 	Case  StorageClassSpecifierCase `PrettyPrint:"stringer,zero"`
 	Token Token
@@ -4086,36 +4082,14 @@ const (
 	TypeSpecifierChar
 	TypeSpecifierShort
 	TypeSpecifierInt
-	TypeSpecifierInt8
-	TypeSpecifierInt16
-	TypeSpecifierInt32
-	TypeSpecifierInt64
-	TypeSpecifierInt128
 	TypeSpecifierLong
 	TypeSpecifierFloat
-	TypeSpecifierFloat16
-	TypeSpecifierDecimal32
-	TypeSpecifierDecimal64
-	TypeSpecifierDecimal128
-	TypeSpecifierFloat128
-	TypeSpecifierFloat80
 	TypeSpecifierDouble
 	TypeSpecifierSigned
 	TypeSpecifierUnsigned
-	TypeSpecifierBool
-	TypeSpecifierComplex
 	TypeSpecifierStructOrUnion
 	TypeSpecifierEnum
 	TypeSpecifierTypedefName
-	TypeSpecifierTypeofExpr
-	TypeSpecifierTypeofType
-	TypeSpecifierFract
-	TypeSpecifierSat
-	TypeSpecifierAccum
-	TypeSpecifierFloat32
-	TypeSpecifierFloat64
-	TypeSpecifierFloat32x
-	TypeSpecifierFloat64x
 )
 
 // String implements fmt.Stringer
@@ -4129,66 +4103,22 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierShort"
 	case TypeSpecifierInt:
 		return "TypeSpecifierInt"
-	case TypeSpecifierInt8:
-		return "TypeSpecifierInt8"
-	case TypeSpecifierInt16:
-		return "TypeSpecifierInt16"
-	case TypeSpecifierInt32:
-		return "TypeSpecifierInt32"
-	case TypeSpecifierInt64:
-		return "TypeSpecifierInt64"
-	case TypeSpecifierInt128:
-		return "TypeSpecifierInt128"
 	case TypeSpecifierLong:
 		return "TypeSpecifierLong"
 	case TypeSpecifierFloat:
 		return "TypeSpecifierFloat"
-	case TypeSpecifierFloat16:
-		return "TypeSpecifierFloat16"
-	case TypeSpecifierDecimal32:
-		return "TypeSpecifierDecimal32"
-	case TypeSpecifierDecimal64:
-		return "TypeSpecifierDecimal64"
-	case TypeSpecifierDecimal128:
-		return "TypeSpecifierDecimal128"
-	case TypeSpecifierFloat128:
-		return "TypeSpecifierFloat128"
-	case TypeSpecifierFloat80:
-		return "TypeSpecifierFloat80"
 	case TypeSpecifierDouble:
 		return "TypeSpecifierDouble"
 	case TypeSpecifierSigned:
 		return "TypeSpecifierSigned"
 	case TypeSpecifierUnsigned:
 		return "TypeSpecifierUnsigned"
-	case TypeSpecifierBool:
-		return "TypeSpecifierBool"
-	case TypeSpecifierComplex:
-		return "TypeSpecifierComplex"
 	case TypeSpecifierStructOrUnion:
 		return "TypeSpecifierStructOrUnion"
 	case TypeSpecifierEnum:
 		return "TypeSpecifierEnum"
 	case TypeSpecifierTypedefName:
 		return "TypeSpecifierTypedefName"
-	case TypeSpecifierTypeofExpr:
-		return "TypeSpecifierTypeofExpr"
-	case TypeSpecifierTypeofType:
-		return "TypeSpecifierTypeofType"
-	case TypeSpecifierFract:
-		return "TypeSpecifierFract"
-	case TypeSpecifierSat:
-		return "TypeSpecifierSat"
-	case TypeSpecifierAccum:
-		return "TypeSpecifierAccum"
-	case TypeSpecifierFloat32:
-		return "TypeSpecifierFloat32"
-	case TypeSpecifierFloat64:
-		return "TypeSpecifierFloat64"
-	case TypeSpecifierFloat32x:
-		return "TypeSpecifierFloat32x"
-	case TypeSpecifierFloat64x:
-		return "TypeSpecifierFloat64x"
 	default:
 		return fmt.Sprintf("TypeSpecifierCase(%v)", int(n))
 	}
@@ -4197,49 +4127,23 @@ func (n TypeSpecifierCase) String() string {
 // TypeSpecifier represents data reduced by productions:
 //
 //	TypeSpecifier:
-//	        "void"                       // Case TypeSpecifierVoid
-//	|       "char"                       // Case TypeSpecifierChar
-//	|       "short"                      // Case TypeSpecifierShort
-//	|       "int"                        // Case TypeSpecifierInt
-//	|       "__int8"                     // Case TypeSpecifierInt8
-//	|       "__int16"                    // Case TypeSpecifierInt16
-//	|       "__int32"                    // Case TypeSpecifierInt32
-//	|       "__int64"                    // Case TypeSpecifierInt64
-//	|       "__int128"                   // Case TypeSpecifierInt128
-//	|       "long"                       // Case TypeSpecifierLong
-//	|       "float"                      // Case TypeSpecifierFloat
-//	|       "__fp16"                     // Case TypeSpecifierFloat16
-//	|       "_Decimal32"                 // Case TypeSpecifierDecimal32
-//	|       "_Decimal64"                 // Case TypeSpecifierDecimal64
-//	|       "_Decimal128"                // Case TypeSpecifierDecimal128
-//	|       "_Float128"                  // Case TypeSpecifierFloat128
-//	|       "__float80"                  // Case TypeSpecifierFloat80
-//	|       "double"                     // Case TypeSpecifierDouble
-//	|       "signed"                     // Case TypeSpecifierSigned
-//	|       "unsigned"                   // Case TypeSpecifierUnsigned
-//	|       "_Bool"                      // Case TypeSpecifierBool
-//	|       "_Complex"                   // Case TypeSpecifierComplex
-//	|       StructOrUnionSpecifier       // Case TypeSpecifierStructOrUnion
-//	|       EnumSpecifier                // Case TypeSpecifierEnum
-//	|       TYPENAME                     // Case TypeSpecifierTypedefName
-//	|       "typeof" '(' Expression ')'  // Case TypeSpecifierTypeofExpr
-//	|       "typeof" '(' TypeName ')'    // Case TypeSpecifierTypeofType
-//	|       "_Fract"                     // Case TypeSpecifierFract
-//	|       "_Sat"                       // Case TypeSpecifierSat
-//	|       "_Accum"                     // Case TypeSpecifierAccum
-//	|       "_Float32"                   // Case TypeSpecifierFloat32
-//	|       "_Float64"                   // Case TypeSpecifierFloat64
-//	|       "_Float32x"                  // Case TypeSpecifierFloat32x
-//	|       "_Float64x"                  // Case TypeSpecifierFloat64x
+//	        "void"                  // Case TypeSpecifierVoid
+//	|       "char"                  // Case TypeSpecifierChar
+//	|       "short"                 // Case TypeSpecifierShort
+//	|       "int"                   // Case TypeSpecifierInt
+//	|       "long"                  // Case TypeSpecifierLong
+//	|       "float"                 // Case TypeSpecifierFloat
+//	|       "double"                // Case TypeSpecifierDouble
+//	|       "signed"                // Case TypeSpecifierSigned
+//	|       "unsigned"              // Case TypeSpecifierUnsigned
+//	|       StructOrUnionSpecifier  // Case TypeSpecifierStructOrUnion
+//	|       EnumSpecifier           // Case TypeSpecifierEnum
+//	|       TYPENAME                // Case TypeSpecifierTypedefName
 type TypeSpecifier struct {
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier
-	Expression             *Expression
 	StructOrUnionSpecifier *StructOrUnionSpecifier
 	Token                  Token
-	Token2                 Token
-	Token3                 Token
-	TypeName               *TypeName
 }
 
 // String implements fmt.Stringer.
@@ -4252,40 +4156,12 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 23:
+	case 10:
 		return n.EnumSpecifier.Position()
-	case 22:
+	case 9:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 24, 27, 28, 29, 30, 31, 32, 33:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 11:
 		return n.Token.Position()
-	case 25:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Expression.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token3.Position()
-	case 26:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.Token2.Position(); p.IsValid() {
-			return p
-		}
-
-		if p := n.TypeName.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Token3.Position()
 	default:
 		panic("internal error")
 	}
@@ -4307,10 +4183,6 @@ const (
 	UnaryExpressionNot
 	UnaryExpressionSizeofExpr
 	UnaryExpressionSizeofType
-	UnaryExpressionAlignofExpr
-	UnaryExpressionAlignofType
-	UnaryExpressionImag
-	UnaryExpressionReal
 )
 
 // String implements fmt.Stringer
@@ -4338,14 +4210,6 @@ func (n UnaryExpressionCase) String() string {
 		return "UnaryExpressionSizeofExpr"
 	case UnaryExpressionSizeofType:
 		return "UnaryExpressionSizeofType"
-	case UnaryExpressionAlignofExpr:
-		return "UnaryExpressionAlignofExpr"
-	case UnaryExpressionAlignofType:
-		return "UnaryExpressionAlignofType"
-	case UnaryExpressionImag:
-		return "UnaryExpressionImag"
-	case UnaryExpressionReal:
-		return "UnaryExpressionReal"
 	default:
 		return fmt.Sprintf("UnaryExpressionCase(%v)", int(n))
 	}
@@ -4354,21 +4218,17 @@ func (n UnaryExpressionCase) String() string {
 // UnaryExpression represents data reduced by productions:
 //
 //	UnaryExpression:
-//	        PostfixExpression            // Case UnaryExpressionPostfix
-//	|       "++" UnaryExpression         // Case UnaryExpressionInc
-//	|       "--" UnaryExpression         // Case UnaryExpressionDec
-//	|       '&' CastExpression           // Case UnaryExpressionAddrof
-//	|       '*' CastExpression           // Case UnaryExpressionDeref
-//	|       '+' CastExpression           // Case UnaryExpressionPlus
-//	|       '-' CastExpression           // Case UnaryExpressionMinus
-//	|       '~' CastExpression           // Case UnaryExpressionCpl
-//	|       '!' CastExpression           // Case UnaryExpressionNot
-//	|       "sizeof" UnaryExpression     // Case UnaryExpressionSizeofExpr
-//	|       "sizeof" '(' TypeName ')'    // Case UnaryExpressionSizeofType
-//	|       "_Alignof" UnaryExpression   // Case UnaryExpressionAlignofExpr
-//	|       "_Alignof" '(' TypeName ')'  // Case UnaryExpressionAlignofType
-//	|       "__imag__" UnaryExpression   // Case UnaryExpressionImag
-//	|       "__real__" UnaryExpression   // Case UnaryExpressionReal
+//	        PostfixExpression          // Case UnaryExpressionPostfix
+//	|       "++" UnaryExpression       // Case UnaryExpressionInc
+//	|       "--" UnaryExpression       // Case UnaryExpressionDec
+//	|       '&' CastExpression         // Case UnaryExpressionAddrof
+//	|       '*' CastExpression         // Case UnaryExpressionDeref
+//	|       '+' CastExpression         // Case UnaryExpressionPlus
+//	|       '-' CastExpression         // Case UnaryExpressionMinus
+//	|       '~' CastExpression         // Case UnaryExpressionCpl
+//	|       '!' CastExpression         // Case UnaryExpressionNot
+//	|       "sizeof" UnaryExpression   // Case UnaryExpressionSizeofExpr
+//	|       "sizeof" '(' TypeName ')'  // Case UnaryExpressionSizeofType
 type UnaryExpression struct {
 	Case              UnaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression    *CastExpression
@@ -4398,7 +4258,7 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.CastExpression.Position()
-	case 10, 12:
+	case 10:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -4412,7 +4272,7 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.Token3.Position()
-	case 1, 2, 9, 11, 13, 14:
+	case 1, 2, 9:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
