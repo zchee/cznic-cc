@@ -2801,12 +2801,19 @@ func ExampleDesignatorList_case1() {
 }
 
 func ExampleDirectAbstractDeclarator_decl() {
-	fmt.Println(exampleAST(153, "void f(int());"))
+	fmt.Println(exampleAST(153, "void f(int(*));"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
-	// · Case: DirectAbstractDeclaratorFunc,
+	// · AbstractDeclarator: &cc.AbstractDeclarator{
+	// · · Case: AbstractDeclaratorPtr,
+	// · · Pointer: &cc.Pointer{
+	// · · · Case: PointerTypeQual,
+	// · · · Token: example.c:1:12: '*' "*",
+	// · · },
+	// · },
+	// · Case: DirectAbstractDeclaratorDecl,
 	// · Token: example.c:1:11: '(' "(",
-	// · Token2: example.c:1:12: ')' ")",
+	// · Token2: example.c:1:13: ')' ")",
 	// }
 }
 

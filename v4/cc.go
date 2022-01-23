@@ -34,6 +34,10 @@ import (
 	v3 "modernc.org/cc/v3"
 )
 
+var (
+	isTesting bool
+)
+
 // HostConfig returns the system C preprocessor/compiler configuration, or an
 // error, if any.  The configuration is obtained by running the command named
 // by the cpp argumnent or "cpp" when it's empty.  For the predefined macros
@@ -152,6 +156,14 @@ type errors []string
 // Error implements error.
 func (e errors) Error() string { return strings.Join(e, "\n") }
 
+func (e errors) err() error {
+	if len(e) == 0 {
+		return nil
+	}
+
+	return e
+}
+
 // Preprocess preprocesses a translation unit, consisting of inputs in sources,
 // and writes the result to w.
 func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
@@ -169,10 +181,7 @@ func preprocess(cpp *cpp, w io.Writer) (err error) {
 	var prev rune
 	for {
 		if cpp.rune() == eof {
-			if errors != nil {
-				err = errors
-			}
-			return err
+			return errors.err()
 		}
 
 		tok := cpp.shift()

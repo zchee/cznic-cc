@@ -986,6 +986,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	        Pointer DirectDeclarator
 type Declarator struct {
 	typedef          bool
+	visible          int32
 	DirectDeclarator *DirectDeclarator
 	Pointer          *Pointer
 }
@@ -1522,6 +1523,7 @@ func (n EnumSpecifierCase) String() string {
 //	        "enum" IDENTIFIER '{' EnumeratorList ',' '}'  // Case EnumSpecifierDef
 //	|       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 type EnumSpecifier struct {
+	visible        int32
 	Case           EnumSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumeratorList *EnumeratorList
 	Token          Token
@@ -1601,6 +1603,7 @@ func (n EnumeratorCase) String() string {
 //	        IDENTIFIER                         // Case EnumeratorIdent
 //	|       IDENTIFIER '=' ConstantExpression  // Case EnumeratorExpr
 type Enumerator struct {
+	visible            int32
 	Case               EnumeratorCase `PrettyPrint:"stringer,zero"`
 	ConstantExpression *ConstantExpression
 	Token              Token
@@ -3883,6 +3886,7 @@ func (n StructOrUnionSpecifierCase) String() string {
 //	        StructOrUnion IDENTIFIER '{' StructDeclarationList '}'  // Case StructOrUnionSpecifierDef
 //	|       StructOrUnion IDENTIFIER                                // Case StructOrUnionSpecifierTag
 type StructOrUnionSpecifier struct {
+	visible               int32
 	Case                  StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
 	StructDeclarationList *StructDeclarationList
 	StructOrUnion         *StructOrUnion

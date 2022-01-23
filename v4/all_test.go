@@ -41,6 +41,7 @@ var (
 )
 
 func init() {
+	isTesting = true
 	var err error
 	if predefined, testCfg0.IncludePaths, testCfg0.SysIncludePaths, err = HostConfig(""); err != nil {
 		panic(errorf("cannot acquire host configuration: %v", err))
@@ -815,7 +816,6 @@ func TestIssue127(t *testing.T) {
 }
 
 func TestBOM(t *testing.T) {
-	return //TODO-
 	for i, v := range []struct {
 		src string
 		err string
@@ -832,6 +832,68 @@ func TestBOM(t *testing.T) {
 			if !regexp.MustCompile(v.err).MatchString(err.Error()) {
 				t.Errorf("%v: error %v does not match %v", i, err, v.err)
 			}
+		}
+	}
+}
+
+func TestStrCatSep(t *testing.T) {
+	for i, v := range []struct {
+		src         string
+		lit         string
+		sep         string
+		trailingSep string
+	}{
+		{`int f() {  "a";}`, `"a"`, "  ", "\n"},
+		{`int f() {  L"a";}`, `L"a"`, "  ", "\n"},
+		{`int f() { "a" "b";}`, `"ab"`, "  ", "\n"},
+		{`int f() { "a""b";}`, `"ab"`, " ", "\n"},
+		{`int f() { "a";}`, `"a"`, " ", "\n"},
+		{`int f() { "a"` + "\n\t" + `"b"; }`, `"ab"`, " \n\t", "\n"},
+		{`int f() { /*x*/ /*y*/ "a";}`, `"a"`, " /*x*/ /*y*/ ", "\n"},
+		{`int f() { /*x*/` + "\n" + `/*y*/ "a";}`, `"a"`, " /*x*/\n/*y*/ ", "\n"},
+		{`int f() { //x` + "\n" + ` "a";}`, `"a"`, " //x\n ", "\n"},
+		{`int f() { //x` + "\n" + `"a";}`, `"a"`, " //x\n", "\n"},
+		{`int f() { L"a" L"b";}`, `L"ab"`, "  ", "\n"},
+		{`int f() { ` + "\n" + ` "a";}`, `"a"`, " \n ", "\n"},
+		{`int f() { ` + "\n" + `"a";}`, `"a"`, " \n", "\n"},
+		{`int f() {"a" "b";}`, `"ab"`, " ", "\n"},
+		{`int f() {"a"/*y*/"b";}`, `"ab"`, "/*y*/", "\n"},
+		{`int f() {"a";} /*x*/ `, `"a"`, "", " /*x*/ \n"},
+		{`int f() {"a";} /*x*/`, `"a"`, "", " /*x*/\n"},
+		{`int f() {"a";} /*x` + "\n" + `*/ `, `"a"`, "", " /*x\n*/ \n"},
+		{`int f() {"a";} `, `"a"`, "", " \n"},
+		{`int f() {"a";}/*x*/`, `"a"`, "", "/*x*/\n"},
+		{`int f() {"a";}` + "\n", `"a"`, "", "\n"},
+		{`int f() {"a";}`, `"a"`, "", "\n"},
+		{`int f() {/*x*/ /*y*/ "a";}`, `"a"`, "/*x*/ /*y*/ ", "\n"},
+		{`int f() {/*x*/"a""b";}`, `"ab"`, "/*x*/", "\n"},
+		{`int f() {/*x*/"a"/*y*/"b";}`, `"ab"`, "/*x*//*y*/", "\n"},
+		{`int f() {/*x*/"a";}`, `"a"`, "/*x*/", "\n"},
+		{`int f() {/*x*//*y*/ "a";}`, `"a"`, "/*x*//*y*/ ", "\n"},
+		{`int f() {/*x*//*y*/"a";}`, `"a"`, "/*x*//*y*/", "\n"},
+		{`int f() {//` + "\n" + `"a";}`, `"a"`, "//\n", "\n"},
+		{`int f() {//x` + "\n" + `"a";}`, `"a"`, "//x\n", "\n"},
+		{`int f() {` + "\n" + ` "a";}`, `"a"`, "\n ", "\n"},
+		{`int f() {` + "\n" + `"a";}`, `"a"`, "\n", "\n"},
+	} {
+		ast, err := Parse(&Config{}, []Source{{Name: "test", Value: v.src}})
+		if err != nil {
+			t.Errorf("%v: %v", i, err)
+			continue
+		}
+
+		var n Node
+		depth := mathutil.MaxInt
+		findNode("PrimaryExpression", ast.TranslationUnit, 0, &n, &depth)
+		tok := n.(*PrimaryExpression).Token
+		if g, e := string(tok.Src()), v.lit; g != e {
+			t.Errorf("%v: %q %q", i, g, e)
+		}
+		if g, e := string(tok.Sep()), v.sep; g != e {
+			t.Errorf("%v: %q %q", i, g, e)
+		}
+		if g, e := string(ast.EOF.Sep()), v.trailingSep; g != e {
+			t.Errorf("%v: %q %q", i, g, e)
 		}
 	}
 }

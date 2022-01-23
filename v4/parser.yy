@@ -478,6 +478,7 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case Float64x    */ |	"_Float64x"
 
 			/* [0], 6.7.2.1 Structure and union specifiers */
+			/*yy:field	visible	int32	*/
 			/*yy:example struct s { int i; }; */
 /*yy:case Def        */ StructOrUnionSpecifier:
 				StructOrUnion /* AttributeSpecifierList */ IDENTIFIER '{' StructDeclarationList '}'
@@ -523,6 +524,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case BitField   */ |	Declarator ':' ConstantExpression /* AttributeSpecifierList */
 
 			/* [0], 6.7.2.2 Enumeration specifiers */
+			/*yy:field	visible	int32	*/
 			/*yy:example enum e {a}; */
 /*yy:case Def        */ EnumSpecifier:
 				"enum" /* AttributeSpecifierList */ IDENTIFIER '{' EnumeratorList ',' '}'
@@ -535,6 +537,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example enum e {a, b}; */
 			|	EnumeratorList ',' Enumerator
 
+			/*yy:field	visible	int32	*/
 			/*yy:example enum e {a}; */
 /*yy:case Ident      */ Enumerator:
 				IDENTIFIER /* AttributeSpecifierList */
@@ -565,7 +568,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:field	typedef	bool	*/
+			/*yy:field	typedef	bool		*/
+			/*yy:field	visible	int32	*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator /* AttributeSpecifierList */ %prec BELOW_ATTRIBUTE
@@ -650,7 +654,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Decl       */ |	Pointer DirectAbstractDeclarator
 
 			/*yy:field	params	*Scope	*/
-			/*yy:example void f(int()); */
+			/*yy:example void f(int(*)); */
 /*yy:case Decl       */ DirectAbstractDeclarator:
 				'(' AbstractDeclarator ')'
 			/*yy:example void f(int[const 42]); */

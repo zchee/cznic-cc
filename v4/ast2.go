@@ -9,11 +9,17 @@ type AST struct {
 	EOF             Token
 }
 
+// Name returns the name of n.
 func (n *Declarator) Name() string {
 	return n.DirectDeclarator.Name()
 }
 
+// Name returns the name of n.
 func (n *DirectDeclarator) Name() string {
+	if n == nil {
+		return ""
+	}
+
 	for n.DirectDeclarator != nil {
 		n = n.DirectDeclarator
 	}

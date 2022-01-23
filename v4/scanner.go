@@ -318,11 +318,15 @@ func newScanner(src Source, eh errHandler) (*scanner, error) {
 		return nil, err
 	}
 
-	return &scanner{
+	r := &scanner{
 		s:  s,
 		ch: eof,
 		eh: eh,
-	}, nil
+	}
+	if r.peek(0) == '\xef' && r.peek(1) == '\xbb' && r.peek(2) == '\xbf' {
+		r.off += 3
+	}
+	return r, nil
 }
 
 // close causes all subsequent calls to .scan to return an EOF token.
