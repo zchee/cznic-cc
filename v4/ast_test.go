@@ -1727,6 +1727,215 @@ func ExampleAssignmentExpression_or() {
 	// }
 }
 
+func ExampleAttributeSpecifier_case0() {
+	fmt.Println(exampleAST(224, "int i __attribute__((a));"))
+	// Output:
+	// &cc.AttributeSpecifier{
+	// · AttributeValueList: &cc.AttributeValueList{
+	// · · AttributeValue: &cc.AttributeValue{
+	// · · · Case: AttributeValueIdent,
+	// · · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · },
+	// · },
+	// · Token: example.c:1:7: ATTRIBUTE "__attribute__",
+	// · Token2: example.c:1:20: '(' "(",
+	// · Token3: example.c:1:21: '(' "(",
+	// · Token4: example.c:1:23: ')' ")",
+	// · Token5: example.c:1:24: ')' ")",
+	// }
+}
+
+func ExampleAttributeSpecifierList_case0() {
+	fmt.Println(exampleAST(225, "int i __attribute__((a));"))
+	// Output:
+	// &cc.AttributeSpecifierList{
+	// · AttributeSpecifier: &cc.AttributeSpecifier{
+	// · · AttributeValueList: &cc.AttributeValueList{
+	// · · · AttributeValue: &cc.AttributeValue{
+	// · · · · Case: AttributeValueIdent,
+	// · · · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:7: ATTRIBUTE "__attribute__",
+	// · · Token2: example.c:1:20: '(' "(",
+	// · · Token3: example.c:1:21: '(' "(",
+	// · · Token4: example.c:1:23: ')' ")",
+	// · · Token5: example.c:1:24: ')' ")",
+	// · },
+	// }
+}
+
+func ExampleAttributeSpecifierList_case1() {
+	fmt.Println(exampleAST(226, "int i __attribute__((a)) __attribute((b));"))
+	// Output:
+	// &cc.AttributeSpecifierList{
+	// · AttributeSpecifier: &cc.AttributeSpecifier{
+	// · · AttributeValueList: &cc.AttributeValueList{
+	// · · · AttributeValue: &cc.AttributeValue{
+	// · · · · Case: AttributeValueIdent,
+	// · · · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:7: ATTRIBUTE "__attribute__",
+	// · · Token2: example.c:1:20: '(' "(",
+	// · · Token3: example.c:1:21: '(' "(",
+	// · · Token4: example.c:1:23: ')' ")",
+	// · · Token5: example.c:1:24: ')' ")",
+	// · },
+	// }
+}
+
+func ExampleAttributeValue_ident() {
+	fmt.Println(exampleAST(220, "int i __attribute__((a));"))
+	// Output:
+	// &cc.AttributeValue{
+	// · Case: AttributeValueIdent,
+	// · Token: example.c:1:22: IDENTIFIER "a",
+	// }
+}
+
+func ExampleAttributeValue_expr() {
+	fmt.Println(exampleAST(221, "int i __attribute__((a(b)));"))
+	// Output:
+	// &cc.AttributeValue{
+	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
+	// · · AssignmentExpression: &cc.AssignmentExpression{
+	// · · · Case: AssignmentExpressionCond,
+	// · · · ConditionalExpression: &cc.ConditionalExpression{
+	// · · · · Case: ConditionalExpressionLOr,
+	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
+	// · · · · · Case: LogicalOrExpressionLAnd,
+	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
+	// · · · · · · Case: LogicalAndExpressionOr,
+	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
+	// · · · · · · · Case: InclusiveOrExpressionXor,
+	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
+	// · · · · · · · · AndExpression: &cc.AndExpression{
+	// · · · · · · · · · Case: AndExpressionEq,
+	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
+	// · · · · · · · · · · Case: EqualityExpressionRel,
+	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
+	// · · · · · · · · · · · Case: RelationalExpressionShift,
+	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
+	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
+	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
+	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
+	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
+	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
+	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
+	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
+	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
+	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionExpr,
+	// · · · · · · · · · · · · · · · · · · Expression: &cc.Expression{
+	// · · · · · · · · · · · · · · · · · · · AssignmentExpression: &cc.AssignmentExpression{
+	// · · · · · · · · · · · · · · · · · · · · Case: AssignmentExpressionCond,
+	// · · · · · · · · · · · · · · · · · · · · ConditionalExpression: &cc.ConditionalExpression{
+	// · · · · · · · · · · · · · · · · · · · · · Case: ConditionalExpressionLOr,
+	// · · · · · · · · · · · · · · · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · Case: LogicalOrExpressionLAnd,
+	// · · · · · · · · · · · · · · · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · Case: LogicalAndExpressionOr,
+	// · · · · · · · · · · · · · · · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · Case: InclusiveOrExpressionXor,
+	// · · · · · · · · · · · · · · · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · AndExpression: &cc.AndExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · Case: AndExpressionEq,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: EqualityExpressionRel,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: RelationalExpressionShift,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:24: IDENTIFIER "b",
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
+	// · · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · · · Token: example.c:1:23: '(' "(",
+	// · · · · · · · · · · · · · · · · · · Token2: example.c:1:25: ')' ")",
+	// · · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · · },
+	// · · · · · · · · · · · · },
+	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
+	// · · · · · · · · · · · },
+	// · · · · · · · · · · },
+	// · · · · · · · · · },
+	// · · · · · · · · },
+	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · },
+	// · · · · },
+	// · · · },
+	// · · },
+	// · },
+	// · Case: AttributeValueExpr,
+	// · Token: example.c:1:22: IDENTIFIER "a",
+	// · Token2: example.c:1:26: ')' ")",
+	// }
+}
+
+func ExampleAttributeValueList_case0() {
+	fmt.Println(exampleAST(222, "int i __attribute__((a));"))
+	// Output:
+	// &cc.AttributeValueList{
+	// · AttributeValue: &cc.AttributeValue{
+	// · · Case: AttributeValueIdent,
+	// · · Token: example.c:1:22: IDENTIFIER "a",
+	// · },
+	// }
+}
+
+func ExampleAttributeValueList_case1() {
+	fmt.Println(exampleAST(223, "int i __attribute__((a, b));"))
+	// Output:
+	// &cc.AttributeValueList{
+	// · AttributeValue: &cc.AttributeValue{
+	// · · Case: AttributeValueIdent,
+	// · · Token: example.c:1:22: IDENTIFIER "a",
+	// · },
+	// · AttributeValueList: &cc.AttributeValueList{
+	// · · AttributeValue: &cc.AttributeValue{
+	// · · · Case: AttributeValueIdent,
+	// · · · Token: example.c:1:25: IDENTIFIER "b",
+	// · · },
+	// · · Token: example.c:1:23: ',' ",",
+	// · },
+	// }
+}
+
 func ExampleBlockItem_decl() {
 	fmt.Println(exampleAST(182, "int f() { int i; }"))
 	// Output:
@@ -2284,9 +2493,24 @@ func ExampleConstantExpression_case0() {
 }
 
 func ExampleDeclaration_case0() {
-	fmt.Println(exampleAST(79, "int i, j;"))
+	fmt.Println(exampleAST(79, "int i, j __attribute__((a));"))
 	// Output:
 	// &cc.Declaration{
+	// · AttributeSpecifierList: &cc.AttributeSpecifierList{
+	// · · AttributeSpecifier: &cc.AttributeSpecifier{
+	// · · · AttributeValueList: &cc.AttributeValueList{
+	// · · · · AttributeValue: &cc.AttributeValue{
+	// · · · · · Case: AttributeValueIdent,
+	// · · · · · Token: example.c:1:25: IDENTIFIER "a",
+	// · · · · },
+	// · · · },
+	// · · · Token: example.c:1:10: ATTRIBUTE "__attribute__",
+	// · · · Token2: example.c:1:23: '(' "(",
+	// · · · Token3: example.c:1:24: '(' "(",
+	// · · · Token4: example.c:1:26: ')' ")",
+	// · · · Token5: example.c:1:27: ')' ")",
+	// · · },
+	// · },
 	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
@@ -2317,7 +2541,7 @@ func ExampleDeclaration_case0() {
 	// · · · Token: example.c:1:6: ',' ",",
 	// · · },
 	// · },
-	// · Token: example.c:1:9: ';' ";",
+	// · Token: example.c:1:28: ';' ";",
 	// }
 }
 
@@ -3377,7 +3601,8 @@ func ExampleEnumSpecifier_def() {
 	// · },
 	// · Token: example.c:1:1: ENUM "enum",
 	// · Token2: example.c:1:6: IDENTIFIER "e",
-	// · Token3: example.c:1:10: '}' "}",
+	// · Token3: example.c:1:8: '{' "{",
+	// · Token5: example.c:1:10: '}' "}",
 	// }
 }
 

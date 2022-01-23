@@ -357,9 +357,9 @@ package cc // import "modernc.org/cc/v4"
 				ConditionalExpression
 
 			/* [0], 6.7 Declarations */
-			/*yy:example int i, j; */
+			/*yy:example int i, j __attribute__((a)); */
 			Declaration:
-				DeclarationSpecifiers InitDeclaratorList ';'
+				DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';' // A1
 
 			/*yy:field	typedef	bool	*/
 			/*yy:example static int i; */
@@ -478,7 +478,7 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case Float64x    */ |	"_Float64x"
 
 			/* [0], 6.7.2.1 Structure and union specifiers */
-			/*yy:field	visible	int32	*/
+			/*yy:field	visible	*/
 			/*yy:example struct s { int i; }; */
 /*yy:case Def        */ StructOrUnionSpecifier:
 				StructOrUnion /* AttributeSpecifierList */ IDENTIFIER '{' StructDeclarationList '}'
@@ -524,7 +524,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case BitField   */ |	Declarator ':' ConstantExpression /* AttributeSpecifierList */
 
 			/* [0], 6.7.2.2 Enumeration specifiers */
-			/*yy:field	visible	int32	*/
+			/*yy:field	visible	*/
 			/*yy:example enum e {a}; */
 /*yy:case Def        */ EnumSpecifier:
 				"enum" /* AttributeSpecifierList */ IDENTIFIER '{' EnumeratorList ',' '}'
@@ -537,7 +537,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example enum e {a, b}; */
 			|	EnumeratorList ',' Enumerator
 
-			/*yy:field	visible	int32	*/
+			/*yy:field	visible	*/
 			/*yy:example enum e {a}; */
 /*yy:case Ident      */ Enumerator:
 				IDENTIFIER /* AttributeSpecifierList */
@@ -569,7 +569,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.7.5 Declarators */
 			/*yy:field	typedef	bool		*/
-			/*yy:field	visible	int32	*/
+			/*yy:field	visible			*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator /* AttributeSpecifierList */ %prec BELOW_ATTRIBUTE
@@ -864,25 +864,31 @@ package cc // import "modernc.org/cc/v4"
 // 			/*yy:example int f() { __label__ L; L: x(); } */
 // 			LabelDeclaration:
 // 				"__label__" IdentifierList ';'
-// 
-// 			/*yy:example int i __attribute__((a)); */
-// /*yy:case Ident      */ AttributeValue:
-// 				IDENTIFIER
-// 			/*yy:example int i __attribute__((a(b))); */
-// /*yy:case Expr       */ |	IDENTIFIER '(' ArgumentExpressionList ')'
-// 
-// 			/*yy:example int i __attribute__((a)); */
-// 			AttributeValueList:
-// 				AttributeValue
-// 			/*yy:example int i __attribute__((a, b)); */
-// 			|	AttributeValueList ',' AttributeValue
-// 
-// 			/*yy:example int i __attribute__((a)); */
-// 			AttributeSpecifier:
-// 				"__attribute__" '(' '(' AttributeValueList ')' ')'
-// 
-// 			/*yy:example int i __attribute__((a)); */
-// 			AttributeSpecifierList:
-// 				AttributeSpecifier %prec BELOW_ATTRIBUTE
-// 			/*yy:example int i __attribute__((a)) __attribute((b)); */
-// 			|	AttributeSpecifierList AttributeSpecifier
+
+// https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html#Attribute-Syntax
+//
+// A1: An attribute specifier list may appear immediately before the comma, =
+// or semicolon terminating the declaration of an identifier other than a
+// function definition. 
+			/*yy:example int i __attribute__((a)); */
+/*yy:case Ident      */ AttributeValue:
+				IDENTIFIER
+			/*yy:example int i __attribute__((a(b))); */
+/*yy:case Expr       */ |	IDENTIFIER '(' ArgumentExpressionList ')'
+
+			/*yy:example int i __attribute__((a)); */
+			AttributeValueList:
+				AttributeValue
+			/*yy:example int i __attribute__((a, b)); */
+			|	AttributeValueList ',' AttributeValue
+
+			/*yy:example int i __attribute__((a)); */
+			AttributeSpecifier:
+				"__attribute__" '(' '(' AttributeValueList ')' ')'
+
+			/*yy:example int i __attribute__((a)); */
+			AttributeSpecifierList:
+				AttributeSpecifier %prec BELOW_ATTRIBUTE
+			/*yy:example int i __attribute__((a)) __attribute((b)); */
+			|	AttributeSpecifierList AttributeSpecifier
+

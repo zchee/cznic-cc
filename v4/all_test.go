@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/dustin/go-humanize"
@@ -36,6 +37,9 @@ var (
 	re          *regexp.Regexp
 	testCfg0    = &Config{}
 	predefined  string
+	builtin     = `
+#define __extension__
+`
 
 	oTrace = flag.Bool("trc", false, "Print tested paths.")
 )
@@ -314,41 +318,86 @@ def
 	}
 }
 
-var toks []Token
+type parallel struct {
+	limit chan struct{}
+	sync.Mutex
+	wg sync.WaitGroup
+}
+
+func newParallel() *parallel {
+	return &parallel{
+		limit: make(chan struct{}, runtime.GOMAXPROCS(0)),
+	}
+}
+
+func (p *parallel) exec(run func()) {
+	p.limit <- struct{}{}
+
+	defer func() { <-p.limit }()
+
+	p.wg.Add(1)
+	go func() {
+		defer p.wg.Done()
+
+		run()
+	}()
+}
+
+var tokSink []Token
 
 func TestScanner(t *testing.T) {
-	defer func() { toks = nil }()
+	defer func() { tokSink = nil }()
 
 	var files, tokens, chars int64
 	var m0, m runtime.MemStats
+	p := newParallel()
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m0)
 	for _, path := range corpusIndex {
+		path := path
 		switch filepath.Ext(path) {
 		case ".c", ".h":
-			buf := corpus[path]
-			chars += int64(len(buf))
-			var s *scanner
-			var err error
-			if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
-				s.close()
-				t.Fatalf(msg, args...)
-			}); err != nil {
-				t.Fatal(path, err)
-			}
-
 			files++
-			for {
-				tok := s.cppScan()
-				if tok.Ch == eof {
-					break
+			p.exec(func() {
+				var err error
+				var chars0, tokens0 int64
+				var toks []Token
+
+				defer func() {
+					p.Lock()
+					chars += chars0
+					tokens += tokens0
+					tokSink = append(tokSink, toks...)
+					if err != nil {
+						t.Error(err)
+					}
+					p.Unlock()
+				}()
+
+				buf := corpus[path]
+				chars0 += int64(len(buf))
+				var s *scanner
+				if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+					s.close()
+					err = fmt.Errorf(msg, args...)
+				}); err != nil {
+					err = fmt.Errorf("%v: %v", path, err)
+					return
 				}
 
-				toks = append(toks, tok)
-				tokens++
-			}
+				for {
+					tok := s.cppScan()
+					if tok.Ch == eof {
+						return
+					}
+
+					toks = append(toks, tok)
+					tokens0++
+				}
+			})
 		}
 	}
+	p.wg.Wait()
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m)
 	t.Logf("files %v; tokens %v; bytes %v; heap %v; alloc %v", h(files), h(tokens), h(chars), h(m.HeapAlloc-m0.HeapAlloc), h(m.TotalAlloc-m0.TotalAlloc))
@@ -399,11 +448,11 @@ var (
 	cppParseBlacklist = map[string]struct{}{
 		"/github.com/vnmakarov/mir/c-tests/new/endif.c": {}, // 1:1: unexpected #endif
 	}
-	asts []group
+	astSink []group
 )
 
-func TestCPPParse(t *testing.T) {
-	defer func() { asts = nil }()
+func TestCPPParse0(t *testing.T) {
+	defer func() { astSink = nil }()
 
 	var files, lines, chars int64
 	var m0, m runtime.MemStats
@@ -441,12 +490,76 @@ func TestCPPParse(t *testing.T) {
 
 			eof := Token(x)
 			lines += int64(eof.Position().Line)
-			asts = append(asts, ast)
+			astSink = append(astSink, ast)
 		}
 	}
 	debug.FreeOSMemory()
 	runtime.ReadMemStats(&m)
-	asts = nil
+	astSink = nil
+	t.Logf("files %v; lines %v bytes %v; heap %v; alloc %v", h(files), h(lines), h(chars), h(m.HeapAlloc-m0.HeapAlloc), h(m.TotalAlloc-m0.TotalAlloc))
+}
+
+func TestCPPParse(t *testing.T) {
+	defer func() { astSink = nil }()
+
+	var files, lines, chars int64
+	var m0, m runtime.MemStats
+	p := newParallel()
+	debug.FreeOSMemory()
+	runtime.ReadMemStats(&m0)
+	for _, path := range corpusIndex {
+		path := path
+		if _, ok := cppParseBlacklist[path]; ok {
+			continue
+		}
+
+		switch filepath.Ext(path) {
+		case ".c", ".h":
+			files++
+			p.exec(func() {
+				buf := corpus[path]
+				var err error
+				var ast group
+				var eof Token
+
+				defer func() {
+					p.Lock()
+					chars += int64(len(buf))
+					lines += int64(eof.Position().Line)
+					astSink = append(astSink, ast)
+					if err != nil {
+						t.Error(err)
+					}
+					p.Unlock()
+				}()
+
+				var p *cppParser
+				if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+					p.close()
+					err = fmt.Errorf(msg, args...)
+				}); err != nil {
+					t.Fatal(path, err)
+				}
+
+				if ast = p.preprocessingFile(); len(ast) == 0 {
+					t.Fatalf("%v: empty AST", path)
+				}
+
+				eol := ast[len(ast)-1]
+				x, ok := eol.(eofLine)
+				if !ok {
+					err = fmt.Errorf("%v: AST not terminated: %T", p.pos(), eol)
+					return
+				}
+
+				eof = Token(x)
+			})
+		}
+	}
+	p.wg.Wait()
+	debug.FreeOSMemory()
+	runtime.ReadMemStats(&m)
+	astSink = nil
 	t.Logf("files %v; lines %v bytes %v; heap %v; alloc %v", h(files), h(lines), h(chars), h(m.HeapAlloc-m0.HeapAlloc), h(m.TotalAlloc-m0.TotalAlloc))
 }
 
@@ -728,6 +841,7 @@ func TestTranslationPhase4(t *testing.T) {
 
 func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int) {
 	var fails []string
+	p := newParallel()
 	err := walk(dir, func(pth string, fi os.FileInfo) error {
 		if fi.IsDir() {
 			return nil
@@ -737,7 +851,6 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 			return nil
 		}
 
-		files++
 		switch {
 		case re != nil:
 			if !re.MatchString(pth) {
@@ -751,28 +864,37 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 			}
 		}
 
+		files++
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, pth)
 		}
-		if err := Preprocess(
-			cfg,
-			[]Source{
-				{Name: "<predefined>", Value: predefined},
-				{Name: pth, FS: cFS},
-			},
-			io.Discard,
-		); err != nil {
-			fails = append(fails, pth)
-			t.Errorf("%v: %v", pth, err)
-		} else {
-			ok++
-		}
+		p.exec(func() {
+			err := Preprocess(
+				cfg,
+				[]Source{
+					{Name: "<predefined>", Value: predefined},
+					{Name: pth, FS: cFS},
+				},
+				io.Discard,
+			)
+			p.Lock()
+
+			defer p.Unlock()
+
+			if err != nil {
+				fails = append(fails, pth)
+				t.Errorf("%v: %v", pth, err)
+			} else {
+				ok++
+			}
+		})
 		return nil
 	})
 	if err != nil {
 		t.Error(err)
 	}
 
+	p.wg.Wait()
 	for _, v := range fails {
 		t.Log(v)
 	}
@@ -896,4 +1018,239 @@ func TestStrCatSep(t *testing.T) {
 			t.Errorf("%v: %q %q", i, g, e)
 		}
 	}
+}
+
+func TestParserBug(t *testing.T) {
+	return //TODO
+	cfg := testCfg()
+	var fails []string
+	var files, ok, skip int
+	err := filepath.Walk(filepath.FromSlash("testdata/parser/bug"), func(pth string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if fi.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(pth) != ".c" {
+			return nil
+		}
+
+		switch {
+		case re != nil:
+			if !re.MatchString(pth) {
+				skip++
+				return nil
+			}
+		}
+
+		files++
+		if *oTrace {
+			fmt.Fprintln(os.Stderr, pth)
+		}
+		_, err = Parse(
+			cfg,
+			[]Source{
+				{Name: "<predefined>", Value: predefined},
+				{Name: "<builtin>", Value: builtin},
+				{Name: pth, FS: cFS},
+			},
+		)
+		if err != nil {
+			fails = append(fails, pth)
+			t.Errorf("%v: %v", pth, err)
+		} else {
+			ok++
+		}
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, v := range fails {
+		t.Log(v)
+	}
+	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
+}
+
+func TestParse(t *testing.T) {
+	return //TODO-
+	cfgGame := testCfg()
+	cfgGame.FS = cFS
+	cfgGame.SysIncludePaths = append(
+		cfgGame.SysIncludePaths,
+		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/libxml",
+		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/malloc",
+		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/libxml",
+		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/malloc",
+		"/benchmarksgame-team.pages.debian.net/Include",
+		"/opt/homebrew/include",
+		"/usr/include/sys",
+		"/usr/lib/clang/11.1.0/include",
+		"/usr/local/Cellar/gcc/11.2.0_1/lib/gcc/11/gcc/x86_64-apple-darwin19/11.2.0/include",
+		"/usr/local/include",
+	)
+	cfgGame.IncludePaths = append(
+		cfgGame.IncludePaths,
+		"/opt/homebrew/include",
+		"/usr/local/include",
+	)
+	cfg := testCfg()
+	cfg.FS = cFS
+	var blacklistCompCert, blacklistCxgo map[string]struct{}
+	blacklistGame := map[string]struct{}{
+		// Missing <apr_pools.h>
+		"binary-trees-2.c": {},
+		"binary-trees-3.c": {},
+	}
+	blacklistGCC := map[string]struct{}{
+		// assertions are deprecated.
+		"950919-1.c": {},
+
+		// Need include files not in ccorpus.
+		"pr88347.c": {},
+		"pr88423.c": {},
+	}
+	blacklistVNMakarov := map[string]struct{}{
+		// #endif without #if
+		"endif.c": {},
+	}
+	blacklictTCC := map[string]struct{}{
+		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
+	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/s390x":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // Unsupported endianness.
+		fallthrough
+	case "linux/arm", "linux/arm64":
+		// Uses sse2 headers.
+		blacklistGame["fannkuchredux-4.c"] = struct{}{}
+		blacklistGame["mandelbrot-6.c"] = struct{}{}
+		blacklistGame["nbody-4.c"] = struct{}{}
+		blacklistGame["nbody-8.c"] = struct{}{}
+		blacklistGame["nbody-9.c"] = struct{}{}
+		blacklistGame["spectral-norm-5.c"] = struct{}{}
+		blacklistGame["spectral-norm-6.c"] = struct{}{}
+	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
+	case "windows/amd64", "windows/386":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
+		blacklistCxgo = map[string]struct{}{"inet.c": {}}    // include file not found: <arpa/inet.h>
+		blacklistGCC["loop-2f.c"] = struct{}{}               // include file not found: <sys/mman.h>
+		blacklistGCC["loop-2g.c"] = struct{}{}               // include file not found: <sys/mman.h>
+		blacklistGame["fasta-4.c"] = struct{}{}              // include file not found: <err.h>
+		blacklistGame["pidigits-2.c"] = struct{}{}           // include file not found: <gmp.h>
+		blacklistGame["pidigits-6.c"] = struct{}{}           // include file not found: <threads.h>
+		blacklistGame["pidigits-9.c"] = struct{}{}           // include file not found: <gmp.h>
+		blacklistGame["pidigits.c"] = struct{}{}             // include file not found: <gmp.h>
+		blacklistGame["regex-redux-2.c"] = struct{}{}        // include file not found: <pcre.h>
+		blacklistGame["regex-redux-3.c"] = struct{}{}        // include file not found: <pcre.h>
+		blacklistGame["regex-redux-4.c"] = struct{}{}        // include file not found: <pcre.h>
+		blacklistGame["regex-redux-5.c"] = struct{}{}        // include file not found: <pcre2.h>
+	case "openbsd/amd64":
+		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
+		blacklistGame["mandelbrot-7.c"] = struct{}{}         // include file not found: <omp.h>
+		blacklistGame["pidigits-6.c"] = struct{}{}           // include file not found: <threads.h>
+		blacklistGame["regex-redux-3.c"] = struct{}{}        // include file not found: <omp.h>
+		blacklistGame["spectral-norm-4.c"] = struct{}{}      // include file not found: <omp.h>
+	}
+	var files, ok, skip, fails int
+	for _, v := range []struct {
+		cfg       *Config
+		dir       string
+		blacklist map[string]struct{}
+	}{
+		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
+		{cfg, "ccgo", nil},
+		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
+		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
+		{cfg, "github.com/cxgo", blacklistCxgo},
+		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
+		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
+		{cfg, "sqlite-amalgamation-3370200", nil},
+		{cfg, "tcc-0.9.27/tests", blacklictTCC},
+		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
+	} {
+		t.Run(v.dir, func(t *testing.T) {
+			f, o, s, n := testParse(t, v.cfg, "/"+v.dir, v.blacklist)
+			files += f
+			ok += o
+			skip += s
+			fails += n
+		})
+	}
+	t.Logf("TOTAL: files %v, skip %v, ok %v, fails %v", files, skip, ok, fails)
+}
+
+func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int) {
+	var fails []string
+	p := newParallel()
+	err := walk(dir, func(pth string, fi os.FileInfo) error {
+		if fi.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(pth) != ".c" {
+			return nil
+		}
+
+		switch {
+		case re != nil:
+			if !re.MatchString(pth) {
+				skip++
+				return nil
+			}
+		default:
+			if _, ok := blacklist[filepath.Base(pth)]; ok {
+				skip++
+				return nil
+			}
+		}
+
+		files++
+		if *oTrace {
+			fmt.Fprintln(os.Stderr, pth)
+		}
+		// Preprocess( //TODO-
+		// 	cfg,
+		// 	[]Source{
+		// 		{Name: "<predefined>", Value: predefined},
+		// 		{Name: pth, FS: cFS},
+		// 	},
+		// 	os.Stdout,
+		// )
+		p.exec(func() {
+			_, err := Parse(
+				cfg,
+				[]Source{
+					{Name: "<predefined>", Value: predefined},
+					{Name: pth, FS: cFS},
+				},
+			)
+			p.Lock()
+
+			defer p.Unlock()
+
+			if err != nil {
+				fails = append(fails, pth)
+				t.Errorf("%v: %v", pth, err)
+			} else {
+				ok++
+			}
+		})
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	p.wg.Wait()
+	for _, v := range fails {
+		t.Log(v)
+	}
+	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
+	return files, ok, skip, len(fails)
 }

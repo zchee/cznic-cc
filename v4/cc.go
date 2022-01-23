@@ -157,6 +157,19 @@ type errors []string
 func (e errors) Error() string { return strings.Join(e, "\n") }
 
 func (e errors) err() error {
+	w := 0
+	for i, v := range e {
+		if i != 0 {
+			if prev, ok := extractPos(e[i-1]); ok {
+				if cur, ok := extractPos(v); ok && prev.Filename == cur.Filename && prev.Line == cur.Line {
+					continue
+				}
+			}
+		}
+		e[w] = v
+		w++
+	}
+	e = e[:w]
 	if len(e) == 0 {
 		return nil
 	}

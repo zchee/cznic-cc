@@ -6,10 +6,12 @@ package cc // import "modernc.org/cc/v4"
 
 import (
 	"fmt"
+	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -368,4 +370,30 @@ func decodeHex(r byte) int {
 		x := int(r) &^ 0x20
 		return x - 'A' + 10
 	}
+}
+
+func extractPos(s string) (p token.Position, ok bool) {
+	var prefix string
+	if len(s) > 1 && s[1] == ':' { // c:\foo
+		prefix = s[:2]
+		s = s[2:]
+	}
+	// "testdata/parser/bug/001.c:1193:6: ..."
+	a := strings.SplitN(s, ":", 4)
+	// ["testdata/parser/bug/001.c" "1193" "6" "..."]
+	if len(a) < 3 {
+		return p, false
+	}
+
+	line, err := strconv.Atoi(a[1])
+	if err != nil {
+		return p, false
+	}
+
+	col, err := strconv.Atoi(a[2])
+	if err != nil {
+		return p, false
+	}
+
+	return token.Position{Filename: prefix + a[0], Line: line, Column: col}, true
 }

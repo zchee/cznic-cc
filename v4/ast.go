@@ -569,6 +569,161 @@ func (n *AssignmentExpression) Position() (r token.Position) {
 	}
 }
 
+// AttributeSpecifier represents data reduced by production:
+//
+//	AttributeSpecifier:
+//	        "__attribute__" '(' '(' AttributeValueList ')' ')'
+type AttributeSpecifier struct {
+	AttributeValueList *AttributeValueList
+	Token              Token
+	Token2             Token
+	Token3             Token
+	Token4             Token
+	Token5             Token
+}
+
+// String implements fmt.Stringer.
+func (n *AttributeSpecifier) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *AttributeSpecifier) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	if p := n.Token.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token2.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token3.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.AttributeValueList.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token4.Position(); p.IsValid() {
+		return p
+	}
+
+	return n.Token5.Position()
+}
+
+// AttributeSpecifierList represents data reduced by productions:
+//
+//	AttributeSpecifierList:
+//	        AttributeSpecifier
+//	|       AttributeSpecifierList AttributeSpecifier
+type AttributeSpecifierList struct {
+	AttributeSpecifier     *AttributeSpecifier
+	AttributeSpecifierList *AttributeSpecifierList
+}
+
+// String implements fmt.Stringer.
+func (n *AttributeSpecifierList) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *AttributeSpecifierList) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	return n.AttributeSpecifier.Position()
+}
+
+// AttributeValueCase represents case numbers of production AttributeValue
+type AttributeValueCase int
+
+// Values of type AttributeValueCase
+const (
+	AttributeValueIdent AttributeValueCase = iota
+	AttributeValueExpr
+)
+
+// String implements fmt.Stringer
+func (n AttributeValueCase) String() string {
+	switch n {
+	case AttributeValueIdent:
+		return "AttributeValueIdent"
+	case AttributeValueExpr:
+		return "AttributeValueExpr"
+	default:
+		return fmt.Sprintf("AttributeValueCase(%v)", int(n))
+	}
+}
+
+// AttributeValue represents data reduced by productions:
+//
+//	AttributeValue:
+//	        IDENTIFIER                                 // Case AttributeValueIdent
+//	|       IDENTIFIER '(' ArgumentExpressionList ')'  // Case AttributeValueExpr
+type AttributeValue struct {
+	ArgumentExpressionList *ArgumentExpressionList
+	Case                   AttributeValueCase `PrettyPrint:"stringer,zero"`
+	Token                  Token
+	Token2                 Token
+	Token3                 Token
+}
+
+// String implements fmt.Stringer.
+func (n *AttributeValue) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *AttributeValue) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	switch n.Case {
+	case 0:
+		return n.Token.Position()
+	case 1:
+		if p := n.Token.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token2.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.ArgumentExpressionList.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Token3.Position()
+	default:
+		panic("internal error")
+	}
+}
+
+// AttributeValueList represents data reduced by productions:
+//
+//	AttributeValueList:
+//	        AttributeValue
+//	|       AttributeValueList ',' AttributeValue
+type AttributeValueList struct {
+	AttributeValue     *AttributeValue
+	AttributeValueList *AttributeValueList
+	Token              Token
+}
+
+// String implements fmt.Stringer.
+func (n *AttributeValueList) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *AttributeValueList) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	return n.AttributeValue.Position()
+}
+
 // BlockItemCase represents case numbers of production BlockItem
 type BlockItemCase int
 
@@ -848,11 +1003,12 @@ func (n *ConstantExpression) Position() (r token.Position) {
 // Declaration represents data reduced by production:
 //
 //	Declaration:
-//	        DeclarationSpecifiers InitDeclaratorList ';'
+//	        DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 type Declaration struct {
-	DeclarationSpecifiers *DeclarationSpecifiers
-	InitDeclaratorList    *InitDeclaratorList
-	Token                 Token
+	AttributeSpecifierList *AttributeSpecifierList
+	DeclarationSpecifiers  *DeclarationSpecifiers
+	InitDeclaratorList     *InitDeclaratorList
+	Token                  Token
 }
 
 // String implements fmt.Stringer.
@@ -869,6 +1025,10 @@ func (n *Declaration) Position() (r token.Position) {
 	}
 
 	if p := n.InitDeclaratorList.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 		return p
 	}
 
@@ -985,8 +1145,8 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	Declarator:
 //	        Pointer DirectDeclarator
 type Declarator struct {
-	typedef          bool
-	visible          int32
+	typedef bool
+	visible
 	DirectDeclarator *DirectDeclarator
 	Pointer          *Pointer
 }
@@ -1523,7 +1683,7 @@ func (n EnumSpecifierCase) String() string {
 //	        "enum" IDENTIFIER '{' EnumeratorList ',' '}'  // Case EnumSpecifierDef
 //	|       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 type EnumSpecifier struct {
-	visible        int32
+	visible
 	Case           EnumSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumeratorList *EnumeratorList
 	Token          Token
@@ -1603,7 +1763,7 @@ func (n EnumeratorCase) String() string {
 //	        IDENTIFIER                         // Case EnumeratorIdent
 //	|       IDENTIFIER '=' ConstantExpression  // Case EnumeratorExpr
 type Enumerator struct {
-	visible            int32
+	visible
 	Case               EnumeratorCase `PrettyPrint:"stringer,zero"`
 	ConstantExpression *ConstantExpression
 	Token              Token
@@ -3886,7 +4046,7 @@ func (n StructOrUnionSpecifierCase) String() string {
 //	        StructOrUnion IDENTIFIER '{' StructDeclarationList '}'  // Case StructOrUnionSpecifierDef
 //	|       StructOrUnion IDENTIFIER                                // Case StructOrUnionSpecifierTag
 type StructOrUnionSpecifier struct {
-	visible               int32
+	visible
 	Case                  StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
 	StructDeclarationList *StructDeclarationList
 	StructOrUnion         *StructOrUnion
