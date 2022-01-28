@@ -39,6 +39,11 @@ var (
 	predefined  string
 	builtin     = `
 #define __extension__
+
+#ifndef __builtin_va_list
+#define __builtin_va_list __builtin_va_list
+typedef void *__builtin_va_list;
+#endif
 `
 
 	oTrace = flag.Bool("trc", false, "Print tested paths.")
@@ -332,12 +337,13 @@ func newParallel() *parallel {
 
 func (p *parallel) exec(run func()) {
 	p.limit <- struct{}{}
-
-	defer func() { <-p.limit }()
-
 	p.wg.Add(1)
+
 	go func() {
-		defer p.wg.Done()
+		defer func() {
+			p.wg.Done()
+			<-p.limit
+		}()
 
 		run()
 	}()
@@ -865,14 +871,15 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 		}
 
 		files++
-		if *oTrace {
-			fmt.Fprintln(os.Stderr, pth)
-		}
 		p.exec(func() {
+			if *oTrace {
+				fmt.Fprintln(os.Stderr, pth)
+			}
 			err := Preprocess(
 				cfg,
 				[]Source{
 					{Name: "<predefined>", Value: predefined},
+					{Name: "<builtin>", Value: builtin},
 					{Name: pth, FS: cFS},
 				},
 				io.Discard,
@@ -1021,7 +1028,6 @@ func TestStrCatSep(t *testing.T) {
 }
 
 func TestParserBug(t *testing.T) {
-	return //TODO
 	cfg := testCfg()
 	var fails []string
 	var files, ok, skip int
@@ -1050,7 +1056,8 @@ func TestParserBug(t *testing.T) {
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, pth)
 		}
-		_, err = Parse(
+		var ast *AST
+		ast, err = Parse(
 			cfg,
 			[]Source{
 				{Name: "<predefined>", Value: predefined},
@@ -1058,6 +1065,7 @@ func TestParserBug(t *testing.T) {
 				{Name: pth, FS: cFS},
 			},
 		)
+		_ = ast //TODO-
 		if err != nil {
 			fails = append(fails, pth)
 			t.Errorf("%v: %v", pth, err)
@@ -1077,7 +1085,6 @@ func TestParserBug(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	return //TODO-
 	cfgGame := testCfg()
 	cfgGame.FS = cFS
 	cfgGame.SysIncludePaths = append(
@@ -1114,13 +1121,13 @@ func TestParse(t *testing.T) {
 		"pr88347.c": {},
 		"pr88423.c": {},
 	}
-	blacklistVNMakarov := map[string]struct{}{
-		// #endif without #if
-		"endif.c": {},
-	}
-	blacklictTCC := map[string]struct{}{
-		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
-	}
+	// blacklistVNMakarov := map[string]struct{}{
+	// 	// #endif without #if
+	// 	"endif.c": {},
+	// }
+	// blacklictTCC := map[string]struct{}{
+	// 	"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
+	// }
 	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
 	case "linux/s390x":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // Unsupported endianness.
@@ -1164,16 +1171,17 @@ func TestParse(t *testing.T) {
 		blacklist map[string]struct{}
 	}{
 		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
-		{cfg, "ccgo", nil},
-		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
-		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
-		{cfg, "github.com/cxgo", blacklistCxgo},
-		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
-		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
-		{cfg, "sqlite-amalgamation-3370200", nil},
-		{cfg, "tcc-0.9.27/tests", blacklictTCC},
-		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
+		//TODO {cfg, "ccgo", nil},
+		//TODO {cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
+		//TODO {cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
+		//TODO {cfg, "github.com/cxgo", blacklistCxgo},
+		//TODO {cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
+		//TODO {cfg, "github.com/vnmakarov", blacklistVNMakarov},
+		//TODO {cfg, "sqlite-amalgamation-3370200", nil},
+		//TODO {cfg, "tcc-0.9.27/tests", blacklictTCC},
+		//TODO {cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
 	} {
+		_ = blacklistCxgo //TODO-
 		t.Run(v.dir, func(t *testing.T) {
 			f, o, s, n := testParse(t, v.cfg, "/"+v.dir, v.blacklist)
 			files += f
@@ -1211,22 +1219,24 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 		}
 
 		files++
-		if *oTrace {
-			fmt.Fprintln(os.Stderr, pth)
-		}
 		// Preprocess( //TODO-
 		// 	cfg,
 		// 	[]Source{
 		// 		{Name: "<predefined>", Value: predefined},
+		// 		{Name: "<builtin>", Value: builtin},
 		// 		{Name: pth, FS: cFS},
 		// 	},
 		// 	os.Stdout,
 		// )
 		p.exec(func() {
+			if *oTrace {
+				fmt.Fprintln(os.Stderr, pth)
+			}
 			_, err := Parse(
 				cfg,
 				[]Source{
 					{Name: "<predefined>", Value: predefined},
+					{Name: "<builtin>", Value: builtin},
 					{Name: pth, FS: cFS},
 				},
 			)

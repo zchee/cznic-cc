@@ -172,7 +172,7 @@ func newToken(s *scannerSource, ch rune, sep, src, len uint32) Token {
 }
 
 // String implements fmt.Stringer.
-func (t *Token) String() string { return PrettyString(t) }
+func (t Token) String() string { return PrettyString(t) }
 
 // Name returns a human readable representation of t.Ch.
 func (t *Token) Name() string { return runeName(t.Ch) }
@@ -214,7 +214,7 @@ func (t *Token) Set(sep, src []byte) error {
 }
 
 // Position implements Node.
-func (t *Token) Position() token.Position { return t.s.pos(t.pos) }
+func (t Token) Position() token.Position { return t.s.pos(t.pos) }
 
 // scannerSource captures source code and the associated position information.
 type scannerSource struct {

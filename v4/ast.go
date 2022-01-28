@@ -446,10 +446,11 @@ func (n *AsmQualifierList) Position() (r token.Position) {
 // AsmStatement represents data reduced by production:
 //
 //	AsmStatement:
-//	        Asm ';'
+//	        Asm AttributeSpecifierList ';'
 type AsmStatement struct {
-	Asm   *Asm
-	Token Token
+	Asm                    *Asm
+	AttributeSpecifierList *AttributeSpecifierList
+	Token                  Token
 }
 
 // String implements fmt.Stringer.
@@ -462,6 +463,10 @@ func (n *AsmStatement) Position() (r token.Position) {
 	}
 
 	if p := n.Asm.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 		return p
 	}
 
@@ -1494,7 +1499,7 @@ func (n DirectDeclaratorCase) String() string {
 // DirectDeclarator represents data reduced by productions:
 //
 //	DirectDeclarator:
-//	        IDENTIFIER Asm                                                         // Case DirectDeclaratorIdent
+//	        IDENTIFIER                                                             // Case DirectDeclaratorIdent
 //	|       '(' Declarator ')'                                                     // Case DirectDeclaratorDecl
 //	|       DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'           // Case DirectDeclaratorArr
 //	|       DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'  // Case DirectDeclaratorStaticArr
@@ -1504,7 +1509,6 @@ func (n DirectDeclaratorCase) String() string {
 //	|       DirectDeclarator '(' IdentifierList ')'                                // Case DirectDeclaratorFuncIdent
 type DirectDeclarator struct {
 	params               *Scope
-	Asm                  *Asm
 	AssignmentExpression *AssignmentExpression
 	Case                 DirectDeclaratorCase `PrettyPrint:"stringer,zero"`
 	Declarator           *Declarator
@@ -1636,11 +1640,7 @@ func (n *DirectDeclarator) Position() (r token.Position) {
 
 		return n.Token3.Position()
 	case 0:
-		if p := n.Token.Position(); p.IsValid() {
-			return p
-		}
-
-		return n.Asm.Position()
+		return n.Token.Position()
 	case 1:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
@@ -3844,8 +3844,9 @@ func (n *StorageClassSpecifier) Position() (r token.Position) {
 // StructDeclaration represents data reduced by production:
 //
 //	StructDeclaration:
-//	        SpecifierQualifierList StructDeclaratorList ';'
+//	        SpecifierQualifierList StructDeclaratorList AttributeSpecifierList ';'
 type StructDeclaration struct {
+	AttributeSpecifierList *AttributeSpecifierList
 	SpecifierQualifierList *SpecifierQualifierList
 	StructDeclaratorList   *StructDeclaratorList
 	Token                  Token
@@ -3865,6 +3866,10 @@ func (n *StructDeclaration) Position() (r token.Position) {
 	}
 
 	if p := n.StructDeclaratorList.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.AttributeSpecifierList.Position(); p.IsValid() {
 		return p
 	}
 
@@ -4252,9 +4257,13 @@ const (
 	TypeSpecifierInt
 	TypeSpecifierLong
 	TypeSpecifierFloat
+	TypeSpecifierFloat128
 	TypeSpecifierDouble
 	TypeSpecifierSigned
 	TypeSpecifierUnsigned
+	TypeSpecifierBool
+	TypeSpecifierComplex
+	TypeSpecifierImaginary
 	TypeSpecifierStructOrUnion
 	TypeSpecifierEnum
 	TypeSpecifierTypeName
@@ -4275,12 +4284,20 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierLong"
 	case TypeSpecifierFloat:
 		return "TypeSpecifierFloat"
+	case TypeSpecifierFloat128:
+		return "TypeSpecifierFloat128"
 	case TypeSpecifierDouble:
 		return "TypeSpecifierDouble"
 	case TypeSpecifierSigned:
 		return "TypeSpecifierSigned"
 	case TypeSpecifierUnsigned:
 		return "TypeSpecifierUnsigned"
+	case TypeSpecifierBool:
+		return "TypeSpecifierBool"
+	case TypeSpecifierComplex:
+		return "TypeSpecifierComplex"
+	case TypeSpecifierImaginary:
+		return "TypeSpecifierImaginary"
 	case TypeSpecifierStructOrUnion:
 		return "TypeSpecifierStructOrUnion"
 	case TypeSpecifierEnum:
@@ -4301,9 +4318,13 @@ func (n TypeSpecifierCase) String() string {
 //	|       "int"                   // Case TypeSpecifierInt
 //	|       "long"                  // Case TypeSpecifierLong
 //	|       "float"                 // Case TypeSpecifierFloat
+//	|       "_Float128"             // Case TypeSpecifierFloat128
 //	|       "double"                // Case TypeSpecifierDouble
 //	|       "signed"                // Case TypeSpecifierSigned
 //	|       "unsigned"              // Case TypeSpecifierUnsigned
+//	|       "_Bool"                 // Case TypeSpecifierBool
+//	|       "_Complex"              // Case TypeSpecifierComplex
+//	|       "_Imaginary"            // Case TypeSpecifierImaginary
 //	|       StructOrUnionSpecifier  // Case TypeSpecifierStructOrUnion
 //	|       EnumSpecifier           // Case TypeSpecifierEnum
 //	|       TYPENAME                // Case TypeSpecifierTypeName
@@ -4324,11 +4345,11 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 10:
+	case 14:
 		return n.EnumSpecifier.Position()
-	case 9:
+	case 13:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 11:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15:
 		return n.Token.Position()
 	default:
 		panic("internal error")
@@ -4351,6 +4372,7 @@ const (
 	UnaryExpressionNot
 	UnaryExpressionSizeofExpr
 	UnaryExpressionSizeofType
+	UnaryExpressionAlignofType
 )
 
 // String implements fmt.Stringer
@@ -4378,6 +4400,8 @@ func (n UnaryExpressionCase) String() string {
 		return "UnaryExpressionSizeofExpr"
 	case UnaryExpressionSizeofType:
 		return "UnaryExpressionSizeofType"
+	case UnaryExpressionAlignofType:
+		return "UnaryExpressionAlignofType"
 	default:
 		return fmt.Sprintf("UnaryExpressionCase(%v)", int(n))
 	}
@@ -4386,17 +4410,18 @@ func (n UnaryExpressionCase) String() string {
 // UnaryExpression represents data reduced by productions:
 //
 //	UnaryExpression:
-//	        PostfixExpression          // Case UnaryExpressionPostfix
-//	|       "++" UnaryExpression       // Case UnaryExpressionInc
-//	|       "--" UnaryExpression       // Case UnaryExpressionDec
-//	|       '&' CastExpression         // Case UnaryExpressionAddrof
-//	|       '*' CastExpression         // Case UnaryExpressionDeref
-//	|       '+' CastExpression         // Case UnaryExpressionPlus
-//	|       '-' CastExpression         // Case UnaryExpressionMinus
-//	|       '~' CastExpression         // Case UnaryExpressionCpl
-//	|       '!' CastExpression         // Case UnaryExpressionNot
-//	|       "sizeof" UnaryExpression   // Case UnaryExpressionSizeofExpr
-//	|       "sizeof" '(' TypeName ')'  // Case UnaryExpressionSizeofType
+//	        PostfixExpression            // Case UnaryExpressionPostfix
+//	|       "++" UnaryExpression         // Case UnaryExpressionInc
+//	|       "--" UnaryExpression         // Case UnaryExpressionDec
+//	|       '&' CastExpression           // Case UnaryExpressionAddrof
+//	|       '*' CastExpression           // Case UnaryExpressionDeref
+//	|       '+' CastExpression           // Case UnaryExpressionPlus
+//	|       '-' CastExpression           // Case UnaryExpressionMinus
+//	|       '~' CastExpression           // Case UnaryExpressionCpl
+//	|       '!' CastExpression           // Case UnaryExpressionNot
+//	|       "sizeof" UnaryExpression     // Case UnaryExpressionSizeofExpr
+//	|       "sizeof" '(' TypeName ')'    // Case UnaryExpressionSizeofType
+//	|       "_Alignof" '(' TypeName ')'  // Case UnaryExpressionAlignofType
 type UnaryExpression struct {
 	Case              UnaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression    *CastExpression
@@ -4426,7 +4451,7 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.CastExpression.Position()
-	case 10:
+	case 10, 11:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}

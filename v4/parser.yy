@@ -72,12 +72,13 @@ package cc // import "modernc.org/cc/v4"
 	GOTO			"goto"
 	IF			"if"
 	IMAG			"__imag__"
+	IMAGINARY		"_Imaginary"
 	INC			"++"
 	INLINE			"inline"
 	INT			"int"
-	INT8			"__int8"
 	INT16			"__int16"
 	INT32			"__int32"
+	INT8			"__int8"
 	INT64			"__int64"
 	INT128			"__int128"
 	LABEL			"__label__"
@@ -143,9 +144,9 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Char       */ |	CHARCONST
 			/*yy:example int i = L'x'; */
 /*yy:case LChar      */ |	LONGCHARCONST
-			/*yy:example char *c = "x"; */
+			/*yy:example char *c = "x" "y"; */
 /*yy:case String     */ |	STRINGLITERAL
-			/*yy:example char *c = L"x"; */
+			/*yy:example char *c = L"x" L"y"; */
 /*yy:case LString    */ |	LONGSTRINGLITERAL
 			/*yy:example int i = (x+y); */
 /*yy:case Expr       */ |	'(' Expression ')'
@@ -209,8 +210,8 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case LabelAddr  */ |	"&&" IDENTIFIER
 // 			/*yy:example int i = _Alignof(x); */
 // /*yy:case AlignofExpr*/ |	"_Alignof" UnaryExpression
-// 			/*yy:example int i = _Alignof(int); */
-// /*yy:case AlignofType*/ |	"_Alignof" '(' TypeName ')'
+			/*yy:example int i = _Alignof(int); */
+/*yy:case AlignofType*/ |	"_Alignof" '(' TypeName ')'
 // 			/*yy:example double i = __imag__ x; */
 // /*yy:case Imag       */ |	"__imag__" UnaryExpression
 // 			/*yy:example double i = __real__ x; */
@@ -435,8 +436,8 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case Decimal64  */ |	"_Decimal64"
 // 			/*yy:example _Decimal128 i; */
 // /*yy:case Decimal128 */ |	"_Decimal128"
-// 			/*yy:example _Float128 i; */
-// /*yy:case Float128   */ |	"_Float128"
+			/*yy:example _Float128 i; */
+/*yy:case Float128   */ |	"_Float128"
 // 			/*yy:example __float80 i; */
 // /*yy:case Float80    */ |	"__float80"
 			/*yy:example double i; */
@@ -445,20 +446,22 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Signed     */ |	"signed"
 			/*yy:example unsigned i; */
 /*yy:case Unsigned   */ |	"unsigned"
-// 			/*yy:example _Bool i; */
-// /*yy:case Bool       */ |	"_Bool"
-// 			/*yy:example _Complex i; */
-// /*yy:case Complex    */ |	"_Complex"
+			/*yy:example _Bool i; */
+/*yy:case Bool       */ |	"_Bool"
+			/*yy:example _Complex i; */
+/*yy:case Complex    */ |	"_Complex"
+			/*yy:example _Imaginary i; */
+/*yy:case Imaginary  */ |	"_Imaginary"
 			/*yy:example struct s i; */
 /*yy:case StructOrUnion */
 			|	StructOrUnionSpecifier
 			/*yy:example enum e i; */
 /*yy:case Enum       */ |	EnumSpecifier
-			/*yy:example typedef const T; T i; */
+			/*yy:example typedef int T; T i; */
 /*yy:case TypeName*/	|	TYPENAME
 // 			/*yy:example typeof(42) i; */
 // /*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
-// 			/*yy:example typedef const T; typeof(T) i; */
+// 			/*yy:example typedef int T; typeof(T) i; */
 // /*yy:case TypeofType */ |	"typeof" '(' TypeName ')'
 // 			/*yy:example _Atomic(int) i; */
 // /*yy:case Atomic     */ |	AtomicTypeSpecifier
@@ -497,9 +500,9 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example struct{ int i; double d; }; */
 			|	StructDeclarationList StructDeclaration
 		
-			/*yy:example struct{ int i; }; */
+			/*yy:example struct{ int i __attribute__((a)); }; */
 			StructDeclaration:
-				SpecifierQualifierList StructDeclaratorList ';'
+				SpecifierQualifierList StructDeclaratorList AttributeSpecifierList ';'
 		
 			/*yy:example struct {int i;};*/
 /*yy:case TypeSpec   */ SpecifierQualifierList:
@@ -584,7 +587,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	params	*Scope	*/
 			/*yy:example int i; */
 /*yy:case Ident      */ DirectDeclarator:
-				IDENTIFIER Asm
+				IDENTIFIER
 			/*yy:example int (f); */
 /*yy:case Decl       */ |	'(' /* AttributeSpecifierList */ Declarator ')'
 			/*yy:example int i[const 42]; */
@@ -839,9 +842,9 @@ package cc // import "modernc.org/cc/v4"
 			Asm:
 				"asm" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
  
-			/*yy:example void f() { asm("nop"); } */
+			/*yy:example void f() { asm("nop") __attribute__((a)); } */
 			AsmStatement:
-				Asm /* AttributeSpecifierList */ ';'
+				Asm AttributeSpecifierList ';'
 
 			/*yy:example int f() asm("nop"); */
 			AsmFunctionDefinition:
@@ -889,6 +892,6 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int i __attribute__((a)); */
 			AttributeSpecifierList:
 				AttributeSpecifier %prec BELOW_ATTRIBUTE
-			/*yy:example int i __attribute__((a)) __attribute((b)); */
+			/*yy:example int i __attribute__((a)) __attribute__((b)); */
 			|	AttributeSpecifierList AttributeSpecifier
 

@@ -1,0 +1,476 @@
+state 0 //
+
+    0 $accept: . ParameterDeclaration
+
+    INT  shift, and goto state 3
+
+    DeclarationSpecifiers  goto state 2
+    ParameterDeclaration   goto state 1
+
+state 1 // INT [$end]
+
+    0 $accept: ParameterDeclaration .  [$end]
+
+    $end  accept
+
+state 2 // INT [$end]
+
+    1 ParameterDeclaration: DeclarationSpecifiers .  [$end, ')', ',']
+    2 ParameterDeclaration: DeclarationSpecifiers . AbstractDeclarator
+    3 ParameterDeclaration: DeclarationSpecifiers . Declarator
+
+    $end        reduce using rule 1 (ParameterDeclaration)
+    '('         shift, and goto state 10
+    ')'         reduce using rule 1 (ParameterDeclaration)
+    '*'         shift, and goto state 8
+    ','         reduce using rule 1 (ParameterDeclaration)
+    '['         shift, and goto state 12
+    IDENTIFIER  shift, and goto state 9
+
+    AbstractDeclarator        goto state 4
+    Declarator                goto state 5
+    DirectAbstractDeclarator  goto state 11
+    DirectDeclarator          goto state 6
+    Pointer                   goto state 7
+
+state 3 // INT
+
+   20 DeclarationSpecifiers: INT .  [$end, '(', ')', '*', ',', '[', IDENTIFIER]
+
+    $end        reduce using rule 20 (DeclarationSpecifiers)
+    '('         reduce using rule 20 (DeclarationSpecifiers)
+    ')'         reduce using rule 20 (DeclarationSpecifiers)
+    '*'         reduce using rule 20 (DeclarationSpecifiers)
+    ','         reduce using rule 20 (DeclarationSpecifiers)
+    '['         reduce using rule 20 (DeclarationSpecifiers)
+    IDENTIFIER  reduce using rule 20 (DeclarationSpecifiers)
+
+state 4 // INT '*' [$end]
+
+    2 ParameterDeclaration: DeclarationSpecifiers AbstractDeclarator .  [$end, ')', ',']
+
+    $end  reduce using rule 2 (ParameterDeclaration)
+    ')'   reduce using rule 2 (ParameterDeclaration)
+    ','   reduce using rule 2 (ParameterDeclaration)
+
+state 5 // INT IDENTIFIER [$end]
+
+    3 ParameterDeclaration: DeclarationSpecifiers Declarator .  [$end, ')', ',']
+
+    $end  reduce using rule 3 (ParameterDeclaration)
+    ')'   reduce using rule 3 (ParameterDeclaration)
+    ','   reduce using rule 3 (ParameterDeclaration)
+
+state 6 // INT IDENTIFIER [$end]
+
+    4 Declarator: DirectDeclarator .  [$end, ')', ',']
+   10 DirectDeclarator: DirectDeclarator . '(' ')'
+   11 DirectDeclarator: DirectDeclarator . '(' IdentifierList ')'
+   12 DirectDeclarator: DirectDeclarator . '(' ParameterTypeList ')'
+   13 DirectDeclarator: DirectDeclarator . '[' STATIC ']'
+
+    $end  reduce using rule 4 (Declarator)
+    '('   shift, and goto state 37
+    ')'   reduce using rule 4 (Declarator)
+    ','   reduce using rule 4 (Declarator)
+    '['   shift, and goto state 38
+
+state 7 // INT '*' [$end]
+
+    5 Declarator: Pointer . DirectDeclarator
+   21 AbstractDeclarator: Pointer .  [$end, ')', ',']
+   22 AbstractDeclarator: Pointer . DirectAbstractDeclarator
+
+    $end        reduce using rule 21 (AbstractDeclarator)
+    '('         shift, and goto state 10
+    ')'         reduce using rule 21 (AbstractDeclarator)
+    ','         reduce using rule 21 (AbstractDeclarator)
+    '['         shift, and goto state 12
+    IDENTIFIER  shift, and goto state 9
+
+    DirectAbstractDeclarator  goto state 36
+    DirectDeclarator          goto state 35
+
+state 8 // INT '*'
+
+    6 Pointer: '*' .  [$end, '(', ')', ',', '[', IDENTIFIER]
+    7 Pointer: '*' . Pointer
+
+    $end        reduce using rule 6 (Pointer)
+    '('         reduce using rule 6 (Pointer)
+    ')'         reduce using rule 6 (Pointer)
+    '*'         shift, and goto state 8
+    ','         reduce using rule 6 (Pointer)
+    '['         reduce using rule 6 (Pointer)
+    IDENTIFIER  reduce using rule 6 (Pointer)
+
+    Pointer  goto state 34
+
+state 9 // INT IDENTIFIER
+
+    8 DirectDeclarator: IDENTIFIER .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 8 (DirectDeclarator)
+    '('   reduce using rule 8 (DirectDeclarator)
+    ')'   reduce using rule 8 (DirectDeclarator)
+    ','   reduce using rule 8 (DirectDeclarator)
+    '['   reduce using rule 8 (DirectDeclarator)
+
+state 10 // INT '('
+
+    9 DirectDeclarator: '(' . Declarator ')'
+   24 DirectAbstractDeclarator: '(' . AbstractDeclarator ')'
+   25 DirectAbstractDeclarator: '(' . ')'
+   26 DirectAbstractDeclarator: '(' . ParameterTypeList ')'
+
+    '('         shift, and goto state 10
+    ')'         shift, and goto state 29
+    '*'         shift, and goto state 8
+    '['         shift, and goto state 12
+    IDENTIFIER  shift, and goto state 9
+    INT         shift, and goto state 3
+
+    AbstractDeclarator        goto state 28
+    DeclarationSpecifiers     goto state 2
+    Declarator                goto state 27
+    DirectAbstractDeclarator  goto state 11
+    DirectDeclarator          goto state 6
+    ParameterDeclaration      goto state 20
+    ParameterList             goto state 19
+    ParameterTypeList         goto state 30
+    Pointer                   goto state 7
+
+state 11 // INT '(' ')' [$end]
+
+   23 AbstractDeclarator: DirectAbstractDeclarator .  [$end, ')', ',']
+   28 DirectAbstractDeclarator: DirectAbstractDeclarator . '(' ')'
+   29 DirectAbstractDeclarator: DirectAbstractDeclarator . '(' ParameterTypeList ')'
+   30 DirectAbstractDeclarator: DirectAbstractDeclarator . '[' STATIC ']'
+
+    $end  reduce using rule 23 (AbstractDeclarator)
+    '('   shift, and goto state 15
+    ')'   reduce using rule 23 (AbstractDeclarator)
+    ','   reduce using rule 23 (AbstractDeclarator)
+    '['   shift, and goto state 16
+
+state 12 // INT '['
+
+   27 DirectAbstractDeclarator: '[' . STATIC ']'
+
+    STATIC  shift, and goto state 13
+
+state 13 // INT '[' STATIC
+
+   27 DirectAbstractDeclarator: '[' STATIC . ']'
+
+    ']'  shift, and goto state 14
+
+state 14 // INT '[' STATIC ']'
+
+   27 DirectAbstractDeclarator: '[' STATIC ']' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 27 (DirectAbstractDeclarator)
+    '('   reduce using rule 27 (DirectAbstractDeclarator)
+    ')'   reduce using rule 27 (DirectAbstractDeclarator)
+    ','   reduce using rule 27 (DirectAbstractDeclarator)
+    '['   reduce using rule 27 (DirectAbstractDeclarator)
+
+state 15 // INT '(' ')' '('
+
+   28 DirectAbstractDeclarator: DirectAbstractDeclarator '(' . ')'
+   29 DirectAbstractDeclarator: DirectAbstractDeclarator '(' . ParameterTypeList ')'
+
+    ')'  shift, and goto state 21
+    INT  shift, and goto state 3
+
+    DeclarationSpecifiers  goto state 2
+    ParameterDeclaration   goto state 20
+    ParameterList          goto state 19
+    ParameterTypeList      goto state 22
+
+state 16 // INT '(' ')' '['
+
+   30 DirectAbstractDeclarator: DirectAbstractDeclarator '[' . STATIC ']'
+
+    STATIC  shift, and goto state 17
+
+state 17 // INT '(' ')' '[' STATIC
+
+   30 DirectAbstractDeclarator: DirectAbstractDeclarator '[' STATIC . ']'
+
+    ']'  shift, and goto state 18
+
+state 18 // INT '(' ')' '[' STATIC ']'
+
+   30 DirectAbstractDeclarator: DirectAbstractDeclarator '[' STATIC ']' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 30 (DirectAbstractDeclarator)
+    '('   reduce using rule 30 (DirectAbstractDeclarator)
+    ')'   reduce using rule 30 (DirectAbstractDeclarator)
+    ','   reduce using rule 30 (DirectAbstractDeclarator)
+    '['   reduce using rule 30 (DirectAbstractDeclarator)
+
+state 19 // INT '(' INT [')']
+
+   14 ParameterTypeList: ParameterList .  [')']
+   15 ParameterTypeList: ParameterList . ',' DDD
+   17 ParameterList: ParameterList . ',' ParameterDeclaration
+
+    ')'  reduce using rule 14 (ParameterTypeList)
+    ','  shift, and goto state 24
+
+state 20 // INT '(' INT [')']
+
+   16 ParameterList: ParameterDeclaration .  [')', ',']
+
+    ')'  reduce using rule 16 (ParameterList)
+    ','  reduce using rule 16 (ParameterList)
+
+state 21 // INT '(' ')' '(' ')'
+
+   28 DirectAbstractDeclarator: DirectAbstractDeclarator '(' ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 28 (DirectAbstractDeclarator)
+    '('   reduce using rule 28 (DirectAbstractDeclarator)
+    ')'   reduce using rule 28 (DirectAbstractDeclarator)
+    ','   reduce using rule 28 (DirectAbstractDeclarator)
+    '['   reduce using rule 28 (DirectAbstractDeclarator)
+
+state 22 // INT '(' ')' '(' INT [')']
+
+   29 DirectAbstractDeclarator: DirectAbstractDeclarator '(' ParameterTypeList . ')'
+
+    ')'  shift, and goto state 23
+
+state 23 // INT '(' ')' '(' INT ')'
+
+   29 DirectAbstractDeclarator: DirectAbstractDeclarator '(' ParameterTypeList ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 29 (DirectAbstractDeclarator)
+    '('   reduce using rule 29 (DirectAbstractDeclarator)
+    ')'   reduce using rule 29 (DirectAbstractDeclarator)
+    ','   reduce using rule 29 (DirectAbstractDeclarator)
+    '['   reduce using rule 29 (DirectAbstractDeclarator)
+
+state 24 // INT '(' INT ','
+
+   15 ParameterTypeList: ParameterList ',' . DDD
+   17 ParameterList: ParameterList ',' . ParameterDeclaration
+
+    DDD  shift, and goto state 25
+    INT  shift, and goto state 3
+
+    DeclarationSpecifiers  goto state 2
+    ParameterDeclaration   goto state 26
+
+state 25 // INT '(' INT ',' DDD
+
+   15 ParameterTypeList: ParameterList ',' DDD .  [')']
+
+    ')'  reduce using rule 15 (ParameterTypeList)
+
+state 26 // INT '(' INT ',' INT [')']
+
+   17 ParameterList: ParameterList ',' ParameterDeclaration .  [')', ',']
+
+    ')'  reduce using rule 17 (ParameterList)
+    ','  reduce using rule 17 (ParameterList)
+
+state 27 // INT '(' IDENTIFIER [')']
+
+    9 DirectDeclarator: '(' Declarator . ')'
+
+    ')'  shift, and goto state 33
+
+state 28 // INT '(' '*' [')']
+
+   24 DirectAbstractDeclarator: '(' AbstractDeclarator . ')'
+
+    ')'  shift, and goto state 32
+
+state 29 // INT '(' ')'
+
+   25 DirectAbstractDeclarator: '(' ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 25 (DirectAbstractDeclarator)
+    '('   reduce using rule 25 (DirectAbstractDeclarator)
+    ')'   reduce using rule 25 (DirectAbstractDeclarator)
+    ','   reduce using rule 25 (DirectAbstractDeclarator)
+    '['   reduce using rule 25 (DirectAbstractDeclarator)
+
+state 30 // INT '(' INT [')']
+
+   26 DirectAbstractDeclarator: '(' ParameterTypeList . ')'
+
+    ')'  shift, and goto state 31
+
+state 31 // INT '(' INT ')'
+
+   26 DirectAbstractDeclarator: '(' ParameterTypeList ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 26 (DirectAbstractDeclarator)
+    '('   reduce using rule 26 (DirectAbstractDeclarator)
+    ')'   reduce using rule 26 (DirectAbstractDeclarator)
+    ','   reduce using rule 26 (DirectAbstractDeclarator)
+    '['   reduce using rule 26 (DirectAbstractDeclarator)
+
+state 32 // INT '(' '*' ')'
+
+   24 DirectAbstractDeclarator: '(' AbstractDeclarator ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 24 (DirectAbstractDeclarator)
+    '('   reduce using rule 24 (DirectAbstractDeclarator)
+    ')'   reduce using rule 24 (DirectAbstractDeclarator)
+    ','   reduce using rule 24 (DirectAbstractDeclarator)
+    '['   reduce using rule 24 (DirectAbstractDeclarator)
+
+state 33 // INT '(' IDENTIFIER ')'
+
+    9 DirectDeclarator: '(' Declarator ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 9 (DirectDeclarator)
+    '('   reduce using rule 9 (DirectDeclarator)
+    ')'   reduce using rule 9 (DirectDeclarator)
+    ','   reduce using rule 9 (DirectDeclarator)
+    '['   reduce using rule 9 (DirectDeclarator)
+
+state 34 // INT '*' '*' [$end]
+
+    7 Pointer: '*' Pointer .  [$end, '(', ')', ',', '[', IDENTIFIER]
+
+    $end        reduce using rule 7 (Pointer)
+    '('         reduce using rule 7 (Pointer)
+    ')'         reduce using rule 7 (Pointer)
+    ','         reduce using rule 7 (Pointer)
+    '['         reduce using rule 7 (Pointer)
+    IDENTIFIER  reduce using rule 7 (Pointer)
+
+state 35 // INT '*' IDENTIFIER [$end]
+
+    5 Declarator: Pointer DirectDeclarator .  [$end, ')', ',']
+   10 DirectDeclarator: DirectDeclarator . '(' ')'
+   11 DirectDeclarator: DirectDeclarator . '(' IdentifierList ')'
+   12 DirectDeclarator: DirectDeclarator . '(' ParameterTypeList ')'
+   13 DirectDeclarator: DirectDeclarator . '[' STATIC ']'
+
+    $end  reduce using rule 5 (Declarator)
+    '('   shift, and goto state 37
+    ')'   reduce using rule 5 (Declarator)
+    ','   reduce using rule 5 (Declarator)
+    '['   shift, and goto state 38
+
+state 36 // INT '*' '(' ')' [$end]
+
+   22 AbstractDeclarator: Pointer DirectAbstractDeclarator .  [$end, ')', ',']
+   28 DirectAbstractDeclarator: DirectAbstractDeclarator . '(' ')'
+   29 DirectAbstractDeclarator: DirectAbstractDeclarator . '(' ParameterTypeList ')'
+   30 DirectAbstractDeclarator: DirectAbstractDeclarator . '[' STATIC ']'
+
+    $end  reduce using rule 22 (AbstractDeclarator)
+    '('   shift, and goto state 15
+    ')'   reduce using rule 22 (AbstractDeclarator)
+    ','   reduce using rule 22 (AbstractDeclarator)
+    '['   shift, and goto state 16
+
+state 37 // INT IDENTIFIER '('
+
+   10 DirectDeclarator: DirectDeclarator '(' . ')'
+   11 DirectDeclarator: DirectDeclarator '(' . IdentifierList ')'
+   12 DirectDeclarator: DirectDeclarator '(' . ParameterTypeList ')'
+
+    ')'         shift, and goto state 41
+    IDENTIFIER  shift, and goto state 44
+    INT         shift, and goto state 3
+
+    DeclarationSpecifiers  goto state 2
+    IdentifierList         goto state 42
+    ParameterDeclaration   goto state 20
+    ParameterList          goto state 19
+    ParameterTypeList      goto state 43
+
+state 38 // INT IDENTIFIER '['
+
+   13 DirectDeclarator: DirectDeclarator '[' . STATIC ']'
+
+    STATIC  shift, and goto state 39
+
+state 39 // INT IDENTIFIER '[' STATIC
+
+   13 DirectDeclarator: DirectDeclarator '[' STATIC . ']'
+
+    ']'  shift, and goto state 40
+
+state 40 // INT IDENTIFIER '[' STATIC ']'
+
+   13 DirectDeclarator: DirectDeclarator '[' STATIC ']' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 13 (DirectDeclarator)
+    '('   reduce using rule 13 (DirectDeclarator)
+    ')'   reduce using rule 13 (DirectDeclarator)
+    ','   reduce using rule 13 (DirectDeclarator)
+    '['   reduce using rule 13 (DirectDeclarator)
+
+state 41 // INT IDENTIFIER '(' ')'
+
+   10 DirectDeclarator: DirectDeclarator '(' ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 10 (DirectDeclarator)
+    '('   reduce using rule 10 (DirectDeclarator)
+    ')'   reduce using rule 10 (DirectDeclarator)
+    ','   reduce using rule 10 (DirectDeclarator)
+    '['   reduce using rule 10 (DirectDeclarator)
+
+state 42 // INT IDENTIFIER '(' IDENTIFIER [')']
+
+   11 DirectDeclarator: DirectDeclarator '(' IdentifierList . ')'
+   19 IdentifierList: IdentifierList . ',' IDENTIFIER
+
+    ')'  shift, and goto state 46
+    ','  shift, and goto state 47
+
+state 43 // INT IDENTIFIER '(' INT [')']
+
+   12 DirectDeclarator: DirectDeclarator '(' ParameterTypeList . ')'
+
+    ')'  shift, and goto state 45
+
+state 44 // INT IDENTIFIER '(' IDENTIFIER
+
+   18 IdentifierList: IDENTIFIER .  [')', ',']
+
+    ')'  reduce using rule 18 (IdentifierList)
+    ','  reduce using rule 18 (IdentifierList)
+
+state 45 // INT IDENTIFIER '(' INT ')'
+
+   12 DirectDeclarator: DirectDeclarator '(' ParameterTypeList ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 12 (DirectDeclarator)
+    '('   reduce using rule 12 (DirectDeclarator)
+    ')'   reduce using rule 12 (DirectDeclarator)
+    ','   reduce using rule 12 (DirectDeclarator)
+    '['   reduce using rule 12 (DirectDeclarator)
+
+state 46 // INT IDENTIFIER '(' IDENTIFIER ')'
+
+   11 DirectDeclarator: DirectDeclarator '(' IdentifierList ')' .  [$end, '(', ')', ',', '[']
+
+    $end  reduce using rule 11 (DirectDeclarator)
+    '('   reduce using rule 11 (DirectDeclarator)
+    ')'   reduce using rule 11 (DirectDeclarator)
+    ','   reduce using rule 11 (DirectDeclarator)
+    '['   reduce using rule 11 (DirectDeclarator)
+
+state 47 // INT IDENTIFIER '(' IDENTIFIER ','
+
+   19 IdentifierList: IdentifierList ',' . IDENTIFIER
+
+    IDENTIFIER  shift, and goto state 48
+
+state 48 // INT IDENTIFIER '(' IDENTIFIER ',' IDENTIFIER
+
+   19 IdentifierList: IdentifierList ',' IDENTIFIER .  [')', ',']
+
+    ')'  reduce using rule 19 (IdentifierList)
+    ','  reduce using rule 19 (IdentifierList)
+
