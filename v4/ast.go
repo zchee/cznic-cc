@@ -574,6 +574,41 @@ func (n *AssignmentExpression) Position() (r token.Position) {
 	}
 }
 
+// AtomicTypeSpecifier represents data reduced by production:
+//
+//	AtomicTypeSpecifier:
+//	        "_Atomic" '(' TypeName ')'
+type AtomicTypeSpecifier struct {
+	Token    Token
+	Token2   Token
+	Token3   Token
+	TypeName *TypeName
+}
+
+// String implements fmt.Stringer.
+func (n *AtomicTypeSpecifier) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *AtomicTypeSpecifier) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	if p := n.Token.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token2.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.TypeName.Position(); p.IsValid() {
+		return p
+	}
+
+	return n.Token3.Position()
+}
+
 // AttributeSpecifier represents data reduced by production:
 //
 //	AttributeSpecifier:
@@ -1098,6 +1133,7 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       FunctionSpecifier DeclarationSpecifiers      // Case DeclarationSpecifiersFunc
 type DeclarationSpecifiers struct {
 	typedef               bool
+	typename              bool
 	Case                  DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
 	DeclarationSpecifiers *DeclarationSpecifiers
 	FunctionSpecifier     *FunctionSpecifier
@@ -4048,16 +4084,17 @@ func (n StructOrUnionSpecifierCase) String() string {
 // StructOrUnionSpecifier represents data reduced by productions:
 //
 //	StructOrUnionSpecifier:
-//	        StructOrUnion IDENTIFIER '{' StructDeclarationList '}'  // Case StructOrUnionSpecifierDef
-//	|       StructOrUnion IDENTIFIER                                // Case StructOrUnionSpecifierTag
+//	        StructOrUnion IDENTIFIER '{' StructDeclarationList '}' AttributeSpecifierList  // Case StructOrUnionSpecifierDef
+//	|       StructOrUnion IDENTIFIER                                                       // Case StructOrUnionSpecifierTag
 type StructOrUnionSpecifier struct {
 	visible
-	Case                  StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
-	StructDeclarationList *StructDeclarationList
-	StructOrUnion         *StructOrUnion
-	Token                 Token
-	Token2                Token
-	Token3                Token
+	AttributeSpecifierList *AttributeSpecifierList
+	Case                   StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
+	StructDeclarationList  *StructDeclarationList
+	StructOrUnion          *StructOrUnion
+	Token                  Token
+	Token2                 Token
+	Token3                 Token
 }
 
 // String implements fmt.Stringer.
@@ -4093,7 +4130,11 @@ func (n *StructOrUnionSpecifier) Position() (r token.Position) {
 			return p
 		}
 
-		return n.Token3.Position()
+		if p := n.Token3.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.AttributeSpecifierList.Position()
 	default:
 		panic("internal error")
 	}
@@ -4154,6 +4195,7 @@ const (
 	TypeQualifierConst TypeQualifierCase = iota
 	TypeQualifierRestrict
 	TypeQualifierVolatile
+	TypeQualifierAtomic
 )
 
 // String implements fmt.Stringer
@@ -4165,6 +4207,8 @@ func (n TypeQualifierCase) String() string {
 		return "TypeQualifierRestrict"
 	case TypeQualifierVolatile:
 		return "TypeQualifierVolatile"
+	case TypeQualifierAtomic:
+		return "TypeQualifierAtomic"
 	default:
 		return fmt.Sprintf("TypeQualifierCase(%v)", int(n))
 	}
@@ -4176,6 +4220,7 @@ func (n TypeQualifierCase) String() string {
 //	        "const"     // Case TypeQualifierConst
 //	|       "restrict"  // Case TypeQualifierRestrict
 //	|       "volatile"  // Case TypeQualifierVolatile
+//	|       "_Atomic"   // Case TypeQualifierAtomic
 type TypeQualifier struct {
 	Case  TypeQualifierCase `PrettyPrint:"stringer,zero"`
 	Token Token
@@ -4267,6 +4312,7 @@ const (
 	TypeSpecifierStructOrUnion
 	TypeSpecifierEnum
 	TypeSpecifierTypeName
+	TypeSpecifierAtomic
 )
 
 // String implements fmt.Stringer
@@ -4304,6 +4350,8 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierEnum"
 	case TypeSpecifierTypeName:
 		return "TypeSpecifierTypeName"
+	case TypeSpecifierAtomic:
+		return "TypeSpecifierAtomic"
 	default:
 		return fmt.Sprintf("TypeSpecifierCase(%v)", int(n))
 	}
@@ -4328,7 +4376,9 @@ func (n TypeSpecifierCase) String() string {
 //	|       StructOrUnionSpecifier  // Case TypeSpecifierStructOrUnion
 //	|       EnumSpecifier           // Case TypeSpecifierEnum
 //	|       TYPENAME                // Case TypeSpecifierTypeName
+//	|       AtomicTypeSpecifier     // Case TypeSpecifierAtomic
 type TypeSpecifier struct {
+	AtomicTypeSpecifier    *AtomicTypeSpecifier
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier
 	StructOrUnionSpecifier *StructOrUnionSpecifier
@@ -4345,6 +4395,8 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 	}
 
 	switch n.Case {
+	case 16:
+		return n.AtomicTypeSpecifier.Position()
 	case 14:
 		return n.EnumSpecifier.Position()
 	case 13:

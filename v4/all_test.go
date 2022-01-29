@@ -27,6 +27,7 @@ import (
 	"modernc.org/ccorpus"
 	"modernc.org/httpfs"
 	"modernc.org/mathutil"
+	//TODO "modernc.org/scannertest"
 )
 
 var (
@@ -1171,7 +1172,7 @@ func TestParse(t *testing.T) {
 		blacklist map[string]struct{}
 	}{
 		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
-		//TODO {cfg, "ccgo", nil},
+		{cfg, "ccgo", nil},
 		//TODO {cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
 		//TODO {cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
 		//TODO {cfg, "github.com/cxgo", blacklistCxgo},

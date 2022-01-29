@@ -362,7 +362,8 @@ package cc // import "modernc.org/cc/v4"
 			Declaration:
 				DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';' // A1
 
-			/*yy:field	typedef	bool	*/
+			/*yy:field	typedef		bool	*/
+			/*yy:field	typename	bool	*/
 			/*yy:example static int i; */
 /*yy:case Storage    */ DeclarationSpecifiers:
 				StorageClassSpecifier DeclarationSpecifiers
@@ -463,8 +464,8 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
 // 			/*yy:example typedef int T; typeof(T) i; */
 // /*yy:case TypeofType */ |	"typeof" '(' TypeName ')'
-// 			/*yy:example _Atomic(int) i; */
-// /*yy:case Atomic     */ |	AtomicTypeSpecifier
+			/*yy:example _Atomic(int) i; */
+/*yy:case Atomic     */ |	AtomicTypeSpecifier
 // 			/*yy:example _Fract i; */
 // /*yy:case Fract      */ |	"_Fract"
 // 			/*yy:example _Sat i; */
@@ -482,9 +483,9 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.7.2.1 Structure and union specifiers */
 			/*yy:field	visible	*/
-			/*yy:example struct s { int i; }; */
+			/*yy:example struct s { int i; } __attribute__((a)); */
 /*yy:case Def        */ StructOrUnionSpecifier:
-				StructOrUnion /* AttributeSpecifierList */ IDENTIFIER '{' StructDeclarationList '}'
+				StructOrUnion /* AttributeSpecifierList */ IDENTIFIER '{' StructDeclarationList '}' AttributeSpecifierList
 			/*yy:example struct s v; */
 /*yy:case Tag        */ |	StructOrUnion /* AttributeSpecifierList */ IDENTIFIER
 
@@ -547,10 +548,10 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example enum e {a = 42}; */
 /*yy:case Expr       */ |	IDENTIFIER /* AttributeSpecifierList */ '=' ConstantExpression
 
-			// /* [2], 6.7.2.4 Atomic type specifiers */
-			// /*yy:example    _Atomic(int) i; */
-			// AtomicTypeSpecifier:
-			// 	"_Atomic" '(' TypeName ')'
+			/* [2], 6.7.2.4 Atomic type specifiers */
+			/*yy:example    _Atomic(int) i; */
+			AtomicTypeSpecifier:
+				"_Atomic" '(' TypeName ')'
 
 			/* [0], 6.7.3 Type qualifiers */
 			/*yy:example const int i; */
@@ -560,8 +561,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Restrict   */ |	"restrict"
 			/*yy:example volatile int i; */
 /*yy:case Volatile   */ |	"volatile"
-// 			/*yy:example _Atomic int i; */
-// /*yy:case Atomic     */ |	"_Atomic"
+			/*yy:example _Atomic int i; */
+/*yy:case Atomic     */ |	"_Atomic"
 
 			/* [0], 6.7.4 Function specifiers */
 			/*yy:example inline int f() {}*/
