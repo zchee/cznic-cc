@@ -206,10 +206,10 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case SizeofExpr */ |	"sizeof" UnaryExpression
 			/*yy:example int i = sizeof(int); */
 /*yy:case SizeofType */ |	"sizeof" '(' TypeName ')'
-// 			/*yy:example int f() { L: &&L; }*/
-// /*yy:case LabelAddr  */ |	"&&" IDENTIFIER
-// 			/*yy:example int i = _Alignof(x); */
-// /*yy:case AlignofExpr*/ |	"_Alignof" UnaryExpression
+			/*yy:example int f() { L: &&L; }*/
+/*yy:case LabelAddr  */ |	"&&" IDENTIFIER
+			/*yy:example int i = _Alignof(x); */
+/*yy:case AlignofExpr*/ |	"_Alignof" UnaryExpression
 			/*yy:example int i = _Alignof(int); */
 /*yy:case AlignofType*/ |	"_Alignof" '(' TypeName ')'
 // 			/*yy:example double i = __imag__ x; */
@@ -732,9 +732,9 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Default    */ |	"default" ':' Statement
 
 			/* [0], 6.8.2 Compound statement */
-			/*yy:example int f() { int i; } 		*/
+			/*yy:example int f() { __label__ L; int i; } 		*/
 			CompoundStatement:
-				'{' BlockItemList '}'
+				'{' LabelDeclaration BlockItemList '}'
 
 			/*yy:example int f() { int i; }*/
 			BlockItemList:
@@ -747,8 +747,6 @@ package cc // import "modernc.org/cc/v4"
 				Declaration
 			/*yy:example int f() { g(); }*/
 /*yy:case Stmt       */ |	Statement
-// 			/*yy:example int f() { __label__ L; }*/
-// /*yy:case Label      */ |	LabelDeclaration
 			/*yy:example int f() { int g() {} }*/
 /*yy:case FuncDef    */ |	DeclarationSpecifiers Declarator CompoundStatement
 
@@ -865,9 +863,9 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example asm inline volatile ("nop"); */
 			|	AsmQualifierList AsmQualifier
 
-// 			/*yy:example int f() { __label__ L; L: x(); } */
-// 			LabelDeclaration:
-// 				"__label__" IdentifierList ';'
+			/*yy:example int f() { __label__ L, M; L: x(); M: y(); } */
+			LabelDeclaration:
+				"__label__" IdentifierList ';'
 
 // https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html#Attribute-Syntax
 //

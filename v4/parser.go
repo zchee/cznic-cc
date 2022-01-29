@@ -61,8 +61,10 @@ var keywords = map[string]rune{
 	"__alignof__":   rune(ALIGNOF),
 	"__asm__":       rune(ASM),
 	"__attribute__": rune(ATTRIBUTE),
+	"__complex__":   rune(COMPLEX),
 	"__inline":      rune(INLINE),
 	"__inline__":    rune(INLINE),
+	"__label__":     rune(LABEL),
 	"__restrict":    rune(RESTRICT),
 	"__restrict__":  rune(RESTRICT),
 	"asm":           rune(ASM),
@@ -407,7 +409,7 @@ func (p *parser) declarationListOpt() (r *DeclarationList) {
 // [0], 6.8.2 Compound statement
 //
 //  compound-statement:
-// 	{ block-item-list_opt }
+// 	{ label-declaration_opt block-item-list_opt }
 func (p *parser) compoundStatement(isFnScope bool) (r *CompoundStatement) {
 	p.newScope()
 
@@ -416,7 +418,21 @@ func (p *parser) compoundStatement(isFnScope bool) (r *CompoundStatement) {
 	if isFnScope {
 		p.fnScope = p.scope
 	}
-	return &CompoundStatement{Token: p.must('{'), BlockItemList: p.blockItemListOpt(), Token2: p.must('}')}
+	return &CompoundStatement{Token: p.must('{'), LabelDeclaration: p.labelDeclarationOpt(), BlockItemList: p.blockItemListOpt(), Token2: p.must('}')}
+}
+
+//  label-declaration
+// 	__label__ identifier-list ;
+func (p *parser) labelDeclarationOpt() (r *LabelDeclaration) {
+	if p.rune() != rune(LABEL) {
+		return nil
+	}
+
+	r = &LabelDeclaration{Token: p.shift(), IdentifierList: p.identifierList()}
+	for l := r.IdentifierList; l != nil; l = l.IdentifierList {
+		p.scope.declare(string(l.Token2.Src()), r)
+	}
+	return r
 }
 
 //  block-item-list:
@@ -560,6 +576,7 @@ func (p *parser) statement(newBlock bool) *Statement {
 		'(',
 		'*',
 		';',
+		rune(ANDAND),
 		rune(DEC),
 		rune(INC),
 		rune(LONGSTRINGLITERAL),
@@ -810,7 +827,13 @@ func (p *parser) asmQualifier() *AsmQualifier {
 func (p *parser) asmArgListOpt() (r *AsmArgList) {
 	var prev *AsmArgList
 	for p.rune() == ':' {
-		aal := &AsmArgList{Token: p.shift(), AsmExpressionList: p.asmExpressionList()}
+		var aal *AsmArgList
+		switch p.peek(1).Ch {
+		case ':':
+			aal = &AsmArgList{Token: p.shift()}
+		default:
+			aal = &AsmArgList{Token: p.shift(), AsmExpressionList: p.asmExpressionList()}
+		}
 		switch {
 		case r == nil:
 			r = aal
@@ -860,12 +883,14 @@ func (p *parser) expression(opt bool) (r *Expression) {
 		'*',
 		'-',
 		'~',
-		rune(DEC),
+		rune(ANDAND),
 		rune(CHARCONST),
+		rune(DEC),
 		rune(FLOATCONST),
 		rune(IDENTIFIER),
 		rune(INC),
 		rune(INTCONST),
+		rune(LONGCHARCONST),
 		rune(LONGSTRINGLITERAL),
 		rune(SIZEOF),
 		rune(STRINGLITERAL):
@@ -1079,6 +1104,7 @@ func (p *parser) initializerList() (r *InitializerList) {
 		rune(CHARCONST),
 		rune(FLOATCONST),
 		rune(INTCONST),
+		rune(LONGCHARCONST),
 		rune(LONGSTRINGLITERAL),
 		rune(STRINGLITERAL):
 
@@ -1104,12 +1130,19 @@ func (p *parser) initializerList() (r *InitializerList) {
 			'{',
 			rune(CHARCONST),
 			rune(FLOATCONST),
-			rune(IDENTIFIER),
 			rune(INTCONST),
+			rune(LONGCHARCONST),
 			rune(LONGSTRINGLITERAL),
 			rune(STRINGLITERAL):
 
 			il = &InitializerList{Token: p.shift(), Initializer: p.initializer()}
+		case rune(IDENTIFIER):
+			switch p.peek(2).Ch {
+			case ':':
+				il = &InitializerList{Token: p.shift(), Designation: p.designation(), Initializer: p.initializer()}
+			default:
+				il = &InitializerList{Token: p.shift(), Initializer: p.initializer()}
+			}
 		case '}':
 			return r
 		default:
@@ -1576,14 +1609,19 @@ func (p *parser) castExpression() (r *CastExpression, u *UnaryExpression) {
 			}
 		case
 			'!',
+			'&',
 			'(',
 			'*',
 			'-',
 			'{',
 			'~',
+			rune(CHARCONST),
 			rune(FLOATCONST),
 			rune(IDENTIFIER),
-			rune(INTCONST):
+			rune(INTCONST),
+			rune(LONGCHARCONST),
+			rune(LONGSTRINGLITERAL),
+			rune(STRINGLITERAL):
 
 			r = &CastExpression{Case: CastExpressionUnary, UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
 			return r, r.UnaryExpression
@@ -1622,6 +1660,13 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 			panic(todo("", p.toks[0]))
 		case '[':
 			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: p.directAbstractDeclarator()}
+		case '(':
+			switch p.peek2(1).Ch {
+			case '*':
+				return &AbstractDeclarator{Case: AbstractDeclaratorPtr, DirectAbstractDeclarator: p.directAbstractDeclarator()}
+			default:
+				panic(todo("", p.peek2(1)))
+			}
 		default:
 			panic(todo("", p.toks[0], opt))
 		}
@@ -1629,6 +1674,13 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 		switch p.rune() {
 		case ')':
 			return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr}
+		case '(':
+			switch p.peek2(1).Ch {
+			case '*':
+				return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr, DirectAbstractDeclarator: p.directAbstractDeclarator()}
+			default:
+				panic(todo("", p.peek2(1)))
+			}
 		default:
 			panic(todo("", p.toks[0]))
 		}
@@ -1688,6 +1740,13 @@ func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
 		default:
 			panic(todo("", p.peek(1)))
 		}
+	case '(':
+		switch p.peek2(1).Ch {
+		case '*':
+			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorDecl, Token: p.shift(), AbstractDeclarator: p.abstractDeclarator(nil, false), Token2: p.must(')')}
+		default:
+			panic(todo("", p.peek2(1)))
+		}
 	default:
 		panic(todo("", p.toks[0]))
 	}
@@ -1698,6 +1757,8 @@ func (p *parser) directAbstractDeclarator() (r *DirectAbstractDeclarator) {
 			return nil
 		case ')':
 			return r
+		case '(':
+			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, DirectAbstractDeclarator: r, Token: p.shift(), ParameterTypeList: p.parameterTypeListOpt(), Token2: p.must(')')}
 		default:
 			panic(todo("", &p.toks[0]))
 		}
@@ -1895,11 +1956,13 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token) (r *UnaryExpr
 
 				return &UnaryExpression{Case: UnaryExpressionAlignofType, Token: p.shift(), Token2: p.shift(), TypeName: p.typeName(), Token3: p.must(')')}
 			default:
-				panic(todo("", p.peek2(2)))
+				return &UnaryExpression{Case: UnaryExpressionAlignofExpr, Token: p.shift(), UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
 			}
 		default:
 			panic(todo("", p.peek(1)))
 		}
+	case rune(ANDAND):
+		return &UnaryExpression{Case: UnaryExpressionLabelAddr, Token: p.shift(), Token2: p.must(rune(IDENTIFIER))}
 	default:
 		panic(todo("", p.toks[0]))
 	}
@@ -1942,14 +2005,19 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token) (r *Postfix
 		switch p.peek2(1).Ch {
 		case
 			'!',
+			'&',
 			'(',
 			'*',
 			'-',
 			'{',
 			'~',
+			rune(CHARCONST),
 			rune(FLOATCONST),
 			rune(IDENTIFIER),
-			rune(INTCONST):
+			rune(INTCONST),
+			rune(LONGCHARCONST),
+			rune(LONGSTRINGLITERAL),
+			rune(STRINGLITERAL):
 
 			r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression()}
 		case
@@ -2005,10 +2073,13 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token) (r *Postfix
 				')',
 				'*',
 				'-',
+				rune(ANDAND),
 				rune(CHARCONST),
 				rune(FLOATCONST),
-				rune(INTCONST),
 				rune(IDENTIFIER),
+				rune(INTCONST),
+				rune(LONGCHARCONST),
+				rune(LONGSTRINGLITERAL),
 				rune(SIZEOF),
 				rune(STRINGLITERAL):
 
@@ -2192,8 +2263,15 @@ func (p *parser) directDeclarator2(dd *DirectDeclarator, declare bool) (r *Direc
 				r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: p.shift(), Token2: p.shift()}
 			case
 				'(',
+				rune(ALIGNOF),
+				rune(CHARCONST),
+				rune(FLOATCONST),
 				rune(IDENTIFIER),
-				rune(INTCONST):
+				rune(INTCONST),
+				rune(LONGCHARCONST),
+				rune(LONGSTRINGLITERAL),
+				rune(SIZEOF),
+				rune(STRINGLITERAL):
 
 				r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: p.shift(), AssignmentExpression: p.assignmentExpression(), Token2: p.shift()}
 			case
@@ -2204,7 +2282,15 @@ func (p *parser) directDeclarator2(dd *DirectDeclarator, declare bool) (r *Direc
 				lbracket := p.shift()
 				tql := p.typeQualifierList(false)
 				switch p.rune() {
-				case rune(INTCONST):
+				case
+					rune(CHARCONST),
+					rune(FLOATCONST),
+					rune(IDENTIFIER),
+					rune(INTCONST),
+					rune(LONGCHARCONST),
+					rune(LONGSTRINGLITERAL),
+					rune(STRINGLITERAL):
+
 					r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, AssignmentExpression: p.assignmentExpression(), Token2: p.must(']')}
 				case rune(STATIC):
 					r = &DirectDeclarator{Case: DirectDeclaratorArrStatic, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, Token2: p.shift(), AssignmentExpression: p.assignmentExpression(), Token3: p.must(']')}
@@ -2243,7 +2329,7 @@ func (p *parser) identifierList() (r *IdentifierList) {
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 		return nil
 	case rune(IDENTIFIER):
-		r = &IdentifierList{Token: p.shift()}
+		r = &IdentifierList{Token2: p.shift()}
 	default:
 		panic(todo("", p.toks[0]))
 	}
@@ -2443,10 +2529,12 @@ func (p *parser) typeQualifierList(opt bool) (r *TypeQualifiers) {
 
 		r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifier: p.typeQualifier()}
 	case
+		'(',
 		')',
 		'*',
 		',',
-		rune(IDENTIFIER):
+		rune(IDENTIFIER),
+		rune(TYPENAME):
 
 		if opt {
 			return nil
@@ -2463,9 +2551,14 @@ func (p *parser) typeQualifierList(opt bool) (r *TypeQualifiers) {
 			return nil
 		case
 			'*',
+			rune(CHARCONST),
+			rune(FLOATCONST),
 			rune(IDENTIFIER),
 			rune(INTCONST),
-			rune(STATIC):
+			rune(LONGCHARCONST),
+			rune(LONGSTRINGLITERAL),
+			rune(STATIC),
+			rune(STRINGLITERAL):
 
 			return r
 		case

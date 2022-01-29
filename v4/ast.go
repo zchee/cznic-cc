@@ -923,11 +923,12 @@ func (n *CastExpression) Position() (r token.Position) {
 // CompoundStatement represents data reduced by production:
 //
 //	CompoundStatement:
-//	        '{' BlockItemList '}'
+//	        '{' LabelDeclaration BlockItemList '}'
 type CompoundStatement struct {
-	BlockItemList *BlockItemList
-	Token         Token
-	Token2        Token
+	BlockItemList    *BlockItemList
+	LabelDeclaration *LabelDeclaration
+	Token            Token
+	Token2           Token
 }
 
 // String implements fmt.Stringer.
@@ -940,6 +941,10 @@ func (n *CompoundStatement) Position() (r token.Position) {
 	}
 
 	if p := n.Token.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.LabelDeclaration.Position(); p.IsValid() {
 		return p
 	}
 
@@ -2713,6 +2718,36 @@ func (n *JumpStatement) Position() (r token.Position) {
 	}
 }
 
+// LabelDeclaration represents data reduced by production:
+//
+//	LabelDeclaration:
+//	        "__label__" IdentifierList ';'
+type LabelDeclaration struct {
+	IdentifierList *IdentifierList
+	Token          Token
+	Token2         Token
+}
+
+// String implements fmt.Stringer.
+func (n *LabelDeclaration) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *LabelDeclaration) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	if p := n.Token.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.IdentifierList.Position(); p.IsValid() {
+		return p
+	}
+
+	return n.Token2.Position()
+}
+
 // LabeledStatementCase represents case numbers of production LabeledStatement
 type LabeledStatementCase int
 
@@ -4424,6 +4459,8 @@ const (
 	UnaryExpressionNot
 	UnaryExpressionSizeofExpr
 	UnaryExpressionSizeofType
+	UnaryExpressionLabelAddr
+	UnaryExpressionAlignofExpr
 	UnaryExpressionAlignofType
 )
 
@@ -4452,6 +4489,10 @@ func (n UnaryExpressionCase) String() string {
 		return "UnaryExpressionSizeofExpr"
 	case UnaryExpressionSizeofType:
 		return "UnaryExpressionSizeofType"
+	case UnaryExpressionLabelAddr:
+		return "UnaryExpressionLabelAddr"
+	case UnaryExpressionAlignofExpr:
+		return "UnaryExpressionAlignofExpr"
 	case UnaryExpressionAlignofType:
 		return "UnaryExpressionAlignofType"
 	default:
@@ -4473,6 +4514,8 @@ func (n UnaryExpressionCase) String() string {
 //	|       '!' CastExpression           // Case UnaryExpressionNot
 //	|       "sizeof" UnaryExpression     // Case UnaryExpressionSizeofExpr
 //	|       "sizeof" '(' TypeName ')'    // Case UnaryExpressionSizeofType
+//	|       "&&" IDENTIFIER              // Case UnaryExpressionLabelAddr
+//	|       "_Alignof" UnaryExpression   // Case UnaryExpressionAlignofExpr
 //	|       "_Alignof" '(' TypeName ')'  // Case UnaryExpressionAlignofType
 type UnaryExpression struct {
 	Case              UnaryExpressionCase `PrettyPrint:"stringer,zero"`
@@ -4503,7 +4546,13 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.CastExpression.Position()
-	case 10, 11:
+	case 11:
+		if p := n.Token.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Token2.Position()
+	case 10, 13:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -4517,7 +4566,7 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.Token3.Position()
-	case 1, 2, 9:
+	case 1, 2, 9, 12:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
