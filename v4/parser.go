@@ -62,6 +62,7 @@ var keywords = map[string]rune{
 	"__asm__":       rune(ASM),
 	"__attribute__": rune(ATTRIBUTE),
 	"__complex__":   rune(COMPLEX),
+	"__float128":    rune(FLOAT128),
 	"__inline":      rune(INLINE),
 	"__inline__":    rune(INLINE),
 	"__label__":     rune(LABEL),
@@ -359,14 +360,10 @@ again:
 		',',
 		';',
 		'=',
+		rune(ASM),
 		rune(ATTRIBUTE):
 
 		return &ExternalDeclaration{Case: ExternalDeclarationDecl, Declaration: p.declaration(ds, d)}
-	case rune(ASM):
-		return &ExternalDeclaration{
-			Case:                  ExternalDeclarationAsm,
-			AsmFunctionDefinition: &AsmFunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, AsmStatement: p.asmStatement()},
-		}
 	case '{':
 		return &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
 	default:
@@ -1034,21 +1031,23 @@ func (p *parser) initDeclaratorListOpt(ds *DeclarationSpecifiers, d *Declarator)
 }
 
 //  init-declarator:
-// 	declarator attribute-specifier-list_opt
-// 	declarator attribute-specifier-list_opt = initializer
-func (p *parser) initDeclarator(ds *DeclarationSpecifiers, d *Declarator) *InitDeclarator {
+// 	declarator asm-register-var_opt
+// 	declarator asm-register-var_opt = initializer
+func (p *parser) initDeclarator(ds *DeclarationSpecifiers, d *Declarator) (r *InitDeclarator) {
 	if d == nil {
 		d = p.declarator(nil, ds, true)
 	}
-	switch p.rune() {
-	case eof:
-		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
-		return nil
-	case '=':
-		return &InitDeclarator{Case: InitDeclaratorInit, Declarator: d, Token: p.shift(), Initializer: p.initializer()}
-	default:
-		return &InitDeclarator{Case: InitDeclaratorDecl, Declarator: d}
+
+	r = &InitDeclarator{Case: InitDeclaratorDecl, Declarator: d}
+	if p.rune() == rune(ASM) {
+		r.Asm = p.asm()
 	}
+	if p.rune() == '=' {
+		r.Case = InitDeclaratorInit
+		r.Token = p.shift()
+		r.Initializer = p.initializer()
+	}
+	return r
 }
 
 // [0], 6.7.8 Initialization

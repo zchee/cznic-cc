@@ -58,7 +58,7 @@ void *__builtin_va_arg_sink(int, ...);
 func init() {
 	isTesting = true
 	var err error
-	if predefined, testCfg0.IncludePaths, testCfg0.SysIncludePaths, err = HostConfig(""); err != nil {
+	if predefined, testCfg0.IncludePaths, testCfg0.SysIncludePaths, err = HostConfig(env("CC_TEST_CPP", "cpp")); err != nil {
 		panic(errorf("cannot acquire host configuration: %v", err))
 	}
 
@@ -828,7 +828,7 @@ func TestTranslationPhase4(t *testing.T) {
 		blacklistGame["nbody-9.c"] = struct{}{}
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64":
+	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64", "linux/386":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
 	case "windows/amd64", "windows/386":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
@@ -2163,7 +2163,7 @@ func TestParse(t *testing.T) {
 		blacklistGame["nbody-9.c"] = struct{}{}
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64":
+	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64", "linux/386":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
 	case "windows/amd64", "windows/386":
 		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"

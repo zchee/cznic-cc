@@ -384,11 +384,11 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int i, j; */
 			|	InitDeclaratorList ',' /* AttributeSpecifierList */ InitDeclarator
 
-			/*yy:example int i; */
+			/*yy:example register int i asm("r0"); */
 /*yy:case Decl       */ InitDeclarator:
-				Declarator /* AttributeSpecifierList */
-			/*yy:example int i = x; */
-/*yy:case Init       */ |	Declarator /* AttributeSpecifierList  */ '=' Initializer
+				Declarator Asm
+			/*yy:example register int i asm("r0") = x; */
+/*yy:case Init       */ |	Declarator Asm '=' Initializer
 
 			/* [0], 6.7.1 Storage-class specifiers */
 			/*yy:example typedef int int_t;*/
@@ -799,10 +799,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int f() {} */
 /*yy:case FuncDef    */ ExternalDeclaration:
 				FunctionDefinition
-			/*yy:example int i; */
+			/*yy:example register int i asm("r0"); */
 /*yy:case Decl       */ |	Declaration
-			/*yy:example int f() asm("nop"); */
-/*yy:case Asm        */ |	AsmFunctionDefinition
 			/*yy:example asm("nop"); */
 /*yy:case AsmStmt    */ |	AsmStatement
 			/*yy:example ; */
@@ -844,10 +842,6 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example void f() { asm("nop") __attribute__((a)); } */
 			AsmStatement:
 				Asm AttributeSpecifierList ';'
-
-			/*yy:example int f() asm("nop"); */
-			AsmFunctionDefinition:
-				DeclarationSpecifiers Declarator AsmStatement
 
 			/*yy:example asm volatile ("nop"); */
 /*yy:case Volatile   */ AsmQualifier:

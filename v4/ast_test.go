@@ -416,7 +416,7 @@ func ExampleArgumentExpressionList_case1() {
 }
 
 func ExampleAsm_case0() {
-	fmt.Println(exampleAST(222, "asm(\"nop\");"))
+	fmt.Println(exampleAST(221, "asm(\"nop\");"))
 	// Output:
 	// &cc.Asm{
 	// · Token: example.c:1:1: ASM "asm",
@@ -427,7 +427,7 @@ func ExampleAsm_case0() {
 }
 
 func ExampleAsmArgList_case0() {
-	fmt.Println(exampleAST(220, "asm(\"nop\": a);"))
+	fmt.Println(exampleAST(219, "asm(\"nop\": a);"))
 	// Output:
 	// &cc.AsmArgList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
@@ -486,7 +486,7 @@ func ExampleAsmArgList_case0() {
 }
 
 func ExampleAsmArgList_case1() {
-	fmt.Println(exampleAST(221, "asm(\"nop\": a : b);"))
+	fmt.Println(exampleAST(220, "asm(\"nop\": a : b);"))
 	// Output:
 	// &cc.AsmArgList{
 	// · AsmArgList: &cc.AsmArgList{
@@ -599,7 +599,7 @@ func ExampleAsmArgList_case1() {
 }
 
 func ExampleAsmExpressionList_case0() {
-	fmt.Println(exampleAST(218, "asm(\"nop\": a);"))
+	fmt.Println(exampleAST(217, "asm(\"nop\": a);"))
 	// Output:
 	// &cc.AsmExpressionList{
 	// · AssignmentExpression: &cc.AssignmentExpression{
@@ -655,7 +655,7 @@ func ExampleAsmExpressionList_case0() {
 }
 
 func ExampleAsmExpressionList_case1() {
-	fmt.Println(exampleAST(219, "asm(\"nop\": a, b);"))
+	fmt.Println(exampleAST(218, "asm(\"nop\": a, b);"))
 	// Output:
 	// &cc.AsmExpressionList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
@@ -762,42 +762,8 @@ func ExampleAsmExpressionList_case1() {
 	// }
 }
 
-func ExampleAsmFunctionDefinition_case0() {
-	fmt.Println(exampleAST(224, "int f() asm(\"nop\");"))
-	// Output:
-	// &cc.AsmFunctionDefinition{
-	// · AsmStatement: &cc.AsmStatement{
-	// · · Asm: &cc.Asm{
-	// · · · Token: example.c:1:9: ASM "asm",
-	// · · · Token2: example.c:1:12: '(' "(",
-	// · · · Token3: example.c:1:13: STRINGLITERAL "\"nop\"",
-	// · · · Token4: example.c:1:18: ')' ")",
-	// · · },
-	// · · Token: example.c:1:19: ';' ";",
-	// · },
-	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · Case: DeclarationSpecifiersTypeSpec,
-	// · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:1: INT "int",
-	// · · },
-	// · },
-	// · Declarator: &cc.Declarator{
-	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Case: DirectDeclaratorFuncParam,
-	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:5: IDENTIFIER "f",
-	// · · · },
-	// · · · Token: example.c:1:6: '(' "(",
-	// · · · Token2: example.c:1:7: ')' ")",
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleAsmIndex_case0() {
-	fmt.Println(exampleAST(217, "asm(\"nop\": [a] b);"))
+	fmt.Println(exampleAST(216, "asm(\"nop\": [a] b);"))
 	// Output:
 	// &cc.AsmIndex{
 	// · Expression: &cc.Expression{
@@ -857,7 +823,7 @@ func ExampleAsmIndex_case0() {
 }
 
 func ExampleAsmQualifier_volatile() {
-	fmt.Println(exampleAST(225, "asm volatile (\"nop\");"))
+	fmt.Println(exampleAST(223, "asm volatile (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierVolatile,
@@ -866,7 +832,7 @@ func ExampleAsmQualifier_volatile() {
 }
 
 func ExampleAsmQualifier_inline() {
-	fmt.Println(exampleAST(226, "asm inline (\"nop\");"))
+	fmt.Println(exampleAST(224, "asm inline (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierInline,
@@ -875,7 +841,7 @@ func ExampleAsmQualifier_inline() {
 }
 
 func ExampleAsmQualifier_goto() {
-	fmt.Println(exampleAST(227, "asm goto (\"nop\");"))
+	fmt.Println(exampleAST(225, "asm goto (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierGoto,
@@ -884,7 +850,7 @@ func ExampleAsmQualifier_goto() {
 }
 
 func ExampleAsmQualifierList_case0() {
-	fmt.Println(exampleAST(228, "asm inline (\"nop\");"))
+	fmt.Println(exampleAST(226, "asm inline (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
@@ -895,7 +861,7 @@ func ExampleAsmQualifierList_case0() {
 }
 
 func ExampleAsmQualifierList_case1() {
-	fmt.Println(exampleAST(229, "asm inline volatile (\"nop\");"))
+	fmt.Println(exampleAST(227, "asm inline volatile (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
@@ -912,7 +878,7 @@ func ExampleAsmQualifierList_case1() {
 }
 
 func ExampleAsmStatement_case0() {
-	fmt.Println(exampleAST(223, "void f() { asm(\"nop\") __attribute__((a)); }"))
+	fmt.Println(exampleAST(222, "void f() { asm(\"nop\") __attribute__((a)); }"))
 	// Output:
 	// &cc.AsmStatement{
 	// · Asm: &cc.Asm{
@@ -1762,7 +1728,7 @@ func ExampleAtomicTypeSpecifier_case0() {
 }
 
 func ExampleAttributeSpecifier_case0() {
-	fmt.Println(exampleAST(235, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(233, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeSpecifier{
 	// · AttributeValueList: &cc.AttributeValueList{
@@ -1780,7 +1746,7 @@ func ExampleAttributeSpecifier_case0() {
 }
 
 func ExampleAttributeSpecifierList_case0() {
-	fmt.Println(exampleAST(236, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(234, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeSpecifierList{
 	// · AttributeSpecifier: &cc.AttributeSpecifier{
@@ -1800,7 +1766,7 @@ func ExampleAttributeSpecifierList_case0() {
 }
 
 func ExampleAttributeSpecifierList_case1() {
-	fmt.Println(exampleAST(237, "int i __attribute__((a)) __attribute__((b));"))
+	fmt.Println(exampleAST(235, "int i __attribute__((a)) __attribute__((b));"))
 	// Output:
 	// &cc.AttributeSpecifierList{
 	// · AttributeSpecifier: &cc.AttributeSpecifier{
@@ -1835,7 +1801,7 @@ func ExampleAttributeSpecifierList_case1() {
 }
 
 func ExampleAttributeValue_ident() {
-	fmt.Println(exampleAST(231, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(229, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeValue{
 	// · Case: AttributeValueIdent,
@@ -1844,7 +1810,7 @@ func ExampleAttributeValue_ident() {
 }
 
 func ExampleAttributeValue_expr() {
-	fmt.Println(exampleAST(232, "int i __attribute__((a(b)));"))
+	fmt.Println(exampleAST(230, "int i __attribute__((a(b)));"))
 	// Output:
 	// &cc.AttributeValue{
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
@@ -1906,7 +1872,7 @@ func ExampleAttributeValue_expr() {
 }
 
 func ExampleAttributeValueList_case0() {
-	fmt.Println(exampleAST(233, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(231, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeValueList{
 	// · AttributeValue: &cc.AttributeValue{
@@ -1917,7 +1883,7 @@ func ExampleAttributeValueList_case0() {
 }
 
 func ExampleAttributeValueList_case1() {
-	fmt.Println(exampleAST(234, "int i __attribute__((a, b));"))
+	fmt.Println(exampleAST(232, "int i __attribute__((a, b));"))
 	// Output:
 	// &cc.AttributeValueList{
 	// · AttributeValue: &cc.AttributeValue{
@@ -2561,7 +2527,7 @@ func ExampleDeclaration_case0() {
 }
 
 func ExampleDeclarationList_case0() {
-	fmt.Println(exampleAST(215, "int f(i) int i; {}"))
+	fmt.Println(exampleAST(214, "int f(i) int i; {}"))
 	// Output:
 	// &cc.DeclarationList{
 	// · Declaration: &cc.Declaration{
@@ -2589,7 +2555,7 @@ func ExampleDeclarationList_case0() {
 }
 
 func ExampleDeclarationList_case1() {
-	fmt.Println(exampleAST(216, "int f(i, j) int i; int j; {}"))
+	fmt.Println(exampleAST(215, "int f(i, j) int i; int j; {}"))
 	// Output:
 	// &cc.DeclarationList{
 	// · Declaration: &cc.Declaration{
@@ -4272,73 +4238,49 @@ func ExampleExternalDeclaration_funcDef() {
 }
 
 func ExampleExternalDeclaration_decl() {
-	fmt.Println(exampleAST(210, "int i;"))
+	fmt.Println(exampleAST(210, "register int i asm(\"r0\");"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · Case: ExternalDeclarationDecl,
 	// · Declaration: &cc.Declaration{
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:1: INT "int",
+	// · · · Case: DeclarationSpecifiersStorage,
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · Case: TypeSpecifierInt,
+	// · · · · · Token: example.c:1:10: INT "int",
+	// · · · · },
+	// · · · },
+	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · Case: StorageClassSpecifierRegister,
+	// · · · · Token: example.c:1:1: REGISTER "register",
 	// · · · },
 	// · · },
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · Asm: &cc.Asm{
+	// · · · · · Token: example.c:1:16: ASM "asm",
+	// · · · · · Token2: example.c:1:19: '(' "(",
+	// · · · · · Token3: example.c:1:20: STRINGLITERAL "\"r0\"",
+	// · · · · · Token4: example.c:1:24: ')' ")",
+	// · · · · },
 	// · · · · Case: InitDeclaratorDecl,
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:14: IDENTIFIER "i",
 	// · · · · · },
 	// · · · · },
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:6: ';' ";",
+	// · · Token: example.c:1:25: ';' ";",
 	// · },
-	// }
-}
-
-func ExampleExternalDeclaration_asm() {
-	fmt.Println(exampleAST(211, "int f() asm(\"nop\");"))
-	// Output:
-	// &cc.ExternalDeclaration{
-	// · AsmFunctionDefinition: &cc.AsmFunctionDefinition{
-	// · · AsmStatement: &cc.AsmStatement{
-	// · · · Asm: &cc.Asm{
-	// · · · · Token: example.c:1:9: ASM "asm",
-	// · · · · Token2: example.c:1:12: '(' "(",
-	// · · · · Token3: example.c:1:13: STRINGLITERAL "\"nop\"",
-	// · · · · Token4: example.c:1:18: ')' ")",
-	// · · · },
-	// · · · Token: example.c:1:19: ';' ";",
-	// · · },
-	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:1: INT "int",
-	// · · · },
-	// · · },
-	// · · Declarator: &cc.Declarator{
-	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Case: DirectDeclaratorFuncParam,
-	// · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:5: IDENTIFIER "f",
-	// · · · · },
-	// · · · · Token: example.c:1:6: '(' "(",
-	// · · · · Token2: example.c:1:7: ')' ")",
-	// · · · },
-	// · · },
-	// · },
-	// · Case: ExternalDeclarationAsm,
 	// }
 }
 
 func ExampleExternalDeclaration_asmStmt() {
-	fmt.Println(exampleAST(212, "asm(\"nop\");"))
+	fmt.Println(exampleAST(211, "asm(\"nop\");"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · AsmStatement: &cc.AsmStatement{
@@ -4355,7 +4297,7 @@ func ExampleExternalDeclaration_asmStmt() {
 }
 
 func ExampleExternalDeclaration_empty() {
-	fmt.Println(exampleAST(213, ";"))
+	fmt.Println(exampleAST(212, ";"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · Case: ExternalDeclarationDecl,
@@ -4366,7 +4308,7 @@ func ExampleExternalDeclaration_empty() {
 }
 
 func ExampleFunctionDefinition_case0() {
-	fmt.Println(exampleAST(214, "int f() {}"))
+	fmt.Println(exampleAST(213, "int f() {}"))
 	// Output:
 	// &cc.FunctionDefinition{
 	// · CompoundStatement: &cc.CompoundStatement{
@@ -4555,28 +4497,40 @@ func ExampleInclusiveOrExpression_or() {
 }
 
 func ExampleInitDeclarator_decl() {
-	fmt.Println(exampleAST(89, "int i;"))
+	fmt.Println(exampleAST(89, "register int i asm(\"r0\");"))
 	// Output:
 	// &cc.InitDeclarator{
+	// · Asm: &cc.Asm{
+	// · · Token: example.c:1:16: ASM "asm",
+	// · · Token2: example.c:1:19: '(' "(",
+	// · · Token3: example.c:1:20: STRINGLITERAL "\"r0\"",
+	// · · Token4: example.c:1:24: ')' ")",
+	// · },
 	// · Case: InitDeclaratorDecl,
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · Token: example.c:1:14: IDENTIFIER "i",
 	// · · },
 	// · },
 	// }
 }
 
 func ExampleInitDeclarator_init() {
-	fmt.Println(exampleAST(90, "int i = x;"))
+	fmt.Println(exampleAST(90, "register int i asm(\"r0\") = x;"))
 	// Output:
 	// &cc.InitDeclarator{
+	// · Asm: &cc.Asm{
+	// · · Token: example.c:1:16: ASM "asm",
+	// · · Token2: example.c:1:19: '(' "(",
+	// · · Token3: example.c:1:20: STRINGLITERAL "\"r0\"",
+	// · · Token4: example.c:1:24: ')' ")",
+	// · },
 	// · Case: InitDeclaratorInit,
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · Token: example.c:1:14: IDENTIFIER "i",
 	// · · },
 	// · },
 	// · Initializer: &cc.Initializer{
@@ -4610,7 +4564,7 @@ func ExampleInitDeclarator_init() {
 	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
 	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
 	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · · · · · · · · · · · · · · · · Token: example.c:1:28: IDENTIFIER "x",
 	// · · · · · · · · · · · · · · · · · },
 	// · · · · · · · · · · · · · · · · },
 	// · · · · · · · · · · · · · · · },
@@ -4631,7 +4585,7 @@ func ExampleInitDeclarator_init() {
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
-	// · Token: example.c:1:7: '=' "=",
+	// · Token: example.c:1:26: '=' "=",
 	// }
 }
 
@@ -6042,7 +5996,7 @@ func ExampleJumpStatement_return() {
 }
 
 func ExampleLabelDeclaration_case0() {
-	fmt.Println(exampleAST(230, "int f() { __label__ L, M; L: x(); M: y(); }"))
+	fmt.Println(exampleAST(228, "int f() { __label__ L, M; L: x(); M: y(); }"))
 	// Output:
 	// &cc.LabelDeclaration{
 	// · IdentifierList: &cc.IdentifierList{

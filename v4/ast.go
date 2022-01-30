@@ -314,36 +314,6 @@ func (n *AsmExpressionList) Position() (r token.Position) {
 	return n.AssignmentExpression.Position()
 }
 
-// AsmFunctionDefinition represents data reduced by production:
-//
-//	AsmFunctionDefinition:
-//	        DeclarationSpecifiers Declarator AsmStatement
-type AsmFunctionDefinition struct {
-	AsmStatement          *AsmStatement
-	DeclarationSpecifiers *DeclarationSpecifiers
-	Declarator            *Declarator
-}
-
-// String implements fmt.Stringer.
-func (n *AsmFunctionDefinition) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *AsmFunctionDefinition) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	if p := n.DeclarationSpecifiers.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.Declarator.Position(); p.IsValid() {
-		return p
-	}
-
-	return n.AsmStatement.Position()
-}
-
 // AsmIndex represents data reduced by production:
 //
 //	AsmIndex:
@@ -2061,7 +2031,6 @@ type ExternalDeclarationCase int
 const (
 	ExternalDeclarationFuncDef ExternalDeclarationCase = iota
 	ExternalDeclarationDecl
-	ExternalDeclarationAsm
 	ExternalDeclarationAsmStmt
 	ExternalDeclarationEmpty
 )
@@ -2073,8 +2042,6 @@ func (n ExternalDeclarationCase) String() string {
 		return "ExternalDeclarationFuncDef"
 	case ExternalDeclarationDecl:
 		return "ExternalDeclarationDecl"
-	case ExternalDeclarationAsm:
-		return "ExternalDeclarationAsm"
 	case ExternalDeclarationAsmStmt:
 		return "ExternalDeclarationAsmStmt"
 	case ExternalDeclarationEmpty:
@@ -2087,18 +2054,16 @@ func (n ExternalDeclarationCase) String() string {
 // ExternalDeclaration represents data reduced by productions:
 //
 //	ExternalDeclaration:
-//	        FunctionDefinition     // Case ExternalDeclarationFuncDef
-//	|       Declaration            // Case ExternalDeclarationDecl
-//	|       AsmFunctionDefinition  // Case ExternalDeclarationAsm
-//	|       AsmStatement           // Case ExternalDeclarationAsmStmt
-//	|       ';'                    // Case ExternalDeclarationEmpty
+//	        FunctionDefinition  // Case ExternalDeclarationFuncDef
+//	|       Declaration         // Case ExternalDeclarationDecl
+//	|       AsmStatement        // Case ExternalDeclarationAsmStmt
+//	|       ';'                 // Case ExternalDeclarationEmpty
 type ExternalDeclaration struct {
-	AsmFunctionDefinition *AsmFunctionDefinition
-	AsmStatement          *AsmStatement
-	Case                  ExternalDeclarationCase `PrettyPrint:"stringer,zero"`
-	Declaration           *Declaration
-	FunctionDefinition    *FunctionDefinition
-	Token                 Token
+	AsmStatement       *AsmStatement
+	Case               ExternalDeclarationCase `PrettyPrint:"stringer,zero"`
+	Declaration        *Declaration
+	FunctionDefinition *FunctionDefinition
+	Token              Token
 }
 
 // String implements fmt.Stringer.
@@ -2112,14 +2077,12 @@ func (n *ExternalDeclaration) Position() (r token.Position) {
 
 	switch n.Case {
 	case 2:
-		return n.AsmFunctionDefinition.Position()
-	case 3:
 		return n.AsmStatement.Position()
 	case 1:
 		return n.Declaration.Position()
 	case 0:
 		return n.FunctionDefinition.Position()
-	case 4:
+	case 3:
 		return n.Token.Position()
 	default:
 		panic("internal error")
@@ -2311,9 +2274,10 @@ func (n InitDeclaratorCase) String() string {
 // InitDeclarator represents data reduced by productions:
 //
 //	InitDeclarator:
-//	        Declarator                  // Case InitDeclaratorDecl
-//	|       Declarator '=' Initializer  // Case InitDeclaratorInit
+//	        Declarator Asm                  // Case InitDeclaratorDecl
+//	|       Declarator Asm '=' Initializer  // Case InitDeclaratorInit
 type InitDeclarator struct {
+	Asm         *Asm
 	Case        InitDeclaratorCase `PrettyPrint:"stringer,zero"`
 	Declarator  *Declarator
 	Initializer *Initializer
@@ -2331,9 +2295,17 @@ func (n *InitDeclarator) Position() (r token.Position) {
 
 	switch n.Case {
 	case 0:
-		return n.Declarator.Position()
+		if p := n.Declarator.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Asm.Position()
 	case 1:
 		if p := n.Declarator.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Asm.Position(); p.IsValid() {
 			return p
 		}
 
