@@ -1534,7 +1534,7 @@ func TestParse(t *testing.T) {
 		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
-			f, o, s, n := testParse(t, v.cfg, filepath.Clean("/"+v.dir), v.blacklist)
+			f, o, s, n := testParse(t, v.cfg, "/"+v.dir, v.blacklist)
 			files += f
 			ok += o
 			skip += s
