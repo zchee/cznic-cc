@@ -60,7 +60,8 @@ package cc // import "modernc.org/cc/v4"
 	EXTERN			"extern"
 	FLOAT			"float"
 	FLOAT128		"_Float128"
-	FLOAT16			"__fp16"
+	FLOAT128X		"_Float128x"
+	FLOAT16			"_Float16"
 	FLOAT32			"_Float32"
 	FLOAT32X		"_Float32x"
 	FLOAT64			"_Float64"
@@ -121,9 +122,6 @@ package cc // import "modernc.org/cc/v4"
 
 %precedence	BELOW_ELSE
 %precedence	ELSE
-
-%precedence	BELOW_ATTRIBUTE
-%precedence	ATTRIBUTE
 
 %start TranslationUnit
 
@@ -221,7 +219,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int i = 42; */
 /*yy:case Unary      */ CastExpression:
 				UnaryExpression
-			/*yy:example int i = (int)3.14; */
+			/*yy:example int i = (__attribute__((a)) int)3.14; */
 /*yy:case Cast       */ |	'(' TypeName ')' CastExpression
 
 			/* [0], 6.5.5 Multiplicative operators */
@@ -360,11 +358,12 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.7 Declarations */
 			/*yy:example int i, j __attribute__((a)); */
 			Declaration:
-				DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';' // A1
+				DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 
-			/*yy:field	typedef		bool	*/
-			/*yy:field	typename	bool	*/
-			/*yy:example static int i; */
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
+			/*yy:field	typedef		bool				*/
+			/*yy:field	typename	bool				*/
+			/*yy:example __attribute__((a)) static int i; */
 /*yy:case Storage    */ DeclarationSpecifiers:
 				StorageClassSpecifier DeclarationSpecifiers
 			/*yy:example int i; */
@@ -375,14 +374,13 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Func       */ |	FunctionSpecifier DeclarationSpecifiers
 // 			/*yy:example _Alignas(double) int i; */
 // /*yy:case AlignSpec  */ |	AlignmentSpecifier DeclarationSpecifiers
-// 			/*yy:example int __attribute__((a)) i; */
-// /*yy:case Attribute  */ |	AttributeSpecifier DeclarationSpecifiers
 
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example int i; */
 			InitDeclaratorList:
 				InitDeclarator
-			/*yy:example int i, j; */
-			|	InitDeclaratorList ',' /* AttributeSpecifierList */ InitDeclarator
+			/*yy:example int i, __attribute__((a)) j; */
+			|	InitDeclaratorList ',' InitDeclarator
 
 			/*yy:example register int i asm("r0"); */
 /*yy:case Decl       */ InitDeclarator:
@@ -429,8 +427,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Long       */ |	"long"
 			/*yy:example float i; */
 /*yy:case Float      */ |	"float"
-// 			/*yy:example __fp16 i; */
-// /*yy:case Float16    */ |	"__fp16"
+			/*yy:example _Float16 i; */
+/*yy:case Float16    */ |	"_Float16"
 // 			/*yy:example _Decimal32 i; */
 // /*yy:case Decimal32  */ |	"_Decimal32"
 // 			/*yy:example _Decimal64 i; */
@@ -439,6 +437,8 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case Decimal128 */ |	"_Decimal128"
 			/*yy:example _Float128 i; */
 /*yy:case Float128   */ |	"_Float128"
+			/*yy:example _Float128x i; */
+/*yy:case Float128x   */ |	"_Float128x"
 // 			/*yy:example __float80 i; */
 // /*yy:case Float80    */ |	"__float80"
 			/*yy:example double i; */
@@ -472,22 +472,24 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case Sat        */ |	"_Sat"
 // 			/*yy:example _Accum i; */
 // /*yy:case Accum      */ |	"_Accum"
-// 			/*yy:example _Float32 i; */
-// /*yy:case Float32    */ |	"_Float32"
-// 			/*yy:example _Float64 i; */
-// /*yy:case Float64    */ |	"_Float64"
-// 			/*yy:example _Float32x i; */
-// /*yy:case Float32x    */ |	"_Float32x"
-// 			/*yy:example _Float64x i; */
-// /*yy:case Float64x    */ |	"_Float64x"
+			/*yy:example _Float32 i; */
+/*yy:case Float32    */ |	"_Float32"
+			/*yy:example _Float64 i; */
+/*yy:case Float64    */ |	"_Float64"
+			/*yy:example _Float32x i; */
+/*yy:case Float32x    */ |	"_Float32x"
+			/*yy:example _Float64x i; */
+/*yy:case Float64x    */ |	"_Float64x"
 
 			/* [0], 6.7.2.1 Structure and union specifiers */
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
+			/*yy:field	AttributeSpecifierList2	*AttributeSpecifierList	*/
 			/*yy:field	visible	*/
 			/*yy:example struct s { int i; } __attribute__((a)); */
 /*yy:case Def        */ StructOrUnionSpecifier:
-				StructOrUnion /* AttributeSpecifierList */ IDENTIFIER '{' StructDeclarationList '}' AttributeSpecifierList
-			/*yy:example struct s v; */
-/*yy:case Tag        */ |	StructOrUnion /* AttributeSpecifierList */ IDENTIFIER
+				StructOrUnion IDENTIFIER '{' StructDeclarationList '}'
+			/*yy:example struct __attribute__((a)) s v; */
+/*yy:case Tag        */ |	StructOrUnion IDENTIFIER
 
 			/*yy:example struct { int i; } s; */
 /*yy:case Struct     */ StructOrUnion:
@@ -495,16 +497,18 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example union { int i; double d; } u; */
 /*yy:case Union      */ |	"union"
 		
-			/*yy:example struct{ int i; }; */
+			/*yy:example struct{ __attribute__((a)) int i; }; */
 			StructDeclarationList:
 				StructDeclaration
 			/*yy:example struct{ int i; double d; }; */
 			|	StructDeclarationList StructDeclaration
 		
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example struct{ int i __attribute__((a)); }; */
 			StructDeclaration:
-				SpecifierQualifierList StructDeclaratorList AttributeSpecifierList ';'
+				SpecifierQualifierList StructDeclaratorList ';'
 		
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example struct {int i;};*/
 /*yy:case TypeSpec   */ SpecifierQualifierList:
 				TypeSpecifier SpecifierQualifierList
@@ -512,8 +516,6 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case TypeQual   */ |	TypeQualifier SpecifierQualifierList
 // 			/*yy:example struct {_Alignas(double) int i;};*/
 // /*yy:case AlignSpec  */ |	AlignmentSpecifier SpecifierQualifierList
-// 			/*yy:example struct {__attribute__((a)) int i;};*/
-// /*yy:case Attribute  */ |	AttributeSpecifier SpecifierQualifierList
 
 			/*yy:example struct{ int i; }; */
 			StructDeclaratorList:
@@ -525,15 +527,15 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Decl       */ StructDeclarator:
 				Declarator
 			/*yy:example struct{ int i:3; }; */
-/*yy:case BitField   */ |	Declarator ':' ConstantExpression /* AttributeSpecifierList */
+/*yy:case BitField   */ |	Declarator ':' ConstantExpression
 
 			/* [0], 6.7.2.2 Enumeration specifiers */
 			/*yy:field	visible	*/
 			/*yy:example enum e {a}; */
 /*yy:case Def        */ EnumSpecifier:
-				"enum" /* AttributeSpecifierList */ IDENTIFIER '{' EnumeratorList ',' '}'
+				"enum" IDENTIFIER '{' EnumeratorList ',' '}'
 			/*yy:example enum e i; */
-/*yy:case Tag        */ |	"enum" /* AttributeSpecifierList */ IDENTIFIER
+/*yy:case Tag        */ |	"enum" IDENTIFIER
 
 			/*yy:example enum e {a}; */
 			EnumeratorList:
@@ -544,9 +546,9 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	visible	*/
 			/*yy:example enum e {a}; */
 /*yy:case Ident      */ Enumerator:
-				IDENTIFIER /* AttributeSpecifierList */
+				IDENTIFIER
 			/*yy:example enum e {a = 42}; */
-/*yy:case Expr       */ |	IDENTIFIER /* AttributeSpecifierList */ '=' ConstantExpression
+/*yy:case Expr       */ |	IDENTIFIER '=' ConstantExpression
 
 			/* [2], 6.7.2.4 Atomic type specifiers */
 			/*yy:example    _Atomic(int) i; */
@@ -554,6 +556,7 @@ package cc // import "modernc.org/cc/v4"
 				"_Atomic" '(' TypeName ')'
 
 			/* [0], 6.7.3 Type qualifiers */
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example const int i; */
 /*yy:case Const      */ TypeQualifier:
 				"const"
@@ -576,7 +579,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	visible			*/
 			/*yy:example int *p; */
 			Declarator:
-				Pointer DirectDeclarator /* AttributeSpecifierList */ %prec BELOW_ATTRIBUTE
+				Pointer DirectDeclarator
 
 // 			/* [2], 6.7.5 Alignment specifier */
 // 			/*yy:example _Alignas(double) char c; */
@@ -590,7 +593,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Ident      */ DirectDeclarator:
 				IDENTIFIER
 			/*yy:example int (f); */
-/*yy:case Decl       */ |	'(' /* AttributeSpecifierList */ Declarator ')'
+/*yy:case Decl       */ |	'(' Declarator ')'
 			/*yy:example int i[const 42]; */
 /*yy:case Arr        */ |	DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
 			/*yy:example int i[static const 42]; */
@@ -612,15 +615,11 @@ package cc // import "modernc.org/cc/v4"
 // 			/*yy:example int atexit_b(void (^ _Nonnull)(void)); */
 // /*yy:case Block      */ |	'^' TypeQualifiers
 
-			/*yy:example int * const i; */
+			/*yy:example int * __attribute__((a)) const i; */
 /*yy:case TypeQual   */ TypeQualifiers:
 				TypeQualifier
-// 			/*yy:example int * __attribute__((a)) i; */
-// /*yy:case Attribute  */ |	AttributeSpecifier
 			/*yy:example int * const volatile i; */
 			|	TypeQualifiers TypeQualifier
-// 			/*yy:example int * __attribute__((a)) __attribute__((b)) i; */
-// 			|	TypeQualifiers AttributeSpecifier
 
 			/*yy:example int f(int i) {} */
 /*yy:case List       */ ParameterTypeList:
@@ -634,9 +633,10 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int f(int i, int j) {} */
 			|	ParameterList ',' ParameterDeclaration
 
-			/*yy:example int f(int i) {} */
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
+			/*yy:example int f(int i __attribute__((a))) {} */
 /*yy:case Decl       */ ParameterDeclaration:
-				DeclarationSpecifiers Declarator /* AttributeSpecifierList */
+				DeclarationSpecifiers Declarator
 			/*yy:example int f(int*) {} */
 /*yy:case Abstract   */ |	DeclarationSpecifiers AbstractDeclarator
 
@@ -709,7 +709,7 @@ package cc // import "modernc.org/cc/v4"
 				LabeledStatement
 			/*yy:example int f() { { y(); } }*/
 /*yy:case Compound   */ |	CompoundStatement
-			/*yy:example int f() { x(); }*/
+			/*yy:example int f() { __attribute__((a)); }*/
 /*yy:case Expr       */ |	ExpressionStatement
 			/*yy:example int f() { if(x) y(); }*/
 /*yy:case Selection  */ |	SelectionStatement
@@ -723,7 +723,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.8.1 Labeled statements */
 			/*yy:example int f() { L: goto L; } */
 /*yy:case Label      */ LabeledStatement:
-				IDENTIFIER ':' /* AttributeSpecifierList */ Statement
+				IDENTIFIER ':' Statement
 			/*yy:example int f() { switch(i) case 42: x(); } */
 /*yy:case CaseLabel  */ |	"case" ConstantExpression ':' Statement
 // 			/*yy:example int f() { switch(i) case 42 ... 56: x(); } */
@@ -751,9 +751,11 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case FuncDef    */ |	DeclarationSpecifiers Declarator CompoundStatement
 
 			/* [0], 6.8.3 Expression and null statements */
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
+			/*yy:field	declarationSpecifiers	*DeclarationSpecifiers	*/
 			/*yy:example int f() { g(); }*/
 			ExpressionStatement:
-				Expression /* AttributeSpecifierList */ ';'
+				Expression ';'
 
 			/* [0], 6.8.4 Selection statements */
 			/*yy:example int f() { if(x) y(); } */
@@ -839,9 +841,9 @@ package cc // import "modernc.org/cc/v4"
 			Asm:
 				"asm" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
  
-			/*yy:example void f() { asm("nop") __attribute__((a)); } */
+			/*yy:example void f() { asm("nop"); } */
 			AsmStatement:
-				Asm AttributeSpecifierList ';'
+				Asm ';'
 
 			/*yy:example asm volatile ("nop"); */
 /*yy:case Volatile   */ AsmQualifier:
@@ -884,7 +886,6 @@ package cc // import "modernc.org/cc/v4"
 
 			/*yy:example int i __attribute__((a)); */
 			AttributeSpecifierList:
-				AttributeSpecifier %prec BELOW_ATTRIBUTE
+				AttributeSpecifier
 			/*yy:example int i __attribute__((a)) __attribute__((b)); */
 			|	AttributeSpecifierList AttributeSpecifier
-

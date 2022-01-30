@@ -15,7 +15,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"modernc.org/mathutil"
 	"modernc.org/strutil"
+	mtoken "modernc.org/token"
 )
 
 var (
@@ -396,4 +398,49 @@ func extractPos(s string) (p token.Position, ok bool) {
 	}
 
 	return token.Position{Filename: prefix + a[0], Line: line, Column: col}, true
+}
+
+func findPosition(n Node) (r mtoken.Position) {
+	var out Node
+	var depth int
+	findNode("Token", n, mathutil.MaxInt, &out, &depth)
+	if x, ok := out.(Token); ok {
+		return x.Position()
+	}
+
+	return r
+}
+
+func findNode(typ string, n Node, depth int, out *Node, pdepth *int) {
+	if depth >= *pdepth {
+		return
+	}
+
+	v := reflect.ValueOf(n)
+	if v.Kind() != reflect.Ptr {
+		return
+	}
+
+	elem := v.Elem()
+	if elem.Kind() != reflect.Struct {
+		return
+	}
+
+	t := reflect.TypeOf(elem.Interface())
+	if t.Name() == typ {
+		*pdepth = depth
+		*out = n
+		return
+	}
+
+	for i := 0; i < elem.NumField(); i++ {
+		fld := t.Field(i)
+		if nm := fld.Name[0]; nm < 'A' || nm > 'Z' {
+			continue
+		}
+
+		if x, ok := elem.FieldByIndex([]int{i}).Interface().(Node); ok {
+			findNode(typ, x, depth+1, out, pdepth)
+		}
+	}
 }

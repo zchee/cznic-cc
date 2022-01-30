@@ -36,7 +36,7 @@ type tokCh int
 
 // Values of Token.Rune representing non-character categories.
 const (
-	_ tokCh = iota + unicodePrivateAreaFirst - 1
+	_ tokCh = iota + unicodePrivateAreaFirst
 
 	ACCUM                  // _Accum
 	ADDASSIGN              // +=
@@ -75,6 +75,7 @@ const (
 	EXTERN                 // extern
 	FLOAT                  // float
 	FLOAT128               // _Float128
+	FLOAT128X              // _Float128x
 	FLOAT16                // __fp16
 	FLOAT32                // _Float32
 	FLOAT32X               // _Float32x
