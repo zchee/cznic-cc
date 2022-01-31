@@ -1518,6 +1518,7 @@ func TestParse(t *testing.T) {
 		blacklistGame["regex-redux-5.c"] = struct{}{} // include file not found: <pcre2.h>
 	case "openbsd/amd64":
 		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
+		blacklistGame["binary-trees.c"] = struct{}{}    // u_short undefined.
 		blacklistGame["mandelbrot-7.c"] = struct{}{}    // include file not found: <omp.h>
 		blacklistGame["pidigits-6.c"] = struct{}{}      // include file not found: <threads.h>
 		blacklistGame["regex-redux-3.c"] = struct{}{}   // include file not found: <omp.h>
