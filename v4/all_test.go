@@ -51,6 +51,10 @@ typedef void *__builtin_va_list;
 #define __builtin_va_arg(va, type) (*(type*)__builtin_va_arg_sink(0, va))
 void *__builtin_va_arg_sink(int, ...);
 #endif
+
+#ifdef __clang__
+#define __builtin_convertvector(src, type) (*(type*)&src)
+#endif
 `
 
 	oTrace = flag.Bool("trc", false, "Print tested paths.")
@@ -1493,8 +1497,11 @@ func TestParse(t *testing.T) {
 		blacklistGame["nbody-9.c"] = struct{}{}
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64", "linux/386":
+	case "freebsd/386", "darwin/arm64", "freebsd/amd64", "linux/386":
 		blacklistCompCert["aes.c"] = struct{}{} // include file not found: "../endian.h"
+	case "darwin/amd64":
+		blacklistCompCert["aes.c"] = struct{}{} // include file not found: "../endian.h"
+		blacklistGame["spectral-norm-4.c"] = struct{}{} // no cpu_set_t on dariwn.
 	case "windows/amd64", "windows/386":
 		blacklistCompCert["aes.c"] = struct{}{}       // include file not found: "../endian.h"
 		blacklistCxgo["inet.c"] = struct{}{}          // include file not found: <arpa/inet.h>

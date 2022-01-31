@@ -383,6 +383,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int i, __attribute__((a)) j; */
 			|	InitDeclaratorList ',' InitDeclarator
 
+			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example register int i asm("r0"); */
 /*yy:case Decl       */ InitDeclarator:
 				Declarator Asm
@@ -615,8 +616,8 @@ package cc // import "modernc.org/cc/v4"
 				'*' TypeQualifiers
 			/*yy:example int **p; */
 /*yy:case Ptr        */ |	'*' TypeQualifiers Pointer
-// 			/*yy:example int atexit_b(void (^ _Nonnull)(void)); */
-// /*yy:case Block      */ |	'^' TypeQualifiers
+			/*yy:example int atexit_b(void (^ _Nonnull)(void)); */
+/*yy:case Block      */ |	'^' TypeQualifiers
 
 			/*yy:example int * __attribute__((a)) const i; */
 /*yy:case TypeQual   */ TypeQualifiers:

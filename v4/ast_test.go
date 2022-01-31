@@ -11,7 +11,7 @@ import (
 )
 
 func ExampleAbstractDeclarator_ptr() {
-	fmt.Println(exampleAST(168, "void f(int*);"))
+	fmt.Println(exampleAST(169, "void f(int*);"))
 	// Output:
 	// &cc.AbstractDeclarator{
 	// · Case: AbstractDeclaratorPtr,
@@ -23,7 +23,7 @@ func ExampleAbstractDeclarator_ptr() {
 }
 
 func ExampleAbstractDeclarator_decl() {
-	fmt.Println(exampleAST(169, "void f(int());"))
+	fmt.Println(exampleAST(170, "void f(int());"))
 	// Output:
 	// &cc.AbstractDeclarator{
 	// · Case: AbstractDeclaratorDecl,
@@ -416,7 +416,7 @@ func ExampleArgumentExpressionList_case1() {
 }
 
 func ExampleAsm_case0() {
-	fmt.Println(exampleAST(228, "asm(\"nop\");"))
+	fmt.Println(exampleAST(229, "asm(\"nop\");"))
 	// Output:
 	// &cc.Asm{
 	// · Token: example.c:1:1: ASM "asm",
@@ -427,7 +427,7 @@ func ExampleAsm_case0() {
 }
 
 func ExampleAsmArgList_case0() {
-	fmt.Println(exampleAST(226, "asm(\"nop\": a);"))
+	fmt.Println(exampleAST(227, "asm(\"nop\": a);"))
 	// Output:
 	// &cc.AsmArgList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
@@ -486,7 +486,7 @@ func ExampleAsmArgList_case0() {
 }
 
 func ExampleAsmArgList_case1() {
-	fmt.Println(exampleAST(227, "asm(\"nop\": a : b);"))
+	fmt.Println(exampleAST(228, "asm(\"nop\": a : b);"))
 	// Output:
 	// &cc.AsmArgList{
 	// · AsmArgList: &cc.AsmArgList{
@@ -599,7 +599,7 @@ func ExampleAsmArgList_case1() {
 }
 
 func ExampleAsmExpressionList_case0() {
-	fmt.Println(exampleAST(224, "asm(\"nop\": a);"))
+	fmt.Println(exampleAST(225, "asm(\"nop\": a);"))
 	// Output:
 	// &cc.AsmExpressionList{
 	// · AssignmentExpression: &cc.AssignmentExpression{
@@ -655,7 +655,7 @@ func ExampleAsmExpressionList_case0() {
 }
 
 func ExampleAsmExpressionList_case1() {
-	fmt.Println(exampleAST(225, "asm(\"nop\": a, b);"))
+	fmt.Println(exampleAST(226, "asm(\"nop\": a, b);"))
 	// Output:
 	// &cc.AsmExpressionList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
@@ -763,7 +763,7 @@ func ExampleAsmExpressionList_case1() {
 }
 
 func ExampleAsmIndex_case0() {
-	fmt.Println(exampleAST(223, "asm(\"nop\": [a] b);"))
+	fmt.Println(exampleAST(224, "asm(\"nop\": [a] b);"))
 	// Output:
 	// &cc.AsmIndex{
 	// · Expression: &cc.Expression{
@@ -823,7 +823,7 @@ func ExampleAsmIndex_case0() {
 }
 
 func ExampleAsmQualifier_volatile() {
-	fmt.Println(exampleAST(230, "asm volatile (\"nop\");"))
+	fmt.Println(exampleAST(231, "asm volatile (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierVolatile,
@@ -832,7 +832,7 @@ func ExampleAsmQualifier_volatile() {
 }
 
 func ExampleAsmQualifier_inline() {
-	fmt.Println(exampleAST(231, "asm inline (\"nop\");"))
+	fmt.Println(exampleAST(232, "asm inline (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierInline,
@@ -841,7 +841,7 @@ func ExampleAsmQualifier_inline() {
 }
 
 func ExampleAsmQualifier_goto() {
-	fmt.Println(exampleAST(232, "asm goto (\"nop\");"))
+	fmt.Println(exampleAST(233, "asm goto (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierGoto,
@@ -850,7 +850,7 @@ func ExampleAsmQualifier_goto() {
 }
 
 func ExampleAsmQualifierList_case0() {
-	fmt.Println(exampleAST(233, "asm inline (\"nop\");"))
+	fmt.Println(exampleAST(234, "asm inline (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
@@ -861,7 +861,7 @@ func ExampleAsmQualifierList_case0() {
 }
 
 func ExampleAsmQualifierList_case1() {
-	fmt.Println(exampleAST(234, "asm inline volatile (\"nop\");"))
+	fmt.Println(exampleAST(235, "asm inline volatile (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
@@ -878,7 +878,7 @@ func ExampleAsmQualifierList_case1() {
 }
 
 func ExampleAsmStatement_case0() {
-	fmt.Println(exampleAST(229, "void f() { asm(\"nop\"); }"))
+	fmt.Println(exampleAST(230, "void f() { asm(\"nop\"); }"))
 	// Output:
 	// &cc.AsmStatement{
 	// · Asm: &cc.Asm{
@@ -1713,7 +1713,7 @@ func ExampleAtomicTypeSpecifier_case0() {
 }
 
 func ExampleAttributeSpecifier_case0() {
-	fmt.Println(exampleAST(240, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(241, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeSpecifier{
 	// · AttributeValueList: &cc.AttributeValueList{
@@ -1731,7 +1731,7 @@ func ExampleAttributeSpecifier_case0() {
 }
 
 func ExampleAttributeSpecifierList_case0() {
-	fmt.Println(exampleAST(241, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(242, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeSpecifierList{
 	// · AttributeSpecifier: &cc.AttributeSpecifier{
@@ -1751,7 +1751,7 @@ func ExampleAttributeSpecifierList_case0() {
 }
 
 func ExampleAttributeSpecifierList_case1() {
-	fmt.Println(exampleAST(242, "int i __attribute__((a)) __attribute__((b));"))
+	fmt.Println(exampleAST(243, "int i __attribute__((a)) __attribute__((b));"))
 	// Output:
 	// &cc.AttributeSpecifierList{
 	// · AttributeSpecifier: &cc.AttributeSpecifier{
@@ -1786,7 +1786,7 @@ func ExampleAttributeSpecifierList_case1() {
 }
 
 func ExampleAttributeValue_ident() {
-	fmt.Println(exampleAST(236, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(237, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeValue{
 	// · Case: AttributeValueIdent,
@@ -1795,7 +1795,7 @@ func ExampleAttributeValue_ident() {
 }
 
 func ExampleAttributeValue_expr() {
-	fmt.Println(exampleAST(237, "int i __attribute__((a(b)));"))
+	fmt.Println(exampleAST(238, "int i __attribute__((a(b)));"))
 	// Output:
 	// &cc.AttributeValue{
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
@@ -1857,7 +1857,7 @@ func ExampleAttributeValue_expr() {
 }
 
 func ExampleAttributeValueList_case0() {
-	fmt.Println(exampleAST(238, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(239, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeValueList{
 	// · AttributeValue: &cc.AttributeValue{
@@ -1868,7 +1868,7 @@ func ExampleAttributeValueList_case0() {
 }
 
 func ExampleAttributeValueList_case1() {
-	fmt.Println(exampleAST(239, "int i __attribute__((a, b));"))
+	fmt.Println(exampleAST(240, "int i __attribute__((a, b));"))
 	// Output:
 	// &cc.AttributeValueList{
 	// · AttributeValue: &cc.AttributeValue{
@@ -1886,7 +1886,7 @@ func ExampleAttributeValueList_case1() {
 }
 
 func ExampleBlockItem_decl() {
-	fmt.Println(exampleAST(199, "int f() { int i; }"))
+	fmt.Println(exampleAST(200, "int f() { int i; }"))
 	// Output:
 	// &cc.BlockItem{
 	// · Case: BlockItemDecl,
@@ -1915,7 +1915,7 @@ func ExampleBlockItem_decl() {
 }
 
 func ExampleBlockItem_stmt() {
-	fmt.Println(exampleAST(200, "int f() { g(); }"))
+	fmt.Println(exampleAST(201, "int f() { g(); }"))
 	// Output:
 	// &cc.BlockItem{
 	// · Case: BlockItemStmt,
@@ -1985,7 +1985,7 @@ func ExampleBlockItem_stmt() {
 }
 
 func ExampleBlockItem_funcDef() {
-	fmt.Println(exampleAST(201, "int f() { int g() {} }"))
+	fmt.Println(exampleAST(202, "int f() { int g() {} }"))
 	// Output:
 	// &cc.BlockItem{
 	// · Case: BlockItemFuncDef,
@@ -2015,7 +2015,7 @@ func ExampleBlockItem_funcDef() {
 }
 
 func ExampleBlockItemList_case0() {
-	fmt.Println(exampleAST(197, "int f() { int i; }"))
+	fmt.Println(exampleAST(198, "int f() { int i; }"))
 	// Output:
 	// &cc.BlockItemList{
 	// · BlockItem: &cc.BlockItem{
@@ -2046,7 +2046,7 @@ func ExampleBlockItemList_case0() {
 }
 
 func ExampleBlockItemList_case1() {
-	fmt.Println(exampleAST(198, "int f() { int i; double j; }"))
+	fmt.Println(exampleAST(199, "int f() { int i; double j; }"))
 	// Output:
 	// &cc.BlockItemList{
 	// · BlockItem: &cc.BlockItem{
@@ -2174,7 +2174,7 @@ func ExampleCastExpression_cast() {
 }
 
 func ExampleCompoundStatement_case0() {
-	fmt.Println(exampleAST(196, "int f() { __label__ L; int i; }"))
+	fmt.Println(exampleAST(197, "int f() { __label__ L; int i; }"))
 	// Output:
 	// &cc.CompoundStatement{
 	// · BlockItemList: &cc.BlockItemList{
@@ -2473,21 +2473,6 @@ func ExampleDeclaration_case0() {
 	fmt.Println(exampleAST(82, "int i, j __attribute__((a));"))
 	// Output:
 	// &cc.Declaration{
-	// · AttributeSpecifierList: &cc.AttributeSpecifierList{
-	// · · AttributeSpecifier: &cc.AttributeSpecifier{
-	// · · · AttributeValueList: &cc.AttributeValueList{
-	// · · · · AttributeValue: &cc.AttributeValue{
-	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:25: IDENTIFIER "a",
-	// · · · · },
-	// · · · },
-	// · · · Token: example.c:1:10: ATTRIBUTE "__attribute__",
-	// · · · Token2: example.c:1:23: '(' "(",
-	// · · · Token3: example.c:1:24: '(' "(",
-	// · · · Token4: example.c:1:26: ')' ")",
-	// · · · Token5: example.c:1:27: ')' ")",
-	// · · },
-	// · },
 	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
@@ -2507,6 +2492,21 @@ func ExampleDeclaration_case0() {
 	// · · },
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · AttributeSpecifierList: &cc.AttributeSpecifierList{
+	// · · · · · AttributeSpecifier: &cc.AttributeSpecifier{
+	// · · · · · · AttributeValueList: &cc.AttributeValueList{
+	// · · · · · · · AttributeValue: &cc.AttributeValue{
+	// · · · · · · · · Case: AttributeValueIdent,
+	// · · · · · · · · Token: example.c:1:25: IDENTIFIER "a",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:10: ATTRIBUTE "__attribute__",
+	// · · · · · · Token2: example.c:1:23: '(' "(",
+	// · · · · · · Token3: example.c:1:24: '(' "(",
+	// · · · · · · Token4: example.c:1:26: ')' ")",
+	// · · · · · · Token5: example.c:1:27: ')' ")",
+	// · · · · · },
+	// · · · · },
 	// · · · · Case: InitDeclaratorDecl,
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
@@ -2523,7 +2523,7 @@ func ExampleDeclaration_case0() {
 }
 
 func ExampleDeclarationList_case0() {
-	fmt.Println(exampleAST(221, "int f(i) int i; {}"))
+	fmt.Println(exampleAST(222, "int f(i) int i; {}"))
 	// Output:
 	// &cc.DeclarationList{
 	// · Declaration: &cc.Declaration{
@@ -2551,7 +2551,7 @@ func ExampleDeclarationList_case0() {
 }
 
 func ExampleDeclarationList_case1() {
-	fmt.Println(exampleAST(222, "int f(i, j) int i; int j; {}"))
+	fmt.Println(exampleAST(223, "int f(i, j) int i; int j; {}"))
 	// Output:
 	// &cc.DeclarationList{
 	// · Declaration: &cc.Declaration{
@@ -2704,7 +2704,7 @@ func ExampleDeclarator_case0() {
 }
 
 func ExampleDesignation_case0() {
-	fmt.Println(exampleAST(180, "int a[] = { [42] = 314 };"))
+	fmt.Println(exampleAST(181, "int a[] = { [42] = 314 };"))
 	// Output:
 	// &cc.Designation{
 	// · DesignatorList: &cc.DesignatorList{
@@ -2767,7 +2767,7 @@ func ExampleDesignation_case0() {
 }
 
 func ExampleDesignator_index() {
-	fmt.Println(exampleAST(183, "int a[] = { [42] = 314 };"))
+	fmt.Println(exampleAST(184, "int a[] = { [42] = 314 };"))
 	// Output:
 	// &cc.Designator{
 	// · Case: DesignatorIndex,
@@ -2825,7 +2825,7 @@ func ExampleDesignator_index() {
 }
 
 func ExampleDesignator_field() {
-	fmt.Println(exampleAST(184, "struct t s = { .fld = 314 };"))
+	fmt.Println(exampleAST(185, "struct t s = { .fld = 314 };"))
 	// Output:
 	// &cc.Designator{
 	// · Case: DesignatorField,
@@ -2835,7 +2835,7 @@ func ExampleDesignator_field() {
 }
 
 func ExampleDesignator_field2() {
-	fmt.Println(exampleAST(185, "struct t s = { fld: 314 };"))
+	fmt.Println(exampleAST(186, "struct t s = { fld: 314 };"))
 	// Output:
 	// &cc.Designator{
 	// · Case: DesignatorField2,
@@ -2845,7 +2845,7 @@ func ExampleDesignator_field2() {
 }
 
 func ExampleDesignatorList_case0() {
-	fmt.Println(exampleAST(181, "int a[] = { [42] = 314 };"))
+	fmt.Println(exampleAST(182, "int a[] = { [42] = 314 };"))
 	// Output:
 	// &cc.DesignatorList{
 	// · Designator: &cc.Designator{
@@ -2905,7 +2905,7 @@ func ExampleDesignatorList_case0() {
 }
 
 func ExampleDesignatorList_case1() {
-	fmt.Println(exampleAST(182, "int a[100][] = { [42][12] = 314 };"))
+	fmt.Println(exampleAST(183, "int a[100][] = { [42][12] = 314 };"))
 	// Output:
 	// &cc.DesignatorList{
 	// · Designator: &cc.Designator{
@@ -3020,7 +3020,7 @@ func ExampleDesignatorList_case1() {
 }
 
 func ExampleDirectAbstractDeclarator_decl() {
-	fmt.Println(exampleAST(170, "void f(int(*));"))
+	fmt.Println(exampleAST(171, "void f(int(*));"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · AbstractDeclarator: &cc.AbstractDeclarator{
@@ -3037,7 +3037,7 @@ func ExampleDirectAbstractDeclarator_decl() {
 }
 
 func ExampleDirectAbstractDeclarator_arr() {
-	fmt.Println(exampleAST(171, "void f(int[const 42]);"))
+	fmt.Println(exampleAST(172, "void f(int[const 42]);"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · AssignmentExpression: &cc.AssignmentExpression{
@@ -3103,7 +3103,7 @@ func ExampleDirectAbstractDeclarator_arr() {
 }
 
 func ExampleDirectAbstractDeclarator_staticArr() {
-	fmt.Println(exampleAST(172, "void f(int[static const 42]);"))
+	fmt.Println(exampleAST(173, "void f(int[static const 42]);"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · AssignmentExpression: &cc.AssignmentExpression{
@@ -3170,7 +3170,7 @@ func ExampleDirectAbstractDeclarator_staticArr() {
 }
 
 func ExampleDirectAbstractDeclarator_arrStatic() {
-	fmt.Println(exampleAST(173, "void f(int[const static 42]);"))
+	fmt.Println(exampleAST(174, "void f(int[const static 42]);"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · AssignmentExpression: &cc.AssignmentExpression{
@@ -3237,7 +3237,7 @@ func ExampleDirectAbstractDeclarator_arrStatic() {
 }
 
 func ExampleDirectAbstractDeclarator_arrStar() {
-	fmt.Println(exampleAST(174, "void f(int[*]);"))
+	fmt.Println(exampleAST(175, "void f(int[*]);"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · Case: DirectAbstractDeclaratorArrStar,
@@ -3248,7 +3248,7 @@ func ExampleDirectAbstractDeclarator_arrStar() {
 }
 
 func ExampleDirectAbstractDeclarator_func() {
-	fmt.Println(exampleAST(175, "void f(int(char));"))
+	fmt.Println(exampleAST(176, "void f(int(char));"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
 	// · Case: DirectAbstractDeclaratorFunc,
@@ -4156,7 +4156,7 @@ func ExampleExpression_comma() {
 }
 
 func ExampleExpressionStatement_case0() {
-	fmt.Println(exampleAST(202, "int f() { g(); }"))
+	fmt.Println(exampleAST(203, "int f() { g(); }"))
 	// Output:
 	// &cc.ExpressionStatement{
 	// · Expression: &cc.Expression{
@@ -4220,7 +4220,7 @@ func ExampleExpressionStatement_case0() {
 }
 
 func ExampleExternalDeclaration_funcDef() {
-	fmt.Println(exampleAST(216, "int f() {}"))
+	fmt.Println(exampleAST(217, "int f() {}"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · Case: ExternalDeclarationFuncDef,
@@ -4252,7 +4252,7 @@ func ExampleExternalDeclaration_funcDef() {
 }
 
 func ExampleExternalDeclaration_decl() {
-	fmt.Println(exampleAST(217, "register int i asm(\"r0\");"))
+	fmt.Println(exampleAST(218, "register int i asm(\"r0\");"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · Case: ExternalDeclarationDecl,
@@ -4294,7 +4294,7 @@ func ExampleExternalDeclaration_decl() {
 }
 
 func ExampleExternalDeclaration_asmStmt() {
-	fmt.Println(exampleAST(218, "asm(\"nop\");"))
+	fmt.Println(exampleAST(219, "asm(\"nop\");"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · AsmStatement: &cc.AsmStatement{
@@ -4311,7 +4311,7 @@ func ExampleExternalDeclaration_asmStmt() {
 }
 
 func ExampleExternalDeclaration_empty() {
-	fmt.Println(exampleAST(219, ";"))
+	fmt.Println(exampleAST(220, ";"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · Case: ExternalDeclarationDecl,
@@ -4322,7 +4322,7 @@ func ExampleExternalDeclaration_empty() {
 }
 
 func ExampleFunctionDefinition_case0() {
-	fmt.Println(exampleAST(220, "int f() {}"))
+	fmt.Println(exampleAST(221, "int f() {}"))
 	// Output:
 	// &cc.FunctionDefinition{
 	// · CompoundStatement: &cc.CompoundStatement{
@@ -4369,7 +4369,7 @@ func ExampleFunctionSpecifier_noreturn() {
 }
 
 func ExampleIdentifierList_case0() {
-	fmt.Println(exampleAST(165, "int f(i) int i; {}"))
+	fmt.Println(exampleAST(166, "int f(i) int i; {}"))
 	// Output:
 	// &cc.IdentifierList{
 	// · Token2: example.c:1:7: IDENTIFIER "i",
@@ -4377,7 +4377,7 @@ func ExampleIdentifierList_case0() {
 }
 
 func ExampleIdentifierList_case1() {
-	fmt.Println(exampleAST(166, "int f(i, j) int i, j; {}"))
+	fmt.Println(exampleAST(167, "int f(i, j) int i, j; {}"))
 	// Output:
 	// &cc.IdentifierList{
 	// · IdentifierList: &cc.IdentifierList{
@@ -4663,7 +4663,7 @@ func ExampleInitDeclaratorList_case1() {
 }
 
 func ExampleInitializer_expr() {
-	fmt.Println(exampleAST(176, "int i = x;"))
+	fmt.Println(exampleAST(177, "int i = x;"))
 	// Output:
 	// &cc.Initializer{
 	// · AssignmentExpression: &cc.AssignmentExpression{
@@ -4720,7 +4720,7 @@ func ExampleInitializer_expr() {
 }
 
 func ExampleInitializer_initList() {
-	fmt.Println(exampleAST(177, "int i[] = { x };"))
+	fmt.Println(exampleAST(178, "int i[] = { x };"))
 	// Output:
 	// &cc.Initializer{
 	// · Case: InitializerExpr,
@@ -4784,7 +4784,7 @@ func ExampleInitializer_initList() {
 }
 
 func ExampleInitializerList_case0() {
-	fmt.Println(exampleAST(178, "int i[] = { [10] = x };"))
+	fmt.Println(exampleAST(179, "int i[] = { [10] = x };"))
 	// Output:
 	// &cc.InitializerList{
 	// · Designation: &cc.Designation{
@@ -4901,7 +4901,7 @@ func ExampleInitializerList_case0() {
 }
 
 func ExampleInitializerList_case1() {
-	fmt.Println(exampleAST(179, "int i[] = { [10] = x, [20] = y };"))
+	fmt.Println(exampleAST(180, "int i[] = { [10] = x, [20] = y };"))
 	// Output:
 	// &cc.InitializerList{
 	// · Designation: &cc.Designation{
@@ -5131,7 +5131,7 @@ func ExampleInitializerList_case1() {
 }
 
 func ExampleIterationStatement_while() {
-	fmt.Println(exampleAST(206, "int f() { while(x) y(); }"))
+	fmt.Println(exampleAST(207, "int f() { while(x) y(); }"))
 	// Output:
 	// &cc.IterationStatement{
 	// · Case: IterationStatementWhile,
@@ -5255,7 +5255,7 @@ func ExampleIterationStatement_while() {
 }
 
 func ExampleIterationStatement_do() {
-	fmt.Println(exampleAST(207, "int f() { do x(); while(y); }"))
+	fmt.Println(exampleAST(208, "int f() { do x(); while(y); }"))
 	// Output:
 	// &cc.IterationStatement{
 	// · Case: IterationStatementDo,
@@ -5381,7 +5381,7 @@ func ExampleIterationStatement_do() {
 }
 
 func ExampleIterationStatement_for() {
-	fmt.Println(exampleAST(208, "int f() { for( i = 0; i < 10; i++) x(); }"))
+	fmt.Println(exampleAST(209, "int f() { for( i = 0; i < 10; i++) x(); }"))
 	// Output:
 	// &cc.IterationStatement{
 	// · Case: IterationStatementFor,
@@ -5653,7 +5653,7 @@ func ExampleIterationStatement_for() {
 }
 
 func ExampleIterationStatement_forDecl() {
-	fmt.Println(exampleAST(209, "int f() { for( int i = 0; i < 10; i++) x(); }"))
+	fmt.Println(exampleAST(210, "int f() { for( int i = 0; i < 10; i++) x(); }"))
 	// Output:
 	// &cc.IterationStatement{
 	// · Case: IterationStatementForDecl,
@@ -5933,7 +5933,7 @@ func ExampleIterationStatement_forDecl() {
 }
 
 func ExampleJumpStatement_goto() {
-	fmt.Println(exampleAST(210, "int f() { L: goto L; }"))
+	fmt.Println(exampleAST(211, "int f() { L: goto L; }"))
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementGoto,
@@ -5944,7 +5944,7 @@ func ExampleJumpStatement_goto() {
 }
 
 func ExampleJumpStatement_continue() {
-	fmt.Println(exampleAST(211, "int f() { for(;;) if (i) continue; }"))
+	fmt.Println(exampleAST(212, "int f() { for(;;) if (i) continue; }"))
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementContinue,
@@ -5954,7 +5954,7 @@ func ExampleJumpStatement_continue() {
 }
 
 func ExampleJumpStatement_break() {
-	fmt.Println(exampleAST(212, "int f() { for(;;) if (i) break; }"))
+	fmt.Println(exampleAST(213, "int f() { for(;;) if (i) break; }"))
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementBreak,
@@ -5964,7 +5964,7 @@ func ExampleJumpStatement_break() {
 }
 
 func ExampleJumpStatement_return() {
-	fmt.Println(exampleAST(213, "int f() { if (i) return x; }"))
+	fmt.Println(exampleAST(214, "int f() { if (i) return x; }"))
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementReturn,
@@ -6025,7 +6025,7 @@ func ExampleJumpStatement_return() {
 }
 
 func ExampleLabelDeclaration_case0() {
-	fmt.Println(exampleAST(235, "int f() { __label__ L, M; L: x(); M: y(); }"))
+	fmt.Println(exampleAST(236, "int f() { __label__ L, M; L: x(); M: y(); }"))
 	// Output:
 	// &cc.LabelDeclaration{
 	// · IdentifierList: &cc.IdentifierList{
@@ -6041,7 +6041,7 @@ func ExampleLabelDeclaration_case0() {
 }
 
 func ExampleLabeledStatement_label() {
-	fmt.Println(exampleAST(193, "int f() { L: goto L; }"))
+	fmt.Println(exampleAST(194, "int f() { L: goto L; }"))
 	// Output:
 	// &cc.LabeledStatement{
 	// · Case: LabeledStatementLabel,
@@ -6060,7 +6060,7 @@ func ExampleLabeledStatement_label() {
 }
 
 func ExampleLabeledStatement_caseLabel() {
-	fmt.Println(exampleAST(194, "int f() { switch(i) case 42: x(); }"))
+	fmt.Println(exampleAST(195, "int f() { switch(i) case 42: x(); }"))
 	// Output:
 	// &cc.LabeledStatement{
 	// · Case: LabeledStatementCaseLabel,
@@ -6180,7 +6180,7 @@ func ExampleLabeledStatement_caseLabel() {
 }
 
 func ExampleLabeledStatement_default() {
-	fmt.Println(exampleAST(195, "int f() { switch(i) default: x(); }"))
+	fmt.Println(exampleAST(196, "int f() { switch(i) default: x(); }"))
 	// Output:
 	// &cc.LabeledStatement{
 	// · Case: LabeledStatementDefault,
@@ -6658,7 +6658,7 @@ func ExampleMultiplicativeExpression_mod() {
 }
 
 func ExampleParameterDeclaration_decl() {
-	fmt.Println(exampleAST(163, "int f(int i __attribute__((a))) {}"))
+	fmt.Println(exampleAST(164, "int f(int i __attribute__((a))) {}"))
 	// Output:
 	// &cc.ParameterDeclaration{
 	// · AttributeSpecifierList: &cc.AttributeSpecifierList{
@@ -6694,7 +6694,7 @@ func ExampleParameterDeclaration_decl() {
 }
 
 func ExampleParameterDeclaration_abstract() {
-	fmt.Println(exampleAST(164, "int f(int*) {}"))
+	fmt.Println(exampleAST(165, "int f(int*) {}"))
 	// Output:
 	// &cc.ParameterDeclaration{
 	// · AbstractDeclarator: &cc.AbstractDeclarator{
@@ -6716,7 +6716,7 @@ func ExampleParameterDeclaration_abstract() {
 }
 
 func ExampleParameterList_case0() {
-	fmt.Println(exampleAST(161, "int f(int i) {}"))
+	fmt.Println(exampleAST(162, "int f(int i) {}"))
 	// Output:
 	// &cc.ParameterList{
 	// · ParameterDeclaration: &cc.ParameterDeclaration{
@@ -6739,7 +6739,7 @@ func ExampleParameterList_case0() {
 }
 
 func ExampleParameterList_case1() {
-	fmt.Println(exampleAST(162, "int f(int i, int j) {}"))
+	fmt.Println(exampleAST(163, "int f(int i, int j) {}"))
 	// Output:
 	// &cc.ParameterList{
 	// · ParameterDeclaration: &cc.ParameterDeclaration{
@@ -6781,7 +6781,7 @@ func ExampleParameterList_case1() {
 }
 
 func ExampleParameterTypeList_list() {
-	fmt.Println(exampleAST(159, "int f(int i) {}"))
+	fmt.Println(exampleAST(160, "int f(int i) {}"))
 	// Output:
 	// &cc.ParameterTypeList{
 	// · Case: ParameterTypeListList,
@@ -6807,7 +6807,7 @@ func ExampleParameterTypeList_list() {
 }
 
 func ExampleParameterTypeList_var() {
-	fmt.Println(exampleAST(160, "int f(int i, ...) {}"))
+	fmt.Println(exampleAST(161, "int f(int i, ...) {}"))
 	// Output:
 	// &cc.ParameterTypeList{
 	// · Case: ParameterTypeListVar,
@@ -6853,6 +6853,15 @@ func ExamplePointer_ptr() {
 	// · · Token: example.c:1:6: '*' "*",
 	// · },
 	// · Token: example.c:1:5: '*' "*",
+	// }
+}
+
+func ExamplePointer_block() {
+	fmt.Println(exampleAST(157, "int atexit_b(void (^ _Nonnull)(void));"))
+	// Output:
+	// &cc.Pointer{
+	// · Case: PointerBlock,
+	// · Token: example.c:1:20: '^' "^",
 	// }
 }
 
@@ -7642,7 +7651,7 @@ func ExampleRelationalExpression_geq() {
 }
 
 func ExampleSelectionStatement_if() {
-	fmt.Println(exampleAST(203, "int f() { if(x) y(); }"))
+	fmt.Println(exampleAST(204, "int f() { if(x) y(); }"))
 	// Output:
 	// &cc.SelectionStatement{
 	// · Case: SelectionStatementIf,
@@ -7766,7 +7775,7 @@ func ExampleSelectionStatement_if() {
 }
 
 func ExampleSelectionStatement_ifElse() {
-	fmt.Println(exampleAST(204, "int f() { if(x) y(); else z(); }"))
+	fmt.Println(exampleAST(205, "int f() { if(x) y(); else z(); }"))
 	// Output:
 	// &cc.SelectionStatement{
 	// · Case: SelectionStatementIfElse,
@@ -7953,7 +7962,7 @@ func ExampleSelectionStatement_ifElse() {
 }
 
 func ExampleSelectionStatement_switch() {
-	fmt.Println(exampleAST(205, "int f() { switch(i) case 42: x(); }"))
+	fmt.Println(exampleAST(206, "int f() { switch(i) case 42: x(); }"))
 	// Output:
 	// &cc.SelectionStatement{
 	// · Case: SelectionStatementSwitch,
@@ -8291,7 +8300,7 @@ func ExampleSpecifierQualifierList_typeQual() {
 }
 
 func ExampleStatement_labeled() {
-	fmt.Println(exampleAST(186, "int f() { L: x(); }"))
+	fmt.Println(exampleAST(187, "int f() { L: x(); }"))
 	// Output:
 	// &cc.Statement{
 	// · Case: StatementLabeled,
@@ -8366,7 +8375,7 @@ func ExampleStatement_labeled() {
 }
 
 func ExampleStatement_compound() {
-	fmt.Println(exampleAST(187, "int f() { { y(); } }"))
+	fmt.Println(exampleAST(188, "int f() { { y(); } }"))
 	// Output:
 	// &cc.Statement{
 	// · Case: StatementCompound,
@@ -8445,7 +8454,7 @@ func ExampleStatement_compound() {
 }
 
 func ExampleStatement_expr() {
-	fmt.Println(exampleAST(188, "int f() { __attribute__((a)); }"))
+	fmt.Println(exampleAST(189, "int f() { __attribute__((a)); }"))
 	// Output:
 	// &cc.Statement{
 	// · Case: StatementExpr,
@@ -8471,7 +8480,7 @@ func ExampleStatement_expr() {
 }
 
 func ExampleStatement_selection() {
-	fmt.Println(exampleAST(189, "int f() { if(x) y(); }"))
+	fmt.Println(exampleAST(190, "int f() { if(x) y(); }"))
 	// Output:
 	// &cc.Statement{
 	// · Case: StatementSelection,
@@ -8598,7 +8607,7 @@ func ExampleStatement_selection() {
 }
 
 func ExampleStatement_iteration() {
-	fmt.Println(exampleAST(190, "int f() { for(;;) x(); }"))
+	fmt.Println(exampleAST(191, "int f() { for(;;) x(); }"))
 	// Output:
 	// &cc.Statement{
 	// · Case: StatementIteration,
@@ -8676,7 +8685,7 @@ func ExampleStatement_iteration() {
 }
 
 func ExampleStatement_jump() {
-	fmt.Println(exampleAST(191, "int f() { return x; }"))
+	fmt.Println(exampleAST(192, "int f() { return x; }"))
 	// Output:
 	// &cc.Statement{
 	// · Case: StatementJump,
@@ -8740,7 +8749,7 @@ func ExampleStatement_jump() {
 }
 
 func ExampleStatement_asm() {
-	fmt.Println(exampleAST(192, "int f() { asm(\"nop\"); }"))
+	fmt.Println(exampleAST(193, "int f() { asm(\"nop\"); }"))
 	// Output:
 	// &cc.Statement{
 	// · AsmStatement: &cc.AsmStatement{
@@ -9163,7 +9172,7 @@ func ExampleStructOrUnionSpecifier_tag() {
 }
 
 func ExampleTranslationUnit_case0() {
-	fmt.Println(exampleAST(214, "int i;"))
+	fmt.Println(exampleAST(215, "int i;"))
 	// Output:
 	// &cc.TranslationUnit{
 	// · ExternalDeclaration: &cc.ExternalDeclaration{
@@ -9194,7 +9203,7 @@ func ExampleTranslationUnit_case0() {
 }
 
 func ExampleTranslationUnit_case1() {
-	fmt.Println(exampleAST(215, "int i; int j;"))
+	fmt.Println(exampleAST(216, "int i; int j;"))
 	// Output:
 	// &cc.TranslationUnit{
 	// · ExternalDeclaration: &cc.ExternalDeclaration{
@@ -9251,7 +9260,7 @@ func ExampleTranslationUnit_case1() {
 }
 
 func ExampleTypeName_case0() {
-	fmt.Println(exampleAST(167, "int i = (int)x;"))
+	fmt.Println(exampleAST(168, "int i = (int)x;"))
 	// Output:
 	// &cc.TypeName{
 	// · SpecifierQualifierList: &cc.SpecifierQualifierList{
@@ -9301,7 +9310,7 @@ func ExampleTypeQualifier_atomic() {
 }
 
 func ExampleTypeQualifiers_typeQual() {
-	fmt.Println(exampleAST(157, "int * __attribute__((a)) const i;"))
+	fmt.Println(exampleAST(158, "int * __attribute__((a)) const i;"))
 	// Output:
 	// &cc.TypeQualifiers{
 	// · Case: TypeQualifiersTypeQual,
@@ -9334,7 +9343,7 @@ func ExampleTypeQualifiers_typeQual() {
 }
 
 func ExampleTypeQualifiers_case1() {
-	fmt.Println(exampleAST(158, "int * const volatile i;"))
+	fmt.Println(exampleAST(159, "int * const volatile i;"))
 	// Output:
 	// &cc.TypeQualifiers{
 	// · Case: TypeQualifiersTypeQual,

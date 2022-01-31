@@ -2275,11 +2275,12 @@ func (n InitDeclaratorCase) String() string {
 //	        Declarator Asm                  // Case InitDeclaratorDecl
 //	|       Declarator Asm '=' Initializer  // Case InitDeclaratorInit
 type InitDeclarator struct {
-	Asm         *Asm
-	Case        InitDeclaratorCase `PrettyPrint:"stringer,zero"`
-	Declarator  *Declarator
-	Initializer *Initializer
-	Token       Token
+	AttributeSpecifierList *AttributeSpecifierList
+	Asm                    *Asm
+	Case                   InitDeclaratorCase `PrettyPrint:"stringer,zero"`
+	Declarator             *Declarator
+	Initializer            *Initializer
+	Token                  Token
 }
 
 // String implements fmt.Stringer.
@@ -3135,6 +3136,7 @@ type PointerCase int
 const (
 	PointerTypeQual PointerCase = iota
 	PointerPtr
+	PointerBlock
 )
 
 // String implements fmt.Stringer
@@ -3144,6 +3146,8 @@ func (n PointerCase) String() string {
 		return "PointerTypeQual"
 	case PointerPtr:
 		return "PointerPtr"
+	case PointerBlock:
+		return "PointerBlock"
 	default:
 		return fmt.Sprintf("PointerCase(%v)", int(n))
 	}
@@ -3154,6 +3158,7 @@ func (n PointerCase) String() string {
 //	Pointer:
 //	        '*' TypeQualifiers          // Case PointerTypeQual
 //	|       '*' TypeQualifiers Pointer  // Case PointerPtr
+//	|       '^' TypeQualifiers          // Case PointerBlock
 type Pointer struct {
 	Case           PointerCase `PrettyPrint:"stringer,zero"`
 	Pointer        *Pointer
@@ -3171,7 +3176,7 @@ func (n *Pointer) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 0:
+	case 0, 2:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
