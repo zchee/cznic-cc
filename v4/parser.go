@@ -50,9 +50,10 @@ var keywords = map[string]rune{
 	"while":      rune(WHILE),
 
 	// C11
-	"_Alignof":  rune(ALIGNOF),
-	"_Atomic":   rune(ATOMIC),
-	"_Noreturn": rune(NORETURN),
+	"_Alignof":      rune(ALIGNOF),
+	"_Atomic":       rune(ATOMIC),
+	"_Noreturn":     rune(NORETURN),
+	"_Thread_local": rune(THREADLOCAL),
 
 	// GCC and/or clang extensions.
 	"_Float128":     rune(FLOAT128),
@@ -519,6 +520,7 @@ again:
 		rune(EXTERN),
 		rune(REGISTER),
 		rune(STATIC),
+		rune(THREADLOCAL),
 		rune(TYPEDEF),
 
 		rune(BOOL),
@@ -2832,7 +2834,8 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 			rune(AUTO),
 			rune(EXTERN),
 			rune(REGISTER),
-			rune(STATIC):
+			rune(STATIC),
+			rune(THREADLOCAL):
 
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
 		case
@@ -2941,6 +2944,7 @@ func (p *parser) storageClassSpecifier() *StorageClassSpecifier {
 	// rune(EXTERN),
 	// rune(REGISTER),
 	// rune(STATIC),
+	// rune(THREADLOCAL),
 	// rune(TYPEDEF):
 	switch p.rune() {
 	case eof:
@@ -2956,6 +2960,8 @@ func (p *parser) storageClassSpecifier() *StorageClassSpecifier {
 		return &StorageClassSpecifier{Case: StorageClassSpecifierStatic, Token: p.shift()}
 	case rune(TYPEDEF):
 		return &StorageClassSpecifier{Case: StorageClassSpecifierTypedef, Token: p.shift()}
+	case rune(THREADLOCAL):
+		return &StorageClassSpecifier{Case: StorageClassSpecifierThreadLocal, Token: p.shift()}
 	default:
 		panic(todo("", p.toks[0]))
 	}
@@ -3197,6 +3203,7 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			'*',
 			',',
 			';',
+			'[',
 			rune(ATTRIBUTE),
 			rune(IDENTIFIER):
 

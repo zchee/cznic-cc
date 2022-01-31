@@ -3845,6 +3845,7 @@ const (
 	StorageClassSpecifierStatic
 	StorageClassSpecifierAuto
 	StorageClassSpecifierRegister
+	StorageClassSpecifierThreadLocal
 )
 
 // String implements fmt.Stringer
@@ -3860,6 +3861,8 @@ func (n StorageClassSpecifierCase) String() string {
 		return "StorageClassSpecifierAuto"
 	case StorageClassSpecifierRegister:
 		return "StorageClassSpecifierRegister"
+	case StorageClassSpecifierThreadLocal:
+		return "StorageClassSpecifierThreadLocal"
 	default:
 		return fmt.Sprintf("StorageClassSpecifierCase(%v)", int(n))
 	}
@@ -3868,11 +3871,12 @@ func (n StorageClassSpecifierCase) String() string {
 // StorageClassSpecifier represents data reduced by productions:
 //
 //	StorageClassSpecifier:
-//	        "typedef"   // Case StorageClassSpecifierTypedef
-//	|       "extern"    // Case StorageClassSpecifierExtern
-//	|       "static"    // Case StorageClassSpecifierStatic
-//	|       "auto"      // Case StorageClassSpecifierAuto
-//	|       "register"  // Case StorageClassSpecifierRegister
+//	        "typedef"        // Case StorageClassSpecifierTypedef
+//	|       "extern"         // Case StorageClassSpecifierExtern
+//	|       "static"         // Case StorageClassSpecifierStatic
+//	|       "auto"           // Case StorageClassSpecifierAuto
+//	|       "register"       // Case StorageClassSpecifierRegister
+//	|       "_Thread_local"  // Case StorageClassSpecifierThreadLocal
 type StorageClassSpecifier struct {
 	Case  StorageClassSpecifierCase `PrettyPrint:"stringer,zero"`
 	Token Token

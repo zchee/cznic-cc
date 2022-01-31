@@ -402,8 +402,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Auto       */ |	"auto"
 			/*yy:example register int i;*/
 /*yy:case Register   */ |	"register"
-// 			/*yy:example _Thread_local int i;*/
-// /*yy:case ThreadLocal*/ |	"_Thread_local"
+			/*yy:example _Thread_local int i;*/
+/*yy:case ThreadLocal*/ |	"_Thread_local"
 
 			/* [0], 6.7.2 Type specifiers */
 			/*yy:example void i(); */
