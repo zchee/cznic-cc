@@ -1497,9 +1497,9 @@ func TestParse(t *testing.T) {
 		blacklistGame["nbody-9.c"] = struct{}{}
 		blacklistGame["spectral-norm-5.c"] = struct{}{}
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "linux/386":
+	case "linux/386":
 		blacklistCompCert["aes.c"] = struct{}{} // include file not found: "../endian.h"
-	case "darwin/amd64", "darwin/arm64", "freebsd/amd64":
+	case "darwin/amd64", "darwin/arm64", "freebsd/amd64", "freebsd/386":
 		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
 		blacklistGame["spectral-norm-4.c"] = struct{}{} // no cpu_set_t on darwin/freebsd.
 	case "windows/amd64", "windows/386":
