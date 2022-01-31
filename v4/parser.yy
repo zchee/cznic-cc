@@ -113,6 +113,7 @@ package cc // import "modernc.org/cc/v4"
 	THREADLOCAL		"_Thread_local"
 	TYPEDEF			"typedef"
 	TYPEOF			"typeof"
+	UINT128			"__uint128_t"
 	UNION			"union"
 	UNSIGNED		"unsigned"
 	VOID			"void"
@@ -423,6 +424,8 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case Int64     */ |	"__int64"
 // 			/*yy:example __int128 i; */
 // /*yy:case Int128     */ |	"__int128"
+			/*yy:example __uint128_t i; */
+/*yy:case Uint128     */ |	"__uint128_t"
 			/*yy:example long i; */
 /*yy:case Long       */ |	"long"
 			/*yy:example float i; */

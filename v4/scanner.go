@@ -136,6 +136,7 @@ const (
 	TYPEDEF                // typedef
 	TYPENAME               // int_t in typedef int int_t;
 	TYPEOF                 // typeof
+	UINT128                // __uint128_t
 	UNION                  // union
 	UNSIGNED               // unsigned
 	VOID                   // void

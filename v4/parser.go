@@ -74,6 +74,8 @@ var keywords = map[string]rune{
 	"__label__":     rune(LABEL),
 	"__restrict":    rune(RESTRICT),
 	"__restrict__":  rune(RESTRICT),
+	"__signed__":    rune(SIGNED),
+	"__uint128_t":   rune(UINT128),
 	"asm":           rune(ASM),
 }
 
@@ -536,6 +538,7 @@ again:
 		rune(SIGNED),
 		rune(STRUCT),
 		rune(TYPENAME),
+		rune(UINT128),
 		rune(UNION),
 		rune(UNSIGNED),
 		rune(VOID):
@@ -783,6 +786,7 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 			rune(SIGNED),
 			rune(STRUCT),
 			rune(TYPENAME),
+			rune(UINT128),
 			rune(UNION),
 			rune(UNSIGNED),
 			rune(VOID):
@@ -1647,6 +1651,7 @@ func (p *parser) castExpression() (r *CastExpression, u *UnaryExpression) {
 			rune(SIGNED),
 			rune(STRUCT),
 			rune(TYPENAME),
+			rune(UINT128),
 			rune(UNION),
 			rune(UNSIGNED),
 			rune(VOID):
@@ -1871,6 +1876,7 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 			rune(SIGNED),
 			rune(STRUCT),
 			rune(TYPENAME),
+			rune(UINT128),
 			rune(UNION),
 			rune(UNSIGNED),
 			rune(VOID):
@@ -1995,6 +2001,7 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token) (r *UnaryExpr
 				rune(SIGNED),
 				rune(STRUCT),
 				rune(TYPENAME),
+				rune(UINT128),
 				rune(UNION),
 				rune(UNSIGNED),
 				rune(VOID):
@@ -2047,6 +2054,7 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token) (r *UnaryExpr
 				rune(SIGNED),
 				rune(STRUCT),
 				rune(TYPENAME),
+				rune(UINT128),
 				rune(UNION),
 				rune(UNSIGNED),
 				rune(VOID):
@@ -2146,6 +2154,7 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token) (r *Postfix
 			rune(SIGNED),
 			rune(STRUCT),
 			rune(TYPENAME),
+			rune(UINT128),
 			rune(UNION),
 			rune(UNSIGNED),
 			rune(VOID):
@@ -2537,6 +2546,8 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 		if ptr0 != nil {
 			return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr0}
 		}
+
+		panic(todo("", p.toks[0]))
 	case '(':
 		lparen := p.shift()
 		switch p.rune2() {
@@ -2600,6 +2611,7 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 			rune(SIGNED),
 			rune(STRUCT),
 			rune(TYPENAME),
+			rune(UINT128),
 			rune(UNION),
 			rune(UNSIGNED),
 			rune(VOID):
@@ -2618,107 +2630,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 		return p.abstractDeclarator(ptr0, false)
 	case rune(IDENTIFIER):
 		return p.declarator(ptr0, nil, declare)
+	default:
+		panic(todo("", p.toks[0]))
 	}
-	panic(todo("", p.toks[0]))
-
-	//TODO- 	switch p.rune2() {
-	//TODO- 	case '*':
-	//TODO- 		ptr := p.pointer(false)
-	//TODO- 		switch p.rune2() {
-	//TODO- 		case
-	//TODO- 			')',
-	//TODO- 			',':
-	//TODO-
-	//TODO- 			return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr}
-	//TODO- 		case rune(IDENTIFIER):
-	//TODO- 			return p.declarator(ptr, nil, declare)
-	//TODO- 		default:
-	//TODO- 			panic(todo("", p.toks[0]))
-	//TODO- 		}
-	//TODO- 	case '(':
-	//TODO- 		lparen := p.shift()
-	//TODO- 		switch p.rune2() {
-	//TODO- 		case ')':
-	//TODO- 			dad := &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: lparen, Token2: p.shift()}
-	//TODO- 			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
-	//TODO- 		case '*':
-	//TODO- 			ptr := p.pointer(false)
-	//TODO- 			switch p.rune2() {
-	//TODO- 			case ')':
-	//TODO- 				dad := &DirectAbstractDeclarator{
-	//TODO- 					Case:               DirectAbstractDeclaratorDecl,
-	//TODO- 					Token:              lparen,
-	//TODO- 					AbstractDeclarator: p.abstractDeclarator(ptr, false),
-	//TODO- 					Token2:             p.must(')'),
-	//TODO- 				}
-	//TODO- 				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
-	//TODO- 			case rune(IDENTIFIER):
-	//TODO- 				dd := p.directDeclarator(false, declare)
-	//TODO- 				switch p.rune() {
-	//TODO- 				case ')':
-	//TODO- 					dd = &DirectDeclarator{
-	//TODO- 						Case:  DirectDeclaratorDecl,
-	//TODO- 						Token: lparen,
-	//TODO- 						Declarator: &Declarator{
-	//TODO- 							Pointer:          ptr,
-	//TODO- 							DirectDeclarator: dd,
-	//TODO- 						},
-	//TODO- 						Token2: p.must(')'),
-	//TODO- 					}
-	//TODO- 					return &Declarator{DirectDeclarator: p.directDeclarator2(dd, declare)}
-	//TODO- 				default:
-	//TODO- 					panic(todo("", p.toks[0]))
-	//TODO- 				}
-	//TODO- 			default:
-	//TODO- 				panic(todo("", p.toks[0]))
-	//TODO- 			}
-	//TODO- 		case
-	//TODO- 			rune(ATOMIC),
-	//TODO- 			rune(CONST),
-	//TODO- 			rune(RESTRICT),
-	//TODO- 			rune(VOLATILE),
-	//TODO-
-	//TODO- 			rune(BOOL),
-	//TODO- 			rune(CHAR),
-	//TODO- 			rune(COMPLEX),
-	//TODO- 			rune(DOUBLE),
-	//TODO- 			rune(ENUM),
-	//TODO- 			rune(FLOAT),
-	//TODO- 			rune(FLOAT16),
-	//TODO- 			rune(FLOAT32),
-	//TODO- 			rune(FLOAT32X),
-	//TODO- 			rune(FLOAT64),
-	//TODO- 			rune(FLOAT64X),
-	//TODO- 			rune(FLOAT128),
-	//TODO- 			rune(FLOAT128X),
-	//TODO- 			rune(IMAGINARY),
-	//TODO- 			rune(INT),
-	//TODO- 			rune(LONG),
-	//TODO- 			rune(SHORT),
-	//TODO- 			rune(SIGNED),
-	//TODO- 			rune(STRUCT),
-	//TODO- 			rune(TYPENAME),
-	//TODO- 			rune(UNION),
-	//TODO- 			rune(UNSIGNED),
-	//TODO- 			rune(VOID):
-	//TODO-
-	//TODO- 			dad := &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: lparen, ParameterTypeList: p.parameterTypeListOpt(), Token2: p.shift2()}
-	//TODO- 			switch p.rune() {
-	//TODO- 			case ')':
-	//TODO- 				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: dad}
-	//TODO- 			default:
-	//TODO- 				panic(todo("", p.toks[0]))
-	//TODO- 			}
-	//TODO- 		default:
-	//TODO- 			panic(todo("", p.toks[0]))
-	//TODO- 		}
-	//TODO- 	case '[':
-	//TODO- 		return p.abstractDeclarator(nil, false)
-	//TODO- 	case rune(IDENTIFIER):
-	//TODO- 		return p.declarator(nil, nil, declare)
-	//TODO- 	default:
-	//TODO- 		panic(todo("", p.toks[0]))
-	//TODO- 	}
 }
 
 //  type-qualifier-list:
@@ -2857,6 +2771,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 			rune(SHORT),
 			rune(SIGNED),
 			rune(STRUCT),
+			rune(UINT128),
 			rune(UNION),
 			rune(UNSIGNED),
 			rune(VOID):
@@ -3063,6 +2978,7 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 	// rune(SIGNED),
 	// rune(STRUCT),
 	// rune(TYPENAME),
+	// rune(UINT128),
 	// rune(UNION),
 	// rune(UNSIGNED),
 	// rune(VOID):
@@ -3119,6 +3035,8 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		return &TypeSpecifier{Case: TypeSpecifierFloat128x, Token: p.shift()}
 	case rune(ATOMIC):
 		return &TypeSpecifier{Case: TypeSpecifierAtomic, AtomicTypeSpecifier: p.atomicTypeSpecifier()}
+	case rune(UINT128):
+		return &TypeSpecifier{Case: TypeSpecifierUint128, Token: p.shift()}
 	default:
 		panic(todo("", p.toks[0]))
 	}
