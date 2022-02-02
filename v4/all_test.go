@@ -54,6 +54,7 @@ void *__builtin_va_arg_sink(int, ...);
 
 #ifdef __clang__
 #define __builtin_convertvector(src, type) (*(type*)&src)
+#elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #endif
 `
 
@@ -1479,6 +1480,7 @@ func TestParse(t *testing.T) {
 		blacklistGame["regex-redux-3.c"] = struct{}{} // include file not found: <pcre.h>
 		blacklistGame["regex-redux-4.c"] = struct{}{} // include file not found: <pcre.h>
 		blacklistGame["regex-redux-5.c"] = struct{}{} // include file not found: <pcre2.h>
+		blacklistGame["spectral-norm-4.c"] = struct{}{}
 	case "netbsd/amd64":
 		blacklistGame["spectral-norm-4.c"] = struct{}{}
 	case "openbsd/amd64":

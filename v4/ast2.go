@@ -16,19 +16,11 @@ type AST struct {
 
 // Name returns the name of n.
 func (n *Declarator) Name() string {
-	if n == nil {
-		return ""
+	if dn := n.DirectDeclarator.name(); dn != nil {
+		return string(dn.Token.Src())
 	}
 
-	return n.DirectDeclarator.Name()
-}
-
-func (n *Declarator) isName() bool {
-	if n == nil {
-		return false
-	}
-
-	return n.DirectDeclarator.isName()
+	return ""
 }
 
 func (n *Declarator) isFn() bool {
@@ -39,42 +31,25 @@ func (n *Declarator) isFn() bool {
 	return n.DirectDeclarator.isFn()
 }
 
-// Name returns the name of n.
-func (n *DirectDeclarator) Name() string {
-	if n == nil {
-		return ""
-	}
+func (n *Declarator) fnParams() *Scope { return n.DirectDeclarator.params }
 
-	for n.DirectDeclarator != nil {
-		n = n.DirectDeclarator
-	}
-	switch n.Case {
-	case DirectDeclaratorIdent:
-		return string(n.Token.Src())
-	case DirectDeclaratorDecl:
-		return n.Declarator.Name()
-	default:
-		panic(todo("internal error"))
-	}
-}
-
-func (n *DirectDeclarator) isName() bool {
+func (n *DirectDeclarator) name() *DirectDeclarator {
 	if n == nil {
-		return false
+		return nil
 	}
 
 	switch n.Case {
 	case DirectDeclaratorIdent:
-		return true
+		return n
 	case DirectDeclaratorDecl:
-		return n.Declarator.isName()
+		return n.Declarator.DirectDeclarator.name()
 	default:
-		panic(todo("internal error"))
+		return n.DirectDeclarator.name()
 	}
 }
 
 func (n *DirectDeclarator) isFn() bool {
-	if n == nil || !n.DirectDeclarator.isName() {
+	if n == nil {
 		return false
 	}
 
@@ -84,13 +59,4 @@ func (n *DirectDeclarator) isFn() bool {
 	}
 
 	return false
-}
-
-func (n *DeclarationSpecifiers) attributeValueList() *AttributeSpecifierList {
-	for ; n != nil; n = n.DeclarationSpecifiers {
-		if n.Case == DeclarationSpecifiersAttr {
-			return n.AttributeSpecifierList
-		}
-	}
-	return nil
 }

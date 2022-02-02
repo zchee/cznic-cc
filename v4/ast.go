@@ -1157,7 +1157,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	Declarator:
 //	        Pointer DirectDeclarator
 type Declarator struct {
-	typedef bool
+	typename bool
 	visible
 	DirectDeclarator *DirectDeclarator
 	Pointer          *Pointer
@@ -4311,6 +4311,7 @@ const (
 	TypeSpecifierChar
 	TypeSpecifierShort
 	TypeSpecifierInt
+	TypeSpecifierInt128
 	TypeSpecifierUint128
 	TypeSpecifierLong
 	TypeSpecifierFloat
@@ -4344,6 +4345,8 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierShort"
 	case TypeSpecifierInt:
 		return "TypeSpecifierInt"
+	case TypeSpecifierInt128:
+		return "TypeSpecifierInt128"
 	case TypeSpecifierUint128:
 		return "TypeSpecifierUint128"
 	case TypeSpecifierLong:
@@ -4396,6 +4399,7 @@ func (n TypeSpecifierCase) String() string {
 //	|       "char"                  // Case TypeSpecifierChar
 //	|       "short"                 // Case TypeSpecifierShort
 //	|       "int"                   // Case TypeSpecifierInt
+//	|       "__int128"              // Case TypeSpecifierInt128
 //	|       "__uint128_t"           // Case TypeSpecifierUint128
 //	|       "long"                  // Case TypeSpecifierLong
 //	|       "float"                 // Case TypeSpecifierFloat
@@ -4434,13 +4438,13 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 19:
+	case 20:
 		return n.AtomicTypeSpecifier.Position()
-	case 17:
+	case 18:
 		return n.EnumSpecifier.Position()
-	case 16:
+	case 17:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 20, 21, 22, 23:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 21, 22, 23, 24:
 		return n.Token.Position()
 	default:
 		panic("internal error")

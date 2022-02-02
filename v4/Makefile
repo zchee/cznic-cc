@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-.PHONY:	ast.go build_all_targets clean cpu edit editor mem 
+.PHONY:	ast.go build_all_targets clean cpu edit editor mem win64 win32
 
 ast.go:
 	go generate
@@ -42,3 +42,11 @@ mem:
 	go test -c -o mem.test
 	./mem.test -test.run TestTranslationPhase4 -re 20001226-1.c -test.memprofile mem.out
 	go tool pprof --lines --web --alloc_space mem.test mem.out
+
+win32:
+	# on linux/amd64
+	CC_TEST_CPP=i686-w64-mingw32-cpp-win32 GOARCH=386 go test 2>&1 | tee log
+
+win64:
+	# on linux/amd64
+	CC_TEST_CPP=x86_64-w64-mingw32-cpp go test 2>&1 | tee log

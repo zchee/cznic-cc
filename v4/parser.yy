@@ -423,8 +423,8 @@ package cc // import "modernc.org/cc/v4"
 // /*yy:case Int32     */ |	"__int32"
 // 			/*yy:example __int64 i; */
 // /*yy:case Int64     */ |	"__int64"
-// 			/*yy:example __int128 i; */
-// /*yy:case Int128     */ |	"__int128"
+			/*yy:example __int128 i; */
+/*yy:case Int128     */ |	"__int128"
 			/*yy:example __uint128_t i; */
 /*yy:case Uint128     */ |	"__uint128_t"
 			/*yy:example long i; */
@@ -579,8 +579,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:field	typedef	bool		*/
-			/*yy:field	visible			*/
+			/*yy:field	typename	bool		*/
+			/*yy:field	visible				*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator
