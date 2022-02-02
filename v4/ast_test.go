@@ -3356,7 +3356,7 @@ func ExampleDirectDeclarator_arr() {
 	// · · Token: example.c:1:5: IDENTIFIER "i",
 	// · },
 	// · Token: example.c:1:6: '[' "[",
-	// · Token2: example.c:1:15: ']' "]",
+	// · Token3: example.c:1:15: ']' "]",
 	// · TypeQualifiers: &cc.TypeQualifiers{
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
