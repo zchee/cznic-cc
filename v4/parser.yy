@@ -69,6 +69,7 @@ package cc // import "modernc.org/cc/v4"
 	FLOAT80			"__float80"
 	FOR			"for"
 	FRACT			"_Fract"
+	GENERIC			"_Generic"
 	GEQ			">="
 	GOTO			"goto"
 	IF			"if"
@@ -87,6 +88,8 @@ package cc // import "modernc.org/cc/v4"
 	LONG			"long"
 	LSH			"<<"
 	LSHASSIGN		"<<="
+	M128	                "__m128"
+	M256D	                "__m256d"
 	MODASSIGN		"%="
 	MULASSIGN		"*="
 	NEQ			"!="
@@ -151,6 +154,24 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Expr       */ |	'(' Expression ')'
 			/*yy:example int i = ({x();}); */
 /*yy:case Stmt       */	|	'(' CompoundStatement ')'
+			/*yy:example int i = _Generic(x, int: y)(42); */
+/*yy:case Generic    */ |	GenericSelection
+
+			/*yy:example int i = _Generic(x, int: y)(42); */
+			GenericSelection:
+				"_Generic" '(' AssignmentExpression ',' GenericAssociationList ')'
+
+			/*yy:example int i = _Generic(x, int: y)(42); */
+			GenericAssociationList:
+				GenericAssociation
+			/*yy:example int i = _Generic(x, int: y, float: z)(42); */
+			|	GenericAssociationList ',' GenericAssociation
+
+			/*yy:example int i = _Generic(x, int: y)(42); */
+/*yy:case Type       */	GenericAssociation:
+				TypeName ':' AssignmentExpression
+			/*yy:example int i = _Generic(x, default: y)(42); */
+/*yy:case Default    */	|	"default" ':' AssignmentExpression
 
 		        /* [0], 6.5.2 Postfix operators */
 			/*yy:example int i = x; */
@@ -373,8 +394,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case TypeQual   */ |	TypeQualifier DeclarationSpecifiers
 			/*yy:example inline int f() {} */
 /*yy:case Func       */ |	FunctionSpecifier DeclarationSpecifiers
-// 			/*yy:example _Alignas(double) int i; */
-// /*yy:case AlignSpec  */ |	AlignmentSpecifier DeclarationSpecifiers
+			/*yy:example _Alignas(double) int i; */
+/*yy:case AlignSpec  */ |	AlignmentSpecifier DeclarationSpecifiers
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example int i; */
@@ -464,10 +485,10 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Enum       */ |	EnumSpecifier
 			/*yy:example typedef int T; T i; */
 /*yy:case TypeName*/	|	TYPENAME
-// 			/*yy:example typeof(42) i; */
-// /*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
-// 			/*yy:example typedef int T; typeof(T) i; */
-// /*yy:case TypeofType */ |	"typeof" '(' TypeName ')'
+			/*yy:example typeof(42) i; */
+/*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
+			/*yy:example typedef int T; typeof(T) i; */
+/*yy:case TypeofType */ |	"typeof" '(' TypeName ')'
 			/*yy:example _Atomic(int) i; */
 /*yy:case Atomic     */ |	AtomicTypeSpecifier
 // 			/*yy:example _Fract i; */
@@ -484,6 +505,10 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Float32x    */ |	"_Float32x"
 			/*yy:example _Float64x i; */
 /*yy:case Float64x    */ |	"_Float64x"
+			/*yy:example __m256d i; */
+/*yy:case M256d       */ |	"__m256d"
+			/*yy:example __m128 i; */
+/*yy:case M128       */ |	"__m128"
 
 			/* [0], 6.7.2.1 Structure and union specifiers */
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
@@ -518,8 +543,8 @@ package cc // import "modernc.org/cc/v4"
 				TypeSpecifier SpecifierQualifierList
 			/*yy:example struct {const int i;};*/
 /*yy:case TypeQual   */ |	TypeQualifier SpecifierQualifierList
-// 			/*yy:example struct {_Alignas(double) int i;};*/
-// /*yy:case AlignSpec  */ |	AlignmentSpecifier SpecifierQualifierList
+			/*yy:example struct {_Alignas(double) int i;};*/
+/*yy:case AlignSpec  */ |	AlignmentSpecifier SpecifierQualifierList
 
 			/*yy:example struct{ int i; }; */
 			StructDeclaratorList:
@@ -585,12 +610,12 @@ package cc // import "modernc.org/cc/v4"
 			Declarator:
 				Pointer DirectDeclarator
 
-// 			/* [2], 6.7.5 Alignment specifier */
-// 			/*yy:example _Alignas(double) char c; */
-// /*yy:case AlignasType*/ AlignmentSpecifier:
-// 				"_Alignas" '(' TypeName ')'
-// 			/*yy:example _Alignas(0ll) char c; */
-// /*yy:case AlignasExpr*/ |	"_Alignas" '(' ConstantExpression ')'
+			/* [2], 6.7.5 Alignment specifier */
+			/*yy:example _Alignas(double) char c; */
+/*yy:case Type       */ AlignmentSpecifier:
+				"_Alignas" '(' TypeName ')'
+			/*yy:example _Alignas(0ll) char c; */
+/*yy:case Expr       */ |	"_Alignas" '(' ConstantExpression ')'
 
 			/*yy:field	params	*Scope	*/
 			/*yy:example int i; */
@@ -702,6 +727,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int a[] = { [42] = 314 }; */
 /*yy:case Index      */ Designator:
 				'[' ConstantExpression ']'
+			/*yy:example int a[] = { [42 ... 278] = 314 }; */
+/*yy:case Index2     */ |	'[' ConstantExpression "..." ConstantExpression ']'
 			/*yy:example struct t s = { .fld = 314 }; */
 /*yy:case Field      */ |	'.' IDENTIFIER
 			/*yy:example struct t s = { fld: 314 }; */
@@ -785,8 +812,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int f() { L: goto L; } */
 /*yy:case Goto       */ JumpStatement:
 				"goto" IDENTIFIER ';'
-// 			/*yy:example int f() { L: x(); void *p = &&L; goto *p; } */
-// /*yy:case GotoExpr   */ |	"goto" '*' Expression ';'
+			/*yy:example int f() { L: x(); void *p = &&L; goto *p; } */
+/*yy:case GotoExpr   */ |	"goto" '*' Expression ';'
 			/*yy:example int f() { for(;;) if (i) continue; } */
 /*yy:case Continue   */ |	"continue" ';'
 			/*yy:example int f() { for(;;) if (i) break; } */

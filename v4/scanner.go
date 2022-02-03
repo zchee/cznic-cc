@@ -85,6 +85,7 @@ const (
 	FLOATCONST             // 1.23
 	FOR                    // for
 	FRACT                  // _Fract
+	GENERIC                // _Generic
 	GEQ                    // >=
 	GOTO                   // goto
 	HEADER_NAME            // <foo> or "bar"
@@ -108,6 +109,8 @@ const (
 	LONGSTRINGLITERAL      // L"foo"
 	LSH                    // <<
 	LSHASSIGN              // <<=
+	M128                   // __m128
+	M256D                  // __m256d
 	MODASSIGN              // %=
 	MULASSIGN              // *=
 	NEQ                    // !=
@@ -577,7 +580,7 @@ func (s *scanner) cppScan0() (tok Token) {
 	}
 
 	switch {
-	case unicode.IsLetter(c) || c == '_':
+	case unicode.IsLetter(c) || c == '_' || c == '$':
 		return s.identifier()
 	case c >= '0' && c <= '9':
 		return s.ppnumber()
@@ -874,7 +877,7 @@ func (s *scanner) identifier() Token {
 	s.shift()
 	for {
 		switch c := s.rune(); {
-		case unicode.IsLetter(c) || c == '_' || unicode.IsDigit(c):
+		case unicode.IsLetter(c) || c == '_' || unicode.IsDigit(c) || c == '$':
 			s.shift()
 		default:
 			return s.newToken(rune(IDENTIFIER))

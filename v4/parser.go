@@ -50,8 +50,10 @@ var keywords = map[string]rune{
 	"while":      rune(WHILE),
 
 	// C11
+	"_Alignas":      rune(ALIGNAS),
 	"_Alignof":      rune(ALIGNOF),
 	"_Atomic":       rune(ATOMIC),
+	"_Generic":      rune(GENERIC),
 	"_Noreturn":     rune(NORETURN),
 	"_Thread_local": rune(THREADLOCAL),
 
@@ -67,6 +69,7 @@ var keywords = map[string]rune{
 	"__alignof__":   rune(ALIGNOF),
 	"__asm":         rune(ASM),
 	"__asm__":       rune(ASM),
+	"__attribute":   rune(ATTRIBUTE),
 	"__attribute__": rune(ATTRIBUTE),
 	"__complex__":   rune(COMPLEX),
 	"__const":       rune(CONST),
@@ -75,6 +78,8 @@ var keywords = map[string]rune{
 	"__inline__":    rune(INLINE),
 	"__int128":      rune(INT128),
 	"__label__":     rune(LABEL),
+	"__m128":        rune(M128),
+	"__m256d":       rune(M256D),
 	"__restrict":    rune(RESTRICT),
 	"__restrict__":  rune(RESTRICT),
 	"__signed":      rune(SIGNED),
@@ -83,6 +88,7 @@ var keywords = map[string]rune{
 	"__volatile":    rune(VOLATILE),
 	"__volatile__":  rune(VOLATILE),
 	"asm":           rune(ASM),
+	"typeof":        rune(TYPEOF),
 }
 
 type parser struct {
@@ -485,7 +491,7 @@ func (p *parser) blockItemListOpt() (r *BlockItemList) {
 func (p *parser) blockItem() *BlockItem {
 again:
 	switch ch := p.rune2(); {
-	case p.isStatement(ch):
+	case p.isStatement(ch) || p.isExpression(ch):
 		return &BlockItem{Case: BlockItemStmt, Statement: p.statement(false)}
 	case p.isDeclarationSpecifier(ch, true):
 		r0 := p.rune()
@@ -520,7 +526,7 @@ again:
 }
 
 func (p *parser) isDeclarationSpecifier(ch rune, typenameOk bool) bool {
-	return p.isTypeSpecifier(ch, typenameOk) || p.isTypeQualifier(ch) || p.isStorageClassSpecifier(ch) || ch == rune(ATTRIBUTE)
+	return p.isTypeSpecifier(ch, typenameOk) || p.isTypeQualifier(ch) || p.isStorageClassSpecifier(ch) || ch == rune(ATTRIBUTE) || ch == rune(ALIGNAS)
 }
 
 func (p *parser) isTypeQualifier(ch rune) bool {
@@ -571,9 +577,12 @@ func (p *parser) isTypeSpecifier(ch rune, typenameOk bool) bool {
 		rune(INT),
 		rune(INT128),
 		rune(LONG),
+		rune(M128),
+		rune(M256D),
 		rune(SHORT),
 		rune(SIGNED),
 		rune(STRUCT),
+		rune(TYPEOF),
 		rune(UINT128),
 		rune(UNION),
 		rune(UNSIGNED),
@@ -631,6 +640,7 @@ func (p *parser) isExpression(ch rune) bool {
 		rune(CHARCONST),
 		rune(DEC),
 		rune(FLOATCONST),
+		rune(GENERIC),
 		rune(IDENTIFIER),
 		rune(INC),
 		rune(INTCONST),
@@ -759,7 +769,12 @@ func (p *parser) jumpStatement() *JumpStatement {
 	case rune(CONTINUE):
 		return &JumpStatement{Case: JumpStatementContinue, Token: p.shift(), Token2: p.must(';')}
 	case rune(GOTO):
-		return &JumpStatement{Case: JumpStatementGoto, Token: p.shift(), Token2: p.must(rune(IDENTIFIER)), Token3: p.must(';')}
+		switch p.peek(1).Ch {
+		case '*':
+			return &JumpStatement{Case: JumpStatementGotoExpr, Token: p.shift(), Token2: p.shift(), Expression: p.expression(false), Token3: p.must(';')}
+		default:
+			return &JumpStatement{Case: JumpStatementGoto, Token: p.shift(), Token2: p.must(rune(IDENTIFIER)), Token3: p.must(';')}
+		}
 	case rune(RETURN):
 		return &JumpStatement{Case: JumpStatementReturn, Token: p.shift(), Expression: p.expression(true), Token2: p.must(';')}
 	default:
@@ -1242,6 +1257,7 @@ func (p *parser) designatorList() (r *DesignatorList, last DesignatorCase) {
 
 //  designator:
 // 	[ constant-expression ]
+// 	[ constant-expression ... constant-expression]
 // 	. identifier
 //	identifier :
 func (p *parser) designator() (r *Designator) {
@@ -1250,7 +1266,18 @@ func (p *parser) designator() (r *Designator) {
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 		return nil
 	case '[':
-		return &Designator{Case: DesignatorIndex, Token: p.shift(), ConstantExpression: p.constantExpression(), Token2: p.must(']')}
+		r = &Designator{Case: DesignatorIndex, Token: p.shift(), ConstantExpression: p.constantExpression()}
+		switch p.rune() {
+		case rune(DDD):
+			r.Case = DesignatorIndex2
+			r.Token2 = p.shift()
+			r.ConstantExpression2 = p.constantExpression()
+			r.Token3 = p.must(']')
+			return r
+		default:
+			r.Token2 = p.must(']')
+			return r
+		}
 	case '.':
 		return &Designator{Case: DesignatorField, Token: p.shift(), Token2: p.must(rune(IDENTIFIER))}
 	case rune(IDENTIFIER):
@@ -1663,7 +1690,10 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 	switch {
 	case ptr == nil:
 		switch p.rune() {
-		case ')':
+		case
+			')',
+			':':
+
 			if opt {
 				return nil
 			}
@@ -1686,7 +1716,10 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 		}
 	default:
 		switch p.rune() {
-		case ')':
+		case
+			')',
+			':':
+
 			return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr}
 		case '[':
 			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr, DirectAbstractDeclarator: p.directAbstractDeclarator()}
@@ -1782,7 +1815,8 @@ func (p *parser) directAbstractDeclarator2(dad *DirectAbstractDeclarator) (r *Di
 			return nil
 		case
 			')',
-			',':
+			',',
+			':':
 
 			return r
 		case '(':
@@ -1814,7 +1848,9 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeSpecifier: p.typeSpecifier()}
 			acceptTypeName = false
 		case p.isTypeQualifier(ch) || ch == rune(ATTRIBUTE):
-			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeQualifier: p.typeQualifier(true)}
+			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeQual, TypeQualifier: p.typeQualifier(true)}
+		case ch == rune(ALIGNAS):
+			sql = &SpecifierQualifierList{Case: SpecifierQualifierListAlignSpec, AlignmentSpecifier: p.alignmentSpecifier()}
 		default:
 			return r
 		}
@@ -1895,6 +1931,7 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token) (r *UnaryExpr
 		'(',
 		rune(CHARCONST),
 		rune(FLOATCONST),
+		rune(GENERIC),
 		rune(IDENTIFIER),
 		rune(INTCONST),
 		rune(LONGCHARCONST),
@@ -2040,6 +2077,7 @@ func (p *parser) argumentExpressionListOpt() (r *ArgumentExpressionList) {
 // 	string-literal
 // 	( expression )
 // 	( compound-statement )
+//	generic-selection
 func (p *parser) primaryExpression() (r *PrimaryExpression) {
 	switch p.rune2() {
 	case eof:
@@ -2066,8 +2104,42 @@ func (p *parser) primaryExpression() (r *PrimaryExpression) {
 		default:
 			return &PrimaryExpression{Case: PrimaryExpressionExpr, Token: p.shift(), Expression: p.expression(false), Token2: p.must(')')}
 		}
+	case rune(GENERIC):
+		return &PrimaryExpression{Case: PrimaryExpressionGeneric, GenericSelection: p.genericSelection()}
 	default:
 		panic(todo("", p.toks[0]))
+	}
+}
+
+// generic-selection:
+//	_Generic ( assignment-expression , generic-assoc-list )
+func (p *parser) genericSelection() (r *GenericSelection) {
+	return &GenericSelection{Token: p.must(rune(GENERIC)), Token2: p.must('('), AssignmentExpression: p.assignmentExpression(), Token3: p.must(','), GenericAssociationList: p.genericAssociationList(), Token4: p.must(')')}
+}
+
+// generic-assoc-list:
+// 	generic-association
+// 	generic-assoc-list , generic-association
+func (p *parser) genericAssociationList() (r *GenericAssociationList) {
+	r = &GenericAssociationList{GenericAssociation: p.genericAssociation()}
+	prev := r
+	for p.rune() == ',' {
+		gal := &GenericAssociationList{Token: p.shift(), GenericAssociation: p.genericAssociation()}
+		prev.GenericAssociationList = gal
+		prev = gal
+	}
+	return r
+}
+
+// generic-association:
+//	type-name : assignment-expression
+//	default : assignment-expression
+func (p *parser) genericAssociation() (r *GenericAssociation) {
+	switch {
+	case p.rune() == rune(DEFAULT):
+		return &GenericAssociation{Case: GenericAssociationDefault, Token: p.shift(), Token2: p.must(':'), AssignmentExpression: p.assignmentExpression()}
+	default:
+		return &GenericAssociation{Case: GenericAssociationType, TypeName: p.typeName(), Token: p.must(':'), AssignmentExpression: p.assignmentExpression()}
 	}
 }
 
@@ -2257,6 +2329,7 @@ func (p *parser) parameterDeclaration() (r *ParameterDeclaration) {
 		case *Declarator:
 			return &ParameterDeclaration{Case: ParameterDeclarationDecl, DeclarationSpecifiers: ds, Declarator: x, AttributeSpecifierList: p.attributeSpecifierListOpt()}
 		default:
+			p.rune()
 			panic(todo("%v %T", p.toks[0], x))
 		}
 	}
@@ -2279,9 +2352,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 		lparen := p.shift()
 		p.attributeSpecifierListOpt() //TODO not stored yet
 		if p.isSpecifierQualifer(p.rune2(), true) {
-			dad := &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: lparen, ParameterTypeList: p.parameterTypeListOpt(), Token2: p.shift2()}
-			switch p.rune() {
-			case ')':
+			dad := &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: lparen, ParameterTypeList: p.parameterTypeListOpt(), Token2: p.must(')')}
+			switch {
+			case p.in(p.rune(), ',', ')'):
 				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: dad}
 			default:
 				panic(todo("", p.toks[0]))
@@ -2292,13 +2365,46 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 		case ')':
 			dad := &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: lparen, Token2: p.shift()}
 			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
+		case '(':
+			switch x := p.declaratorOrAbstractDeclarator(declare).(type) {
+			case *AbstractDeclarator:
+				dad := &DirectAbstractDeclarator{
+					Case:               DirectAbstractDeclaratorDecl,
+					Token:              lparen,
+					AbstractDeclarator: p.abstractDeclarator(nil, true),
+					Token2:             p.must(')'),
+				}
+				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
+			default:
+				p.rune()
+				panic(todo("%v %T", p.toks[0], x))
+			}
+		case rune(IDENTIFIER):
+			dd := p.directDeclarator(declare)
+			switch p.rune() {
+			case ')':
+				dd = &DirectDeclarator{
+					Case:  DirectDeclaratorDecl,
+					Token: lparen,
+					Declarator: &Declarator{
+						DirectDeclarator: dd,
+					},
+					Token2: p.must(')'),
+				}
+				return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+			default:
+				panic(todo("", p.toks[0]))
+			}
 		case
 			'*',
 			'^':
 
 			ptr := p.pointer(false)
 			switch p.rune2() {
-			case ')':
+			case
+				')',
+				'[':
+
 				dad := &DirectAbstractDeclarator{
 					Case:               DirectAbstractDeclaratorDecl,
 					Token:              lparen,
@@ -2326,6 +2432,14 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 			default:
 				panic(todo("", p.toks[0]))
 			}
+		case '[':
+			dad := &DirectAbstractDeclarator{
+				Case:               DirectAbstractDeclaratorDecl,
+				Token:              lparen,
+				AbstractDeclarator: p.abstractDeclarator(nil, false),
+				Token2:             p.must(')'),
+			}
+			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
 		default:
 			panic(todo("", p.toks[0]))
 		}
@@ -2340,40 +2454,30 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 	}
 }
 
+func (p *parser) in(ch rune, set ...rune) bool {
+	for _, v := range set {
+		if ch == v {
+			return true
+		}
+	}
+	return false
+}
+
 //  type-qualifier-list:
 // 	type-qualifier
 // 	type-qualifier-list type-qualifier
 // 	type-qualifier-list
-func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifiers) { //TODO continue here 20220202 19:04
-	// rune(ATOMIC),
-	// rune(CONST),
-	// rune(RESTRICT),
-	// rune(VOLATILE):
-	switch p.rune2() {
-	case eof:
-		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
-		return nil
-	case
-		rune(ATOMIC),
-		rune(CONST),
-		rune(RESTRICT),
-		rune(VOLATILE):
-
+func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifiers) {
+	switch ch := p.rune2(); {
+	case p.isTypeQualifier(ch):
 		r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifier: p.typeQualifier(false)}
-	case
-		'(',
-		')',
-		'*',
-		',',
-		rune(IDENTIFIER),
-		rune(TYPENAME):
-
+	case p.in(ch, ':', ')', ',', '[', rune(STATIC)) || p.isExpression(ch) || ch == rune(TYPENAME):
 		if opt {
 			return nil
 		}
 
 		panic(todo("", p.toks[0]))
-	case rune(ATTRIBUTE):
+	case ch == rune(ATTRIBUTE):
 		if acceptAttributes {
 			r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifier: p.typeQualifier(true)}
 			break
@@ -2384,31 +2488,10 @@ func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifier
 		panic(todo("", p.toks[0], opt))
 	}
 	for {
-		switch p.rune() {
-		case eof:
-			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
-			return nil
-		case
-			')',
-			'*',
-			',',
-			'[',
-			rune(CHARCONST),
-			rune(FLOATCONST),
-			rune(IDENTIFIER),
-			rune(INTCONST),
-			rune(LONGCHARCONST),
-			rune(LONGSTRINGLITERAL),
-			rune(STATIC),
-			rune(STRINGLITERAL):
-
+		switch ch := p.rune(); {
+		case p.in(ch, ':', ')', ',', '[', rune(STATIC)) || p.isExpression(ch) || ch == rune(TYPENAME):
 			return r
-		case
-			rune(ATOMIC),
-			rune(CONST),
-			rune(RESTRICT),
-			rune(VOLATILE):
-
+		case p.isTypeQualifier(ch):
 			r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifiers: r, TypeQualifier: p.typeQualifier(acceptAttributes)}
 		default:
 			panic(todo("", p.toks[0]))
@@ -2456,46 +2539,21 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 	var typedef bool
 	acceptTypeName := true
 	for {
-		switch p.rune() {
-		case eof:
+		switch ch := p.rune(); {
+		case ch == eof:
 			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 			return nil, false
-		case
-			rune(BOOL),
-			rune(CHAR),
-			rune(COMPLEX),
-			rune(DOUBLE),
-			rune(ENUM),
-			rune(FLOAT),
-			rune(FLOAT16),
-			rune(FLOAT32),
-			rune(FLOAT32X),
-			rune(FLOAT64),
-			rune(FLOAT64X),
-			rune(FLOAT128),
-			rune(FLOAT128X),
-			rune(IMAGINARY),
-			rune(INT),
-			rune(INT128),
-			rune(LONG),
-			rune(SHORT),
-			rune(SIGNED),
-			rune(STRUCT),
-			rune(UINT128),
-			rune(UNION),
-			rune(UNSIGNED),
-			rune(VOID):
-
+		case p.isTypeSpecifier(ch, false):
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
 			acceptTypeName = false
-		case rune(IDENTIFIER):
+		case ch == rune(IDENTIFIER):
 			if !acceptTypeName || !p.checkTypeName(&p.toks[0]) {
 				return r, true
 			}
 
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
 			acceptTypeName = false
-		case rune(ATOMIC):
+		case ch == rune(ATOMIC):
 			switch p.peek(1).Ch {
 			case '(':
 				ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeSpec, TypeSpecifier: p.typeSpecifier()}
@@ -2503,45 +2561,21 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 			default:
 				ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier(false)}
 			}
-		case rune(TYPEDEF):
+		case ch == rune(TYPEDEF):
 			typedef = true
 			fallthrough
-		case
-			rune(AUTO),
-			rune(EXTERN),
-			rune(REGISTER),
-			rune(STATIC),
-			rune(THREADLOCAL):
-
+		case p.isStorageClassSpecifier(ch):
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
-		case
-			rune(CONST),
-			rune(RESTRICT),
-			rune(VOLATILE):
-
+		case p.isTypeQualifier(ch):
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier(false)}
-		case
-			rune(INLINE),
-			rune(NORETURN):
-
+		case p.in(ch, rune(INLINE), rune(NORETURN)):
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersFunc, FunctionSpecifier: p.functionSpecifier()}
-		case rune(ATTRIBUTE):
+		case ch == rune(ATTRIBUTE):
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersAttr, AttributeSpecifierList: p.attributeSpecifierListOpt()}
-		case
-			'(',
-			')',
-			'*',
-			',',
-			':',
-			';',
-			'[',
-			'}':
-
-			return r, true
+		case ch == rune(ALIGNAS):
+			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersAlignSpec, AlignmentSpecifier: p.alignmentSpecifier()}
 		default:
-			p.cpp.eh("%v: unexpected %v, expected declaration-specifiers", p.toks[0].Position(), runeName(p.rune()))
-			p.shift()
-			return r, false
+			return r, true
 		}
 		switch {
 		case r == nil:
@@ -2554,6 +2588,22 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 		if !acceptTypeName {
 			r.typename = true
 		}
+	}
+}
+
+// [2], 6.7.5 Alignment specifier
+//
+// alignment-specifier:
+// 	_Alignas ( type-name )
+// 	_Alignas ( constant-expression )
+func (p *parser) alignmentSpecifier() *AlignmentSpecifier {
+	switch ch := p.peek2(2).Ch; {
+	case p.isTypeSpecifier(ch, true):
+		return &AlignmentSpecifier{Case: AlignmentSpecifierType, Token: p.must(rune(ALIGNAS)), Token2: p.must('('), TypeName: p.typeName(), Token3: p.must(')')}
+	case p.isExpression(ch):
+		return &AlignmentSpecifier{Case: AlignmentSpecifierExpr, Token: p.must(rune(ALIGNAS)), Token2: p.must('('), ConstantExpression: p.constantExpression(), Token3: p.must(')')}
+	default:
+		panic(todo("", p.toks[0]))
 	}
 }
 
@@ -2616,12 +2666,6 @@ func (p *parser) typeQualifier(acceptAttributes bool) *TypeQualifier {
 // 	auto
 // 	register
 func (p *parser) storageClassSpecifier() *StorageClassSpecifier {
-	// rune(AUTO),
-	// rune(EXTERN),
-	// rune(REGISTER),
-	// rune(STATIC),
-	// rune(THREADLOCAL),
-	// rune(TYPEDEF):
 	switch p.rune() {
 	case eof:
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
@@ -2670,33 +2714,9 @@ func (p *parser) storageClassSpecifier() *StorageClassSpecifier {
 //	_Sat
 //	_Accum
 // 	_Float32
+// 	_Float64
+// 	__m256d
 func (p *parser) typeSpecifier() *TypeSpecifier {
-	// rune(ATOMIC),
-	// rune(BOOL),
-	// rune(CHAR),
-	// rune(COMPLEX),
-	// rune(DOUBLE),
-	// rune(ENUM),
-	// rune(FLOAT),
-	// rune(FLOAT128),
-	// rune(FLOAT128X),
-	// rune(FLOAT16),
-	// rune(FLOAT32),
-	// rune(FLOAT32X),
-	// rune(FLOAT64),
-	// rune(FLOAT64X),
-	// rune(IMAGINARY),
-	// rune(INT),
-	// rune(INT128),
-	// rune(LONG),
-	// rune(SHORT),
-	// rune(SIGNED),
-	// rune(STRUCT),
-	// rune(TYPENAME),
-	// rune(UINT128),
-	// rune(UNION),
-	// rune(UNSIGNED),
-	// rune(VOID):
 	switch p.rune2() {
 	case eof:
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
@@ -2754,6 +2774,19 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		return &TypeSpecifier{Case: TypeSpecifierUint128, Token: p.shift()}
 	case rune(INT128):
 		return &TypeSpecifier{Case: TypeSpecifierInt128, Token: p.shift()}
+	case rune(M128):
+		return &TypeSpecifier{Case: TypeSpecifierM128, Token: p.shift()}
+	case rune(M256D):
+		return &TypeSpecifier{Case: TypeSpecifierM256d, Token: p.shift()}
+	case rune(TYPEOF):
+		switch ch := p.peek2(2).Ch; {
+		case p.isTypeSpecifier(ch, true):
+			return &TypeSpecifier{Case: TypeSpecifierTypeofType, Token: p.shift(), Token2: p.must('('), TypeName: p.typeName(), Token3: p.must(')')}
+		case p.isExpression(ch):
+			return &TypeSpecifier{Case: TypeSpecifierTypeofExpr, Token: p.shift(), Token2: p.must('('), Expression: p.expression(false), Token3: p.must(')')}
+		default:
+			panic(todo("", p.toks[0]))
+		}
 	default:
 		panic(todo("", p.toks[0]))
 	}
@@ -2784,13 +2817,8 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 			r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(), Token2: p.shift(), Token3: p.shift(), EnumeratorList: p.enumeratorList()}
 			r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
 			p.scope.declare(string(r.Token.Src()), r)
-		case
-			')',
-			rune(IDENTIFIER):
-
-			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(), Token2: p.shift()}
 		default:
-			panic(todo("", p.peek2(2)))
+			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(), Token2: p.shift()}
 		}
 	case '{':
 		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(), Token2: p.shift(), EnumeratorList: p.enumeratorList()}
@@ -2880,17 +2908,6 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 		case eof:
 			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 			return nil
-		case
-			')',
-			'*',
-			',',
-			';',
-			'[',
-			rune(ATTRIBUTE),
-			rune(IDENTIFIER):
-
-			r.Case = StructOrUnionSpecifierTag
-			return r
 		case '{':
 			r.Case = StructOrUnionSpecifierDef
 			r.Token2 = p.shift()
@@ -2899,7 +2916,8 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 			return r
 		default:
-			panic(todo("", p.toks[0]))
+			r.Case = StructOrUnionSpecifierTag
+			return r
 		}
 	default:
 		panic(todo("", p.toks[0]))

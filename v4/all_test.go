@@ -173,6 +173,7 @@ func exampleAST(rule int, src string) (r interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			r = fmt.Sprintf("%v (%v:)", err, origin(5))
+			trc("%v\n%s", r, debug.Stack())
 		}
 	}()
 
@@ -743,34 +744,6 @@ func TestTranslationPhase4(t *testing.T) {
 		// Missing <apr_pools.h>
 		"binary-trees-2.c": {},
 		"binary-trees-3.c": {},
-
-		"binary-trees-5.c":       {}, //TODO
-		"fannkuchredux-2.c":      {}, //TODO
-		"fannkuchredux-3.c":      {}, //TODO
-		"fannkuchredux-4.c":      {}, //TODO
-		"fasta-4.c":              {}, //TODO
-		"fasta.c":                {}, //TODO
-		"k-nucleotide.c":         {}, //TODO
-		"mandelbrot-3.c":         {}, //TODO
-		"mandelbrot-4.c":         {}, //TODO
-		"mandelbrot-6.c":         {}, //TODO
-		"mandelbrot-7.c":         {}, //TODO
-		"mandelbrot.c":           {}, //TODO
-		"nbody-4.c":              {}, //TODO
-		"nbody-8.c":              {}, //TODO
-		"nbody-9.c":              {}, //TODO
-		"pidigits-2.c":           {}, //TODO
-		"pidigits-6.c":           {}, //TODO
-		"pidigits.c":             {}, //TODO
-		"regex-redux-3.c":        {}, //TODO
-		"regex-redux-4.c":        {}, //TODO
-		"regex-redux-5.c":        {}, //TODO
-		"reverse-complement-2.c": {}, //TODO
-		"reverse-complement-4.c": {}, //TODO
-		"reverse-complement-5.c": {}, //TODO
-		"spectral-norm-4.c":      {}, //TODO
-		"spectral-norm-5.c":      {}, //TODO
-		"spectral-norm-6.c":      {}, //TODO
 	}
 	blacklistGCC := map[string]struct{}{
 		// assertions are deprecated.
@@ -1117,12 +1090,6 @@ func TestParse(t *testing.T) {
 		// Missing <apr_pools.h>
 		"binary-trees-2.c": {},
 		"binary-trees-3.c": {},
-
-		"nbody-8.c":         {}, //TODO-
-		"nbody-9.c":         {}, //TODO-
-		"regex-redux-4.c":   {}, //TODO-
-		"regex-redux-5.c":   {}, //TODO-
-		"spectral-norm-6.c": {}, //TODO-
 	}
 	blacklistGCC := map[string]struct{}{
 		// assertions are deprecated.
@@ -1135,9 +1102,7 @@ func TestParse(t *testing.T) {
 		//TODO What's the type of bar?
 		"20010313-1.c": {},
 
-		"20000917-1.c":                 {}, //TODO-
 		"20010114-1.c":                 {}, //TODO-
-		"20010118-1.c":                 {}, //TODO-
 		"20010124-1.c":                 {}, //TODO-
 		"20010325-1.c":                 {}, //TODO-
 		"20010605-1.c":                 {}, //TODO-
@@ -1145,56 +1110,27 @@ func TestParse(t *testing.T) {
 		"20010903-2.c":                 {}, //TODO-
 		"20010911-1.c":                 {}, //TODO-
 		"20020411-1.c":                 {}, //TODO-
-		"20020412-1.c":                 {}, //TODO-
 		"20030903-1.c":                 {}, //TODO-
 		"20030910-1.c":                 {}, //TODO-
 		"20031112-1.c":                 {}, //TODO-
-		"20040302-1.c":                 {}, //TODO-
-		"20040614-1.c":                 {}, //TODO-
-		"20041214-1.c":                 {}, //TODO-
 		"20050121-1.c":                 {}, //TODO-
-		"20050510-1.c":                 {}, //TODO-
 		"20070603-1.c":                 {}, //TODO-
-		"20071210-1.c":                 {}, //TODO-
-		"20071220-1.c":                 {}, //TODO-
 		"20081108-1.c":                 {}, //TODO-
-		"20101216-1.c":                 {}, //TODO-
 		"20110131-1.c":                 {}, //TODO-
 		"20121107-1.c":                 {}, //TODO-
-		"920302-1.c":                   {}, //TODO-
-		"920415-1.c":                   {}, //TODO-
-		"920428-2.c":                   {}, //TODO-
-		"920428-3.c":                   {}, //TODO-
-		"920501-3.c":                   {}, //TODO-
-		"920501-4.c":                   {}, //TODO-
-		"920501-5.c":                   {}, //TODO-
-		"920501-7.c":                   {}, //TODO-
-		"920502-1.c":                   {}, //TODO-
-		"920502-2.c":                   {}, //TODO-
-		"920721-4.c":                   {}, //TODO-
-		"920826-1.c":                   {}, //TODO-
-		"920831-1.c":                   {}, //TODO-
-		"920928-5.c":                   {}, //TODO-
-		"921012-1.c":                   {}, //TODO-
 		"921215-1.c":                   {}, //TODO-
 		"930513-1.c":                   {}, //TODO-
 		"940718-1.c":                   {}, //TODO-
-		"950613-1.c":                   {}, //TODO-
 		"961031-1.c":                   {}, //TODO-
 		"980505-1.c":                   {}, //TODO-
 		"980526-1.c":                   {}, //TODO-
-		"980929-1.c":                   {}, //TODO-
 		"981001-2.c":                   {}, //TODO-
 		"981001-4.c":                   {}, //TODO-
 		"981223-1.c":                   {}, //TODO-
-		"990928-1.c":                   {}, //TODO-
 		"991213-1.c":                   {}, //TODO-
 		"991213-2.c":                   {}, //TODO-
-		"991213-3.c":                   {}, //TODO-
 		"builtin-types-compatible-p.c": {}, //TODO-
 		"callind.c":                    {}, //TODO-
-		"comp-goto-1.c":                {}, //TODO-
-		"comp-goto-2.c":                {}, //TODO-
 		"complex-1-lib.c":              {}, //TODO-
 		"complex-1.c":                  {}, //TODO-
 		"complex-2.c":                  {}, //TODO-
@@ -1202,49 +1138,25 @@ func TestParse(t *testing.T) {
 		"complex-4.c":                  {}, //TODO-
 		"cp.c":                         {}, //TODO-
 		"dll.c":                        {}, //TODO-
-		"enum-3.c":                     {}, //TODO-
-		"fp-cmp-4.c":                   {}, //TODO-
-		"fp-cmp-4f.c":                  {}, //TODO-
-		"fp-cmp-4l.c":                  {}, //TODO-
-		"fp-cmp-5.c":                   {}, //TODO-
-		"fp-cmp-8.c":                   {}, //TODO-
-		"fp-cmp-8f.c":                  {}, //TODO-
-		"fp-cmp-8l.c":                  {}, //TODO-
-		"labels-3.c":                   {}, //TODO-
 		"nest-align-1.c":               {}, //TODO-
-		"packed-aligned.c":             {}, //TODO-
 		"pc44485.c":                    {}, //TODO-
-		"pr17913.c":                    {}, //TODO-
-		"pr18903.c":                    {}, //TODO-
-		"pr21356.c":                    {}, //TODO-
 		"pr22098-1.c":                  {}, //TODO-
 		"pr22098-2.c":                  {}, //TODO-
 		"pr22098-3.c":                  {}, //TODO-
-		"pr22422.c":                    {}, //TODO-
 		"pr24135.c":                    {}, //TODO-
-		"pr25224.c":                    {}, //TODO-
 		"pr25860.c":                    {}, //TODO-
 		"pr27341-1.c":                  {}, //TODO-
-		"pr27863.c":                    {}, //TODO-
-		"pr28489.c":                    {}, //TODO-
-		"pr29128.c":                    {}, //TODO-
-		"pr30984.c":                    {}, //TODO-
 		"pr32139.c":                    {}, //TODO-
-		"pr32919.c":                    {}, //TODO-
 		"pr33382.c":                    {}, //TODO-
 		"pr34154.c":                    {}, //TODO-
 		"pr34648.c":                    {}, //TODO-
 		"pr34768-1.c":                  {}, //TODO-
 		"pr34768-2.c":                  {}, //TODO-
-		"pr34993.c":                    {}, //TODO-
 		"pr36666.c":                    {}, //TODO-
 		"pr37418-3.c":                  {}, //TODO-
 		"pr37418-4.c":                  {}, //TODO-
-		"pr38016.c":                    {}, //TODO-
-		"pr38554.c":                    {}, //TODO-
 		"pr38771.c":                    {}, //TODO-
 		"pr38969.c":                    {}, //TODO-
-		"pr39120.c":                    {}, //TODO-
 		"pr40233.c":                    {}, //TODO-
 		"pr42196-1.c":                  {}, //TODO-
 		"pr42196-2.c":                  {}, //TODO-
@@ -1255,29 +1167,17 @@ func TestParse(t *testing.T) {
 		"pr43845.c":                    {}, //TODO-
 		"pr44119.c":                    {}, //TODO-
 		"pr44197.c":                    {}, //TODO-
-		"pr45109.c":                    {}, //TODO-
-		"pr46107.c":                    {}, //TODO-
-		"pr46866.c":                    {}, //TODO-
 		"pr47428.c":                    {}, //TODO-
-		"pr51495.c":                    {}, //TODO-
 		"pr51694.c":                    {}, //TODO-
 		"pr54103-1.c":                  {}, //TODO-
 		"pr54103-2.c":                  {}, //TODO-
 		"pr54103-3.c":                  {}, //TODO-
 		"pr54103-4.c":                  {}, //TODO-
-		"pr54103-5.c":                  {}, //TODO-
 		"pr54103-6.c":                  {}, //TODO-
 		"pr54552-1.c":                  {}, //TODO-
 		"pr56571.c":                    {}, //TODO-
-		"pr58164.c":                    {}, //TODO-
-		"pr64242.c":                    {}, //TODO-
 		"pr68249.c":                    {}, //TODO-
-		"pr68532.c":                    {}, //TODO-
-		"pr70190.c":                    {}, //TODO-
-		"pr70199.c":                    {}, //TODO-
-		"pr70460.c":                    {}, //TODO-
 		"pr70916.c":                    {}, //TODO-
-		"pr71494.c":                    {}, //TODO-
 		"pr72802.c":                    {}, //TODO-
 		"pr77754-1.c":                  {}, //TODO-
 		"pr77754-2.c":                  {}, //TODO-
@@ -1288,61 +1188,22 @@ func TestParse(t *testing.T) {
 		"pr78694.c":                    {}, //TODO-
 		"pr80692.c":                    {}, //TODO-
 		"pr82052.c":                    {}, //TODO-
-		"pr82337.c":                    {}, //TODO-
-		"pr83547.c":                    {}, //TODO-
-		"pr84136.c":                    {}, //TODO-
 		"pr84305.c":                    {}, //TODO-
-		"pr84960.c":                    {}, //TODO-
-		"pr86659-1.c":                  {}, //TODO-
-		"pr86659-2.c":                  {}, //TODO-
 		"pr87110.c":                    {}, //TODO-
-		"pr89369.c":                    {}, //TODO-
 		"pr89655.c":                    {}, //TODO-
-		"section.c":                    {}, //TODO-
 		"sra-1.c":                      {}, //TODO-
-		"va-arg-22.c":                  {}, //TODO-
 		"widechar-1.c":                 {}, //TODO-
 		"zerolen-2.c":                  {}, //TODO-
 	}
-	blacklistCxgo := map[string]struct{}{
-		"forward enum.c":      {}, //TODO-
-		"literal statement.c": {}, //TODO-
-	}
+	blacklistCxgo := map[string]struct{}{}
 	blacklistVNMakarov := map[string]struct{}{
 		// #endif without #if
 		"endif.c": {},
 
 		"declarator-abstract.c": {}, //TODO-
-		"short-circuit-comma.c": {}, //TODO-
 		"fermian-2.c":           {}, //TODO-
 	}
-	blacklictTCC := map[string]struct{}{
-		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
-
-		"02.c":                        {}, //TODO-
-		"03.c":                        {}, //TODO-
-		"04.c":                        {}, //TODO-
-		"06.c":                        {}, //TODO-
-		"07.c":                        {}, //TODO-
-		"08.c":                        {}, //TODO-
-		"09.c":                        {}, //TODO-
-		"10.c":                        {}, //TODO-
-		"14.c":                        {}, //TODO-
-		"15.c":                        {}, //TODO-
-		"17.c":                        {}, //TODO-
-		"18.c":                        {}, //TODO-
-		"19.c":                        {}, //TODO-
-		"20.c":                        {}, //TODO-
-		"21.c":                        {}, //TODO-
-		"pp-counter.c":                {}, //TODO-
-		"17_enum.c":                   {}, //TODO-
-		"39_typedef.c":                {}, //TODO-
-		"76_dollars_in_identifiers.c": {}, //TODO-
-		"81_types.c":                  {}, //TODO-
-		"90_struct-init.c":            {}, //TODO-
-		"94_generic.c":                {}, //TODO-
-		"99_fastcall.c":               {}, //TODO-
-	}
+	blacklictTCC := map[string]struct{}{}
 	blacklistCompCert := map[string]struct{}{}
 	blacklistCcgo := map[string]struct{}{}
 	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
@@ -1402,7 +1263,7 @@ func TestParse(t *testing.T) {
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
 		{cfg, "sqlite-amalgamation-3370200", nil},
-		{cfg, "tcc-0.9.27/tests", blacklictTCC},
+		{cfg, "tcc-0.9.27/tests/tests2", blacklictTCC},
 		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
