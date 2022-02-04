@@ -53,8 +53,8 @@ void *__builtin_va_arg_sink(int, ...);
 #endif
 
 #ifdef __clang__
-#define __builtin_convertvector(src, type) (*(type*)&src)
 #define __builtin_bit_cast(type, arg) (*(type*)&arg)
+#define __builtin_convertvector(src, type) (*(type*)&src)
 #elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #endif
 `
@@ -1100,109 +1100,87 @@ func TestParse(t *testing.T) {
 		"pr88347.c": {},
 		"pr88423.c": {},
 
-		//TODO What's the type of bar?
-		"20010313-1.c": {},
-
-		"20010114-1.c":                 {}, //TODO-
-		"20010124-1.c":                 {}, //TODO-
-		"20010325-1.c":                 {}, //TODO-
-		"20010605-1.c":                 {}, //TODO-
-		"20010605-2.c":                 {}, //TODO-
-		"20010903-2.c":                 {}, //TODO-
-		"20010911-1.c":                 {}, //TODO-
-		"20020411-1.c":                 {}, //TODO-
-		"20030903-1.c":                 {}, //TODO-
-		"20030910-1.c":                 {}, //TODO-
-		"20031112-1.c":                 {}, //TODO-
-		"20050121-1.c":                 {}, //TODO-
-		"20070603-1.c":                 {}, //TODO-
-		"20081108-1.c":                 {}, //TODO-
-		"20110131-1.c":                 {}, //TODO-
-		"20121107-1.c":                 {}, //TODO-
-		"921215-1.c":                   {}, //TODO-
-		"930513-1.c":                   {}, //TODO-
-		"940718-1.c":                   {}, //TODO-
-		"961031-1.c":                   {}, //TODO-
-		"980505-1.c":                   {}, //TODO-
-		"980526-1.c":                   {}, //TODO-
-		"981001-2.c":                   {}, //TODO-
-		"981001-4.c":                   {}, //TODO-
-		"981223-1.c":                   {}, //TODO-
-		"991213-1.c":                   {}, //TODO-
-		"991213-2.c":                   {}, //TODO-
-		"builtin-types-compatible-p.c": {}, //TODO-
-		"callind.c":                    {}, //TODO-
-		"complex-1-lib.c":              {}, //TODO-
-		"complex-1.c":                  {}, //TODO-
-		"complex-2.c":                  {}, //TODO-
-		"complex-3.c":                  {}, //TODO-
-		"complex-4.c":                  {}, //TODO-
-		"cp.c":                         {}, //TODO-
-		"dll.c":                        {}, //TODO-
-		"nest-align-1.c":               {}, //TODO-
-		"pc44485.c":                    {}, //TODO-
-		"pr22098-1.c":                  {}, //TODO-
-		"pr22098-2.c":                  {}, //TODO-
-		"pr22098-3.c":                  {}, //TODO-
-		"pr24135.c":                    {}, //TODO-
-		"pr25860.c":                    {}, //TODO-
-		"pr27341-1.c":                  {}, //TODO-
-		"pr32139.c":                    {}, //TODO-
-		"pr33382.c":                    {}, //TODO-
-		"pr34154.c":                    {}, //TODO-
-		"pr34648.c":                    {}, //TODO-
-		"pr34768-1.c":                  {}, //TODO-
-		"pr34768-2.c":                  {}, //TODO-
-		"pr36666.c":                    {}, //TODO-
-		"pr37418-3.c":                  {}, //TODO-
-		"pr37418-4.c":                  {}, //TODO-
-		"pr38771.c":                    {}, //TODO-
-		"pr38969.c":                    {}, //TODO-
-		"pr40233.c":                    {}, //TODO-
-		"pr42196-1.c":                  {}, //TODO-
-		"pr42196-2.c":                  {}, //TODO-
-		"pr42196-3.c":                  {}, //TODO-
-		"pr42716.c":                    {}, //TODO-
-		"pr42717.c":                    {}, //TODO-
-		"pr43661.c":                    {}, //TODO-
-		"pr43845.c":                    {}, //TODO-
-		"pr44119.c":                    {}, //TODO-
-		"pr44197.c":                    {}, //TODO-
-		"pr47428.c":                    {}, //TODO-
-		"pr51694.c":                    {}, //TODO-
-		"pr54103-1.c":                  {}, //TODO-
-		"pr54103-2.c":                  {}, //TODO-
-		"pr54103-3.c":                  {}, //TODO-
-		"pr54103-4.c":                  {}, //TODO-
-		"pr54103-6.c":                  {}, //TODO-
-		"pr54552-1.c":                  {}, //TODO-
-		"pr56571.c":                    {}, //TODO-
-		"pr68249.c":                    {}, //TODO-
-		"pr70916.c":                    {}, //TODO-
-		"pr72802.c":                    {}, //TODO-
-		"pr77754-1.c":                  {}, //TODO-
-		"pr77754-2.c":                  {}, //TODO-
-		"pr77754-3.c":                  {}, //TODO-
-		"pr77754-4.c":                  {}, //TODO-
-		"pr77754-5.c":                  {}, //TODO-
-		"pr77754-6.c":                  {}, //TODO-
-		"pr78694.c":                    {}, //TODO-
-		"pr80692.c":                    {}, //TODO-
-		"pr82052.c":                    {}, //TODO-
-		"pr84305.c":                    {}, //TODO-
-		"pr87110.c":                    {}, //TODO-
-		"pr89655.c":                    {}, //TODO-
-		"sra-1.c":                      {}, //TODO-
-		"widechar-1.c":                 {}, //TODO-
-		"zerolen-2.c":                  {}, //TODO-
+		"20010124-1.c":                 {}, //TODO
+		"20010325-1.c":                 {}, //TODO
+		"20010605-1.c":                 {}, //TODO
+		"20010903-2.c":                 {}, //TODO
+		"20010911-1.c":                 {}, //TODO
+		"20030910-1.c":                 {}, //TODO
+		"20031112-1.c":                 {}, //TODO
+		"20050121-1.c":                 {}, //TODO
+		"20081108-1.c":                 {}, //TODO
+		"20110131-1.c":                 {}, //TODO
+		"20121107-1.c":                 {}, //TODO
+		"930513-1.c":                   {}, //TODO
+		"940718-1.c":                   {}, //TODO
+		"961031-1.c":                   {}, //TODO
+		"980505-1.c":                   {}, //TODO
+		"980526-1.c":                   {}, //TODO
+		"981001-2.c":                   {}, //TODO
+		"981001-4.c":                   {}, //TODO
+		"991213-2.c":                   {}, //TODO
+		"builtin-types-compatible-p.c": {}, //TODO
+		"callind.c":                    {}, //TODO
+		"cp.c":                         {}, //TODO
+		"dll.c":                        {}, //TODO
+		"nest-align-1.c":               {}, //TODO
+		"pc44485.c":                    {}, //TODO
+		"pr22098-1.c":                  {}, //TODO
+		"pr22098-2.c":                  {}, //TODO
+		"pr22098-3.c":                  {}, //TODO
+		"pr24135.c":                    {}, //TODO
+		"pr25860.c":                    {}, //TODO
+		"pr32139.c":                    {}, //TODO
+		"pr33382.c":                    {}, //TODO
+		"pr34154.c":                    {}, //TODO
+		"pr34648.c":                    {}, //TODO
+		"pr34768-1.c":                  {}, //TODO
+		"pr34768-2.c":                  {}, //TODO
+		"pr36666.c":                    {}, //TODO
+		"pr37418-3.c":                  {}, //TODO
+		"pr37418-4.c":                  {}, //TODO
+		"pr38771.c":                    {}, //TODO
+		"pr40233.c":                    {}, //TODO
+		"pr42716.c":                    {}, //TODO
+		"pr42717.c":                    {}, //TODO
+		"pr43661.c":                    {}, //TODO
+		"pr43845.c":                    {}, //TODO
+		"pr44119.c":                    {}, //TODO
+		"pr44197.c":                    {}, //TODO
+		"pr47428.c":                    {}, //TODO
+		"pr51694.c":                    {}, //TODO
+		"pr54103-1.c":                  {}, //TODO
+		"pr54103-2.c":                  {}, //TODO
+		"pr54103-3.c":                  {}, //TODO
+		"pr54103-4.c":                  {}, //TODO
+		"pr54103-6.c":                  {}, //TODO
+		"pr54552-1.c":                  {}, //TODO
+		"pr56571.c":                    {}, //TODO
+		"pr68249.c":                    {}, //TODO
+		"pr70916.c":                    {}, //TODO
+		"pr72802.c":                    {}, //TODO
+		"pr77754-1.c":                  {}, //TODO
+		"pr77754-2.c":                  {}, //TODO
+		"pr77754-3.c":                  {}, //TODO
+		"pr77754-4.c":                  {}, //TODO
+		"pr77754-5.c":                  {}, //TODO
+		"pr77754-6.c":                  {}, //TODO
+		"pr78694.c":                    {}, //TODO
+		"pr80692.c":                    {}, //TODO
+		"pr82052.c":                    {}, //TODO
+		"pr84305.c":                    {}, //TODO
+		"pr87110.c":                    {}, //TODO
+		"pr89655.c":                    {}, //TODO
+		"widechar-1.c":                 {}, //TODO
+		"zerolen-2.c":                  {}, //TODO
 	}
 	blacklistCxgo := map[string]struct{}{}
 	blacklistVNMakarov := map[string]struct{}{
 		// #endif without #if
 		"endif.c": {},
 
-		"declarator-abstract.c": {}, //TODO-
-		"fermian-2.c":           {}, //TODO-
+		// syntax error
+		"fermian-2.c": {},
 	}
 	blacklictTCC := map[string]struct{}{}
 	blacklistCompCert := map[string]struct{}{}
@@ -1333,6 +1311,7 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 				defer func() {
 					if e := recover(); e != nil && err == nil {
 						err = fmt.Errorf("%v: PANIC: %v", pth, e)
+						// trc("\n%s", debug.Stack())
 					}
 				}()
 

@@ -65,6 +65,7 @@ var keywords = map[string]rune{
 	"_Float32x":     rune(FLOAT32X),
 	"_Float64":      rune(FLOAT64),
 	"_Float64x":     rune(FLOAT64X),
+	"_Nonnull":      rune(NONNULL),
 	"__alignof":     rune(ALIGNOF),
 	"__alignof__":   rune(ALIGNOF),
 	"__asm":         rune(ASM),
@@ -74,12 +75,14 @@ var keywords = map[string]rune{
 	"__complex__":   rune(COMPLEX),
 	"__const":       rune(CONST),
 	"__float128":    rune(FLOAT128),
+	"__imag__":      rune(IMAG),
 	"__inline":      rune(INLINE),
 	"__inline__":    rune(INLINE),
 	"__int128":      rune(INT128),
 	"__label__":     rune(LABEL),
 	"__m128":        rune(M128),
 	"__m256d":       rune(M256D),
+	"__real__":      rune(REAL),
 	"__restrict":    rune(RESTRICT),
 	"__restrict__":  rune(RESTRICT),
 	"__signed":      rune(SIGNED),
@@ -438,9 +441,11 @@ func (p *parser) compoundStatement(isFnScope bool, params *Scope) (r *CompoundSt
 
 	if isFnScope {
 		p.fnScope = p.scope
-		for nm, v := range params.Nodes {
-			for _, n := range v {
-				p.scope.declare(nm, n)
+		if params != nil {
+			for nm, v := range params.Nodes {
+				for _, n := range v {
+					p.scope.declare(nm, n)
+				}
 			}
 		}
 	}
@@ -534,6 +539,7 @@ func (p *parser) isTypeQualifier(ch rune) bool {
 	case
 		rune(ATOMIC),
 		rune(CONST),
+		rune(NONNULL),
 		rune(RESTRICT),
 		rune(VOLATILE):
 
@@ -642,10 +648,12 @@ func (p *parser) isExpression(ch rune) bool {
 		rune(FLOATCONST),
 		rune(GENERIC),
 		rune(IDENTIFIER),
+		rune(IMAG),
 		rune(INC),
 		rune(INTCONST),
 		rune(LONGCHARCONST),
 		rune(LONGSTRINGLITERAL),
+		rune(REAL),
 		rune(SIZEOF),
 		rune(STRINGLITERAL):
 
@@ -1957,6 +1965,10 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token) (r *UnaryExpr
 		}
 	case rune(ANDAND):
 		return &UnaryExpression{Case: UnaryExpressionLabelAddr, Token: p.shift(), Token2: p.must(rune(IDENTIFIER))}
+	case rune(REAL):
+		return &UnaryExpression{Case: UnaryExpressionReal, Token: p.shift(), UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
+	case rune(IMAG):
+		return &UnaryExpression{Case: UnaryExpressionImag, Token: p.shift(), UnaryExpression: p.unaryExpression(Token{}, nil, Token{})}
 	default:
 		panic(todo("", p.toks[0]))
 	}
@@ -2371,10 +2383,18 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 				dad := &DirectAbstractDeclarator{
 					Case:               DirectAbstractDeclaratorDecl,
 					Token:              lparen,
-					AbstractDeclarator: p.abstractDeclarator(nil, true),
+					AbstractDeclarator: x,
 					Token2:             p.must(')'),
 				}
 				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
+			case *Declarator:
+				dd := &DirectDeclarator{
+					Case:       DirectDeclaratorDecl,
+					Token:      lparen,
+					Declarator: x,
+					Token2:     p.must(')'),
+				}
+				return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 			default:
 				p.rune()
 				panic(todo("%v %T", p.toks[0], x))
@@ -2395,12 +2415,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 			default:
 				panic(todo("", p.toks[0]))
 			}
-		case
-			'*',
-			'^':
-
+		case '*':
 			ptr := p.pointer(false)
-			switch p.rune2() {
+			switch p.rune() {
 			case
 				')',
 				'[':
@@ -2429,6 +2446,20 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 				default:
 					panic(todo("", p.toks[0]))
 				}
+			default:
+				panic(todo("", p.toks[0]))
+			}
+		case '^':
+			ptr := p.pointer(false)
+			switch p.rune() {
+			case ')':
+				dad := &DirectAbstractDeclarator{
+					Case:               DirectAbstractDeclaratorDecl,
+					Token:              lparen,
+					AbstractDeclarator: p.abstractDeclarator(ptr, false),
+					Token2:             p.must(')'),
+				}
+				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
 			default:
 				panic(todo("", p.toks[0]))
 			}
@@ -2646,6 +2677,8 @@ func (p *parser) typeQualifier(acceptAttributes bool) *TypeQualifier {
 		return &TypeQualifier{Case: TypeQualifierVolatile, Token: p.shift()}
 	case rune(ATOMIC):
 		return &TypeQualifier{Case: TypeQualifierAtomic, Token: p.shift()}
+	case rune(NONNULL):
+		return &TypeQualifier{Case: TypeQualifierNonnull, Token: p.shift()}
 	case rune(ATTRIBUTE):
 		if acceptAttributes {
 			return &TypeQualifier{Case: TypeQualifierAttr, AttributeSpecifierList: p.attributeSpecifierListOpt()}

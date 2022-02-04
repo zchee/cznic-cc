@@ -4492,6 +4492,7 @@ const (
 	TypeQualifierRestrict
 	TypeQualifierVolatile
 	TypeQualifierAtomic
+	TypeQualifierNonnull
 )
 
 // String implements fmt.Stringer
@@ -4505,6 +4506,8 @@ func (n TypeQualifierCase) String() string {
 		return "TypeQualifierVolatile"
 	case TypeQualifierAtomic:
 		return "TypeQualifierAtomic"
+	case TypeQualifierNonnull:
+		return "TypeQualifierNonnull"
 	default:
 		return fmt.Sprintf("TypeQualifierCase(%v)", int(n))
 	}
@@ -4517,6 +4520,7 @@ func (n TypeQualifierCase) String() string {
 //	|       "restrict"  // Case TypeQualifierRestrict
 //	|       "volatile"  // Case TypeQualifierVolatile
 //	|       "_Atomic"   // Case TypeQualifierAtomic
+//	|       "_Nonnull"  // Case TypeQualifierNonnull
 type TypeQualifier struct {
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   TypeQualifierCase `PrettyPrint:"stringer,zero"`
@@ -4804,6 +4808,8 @@ const (
 	UnaryExpressionLabelAddr
 	UnaryExpressionAlignofExpr
 	UnaryExpressionAlignofType
+	UnaryExpressionImag
+	UnaryExpressionReal
 )
 
 // String implements fmt.Stringer
@@ -4837,6 +4843,10 @@ func (n UnaryExpressionCase) String() string {
 		return "UnaryExpressionAlignofExpr"
 	case UnaryExpressionAlignofType:
 		return "UnaryExpressionAlignofType"
+	case UnaryExpressionImag:
+		return "UnaryExpressionImag"
+	case UnaryExpressionReal:
+		return "UnaryExpressionReal"
 	default:
 		return fmt.Sprintf("UnaryExpressionCase(%v)", int(n))
 	}
@@ -4859,6 +4869,8 @@ func (n UnaryExpressionCase) String() string {
 //	|       "&&" IDENTIFIER              // Case UnaryExpressionLabelAddr
 //	|       "_Alignof" UnaryExpression   // Case UnaryExpressionAlignofExpr
 //	|       "_Alignof" '(' TypeName ')'  // Case UnaryExpressionAlignofType
+//	|       "__imag__" UnaryExpression   // Case UnaryExpressionImag
+//	|       "__real__" UnaryExpression   // Case UnaryExpressionReal
 type UnaryExpression struct {
 	Case              UnaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression    *CastExpression
@@ -4908,7 +4920,7 @@ func (n *UnaryExpression) Position() (r token.Position) {
 		}
 
 		return n.Token3.Position()
-	case 1, 2, 9, 12:
+	case 1, 2, 9, 12, 14, 15:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}

@@ -94,6 +94,7 @@ package cc // import "modernc.org/cc/v4"
 	MULASSIGN		"*="
 	NEQ			"!="
 	NORETURN		"_Noreturn"
+	NONNULL  		"_Nonnull"
 	ORASSIGN		"|="
 	OROR			"||"
 	PPNUMBER		"preprocessing number"
@@ -232,10 +233,10 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case AlignofExpr*/ |	"_Alignof" UnaryExpression
 			/*yy:example int i = _Alignof(int); */
 /*yy:case AlignofType*/ |	"_Alignof" '(' TypeName ')'
-// 			/*yy:example double i = __imag__ x; */
-// /*yy:case Imag       */ |	"__imag__" UnaryExpression
-// 			/*yy:example double i = __real__ x; */
-// /*yy:case Real       */ |	"__real__" UnaryExpression
+			/*yy:example double i = __imag__ x; */
+/*yy:case Imag       */ |	"__imag__" UnaryExpression
+			/*yy:example double i = __real__ x; */
+/*yy:case Real       */ |	"__real__" UnaryExpression
 
 			/* [0], 6.5.4 Cast operators */
 			/*yy:example int i = 42; */
@@ -595,6 +596,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Volatile   */ |	"volatile"
 			/*yy:example _Atomic int i; */
 /*yy:case Atomic     */ |	"_Atomic"
+			/*yy:example _Nonnull int i; */
+/*yy:case Nonnull    */ |	"_Nonnull"
 
 			/* [0], 6.7.4 Function specifiers */
 			/*yy:example inline int f() {}*/

@@ -114,6 +114,7 @@ const (
 	MODASSIGN              // %=
 	MULASSIGN              // *=
 	NEQ                    // !=
+	NONNULL                // _Nonnull
 	NORETURN               // _Noreturn
 	ORASSIGN               // |=
 	OROR                   // ||
