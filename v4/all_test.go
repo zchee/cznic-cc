@@ -54,6 +54,7 @@ void *__builtin_va_arg_sink(int, ...);
 
 #ifdef __clang__
 #define __builtin_convertvector(src, type) (*(type*)&src)
+#define __builtin_bit_cast(type, arg) (*(type*)&arg)
 #elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #endif
 `
@@ -1221,14 +1222,32 @@ func TestParse(t *testing.T) {
 		blacklistGame["spectral-norm-6.c"] = struct{}{}
 	case "linux/386":
 		blacklistCompCert["aes.c"] = struct{}{} // include file not found: "../endian.h"
-	case "darwin/amd64", "darwin/arm64", "freebsd/amd64", "freebsd/386":
+	case "darwin/amd64":
 		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
-		blacklistGame["spectral-norm-4.c"] = struct{}{} // no cpu_set_t on darwin/freebsd.
+		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
+		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
+		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
+	case "darwin/arm64":
+		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
+		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
+		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
+		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
+	case "freebsd/amd64":
+		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
+		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
+		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
+		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
+	case "freebsd/386":
+		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
+		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
+		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
+		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
 	case "windows/amd64", "windows/386":
 		blacklistCompCert["aes.c"] = struct{}{}       // include file not found: "../endian.h"
 		blacklistCxgo["inet.c"] = struct{}{}          // include file not found: <arpa/inet.h>
 		blacklistGCC["loop-2f.c"] = struct{}{}        // include file not found: <sys/mman.h>
 		blacklistGCC["loop-2g.c"] = struct{}{}        // include file not found: <sys/mman.h>
+		blacklistGame["mandelbrot-7.c"] = struct{}{}  // linux only
 		blacklistGame["fasta-4.c"] = struct{}{}       // include file not found: <err.h>
 		blacklistGame["pidigits-2.c"] = struct{}{}    // include file not found: <gmp.h>
 		blacklistGame["pidigits-6.c"] = struct{}{}    // include file not found: <threads.h>
@@ -1240,11 +1259,12 @@ func TestParse(t *testing.T) {
 		blacklistGame["regex-redux-5.c"] = struct{}{} // include file not found: <pcre2.h>
 		blacklistGame["spectral-norm-4.c"] = struct{}{}
 	case "netbsd/amd64":
+		blacklistGame["mandelbrot-7.c"] = struct{}{} // linux only
 		blacklistGame["spectral-norm-4.c"] = struct{}{}
 	case "openbsd/amd64":
 		blacklistCompCert["aes.c"] = struct{}{}       // include file not found: "../endian.h"
 		blacklistGame["binary-trees.c"] = struct{}{}  // u_short undefined.
-		blacklistGame["mandelbrot-7.c"] = struct{}{}  // include file not found: <omp.h>
+		blacklistGame["mandelbrot-7.c"] = struct{}{}  // linux only
 		blacklistGame["pidigits-6.c"] = struct{}{}    // include file not found: <threads.h>
 		blacklistGame["regex-redux-3.c"] = struct{}{} // include file not found: <omp.h>
 		blacklistGame["spectral-norm-4.c"] = struct{}{}
