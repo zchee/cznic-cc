@@ -50,6 +50,7 @@ package cc // import "modernc.org/cc/v4"
 	DECIMAL128		"_Decimal128"
 	DECIMAL32		"_Decimal32"
 	DECIMAL64		"_Decimal64"
+	DECLSPEC		"__declspec"
 	DEFAULT			"default"
 	DIVASSIGN		"/="
 	DO			"do"
@@ -413,7 +414,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Init       */ |	Declarator Asm '=' Initializer
 
 			/* [0], 6.7.1 Storage-class specifiers */
-			/*yy:example typedef int int_t;*/
+			/*yy:field	Declspecs	[]Token*/
+			/*yy:example typedef int int_t; */
 /*yy:case Typedef    */ StorageClassSpecifier:
 				"typedef"
 			/*yy:example extern int i;*/
@@ -426,6 +428,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Register   */ |	"register"
 			/*yy:example _Thread_local int i;*/
 /*yy:case ThreadLocal*/ |	"_Thread_local"
+			/*yy:example __declspec(foo) int i;*/
+/*yy:case Declspec   */ |	"__declspec" '(' /* ... */ ')'
 
 			/* [0], 6.7.2 Type specifiers */
 			/*yy:example void i(); */
@@ -457,8 +461,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Float16    */ |	"_Float16"
 // 			/*yy:example _Decimal32 i; */
 // /*yy:case Decimal32  */ |	"_Decimal32"
-// 			/*yy:example _Decimal64 i; */
-// /*yy:case Decimal64  */ |	"_Decimal64"
+			/*yy:example _Decimal64 i; */
+/*yy:case Decimal64  */ |	"_Decimal64"
 // 			/*yy:example _Decimal128 i; */
 // /*yy:case Decimal128 */ |	"_Decimal128"
 			/*yy:example _Float128 i; */
@@ -760,15 +764,21 @@ package cc // import "modernc.org/cc/v4"
 				IDENTIFIER ':' Statement
 			/*yy:example int f() { switch(i) case 42: x(); } */
 /*yy:case CaseLabel  */ |	"case" ConstantExpression ':' Statement
-// 			/*yy:example int f() { switch(i) case 42 ... 56: x(); } */
-// /*yy:case Range      */ |	"case" ConstantExpression "..." ConstantExpression ':' Statement
+			/*yy:example int f() { switch(i) case 42 ... 56: x(); } */
+/*yy:case Range      */ |	"case" ConstantExpression "..." ConstantExpression ':' Statement
 			/*yy:example int f() { switch(i) default: x(); } */
 /*yy:case Default    */ |	"default" ':' Statement
 
 			/* [0], 6.8.2 Compound statement */
 			/*yy:example int f() { __label__ L; int i; } 		*/
 			CompoundStatement:
-				'{' LabelDeclaration BlockItemList '}'
+				'{' LabelDeclarationList BlockItemList '}'
+
+			/*yy:example int f() { __label__ L; int i; } 		*/
+			LabelDeclarationList:
+				LabelDeclaration
+			/*yy:example int f() { __label__ L; __label__ L2; int i; } 	*/
+			|	LabelDeclarationList LabelDeclaration
 
 			/*yy:example int f() { int i; }*/
 			BlockItemList:

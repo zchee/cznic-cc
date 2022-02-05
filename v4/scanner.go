@@ -64,6 +64,7 @@ const (
 	DECIMAL128             // _Decimal128
 	DECIMAL32              // _Decimal32
 	DECIMAL64              // _Decimal64
+	DECLSPEC               // __declspec
 	DEFAULT                // default
 	DIVASSIGN              // /=
 	DO                     // do

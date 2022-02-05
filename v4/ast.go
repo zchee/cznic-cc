@@ -966,12 +966,12 @@ func (n *CastExpression) Position() (r token.Position) {
 // CompoundStatement represents data reduced by production:
 //
 //	CompoundStatement:
-//	        '{' LabelDeclaration BlockItemList '}'
+//	        '{' LabelDeclarationList BlockItemList '}'
 type CompoundStatement struct {
-	BlockItemList    *BlockItemList
-	LabelDeclaration *LabelDeclaration
-	Token            Token
-	Token2           Token
+	BlockItemList        *BlockItemList
+	LabelDeclarationList *LabelDeclarationList
+	Token                Token
+	Token2               Token
 }
 
 // String implements fmt.Stringer.
@@ -987,7 +987,7 @@ func (n *CompoundStatement) Position() (r token.Position) {
 		return p
 	}
 
-	if p := n.LabelDeclaration.Position(); p.IsValid() {
+	if p := n.LabelDeclarationList.Position(); p.IsValid() {
 		return p
 	}
 
@@ -2988,6 +2988,28 @@ func (n *LabelDeclaration) Position() (r token.Position) {
 	return n.Token2.Position()
 }
 
+// LabelDeclarationList represents data reduced by productions:
+//
+//	LabelDeclarationList:
+//	        LabelDeclaration
+//	|       LabelDeclarationList LabelDeclaration
+type LabelDeclarationList struct {
+	LabelDeclaration     *LabelDeclaration
+	LabelDeclarationList *LabelDeclarationList
+}
+
+// String implements fmt.Stringer.
+func (n *LabelDeclarationList) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *LabelDeclarationList) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	return n.LabelDeclaration.Position()
+}
+
 // LabeledStatementCase represents case numbers of production LabeledStatement
 type LabeledStatementCase int
 
@@ -2995,6 +3017,7 @@ type LabeledStatementCase int
 const (
 	LabeledStatementLabel LabeledStatementCase = iota
 	LabeledStatementCaseLabel
+	LabeledStatementRange
 	LabeledStatementDefault
 )
 
@@ -3005,6 +3028,8 @@ func (n LabeledStatementCase) String() string {
 		return "LabeledStatementLabel"
 	case LabeledStatementCaseLabel:
 		return "LabeledStatementCaseLabel"
+	case LabeledStatementRange:
+		return "LabeledStatementRange"
 	case LabeledStatementDefault:
 		return "LabeledStatementDefault"
 	default:
@@ -3015,15 +3040,18 @@ func (n LabeledStatementCase) String() string {
 // LabeledStatement represents data reduced by productions:
 //
 //	LabeledStatement:
-//	        IDENTIFIER ':' Statement                 // Case LabeledStatementLabel
-//	|       "case" ConstantExpression ':' Statement  // Case LabeledStatementCaseLabel
-//	|       "default" ':' Statement                  // Case LabeledStatementDefault
+//	        IDENTIFIER ':' Statement                                          // Case LabeledStatementLabel
+//	|       "case" ConstantExpression ':' Statement                           // Case LabeledStatementCaseLabel
+//	|       "case" ConstantExpression "..." ConstantExpression ':' Statement  // Case LabeledStatementRange
+//	|       "default" ':' Statement                                           // Case LabeledStatementDefault
 type LabeledStatement struct {
-	Case               LabeledStatementCase `PrettyPrint:"stringer,zero"`
-	ConstantExpression *ConstantExpression
-	Statement          *Statement
-	Token              Token
-	Token2             Token
+	Case                LabeledStatementCase `PrettyPrint:"stringer,zero"`
+	ConstantExpression  *ConstantExpression
+	ConstantExpression2 *ConstantExpression
+	Statement           *Statement
+	Token               Token
+	Token2              Token
+	Token3              Token
 }
 
 // String implements fmt.Stringer.
@@ -3036,6 +3064,28 @@ func (n *LabeledStatement) Position() (r token.Position) {
 	}
 
 	switch n.Case {
+	case 2:
+		if p := n.Token.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.ConstantExpression.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token2.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.ConstantExpression2.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token3.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Statement.Position()
 	case 1:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
@@ -3050,7 +3100,7 @@ func (n *LabeledStatement) Position() (r token.Position) {
 		}
 
 		return n.Statement.Position()
-	case 0, 2:
+	case 0, 3:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -4132,6 +4182,7 @@ const (
 	StorageClassSpecifierAuto
 	StorageClassSpecifierRegister
 	StorageClassSpecifierThreadLocal
+	StorageClassSpecifierDeclspec
 )
 
 // String implements fmt.Stringer
@@ -4149,6 +4200,8 @@ func (n StorageClassSpecifierCase) String() string {
 		return "StorageClassSpecifierRegister"
 	case StorageClassSpecifierThreadLocal:
 		return "StorageClassSpecifierThreadLocal"
+	case StorageClassSpecifierDeclspec:
+		return "StorageClassSpecifierDeclspec"
 	default:
 		return fmt.Sprintf("StorageClassSpecifierCase(%v)", int(n))
 	}
@@ -4157,15 +4210,19 @@ func (n StorageClassSpecifierCase) String() string {
 // StorageClassSpecifier represents data reduced by productions:
 //
 //	StorageClassSpecifier:
-//	        "typedef"        // Case StorageClassSpecifierTypedef
-//	|       "extern"         // Case StorageClassSpecifierExtern
-//	|       "static"         // Case StorageClassSpecifierStatic
-//	|       "auto"           // Case StorageClassSpecifierAuto
-//	|       "register"       // Case StorageClassSpecifierRegister
-//	|       "_Thread_local"  // Case StorageClassSpecifierThreadLocal
+//	        "typedef"             // Case StorageClassSpecifierTypedef
+//	|       "extern"              // Case StorageClassSpecifierExtern
+//	|       "static"              // Case StorageClassSpecifierStatic
+//	|       "auto"                // Case StorageClassSpecifierAuto
+//	|       "register"            // Case StorageClassSpecifierRegister
+//	|       "_Thread_local"       // Case StorageClassSpecifierThreadLocal
+//	|       "__declspec" '(' ')'  // Case StorageClassSpecifierDeclspec
 type StorageClassSpecifier struct {
-	Case  StorageClassSpecifierCase `PrettyPrint:"stringer,zero"`
-	Token Token
+	Declspecs []Token
+	Case      StorageClassSpecifierCase `PrettyPrint:"stringer,zero"`
+	Token     Token
+	Token2    Token
+	Token3    Token
 }
 
 // String implements fmt.Stringer.
@@ -4177,7 +4234,22 @@ func (n *StorageClassSpecifier) Position() (r token.Position) {
 		return r
 	}
 
-	return n.Token.Position()
+	switch n.Case {
+	case 0, 1, 2, 3, 4, 5:
+		return n.Token.Position()
+	case 6:
+		if p := n.Token.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token2.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Token3.Position()
+	default:
+		panic("internal error")
+	}
 }
 
 // StructDeclaration represents data reduced by production:
@@ -4606,6 +4678,7 @@ const (
 	TypeSpecifierLong
 	TypeSpecifierFloat
 	TypeSpecifierFloat16
+	TypeSpecifierDecimal64
 	TypeSpecifierFloat128
 	TypeSpecifierFloat128x
 	TypeSpecifierDouble
@@ -4649,6 +4722,8 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierFloat"
 	case TypeSpecifierFloat16:
 		return "TypeSpecifierFloat16"
+	case TypeSpecifierDecimal64:
+		return "TypeSpecifierDecimal64"
 	case TypeSpecifierFloat128:
 		return "TypeSpecifierFloat128"
 	case TypeSpecifierFloat128x:
@@ -4706,6 +4781,7 @@ func (n TypeSpecifierCase) String() string {
 //	|       "long"                       // Case TypeSpecifierLong
 //	|       "float"                      // Case TypeSpecifierFloat
 //	|       "_Float16"                   // Case TypeSpecifierFloat16
+//	|       "_Decimal64"                 // Case TypeSpecifierDecimal64
 //	|       "_Float128"                  // Case TypeSpecifierFloat128
 //	|       "_Float128x"                 // Case TypeSpecifierFloat128x
 //	|       "double"                     // Case TypeSpecifierDouble
@@ -4748,15 +4824,15 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 	}
 
 	switch n.Case {
-	case 22:
+	case 23:
 		return n.AtomicTypeSpecifier.Position()
-	case 18:
+	case 19:
 		return n.EnumSpecifier.Position()
-	case 17:
+	case 18:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 23, 24, 25, 26, 27, 28:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 24, 25, 26, 27, 28, 29:
 		return n.Token.Position()
-	case 20:
+	case 21:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
@@ -4770,7 +4846,7 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 		}
 
 		return n.Token3.Position()
-	case 21:
+	case 22:
 		if p := n.Token.Position(); p.IsValid() {
 			return p
 		}
