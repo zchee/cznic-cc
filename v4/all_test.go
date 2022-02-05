@@ -55,6 +55,7 @@ void *__builtin_va_arg_sink(int, ...);
 #ifdef __clang__
 #define __builtin_bit_cast(type, arg) (*(type*)&arg)
 #define __builtin_convertvector(src, type) (*(type*)&src)
+#define __builtin_bit_cast(type, arg) (*(type*)&arg)
 #elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #endif
 `

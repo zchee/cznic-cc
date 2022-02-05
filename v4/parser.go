@@ -2460,6 +2460,23 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					Token2:             p.must(')'),
 				}
 				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
+			case rune(IDENTIFIER):
+				dd := p.directDeclarator(declare)
+				switch p.rune() {
+				case ')':
+					dd = &DirectDeclarator{
+						Case:  DirectDeclaratorDecl,
+						Token: lparen,
+						Declarator: &Declarator{
+							Pointer:          ptr,
+							DirectDeclarator: dd,
+						},
+						Token2: p.must(')'),
+					}
+					return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+				default:
+					panic(todo("", p.toks[0]))
+				}
 			default:
 				panic(todo("", p.toks[0]))
 			}
