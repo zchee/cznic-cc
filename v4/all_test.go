@@ -1016,8 +1016,6 @@ func TestParserBug(t *testing.T) {
 
 		// Type checking has to detect the fail.
 		"bitfield_declaration_ambiguity.fail.c": {},
-
-		"function_parameter_scope_extends.c": {}, //TODO
 	}
 	t.Run("parser/bug", func(t *testing.T) { testParserBug(t, "testdata/parser/bug", nil) })
 	t.Run("jhjourdan", func(t *testing.T) { testParserBug(t, "testdata/jhjourdan", blacklistJourdan) })

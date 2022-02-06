@@ -31,8 +31,6 @@ func (n *Declarator) isFn() bool {
 	return n.DirectDeclarator.isFn()
 }
 
-func (n *Declarator) fnParams() *Scope { return n.DirectDeclarator.params }
-
 func (n *DirectDeclarator) name() *DirectDeclarator {
 	if n == nil {
 		return nil

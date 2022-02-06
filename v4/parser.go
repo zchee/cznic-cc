@@ -189,22 +189,23 @@ func (p *parser) checkTypeName(t *Token) (r bool) {
 		return false
 	}
 
-	// defer func() { trc("%v %v (%v: %v: %v:)", t, r, origin(3), origin(4), origin(5)) }()
+	// defer func() { trc("%v seq %v -> %v (%v: %v: %v:)", t, t.seq, r, origin(3), origin(4), origin(5)) }()
 	nm := string(t.Src())
 	for s := p.scope; s != nil; s = s.Parent {
 		for _, v := range s.Nodes[nm] {
 			switch x := v.(type) {
 			case *Declarator:
 				if x.typename && t.seq >= int32(x.visible) {
-					// trc("%v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
+					// trc("TYPENAME %v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
 					t.Ch = rune(TYPENAME)
 					return true
 				}
 
-				// trc("%v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
+				// trc("IDENTIFIER(D) %v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
 				return false
 			case *Enumerator:
 				if t.seq >= int32(x.visible) {
+					// trc("IDENTIFIER(E) %v: %q t.seq %v, x.visible %v (scope %p)", x.Position(), nm, t.seq, x.visible, s)
 					return false
 				}
 			}
@@ -426,7 +427,7 @@ again:
 // 	declaration-specifiers declarator declaration-list_opt compound-statement
 func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) (r *FunctionDefinition) {
 	defer func() { p.fnScope = nil }()
-	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: p.declarationListOpt(), CompoundStatement: p.compoundStatement(true, d.fnParams())}
+	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: p.declarationListOpt(), CompoundStatement: p.compoundStatement(true, d)}
 }
 
 //  declaration-list:
@@ -456,17 +457,30 @@ func (p *parser) declarationListOpt() (r *DeclarationList) {
 //
 //  compound-statement:
 // 	{ label-declaration_opt block-item-list_opt }
-func (p *parser) compoundStatement(isFnScope bool, params *Scope) (r *CompoundStatement) {
+func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundStatement) {
 	p.newScope()
 
 	defer p.closeScope()
 
 	if isFnScope {
 		p.fnScope = p.scope
-		if params != nil {
-			for nm, v := range params.Nodes {
-				for _, n := range v {
-					p.scope.declare(nm, n)
+		if d != nil {
+			for dd := d.DirectDeclarator; dd != nil; {
+				s := dd.params
+				if s != nil {
+					for nm, nodes := range s.Nodes {
+						for _, node := range nodes {
+							p.scope.declare(nm, node)
+						}
+					}
+				}
+				switch dd.Case {
+				case DirectDeclaratorIdent:
+					dd = nil
+				case DirectDeclaratorDecl:
+					dd = dd.Declarator.DirectDeclarator
+				default:
+					dd = dd.DirectDeclarator
 				}
 			}
 		}
@@ -557,7 +571,7 @@ again:
 		}
 		switch p.rune() {
 		case '{':
-			return &BlockItem{Case: BlockItemFuncDef, DeclarationSpecifiers: ds, Declarator: d, CompoundStatement: p.compoundStatement(true, d.fnParams())}
+			return &BlockItem{Case: BlockItemFuncDef, DeclarationSpecifiers: ds, Declarator: d, CompoundStatement: p.compoundStatement(true, d)}
 		default:
 			return &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(ds, d)}
 		}
