@@ -19,6 +19,7 @@
 //
 //  [0]: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 //  [1]: https://www.spinellis.gr/blog/20060626/cpp.algo.pdf
+//  [2]: https://jhjourdan.mketjh.fr/pdf/jourdan2017simple.pdf
 package cc // import "modernc.org/cc/v4"
 
 import (
@@ -35,7 +36,8 @@ import (
 )
 
 var (
-	isTesting bool
+	isTesting  bool
+	traceFails bool
 )
 
 // HostConfig returns the system C preprocessor/compiler configuration, or an

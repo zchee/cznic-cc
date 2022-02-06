@@ -26,7 +26,6 @@ import (
 	"modernc.org/ccorpus"
 	"modernc.org/httpfs"
 	"modernc.org/mathutil"
-	//TODO "modernc.org/scannertest"
 )
 
 var (
@@ -65,6 +64,7 @@ void *__builtin_va_arg_sink(int, ...);
 )
 
 func init() {
+	flag.BoolVar(&traceFails, "trcfails", false, "")
 	isTesting = true
 	var err error
 	if predefined, testCfg0.IncludePaths, testCfg0.SysIncludePaths, err = HostConfig(env("CC_TEST_CPP", "cpp")); err != nil {
@@ -1010,10 +1010,24 @@ func TestStrCatSep(t *testing.T) {
 }
 
 func TestParserBug(t *testing.T) {
+	blacklistJourdan := map[string]struct{}{
+		// [2], pg.20: Noncompliant code.
+		"atomic_parenthesis.c": {},
+
+		// Type checking has to detect the fail.
+		"bitfield_declaration_ambiguity.fail.c": {},
+
+		"function_parameter_scope_extends.c": {}, //TODO
+	}
+	t.Run("parser/bug", func(t *testing.T) { testParserBug(t, "testdata/parser/bug", nil) })
+	t.Run("jhjourdan", func(t *testing.T) { testParserBug(t, "testdata/jhjourdan", blacklistJourdan) })
+}
+
+func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 	cfg := testCfg()
 	var fails []string
 	var files, ok, skip int
-	err := filepath.Walk(filepath.FromSlash("testdata/parser/bug"), func(pth string, fi os.FileInfo, err error) error {
+	err := filepath.Walk(filepath.FromSlash(dir), func(pth string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -1035,11 +1049,23 @@ func TestParserBug(t *testing.T) {
 		}
 
 		files++
+		switch {
+		case re != nil:
+			if !re.MatchString(pth) {
+				skip++
+				return nil
+			}
+		default:
+			if _, ok := blacklist[filepath.Base(pth)]; ok {
+				skip++
+				return nil
+			}
+		}
+
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, pth)
 		}
-		var ast *AST
-		ast, err = Parse(
+		_, err = Parse(
 			cfg,
 			[]Source{
 				{Name: "<predefined>", Value: predefined},
@@ -1047,12 +1073,24 @@ func TestParserBug(t *testing.T) {
 				{Name: pth, FS: cFS},
 			},
 		)
-		_ = ast //TODO-
-		if err != nil {
-			fails = append(fails, pth)
-			t.Errorf("%v: %v", pth, err)
-		} else {
-			ok++
+		switch {
+		case strings.Contains(pth, ".fail."):
+			if err == nil {
+				fails = append(fails, pth)
+				t.Errorf("%v: missing error", pth)
+			} else {
+				if *oTrace {
+					t.Log(err)
+				}
+				ok++
+			}
+		default:
+			if err != nil {
+				fails = append(fails, pth)
+				t.Errorf("%v: %v", pth, err)
+			} else {
+				ok++
+			}
 		}
 		return nil
 	})

@@ -189,19 +189,24 @@ func (p *parser) checkTypeName(t *Token) (r bool) {
 		return false
 	}
 
-	// defer func() { trc("%v %v (%v: %v:)", t, r, origin(3), origin(4)) }()
+	// defer func() { trc("%v %v (%v: %v: %v:)", t, r, origin(3), origin(4), origin(5)) }()
 	nm := string(t.Src())
 	for s := p.scope; s != nil; s = s.Parent {
 		for _, v := range s.Nodes[nm] {
 			switch x := v.(type) {
 			case *Declarator:
 				if x.typename && t.seq >= int32(x.visible) {
+					// trc("%v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
 					t.Ch = rune(TYPENAME)
 					return true
 				}
 
-				// trc("%q x.typename %v, t.seq %v, x.visible %v", nm, x.typename, t.seq, x.visible)
+				// trc("%v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
 				return false
+			case *Enumerator:
+				if t.seq >= int32(x.visible) {
+					return false
+				}
 			}
 		}
 	}
@@ -326,7 +331,7 @@ func (p *parser) parse() (ast *AST, err error) {
 		s := fmt.Sprintf(msg, args...)
 		if isTesting {
 			s += fmt.Sprintf(" (%v: %v)", origin(2), origin(3))
-			if isTesting {
+			if isTesting && traceFails {
 				trc("%s FAIL (%v)", s, origin(1))
 				// trc("\n%s", debug.Stack())
 			}
@@ -527,7 +532,7 @@ func (p *parser) blockItemListOpt() (r *BlockItemList) {
 func (p *parser) blockItem() *BlockItem {
 again:
 	switch ch := p.rune2(); {
-	case p.isStatement(ch) || p.isExpression(ch):
+	case p.isStatement(ch) || p.isExpression(ch) || ch == rune(TYPENAME) && p.peek(1).Ch == ':':
 		return &BlockItem{Case: BlockItemStmt, Statement: p.statement(false)}
 	case p.isDeclarationSpecifier(ch, true):
 		r0 := p.rune()
@@ -577,7 +582,7 @@ func (p *parser) statement(newBlock bool) *Statement {
 
 		defer p.closeScope()
 	}
-	switch ch := p.rune2(); {
+	switch ch := p.rune(); {
 	case ch == rune(IDENTIFIER):
 		switch p.peek(1).Ch {
 		case ':':
@@ -727,7 +732,7 @@ func (p *parser) jumpStatement() *JumpStatement {
 // 	case constant-expression ... constant-expression : statement
 // 	default : statement
 func (p *parser) labeledStatement() (r *LabeledStatement) {
-	switch p.rune2() {
+	switch p.rune() {
 	case eof:
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 		return nil
@@ -1065,7 +1070,7 @@ func (p *parser) attributeValue() (r *AttributeValue) {
 func (p *parser) initDeclaratorListOpt(ds *DeclarationSpecifiers, d *Declarator) (r *InitDeclaratorList) {
 	switch {
 	case d == nil:
-		switch p.rune2() {
+		switch p.rune() {
 		case eof:
 			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 			return nil
@@ -1707,8 +1712,8 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 		case '[':
 			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr, DirectAbstractDeclarator: p.directAbstractDeclarator()}
 		case '(':
-			switch p.peek2(1).Ch {
-			case '*':
+			switch ch := p.peek2(1).Ch; {
+			case ch == '*' || p.isDeclarationSpecifier(ch, true):
 				return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr, DirectAbstractDeclarator: p.directAbstractDeclarator()}
 			default:
 				panic(todo("", p.peek2(1)))
@@ -1774,12 +1779,11 @@ out:
 			panic(todo("", p.peek(1)))
 		}
 	case '(':
-		switch p.peek2(1).Ch {
-		case
-			'*',
-			rune(ATTRIBUTE):
-
+		switch ch := p.peek2(1).Ch; {
+		case p.in(ch, '*', rune(ATTRIBUTE)):
 			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorDecl, Token: p.shift(), AbstractDeclarator: p.abstractDeclarator(nil, false), Token2: p.must(')')}
+		case p.isDeclarationSpecifier(ch, true):
+			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: p.shift(), ParameterTypeList: p.parameterTypeListOpt(), Token2: p.must(')')}
 		default:
 			panic(todo("", p.peek2(1)))
 		}
@@ -2116,7 +2120,7 @@ func (p *parser) primaryExpression(checkTypeName bool) (r *PrimaryExpression) {
 	case rune(GENERIC):
 		return &PrimaryExpression{Case: PrimaryExpressionGeneric, GenericSelection: p.genericSelection()}
 	default:
-		panic(todo("", p.toks[0]))
+		panic(todo("%v %v scope %p", p.toks[0], checkTypeName, p.scope))
 	}
 }
 
@@ -3205,6 +3209,7 @@ type Scope struct {
 func newScope(parent *Scope) *Scope { return &Scope{Parent: parent} }
 
 func (s *Scope) declare(nm string, n Node) {
+	// trc("%v: %q %T, visible %v (scope %p)", n.Position(), nm, n, n.(interface{ Visible() int }).Visible(), s)
 	if s.Nodes != nil {
 		s.Nodes[nm] = append(s.Nodes[nm], n)
 		return
