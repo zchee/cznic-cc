@@ -50,7 +50,7 @@ var (
 // The function relies on a POSIX/GCC compatible C preprocessor installed.
 // Execution of HostConfig is not free, so caching of the results is
 // recommended.
-func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) {
+func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) { //TODO-
 	if cpp == "" {
 		cpp = "cpp"
 	}
@@ -102,13 +102,107 @@ func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sy
 	return "", nil, nil, errorf("failed parsing the output of %s -v", cpp)
 }
 
+// NewConfig returns the system C compiler configuration, or an error, if
+// any. The function will look for the compiler first in the environment
+// variable CC, then it'll try other options. Usually that means looking for
+// the "cc" and "gcc" binary, in that order.
+//
+// Execution of NewConfig is expensive, caching the results is recommended.
+func NewConfig(goos, goarch string) (r *Config, err error) {
+	cc, predefined, includePaths, sysIncludePaths, err := newConfig()
+	if err != nil {
+		return nil, fmt.Errorf("DefaultConfig: %v", err)
+	}
+
+	switch fmt.Sprintf("%s/%s", goos, goarch) {
+	case "netbsd/amd64":
+		sysIncludePaths = append(sysIncludePaths, "/usr/pkg/include")
+	case "freebsd/386":
+		sysIncludePaths = append(sysIncludePaths, "/usr/local/include")
+	}
+	sysIncludePaths = sysIncludePaths[:len(sysIncludePaths):len(sysIncludePaths)]
+	includePaths = append([]string{""}, includePaths...)
+	includePaths = append(includePaths, sysIncludePaths...)
+	includePaths = includePaths[:len(includePaths):len(includePaths)]
+	abi, err := NewABI(goos, goarch)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Config{
+		ABI:             abi,
+		CC:              cc,
+		IncludePaths:    includePaths,
+		Predefined:      predefined,
+		SysIncludePaths: sysIncludePaths,
+	}, nil
+}
+
+func newConfig() (cc, predefined string, includePaths, sysIncludePaths []string, err error) {
+	for _, cc = range []string{os.Getenv("CC"), "cc", "gcc"} {
+		if cc == "" {
+			continue
+		}
+
+		cc, err = exec.LookPath(cc)
+		if err != nil {
+			continue
+		}
+
+		pre, err := exec.Command(cc, "-dM", "-E", "-").Output()
+		if err != nil {
+			continue
+		}
+
+		out, err := exec.Command(cc, "-v", "-E", "-").CombinedOutput()
+		if err != nil {
+			continue
+		}
+
+		sep := "\n"
+		if env("GOOS", runtime.GOOS) == "windows" {
+			sep = "\r\n"
+		}
+		a := strings.Split(string(out), sep)
+		for i := 0; i < len(a); {
+			switch a[i] {
+			case "#include \"...\" search starts here:":
+			loop:
+				for i = i + 1; i < len(a); {
+					switch v := a[i]; {
+					case strings.HasPrefix(v, "#") || v == "End of search list.":
+						break loop
+					default:
+						includePaths = append(includePaths, strings.TrimSpace(v))
+						i++
+					}
+				}
+			case "#include <...> search starts here:":
+				for i = i + 1; i < len(a); {
+					switch v := a[i]; {
+					case strings.HasPrefix(v, "#") || v == "End of search list.":
+						return cc, string(pre), includePaths, sysIncludePaths, nil
+					default:
+						sysIncludePaths = append(sysIncludePaths, strings.TrimSpace(v))
+						i++
+					}
+				}
+			default:
+				i++
+			}
+		}
+	}
+	return "", "", nil, nil, fmt.Errorf("cannot determine C compiler configuration")
+}
+
 // Source is a named part of a translation unit. The name argument is used for
 // reporting Token positions.  The value argument can be a string, []byte,
 // fs.File, io.ReadCloser, io.Reader or nil. If the value argument is nil an
 // attempt is made to open a file using the name argument.
 //
 // When the value argument is an *os.File, io.ReadCloser or fs.File,
-// value.Close() is called before returning.
+// Value.Close() is called before returning from Preprocess, Parse or
+// Translate.
 //
 // If FS is not nil it overrides the FS from Config.
 type Source struct {
@@ -145,9 +239,11 @@ func NewABI(os, arch string) (*ABI, error) {
 // If FS is nil, os.Open is used to open named files.
 type Config struct {
 	ABI             *ABI
-	IncludePaths    []string
+	CC              string // The configured C compiler, filled by NewConfig.
 	FS              fs.FS
+	IncludePaths    []string
 	PragmaHandler   func([]Token) error
+	Predefined      string // The predefined macros from CC, filled by NewConfig.
 	SysIncludePaths []string
 
 	fakeIncludes bool // testing

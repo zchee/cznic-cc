@@ -13,12 +13,14 @@ import (
 	"io/fs"
 	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/dustin/go-humanize"
@@ -34,7 +36,8 @@ var (
 	corpus      = map[string][]byte{}
 	corpusIndex []string
 	re          *regexp.Regexp
-	testCfg0    = &Config{}
+	testCfg0    = &Config{} //TODO-
+	defaultCfg0 *Config
 	predefined  string
 	builtin     = `
 #define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
@@ -67,6 +70,10 @@ func init() {
 	flag.BoolVar(&traceFails, "trcfails", false, "")
 	isTesting = true
 	var err error
+	if defaultCfg0, err = NewConfig(runtime.GOOS, runtime.GOARCH); err != nil {
+		panic(errorf("NewConfig: %v", err))
+	}
+
 	if predefined, testCfg0.IncludePaths, testCfg0.SysIncludePaths, err = HostConfig(env("CC_TEST_CPP", "cpp")); err != nil {
 		panic(errorf("cannot acquire host configuration: %v", err))
 	}
@@ -588,8 +595,13 @@ func BenchmarkCPPParse(b *testing.B) {
 	}
 }
 
-func testCfg() *Config {
+func testCfg() *Config { //TODO-
 	c := *testCfg0
+	return &c
+}
+
+func defaultCfg() *Config {
+	c := *defaultCfg0
 	return &c
 }
 
@@ -601,7 +613,7 @@ func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}, fake
 	var fails []string
 	var files, ok, skip int
 	var c *cpp
-	cfg := testCfg()
+	cfg := defaultCfg()
 	cfg.fakeIncludes = fakeIncludes
 	cfg.PragmaHandler = func(s []Token) error {
 		a := textLine{pragmaTestTok}
@@ -720,86 +732,18 @@ func TestInclude(t *testing.T) {
 }
 
 func TestTranslationPhase4(t *testing.T) {
-	cfgGame := testCfg()
-	cfgGame.FS = cFS
-	cfgGame.SysIncludePaths = append(
-		cfgGame.SysIncludePaths,
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/libxml",
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/malloc",
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/libxml",
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/malloc",
-		"/benchmarksgame-team.pages.debian.net/Include",
-		"/opt/homebrew/include",
-		"/usr/include/sys",
-		"/usr/lib/clang/11.1.0/include",
-		"/usr/local/Cellar/gcc/11.2.0_1/lib/gcc/11/gcc/x86_64-apple-darwin19/11.2.0/include",
-		"/usr/local/include",
-	)
-	cfgGame.IncludePaths = append(
-		cfgGame.IncludePaths,
-		"/opt/homebrew/include",
-		"/usr/local/include",
-	)
-	cfg := testCfg()
+	cfg := defaultCfg()
 	cfg.FS = cFS
 	var blacklistCompCert, blacklistCxgo map[string]struct{}
-	blacklistGame := map[string]struct{}{
-		// Missing <apr_pools.h>
-		"binary-trees-2.c": {},
-		"binary-trees-3.c": {},
-	}
 	blacklistGCC := map[string]struct{}{
-		// assertions are deprecated.
+		// assertions are deprecated, not supported.
 		"950919-1.c": {},
-
-		// Need include files not in ccorpus.
-		"pr88347.c": {},
-		"pr88423.c": {},
-	}
-	blacklistVNMakarov := map[string]struct{}{
-		// #endif without #if
-		"endif.c": {},
 	}
 	blacklictTCC := map[string]struct{}{
-		"11.c": {}, // https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros
+		// https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros, not supported.
+		"11.c": {},
 	}
-	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "linux/s390x":
-		blacklistCompCert = map[string]struct{}{"aes.c": {}} // Unsupported endianness.
-		fallthrough
-	case "linux/arm", "linux/arm64":
-		// Uses sse2 headers.
-		blacklistGame["fannkuchredux-4.c"] = struct{}{}
-		blacklistGame["mandelbrot-6.c"] = struct{}{}
-		blacklistGame["nbody-4.c"] = struct{}{}
-		blacklistGame["nbody-8.c"] = struct{}{}
-		blacklistGame["nbody-9.c"] = struct{}{}
-		blacklistGame["spectral-norm-5.c"] = struct{}{}
-		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "freebsd/386", "darwin/amd64", "darwin/arm64", "freebsd/amd64", "linux/386":
-		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
-	case "windows/amd64", "windows/386":
-		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
-		blacklistCxgo = map[string]struct{}{"inet.c": {}}    // include file not found: <arpa/inet.h>
-		blacklistGCC["loop-2f.c"] = struct{}{}               // include file not found: <sys/mman.h>
-		blacklistGCC["loop-2g.c"] = struct{}{}               // include file not found: <sys/mman.h>
-		blacklistGame["fasta-4.c"] = struct{}{}              // include file not found: <err.h>
-		blacklistGame["pidigits-2.c"] = struct{}{}           // include file not found: <gmp.h>
-		blacklistGame["pidigits-6.c"] = struct{}{}           // include file not found: <threads.h>
-		blacklistGame["pidigits-9.c"] = struct{}{}           // include file not found: <gmp.h>
-		blacklistGame["pidigits.c"] = struct{}{}             // include file not found: <gmp.h>
-		blacklistGame["regex-redux-2.c"] = struct{}{}        // include file not found: <pcre.h>
-		blacklistGame["regex-redux-3.c"] = struct{}{}        // include file not found: <pcre.h>
-		blacklistGame["regex-redux-4.c"] = struct{}{}        // include file not found: <pcre.h>
-		blacklistGame["regex-redux-5.c"] = struct{}{}        // include file not found: <pcre2.h>
-	case "openbsd/amd64":
-		blacklistCompCert = map[string]struct{}{"aes.c": {}} // include file not found: "../endian.h"
-		blacklistGame["mandelbrot-7.c"] = struct{}{}         // include file not found: <omp.h>
-		blacklistGame["pidigits-6.c"] = struct{}{}           // include file not found: <threads.h>
-		blacklistGame["regex-redux-3.c"] = struct{}{}        // include file not found: <omp.h>
-		blacklistGame["spectral-norm-4.c"] = struct{}{}      // include file not found: <omp.h>
-	}
-	var files, ok, skip, fails int
+	var files, ok, skip, fails int32
 	for _, v := range []struct {
 		cfg       *Config
 		dir       string
@@ -811,10 +755,10 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
 		{cfg, "github.com/cxgo", blacklistCxgo},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
-		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
+		{cfg, "github.com/vnmakarov", nil},
 		{cfg, "sqlite-amalgamation-3370200", nil},
 		{cfg, "tcc-0.9.27/tests", blacklictTCC},
-		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
+		{cfg, "benchmarksgame-team.pages.debian.net", nil},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
 			f, o, s, n := testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
@@ -827,7 +771,8 @@ func TestTranslationPhase4(t *testing.T) {
 	t.Logf("TOTAL: files %v, skip %v, ok %v, fails %v", files, skip, ok, fails)
 }
 
-func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int) {
+func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int32) {
+	tmp := t.TempDir()
 	var fails []string
 	p := newParallel()
 	err := walk(dir, func(pth string, fi os.FileInfo) error {
@@ -842,39 +787,78 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 		switch {
 		case re != nil:
 			if !re.MatchString(pth) {
-				skip++
+				atomic.AddInt32(&skip, 1)
 				return nil
 			}
 		default:
 			if _, ok := blacklist[filepath.Base(pth)]; ok {
-				skip++
+				atomic.AddInt32(&skip, 1)
 				return nil
 			}
 		}
 
 		files++
+		apth := pth
 		p.exec(func() {
 			if *oTrace {
-				fmt.Fprintln(os.Stderr, pth)
+				fmt.Fprintln(os.Stderr, apth)
 			}
-			err := Preprocess(
+			var err error
+
+			defer func() {
+				p.Lock()
+
+				defer p.Unlock()
+
+				if err != nil {
+					fails = append(fails, apth)
+					t.Errorf("%v: %v", apth, err)
+				}
+			}()
+
+			f, err := cFS.Open(apth)
+			if err != nil {
+				err = errorf("", err)
+				return
+			}
+
+			defer f.Close()
+
+			b := make([]byte, fi.Size())
+			n, err := f.Read(b)
+			if int64(n) != fi.Size() {
+				err = errorf("%v: short read", apth)
+				return
+			}
+
+			fn := filepath.Join(tmp, filepath.Base(apth))
+			if err := os.WriteFile(fn, b, 0660); err != nil {
+				err = errorf("", err)
+				return
+			}
+
+			defer os.Remove(fn)
+
+			cmd := exec.Command(cfg.CC, "-E", fn)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err = cmd.Run(); err != nil {
+				t.Logf("%v: skip: %v: %s %v", apth, cfg.CC, buf.Bytes(), err)
+				atomic.AddInt32(&skip, 1)
+				err = nil
+				return
+			}
+
+			if err = Preprocess(
 				cfg,
 				[]Source{
-					{Name: "<predefined>", Value: predefined},
+					{Name: "<predefined>", Value: cfg.Predefined},
 					{Name: "<builtin>", Value: builtin},
-					{Name: pth, FS: cFS},
+					{Name: apth, FS: cFS},
 				},
 				io.Discard,
-			)
-			p.Lock()
-
-			defer p.Unlock()
-
-			if err != nil {
-				fails = append(fails, pth)
-				t.Errorf("%v: %v", pth, err)
-			} else {
-				ok++
+			); err == nil {
+				atomic.AddInt32(&ok, 1)
 			}
 		})
 		return nil
@@ -888,7 +872,7 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 		t.Log(v)
 	}
 	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
-	return files, ok, skip, len(fails)
+	return files, ok, skip, int32(len(fails))
 }
 
 // https://gitlab.com/cznic/cc/-/issues/127
@@ -915,7 +899,7 @@ func TestIssue127(t *testing.T) {
 	}
 
 	t.Logf("working directory: %s", cd)
-	cfg := testCfg()
+	cfg := defaultCfg()
 	cfg.IncludePaths = append(cfg.IncludePaths, "include")
 	if err := Preprocess(
 		cfg,
@@ -934,7 +918,7 @@ func TestBOM(t *testing.T) {
 		{"int main() {}", ""},
 		{"\xEF\xBB\xBFint main() {}", ""},
 	} {
-		switch _, err := Parse(testCfg(), []Source{{Value: v.src}}); {
+		switch _, err := Parse(defaultCfg(), []Source{{Value: v.src}}); {
 		case v.err == "" && err != nil:
 			t.Errorf("%v: unexpected error %v", i, err)
 		case v.err != "" && err == nil:
@@ -1011,9 +995,6 @@ func TestStrCatSep(t *testing.T) {
 
 func TestParserBug(t *testing.T) {
 	blacklistJourdan := map[string]struct{}{
-		// [2], pg.20: Noncompliant code.
-		"atomic_parenthesis.c": {},
-
 		// Type checking has to detect the fail.
 		"bitfield_declaration_ambiguity.fail.c": {},
 	}
@@ -1022,7 +1003,8 @@ func TestParserBug(t *testing.T) {
 }
 
 func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
-	cfg := testCfg()
+	tmp := t.TempDir()
+	cfg := defaultCfg()
 	var fails []string
 	var files, ok, skip int
 	err := filepath.Walk(filepath.FromSlash(dir), func(pth string, fi os.FileInfo, err error) error {
@@ -1063,12 +1045,24 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 		if *oTrace {
 			fmt.Fprintln(os.Stderr, pth)
 		}
+
+		if !strings.Contains(pth, ".fail.") {
+			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), pth)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err = cmd.Run(); err != nil {
+				t.Logf("%v: skip: %v: %s %v", pth, cfg.CC, buf.Bytes(), err)
+				skip++
+				return nil
+			}
+		}
+
 		_, err = Parse(
 			cfg,
 			[]Source{
-				{Name: "<predefined>", Value: predefined},
+				{Name: "<predefined>", Value: cfg.Predefined},
 				{Name: "<builtin>", Value: builtin},
-				{Name: pth, FS: cFS},
+				{Name: pth},
 			},
 		)
 		switch {
@@ -1103,130 +1097,28 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 }
 
 func TestParse(t *testing.T) {
-	cfgGame := testCfg()
-	cfgGame.FS = cFS
-	cfgGame.SysIncludePaths = append(
-		cfgGame.SysIncludePaths,
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/libxml",
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/include/malloc",
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/libxml",
-		"/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/malloc",
-		"/benchmarksgame-team.pages.debian.net/Include",
-		"/opt/homebrew/include",
-		"/usr/include/sys",
-		"/usr/lib/clang/11.1.0/include",
-		"/usr/local/Cellar/gcc/11.2.0_1/lib/gcc/11/gcc/x86_64-apple-darwin19/11.2.0/include",
-		"/usr/local/include",
-	)
-	cfgGame.IncludePaths = append(
-		cfgGame.IncludePaths,
-		"/opt/homebrew/include",
-		"/usr/local/include",
-	)
-	cfg := testCfg()
+	cfg := defaultCfg()
 	cfg.FS = cFS
-	blacklistGame := map[string]struct{}{
-		// Missing <apr_pools.h>
-		"binary-trees-2.c": {},
-		"binary-trees-3.c": {},
-	}
 	blacklistGCC := map[string]struct{}{
-		// assertions are deprecated.
+		// Assertions are deprecated, not supported.
 		"950919-1.c": {},
-
-		// Need include files not in ccorpus.
-		"pr88347.c": {},
-		"pr88423.c": {},
 	}
-	blacklistCxgo := map[string]struct{}{}
-	blacklistVNMakarov := map[string]struct{}{
-		// #endif without #if
-		"endif.c": {},
-
-		// syntax error
-		"fermian-2.c": {},
-	}
-	blacklictTCC := map[string]struct{}{}
-	blacklistCompCert := map[string]struct{}{}
-	blacklistCcgo := map[string]struct{}{}
-	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "linux/s390x":
-		blacklistCompCert["aes.c"] = struct{}{} // Unsupported endianness.
-		fallthrough
-	case "linux/arm", "linux/arm64":
-		// Uses sse2 headers.
-		blacklistGame["fannkuchredux-4.c"] = struct{}{}
-		blacklistGame["mandelbrot-6.c"] = struct{}{}
-		blacklistGame["nbody-4.c"] = struct{}{}
-		blacklistGame["nbody-8.c"] = struct{}{}
-		blacklistGame["nbody-9.c"] = struct{}{}
-		blacklistGame["spectral-norm-5.c"] = struct{}{}
-		blacklistGame["spectral-norm-6.c"] = struct{}{}
-	case "linux/386":
-		blacklistCompCert["aes.c"] = struct{}{} // include file not found: "../endian.h"
-	case "darwin/amd64":
-		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
-		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
-		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
-		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
-	case "darwin/arm64":
-		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
-		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
-		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
-		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
-	case "freebsd/amd64":
-		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
-		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
-		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
-		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
-	case "freebsd/386":
-		blacklistCompCert["aes.c"] = struct{}{}         // include file not found: "../endian.h"
-		blacklistGame["mandelbrot-7.c"] = struct{}{}    // linux only
-		blacklistGame["pidigits-6.c"] = struct{}{}      // linux only
-		blacklistGame["spectral-norm-4.c"] = struct{}{} // linux only
-	case "windows/amd64", "windows/386":
-		blacklistCompCert["aes.c"] = struct{}{}       // include file not found: "../endian.h"
-		blacklistCxgo["inet.c"] = struct{}{}          // include file not found: <arpa/inet.h>
-		blacklistGCC["loop-2f.c"] = struct{}{}        // include file not found: <sys/mman.h>
-		blacklistGCC["loop-2g.c"] = struct{}{}        // include file not found: <sys/mman.h>
-		blacklistGame["mandelbrot-7.c"] = struct{}{}  // linux only
-		blacklistGame["fasta-4.c"] = struct{}{}       // include file not found: <err.h>
-		blacklistGame["pidigits-2.c"] = struct{}{}    // include file not found: <gmp.h>
-		blacklistGame["pidigits-6.c"] = struct{}{}    // include file not found: <threads.h>
-		blacklistGame["pidigits-9.c"] = struct{}{}    // include file not found: <gmp.h>
-		blacklistGame["pidigits.c"] = struct{}{}      // include file not found: <gmp.h>
-		blacklistGame["regex-redux-2.c"] = struct{}{} // include file not found: <pcre.h>
-		blacklistGame["regex-redux-3.c"] = struct{}{} // include file not found: <pcre.h>
-		blacklistGame["regex-redux-4.c"] = struct{}{} // include file not found: <pcre.h>
-		blacklistGame["regex-redux-5.c"] = struct{}{} // include file not found: <pcre2.h>
-		blacklistGame["spectral-norm-4.c"] = struct{}{}
-	case "netbsd/amd64":
-		blacklistGame["mandelbrot-7.c"] = struct{}{} // linux only
-		blacklistGame["spectral-norm-4.c"] = struct{}{}
-	case "openbsd/amd64":
-		blacklistCompCert["aes.c"] = struct{}{}       // include file not found: "../endian.h"
-		blacklistGame["binary-trees.c"] = struct{}{}  // u_short undefined.
-		blacklistGame["mandelbrot-7.c"] = struct{}{}  // linux only
-		blacklistGame["pidigits-6.c"] = struct{}{}    // include file not found: <threads.h>
-		blacklistGame["regex-redux-3.c"] = struct{}{} // include file not found: <omp.h>
-		blacklistGame["spectral-norm-4.c"] = struct{}{}
-	}
-	var files, ok, skip, fails int
+	var files, ok, skip, fails int32
 	for _, v := range []struct {
 		cfg       *Config
 		dir       string
 		blacklist map[string]struct{}
 	}{
-		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
-		{cfg, "ccgo", blacklistCcgo},
+		{cfg, "CompCert-3.6/test/c", nil},
+		{cfg, "ccgo", nil},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
-		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
-		{cfg, "github.com/cxgo", blacklistCxgo},
+		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
+		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
-		{cfg, "github.com/vnmakarov", blacklistVNMakarov},
+		{cfg, "github.com/vnmakarov", nil},
 		{cfg, "sqlite-amalgamation-3370200", nil},
-		{cfg, "tcc-0.9.27/tests/tests2", blacklictTCC},
-		{cfgGame, "benchmarksgame-team.pages.debian.net", blacklistGame},
+		{cfg, "tcc-0.9.27/tests/tests2", nil},
+		{cfg, "benchmarksgame-team.pages.debian.net", nil},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
 			f, o, s, n := testParse(t, v.cfg, "/"+v.dir, v.blacklist)
@@ -1239,7 +1131,8 @@ func TestParse(t *testing.T) {
 	t.Logf("TOTAL: files %v, skip %v, ok %v, fails %v", files, skip, ok, fails)
 }
 
-func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int) {
+func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int32) {
+	tmp := t.TempDir()
 	var fails []string
 	p := newParallel()
 	err := walk(dir, func(pth string, fi os.FileInfo) error {
@@ -1255,49 +1148,87 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 		switch {
 		case re != nil:
 			if !re.MatchString(pth) {
-				skip++
+				atomic.AddInt32(&skip, 1)
 				return nil
 			}
 		default:
 			if _, ok := blacklist[filepath.Base(pth)]; ok {
-				skip++
+				atomic.AddInt32(&skip, 1)
 				return nil
 			}
 		}
+		apth := pth
 		p.exec(func() {
 			if *oTrace {
-				fmt.Fprintln(os.Stderr, pth)
+				fmt.Fprintln(os.Stderr, apth)
 			}
 
 			var err error
 
+			defer func() {
+				p.Lock()
+
+				defer p.Unlock()
+
+				if err != nil {
+					fails = append(fails, apth)
+					t.Errorf("%v: %v", apth, err)
+				}
+
+			}()
+
+			f, err := cFS.Open(apth)
+			if err != nil {
+				err = errorf("", err)
+				return
+			}
+
+			defer f.Close()
+
+			b := make([]byte, fi.Size())
+			n, err := f.Read(b)
+			if int64(n) != fi.Size() {
+				err = errorf("%v: short read", apth)
+				return
+			}
+
+			fn := filepath.Join(tmp, filepath.Base(apth))
+			if err := os.WriteFile(fn, b, 0660); err != nil {
+				err = errorf("", err)
+				return
+			}
+
+			defer os.Remove(fn)
+
+			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), fn)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err = cmd.Run(); err != nil {
+				t.Logf("%v: skip: %v: %s %v", apth, cfg.CC, buf.Bytes(), err)
+				atomic.AddInt32(&skip, 1)
+				err = nil
+				return
+			}
+
 			func() {
 				defer func() {
 					if e := recover(); e != nil && err == nil {
-						err = fmt.Errorf("%v: PANIC: %v", pth, e)
+						err = fmt.Errorf("%v: PANIC: %v", apth, e)
 						// trc("\n%s", debug.Stack())
 					}
 				}()
 
-				_, err = Parse(
+				if _, err = Parse(
 					cfg,
 					[]Source{
-						{Name: "<predefined>", Value: predefined},
+						{Name: "<predefined>", Value: cfg.Predefined},
 						{Name: "<builtin>", Value: builtin},
-						{Name: pth, FS: cFS},
+						{Name: apth, FS: cFS},
 					},
-				)
+				); err == nil {
+					atomic.AddInt32(&ok, 1)
+				}
 			}()
-			p.Lock()
-
-			defer p.Unlock()
-
-			if err != nil {
-				fails = append(fails, pth)
-				t.Errorf("%v: %v", pth, err)
-			} else {
-				ok++
-			}
 		})
 		return nil
 	})
@@ -1311,5 +1242,5 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 	}
 	// fmt.Fprintf(os.Stderr, "%v: files %v, skip %v, ok %v, fails %v\n", dir, files, skip, ok, len(fails))
 	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
-	return files, ok, skip, len(fails)
+	return files, ok, skip, int32(len(fails))
 }

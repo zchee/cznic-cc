@@ -191,6 +191,10 @@ func (t *Token) Seq() int { return int(t.seq) }
 // Sep returns any white space, including comments, that precede t. The result
 // is R/O but it's okay to append to it.
 func (t *Token) Sep() []byte {
+	if t.s == nil {
+		return nil
+	}
+
 	n := t.src - t.sep
 	return t.s.buf[t.sep : t.sep+n : t.sep+n]
 }
@@ -198,6 +202,10 @@ func (t *Token) Sep() []byte {
 // Src returns the source representation of t. The result is R/O but it's okay
 // to append to it.
 func (t *Token) Src() []byte {
+	if t.s == nil {
+		return nil
+	}
+
 	n := t.len
 	return t.s.buf[t.src : t.src+n : t.src+n]
 }
@@ -211,7 +219,6 @@ func (t *Token) Set(sep, src []byte) error {
 	if uint64(len(t.s.buf)+len(sep)+len(src)) > math.MaxUint32 {
 		return errorf("Token.Set: underlying scanner source buffer overflow: size is already %v", len(t.s.buf))
 	}
-
 	t.sep = uint32(len(t.s.buf))
 	t.s.buf = append(t.s.buf, sep...)
 	t.src = uint32(len(t.s.buf))

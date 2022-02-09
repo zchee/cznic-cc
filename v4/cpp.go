@@ -26,10 +26,7 @@ var (
 	_ tokenSequence = (*dequeue)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 
-	commaTok, eofTok, hashTok, nlTok, oneTok, pragmaTok, pragmaTestTok, spTok, zeroTok, emptyStringTok Token
-
-	emptyStringCppToken cppToken
-	eofCppToken         cppToken
+	commaTok, hashTok, nlTok, oneTok, pragmaTok, pragmaTestTok, spTok, zeroTok Token //TODO-
 
 	comma  = []byte{','}
 	hash   = []byte{'#'}
@@ -54,53 +51,42 @@ var (
 )
 
 func init() {
-	s, err := newScannerSource(Source{"", []byte(nil), nil})
-	if err != nil {
-		panic(errorf("initialization error"))
-	}
+	s, err := newScannerSource(Source{"", []byte(nil), nil}) //TODO-
+	if err != nil {                                          //TODO-
+		panic(errorf("initialization error")) //TODO-
+	} //TODO-
 
-	commaTok.s = s
-	commaTok.Ch = ','
-	commaTok.Set(nil, comma)
+	commaTok.s = s           //TODO-
+	commaTok.Ch = ','        //TODO-
+	commaTok.Set(nil, comma) //TODO-
 
-	emptyStringTok.s = s
-	emptyStringTok.Ch = rune(STRINGLITERAL)
-	emptyStringTok.Set(nil, qq)
+	hashTok.s = s          //TODO-
+	hashTok.Ch = '#'       //TODO-
+	hashTok.Set(nil, hash) //TODO-
 
-	hashTok.s = s
-	hashTok.Ch = '#'
-	hashTok.Set(nil, hash)
+	nlTok.s = s                  //TODO-
+	nlTok.Ch = '\n'              //TODO-
+	nlTok.Set(nil, []byte{'\n'}) //TODO-
 
-	eofTok.s = s
-	eofTok.Ch = eof
-	eofTok.Set(nil, nil)
+	pragmaTok.s = s                 //TODO-
+	pragmaTok.Ch = rune(IDENTIFIER) //TODO-
+	pragmaTok.Set(nil, pragma)      //TODO-
 
-	nlTok.s = s
-	nlTok.Ch = '\n'
-	nlTok.Set(nil, []byte{'\n'})
+	pragmaTestTok.s = s                        //TODO-
+	pragmaTestTok.Ch = rune(IDENTIFIER)        //TODO-
+	pragmaTestTok.Set(nil, []byte("__pragma")) //TODO-
 
-	pragmaTok.s = s
-	pragmaTok.Ch = rune(IDENTIFIER)
-	pragmaTok.Set(nil, pragma)
+	oneTok.s = s               //TODO-
+	oneTok.Ch = rune(PPNUMBER) //TODO-
+	oneTok.Set(nil, one)       //TODO-
 
-	pragmaTestTok.s = s
-	pragmaTestTok.Ch = rune(IDENTIFIER)
-	pragmaTestTok.Set(nil, []byte("__pragma"))
+	spTok.s = s        //TODO-
+	spTok.Ch = ' '     //TODO-
+	spTok.Set(nil, sp) //TODO-
 
-	oneTok.s = s
-	oneTok.Ch = rune(PPNUMBER)
-	oneTok.Set(nil, one)
-
-	spTok.s = s
-	spTok.Ch = ' '
-	spTok.Set(nil, sp)
-
-	zeroTok.s = s
-	zeroTok.Ch = rune(PPNUMBER)
-	zeroTok.Set(nil, zero)
-
-	emptyStringCppToken = cppToken{emptyStringTok, nil}
-	eofCppToken = cppToken{eofTok, nil}
+	zeroTok.s = s               //TODO-
+	zeroTok.Ch = rune(PPNUMBER) //TODO-
+	zeroTok.Set(nil, zero)      //TODO-
 }
 
 // cppParser produces a preprocessingFile.
@@ -671,13 +657,15 @@ func (p *cppTokens) peek(index int) cppToken {
 		return (*p)[index]
 	}
 
-	return eofCppToken
+	return p.eofCppToken()
 }
+
+func (p *cppTokens) eofCppToken() cppToken { return cppToken{Token: Token{Ch: eof}} }
 
 func (p *cppTokens) shift() (tok cppToken) {
 	s := *p
 	if len(s) == 0 {
-		return eofCppToken
+		return p.eofCppToken()
 	}
 
 	tok = s[0]
@@ -703,7 +691,7 @@ func (p *cppTokens) peekNonBlank() (cppToken, int) {
 		}
 	}
 
-	return eofCppToken, -1
+	return p.eofCppToken(), -1
 }
 
 func (p *cppTokens) skip(n int) {
@@ -909,7 +897,7 @@ more:
 				// if IS is # • T • IS’ and T is FP[i] then
 				//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
 				IS = IS[skip+1:]
-				OS = append(OS, c.stringize(c.apSelect(m, t2, AP, i)))
+				OS = append(OS, c.stringize(t, c.apSelect(m, t2, AP, i)))
 				goto more
 			}
 		}
@@ -1028,11 +1016,14 @@ func (c *cpp) glue(LS, RS cppTokens) (r cppTokens) {
 // containing the concatenated spellings of the tokens.
 //
 // [1] pg. 3
-func (c *cpp) stringize(s0 cppTokens) (r cppToken) {
+func (c *cpp) stringize(t cppToken, s0 cppTokens) (r cppToken) {
 	// trc("  %s%v (%v)", c.indent(), toksDump(s0), origin(2))
 	// defer func() { trc("->%s%v: %s", c.undent(), toksDump(cppTokens{r}), r.Src()) }()
 	if len(s0) == 0 {
-		return emptyStringCppToken
+		t.hs = nil
+		t.Ch = rune(STRINGLITERAL)
+		t.Token.Set(nil, qq)
+		return t
 	}
 
 	r = s0[0]
