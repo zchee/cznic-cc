@@ -816,39 +816,6 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 				}
 			}()
 
-			f, err := cFS.Open(apth)
-			if err != nil {
-				err = errorf("", err)
-				return
-			}
-
-			defer f.Close()
-
-			b := make([]byte, fi.Size())
-			n, err := f.Read(b)
-			if int64(n) != fi.Size() {
-				err = errorf("%v: short read", apth)
-				return
-			}
-
-			fn := filepath.Join(tmp, filepath.Base(apth))
-			if err := os.WriteFile(fn, b, 0660); err != nil {
-				err = errorf("", err)
-				return
-			}
-
-			defer os.Remove(fn)
-
-			cmd := exec.Command(cfg.CC, "-E", fn)
-			var buf bytes.Buffer
-			cmd.Stderr = &buf
-			if err = cmd.Run(); err != nil {
-				t.Logf("%v: skip: %v: %s %v", apth, cfg.CC, buf.Bytes(), err)
-				atomic.AddInt32(&skip, 1)
-				err = nil
-				return
-			}
-
 			if err = Preprocess(
 				cfg,
 				[]Source{
@@ -859,6 +826,38 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 				io.Discard,
 			); err == nil {
 				atomic.AddInt32(&ok, 1)
+				return
+			}
+
+			f, err2 := cFS.Open(apth)
+			if err2 != nil {
+				err = errorf("", err2)
+				return
+			}
+
+			defer f.Close()
+
+			b := make([]byte, fi.Size())
+			if n, _ := f.Read(b); int64(n) != fi.Size() {
+				err = errorf("%v: short read", apth)
+				return
+			}
+
+			fn := filepath.Join(tmp, filepath.Base(apth))
+			if err2 := os.WriteFile(fn, b, 0660); err2 != nil {
+				err = errorf("", err2)
+				return
+			}
+
+			defer os.Remove(fn)
+
+			cmd := exec.Command(cfg.CC, "-E", fn)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err2 = cmd.Run(); err2 != nil {
+				t.Logf("%v: skip: %v: %s %v", apth, cfg.CC, buf.Bytes(), err2)
+				atomic.AddInt32(&skip, 1)
+				err = nil
 			}
 		})
 		return nil
@@ -1099,9 +1098,14 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 func TestParse(t *testing.T) {
 	cfg := defaultCfg()
 	cfg.FS = cFS
+	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
 		// Assertions are deprecated, not supported.
 		"950919-1.c": {},
+	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/s390x":
+		blacklistCompCert["aes.c"] = struct{}{} // Unsupported endianness.
 	}
 	var files, ok, skip, fails int32
 	for _, v := range []struct {
@@ -1109,7 +1113,7 @@ func TestParse(t *testing.T) {
 		dir       string
 		blacklist map[string]struct{}
 	}{
-		{cfg, "CompCert-3.6/test/c", nil},
+		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
 		{cfg, "ccgo", nil},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
 		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
@@ -1177,39 +1181,6 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 
 			}()
 
-			f, err := cFS.Open(apth)
-			if err != nil {
-				err = errorf("", err)
-				return
-			}
-
-			defer f.Close()
-
-			b := make([]byte, fi.Size())
-			n, err := f.Read(b)
-			if int64(n) != fi.Size() {
-				err = errorf("%v: short read", apth)
-				return
-			}
-
-			fn := filepath.Join(tmp, filepath.Base(apth))
-			if err := os.WriteFile(fn, b, 0660); err != nil {
-				err = errorf("", err)
-				return
-			}
-
-			defer os.Remove(fn)
-
-			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), fn)
-			var buf bytes.Buffer
-			cmd.Stderr = &buf
-			if err = cmd.Run(); err != nil {
-				t.Logf("%v: skip: %v: %s %v", apth, cfg.CC, buf.Bytes(), err)
-				atomic.AddInt32(&skip, 1)
-				err = nil
-				return
-			}
-
 			func() {
 				defer func() {
 					if e := recover(); e != nil && err == nil {
@@ -1227,8 +1198,45 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 					},
 				); err == nil {
 					atomic.AddInt32(&ok, 1)
+					return
 				}
 			}()
+
+			if err == nil {
+				return
+			}
+
+			f, err2 := cFS.Open(apth)
+			if err2 != nil {
+				err = errorf("", err2)
+				return
+			}
+
+			defer f.Close()
+
+			b := make([]byte, fi.Size())
+			if n, _ := f.Read(b); int64(n) != fi.Size() {
+				err = errorf("%v: short read", apth)
+				return
+			}
+
+			fn := filepath.Join(tmp, filepath.Base(apth))
+			if err2 := os.WriteFile(fn, b, 0660); err2 != nil {
+				err = errorf("", err2)
+				return
+			}
+
+			defer os.Remove(fn)
+
+			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), fn)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err2 = cmd.Run(); err2 != nil {
+				t.Logf("%v: skip: %v: %s %v", apth, cfg.CC, buf.Bytes(), err2)
+				atomic.AddInt32(&skip, 1)
+				err = nil
+				return
+			}
 		})
 		return nil
 	})
