@@ -595,11 +595,6 @@ func BenchmarkCPPParse(b *testing.B) {
 	}
 }
 
-func testCfg() *Config { //TODO-
-	c := *testCfg0
-	return &c
-}
-
 func defaultCfg() *Config {
 	c := *defaultCfg0
 	return &c
@@ -616,6 +611,8 @@ func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}, fake
 	cfg := defaultCfg()
 	cfg.fakeIncludes = fakeIncludes
 	cfg.PragmaHandler = func(s []Token) error {
+		pragmaTestTok := Token{s: s[0].s, Ch: rune(IDENTIFIER)}
+		pragmaTestTok.Set(nil, []byte("__pragma"))
 		a := textLine{pragmaTestTok}
 		for i, v := range s {
 			if i == 0 {
@@ -623,6 +620,8 @@ func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}, fake
 			}
 			a = append(a, v)
 		}
+		nlTok := Token{s: s[0].s, Ch: '\n'}
+		nlTok.Set(nil, nl)
 		c.push(append(a, nlTok))
 		return nil
 	}
@@ -742,6 +741,10 @@ func TestTranslationPhase4(t *testing.T) {
 	blacklictTCC := map[string]struct{}{
 		// https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html#Variadic-Macros, not supported.
 		"11.c": {},
+	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/s390x":
+		blacklistCompCert["aes.c"] = struct{}{} // Unsupported endianness.
 	}
 	var files, ok, skip, fails int32
 	for _, v := range []struct {
@@ -1098,14 +1101,9 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 func TestParse(t *testing.T) {
 	cfg := defaultCfg()
 	cfg.FS = cFS
-	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
 		// Assertions are deprecated, not supported.
 		"950919-1.c": {},
-	}
-	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "linux/s390x":
-		blacklistCompCert["aes.c"] = struct{}{} // Unsupported endianness.
 	}
 	var files, ok, skip, fails int32
 	for _, v := range []struct {
@@ -1113,7 +1111,7 @@ func TestParse(t *testing.T) {
 		dir       string
 		blacklist map[string]struct{}
 	}{
-		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
+		{cfg, "CompCert-3.6/test/c", nil},
 		{cfg, "ccgo", nil},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
 		{cfg, "github.com/AbsInt/CompCert/test/c", nil},

@@ -205,8 +205,13 @@ func toksDump(v interface{}) string {
 }
 
 func tokens2CppTokens(s []Token, skipFirstSep bool) (r []cppToken) {
+	var spTok Token
 	for i, v := range s {
 		if (i != 0 || !skipFirstSep) && len(v.Sep()) != 0 {
+			if spTok.s == nil {
+				spTok = Token{s: s[0].s, Ch: ' '}
+				spTok.Set(nil, sp)
+			}
 			r = append(r, cppToken{spTok, nil})
 		}
 		r = append(r, cppToken{v, nil})

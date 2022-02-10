@@ -26,8 +26,6 @@ var (
 	_ tokenSequence = (*dequeue)(nil)
 	_ tokenSequence = (*tokenizer)(nil)
 
-	commaTok, hashTok, nlTok, oneTok, pragmaTok, pragmaTestTok, spTok, zeroTok Token //TODO-
-
 	comma  = []byte{','}
 	hash   = []byte{'#'}
 	nl     = []byte{'\n'}
@@ -49,45 +47,6 @@ var (
 		"defined":                  {},
 	}
 )
-
-func init() {
-	s, err := newScannerSource(Source{"", []byte(nil), nil}) //TODO-
-	if err != nil {                                          //TODO-
-		panic(errorf("initialization error")) //TODO-
-	} //TODO-
-
-	commaTok.s = s           //TODO-
-	commaTok.Ch = ','        //TODO-
-	commaTok.Set(nil, comma) //TODO-
-
-	hashTok.s = s          //TODO-
-	hashTok.Ch = '#'       //TODO-
-	hashTok.Set(nil, hash) //TODO-
-
-	nlTok.s = s                  //TODO-
-	nlTok.Ch = '\n'              //TODO-
-	nlTok.Set(nil, []byte{'\n'}) //TODO-
-
-	pragmaTok.s = s                 //TODO-
-	pragmaTok.Ch = rune(IDENTIFIER) //TODO-
-	pragmaTok.Set(nil, pragma)      //TODO-
-
-	pragmaTestTok.s = s                        //TODO-
-	pragmaTestTok.Ch = rune(IDENTIFIER)        //TODO-
-	pragmaTestTok.Set(nil, []byte("__pragma")) //TODO-
-
-	oneTok.s = s               //TODO-
-	oneTok.Ch = rune(PPNUMBER) //TODO-
-	oneTok.Set(nil, one)       //TODO-
-
-	spTok.s = s        //TODO-
-	spTok.Ch = ' '     //TODO-
-	spTok.Set(nil, sp) //TODO-
-
-	zeroTok.s = s               //TODO-
-	zeroTok.Ch = rune(PPNUMBER) //TODO-
-	zeroTok.Set(nil, zero)      //TODO-
-}
 
 // cppParser produces a preprocessingFile.
 type cppParser struct {
@@ -1127,6 +1086,10 @@ func (c *cpp) parsePragma(ts tokenSequence) {
 		return
 	}
 
+	hashTok := Token{s: t.s, Ch: '#'}
+	hashTok.Set(nil, hash)
+	pragmaTok := Token{s: t.s, Ch: rune(IDENTIFIER)}
+	pragmaTok.Set(nil, pragma)
 	a := controlLine{hashTok, pragmaTok}
 	for {
 		t := sc.cppScan0()
@@ -1261,6 +1224,10 @@ func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
 	}
 
 	nm := string(t.Src())
+	oneTok := Token{s: t.s, Ch: rune(PPNUMBER)}
+	oneTok.Set(nil, one)
+	zeroTok := Token{s: t.s, Ch: rune(PPNUMBER)}
+	zeroTok.Set(nil, zero)
 	switch c.macro(t.Token, nm) {
 	case nil:
 		switch nm {
@@ -1308,6 +1275,10 @@ func (c *cpp) varArgsP(t cppToken, AP []cppTokens) *cppTokens {
 func (c *cpp) varArgs(t cppToken, AP []cppTokens) (r cppTokens) {
 	// trc("  %s%v %v (%v)", c.indent(), &t, toksDump(AP), origin(2))
 	// defer func() { trc("->%sout %v", c.undent(), toksDump(r)) }()
+	commaTok := Token{s: t.s, Ch: ','}
+	commaTok.Set(nil, comma)
+	spTok := Token{s: t.s, Ch: ' '}
+	spTok.Set(nil, sp)
 	for i, v := range AP {
 		if i != 0 {
 			r = append(r, cppToken{commaTok, nil})
