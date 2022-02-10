@@ -1101,9 +1101,14 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 func TestParse(t *testing.T) {
 	cfg := defaultCfg()
 	cfg.FS = cFS
+	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
 		// Assertions are deprecated, not supported.
 		"950919-1.c": {},
+	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/s390x":
+		blacklistCompCert["aes.c"] = struct{}{} // Unsupported endianness.
 	}
 	var files, ok, skip, fails int32
 	for _, v := range []struct {
@@ -1111,10 +1116,10 @@ func TestParse(t *testing.T) {
 		dir       string
 		blacklist map[string]struct{}
 	}{
-		{cfg, "CompCert-3.6/test/c", nil},
+		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
 		{cfg, "ccgo", nil},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
-		{cfg, "github.com/AbsInt/CompCert/test/c", nil},
+		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", nil},
