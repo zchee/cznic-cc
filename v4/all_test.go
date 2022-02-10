@@ -733,7 +733,7 @@ func TestInclude(t *testing.T) {
 func TestTranslationPhase4(t *testing.T) {
 	cfg := defaultCfg()
 	cfg.FS = cFS
-	var blacklistCompCert, blacklistCxgo map[string]struct{}
+	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
 		// assertions are deprecated, not supported.
 		"950919-1.c": {},
@@ -756,7 +756,7 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "ccgo", nil},
 		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
 		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
-		{cfg, "github.com/cxgo", blacklistCxgo},
+		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", nil},
 		{cfg, "sqlite-amalgamation-3370200", nil},
