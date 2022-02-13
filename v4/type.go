@@ -4,6 +4,12 @@
 
 package cc // import "modernc.org/cc/v4"
 
+var (
+	_ Type = (*FunctionType)(nil)
+	_ Type = (*PointerType)(nil)
+	_ Type = (*PredefinedType)(nil)
+)
+
 // Type is the representation of a C type.
 //
 // Not all methods apply to all kinds of types. Restrictions, if any, are noted
@@ -14,5 +20,67 @@ package cc // import "modernc.org/cc/v4"
 // Calling a method on a type of kind Invalid yields an undefined result, but
 // does not panic.
 type Type interface {
-	//TODO
+	Kind() Kind
 }
+
+const (
+	Char       Kind = iota // char
+	Double                 // double
+	Float                  // float
+	Function               // function
+	Int                    // int
+	Long                   // long
+	LongDouble             // long double
+	LongLong               // long long
+	Ptr                    // pointer
+	Schar                  // signed char
+	Short                  // short
+	Uchar                  // unsigned char
+	Uint                   // unsigned
+	Ulong                  // unsigned long
+	UlongLong              // unsigned long long
+	Ushort                 // unsigned short
+	Void                   // void
+)
+
+type Kind int
+
+type PredefinedType struct {
+	ast  *AST
+	kind Kind
+}
+
+func newPredefinedType(ast *AST, kind Kind) *PredefinedType { return &PredefinedType{kind: kind} }
+
+func (n *PredefinedType) Kind() Kind { return n.kind }
+
+type FunctionType struct {
+	result  Type
+	fp      []*ParameterDeclaration
+	minArgs int
+	maxArgs int // -1: unlimited
+}
+
+func newFunctionType(c *ctx, result Type, fp []*ParameterDeclaration, isVariadic bool) *FunctionType {
+	r := &FunctionType{result: result, fp: fp, minArgs: len(fp), maxArgs: len(fp)}
+	if isVariadic {
+		r.maxArgs = -1
+	}
+	if len(fp) == 1 {
+		if t := fp[0].typ; t != nil && t.Kind() == Void {
+			r.minArgs = 0
+			r.maxArgs = 0
+		}
+	}
+	return r
+}
+
+func (n *FunctionType) Kind() Kind { return Function }
+
+type PointerType struct {
+	elem Type
+}
+
+func newPointerType(elem Type) *PointerType { return &PointerType{elem: elem} }
+
+func (n *PointerType) Kind() Kind { return Ptr }

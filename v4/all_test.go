@@ -732,6 +732,7 @@ func TestInclude(t *testing.T) {
 
 func TestTranslationPhase4(t *testing.T) {
 	cfg := defaultCfg()
+	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
 	cfg.FS = cFS
 	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
@@ -1048,17 +1049,6 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 			fmt.Fprintln(os.Stderr, pth)
 		}
 
-		if !strings.Contains(pth, ".fail.") {
-			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), pth)
-			var buf bytes.Buffer
-			cmd.Stderr = &buf
-			if err = cmd.Run(); err != nil {
-				t.Logf("%v: skip: %v: %s %v", pth, cfg.CC, buf.Bytes(), err)
-				skip++
-				return nil
-			}
-		}
-
 		_, err = Parse(
 			cfg,
 			[]Source{
@@ -1078,13 +1068,20 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 				}
 				ok++
 			}
+		case err == nil:
+			ok++
 		default:
-			if err != nil {
-				fails = append(fails, pth)
-				t.Errorf("%v: %v", pth, err)
-			} else {
-				ok++
+			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), pth)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err2 := cmd.Run(); err2 != nil {
+				t.Logf("%v: skip: %v: %s %v", pth, cfg.CC, buf.Bytes(), err2)
+				skip++
+				break
 			}
+
+			fails = append(fails, pth)
+			t.Errorf("%v: %v", pth, err)
 		}
 		return nil
 	})
@@ -1100,6 +1097,7 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 
 func TestParse(t *testing.T) {
 	cfg := defaultCfg()
+	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
 	cfg.FS = cFS
 	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
@@ -1193,6 +1191,167 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 				}()
 
 				if _, err = Parse(
+					cfg,
+					[]Source{
+						{Name: "<predefined>", Value: cfg.Predefined},
+						{Name: "<builtin>", Value: builtin},
+						{Name: apth, FS: cFS},
+					},
+				); err == nil {
+					atomic.AddInt32(&ok, 1)
+					return
+				}
+			}()
+
+			if err == nil {
+				return
+			}
+
+			f, err2 := cFS.Open(apth)
+			if err2 != nil {
+				err = errorf("", err2)
+				return
+			}
+
+			defer f.Close()
+
+			b := make([]byte, fi.Size())
+			if n, _ := f.Read(b); int64(n) != fi.Size() {
+				err = errorf("%v: short read", apth)
+				return
+			}
+
+			fn := filepath.Join(tmp, filepath.Base(apth))
+			if err2 := os.WriteFile(fn, b, 0660); err2 != nil {
+				err = errorf("", err2)
+				return
+			}
+
+			defer os.Remove(fn)
+
+			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), fn)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err2 = cmd.Run(); err2 != nil {
+				t.Logf("%v: skip: %v: %s %v", apth, cfg.CC, buf.Bytes(), err2)
+				atomic.AddInt32(&skip, 1)
+				err = nil
+				return
+			}
+		})
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	p.wg.Wait()
+	for _, v := range fails {
+		t.Log(v)
+	}
+	// fmt.Fprintf(os.Stderr, "%v: files %v, skip %v, ok %v, fails %v\n", dir, files, skip, ok, len(fails))
+	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
+	return files, ok, skip, int32(len(fails))
+}
+
+func TestTranslate(t *testing.T) {
+	return //TODO-
+	cfg := defaultCfg()
+	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
+	cfg.FS = cFS
+	blacklistCompCert := map[string]struct{}{}
+	blacklistGCC := map[string]struct{}{
+		// Assertions are deprecated, not supported.
+		"950919-1.c": {},
+	}
+	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
+	case "linux/s390x":
+		blacklistCompCert["aes.c"] = struct{}{} // Unsupported endianness.
+	}
+	var files, ok, skip, fails int32
+	for _, v := range []struct {
+		cfg       *Config
+		dir       string
+		blacklist map[string]struct{}
+	}{
+		{cfg, "CompCert-3.6/test/c", blacklistCompCert},
+		{cfg, "ccgo", nil},
+		{cfg, "gcc-9.1.0/gcc/testsuite/gcc.c-torture", blacklistGCC},
+		{cfg, "github.com/AbsInt/CompCert/test/c", blacklistCompCert},
+		{cfg, "github.com/cxgo", nil},
+		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
+		{cfg, "github.com/vnmakarov", nil},
+		{cfg, "sqlite-amalgamation-3370200", nil},
+		{cfg, "tcc-0.9.27/tests/tests2", nil},
+		{cfg, "benchmarksgame-team.pages.debian.net", nil},
+	} {
+		t.Run(v.dir, func(t *testing.T) {
+			f, o, s, n := testTranslate(t, v.cfg, "/"+v.dir, v.blacklist)
+			files += f
+			ok += o
+			skip += s
+			fails += n
+		})
+	}
+	t.Logf("TOTAL: files %v, skip %v, ok %v, fails %v", files, skip, ok, fails)
+}
+
+func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]struct{}) (files, ok, skip, nfails int32) {
+	tmp := t.TempDir()
+	var fails []string
+	p := newParallel()
+	err := walk(dir, func(pth string, fi os.FileInfo) error {
+		if fi.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(pth) != ".c" {
+			return nil
+		}
+
+		files++
+		switch {
+		case re != nil:
+			if !re.MatchString(pth) {
+				atomic.AddInt32(&skip, 1)
+				return nil
+			}
+		default:
+			if _, ok := blacklist[filepath.Base(pth)]; ok {
+				atomic.AddInt32(&skip, 1)
+				return nil
+			}
+		}
+		apth := pth
+		p.exec(func() {
+			if *oTrace {
+				fmt.Fprintln(os.Stderr, apth)
+			}
+
+			var err error
+
+			defer func() {
+				p.Lock()
+
+				defer p.Unlock()
+
+				if err != nil {
+					fails = append(fails, apth)
+					t.Errorf("%v: %v", apth, err)
+				}
+
+			}()
+
+			func() {
+				defer func() {
+					if e := recover(); e != nil && err == nil {
+						err = fmt.Errorf("%v: PANIC: %v", apth, e)
+						trc("%v: PANIC: %v\n%s", apth, e, debug.Stack())
+						os.Exit(1)
+					}
+				}()
+
+				if _, err = Translate(
 					cfg,
 					[]Source{
 						{Name: "<predefined>", Value: cfg.Predefined},

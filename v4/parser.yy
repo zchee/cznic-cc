@@ -413,8 +413,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example register int i asm("r0") = x; */
 /*yy:case Init       */ |	Declarator Asm '=' Initializer
 
-			/* [0], 6.7.1 Storage-class specifiers */
-			/*yy:field	Declspecs	[]Token*/
+			/* [0], 6.7.1 Storage-class specifiers	*/
+			/*yy:field	Declspecs	[]Token	*/
 			/*yy:example typedef int int_t; */
 /*yy:case Typedef    */ StorageClassSpecifier:
 				"typedef"
@@ -432,6 +432,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Declspec   */ |	"__declspec" '(' /* ... */ ')'
 
 			/* [0], 6.7.2 Type specifiers */
+			/*yy:field	resolutionScope	*Scope	*/
 			/*yy:example void i(); */
 /*yy:case Void       */ TypeSpecifier:
 				"void"
@@ -611,8 +612,11 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:field	typename	bool		*/
+			/*yy:field	typ		Type		*/
 			/*yy:field	visible				*/
+			/*yy:field	isExtern	bool		*/
+			/*yy:field	isParam		bool		*/
+			/*yy:field	typename	bool		*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator
@@ -670,6 +674,7 @@ package cc // import "modernc.org/cc/v4"
 			|	ParameterList ',' ParameterDeclaration
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
+			/*yy:field	typ	Type	*/
 			/*yy:example int f(int i __attribute__((a))) {} */
 /*yy:case Decl       */ ParameterDeclaration:
 				DeclarationSpecifiers Declarator
@@ -687,6 +692,7 @@ package cc // import "modernc.org/cc/v4"
 			TypeName:
 				SpecifierQualifierList AbstractDeclarator
 
+			/*yy:field	typ	Type	*/
 			/*yy:example void f(int*); */
 /*yy:case Ptr        */ AbstractDeclarator:
 				Pointer

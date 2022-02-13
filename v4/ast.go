@@ -39,6 +39,7 @@ func (n AbstractDeclaratorCase) String() string {
 //	        Pointer                           // Case AbstractDeclaratorPtr
 //	|       Pointer DirectAbstractDeclarator  // Case AbstractDeclaratorDecl
 type AbstractDeclarator struct {
+	typ                      Type
 	Case                     AbstractDeclaratorCase `PrettyPrint:"stringer,zero"`
 	DirectAbstractDeclarator *DirectAbstractDeclarator
 	Pointer                  *Pointer
@@ -1246,8 +1247,11 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	Declarator:
 //	        Pointer DirectDeclarator
 type Declarator struct {
-	typename bool
+	typ Type
 	visible
+	isExtern         bool
+	isParam          bool
+	typename         bool
 	DirectDeclarator *DirectDeclarator
 	Pointer          *Pointer
 }
@@ -3331,6 +3335,7 @@ func (n ParameterDeclarationCase) String() string {
 //	|       DeclarationSpecifiers AbstractDeclarator  // Case ParameterDeclarationAbstract
 type ParameterDeclaration struct {
 	AttributeSpecifierList *AttributeSpecifierList
+	typ                    Type
 	AbstractDeclarator     *AbstractDeclarator
 	Case                   ParameterDeclarationCase `PrettyPrint:"stringer,zero"`
 	DeclarationSpecifiers  *DeclarationSpecifiers
@@ -4803,6 +4808,7 @@ func (n TypeSpecifierCase) String() string {
 //	|       "__m256d"                    // Case TypeSpecifierM256d
 //	|       "__m128"                     // Case TypeSpecifierM128
 type TypeSpecifier struct {
+	resolutionScope        *Scope
 	AtomicTypeSpecifier    *AtomicTypeSpecifier
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier

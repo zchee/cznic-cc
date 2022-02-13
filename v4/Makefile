@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-.PHONY:	ast.go build_all_targets clean cpu edit editor mem win64 win32
+.PHONY:	ast.go build_all_targets clean cpu edit editor mem win64 win32 tmp
 
 ast.go:
 	go generate
@@ -53,3 +53,8 @@ win32:
 win64:
 	# on linux/amd64
 	CC_TEST_CPP=x86_64-w64-mingw32-cpp go test 2>&1 | tee log
+
+tmp:
+	go test -run Translate 2>&1 | tee log
+	grep '^ \+TODO' log | sort | uniq -c | sort -n
+	grep TOTAL log

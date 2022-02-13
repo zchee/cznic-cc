@@ -4,7 +4,7 @@
 
 //go:generate rm -f ast.go
 //go:generate yy -o /dev/null -position -astImport "\"fmt\"\n\n\"modernc.org/token\"" -prettyString PrettyString -kind Case -noListKind -noPrivateHelpers -forceOptPos parser.yy
-//go:generate stringer -output stringer.go -type=tokCh
+//go:generate stringer -output stringer.go -linecomment -type=tokCh,Kind
 //go:generate sh -c "go test -run ^Example |fe"
 
 // Package cc is a C99 compiler front end.
@@ -254,6 +254,8 @@ type errors []string
 // Error implements error.
 func (e errors) Error() string { return strings.Join(e, "\n") }
 
+func (e *errors) add(err error) { *e = append(*e, err.Error()) }
+
 func (e errors) err() error {
 	w := 0
 	for i, v := range e {
@@ -341,8 +343,8 @@ func preprocess(cpp *cpp, w io.Writer) (err error) {
 	}
 }
 
-// Parse preprocesses and parsees a translation unit, consisting of inputs in
-// sources, and writes the result to w.
+// Parse preprocesses and parses a translation unit, consisting of inputs in
+// sources.
 func Parse(cfg *Config, sources []Source) (*AST, error) {
 	p, err := newParser(cfg, sources)
 	if err != nil {
@@ -350,4 +352,19 @@ func Parse(cfg *Config, sources []Source) (*AST, error) {
 	}
 
 	return p.parse()
+}
+
+// Translate preprocesses, parses and type checks a translation unit,
+// consisting of inputs in sources.
+func Translate(cfg *Config, sources []Source) (*AST, error) {
+	ast, err := Parse(cfg, sources)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ast.check(); err != nil {
+		return nil, err
+	}
+
+	return ast, nil
 }

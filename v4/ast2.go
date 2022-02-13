@@ -9,11 +9,6 @@ const (
 	TypeQualifierAttr         = TypeQualifierAtomic + 1
 )
 
-type AST struct {
-	TranslationUnit *TranslationUnit
-	EOF             Token
-}
-
 // Name returns the name of n.
 func (n *Declarator) Name() string {
 	if dn := n.DirectDeclarator.name(); dn != nil {

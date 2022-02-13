@@ -322,7 +322,7 @@ func (p *parser) parse() (ast *AST, err error) {
 		s := fmt.Sprintf(msg, args...)
 		if isTesting {
 			s += fmt.Sprintf(" (%v: %v)", origin(2), origin(3))
-			if isTesting && traceFails {
+			if traceFails {
 				trc("%s FAIL (%v)", s, origin(1))
 				// trc("\n%s", debug.Stack())
 			}
@@ -456,8 +456,7 @@ func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundSt
 		p.fnScope = p.scope
 		if d != nil {
 			for dd := d.DirectDeclarator; dd != nil; {
-				s := dd.params
-				if s != nil {
+				if s := dd.params; s != nil {
 					for nm, nodes := range s.Nodes {
 						for _, node := range nodes {
 							p.scope.declare(nm, node)
@@ -1704,7 +1703,14 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 				panic(todo("", p.peek(1, true)))
 			}
 		default:
-			panic(todo("", p.toks[0], opt))
+			switch p.rune(true) {
+			case rune(IDENTIFIER):
+				t := p.shift(true)
+				p.cpp.eh("%v: unexpected %v, expected ';'", t.Position(), runeName(t.Ch))
+				return nil
+			default:
+				panic(todo("", p.toks[0], opt))
+			}
 		}
 	default:
 		switch p.rune(false) {
@@ -2859,7 +2865,7 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 	case rune(SHORT):
 		return &TypeSpecifier{Case: TypeSpecifierShort, Token: p.shift(false)}
 	case rune(TYPENAME):
-		return &TypeSpecifier{Case: TypeSpecifierTypeName, Token: p.shift(true)}
+		return &TypeSpecifier{Case: TypeSpecifierTypeName, Token: p.shift(true), resolutionScope: p.scope}
 	case rune(UNSIGNED):
 		return &TypeSpecifier{Case: TypeSpecifierUnsigned, Token: p.shift(false)}
 	case
@@ -3206,11 +3212,18 @@ func (p *parser) structOrUnion() *StructOrUnion {
 
 // Scope binds names to declaring nodes.
 type Scope struct {
+	childs []*Scope
 	Nodes  map[string][]Node
 	Parent *Scope
 }
 
-func newScope(parent *Scope) *Scope { return &Scope{Parent: parent} }
+func newScope(parent *Scope) (r *Scope) {
+	r = &Scope{Parent: parent}
+	if parent != nil {
+		parent.childs = append(parent.childs, r)
+	}
+	return r
+}
 
 func (s *Scope) declare(nm string, n Node) {
 	// trc("%v: %q %T, visible %v (scope %p)", n.Position(), nm, n, n.(interface{ Visible() int }).Visible(), s)

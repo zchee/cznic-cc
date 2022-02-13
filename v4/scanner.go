@@ -38,116 +38,116 @@ type tokCh int
 const (
 	_ tokCh = iota + unicodePrivateAreaFirst
 
-	ACCUM                  // _Accum
-	ADDASSIGN              // +=
-	ALIGNAS                // _Alignas
-	ALIGNOF                // _Alignof
-	ANDAND                 // &&
-	ANDASSIGN              // &=
-	ARROW                  // ->
-	ASM                    // __asm__
-	ATOMIC                 // _Atomic
-	ATTRIBUTE              // __attribute__
-	AUTO                   // auto
-	BOOL                   // _Bool
-	BREAK                  // break
-	BUILTINCHOOSEEXPR      // __builtin_choose_expr
-	BUILTINTYPESCOMPATIBLE // __builtin_types_compatible_p
-	CASE                   // case
-	CHAR                   // char
-	CHARCONST              // 'a'
-	COMPLEX                // _Complex
-	CONST                  // const
-	CONTINUE               // continue
-	DDD                    // ...
-	DEC                    // --
-	DECIMAL128             // _Decimal128
-	DECIMAL32              // _Decimal32
-	DECIMAL64              // _Decimal64
-	DECLSPEC               // __declspec
-	DEFAULT                // default
-	DIVASSIGN              // /=
-	DO                     // do
-	DOUBLE                 // double
-	ELSE                   // else
-	ENUM                   // enum
-	ENUMCONST              // foo in enum x { foo, bar };
-	EQ                     // ==
-	EXTERN                 // extern
-	FLOAT                  // float
-	FLOAT128               // _Float128
-	FLOAT128X              // _Float128x
-	FLOAT16                // __fp16
-	FLOAT32                // _Float32
-	FLOAT32X               // _Float32x
-	FLOAT64                // _Float64
-	FLOAT64X               // _Float64x
-	FLOAT80                // __float80
-	FLOATCONST             // 1.23
-	FOR                    // for
-	FRACT                  // _Fract
-	GENERIC                // _Generic
-	GEQ                    // >=
-	GOTO                   // goto
-	HEADER_NAME            // <foo> or "bar"
-	IDENTIFIER             // foo
-	IF                     // if
-	IMAG                   // __imag__
-	IMAGINARY              // _Imaginary
-	INC                    // ++
-	INLINE                 // inline
-	INT                    // int
-	INT128                 // __int128
-	INT16                  // __int16
-	INT32                  // __int32
-	INT64                  // __int64
-	INT8                   // __int8
-	INTCONST               // 42
-	LABEL                  // __label__
-	LEQ                    // <=
-	LONG                   // long
-	LONGCHARCONST          // L'a'
-	LONGSTRINGLITERAL      // L"foo"
-	LSH                    // <<
-	LSHASSIGN              // <<=
-	M128                   // __m128
-	M256D                  // __m256d
-	MODASSIGN              // %=
-	MULASSIGN              // *=
-	NEQ                    // !=
-	NONNULL                // _Nonnull
-	NORETURN               // _Noreturn
-	ORASSIGN               // |=
-	OROR                   // ||
-	PPNUMBER               // .32e.
-	PPPASTE                // ##
-	PRAGMASTDC             // __pragma_stdc
-	REAL                   // __real__
-	REGISTER               // register
-	RESTRICT               // restrict
-	RETURN                 // return
-	RSH                    // >>
-	RSHASSIGN              // >>=
-	SAT                    // _Sat
-	SHORT                  // short
-	SIGNED                 // signed
-	SIZEOF                 // sizeof
-	STATIC                 // static
-	STRINGLITERAL          // "foo"
-	STRUCT                 // struct
-	SUBASSIGN              // -=
-	SWITCH                 // switch
-	THREADLOCAL            // _Thread_local
-	TYPEDEF                // typedef
-	TYPENAME               // int_t in typedef int int_t;
-	TYPEOF                 // typeof
-	UINT128                // __uint128_t
-	UNION                  // union
-	UNSIGNED               // unsigned
-	VOID                   // void
-	VOLATILE               // volatile
-	WHILE                  // while
-	XORASSIGN              // ^=
+	ACCUM
+	ADDASSIGN
+	ALIGNAS
+	ALIGNOF
+	ANDAND
+	ANDASSIGN
+	ARROW
+	ASM
+	ATOMIC
+	ATTRIBUTE
+	AUTO
+	BOOL
+	BREAK
+	BUILTINCHOOSEEXPR
+	BUILTINTYPESCOMPATIBLE
+	CASE
+	CHAR
+	CHARCONST
+	COMPLEX
+	CONST
+	CONTINUE
+	DDD
+	DEC
+	DECIMAL128
+	DECIMAL32
+	DECIMAL64
+	DECLSPEC
+	DEFAULT
+	DIVASSIGN
+	DO
+	DOUBLE
+	ELSE
+	ENUM
+	ENUMCONST
+	EQ
+	EXTERN
+	FLOAT
+	FLOAT128
+	FLOAT128X
+	FLOAT16
+	FLOAT32
+	FLOAT32X
+	FLOAT64
+	FLOAT64X
+	FLOAT80
+	FLOATCONST
+	FOR
+	FRACT
+	GENERIC
+	GEQ
+	GOTO
+	HEADER_NAME
+	IDENTIFIER
+	IF
+	IMAG
+	IMAGINARY
+	INC
+	INLINE
+	INT
+	INT128
+	INT16
+	INT32
+	INT64
+	INT8
+	INTCONST
+	LABEL
+	LEQ
+	LONG
+	LONGCHARCONST
+	LONGSTRINGLITERAL
+	LSH
+	LSHASSIGN
+	M128
+	M256D
+	MODASSIGN
+	MULASSIGN
+	NEQ
+	NONNULL
+	NORETURN
+	ORASSIGN
+	OROR
+	PPNUMBER
+	PPPASTE
+	PRAGMASTDC
+	REAL
+	REGISTER
+	RESTRICT
+	RETURN
+	RSH
+	RSHASSIGN
+	SAT
+	SHORT
+	SIGNED
+	SIZEOF
+	STATIC
+	STRINGLITERAL
+	STRUCT
+	SUBASSIGN
+	SWITCH
+	THREADLOCAL
+	TYPEDEF
+	TYPENAME
+	TYPEOF
+	UINT128
+	UNION
+	UNSIGNED
+	VOID
+	VOLATILE
+	WHILE
+	XORASSIGN
 )
 
 // Node is implemented by Token and AST nodes.

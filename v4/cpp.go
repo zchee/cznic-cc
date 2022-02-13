@@ -194,7 +194,7 @@ func (p *cppParser) groupPart(inIfSection bool) groupPart {
 			}
 
 			p.eh("%v: unexpected #%s", p.pos(), p.line[1].Src())
-			return textLine(p.shift())
+			return nonDirective(p.shift())
 		default:
 			return nonDirective(p.shift())
 		}
@@ -1584,8 +1584,12 @@ func (c *cpp) include(ln controlLine) {
 	case strings.HasPrefix(raw, `"`) && strings.HasSuffix(raw, `"`):
 		nm := raw[1 : len(raw)-1]
 		for _, v := range c.cfg.IncludePaths {
-			if v == "" {
+			switch {
+			case v == "":
 				v, _ = filepath.Split(ln[2].Position().Filename)
+			case !filepath.IsAbs(v):
+				x, _ := filepath.Split(ln[2].Position().Filename)
+				v = filepath.Join(x, v)
 			}
 			pth := filepath.Join(v, nm)
 			if g, err := c.group(Source{pth, nil, c.cfg.FS}); err == nil {
@@ -1598,6 +1602,10 @@ func (c *cpp) include(ln controlLine) {
 	case strings.HasPrefix(raw, "<") && strings.HasSuffix(raw, ">"):
 		nm := raw[1 : len(raw)-1]
 		for _, v := range c.cfg.SysIncludePaths {
+			if !filepath.IsAbs(v) {
+				x, _ := filepath.Split(ln[2].Position().Filename)
+				v = filepath.Join(x, v)
+			}
 			pth := filepath.Join(v, nm)
 			if g, err := c.group(Source{pth, nil, c.cfg.FS}); err == nil {
 				c.push(g)
