@@ -347,20 +347,8 @@ func (n *TypeSpecifier) check(c *ctx) Type {
 	case TypeSpecifierEnum: // EnumSpecifier
 		c.errors.add(errorf("TODO %v", n.Case))
 	case TypeSpecifierTypeName: // TYPENAME
-	out:
-		for s := n.resolutionScope; s != nil; s = s.Parent {
-			for _, v := range s.Nodes[string(n.Token.Src())] {
-				switch x := v.(type) {
-				case *Declarator:
-					if x.typename {
-						if n.Token.seq >= int32(x.visible) {
-							return x.typ
-						}
-					}
-
-					break out
-				}
-			}
+		if x, ok := n.resolutionScope.ident(n.Token).(*Declarator); ok && x.typename {
+			return x.typ
 		}
 
 		c.errors.add(errorf("%v: undefined type name", n.Position()))
@@ -391,11 +379,26 @@ func (n *TypeSpecifier) check(c *ctx) Type {
 func (n *StructOrUnionSpecifier) check(c *ctx) Type {
 	switch n.Case {
 	case StructOrUnionSpecifierDef: // StructOrUnion IDENTIFIER '{' StructDeclarationList '}'
-		c.errors.add(errorf("TODO %v", n.Case))
+		n.typ = n.StructDeclarationList.check(c)
+		return n.typ
 	case StructOrUnionSpecifierTag: // StructOrUnion IDENTIFIER
-		c.errors.add(errorf("TODO %v", n.Case))
+		if x := n.resolutionScope.structOrUnion(n.Token); x != nil {
+			if n.StructOrUnion.Case != x.StructOrUnion.Case {
+				c.errors.add(errorf("%v: mismateched struct/union tag", n.Token.Position()))
+				break
+			}
+
+			return x.typ
+		}
+
+		c.errors.add(errorf("%v: undefined struct/union tag", n.Token.Position()))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 	return nil //TODO-
+}
+
+func (n *StructDeclarationList) check(c *ctx) Type {
+	c.errors.add(errorf("TODO"))
+	return nil
 }

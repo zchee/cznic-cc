@@ -181,28 +181,13 @@ func (p *parser) checkTypeName(t *Token) (r bool) {
 		return false
 	}
 
-	// defer func() { trc("%v seq %v -> %v (%v: %v: %v:)", t, t.seq, r, origin(3), origin(4), origin(5)) }()
-	nm := string(t.Src())
-	for s := p.scope; s != nil; s = s.Parent {
-		for _, v := range s.Nodes[nm] {
-			switch x := v.(type) {
-			case *Declarator:
-				if x.typename && t.seq >= int32(x.visible) {
-					// trc("TYPENAME %v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
-					t.Ch = rune(TYPENAME)
-					return true
-				}
-
-				// trc("IDENTIFIER(D) %v: %q x.typename %v, t.seq %v, x.visible %v (scope %p)", x.Position(), nm, x.typename, t.seq, x.visible, s)
-				return false
-			case *Enumerator:
-				if t.seq >= int32(x.visible) {
-					// trc("IDENTIFIER(E) %v: %q t.seq %v, x.visible %v (scope %p)", x.Position(), nm, t.seq, x.visible, s)
-					return false
-				}
-			}
+	if x, ok := p.scope.ident(*t).(*Declarator); ok {
+		if x.typename {
+			t.Ch = rune(TYPENAME)
+			return true
 		}
 	}
+
 	return false
 }
 
@@ -3071,12 +3056,12 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 	case rune(IDENTIFIER):
 		r = &StructOrUnionSpecifier{StructOrUnion: sou, AttributeSpecifierList: attrs, Token: p.shift(false)}
 		r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
-		p.scope.declare(string(r.Token.Src()), r)
 		switch p.rune(false) {
 		case eof:
 			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 			return nil
 		case '{':
+			p.scope.declare(string(r.Token.Src()), r)
 			r.Case = StructOrUnionSpecifierDef
 			r.Token2 = p.shift(false)
 			r.StructDeclarationList = p.structDeclarationList()
@@ -3084,6 +3069,7 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 			return r
 		default:
+			r.resolutionScope = p.scope
 			r.Case = StructOrUnionSpecifierTag
 			return r
 		}
@@ -3233,6 +3219,36 @@ func (s *Scope) declare(nm string, n Node) {
 	}
 
 	s.Nodes = map[string][]Node{nm: {n}}
+}
+
+func (s *Scope) ident(t Token) Node {
+	for ; s != nil; s = s.Parent {
+		for _, v := range s.Nodes[string(t.Src())] {
+			switch x := v.(type) {
+			case *Declarator:
+				if t.seq >= int32(x.visible) {
+					return x
+				}
+			case *Enumerator:
+				if t.seq >= int32(x.visible) {
+					return x
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Scope) structOrUnion(t Token) *StructOrUnionSpecifier {
+	for ; s != nil; s = s.Parent {
+		for _, v := range s.Nodes[string(t.Src())] {
+			switch x := v.(type) {
+			case *StructOrUnionSpecifier:
+				return x
+			}
+		}
+	}
+	return nil
 }
 
 type scoper struct {

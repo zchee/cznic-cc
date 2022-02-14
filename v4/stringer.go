@@ -146,17 +146,19 @@ func _() {
 	_ = x[Ptr-8]
 	_ = x[Schar-9]
 	_ = x[Short-10]
-	_ = x[Uchar-11]
-	_ = x[Uint-12]
-	_ = x[Ulong-13]
-	_ = x[UlongLong-14]
-	_ = x[Ushort-15]
-	_ = x[Void-16]
+	_ = x[Struct-11]
+	_ = x[Uchar-12]
+	_ = x[Uint-13]
+	_ = x[Ulong-14]
+	_ = x[UlongLong-15]
+	_ = x[Union-16]
+	_ = x[Ushort-17]
+	_ = x[Void-18]
 }
 
-const _Kind_name = "chardoublefloatfunctionintlonglong doublelong longpointersigned charshortunsigned charunsignedunsigned longunsigned long longunsigned shortvoid"
+const _Kind_name = "chardoublefloatfunctionintlonglong doublelong longpointersigned charshortstructunsigned charunsignedunsigned longunsigned long longunionunsigned shortvoid"
 
-var _Kind_index = [...]uint8{0, 4, 10, 15, 23, 26, 30, 41, 50, 57, 68, 73, 86, 94, 107, 125, 139, 143}
+var _Kind_index = [...]uint8{0, 4, 10, 15, 23, 26, 30, 41, 50, 57, 68, 73, 79, 92, 100, 113, 131, 136, 150, 154}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

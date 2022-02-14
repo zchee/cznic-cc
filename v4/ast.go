@@ -4466,6 +4466,8 @@ type StructOrUnionSpecifier struct {
 	AttributeSpecifierList  *AttributeSpecifierList
 	AttributeSpecifierList2 *AttributeSpecifierList
 	visible
+	resolutionScope       *Scope
+	typ                   Type
 	Case                  StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
 	StructDeclarationList *StructDeclarationList
 	StructOrUnion         *StructOrUnion

@@ -508,11 +508,11 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example _Float64 i; */
 /*yy:case Float64    */ |	"_Float64"
 			/*yy:example _Float32x i; */
-/*yy:case Float32x    */ |	"_Float32x"
+/*yy:case Float32x   */ |	"_Float32x"
 			/*yy:example _Float64x i; */
-/*yy:case Float64x    */ |	"_Float64x"
+/*yy:case Float64x   */ |	"_Float64x"
 			/*yy:example __m256d i; */
-/*yy:case M256d       */ |	"__m256d"
+/*yy:case M256d      */ |	"__m256d"
 			/*yy:example __m128 i; */
 /*yy:case M128       */ |	"__m128"
 
@@ -520,6 +520,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:field	AttributeSpecifierList2	*AttributeSpecifierList	*/
 			/*yy:field	visible	*/
+			/*yy:field	resolutionScope	*Scope	*/
+			/*yy:field	typ		Type		*/
 			/*yy:example struct s { int i; } __attribute__((a)); */
 /*yy:case Def        */ StructOrUnionSpecifier:
 				StructOrUnion IDENTIFIER '{' StructDeclarationList '}'

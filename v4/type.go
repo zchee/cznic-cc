@@ -8,6 +8,8 @@ var (
 	_ Type = (*FunctionType)(nil)
 	_ Type = (*PointerType)(nil)
 	_ Type = (*PredefinedType)(nil)
+	_ Type = (*StructType)(nil)
+	_ Type = (*UnionType)(nil)
 )
 
 // Type is the representation of a C type.
@@ -35,10 +37,12 @@ const (
 	Ptr                    // pointer
 	Schar                  // signed char
 	Short                  // short
+	Struct                 // struct
 	Uchar                  // unsigned char
 	Uint                   // unsigned
 	Ulong                  // unsigned long
 	UlongLong              // unsigned long long
+	Union                  // union
 	Ushort                 // unsigned short
 	Void                   // void
 )
@@ -84,3 +88,15 @@ type PointerType struct {
 func newPointerType(elem Type) *PointerType { return &PointerType{elem: elem} }
 
 func (n *PointerType) Kind() Kind { return Ptr }
+
+type StructType struct {
+	//TODO
+}
+
+func (n *StructType) Kind() Kind { return Struct }
+
+type UnionType struct {
+	//TODO
+}
+
+func (n *UnionType) Kind() Kind { return Union }
