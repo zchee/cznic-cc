@@ -4,6 +4,7 @@
 
 //go:generate rm -f ast.go
 //go:generate yy -o /dev/null -position -astImport "\"fmt\"\n\n\"modernc.org/token\"" -prettyString PrettyString -kind Case -noListKind -noPrivateHelpers -forceOptPos parser.yy
+//go:generate patch ast.go ast.patch
 //go:generate stringer -output stringer.go -linecomment -type=tokCh,Kind
 //go:generate sh -c "go test -run ^Example |fe"
 

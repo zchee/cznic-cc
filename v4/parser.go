@@ -84,8 +84,6 @@ var keywords = map[string]rune{
 	"__inline__":    rune(INLINE),
 	"__int128":      rune(INT128),
 	"__label__":     rune(LABEL),
-	"__m128":        rune(M128),
-	"__m256d":       rune(M256D),
 	"__real":        rune(REAL),
 	"__real__":      rune(REAL),
 	"__restrict":    rune(RESTRICT),
@@ -1778,7 +1776,12 @@ out:
 		case p.in(ch, '*', rune(ATTRIBUTE)):
 			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorDecl, Token: p.shift(false), AbstractDeclarator: p.abstractDeclarator(nil, false), Token2: p.must(')')}
 		case p.isDeclarationSpecifier(ch, true):
-			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: p.shift(false), ParameterTypeList: p.parameterTypeListOpt(), Token2: p.must(')')}
+			p.newScope()
+
+			func() {
+				defer p.closeScope()
+				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: p.shift(false), ParameterTypeList: p.parameterTypeListOpt(), Token2: p.must(')'), params: p.scope}
+			}()
 		default:
 			panic(todo("", p.peek(1, true)))
 		}
@@ -2838,7 +2841,7 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 	case rune(DOUBLE):
 		return &TypeSpecifier{Case: TypeSpecifierDouble, Token: p.shift(false)}
 	case rune(ENUM):
-		return &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier()}
+		return &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier(), resolutionScope: p.scope}
 	case rune(FLOAT):
 		return &TypeSpecifier{Case: TypeSpecifierFloat, Token: p.shift(false)}
 	case rune(INT):
@@ -2886,10 +2889,6 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		return &TypeSpecifier{Case: TypeSpecifierUint128, Token: p.shift(false)}
 	case rune(INT128):
 		return &TypeSpecifier{Case: TypeSpecifierInt128, Token: p.shift(false)}
-	case rune(M128):
-		return &TypeSpecifier{Case: TypeSpecifierM128, Token: p.shift(false)}
-	case rune(M256D):
-		return &TypeSpecifier{Case: TypeSpecifierM256d, Token: p.shift(false)}
 	case rune(DECIMAL64):
 		return &TypeSpecifier{Case: TypeSpecifierDecimal64, Token: p.shift(false)}
 	case rune(TYPEOF):
@@ -2927,8 +2926,6 @@ func (p *parser) isTypeSpecifier(ch rune, typenameOk bool) bool {
 		rune(INT),
 		rune(INT128),
 		rune(LONG),
-		rune(M128),
-		rune(M256D),
 		rune(SHORT),
 		rune(SIGNED),
 		rune(STRUCT),
@@ -3239,6 +3236,18 @@ func (s *Scope) ident(t Token) Node {
 	return nil
 }
 
+func (s *Scope) enum(t Token) *EnumSpecifier {
+	for ; s != nil; s = s.Parent {
+		for _, v := range s.Nodes[string(t.Src())] {
+			switch x := v.(type) {
+			case *EnumSpecifier:
+				return x
+			}
+		}
+	}
+	return nil
+}
+
 func (s *Scope) structOrUnion(t Token) *StructOrUnionSpecifier {
 	for ; s != nil; s = s.Parent {
 		for _, v := range s.Nodes[string(t.Src())] {
@@ -3248,29 +3257,6 @@ func (s *Scope) structOrUnion(t Token) *StructOrUnionSpecifier {
 			}
 		}
 	}
-	return nil
-}
-
-type scoper struct {
-	s *Scope
-}
-
-// Nodes return nodes binded to nm.
-func (s *scoper) Nodes(nm string) (r []Node) {
-	if s.s != nil {
-		r, _ = s.s.Nodes[nm]
-		return r
-	}
-
-	return nil
-}
-
-// Parent returns scope parent of a node, if any.
-func (s *scoper) Parent() (r *Scope) {
-	if s.s != nil {
-		return s.s.Parent
-	}
-
 	return nil
 }
 

@@ -110,8 +110,6 @@ const (
 	LONGSTRINGLITERAL
 	LSH
 	LSHASSIGN
-	M128
-	M256D
 	MODASSIGN
 	MULASSIGN
 	NEQ
@@ -304,6 +302,10 @@ func newScannerSource(src Source) (s *scannerSource, err error) {
 
 // pos returns a token.Position representing off.
 func (s *scannerSource) pos(off uint32) token.Position {
+	if s == nil { //TODO-
+		panic(todo("", off))
+	}
+
 	return s.file.PositionFor(token.Pos(off)+s.pos0, true)
 }
 

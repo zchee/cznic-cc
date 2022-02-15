@@ -99,6 +99,7 @@ func (n AdditiveExpressionCase) String() string {
 //	|       AdditiveExpression '+' MultiplicativeExpression  // Case AdditiveExpressionAdd
 //	|       AdditiveExpression '-' MultiplicativeExpression  // Case AdditiveExpressionSub
 type AdditiveExpression struct {
+	typer
 	AdditiveExpression       *AdditiveExpression
 	Case                     AdditiveExpressionCase `PrettyPrint:"stringer,zero"`
 	MultiplicativeExpression *MultiplicativeExpression
@@ -237,6 +238,7 @@ func (n AndExpressionCase) String() string {
 //	        EqualityExpression                    // Case AndExpressionEq
 //	|       AndExpression '&' EqualityExpression  // Case AndExpressionAnd
 type AndExpression struct {
+	typer
 	AndExpression      *AndExpression
 	Case               AndExpressionCase `PrettyPrint:"stringer,zero"`
 	EqualityExpression *EqualityExpression
@@ -584,6 +586,7 @@ func (n AssignmentExpressionCase) String() string {
 //	|       UnaryExpression "^=" AssignmentExpression   // Case AssignmentExpressionXor
 //	|       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
 type AssignmentExpression struct {
+	typer
 	AssignmentExpression  *AssignmentExpression
 	Case                  AssignmentExpressionCase `PrettyPrint:"stringer,zero"`
 	ConditionalExpression *ConditionalExpression
@@ -925,6 +928,7 @@ func (n CastExpressionCase) String() string {
 //	        UnaryExpression                  // Case CastExpressionUnary
 //	|       '(' TypeName ')' CastExpression  // Case CastExpressionCast
 type CastExpression struct {
+	typer
 	Case            CastExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression  *CastExpression
 	Token           Token
@@ -1026,6 +1030,7 @@ func (n ConditionalExpressionCase) String() string {
 //	        LogicalOrExpression                                           // Case ConditionalExpressionLOr
 //	|       LogicalOrExpression '?' Expression ':' ConditionalExpression  // Case ConditionalExpressionCond
 type ConditionalExpression struct {
+	typer
 	Case                  ConditionalExpressionCase `PrettyPrint:"stringer,zero"`
 	ConditionalExpression *ConditionalExpression
 	Expression            *Expression
@@ -1249,8 +1254,10 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 type Declarator struct {
 	typ Type
 	visible
+	isAtomic         bool
 	isExtern         bool
 	isParam          bool
+	isStatic         bool
 	typename         bool
 	DirectDeclarator *DirectDeclarator
 	Pointer          *Pointer
@@ -1808,13 +1815,15 @@ func (n EnumSpecifierCase) String() string {
 //	|       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 type EnumSpecifier struct {
 	visible
-	Case           EnumSpecifierCase `PrettyPrint:"stringer,zero"`
-	EnumeratorList *EnumeratorList
-	Token          Token
-	Token2         Token
-	Token3         Token
-	Token4         Token
-	Token5         Token
+	resolutionScope *Scope
+	typ             Type
+	Case            EnumSpecifierCase `PrettyPrint:"stringer,zero"`
+	EnumeratorList  *EnumeratorList
+	Token           Token
+	Token2          Token
+	Token3          Token
+	Token4          Token
+	Token5          Token
 }
 
 // String implements fmt.Stringer.
@@ -1975,6 +1984,7 @@ func (n EqualityExpressionCase) String() string {
 //	|       EqualityExpression "==" RelationalExpression  // Case EqualityExpressionEq
 //	|       EqualityExpression "!=" RelationalExpression  // Case EqualityExpressionNeq
 type EqualityExpression struct {
+	typer
 	Case                 EqualityExpressionCase `PrettyPrint:"stringer,zero"`
 	EqualityExpression   *EqualityExpression
 	RelationalExpression *RelationalExpression
@@ -2035,6 +2045,7 @@ func (n ExclusiveOrExpressionCase) String() string {
 //	        AndExpression                            // Case ExclusiveOrExpressionAnd
 //	|       ExclusiveOrExpression '^' AndExpression  // Case ExclusiveOrExpressionXor
 type ExclusiveOrExpression struct {
+	typer
 	AndExpression         *AndExpression
 	Case                  ExclusiveOrExpressionCase `PrettyPrint:"stringer,zero"`
 	ExclusiveOrExpression *ExclusiveOrExpression
@@ -2095,6 +2106,7 @@ func (n ExpressionCase) String() string {
 //	        AssignmentExpression
 //	|       Expression ',' AssignmentExpression
 type Expression struct {
+	typer
 	AssignmentExpression *AssignmentExpression
 	Expression           *Expression
 	Token                Token
@@ -2469,6 +2481,7 @@ func (n InclusiveOrExpressionCase) String() string {
 //	        ExclusiveOrExpression                            // Case InclusiveOrExpressionXor
 //	|       InclusiveOrExpression '|' ExclusiveOrExpression  // Case InclusiveOrExpressionOr
 type InclusiveOrExpression struct {
+	typer
 	Case                  InclusiveOrExpressionCase `PrettyPrint:"stringer,zero"`
 	ExclusiveOrExpression *ExclusiveOrExpression
 	InclusiveOrExpression *InclusiveOrExpression
@@ -3146,6 +3159,7 @@ func (n LogicalAndExpressionCase) String() string {
 //	        InclusiveOrExpression                            // Case LogicalAndExpressionOr
 //	|       LogicalAndExpression "&&" InclusiveOrExpression  // Case LogicalAndExpressionLAnd
 type LogicalAndExpression struct {
+	typer
 	Case                  LogicalAndExpressionCase `PrettyPrint:"stringer,zero"`
 	InclusiveOrExpression *InclusiveOrExpression
 	LogicalAndExpression  *LogicalAndExpression
@@ -3206,6 +3220,7 @@ func (n LogicalOrExpressionCase) String() string {
 //	        LogicalAndExpression                           // Case LogicalOrExpressionLAnd
 //	|       LogicalOrExpression "||" LogicalAndExpression  // Case LogicalOrExpressionLOr
 type LogicalOrExpression struct {
+	typer
 	Case                 LogicalOrExpressionCase `PrettyPrint:"stringer,zero"`
 	LogicalAndExpression *LogicalAndExpression
 	LogicalOrExpression  *LogicalOrExpression
@@ -3274,6 +3289,7 @@ func (n MultiplicativeExpressionCase) String() string {
 //	|       MultiplicativeExpression '/' CastExpression  // Case MultiplicativeExpressionDiv
 //	|       MultiplicativeExpression '%' CastExpression  // Case MultiplicativeExpressionMod
 type MultiplicativeExpression struct {
+	typer
 	Case                     MultiplicativeExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression           *CastExpression
 	MultiplicativeExpression *MultiplicativeExpression
@@ -3571,6 +3587,7 @@ func (n PostfixExpressionCase) String() string {
 //	|       PostfixExpression "--"                            // Case PostfixExpressionDec
 //	|       '(' TypeName ')' '{' InitializerList ',' '}'      // Case PostfixExpressionComplit
 type PostfixExpression struct {
+	typer
 	ArgumentExpressionList *ArgumentExpressionList
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
 	Expression             *Expression
@@ -3735,6 +3752,7 @@ func (n PrimaryExpressionCase) String() string {
 //	|       '(' CompoundStatement ')'  // Case PrimaryExpressionStmt
 //	|       GenericSelection           // Case PrimaryExpressionGeneric
 type PrimaryExpression struct {
+	typer
 	Case              PrimaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CompoundStatement *CompoundStatement
 	Expression        *Expression
@@ -3821,6 +3839,7 @@ func (n RelationalExpressionCase) String() string {
 //	|       RelationalExpression "<=" ShiftExpression  // Case RelationalExpressionLeq
 //	|       RelationalExpression ">=" ShiftExpression  // Case RelationalExpressionGeq
 type RelationalExpression struct {
+	typer
 	Case                 RelationalExpressionCase `PrettyPrint:"stringer,zero"`
 	RelationalExpression *RelationalExpression
 	ShiftExpression      *ShiftExpression
@@ -3985,6 +4004,7 @@ func (n ShiftExpressionCase) String() string {
 //	|       ShiftExpression "<<" AdditiveExpression  // Case ShiftExpressionLsh
 //	|       ShiftExpression ">>" AdditiveExpression  // Case ShiftExpressionRsh
 type ShiftExpression struct {
+	typer
 	AdditiveExpression *AdditiveExpression
 	Case               ShiftExpressionCase `PrettyPrint:"stringer,zero"`
 	ShiftExpression    *ShiftExpression
@@ -4572,6 +4592,7 @@ const (
 	TypeQualifierVolatile
 	TypeQualifierAtomic
 	TypeQualifierNonnull
+	TypeQualifierAttr
 )
 
 // String implements fmt.Stringer
@@ -4587,6 +4608,8 @@ func (n TypeQualifierCase) String() string {
 		return "TypeQualifierAtomic"
 	case TypeQualifierNonnull:
 		return "TypeQualifierNonnull"
+	case TypeQualifierAttr:
+		return "TypeQualifierAttr"
 	default:
 		return fmt.Sprintf("TypeQualifierCase(%v)", int(n))
 	}
@@ -4613,6 +4636,10 @@ func (n *TypeQualifier) String() string { return PrettyString(n) }
 func (n *TypeQualifier) Position() (r token.Position) {
 	if n == nil {
 		return r
+	}
+
+	if n.AttributeSpecifierList != nil {
+		return n.AttributeSpecifierList.Position()
 	}
 
 	return n.Token.Position()
@@ -4704,8 +4731,6 @@ const (
 	TypeSpecifierFloat64
 	TypeSpecifierFloat32x
 	TypeSpecifierFloat64x
-	TypeSpecifierM256d
-	TypeSpecifierM128
 )
 
 // String implements fmt.Stringer
@@ -4767,10 +4792,6 @@ func (n TypeSpecifierCase) String() string {
 		return "TypeSpecifierFloat32x"
 	case TypeSpecifierFloat64x:
 		return "TypeSpecifierFloat64x"
-	case TypeSpecifierM256d:
-		return "TypeSpecifierM256d"
-	case TypeSpecifierM128:
-		return "TypeSpecifierM128"
 	default:
 		return fmt.Sprintf("TypeSpecifierCase(%v)", int(n))
 	}
@@ -4807,8 +4828,6 @@ func (n TypeSpecifierCase) String() string {
 //	|       "_Float64"                   // Case TypeSpecifierFloat64
 //	|       "_Float32x"                  // Case TypeSpecifierFloat32x
 //	|       "_Float64x"                  // Case TypeSpecifierFloat64x
-//	|       "__m256d"                    // Case TypeSpecifierM256d
-//	|       "__m128"                     // Case TypeSpecifierM128
 type TypeSpecifier struct {
 	resolutionScope        *Scope
 	AtomicTypeSpecifier    *AtomicTypeSpecifier
@@ -4838,7 +4857,7 @@ func (n *TypeSpecifier) Position() (r token.Position) {
 		return n.EnumSpecifier.Position()
 	case 18:
 		return n.StructOrUnionSpecifier.Position()
-	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 24, 25, 26, 27, 28, 29:
+	case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 24, 25, 26, 27:
 		return n.Token.Position()
 	case 21:
 		if p := n.Token.Position(); p.IsValid() {
@@ -4956,6 +4975,7 @@ func (n UnaryExpressionCase) String() string {
 //	|       "__imag__" UnaryExpression   // Case UnaryExpressionImag
 //	|       "__real__" UnaryExpression   // Case UnaryExpressionReal
 type UnaryExpression struct {
+	typer
 	Case              UnaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CastExpression    *CastExpression
 	PostfixExpression *PostfixExpression

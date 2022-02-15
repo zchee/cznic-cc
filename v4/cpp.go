@@ -1497,6 +1497,7 @@ func (c *cpp) includeNext(ln controlLine) {
 
 	if c.includeLevel == maxIncludeLevel {
 		c.eh("%v: too many include levels", ln[1].Position())
+		c.closed = true
 		return
 	}
 
@@ -1525,6 +1526,7 @@ func (c *cpp) includeNext(ln controlLine) {
 		nm = raw[1 : len(raw)-1]
 	default:
 		c.eh("%v: invalid argument", s[0].Position())
+		c.closed = true
 		return
 	}
 
@@ -1549,6 +1551,7 @@ func (c *cpp) includeNext(ln controlLine) {
 	}
 
 	c.eh("%v: include file not found: %s", s[0].Position(), raw)
+	c.closed = true
 }
 
 // include executes an #include control-line, [0]6.10.
@@ -1561,6 +1564,7 @@ func (c *cpp) include(ln controlLine) {
 
 	if c.includeLevel == maxIncludeLevel {
 		c.eh("%v: too many include levels", ln[1].Position())
+		c.closed = true
 		return
 	}
 
@@ -1599,6 +1603,7 @@ func (c *cpp) include(ln controlLine) {
 		}
 
 		c.eh("%v: include file not found: %s", s[0].Position(), raw)
+		c.closed = true
 	case strings.HasPrefix(raw, "<") && strings.HasSuffix(raw, ">"):
 		nm := raw[1 : len(raw)-1]
 		for _, v := range c.cfg.SysIncludePaths {
@@ -1614,8 +1619,10 @@ func (c *cpp) include(ln controlLine) {
 		}
 
 		c.eh("%v: include file not found: %s", s[0].Position(), raw)
+		c.closed = true
 	default:
 		c.eh("%v: invalid argument", s[0].Position())
+		c.closed = true
 	}
 }
 

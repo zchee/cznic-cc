@@ -1,0 +1,32 @@
+diff --git a/v4/ast.go b/v4/ast.go
+index 1b1344d..e9c5da5 100644
+--- a/v4/ast.go
++++ b/v4/ast.go
+@@ -4591,6 +4591,7 @@ const (
+ 	TypeQualifierVolatile
+ 	TypeQualifierAtomic
+ 	TypeQualifierNonnull
++	TypeQualifierAttr
+ )
+ 
+ // String implements fmt.Stringer
+@@ -4606,6 +4607,8 @@ func (n TypeQualifierCase) String() string {
+ 		return "TypeQualifierAtomic"
+ 	case TypeQualifierNonnull:
+ 		return "TypeQualifierNonnull"
++	case TypeQualifierAttr:
++		return "TypeQualifierAttr"
+ 	default:
+ 		return fmt.Sprintf("TypeQualifierCase(%v)", int(n))
+ 	}
+@@ -4634,6 +4637,10 @@ func (n *TypeQualifier) Position() (r token.Position) {
+ 		return r
+ 	}
+ 
++	if n.AttributeSpecifierList != nil {
++		return n.AttributeSpecifierList.Position()
++	}
++
+ 	return n.Token.Position()
+ }
+ 

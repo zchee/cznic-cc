@@ -5,6 +5,8 @@
 package cc // import "modernc.org/cc/v4"
 
 var (
+	_ Type = (*ArrayType)(nil)
+	_ Type = (*EnumType)(nil)
 	_ Type = (*FunctionType)(nil)
 	_ Type = (*PointerType)(nil)
 	_ Type = (*PredefinedType)(nil)
@@ -26,25 +28,44 @@ type Type interface {
 }
 
 const (
-	Char       Kind = iota // char
-	Double                 // double
-	Float                  // float
-	Function               // function
-	Int                    // int
-	Long                   // long
-	LongDouble             // long double
-	LongLong               // long long
-	Ptr                    // pointer
-	Schar                  // signed char
-	Short                  // short
-	Struct                 // struct
-	Uchar                  // unsigned char
-	Uint                   // unsigned
-	Ulong                  // unsigned long
-	UlongLong              // unsigned long long
-	Union                  // union
-	Ushort                 // unsigned short
-	Void                   // void
+	Array             Kind = iota // array
+	Bool                          // _Bool
+	Char                          // char
+	ComplexChar                   // _Complex char
+	ComplexDouble                 // _Complex double
+	ComplexFloat                  // _Complex float
+	ComplexInt                    // _Complex int
+	ComplexLong                   // _Complex long
+	ComplexLongDouble             // _Complex long double
+	ComplexLongLong               // _Complex long long
+	ComplexShort                  // _Complex short
+	ComplexUInt                   // _Complex unsigned
+	Double                        // double
+	Enum                          // enum
+	Float                         // float
+	Float128                      // _Float128
+	Float32                       // _Float32
+	Float32x                      // _Float32x
+	Float64                       // _Float64
+	Float64x                      // _Float64x
+	Function                      // function
+	Int                           // int
+	Int128                        // __int128
+	Long                          // long
+	LongDouble                    // long double
+	LongLong                      // long long
+	Ptr                           // pointer
+	SChar                         // signed char
+	Short                         // short
+	Struct                        // struct
+	UChar                         // unsigned char
+	UInt                          // unsigned
+	UInt128                       // unsigned __int128
+	ULong                         // unsigned long
+	ULongLong                     // unsigned long long
+	UShort                        // unsigned short
+	Union                         // union
+	Void                          // void
 )
 
 type Kind int
@@ -100,3 +121,20 @@ type UnionType struct {
 }
 
 func (n *UnionType) Kind() Kind { return Union }
+
+type ArrayType struct {
+	elem Type
+	expr *AssignmentExpression
+}
+
+func newArrayType(expr *AssignmentExpression, elem Type) *ArrayType {
+	return &ArrayType{elem: elem, expr: expr}
+}
+
+func (n *ArrayType) Kind() Kind { return Array }
+
+type EnumType struct {
+	//TODO
+}
+
+func (n *EnumType) Kind() Kind { return Enum }

@@ -18,22 +18,78 @@ type ctx struct {
 
 func newCtx(ast *AST) *ctx {
 	c := &ctx{ast: ast}
+	complexdouble := c.newPredefinedType(ComplexDouble)
+	complexlong := c.newPredefinedType(ComplexLong)
+	int := c.newPredefinedType(Int)
+	long := c.newPredefinedType(Long)
+	longlong := c.newPredefinedType(LongLong)
+	short := c.newPredefinedType(Short)
+	uint := c.newPredefinedType(UInt)
+	uint128 := c.newPredefinedType(UInt128)
+	ulong := c.newPredefinedType(ULong)
+	ulonglog := c.newPredefinedType(ULongLong)
+	ushort := c.newPredefinedType(UShort)
 	c.builtinTypes = map[string]Type{
-		ts2String([]TypeSpecifierCase{TypeSpecifierChar, TypeSpecifierSigned}):   c.newPredefinedType(Schar),
-		ts2String([]TypeSpecifierCase{TypeSpecifierChar, TypeSpecifierUnsigned}): c.newPredefinedType(Uchar),
-		ts2String([]TypeSpecifierCase{TypeSpecifierChar}):                        c.newPredefinedType(Char),
-		ts2String([]TypeSpecifierCase{TypeSpecifierDouble, TypeSpecifierLong}):   c.newPredefinedType(LongDouble),
-		ts2String([]TypeSpecifierCase{TypeSpecifierDouble}):                      c.newPredefinedType(Double),
-		ts2String([]TypeSpecifierCase{TypeSpecifierFloat}):                       c.newPredefinedType(Float),
-		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierLong}):      c.newPredefinedType(Long),
-		ts2String([]TypeSpecifierCase{TypeSpecifierInt}):                         c.newPredefinedType(Int),
-		ts2String([]TypeSpecifierCase{TypeSpecifierVoid}):                        c.newPredefinedType(Void),
+		ts2String([]TypeSpecifierCase{TypeSpecifierBool}):                                                             c.newPredefinedType(Bool),
+		ts2String([]TypeSpecifierCase{TypeSpecifierChar, TypeSpecifierSigned}):                                        c.newPredefinedType(SChar),
+		ts2String([]TypeSpecifierCase{TypeSpecifierChar, TypeSpecifierUnsigned}):                                      c.newPredefinedType(UChar),
+		ts2String([]TypeSpecifierCase{TypeSpecifierChar}):                                                             c.newPredefinedType(Char),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierChar}):                                       c.newPredefinedType(ComplexChar),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierDouble}):                                     complexdouble,
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierFloat}):                                      c.newPredefinedType(ComplexFloat),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierInt, TypeSpecifierLong}):                     complexlong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierInt}):                                        c.newPredefinedType(ComplexInt),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierLong, TypeSpecifierDouble}):                  c.newPredefinedType(ComplexLongDouble),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierLong, TypeSpecifierLong}):                    c.newPredefinedType(ComplexLongLong),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierLong}):                                       complexlong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierShort}):                                      c.newPredefinedType(ComplexShort),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierUnsigned}):                                   c.newPredefinedType(ComplexUInt),
+		ts2String([]TypeSpecifierCase{TypeSpecifierComplex}):                                                          complexdouble,
+		ts2String([]TypeSpecifierCase{TypeSpecifierDouble, TypeSpecifierLong}):                                        c.newPredefinedType(LongDouble),
+		ts2String([]TypeSpecifierCase{TypeSpecifierDouble}):                                                           c.newPredefinedType(Double),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat128}):                                                         c.newPredefinedType(Float128),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat32x}):                                                         c.newPredefinedType(Float32x),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat32}):                                                          c.newPredefinedType(Float32),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat64x}):                                                         c.newPredefinedType(Float64x),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat64}):                                                          c.newPredefinedType(Float64),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat}):                                                            c.newPredefinedType(Float),
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierLong, TypeSpecifierLong, TypeSpecifierSigned}):   longlong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierLong, TypeSpecifierLong, TypeSpecifierUnsigned}): ulonglog,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierLong, TypeSpecifierLong}):                        longlong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierLong, TypeSpecifierSigned}):                      long,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierLong, TypeSpecifierUnsigned}):                    ulong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierLong}):                                           long,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierShort, TypeSpecifierSigned}):                     short,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierShort, TypeSpecifierUnsigned}):                   ushort,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierShort}):                                          short,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierSigned}):                                         int,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt, TypeSpecifierUnsigned}):                                       uint,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt128, TypeSpecifierUnsigned}):                                    uint128,
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt128}):                                                           c.newPredefinedType(Int128),
+		ts2String([]TypeSpecifierCase{TypeSpecifierInt}):                                                              int,
+		ts2String([]TypeSpecifierCase{TypeSpecifierLong, TypeSpecifierLong, TypeSpecifierSigned}):                     longlong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierLong, TypeSpecifierLong, TypeSpecifierUnsigned}):                   ulonglog,
+		ts2String([]TypeSpecifierCase{TypeSpecifierLong, TypeSpecifierLong}):                                          longlong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierLong, TypeSpecifierSigned}):                                        long,
+		ts2String([]TypeSpecifierCase{TypeSpecifierLong, TypeSpecifierUnsigned}):                                      ulong,
+		ts2String([]TypeSpecifierCase{TypeSpecifierLong}):                                                             long,
+		ts2String([]TypeSpecifierCase{TypeSpecifierShort, TypeSpecifierSigned}):                                       short,
+		ts2String([]TypeSpecifierCase{TypeSpecifierShort, TypeSpecifierUnsigned}):                                     ushort,
+		ts2String([]TypeSpecifierCase{TypeSpecifierShort}):                                                            short,
+		ts2String([]TypeSpecifierCase{TypeSpecifierSigned}):                                                           int,
+		ts2String([]TypeSpecifierCase{TypeSpecifierUint128}):                                                          uint128,
+		ts2String([]TypeSpecifierCase{TypeSpecifierUnsigned}):                                                         uint,
+		ts2String([]TypeSpecifierCase{TypeSpecifierVoid}):                                                             c.newPredefinedType(Void),
 	}
-	c.intType = c.newPredefinedType(Int)
+	c.intType = int
 	return c
 }
 
 func (c *ctx) newPredefinedType(kind Kind) *PredefinedType { return newPredefinedType(c.ast, kind) }
+
+type typer struct{ typ Type }
+
+func (t typer) Type() (r Type) { return t.typ }
 
 type AST struct {
 	TranslationUnit *TranslationUnit
@@ -55,7 +111,7 @@ func (n *ExternalDeclaration) check(c *ctx) {
 	case ExternalDeclarationDecl: // Declaration
 		n.Declaration.check(c)
 	case ExternalDeclarationAsmStmt: // AsmStatement
-		c.errors.add(errorf("TODO %v", n.Case))
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
 	case ExternalDeclarationEmpty: // ';'
 		c.errors.add(errorf("TODO %v", n.Case))
 	default:
@@ -64,7 +120,7 @@ func (n *ExternalDeclaration) check(c *ctx) {
 }
 
 func (n *FunctionDefinition) check(c *ctx) {
-	n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &n.Declarator.isExtern))
+	n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &n.Declarator.isExtern, &n.Declarator.isStatic, &n.Declarator.isAtomic))
 	n.CompoundStatement.check(c)
 }
 
@@ -79,18 +135,20 @@ func (n *CompoundStatement) check(c *ctx) {
 }
 
 func (n *Declaration) check(c *ctx) {
-	var isExtern bool
-	t := n.DeclarationSpecifiers.check(c, &isExtern)
+	var isExtern, isStatic, isAtomic bool
+	t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic)
 	for l := n.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
-		l.InitDeclarator.check(c, t, isExtern)
+		l.InitDeclarator.check(c, t, isExtern, isStatic, isAtomic)
 	}
 }
 
-func (n *InitDeclarator) check(c *ctx, t Type, isExtern bool) {
+func (n *InitDeclarator) check(c *ctx, t Type, isExtern, isStatic, isAtomic bool) {
 	n.Declarator.isExtern = isExtern
+	n.Declarator.isStatic = isStatic
+	n.Declarator.isAtomic = isAtomic
 	n.Declarator.check(c, t)
 	if n.Asm != nil {
-		c.errors.add(errorf("TODO"))
+		//TODO c.errors.add(errorf("TODO"))
 		return
 	}
 
@@ -103,24 +161,41 @@ func (n *Initializer) check(c *ctx) {
 	}
 
 	switch n.Case {
+	case InitializerExpr: // AssignmentExpression
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case InitializerInitList: // '{' InitializerList ',' '}'
+		c.errors.add(errorf("TODO %v", n.Case))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 }
 
-func (n *Declarator) check(c *ctx, t Type) Type {
+func (n *Declarator) check(c *ctx, t Type) (r Type) {
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
 	n.typ = n.DirectDeclarator.check(c, n.Pointer.check(c, t))
 	return n.typ
 }
 
-func (n *DirectDeclarator) check(c *ctx, t Type) Type {
+func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
 	switch n.Case {
 	case DirectDeclaratorIdent: // IDENTIFIER
 		return t
 	case DirectDeclaratorDecl: // '(' Declarator ')'
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.Declarator.check(c, t)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		c.errors.add(errorf("TODO %v", n.Case))
+		n.AssignmentExpression.check(c)
+		return n.DirectDeclarator.check(c, newArrayType(n.AssignmentExpression, t))
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -131,7 +206,7 @@ func (n *DirectDeclarator) check(c *ctx, t Type) Type {
 		fp, isVariadic := n.ParameterTypeList.check(c)
 		return n.DirectDeclarator.check(c, newFunctionType(c, t, fp, isVariadic))
 	case DirectDeclaratorFuncIdent: // DirectDeclarator '(' IdentifierList ')'
-		c.errors.add(errorf("TODO %v", n.Case))
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -156,43 +231,56 @@ func (n *ParameterList) check(c *ctx) (fp []*ParameterDeclaration) {
 }
 
 func (n *ParameterDeclaration) check(c *ctx) {
-	var isExtern bool
+	var isExtern, isStatic, isAtomic bool
 	switch n.Case {
 	case ParameterDeclarationDecl: // DeclarationSpecifiers Declarator
 		n.Declarator.isParam = true
-		n.typ = n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern))
-		if isExtern {
-			c.errors.add(errorf("%v: storage class specified for parameter: abc", n.Declarator.Position()))
+		n.typ = n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic))
+		if isExtern || isStatic || isAtomic {
+			c.errors.add(errorf("%v: storage class or atomic specified for parameter: abc", n.Declarator.Position()))
 		}
 	case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclarator
-		n.typ = n.AbstractDeclarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern))
-		if isExtern {
-			c.errors.add(errorf("%v: storage class specified for unnamed parameter", n.Position()))
+		n.typ = n.AbstractDeclarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic))
+		if isExtern || isStatic || isAtomic {
+			c.errors.add(errorf("%v: storage class or atomic specified for unnamed parameter", n.Position()))
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 }
 
-func (n *AbstractDeclarator) check(c *ctx, t Type) Type {
+func (n *AbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	if n == nil {
 		return t
 	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
 
 	n.typ = n.DirectAbstractDeclarator.check(c, n.Pointer.check(c, t))
 	return n.typ
 }
 
-func (n *DirectAbstractDeclarator) check(c *ctx, t Type) Type {
+func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	if n == nil {
 		return t
 	}
 
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
 	switch n.Case {
 	case DirectAbstractDeclaratorDecl: // '(' AbstractDeclarator ')'
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.AbstractDeclarator.check(c, t)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		c.errors.add(errorf("TODO %v", n.Case))
+		n.AssignmentExpression.check(c)
+		return n.DirectAbstractDeclarator.check(c, newArrayType(n.AssignmentExpression, t))
 	case DirectAbstractDeclaratorStaticArr: // DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectAbstractDeclaratorArrStatic: // DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -200,17 +288,24 @@ func (n *DirectAbstractDeclarator) check(c *ctx, t Type) Type {
 	case DirectAbstractDeclaratorArrStar: // DirectAbstractDeclarator '[' '*' ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectAbstractDeclaratorFunc: // DirectAbstractDeclarator '(' ParameterTypeList ')'
-		c.errors.add(errorf("TODO %v", n.Case))
+		fp, isVariadic := n.ParameterTypeList.check(c)
+		return n.DirectAbstractDeclarator.check(c, newFunctionType(c, t, fp, isVariadic))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 	return t //TODO-
 }
 
-func (n *Pointer) check(c *ctx, t Type) Type {
+func (n *Pointer) check(c *ctx, t Type) (r Type) {
 	if n == nil {
 		return t
 	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
 
 	switch n.Case {
 	case PointerTypeQual: // '*' TypeQualifiers
@@ -234,23 +329,30 @@ func ts2String(a []TypeSpecifierCase) string {
 	return b.String()
 }
 
-func (n *DeclarationSpecifiers) check(c *ctx, isExtern *bool) (r Type) {
+func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic *bool) (r Type) {
 	if n == nil {
 		return c.intType
 	}
 
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	n0 := n
 	var ts []TypeSpecifierCase
 	var firstTypeSpecifier *TypeSpecifier
 	for ; n != nil; n = n.DeclarationSpecifiers {
 		switch n.Case {
 		case DeclarationSpecifiersStorage: // StorageClassSpecifier DeclarationSpecifiers
-			n.StorageClassSpecifier.check(c, isExtern)
+			n.StorageClassSpecifier.check(c, isExtern, isStatic)
 		case DeclarationSpecifiersTypeSpec: // TypeSpecifier DeclarationSpecifiers
 			ts = append(ts, n.TypeSpecifier.Case)
 			if firstTypeSpecifier == nil {
 				firstTypeSpecifier = n.TypeSpecifier
 			}
-			r = n.TypeSpecifier.check(c)
+			r = n.TypeSpecifier.check(c, isAtomic)
 		case DeclarationSpecifiersTypeQual: // TypeQualifier DeclarationSpecifiers
 			//TODO c.errors.add(errorf("TODO %v", n.Case))
 		case DeclarationSpecifiersFunc: // FunctionSpecifier DeclarationSpecifiers
@@ -266,35 +368,38 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern *bool) (r Type) {
 		return t
 	}
 
-	if len(ts) == 1 {
+	switch len(ts) {
+	case 0:
+		return c.intType
+	case 1:
 		switch ts[0] {
 		case
+			TypeSpecifierAtomic,
+			TypeSpecifierEnum,
 			TypeSpecifierStructOrUnion,
-			TypeSpecifierTypeName:
+			TypeSpecifierTypeName,
+			TypeSpecifierTypeofExpr:
 
 			return r
-		default:
-			c.errors.add(errorf("TODO %v", ts[0]))
-			return nil
 		}
 	}
 
-	c.errors.add(errorf("TODO %v", ts))
+	c.errors.add(errorf("TODO %v %v", ts, n0.Position()))
 	return nil
 }
 
-func (n *StorageClassSpecifier) check(c *ctx, isExtern *bool) {
+func (n *StorageClassSpecifier) check(c *ctx, isExtern, isStatic *bool) {
 	switch n.Case {
 	case StorageClassSpecifierTypedef: // "typedef"
 		// ok
 	case StorageClassSpecifierExtern: // "extern"
 		*isExtern = true
 	case StorageClassSpecifierStatic: // "static"
-		c.errors.add(errorf("TODO %v", n.Case))
+		*isStatic = true
 	case StorageClassSpecifierAuto: // "auto"
 		c.errors.add(errorf("TODO %v", n.Case))
 	case StorageClassSpecifierRegister: // "register"
-		c.errors.add(errorf("TODO %v", n.Case))
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
 	case StorageClassSpecifierThreadLocal: // "_Thread_local"
 		c.errors.add(errorf("TODO %v", n.Case))
 	case StorageClassSpecifierDeclspec: // "__declspec" '(' ')'
@@ -304,20 +409,30 @@ func (n *StorageClassSpecifier) check(c *ctx, isExtern *bool) {
 	}
 }
 
-func (n *TypeSpecifier) check(c *ctx) Type {
+func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
 	switch n.Case {
 	case TypeSpecifierVoid: // "void"
 		// ok
 	case TypeSpecifierChar: // "char"
 		// ok
 	case TypeSpecifierShort: // "short"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierInt: // "int"
 		// ok
 	case TypeSpecifierInt128: // "__int128"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierUint128: // "__uint128_t"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierLong: // "long"
 		// ok
 	case TypeSpecifierFloat: // "float"
@@ -327,25 +442,25 @@ func (n *TypeSpecifier) check(c *ctx) Type {
 	case TypeSpecifierDecimal64: // "_Decimal64"
 		c.errors.add(errorf("TODO %v", n.Case))
 	case TypeSpecifierFloat128: // "_Float128"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierFloat128x: // "_Float128x"
 		c.errors.add(errorf("TODO %v", n.Case))
 	case TypeSpecifierDouble: // "double"
 		// ok
 	case TypeSpecifierSigned: // "signed"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierUnsigned: // "unsigned"
 		// ok
 	case TypeSpecifierBool: // "_Bool"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierComplex: // "_Complex"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierImaginary: // "_Imaginary"
 		c.errors.add(errorf("TODO %v", n.Case))
 	case TypeSpecifierStructOrUnion: // StructOrUnionSpecifier
 		return n.StructOrUnionSpecifier.check(c)
 	case TypeSpecifierEnum: // EnumSpecifier
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.EnumSpecifier.check(c)
 	case TypeSpecifierTypeName: // TYPENAME
 		if x, ok := n.resolutionScope.ident(n.Token).(*Declarator); ok && x.typename {
 			return x.typ
@@ -353,34 +468,80 @@ func (n *TypeSpecifier) check(c *ctx) Type {
 
 		c.errors.add(errorf("%v: undefined type name", n.Position()))
 	case TypeSpecifierTypeofExpr: // "typeof" '(' Expression ')'
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.Expression.check(c)
 	case TypeSpecifierTypeofType: // "typeof" '(' TypeName ')'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case TypeSpecifierAtomic: // AtomicTypeSpecifier
-		c.errors.add(errorf("TODO %v", n.Case))
+		*isAtomic = true
 	case TypeSpecifierFloat32: // "_Float32"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierFloat64: // "_Float64"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierFloat32x: // "_Float32x"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierFloat64x: // "_Float64x"
-		c.errors.add(errorf("TODO %v", n.Case))
-	case TypeSpecifierM256d: // "__m256d"
-		c.errors.add(errorf("TODO %v", n.Case))
-	case TypeSpecifierM128: // "__m128"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 	return nil
 }
 
-func (n *StructOrUnionSpecifier) check(c *ctx) Type {
+func (n *EnumSpecifier) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case EnumSpecifierDef: // "enum" IDENTIFIER '{' EnumeratorList ',' '}'
+		n.typ = n.EnumeratorList.check(c)
+	case EnumSpecifierTag: // "enum" IDENTIFIER
+		if x := n.resolutionScope.enum(n.Token2); x != nil {
+			n.typ = x.typ
+			break
+		}
+
+		c.errors.add(errorf("%v: undefined enum tag", n.Token2.Position()))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *EnumeratorList) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	return nil
+}
+
+func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
 	switch n.Case {
 	case StructOrUnionSpecifierDef: // StructOrUnion IDENTIFIER '{' StructDeclarationList '}'
+		// defer func() {
+		// 	if r == nil {
+		// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+		// 	}
+		// }()
+
 		n.typ = n.StructDeclarationList.check(c)
-		return n.typ
 	case StructOrUnionSpecifierTag: // StructOrUnion IDENTIFIER
 		if x := n.resolutionScope.structOrUnion(n.Token); x != nil {
 			if n.StructOrUnion.Case != x.StructOrUnion.Case {
@@ -388,17 +549,493 @@ func (n *StructOrUnionSpecifier) check(c *ctx) Type {
 				break
 			}
 
-			return x.typ
+			n.typ = x.typ
 		}
-
-		c.errors.add(errorf("%v: undefined struct/union tag", n.Token.Position()))
+		// No error report when the type is not found. It's sometimes valid to have a
+		// struct type that never becomes complete:
+		//
+		// struct x;
+		// struct x *p;
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
-	return nil //TODO-
+	return n.typ
 }
 
-func (n *StructDeclarationList) check(c *ctx) Type {
-	c.errors.add(errorf("TODO"))
+func (n *StructDeclarationList) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
 	return nil
+}
+
+func (n *AssignmentExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case AssignmentExpressionCond: // ConditionalExpression
+		n.typ = n.ConditionalExpression.check(c)
+	case AssignmentExpressionAssign: // UnaryExpression '=' AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionMul: // UnaryExpression "*=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionDiv: // UnaryExpression "/=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionMod: // UnaryExpression "%=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionAdd: // UnaryExpression "+=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionSub: // UnaryExpression "-=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionLsh: // UnaryExpression "<<=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionRsh: // UnaryExpression ">>=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionAnd: // UnaryExpression "&=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionXor: // UnaryExpression "^=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case AssignmentExpressionOr: // UnaryExpression "|=" AssignmentExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *ConditionalExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case ConditionalExpressionLOr: // LogicalOrExpression
+		n.typ = n.LogicalOrExpression.check(c)
+	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *LogicalOrExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case LogicalOrExpressionLAnd: // LogicalAndExpression
+		n.typ = n.LogicalAndExpression.check(c)
+	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *LogicalAndExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case LogicalAndExpressionOr: // InclusiveOrExpression
+		n.typ = n.InclusiveOrExpression.check(c)
+	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *InclusiveOrExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case InclusiveOrExpressionXor: // ExclusiveOrExpression
+		n.typ = n.ExclusiveOrExpression.check(c)
+	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *ExclusiveOrExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case ExclusiveOrExpressionAnd: // AndExpression
+		n.typ = n.AndExpression.check(c)
+	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *AndExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case AndExpressionEq: // EqualityExpression
+		n.typ = n.EqualityExpression.check(c)
+	case AndExpressionAnd: // AndExpression '&' EqualityExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *EqualityExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case EqualityExpressionRel: // RelationalExpression
+		n.typ = n.RelationalExpression.check(c)
+	case EqualityExpressionEq: // EqualityExpression "==" RelationalExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *RelationalExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case RelationalExpressionShift: // ShiftExpression
+		n.typ = n.ShiftExpression.check(c)
+	case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case RelationalExpressionLeq: // RelationalExpression "<=" ShiftExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *ShiftExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case ShiftExpressionAdd: // AdditiveExpression
+		n.typ = n.AdditiveExpression.check(c)
+	case ShiftExpressionLsh: // ShiftExpression "<<" AdditiveExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case ShiftExpressionRsh: // ShiftExpression ">>" AdditiveExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *AdditiveExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case AdditiveExpressionMul: // MultiplicativeExpression
+		n.typ = n.MultiplicativeExpression.check(c)
+	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *MultiplicativeExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case MultiplicativeExpressionCast: // CastExpression
+		n.typ = n.CastExpression.check(c)
+	case MultiplicativeExpressionMul: // MultiplicativeExpression '*' CastExpression
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *CastExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case CastExpressionUnary: // UnaryExpression
+		n.typ = n.UnaryExpression.check(c)
+	case CastExpressionCast: // '(' TypeName ')' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *UnaryExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case UnaryExpressionPostfix: // PostfixExpression
+		n.typ = n.PostfixExpression.check(c)
+	case UnaryExpressionInc: // "++" UnaryExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionDec: // "--" UnaryExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionAddrof: // '&' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionDeref: // '*' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionPlus: // '+' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionMinus: // '-' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionCpl: // '~' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionNot: // '!' CastExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionAlignofType: // "_Alignof" '(' TypeName ')'
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionImag: // "__imag__" UnaryExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	case UnaryExpressionReal: // "__real__" UnaryExpression
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *PostfixExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case PostfixExpressionPrimary: // PrimaryExpression
+		n.typ = n.PrimaryExpression.check(c)
+	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PostfixExpressionInc: // PostfixExpression "++"
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case PostfixExpressionDec: // PostfixExpression "--"
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *PrimaryExpression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	switch n.Case {
+	case PrimaryExpressionIdent: // IDENTIFIER
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionInt: // INTCONST
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionFloat: // FLOATCONST
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionEnum: // ENUMCONST
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionChar: // CHARCONST
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionLChar: // LONGCHARCONST
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionString: // STRINGLITERAL
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionLString: // LONGSTRINGLITERAL
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionExpr: // '(' Expression ')'
+		n.typ = n.Expression.check(c)
+	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
+		c.errors.add(errorf("TODO %v", n.Case))
+	case PrimaryExpressionGeneric: // GenericSelection
+		c.errors.add(errorf("TODO %v", n.Case))
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return n.typ
+}
+
+func (n *Expression) check(c *ctx) (r Type) {
+	if n == nil {
+		return nil
+	}
+
+	// defer func() {
+	// 	if r == nil {
+	// 		c.errors.add(errorf("TODO missed type check %v:", n.Position()))
+	// 	}
+	// }()
+
+	n0 := n
+	for ; n != nil; n = n.Expression {
+		n0.typ = n.AssignmentExpression.check(c)
+	}
+	return n0.typ
 }

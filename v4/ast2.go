@@ -6,7 +6,6 @@ package cc // import "modernc.org/cc/v4"
 
 const (
 	DeclarationSpecifiersAttr = DeclarationSpecifiersFunc + 1
-	TypeQualifierAttr         = TypeQualifierAtomic + 1
 )
 
 // Name returns the name of n.
