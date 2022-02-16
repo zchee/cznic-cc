@@ -4,7 +4,6 @@
 
 //go:generate rm -f ast.go
 //go:generate yy -o /dev/null -position -astImport "\"fmt\"\n\n\"modernc.org/token\"" -prettyString PrettyString -kind Case -noListKind -noPrivateHelpers -forceOptPos parser.yy
-//go:generate patch ast.go ast.patch
 //go:generate stringer -output stringer.go -linecomment -type=tokCh,Kind
 //go:generate sh -c "go test -run ^Example |fe"
 
@@ -40,68 +39,6 @@ var (
 	isTesting  bool
 	traceFails bool
 )
-
-// HostConfig returns the system C preprocessor/compiler configuration, or an
-// error, if any.  The configuration is obtained by running the command named
-// by the cpp argumnent or "cpp" when it's empty.  For the predefined macros
-// list the '-dM' options is added. For the include paths lists, the option
-// '-v' is added and the output is parsed to extract the "..." include and
-// <...> include paths. To add any other options to cpp, list them in opts.
-//
-// The function relies on a POSIX/GCC compatible C preprocessor installed.
-// Execution of HostConfig is not free, so caching of the results is
-// recommended.
-func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sysIncludePaths []string, err error) { //TODO-
-	if cpp == "" {
-		cpp = "cpp"
-	}
-	args := append(append([]string{"-dM"}, opts...), os.DevNull)
-	pre, err := exec.Command(cpp, args...).Output()
-	if err != nil {
-		return "", nil, nil, errorf("", err)
-	}
-
-	args = append(append([]string{"-v"}, opts...), os.DevNull)
-	out, err := exec.Command(cpp, args...).CombinedOutput()
-	if err != nil {
-		return "", nil, nil, errorf("", err)
-	}
-
-	sep := "\n"
-	if env("GOOS", runtime.GOOS) == "windows" {
-		sep = "\r\n"
-	}
-
-	a := strings.Split(string(out), sep)
-	for i := 0; i < len(a); {
-		switch a[i] {
-		case "#include \"...\" search starts here:":
-		loop:
-			for i = i + 1; i < len(a); {
-				switch v := a[i]; {
-				case strings.HasPrefix(v, "#") || v == "End of search list.":
-					break loop
-				default:
-					includePaths = append(includePaths, strings.TrimSpace(v))
-					i++
-				}
-			}
-		case "#include <...> search starts here:":
-			for i = i + 1; i < len(a); {
-				switch v := a[i]; {
-				case strings.HasPrefix(v, "#") || v == "End of search list.":
-					return string(pre), includePaths, sysIncludePaths, nil
-				default:
-					sysIncludePaths = append(sysIncludePaths, strings.TrimSpace(v))
-					i++
-				}
-			}
-		default:
-			i++
-		}
-	}
-	return "", nil, nil, errorf("failed parsing the output of %s -v", cpp)
-}
 
 // NewConfig returns the system C compiler configuration, or an error, if
 // any. The function will look for the compiler first in the environment

@@ -36,9 +36,7 @@ var (
 	corpus      = map[string][]byte{}
 	corpusIndex []string
 	re          *regexp.Regexp
-	testCfg0    = &Config{} //TODO-
 	defaultCfg0 *Config
-	predefined  string
 	builtin     = `
 #define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
 #define __builtin_types_compatible_p(t1, t2) (sizeof(t1) == sizeof(t2))
@@ -72,24 +70,6 @@ func init() {
 	var err error
 	if defaultCfg0, err = NewConfig(runtime.GOOS, runtime.GOARCH); err != nil {
 		panic(errorf("NewConfig: %v", err))
-	}
-
-	if predefined, testCfg0.IncludePaths, testCfg0.SysIncludePaths, err = HostConfig(env("CC_TEST_CPP", "cpp")); err != nil {
-		panic(errorf("cannot acquire host configuration: %v", err))
-	}
-
-	switch fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH) {
-	case "netbsd/amd64":
-		testCfg0.SysIncludePaths = append(testCfg0.SysIncludePaths, "/usr/pkg/include")
-	case "freebsd/386":
-		testCfg0.SysIncludePaths = append(testCfg0.SysIncludePaths, "/usr/local/include")
-	}
-	testCfg0.SysIncludePaths = testCfg0.SysIncludePaths[:len(testCfg0.SysIncludePaths):len(testCfg0.SysIncludePaths)]
-	testCfg0.IncludePaths = append([]string{""}, testCfg0.IncludePaths...)
-	testCfg0.IncludePaths = append(testCfg0.IncludePaths, testCfg0.SysIncludePaths...)
-	testCfg0.IncludePaths = testCfg0.IncludePaths[:len(testCfg0.IncludePaths):len(testCfg0.IncludePaths)]
-	if testCfg0.ABI, err = NewABI(runtime.GOOS, runtime.GOARCH); err != nil {
-		panic(errorf("cannot configure ABI: %v", err))
 	}
 
 	var chars int
@@ -1255,7 +1235,6 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 }
 
 func TestTranslate(t *testing.T) {
-	return //TODO-
 	cfg := defaultCfg()
 	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
 	cfg.FS = cFS

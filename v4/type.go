@@ -138,3 +138,8 @@ type EnumType struct {
 }
 
 func (n *EnumType) Kind() Kind { return Enum }
+
+// [0] 6.3.1.8 Usual arithmetic conversions
+func usualArithmeticConversions(a, b Type) (r, s Type) {
+	panic(todo(""))
+}

@@ -4,10 +4,6 @@
 
 package cc // import "modernc.org/cc/v4"
 
-const (
-	DeclarationSpecifiersAttr = DeclarationSpecifiersFunc + 1
-)
-
 // Name returns the name of n.
 func (n *Declarator) Name() string {
 	if dn := n.DirectDeclarator.name(); dn != nil {
@@ -24,6 +20,41 @@ func (n *Declarator) isFn() bool {
 
 	return n.DirectDeclarator.isFn()
 }
+
+// IsExtern reports whether the storage class specifier 'extern' was present in
+// the declaration of n.
+func (n *Declarator) IsExtern() bool { return n.isExtern }
+
+// IsConst reports whether the type qualifier 'const' was present in
+// the declaration of n.
+func (n *Declarator) IsConst() bool { return n.isConst }
+
+// IsInline reports whether the function specifier 'inline' was present in the
+// declaration of n.
+func (n *Declarator) IsInline() bool { return n.isInline }
+
+// IsVolatile reports whether the type qualifier 'volatile' was present in
+// the declaration of n.
+func (n *Declarator) IsVolatile() bool { return n.isVolatile }
+
+// IsRegister reports whether the storage class specifier 'register' was
+// present in the declaration of n.
+func (n *Declarator) IsRegister() bool { return n.isRegister }
+
+// IsStatic reports whether the storage class specifier 'static' was present in
+// the declaration of n.
+func (n *Declarator) IsStatic() bool { return n.isStatic }
+
+// IsAtomic reports whether the type specifier '_Atomic' was present in the
+// declaration of n.
+func (n *Declarator) IsAtomic() bool { return n.isAtomic }
+
+// IsThreadLocal reports whether the storage class specifier '_Thread_local'
+// was present in the declaration of n.
+func (n *Declarator) IsThreadLocal() bool { return n.isThreadLocal }
+
+// IsParam reports whether n is a function paramater.
+func (n *Declarator) IsParam() bool { return n.isParam }
 
 func (n *DirectDeclarator) name() *DirectDeclarator {
 	if n == nil {

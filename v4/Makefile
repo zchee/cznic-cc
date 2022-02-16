@@ -55,6 +55,6 @@ win64:
 	CC_TEST_CPP=x86_64-w64-mingw32-cpp go test 2>&1 | tee log
 
 tmp:
-	go test -run Translate 2>&1 | tee log
+	go test -v -run Translate 2>&1 | tee log
 	grep '^ \+TODO' log | sort | uniq -c | sort -n
 	grep TOTAL log

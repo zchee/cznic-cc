@@ -390,6 +390,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Comma      */ |	Expression ',' AssignmentExpression
 
 			/* [0], 6.6 Constant expressions */
+			/*yy:field	typer	*/
 			/*yy:example struct { int i:3; }; */
 			ConstantExpression:
 				ConditionalExpression
@@ -400,8 +401,7 @@ package cc // import "modernc.org/cc/v4"
 				DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
-			/*yy:field	typedef		bool				*/
-			/*yy:field	typename	bool				*/
+			/*yy:field	isTypedef	bool				*/
 			/*yy:example __attribute__((a)) static int i; */
 /*yy:case Storage    */ DeclarationSpecifiers:
 				StorageClassSpecifier DeclarationSpecifiers
@@ -413,6 +413,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Func       */ |	FunctionSpecifier DeclarationSpecifiers
 			/*yy:example _Alignas(double) int i; */
 /*yy:case AlignSpec  */ |	AlignmentSpecifier DeclarationSpecifiers
+			/*yy:example __attribute__((a)) int i; */
+/*yy:case Attr       */ |	"__attribute__"
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example int i; */
@@ -618,6 +620,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Atomic     */ |	"_Atomic"
 			/*yy:example _Nonnull int i; */
 /*yy:case Nonnull    */ |	"_Nonnull"
+			/*yy:example struct { __attribute__((a)) int i; }; */
+/*yy:case Attr       */ |	"__attribute__"
 
 			/* [0], 6.7.4 Function specifiers */
 			/*yy:example inline int f() {}*/
@@ -630,10 +634,15 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	typ		Type		*/
 			/*yy:field	visible				*/
 			/*yy:field	isAtomic	bool		*/
+			/*yy:field	isConst		bool		*/
 			/*yy:field	isExtern	bool		*/
+			/*yy:field	isInline	bool		*/
 			/*yy:field	isParam		bool		*/
+			/*yy:field	isRegister	bool		*/
 			/*yy:field	isStatic	bool		*/
-			/*yy:field	typename	bool		*/
+			/*yy:field	isThreadLocal	bool		*/
+			/*yy:field	isTypename	bool		*/
+			/*yy:field	isVolatile	bool		*/
 			/*yy:example int *p; */
 			Declarator:
 				Pointer DirectDeclarator

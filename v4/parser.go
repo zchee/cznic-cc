@@ -180,7 +180,7 @@ func (p *parser) checkTypeName(t *Token) (r bool) {
 	}
 
 	if x, ok := p.scope.ident(*t).(*Declarator); ok {
-		if x.typename {
+		if x.isTypename {
 			t.Ch = rune(TYPENAME)
 			return true
 		}
@@ -2164,14 +2164,11 @@ func (p *parser) declarator(ptr *Pointer, ds *DeclarationSpecifiers, declare boo
 	}
 	r = &Declarator{Pointer: ptr, DirectDeclarator: p.directDeclarator(declare)}
 	if ds != nil {
-		r.typename = ds.typedef
+		r.isTypename = ds.isTypedef
 	}
 	if declare {
 		r.visible = visible(p.seq) // [0]6.2.1,7
 		p.scope.declare(r.Name(), r)
-		// if r.typename {
-		// 	trc("%v: %s is a typename", r.Position(), r.Name())
-		// }
 	}
 	return r
 }
@@ -2607,7 +2604,7 @@ func (p *parser) pointer(opt bool) (r *Pointer) {
 //	alignment-specifier declaration-specifiers_opt
 func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 	var ds, prev *DeclarationSpecifiers
-	var typedef bool
+	var isTypedef bool
 	acceptTypeName := true
 	for {
 		switch ch := p.rune(false); {
@@ -2633,7 +2630,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 				ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersTypeQual, TypeQualifier: p.typeQualifier(false)}
 			}
 		case ch == rune(TYPEDEF):
-			typedef = true
+			isTypedef = true
 			fallthrough
 		case p.isStorageClassSpecifier(ch):
 			ds = &DeclarationSpecifiers{Case: DeclarationSpecifiersStorage, StorageClassSpecifier: p.storageClassSpecifier()}
@@ -2655,10 +2652,7 @@ func (p *parser) declarationSpecifiers() (r *DeclarationSpecifiers, ok bool) {
 			prev.DeclarationSpecifiers = ds
 		}
 		prev = ds
-		r.typedef = typedef
-		if !acceptTypeName {
-			r.typename = true
-		}
+		r.isTypedef = isTypedef
 	}
 }
 
@@ -2966,9 +2960,9 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 		case '{':
 			r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), Token3: p.shift(false), EnumeratorList: p.enumeratorList()}
 			r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
-			p.scope.declare(string(r.Token.Src()), r)
+			p.scope.declare(string(r.Token2.Src()), r)
 		default:
-			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false)}
+			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false), resolutionScope: p.scope}
 		}
 	case '{':
 		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), EnumeratorList: p.enumeratorList()}

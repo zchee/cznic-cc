@@ -1079,6 +1079,7 @@ func (n *ConditionalExpression) Position() (r token.Position) {
 //	ConstantExpression:
 //	        ConditionalExpression
 type ConstantExpression struct {
+	typer
 	ConditionalExpression *ConditionalExpression
 }
 
@@ -1161,6 +1162,7 @@ const (
 	DeclarationSpecifiersTypeQual
 	DeclarationSpecifiersFunc
 	DeclarationSpecifiersAlignSpec
+	DeclarationSpecifiersAttr
 )
 
 // String implements fmt.Stringer
@@ -1176,6 +1178,8 @@ func (n DeclarationSpecifiersCase) String() string {
 		return "DeclarationSpecifiersFunc"
 	case DeclarationSpecifiersAlignSpec:
 		return "DeclarationSpecifiersAlignSpec"
+	case DeclarationSpecifiersAttr:
+		return "DeclarationSpecifiersAttr"
 	default:
 		return fmt.Sprintf("DeclarationSpecifiersCase(%v)", int(n))
 	}
@@ -1189,15 +1193,16 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       TypeQualifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeQual
 //	|       FunctionSpecifier DeclarationSpecifiers      // Case DeclarationSpecifiersFunc
 //	|       AlignmentSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAlignSpec
+//	|       "__attribute__"                              // Case DeclarationSpecifiersAttr
 type DeclarationSpecifiers struct {
 	AttributeSpecifierList *AttributeSpecifierList
-	typedef                bool
-	typename               bool
+	isTypedef              bool
 	AlignmentSpecifier     *AlignmentSpecifier
 	Case                   DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
 	DeclarationSpecifiers  *DeclarationSpecifiers
 	FunctionSpecifier      *FunctionSpecifier
 	StorageClassSpecifier  *StorageClassSpecifier
+	Token                  Token
 	TypeQualifier          *TypeQualifier
 	TypeSpecifier          *TypeSpecifier
 }
@@ -1230,6 +1235,8 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 		}
 
 		return n.DeclarationSpecifiers.Position()
+	case 5:
+		return n.Token.Position()
 	case 2:
 		if p := n.TypeQualifier.Position(); p.IsValid() {
 			return p
@@ -1255,10 +1262,15 @@ type Declarator struct {
 	typ Type
 	visible
 	isAtomic         bool
+	isConst          bool
 	isExtern         bool
+	isInline         bool
 	isParam          bool
+	isRegister       bool
 	isStatic         bool
-	typename         bool
+	isThreadLocal    bool
+	isTypename       bool
+	isVolatile       bool
 	DirectDeclarator *DirectDeclarator
 	Pointer          *Pointer
 }
@@ -4618,11 +4630,12 @@ func (n TypeQualifierCase) String() string {
 // TypeQualifier represents data reduced by productions:
 //
 //	TypeQualifier:
-//	        "const"     // Case TypeQualifierConst
-//	|       "restrict"  // Case TypeQualifierRestrict
-//	|       "volatile"  // Case TypeQualifierVolatile
-//	|       "_Atomic"   // Case TypeQualifierAtomic
-//	|       "_Nonnull"  // Case TypeQualifierNonnull
+//	        "const"          // Case TypeQualifierConst
+//	|       "restrict"       // Case TypeQualifierRestrict
+//	|       "volatile"       // Case TypeQualifierVolatile
+//	|       "_Atomic"        // Case TypeQualifierAtomic
+//	|       "_Nonnull"       // Case TypeQualifierNonnull
+//	|       "__attribute__"  // Case TypeQualifierAttr
 type TypeQualifier struct {
 	AttributeSpecifierList *AttributeSpecifierList
 	Case                   TypeQualifierCase `PrettyPrint:"stringer,zero"`
@@ -4636,10 +4649,6 @@ func (n *TypeQualifier) String() string { return PrettyString(n) }
 func (n *TypeQualifier) Position() (r token.Position) {
 	if n == nil {
 		return r
-	}
-
-	if n.AttributeSpecifierList != nil {
-		return n.AttributeSpecifierList.Position()
 	}
 
 	return n.Token.Position()
