@@ -104,6 +104,11 @@ func (n *AST) check() error {
 	return c.errors.err()
 }
 
+//  ExternalDeclaration:
+//          FunctionDefinition  // Case ExternalDeclarationFuncDef
+//  |       Declaration         // Case ExternalDeclarationDecl
+//  |       AsmStatement        // Case ExternalDeclarationAsmStmt
+//  |       ';'                 // Case ExternalDeclarationEmpty
 func (n *ExternalDeclaration) check(c *ctx) {
 	switch n.Case {
 	case ExternalDeclarationFuncDef: // FunctionDefinition
@@ -119,21 +124,31 @@ func (n *ExternalDeclaration) check(c *ctx) {
 	}
 }
 
+//  AsmStatement:
+//          Asm ';'
 func (n *AsmStatement) check(c *ctx) {
 	n.Asm.check(c)
 }
 
+//  Asm:
+//          "asm" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
 func (n *Asm) check(c *ctx) {
 	n.AsmQualifierList.check(c)
 	n.AsmArgList.check(c)
 }
 
+//  AsmArgList:
+//          ':' AsmExpressionList
+//  |       AsmArgList ':' AsmExpressionList
 func (n *AsmArgList) check(c *ctx) {
 	for ; n != nil; n = n.AsmArgList {
 		n.AsmExpressionList.check(c)
 	}
 }
 
+//  AsmExpressionList:
+//          AsmIndex AssignmentExpression
+//  |       AsmExpressionList ',' AsmIndex AssignmentExpression
 func (n *AsmExpressionList) check(c *ctx) {
 	for ; n != nil; n = n.AsmExpressionList {
 		n.AsmIndex.check(c)
@@ -141,6 +156,8 @@ func (n *AsmExpressionList) check(c *ctx) {
 	}
 }
 
+//  AsmIndex:
+//          '[' Expression ']'
 func (n *AsmIndex) check(c *ctx) {
 	n.Expression.check(c)
 }
@@ -151,6 +168,9 @@ func (n *AsmQualifierList) check(c *ctx) {
 	}
 }
 
+//  AsmQualifierList:
+//          AsmQualifier
+//  |       AsmQualifierList AsmQualifier
 func (n *AsmQualifier) check(c *ctx) {
 	switch n.Case {
 	case AsmQualifierVolatile: // "volatile"
@@ -164,6 +184,8 @@ func (n *AsmQualifier) check(c *ctx) {
 	}
 }
 
+//  FunctionDefinition:
+//          DeclarationSpecifiers Declarator DeclarationList CompoundStatement
 func (n *FunctionDefinition) check(c *ctx) {
 	d := n.Declarator
 	d.check(c, n.DeclarationSpecifiers.check(c, &d.isExtern, &d.isStatic, &d.isAtomic, &d.isThreadLocal, &d.isConst, &d.isVolatile, &d.isInline, &d.isRegister))
@@ -171,12 +193,17 @@ func (n *FunctionDefinition) check(c *ctx) {
 	n.CompoundStatement.check(c)
 }
 
+//  DeclarationList:
+//          Declaration
+//  |       DeclarationList Declaration
 func (n *DeclarationList) check(c *ctx) {
 	for ; n != nil; n = n.DeclarationList {
 		n.Declaration.check(c)
 	}
 }
 
+//  CompoundStatement:
+//          '{' LabelDeclarationList BlockItemList '}'
 func (n *CompoundStatement) check(c *ctx) {
 	if n == nil {
 		return
@@ -187,6 +214,8 @@ func (n *CompoundStatement) check(c *ctx) {
 	// }
 }
 
+//  Declaration:
+//          DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 func (n *Declaration) check(c *ctx) {
 	var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister bool
 	t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister)
@@ -195,6 +224,9 @@ func (n *Declaration) check(c *ctx) {
 	}
 }
 
+//  InitDeclarator:
+//          Declarator Asm                  // Case InitDeclaratorDecl
+//  |       Declarator Asm '=' Initializer  // Case InitDeclaratorInit
 func (n *InitDeclarator) check(c *ctx, t Type, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister bool) {
 	n.Declarator.isExtern = isExtern
 	n.Declarator.isStatic = isStatic
@@ -213,6 +245,9 @@ func (n *InitDeclarator) check(c *ctx, t Type, isExtern, isStatic, isAtomic, isT
 	n.Initializer.check(c, t)
 }
 
+//  Initializer:
+//          AssignmentExpression         // Case InitializerExpr
+//  |       '{' InitializerList ',' '}'  // Case InitializerInitList
 func (n *Initializer) check(c *ctx, t Type) {
 	if n == nil {
 		return
@@ -228,6 +263,8 @@ func (n *Initializer) check(c *ctx, t Type) {
 	}
 }
 
+//  Declarator:
+//          Pointer DirectDeclarator
 func (n *Declarator) check(c *ctx, t Type) (r Type) {
 	// defer func() {
 	// 	if r == nil {
@@ -239,6 +276,15 @@ func (n *Declarator) check(c *ctx, t Type) (r Type) {
 	return n.typ
 }
 
+//  DirectDeclarator:
+//          IDENTIFIER                                                             // Case DirectDeclaratorIdent
+//  |       '(' Declarator ')'                                                     // Case DirectDeclaratorDecl
+//  |       DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'           // Case DirectDeclaratorArr
+//  |       DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'  // Case DirectDeclaratorStaticArr
+//  |       DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'  // Case DirectDeclaratorArrStatic
+//  |       DirectDeclarator '[' TypeQualifiers '*' ']'                            // Case DirectDeclaratorStar
+//  |       DirectDeclarator '(' ParameterTypeList ')'                             // Case DirectDeclaratorFuncParam
+//  |       DirectDeclarator '(' IdentifierList ')'                                // Case DirectDeclaratorFuncIdent
 func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 	// defer func() {
 	// 	if r == nil {
@@ -271,6 +317,9 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 	return t //TODO-
 }
 
+//  ParameterTypeList:
+//          ParameterList            // Case ParameterTypeListList
+//  |       ParameterList ',' "..."  // Case ParameterTypeListVar
 func (n *ParameterTypeList) check(c *ctx) (fp []*ParameterDeclaration, isVariadic bool) {
 	if n == nil {
 		return nil, false
@@ -280,6 +329,9 @@ func (n *ParameterTypeList) check(c *ctx) (fp []*ParameterDeclaration, isVariadi
 	return fp, n.Case == ParameterTypeListVar
 }
 
+//  ParameterList:
+//          ParameterDeclaration
+//  |       ParameterList ',' ParameterDeclaration
 func (n *ParameterList) check(c *ctx) (fp []*ParameterDeclaration) {
 	for ; n != nil; n = n.ParameterList {
 		n.ParameterDeclaration.check(c)
@@ -288,6 +340,9 @@ func (n *ParameterList) check(c *ctx) (fp []*ParameterDeclaration) {
 	return fp
 }
 
+//  ParameterDeclaration:
+//          DeclarationSpecifiers Declarator          // Case ParameterDeclarationDecl
+//  |       DeclarationSpecifiers AbstractDeclarator  // Case ParameterDeclarationAbstract
 func (n *ParameterDeclaration) check(c *ctx) {
 	var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister bool
 	switch n.Case {
@@ -310,6 +365,9 @@ func (n *ParameterDeclaration) check(c *ctx) {
 	}
 }
 
+//  AbstractDeclarator:
+//          Pointer                           // Case AbstractDeclaratorPtr
+//  |       Pointer DirectAbstractDeclarator  // Case AbstractDeclaratorDecl
 func (n *AbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	if n == nil {
 		return t
@@ -325,6 +383,13 @@ func (n *AbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	return n.typ
 }
 
+//  DirectAbstractDeclarator:
+//          '(' AbstractDeclarator ')'                                                     // Case DirectAbstractDeclaratorDecl
+//  |       DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'           // Case DirectAbstractDeclaratorArr
+//  |       DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'  // Case DirectAbstractDeclaratorStaticArr
+//  |       DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'  // Case DirectAbstractDeclaratorArrStatic
+//  |       DirectAbstractDeclarator '[' '*' ']'                                           // Case DirectAbstractDeclaratorArrStar
+//  |       DirectAbstractDeclarator '(' ParameterTypeList ')'                             // Case DirectAbstractDeclaratorFunc
 func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	if n == nil {
 		return t
@@ -357,6 +422,10 @@ func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	return t //TODO-
 }
 
+//  Pointer:
+//          '*' TypeQualifiers          // Case PointerTypeQual
+//  |       '*' TypeQualifiers Pointer  // Case PointerPtr
+//  |       '^' TypeQualifiers          // Case PointerBlock
 func (n *Pointer) check(c *ctx, t Type) (r Type) {
 	if n == nil {
 		return t
@@ -374,7 +443,7 @@ func (n *Pointer) check(c *ctx, t Type) (r Type) {
 	case PointerPtr: // '*' TypeQualifiers Pointer
 		c.errors.add(errorf("TODO %v", n.Case))
 	case PointerBlock: // '^' TypeQualifiers
-		c.errors.add(errorf("TODO %v", n.Case))
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -390,6 +459,13 @@ func ts2String(a []TypeSpecifierCase) string {
 	return b.String()
 }
 
+//  DeclarationSpecifiers:
+//          StorageClassSpecifier DeclarationSpecifiers  // Case DeclarationSpecifiersStorage
+//  |       TypeSpecifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeSpec
+//  |       TypeQualifier DeclarationSpecifiers          // Case DeclarationSpecifiersTypeQual
+//  |       FunctionSpecifier DeclarationSpecifiers      // Case DeclarationSpecifiersFunc
+//  |       AlignmentSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAlignSpec
+//  |       "__attribute__"                              // Case DeclarationSpecifiersAttr
 func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister *bool) (r Type) {
 	if n == nil {
 		return c.intType
@@ -451,22 +527,33 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 	return nil
 }
 
+//  AttributeSpecifierList:
+//          AttributeSpecifier
+//  |       AttributeSpecifierList AttributeSpecifier
 func (n *AttributeSpecifierList) check(c *ctx) {
 	for ; n != nil; n = n.AttributeSpecifierList {
 		n.AttributeSpecifier.check(c)
 	}
 }
 
+//  AttributeSpecifier:
+//          "__attribute__" '(' '(' AttributeValueList ')' ')'
 func (n *AttributeSpecifier) check(c *ctx) {
 	n.AttributeValueList.check(c)
 }
 
+//  AttributeValueList:
+//          AttributeValue
+//  |       AttributeValueList ',' AttributeValue
 func (n *AttributeValueList) check(c *ctx) {
 	for ; n != nil; n = n.AttributeValueList {
 		n.AttributeValue.check(c)
 	}
 }
 
+//  AttributeValue:
+//          IDENTIFIER                                 // Case AttributeValueIdent
+//  |       IDENTIFIER '(' ArgumentExpressionList ')'  // Case AttributeValueExpr
 func (n *AttributeValue) check(c *ctx) {
 	switch n.Case {
 	case AttributeValueIdent: // IDENTIFIER
@@ -478,12 +565,18 @@ func (n *AttributeValue) check(c *ctx) {
 	}
 }
 
+//  ArgumentExpressionList:
+//          AssignmentExpression
+//  |       ArgumentExpressionList ',' AssignmentExpression
 func (n *ArgumentExpressionList) check(c *ctx) {
 	for ; n != nil; n = n.ArgumentExpressionList {
 		n.AssignmentExpression.check(c)
 	}
 }
 
+//  AlignmentSpecifier:
+//          "_Alignas" '(' TypeName ')'            // Case AlignmentSpecifierType
+//  |       "_Alignas" '(' ConstantExpression ')'  // Case AlignmentSpecifierExpr
 func (n *AlignmentSpecifier) check(c *ctx) {
 	switch n.Case {
 	case AlignmentSpecifierType: // "_Alignas" '(' TypeName ')'
@@ -495,23 +588,33 @@ func (n *AlignmentSpecifier) check(c *ctx) {
 	}
 }
 
+//  FunctionSpecifier:
+//          "inline"     // Case FunctionSpecifierInline
+//  |       "_Noreturn"  // Case FunctionSpecifierNoreturn
 func (n *FunctionSpecifier) check(c *ctx, isInline *bool) {
 	switch n.Case {
 	case FunctionSpecifierInline: // "inline"
 		*isInline = true
 	case FunctionSpecifierNoreturn: // "_Noreturn"
-		c.errors.add(errorf("TODO %v", n.Case))
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 }
 
+//  TypeQualifier:
+//          "const"          // Case TypeQualifierConst
+//  |       "restrict"       // Case TypeQualifierRestrict
+//  |       "volatile"       // Case TypeQualifierVolatile
+//  |       "_Atomic"        // Case TypeQualifierAtomic
+//  |       "_Nonnull"       // Case TypeQualifierNonnull
+//  |       "__attribute__"  // Case TypeQualifierAttr
 func (n *TypeQualifier) check(c *ctx, isConst, isVolatile, isAtomic *bool) {
 	switch n.Case {
 	case TypeQualifierConst: // "const"
 		*isConst = true
 	case TypeQualifierRestrict: // "restrict"
-		c.errors.add(errorf("TODO %v", n.Case))
+		//TODO c.errors.add(errorf("TODO %v", n.Case))
 	case TypeQualifierVolatile: // "volatile"
 		*isVolatile = true
 	case TypeQualifierAtomic: // "_Atomic"
@@ -525,6 +628,14 @@ func (n *TypeQualifier) check(c *ctx, isConst, isVolatile, isAtomic *bool) {
 	}
 }
 
+//  StorageClassSpecifier:
+//          "typedef"             // Case StorageClassSpecifierTypedef
+//  |       "extern"              // Case StorageClassSpecifierExtern
+//  |       "static"              // Case StorageClassSpecifierStatic
+//  |       "auto"                // Case StorageClassSpecifierAuto
+//  |       "register"            // Case StorageClassSpecifierRegister
+//  |       "_Thread_local"       // Case StorageClassSpecifierThreadLocal
+//  |       "__declspec" '(' ')'  // Case StorageClassSpecifierDeclspec
 func (n *StorageClassSpecifier) check(c *ctx, isExtern, isStatic, isThreadLocal, isRegister *bool) {
 	switch n.Case {
 	case StorageClassSpecifierTypedef: // "typedef"
@@ -546,6 +657,35 @@ func (n *StorageClassSpecifier) check(c *ctx, isExtern, isStatic, isThreadLocal,
 	}
 }
 
+//  TypeSpecifier:
+//          "void"                       // Case TypeSpecifierVoid
+//  |       "char"                       // Case TypeSpecifierChar
+//  |       "short"                      // Case TypeSpecifierShort
+//  |       "int"                        // Case TypeSpecifierInt
+//  |       "__int128"                   // Case TypeSpecifierInt128
+//  |       "__uint128_t"                // Case TypeSpecifierUint128
+//  |       "long"                       // Case TypeSpecifierLong
+//  |       "float"                      // Case TypeSpecifierFloat
+//  |       "_Float16"                   // Case TypeSpecifierFloat16
+//  |       "_Decimal64"                 // Case TypeSpecifierDecimal64
+//  |       "_Float128"                  // Case TypeSpecifierFloat128
+//  |       "_Float128x"                 // Case TypeSpecifierFloat128x
+//  |       "double"                     // Case TypeSpecifierDouble
+//  |       "signed"                     // Case TypeSpecifierSigned
+//  |       "unsigned"                   // Case TypeSpecifierUnsigned
+//  |       "_Bool"                      // Case TypeSpecifierBool
+//  |       "_Complex"                   // Case TypeSpecifierComplex
+//  |       "_Imaginary"                 // Case TypeSpecifierImaginary
+//  |       StructOrUnionSpecifier       // Case TypeSpecifierStructOrUnion
+//  |       EnumSpecifier                // Case TypeSpecifierEnum
+//  |       TYPENAME                     // Case TypeSpecifierTypeName
+//  |       "typeof" '(' Expression ')'  // Case TypeSpecifierTypeofExpr
+//  |       "typeof" '(' TypeName ')'    // Case TypeSpecifierTypeofType
+//  |       AtomicTypeSpecifier          // Case TypeSpecifierAtomic
+//  |       "_Float32"                   // Case TypeSpecifierFloat32
+//  |       "_Float64"                   // Case TypeSpecifierFloat64
+//  |       "_Float32x"                  // Case TypeSpecifierFloat32x
+//  |       "_Float64x"                  // Case TypeSpecifierFloat64x
 func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 	if n == nil {
 		return nil
@@ -624,6 +764,9 @@ func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 	return nil
 }
 
+//  EnumSpecifier:
+//          "enum" IDENTIFIER '{' EnumeratorList ',' '}'  // Case EnumSpecifierDef
+//  |       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -652,6 +795,9 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  EnumeratorList:
+//          Enumerator
+//  |       EnumeratorList ',' Enumerator
 func (n *EnumeratorList) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -666,6 +812,9 @@ func (n *EnumeratorList) check(c *ctx) (r Type) {
 	return nil
 }
 
+//  StructOrUnionSpecifier:
+//          StructOrUnion IDENTIFIER '{' StructDeclarationList '}'  // Case StructOrUnionSpecifierDef
+//  |       StructOrUnion IDENTIFIER                                // Case StructOrUnionSpecifierTag
 func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -699,6 +848,9 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  StructDeclarationList:
+//          StructDeclaration
+//  |       StructDeclarationList StructDeclaration
 func (n *StructDeclarationList) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -713,6 +865,19 @@ func (n *StructDeclarationList) check(c *ctx) (r Type) {
 	return nil
 }
 
+//  AssignmentExpression:
+//          ConditionalExpression                       // Case AssignmentExpressionCond
+//  |       UnaryExpression '=' AssignmentExpression    // Case AssignmentExpressionAssign
+//  |       UnaryExpression "*=" AssignmentExpression   // Case AssignmentExpressionMul
+//  |       UnaryExpression "/=" AssignmentExpression   // Case AssignmentExpressionDiv
+//  |       UnaryExpression "%=" AssignmentExpression   // Case AssignmentExpressionMod
+//  |       UnaryExpression "+=" AssignmentExpression   // Case AssignmentExpressionAdd
+//  |       UnaryExpression "-=" AssignmentExpression   // Case AssignmentExpressionSub
+//  |       UnaryExpression "<<=" AssignmentExpression  // Case AssignmentExpressionLsh
+//  |       UnaryExpression ">>=" AssignmentExpression  // Case AssignmentExpressionRsh
+//  |       UnaryExpression "&=" AssignmentExpression   // Case AssignmentExpressionAnd
+//  |       UnaryExpression "^=" AssignmentExpression   // Case AssignmentExpressionXor
+//  |       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
 func (n *AssignmentExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -755,6 +920,9 @@ func (n *AssignmentExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  ConditionalExpression:
+//          LogicalOrExpression                                           // Case ConditionalExpressionLOr
+//  |       LogicalOrExpression '?' Expression ':' ConditionalExpression  // Case ConditionalExpressionCond
 func (n *ConditionalExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -777,6 +945,9 @@ func (n *ConditionalExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  LogicalOrExpression:
+//          LogicalAndExpression                           // Case LogicalOrExpressionLAnd
+//  |       LogicalOrExpression "||" LogicalAndExpression  // Case LogicalOrExpressionLOr
 func (n *LogicalOrExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -799,6 +970,9 @@ func (n *LogicalOrExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  LogicalAndExpression:
+//          InclusiveOrExpression                            // Case LogicalAndExpressionOr
+//  |       LogicalAndExpression "&&" InclusiveOrExpression  // Case LogicalAndExpressionLAnd
 func (n *LogicalAndExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -821,6 +995,9 @@ func (n *LogicalAndExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  InclusiveOrExpression:
+//          ExclusiveOrExpression                            // Case InclusiveOrExpressionXor
+//  |       InclusiveOrExpression '|' ExclusiveOrExpression  // Case InclusiveOrExpressionOr
 func (n *InclusiveOrExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -843,6 +1020,9 @@ func (n *InclusiveOrExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  ExclusiveOrExpression:
+//          AndExpression                            // Case ExclusiveOrExpressionAnd
+//  |       ExclusiveOrExpression '^' AndExpression  // Case ExclusiveOrExpressionXor
 func (n *ExclusiveOrExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -865,6 +1045,9 @@ func (n *ExclusiveOrExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  AndExpression:
+//          EqualityExpression                    // Case AndExpressionEq
+//  |       AndExpression '&' EqualityExpression  // Case AndExpressionAnd
 func (n *AndExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -887,6 +1070,10 @@ func (n *AndExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  EqualityExpression:
+//          RelationalExpression                          // Case EqualityExpressionRel
+//  |       EqualityExpression "==" RelationalExpression  // Case EqualityExpressionEq
+//  |       EqualityExpression "!=" RelationalExpression  // Case EqualityExpressionNeq
 func (n *EqualityExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -911,6 +1098,12 @@ func (n *EqualityExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  RelationalExpression:
+//          ShiftExpression                            // Case RelationalExpressionShift
+//  |       RelationalExpression '<' ShiftExpression   // Case RelationalExpressionLt
+//  |       RelationalExpression '>' ShiftExpression   // Case RelationalExpressionGt
+//  |       RelationalExpression "<=" ShiftExpression  // Case RelationalExpressionLeq
+//  |       RelationalExpression ">=" ShiftExpression  // Case RelationalExpressionGeq
 func (n *RelationalExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -939,6 +1132,10 @@ func (n *RelationalExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  ShiftExpression:
+//          AdditiveExpression                       // Case ShiftExpressionAdd
+//  |       ShiftExpression "<<" AdditiveExpression  // Case ShiftExpressionLsh
+//  |       ShiftExpression ">>" AdditiveExpression  // Case ShiftExpressionRsh
 func (n *ShiftExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -963,6 +1160,10 @@ func (n *ShiftExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  AdditiveExpression:
+//          MultiplicativeExpression                         // Case AdditiveExpressionMul
+//  |       AdditiveExpression '+' MultiplicativeExpression  // Case AdditiveExpressionAdd
+//  |       AdditiveExpression '-' MultiplicativeExpression  // Case AdditiveExpressionSub
 func (n *AdditiveExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -987,6 +1188,11 @@ func (n *AdditiveExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  MultiplicativeExpression:
+//          CastExpression                               // Case MultiplicativeExpressionCast
+//  |       MultiplicativeExpression '*' CastExpression  // Case MultiplicativeExpressionMul
+//  |       MultiplicativeExpression '/' CastExpression  // Case MultiplicativeExpressionDiv
+//  |       MultiplicativeExpression '%' CastExpression  // Case MultiplicativeExpressionMod
 func (n *MultiplicativeExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -1013,6 +1219,9 @@ func (n *MultiplicativeExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  CastExpression:
+//          UnaryExpression                  // Case CastExpressionUnary
+//  |       '(' TypeName ')' CastExpression  // Case CastExpressionCast
 func (n *CastExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -1035,6 +1244,23 @@ func (n *CastExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  UnaryExpression:
+//          PostfixExpression            // Case UnaryExpressionPostfix
+//  |       "++" UnaryExpression         // Case UnaryExpressionInc
+//  |       "--" UnaryExpression         // Case UnaryExpressionDec
+//  |       '&' CastExpression           // Case UnaryExpressionAddrof
+//  |       '*' CastExpression           // Case UnaryExpressionDeref
+//  |       '+' CastExpression           // Case UnaryExpressionPlus
+//  |       '-' CastExpression           // Case UnaryExpressionMinus
+//  |       '~' CastExpression           // Case UnaryExpressionCpl
+//  |       '!' CastExpression           // Case UnaryExpressionNot
+//  |       "sizeof" UnaryExpression     // Case UnaryExpressionSizeofExpr
+//  |       "sizeof" '(' TypeName ')'    // Case UnaryExpressionSizeofType
+//  |       "&&" IDENTIFIER              // Case UnaryExpressionLabelAddr
+//  |       "_Alignof" UnaryExpression   // Case UnaryExpressionAlignofExpr
+//  |       "_Alignof" '(' TypeName ')'  // Case UnaryExpressionAlignofType
+//  |       "__imag__" UnaryExpression   // Case UnaryExpressionImag
+//  |       "__real__" UnaryExpression   // Case UnaryExpressionReal
 func (n *UnaryExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -1085,6 +1311,15 @@ func (n *UnaryExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  PostfixExpression:
+//          PrimaryExpression                                 // Case PostfixExpressionPrimary
+//  |       PostfixExpression '[' Expression ']'              // Case PostfixExpressionIndex
+//  |       PostfixExpression '(' ArgumentExpressionList ')'  // Case PostfixExpressionCall
+//  |       PostfixExpression '.' IDENTIFIER                  // Case PostfixExpressionSelect
+//  |       PostfixExpression "->" IDENTIFIER                 // Case PostfixExpressionPSelect
+//  |       PostfixExpression "++"                            // Case PostfixExpressionInc
+//  |       PostfixExpression "--"                            // Case PostfixExpressionDec
+//  |       '(' TypeName ')' '{' InitializerList ',' '}'      // Case PostfixExpressionComplit
 func (n *PostfixExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -1121,6 +1356,18 @@ func (n *PostfixExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  PrimaryExpression:
+//          IDENTIFIER                 // Case PrimaryExpressionIdent
+//  |       INTCONST                   // Case PrimaryExpressionInt
+//  |       FLOATCONST                 // Case PrimaryExpressionFloat
+//  |       ENUMCONST                  // Case PrimaryExpressionEnum
+//  |       CHARCONST                  // Case PrimaryExpressionChar
+//  |       LONGCHARCONST              // Case PrimaryExpressionLChar
+//  |       STRINGLITERAL              // Case PrimaryExpressionString
+//  |       LONGSTRINGLITERAL          // Case PrimaryExpressionLString
+//  |       '(' Expression ')'         // Case PrimaryExpressionExpr
+//  |       '(' CompoundStatement ')'  // Case PrimaryExpressionStmt
+//  |       GenericSelection           // Case PrimaryExpressionGeneric
 func (n *PrimaryExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -1161,6 +1408,9 @@ func (n *PrimaryExpression) check(c *ctx) (r Type) {
 	return n.typ
 }
 
+//  Expression:
+//          AssignmentExpression
+//  |       Expression ',' AssignmentExpression
 func (n *Expression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil
@@ -1179,6 +1429,8 @@ func (n *Expression) check(c *ctx) (r Type) {
 	return n0.typ
 }
 
+//  ConstantExpression:
+//          ConditionalExpression
 func (n *ConstantExpression) check(c *ctx) (r Type) {
 	if n == nil {
 		return nil

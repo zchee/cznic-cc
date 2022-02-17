@@ -92,6 +92,7 @@ var keywords = map[string]rune{
 	"__signed__":    rune(SIGNED),
 	"__thread":      rune(THREADLOCAL),
 	"__typeof":      rune(TYPEOF),
+	"__typeof__":    rune(TYPEOF),
 	"__uint128_t":   rune(UINT128),
 	"__volatile":    rune(VOLATILE),
 	"__volatile__":  rune(VOLATILE),
