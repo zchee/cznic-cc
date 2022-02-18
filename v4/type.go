@@ -25,6 +25,9 @@ var (
 // does not panic.
 type Type interface {
 	Kind() Kind
+	// Size reports the size of a type in bytes. Incomplete or invalid types may
+	// report a negative size.
+	Size() int64
 }
 
 const (
@@ -77,7 +80,17 @@ type PredefinedType struct {
 
 func newPredefinedType(ast *AST, kind Kind) *PredefinedType { return &PredefinedType{kind: kind} }
 
+// Kind implements Type.
 func (n *PredefinedType) Kind() Kind { return n.kind }
+
+// Size implements Type.
+func (n *PredefinedType) Size() int64 {
+	if x, ok := n.ast.ABI.types[n.kind]; ok {
+		return x.size
+	}
+
+	return -1
+}
 
 type FunctionType struct {
 	result  Type
@@ -100,44 +113,98 @@ func newFunctionType(c *ctx, result Type, fp []*ParameterDeclaration, isVariadic
 	return r
 }
 
+// Kind implements Type.
 func (n *FunctionType) Kind() Kind { return Function }
 
+// Size implements Type.
+func (n *FunctionType) Size() int64 { return 1 } // gcc compatibility
+
 type PointerType struct {
+	ast  *AST
 	elem Type
 }
 
-func newPointerType(elem Type) *PointerType { return &PointerType{elem: elem} }
+func newPointerType(ast *AST, elem Type) *PointerType { return &PointerType{ast: ast, elem: elem} }
 
+// Kind implements Type.
 func (n *PointerType) Kind() Kind { return Ptr }
+
+// Size implements Type.
+func (n *PointerType) Size() int64 {
+	if x, ok := n.ast.ABI.types[Ptr]; ok {
+		return x.size
+	}
+
+	return -1
+}
 
 type StructType struct {
 	//TODO
 }
 
+// Kind implements Type.
 func (n *StructType) Kind() Kind { return Struct }
+
+// Size implements Type.
+func (n *StructType) Size() int64 {
+	panic(todo(""))
+}
 
 type UnionType struct {
 	//TODO
 }
 
+// Kind implements Type.
 func (n *UnionType) Kind() Kind { return Union }
 
+// Size implements Type.
+func (n *UnionType) Size() int64 {
+	panic(todo(""))
+}
+
 type ArrayType struct {
-	elem Type
-	expr *AssignmentExpression
+	elem  Type
+	expr  *AssignmentExpression
+	elems int64
 }
 
-func newArrayType(expr *AssignmentExpression, elem Type) *ArrayType {
-	return &ArrayType{elem: elem, expr: expr}
+func newArrayType(expr *AssignmentExpression, elem Type) (r *ArrayType) {
+	r = &ArrayType{elem: elem, expr: expr, elems: -1}
+	//TODO handle expr
+	return r
 }
 
+// Kind implements Type.
 func (n *ArrayType) Kind() Kind { return Array }
 
-type EnumType struct {
-	//TODO
+// Size implements Type.
+func (n *ArrayType) Size() int64 {
+	if n.elem != nil {
+		if a, b := n.elems, n.elem.Size(); a >= 0 && b > 0 {
+			return a * b
+		}
+	}
+
+	return -1
 }
 
+type EnumType struct {
+	typ Type
+}
+
+func newEnumType(typ Type) *EnumType { return &EnumType{typ: typ} }
+
+// Kind implements Type.
 func (n *EnumType) Kind() Kind { return Enum }
+
+// Size implements Type.
+func (n *EnumType) Size() int64 {
+	if n.typ != nil {
+		return n.typ.Size()
+	}
+
+	return -1
+}
 
 // [0] 6.3.1.8 Usual arithmetic conversions
 func usualArithmeticConversions(a, b Type) (r, s Type) {

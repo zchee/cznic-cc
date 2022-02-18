@@ -319,11 +319,14 @@ func (p *parser) parse() (ast *AST, err error) {
 		t := p.shift(false)
 		t.Set(append(p.prevNL.Sep(), p.prevNL.Src()...), nil)
 		return &AST{
+			ABI:             p.cpp.cfg.ABI,
 			TranslationUnit: tu,
 			EOF:             t,
 		}, errors.err()
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected EOF", t.Position(), runeName(t.Ch))
+		return nil, errors.err()
 	}
 }
 
@@ -391,7 +394,9 @@ again:
 			return &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
 		}
 
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected external declaration", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -549,7 +554,9 @@ again:
 			return &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(ds, d)}
 		}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected block item", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -613,7 +620,9 @@ func (p *parser) statement(newBlock bool) *Statement {
 
 		return &Statement{Case: StatementLabeled, LabeledStatement: p.labeledStatement()}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected statement", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -676,7 +685,9 @@ func (p *parser) selectionStatement() (r *SelectionStatement) {
 	case rune(SWITCH):
 		return &SelectionStatement{Case: SelectionStatementSwitch, Token: p.shift(false), Token2: p.must('('), Expression: p.expression(false), Token3: p.must(')'), Statement: p.statement(true)}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected selection statement", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -707,7 +718,9 @@ func (p *parser) jumpStatement() *JumpStatement {
 	case rune(RETURN):
 		return &JumpStatement{Case: JumpStatementReturn, Token: p.shift(false), Expression: p.expression(true), Token2: p.must(';')}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected jump statement", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -745,13 +758,16 @@ func (p *parser) labeledStatement() (r *LabeledStatement) {
 		r = &LabeledStatement{Case: LabeledStatementLabel, Token: p.shift(false), Token2: p.must(':'), Statement: p.statement(false)}
 		switch {
 		case p.fnScope == nil:
-			panic(todo("", &r.Token))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected label", t.Position())
 		default:
 			p.fnScope.declare(string(r.Token.Src()), r)
 		}
 		return r
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected labeled statement", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -780,7 +796,9 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 
 		return &IterationStatement{Case: IterationStatementFor, Token: p.shift(false), Token2: p.must('('), Expression: p.expression(true), Token3: p.must(';'), Expression2: p.expression(true), Token4: p.must(';'), Expression3: p.expression(true), Token5: p.must(')'), Statement: p.statement(true)}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected iteration statement", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -791,7 +809,9 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 func (p *parser) expressionStatement() *ExpressionStatement {
 	switch p.rune(false) {
 	case rune(ATTRIBUTE):
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: internal error: TODO", t.Position(), runeName(t.Ch))
+		return nil
 	default:
 		return &ExpressionStatement{Expression: p.expression(true), Token: p.must(';')}
 	}
@@ -850,7 +870,9 @@ func (p *parser) asmQualifier() *AsmQualifier {
 	case rune(GOTO):
 		return &AsmQualifier{Case: AsmQualifierGoto, Token: p.shift(false)}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected asm qualifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -923,7 +945,9 @@ func (p *parser) expression(opt bool) (r *Expression) {
 		return nil
 	}
 
-	panic(todo("", p.toks[0], opt))
+	t := p.shift(false)
+	p.cpp.eh("%v: unexpected %v, expected asm expression", t.Position(), runeName(t.Ch))
+	return nil
 }
 
 func (p *parser) isExpression(ch rune) bool {
@@ -1013,7 +1037,8 @@ func (p *parser) attributeValueListOpt() (r *AttributeValueList) {
 			break
 		}
 
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected attribute value", t.Position(), runeName(t.Ch))
 	}
 	prev := r
 	for p.rune(false) == ',' {
@@ -1159,7 +1184,8 @@ func (p *parser) initializerList() (r *InitializerList) {
 			break
 		}
 
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected designation or initializer", t.Position(), runeName(t.Ch))
 	}
 	prev := r
 	for p.rune(false) == ',' {
@@ -1264,10 +1290,14 @@ func (p *parser) designator() (r *Designator) {
 		case ':':
 			return &Designator{Case: DesignatorField2, Token: p.shift(false), Token2: p.shift(false)}
 		default:
-			panic(todo("", p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected designator", t.Position(), runeName(t.Ch))
+			return nil
 		}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected designator", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -1639,7 +1669,9 @@ func (p *parser) castExpression(checkTypeName bool) (r *CastExpression, u *Unary
 			return r, r.UnaryExpression
 		}
 
-		panic(todo("", p.peek(1, true)))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected cast expression", t.Position(), runeName(t.Ch))
+		return nil, nil
 	default:
 		r = &CastExpression{Case: CastExpressionUnary, UnaryExpression: p.unaryExpression(Token{}, nil, Token{}, checkTypeName)}
 		return r, r.UnaryExpression
@@ -1673,7 +1705,9 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 				return nil
 			}
 
-			panic(todo("", p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected abstract declarator", t.Position(), runeName(t.Ch))
+			return nil
 		case '[':
 			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, DirectAbstractDeclarator: p.directAbstractDeclarator()}
 		case '(':
@@ -1684,7 +1718,9 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 
 				return &AbstractDeclarator{Case: AbstractDeclaratorPtr, DirectAbstractDeclarator: p.directAbstractDeclarator()}
 			default:
-				panic(todo("", p.peek(1, true)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		default:
 			switch p.rune(true) {
@@ -1693,7 +1729,9 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 				p.cpp.eh("%v: unexpected %v, expected ';'", t.Position(), runeName(t.Ch))
 				return nil
 			default:
-				panic(todo("", p.toks[0], opt))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		}
 	default:
@@ -1710,10 +1748,14 @@ func (p *parser) abstractDeclarator(ptr *Pointer, opt bool) *AbstractDeclarator 
 			case ch == '*' || p.isDeclarationSpecifier(ch, true):
 				return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr, DirectAbstractDeclarator: p.directAbstractDeclarator()}
 			default:
-				panic(todo("", p.peek(1, true)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		default:
-			panic(todo("", p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected abstract declarator", t.Position(), runeName(t.Ch))
+			return nil
 		}
 	}
 }
@@ -1744,7 +1786,8 @@ out:
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, Token: lbracket, TypeQualifiers: tql, Token2: p.shift(false), AssignmentExpression: p.assignmentExpression(true), Token3: p.must(']')}
 				break out
 			default:
-				panic(todo("", &lbracket, tql, &p.toks[0]))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 			}
 		case ch != '*' && p.isExpression(ch):
 			r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, Token: p.shift(false), AssignmentExpression: p.assignmentExpression(true), Token2: p.must(']')}
@@ -1760,17 +1803,20 @@ out:
 			case p.isTypeQualifier(p.peek(1, false).Ch):
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorStaticArr, Token: lbracket, Token2: p.shift(false), TypeQualifiers: p.typeQualifierList(false, false), AssignmentExpression: p.assignmentExpression(true), Token3: p.must(']')}
 			default:
-				panic(todo("", &lbracket, p.peek(1, false)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 			}
 		case '*':
 			switch p.peek(2, false).Ch {
 			case ']':
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArrStar, Token: p.shift(false), Token2: p.shift(false), Token3: p.shift(false)}
 			default:
-				panic(todo("", p.peek(2, false)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 			}
 		default:
-			panic(todo("", p.peek(1, false)))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 		}
 	case '(':
 		switch ch := p.peek(1, true).Ch; {
@@ -1784,10 +1830,12 @@ out:
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorFunc, Token: p.shift(false), ParameterTypeList: p.parameterTypeListOpt(), Token2: p.must(')'), params: p.scope}
 			}()
 		default:
-			panic(todo("", p.peek(1, true)))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 		}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 	}
 	return p.directAbstractDeclarator2(r)
 }
@@ -1814,10 +1862,12 @@ func (p *parser) directAbstractDeclarator2(dad *DirectAbstractDeclarator) (r *Di
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, DirectAbstractDeclarator: r, Token: p.shift(false), AssignmentExpression: p.assignmentExpression(true), Token2: p.must(']')}
 				continue
 			default:
-				panic(todo("", p.peek(1, true)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 			}
 		default:
-			panic(todo("", &p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
 		}
 	}
 }
@@ -1961,7 +2011,9 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token, checkTypeName
 				return &UnaryExpression{Case: UnaryExpressionAlignofExpr, Token: p.shift(false), UnaryExpression: p.unaryExpression(Token{}, nil, Token{}, checkTypeName)}
 			}
 		default:
-			panic(todo("", p.peek(1, false)))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected unary expression or (type name)", t.Position(), runeName(t.Ch))
+			return nil
 		}
 	case rune(ANDAND):
 		return &UnaryExpression{Case: UnaryExpressionLabelAddr, Token: p.shift(false), Token2: p.must(rune(IDENTIFIER))}
@@ -1970,7 +2022,9 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token, checkTypeName
 	case rune(IMAG):
 		return &UnaryExpression{Case: UnaryExpressionImag, Token: p.shift(false), UnaryExpression: p.unaryExpression(Token{}, nil, Token{}, checkTypeName)}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected unary expression", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2024,7 +2078,8 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token, checkTypeNa
 					return r
 				}
 			default:
-				panic(todo("", p.peek(1, true)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected postfix expression", t.Position(), runeName(t.Ch))
 			}
 		default:
 			r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression(checkTypeName)}
@@ -2042,7 +2097,8 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token, checkTypeNa
 			case p.isExpression(ch) || ch == ')':
 				r = &PostfixExpression{Case: PostfixExpressionCall, PostfixExpression: r, Token: p.shift(false), ArgumentExpressionList: p.argumentExpressionListOpt(true), Token2: p.must(')')}
 			default:
-				panic(todo("", p.peek(1, true)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected postfix expression", t.Position(), runeName(t.Ch))
 			}
 		case '.':
 			r = &PostfixExpression{Case: PostfixExpressionSelect, PostfixExpression: r, Token: p.shift(false), Token2: p.must(rune(IDENTIFIER))}
@@ -2119,7 +2175,9 @@ func (p *parser) primaryExpression(checkTypeName bool) (r *PrimaryExpression) {
 	case rune(GENERIC):
 		return &PrimaryExpression{Case: PrimaryExpressionGeneric, GenericSelection: p.genericSelection()}
 	default:
-		panic(todo("%v %v scope %p", p.toks[0], checkTypeName, p.scope))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected primary expression", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2193,7 +2251,8 @@ func (p *parser) directDeclarator(declare bool) (r *DirectDeclarator) {
 		r.Declarator = p.declarator(nil, nil, false)
 		r.Token2 = p.must(')')
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected direct declarator", t.Position(), runeName(t.Ch))
 	}
 	return p.directDeclarator2(r, declare)
 }
@@ -2242,7 +2301,8 @@ func (p *parser) directDeclarator2(dd *DirectDeclarator, declare bool) (r *Direc
 			case rune(STATIC):
 				r = &DirectDeclarator{Case: DirectDeclaratorStaticArr, DirectDeclarator: r, Token: p.shift(false), Token2: p.shift(false), TypeQualifiers: p.typeQualifierList(true, false), AssignmentExpression: p.assignmentExpression(true), Token3: p.must(']')}
 			default:
-				panic(todo("", p.toks[0], p.peek(1, true)))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected direct declarator", t.Position(), runeName(t.Ch))
 			}
 		default:
 			return r
@@ -2262,7 +2322,8 @@ func (p *parser) identifierList() (r *IdentifierList) {
 	case rune(IDENTIFIER):
 		r = &IdentifierList{Token2: p.shift(false)}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected identifier", t.Position(), runeName(t.Ch))
 	}
 
 	prev := r
@@ -2338,8 +2399,9 @@ func (p *parser) parameterDeclaration() (r *ParameterDeclaration) {
 		case *Declarator:
 			return &ParameterDeclaration{Case: ParameterDeclarationDecl, DeclarationSpecifiers: ds, Declarator: x, AttributeSpecifierList: p.attributeSpecifierListOpt()}
 		default:
-			p.rune(false)
-			panic(todo("%v %T", p.toks[0], x))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected parameter declaration", t.Position(), runeName(t.Ch))
+			return nil
 		}
 	}
 }
@@ -2356,7 +2418,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 			return &AbstractDeclarator{Case: AbstractDeclaratorPtr, Pointer: ptr0}
 		}
 
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+		return nil
 	case '(':
 		lparen := p.shift(false)
 		p.attributeSpecifierListOpt() //TODO not stored yet
@@ -2366,7 +2430,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 			case p.in(p.rune(false), ',', ')'):
 				return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: dad}
 			default:
-				panic(todo("", p.toks[0]))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		}
 
@@ -2393,8 +2459,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 				}
 				return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 			default:
-				p.rune(false)
-				panic(todo("%v %T", p.toks[0], x))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		case rune(IDENTIFIER):
 			dd := p.directDeclarator(declare)
@@ -2410,7 +2477,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 				}
 				return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 			default:
-				panic(todo("", p.toks[0]))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		case '*':
 			ptr := p.pointer(false)
@@ -2441,7 +2510,9 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					}
 					return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 				default:
-					panic(todo("", p.toks[0]))
+					t := p.shift(false)
+					p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+					return nil
 				}
 			case '(':
 				switch x := p.declaratorOrAbstractDeclarator(declare).(type) {
@@ -2450,11 +2521,14 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					dd := &DirectDeclarator{Case: DirectDeclaratorDecl, Token: lparen, Declarator: x, Token2: p.must(')')}
 					return &Declarator{Pointer: ptr0, DirectDeclarator: dd}
 				default:
-					p.rune(false)
-					panic(todo("%v %T", p.toks[0], x))
+					t := p.shift(false)
+					p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+					return nil
 				}
 			default:
-				panic(todo("", p.toks[0]))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		case '^':
 			ptr := p.pointer(false)
@@ -2482,10 +2556,14 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					}
 					return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 				default:
-					panic(todo("", p.toks[0]))
+					t := p.shift(false)
+					p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+					return nil
 				}
 			default:
-				panic(todo("", p.toks[0]))
+				t := p.shift(false)
+				p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+				return nil
 			}
 		case '[':
 			dad := &DirectAbstractDeclarator{
@@ -2496,16 +2574,18 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 			}
 			return &AbstractDeclarator{Case: AbstractDeclaratorDecl, Pointer: ptr0, DirectAbstractDeclarator: p.directAbstractDeclarator2(dad)}
 		default:
-			panic(todo("", p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+			return nil
 		}
 	case '[':
 		return p.abstractDeclarator(ptr0, false)
 	case rune(IDENTIFIER):
 		return p.declarator(ptr0, nil, declare)
 	default:
-		t := p.toks[0]
-		x := p.checkTypeName(&t)
-		panic(todo("", p.toks[0], t, x))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2531,7 +2611,8 @@ func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifier
 			return nil
 		}
 
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected type qualifier", t.Position(), runeName(t.Ch))
 	case ch == rune(ATTRIBUTE):
 		if acceptAttributes {
 			r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifier: p.typeQualifier(true)}
@@ -2540,7 +2621,8 @@ func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifier
 
 		fallthrough
 	default:
-		panic(todo("", p.toks[0], opt))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected type qualifier", t.Position(), runeName(t.Ch))
 	}
 	for {
 		switch ch := p.rune(false); {
@@ -2549,7 +2631,8 @@ func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifier
 		case p.isTypeQualifier(ch):
 			r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifiers: r, TypeQualifier: p.typeQualifier(acceptAttributes)}
 		default:
-			panic(todo("", p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected type qualifier", t.Position(), runeName(t.Ch))
 		}
 	}
 }
@@ -2586,7 +2669,8 @@ func (p *parser) pointer(opt bool) (r *Pointer) {
 			return nil
 		}
 
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected type pointer", t.Position(), runeName(t.Ch))
 	}
 	prev := r
 	for p.rune(false) == '*' {
@@ -2674,7 +2758,9 @@ func (p *parser) alignmentSpecifier() *AlignmentSpecifier {
 	case p.isExpression(ch):
 		return &AlignmentSpecifier{Case: AlignmentSpecifierExpr, Token: p.must(rune(ALIGNAS)), Token2: p.must('('), ConstantExpression: p.constantExpression(), Token3: p.must(')')}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected alignment specifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2693,7 +2779,9 @@ func (p *parser) functionSpecifier() *FunctionSpecifier {
 	case rune(NORETURN):
 		return &FunctionSpecifier{Case: FunctionSpecifierNoreturn, Token: p.shift(false)}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected function specifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2728,7 +2816,9 @@ func (p *parser) typeQualifier(acceptAttributes bool) *TypeQualifier {
 
 		fallthrough
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected type qualifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2779,7 +2869,9 @@ func (p *parser) storageClassSpecifier() (r *StorageClassSpecifier) {
 		r.Token3 = p.must(')')
 		return r
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected storage class specifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2893,10 +2985,14 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		case p.isExpression(ch):
 			return &TypeSpecifier{Case: TypeSpecifierTypeofExpr, Token: p.shift(false), Token2: p.must('('), Expression: p.expression(false), Token3: p.must(')')}
 		default:
-			panic(todo("", p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected type specifier", t.Position(), runeName(t.Ch))
+			return nil
 		}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected type specifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -2968,7 +3064,9 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 	case '{':
 		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), EnumeratorList: p.enumeratorList()}
 	default:
-		panic(todo("", p.peek(1, true)))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected enum specifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 	switch p.rune(false) {
 	case eof:
@@ -2982,7 +3080,9 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 		r.Token5 = p.shift(false)
 		return r
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected enum specifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -3009,7 +3109,8 @@ func (p *parser) enumeratorList() (r *EnumeratorList) {
 				return r
 			}
 		default:
-			panic(todo("", p.toks[0]))
+			t := p.shift(false)
+			p.cpp.eh("%v: unexpected %v, expected enumerator", t.Position(), runeName(t.Ch))
 		}
 	}
 }
@@ -3024,7 +3125,9 @@ func (p *parser) enumerator() (r *Enumerator) {
 	case '=':
 		r = &Enumerator{Case: EnumeratorExpr, Token: p.must(rune(IDENTIFIER)), Token2: p.shift(false), ConstantExpression: p.constantExpression()}
 	default:
-		panic(todo("", p.peek(1, false)))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected enumerator", t.Position(), runeName(t.Ch))
+		return nil
 	}
 	r.visible = visible(r.Token.seq + 1)
 	p.scope.declare(string(r.Token.Src()), r)
@@ -3066,7 +3169,9 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			return r
 		}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected struct or union specifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 
@@ -3127,7 +3232,9 @@ func (p *parser) structDeclaratorListOpt() (r *StructDeclaratorList) {
 	case ';':
 		return nil
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected struct declarator list", t.Position(), runeName(t.Ch))
+		return nil
 	}
 
 	r = &StructDeclaratorList{StructDeclarator: p.structDeclarator()}
@@ -3184,7 +3291,9 @@ func (p *parser) structOrUnion() *StructOrUnion {
 	case rune(UNION):
 		return &StructOrUnion{Case: StructOrUnionUnion, Token: p.shift(false)}
 	default:
-		panic(todo("", p.toks[0]))
+		t := p.shift(false)
+		p.cpp.eh("%v: unexpected %v, expected 'struct' or 'union'", t.Position(), runeName(t.Ch))
+		return nil
 	}
 }
 

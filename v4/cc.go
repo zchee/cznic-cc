@@ -23,7 +23,6 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io"
 	"io/fs"
@@ -31,8 +30,6 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
-
-	v3 "modernc.org/cc/v3"
 )
 
 var (
@@ -62,7 +59,7 @@ func NewConfig(goos, goarch string) (r *Config, err error) {
 	includePaths = append([]string{""}, includePaths...)
 	includePaths = append(includePaths, sysIncludePaths...)
 	includePaths = includePaths[:len(includePaths):len(includePaths)]
-	abi, err := NewABI(goos, goarch)
+	abi, err := newABI(goos, goarch)
 	if err != nil {
 		return nil, err
 	}
@@ -147,24 +144,6 @@ type Source struct {
 	Name  string
 	Value interface{}
 	FS    fs.FS
-}
-
-// ABI describes selected parts of the Application Binary Interface.
-type ABI struct {
-	ByteOrder  binary.ByteOrder
-	SignedChar bool
-}
-
-// NewABI creates an ABI for a given OS and architecture. The OS and
-// architecture values are the same as used in Go. The ABI type map may miss
-// advanced types like complex numbers, etc.
-func NewABI(os, arch string) (*ABI, error) {
-	abi, err := v3.NewABI(os, arch)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ABI{abi.ByteOrder, abi.SignedChar}, nil
 }
 
 // Config configures the preprocessor, parser and type checker.

@@ -92,6 +92,7 @@ type typer struct{ typ Type }
 func (t typer) Type() (r Type) { return t.typ }
 
 type AST struct {
+	ABI             *ABI
 	TranslationUnit *TranslationUnit
 	EOF             Token
 }
@@ -439,7 +440,7 @@ func (n *Pointer) check(c *ctx, t Type) (r Type) {
 
 	switch n.Case {
 	case PointerTypeQual: // '*' TypeQualifiers
-		return newPointerType(t)
+		return newPointerType(c.ast, t)
 	case PointerPtr: // '*' TypeQualifiers Pointer
 		c.errors.add(errorf("TODO %v", n.Case))
 	case PointerBlock: // '^' TypeQualifiers
