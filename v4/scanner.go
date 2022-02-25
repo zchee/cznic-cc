@@ -71,7 +71,6 @@ const (
 	DOUBLE
 	ELSE
 	ENUM
-	ENUMCONST
 	EQ
 	EXTERN
 	FLOAT
@@ -820,7 +819,7 @@ func (s *scanner) ppnumber() Token {
 			case c >= '0' && c <= '9':
 				s.shift()
 			case unicode.IsLetter(c):
-				s.identifier()
+				s.shift()
 			default:
 				return s.newToken(rune(PPNUMBER))
 			}

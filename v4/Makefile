@@ -57,4 +57,4 @@ win64:
 tmp:
 	go test -v -run Translate 2>&1 | tee log
 	grep '^ \+TODO' log | sort | uniq -c | sort -n
-	grep TOTAL log
+	grep TOTAL log || true

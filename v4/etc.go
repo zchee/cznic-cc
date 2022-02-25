@@ -449,3 +449,24 @@ func findNode(typ string, n Node, depth int, out *Node, pdepth *int) {
 		}
 	}
 }
+
+func roundup(n, to int64) int64 {
+	if r := n % to; r != 0 {
+		return n + to - r
+	}
+
+	return n
+}
+
+func bits2AccessBytes(n int64) int64 {
+	switch {
+	case n <= 8:
+		return 1
+	case n <= 16:
+		return 2
+	case n <= 32:
+		return 4
+	default:
+		return 8
+	}
+}

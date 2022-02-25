@@ -16,7 +16,6 @@ package cc // import "modernc.org/cc/v4"
 
 %token
 	/*yy:token "%c"		*/	IDENTIFIER
-	/*yy:token "%c_e"	*/	ENUMCONST
 	/*yy:token "%c_t"	*/	TYPENAME
 	/*yy:token "%d"		*/	INTCONST
 	/*yy:token "'%c'"	*/	CHARCONST
@@ -132,7 +131,10 @@ package cc // import "modernc.org/cc/v4"
 %%
 
 		        /* [0], 6.5.1 Primary expressions */
+			/*yy:field	resolutionScope	*Scope	*/
+			/*yy:field	resolvedTo	Node	*/
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Ident      */
 			PrimaryExpression:
@@ -141,8 +143,6 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Int        */ |	INTCONST
 			/*yy:example int i = 3.14; */
 /*yy:case Float      */ |	FLOATCONST
-			/*yy:example enum e {a}; int i = a; */
-/*yy:case Enum       */ |	ENUMCONST
 			/*yy:example int i = 'x'; */
 /*yy:case Char       */ |	CHARCONST
 			/*yy:example int i = L'x'; */
@@ -176,6 +176,7 @@ package cc // import "modernc.org/cc/v4"
 
 		        /* [0], 6.5.2 Postfix operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Primary    */ PostfixExpression:
 				PrimaryExpression
@@ -206,6 +207,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.3 Unary operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Postfix    */ UnaryExpression:
 				PostfixExpression
@@ -242,6 +244,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.4 Cast operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = 42; */
 /*yy:case Unary      */ CastExpression:
 				UnaryExpression
@@ -250,6 +253,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.5 Multiplicative operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x;*/
 /*yy:case Cast       */ MultiplicativeExpression:
 				CastExpression
@@ -262,6 +266,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.6 Additive operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Mul        */ AdditiveExpression:
 				MultiplicativeExpression
@@ -272,6 +277,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.7 Bitwise shift operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Add        */ ShiftExpression:
 				AdditiveExpression
@@ -282,6 +288,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.8 Relational operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Shift      */ RelationalExpression:
 				ShiftExpression        
@@ -296,6 +303,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.9 Equality operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Rel        */ EqualityExpression:
 				RelationalExpression
@@ -306,6 +314,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.10 Bitwise AND operator */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Eq         */ AndExpression:
 				EqualityExpression
@@ -314,6 +323,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.11 Bitwise exclusive OR operator */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case And        */ ExclusiveOrExpression:
 				AndExpression
@@ -322,6 +332,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.12 Bitwise inclusive OR operator */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Xor        */ InclusiveOrExpression:
 				ExclusiveOrExpression
@@ -330,6 +341,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.13 Logical AND operator */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x;	*/
 /*yy:case Or         */ LogicalAndExpression:
 				InclusiveOrExpression
@@ -338,6 +350,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.14 Logical OR operator */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x;*/
 /*yy:case LAnd       */ LogicalOrExpression:
 				LogicalAndExpression
@@ -346,6 +359,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.15 Conditional operator */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case LOr        */ ConditionalExpression:
 				LogicalOrExpression
@@ -354,6 +368,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.16 Assignment operators */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Cond       */ AssignmentExpression:
 				ConditionalExpression
@@ -382,6 +397,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.5.17 Comma operator */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int f() { i = x; }; */
 			//yy:list
 /*yy:case Assign     */ Expression:
@@ -391,6 +407,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.6 Constant expressions */
 			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example struct { int i:3; }; */
 			ConstantExpression:
 				ConditionalExpression
@@ -534,7 +551,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	AttributeSpecifierList2	*AttributeSpecifierList	*/
 			/*yy:field	visible	*/
 			/*yy:field	resolutionScope	*Scope	*/
-			/*yy:field	typ		Type		*/
+			/*yy:field	typer		*/
 			/*yy:example struct s { int i; } __attribute__((a)); */
 /*yy:case Def        */ StructOrUnionSpecifier:
 				StructOrUnion IDENTIFIER '{' StructDeclarationList '}'
@@ -582,7 +599,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.7.2.2 Enumeration specifiers */
 			/*yy:field	visible	*/
 			/*yy:field	resolutionScope	*Scope	*/
-			/*yy:field	typ		Type		*/
+			/*yy:field	typer		*/
 			/*yy:example enum e {a}; */
 /*yy:case Def        */ EnumSpecifier:
 				"enum" IDENTIFIER '{' EnumeratorList ',' '}'
@@ -595,6 +612,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example enum e {a, b}; */
 			|	EnumeratorList ',' Enumerator
 
+			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:field	visible	*/
 			/*yy:example enum e {a}; */
 /*yy:case Ident      */ Enumerator:
@@ -631,9 +650,10 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
-			/*yy:field	typ		Type		*/
+			/*yy:field	typer				*/
 			/*yy:field	visible				*/
 			/*yy:field	isAtomic	bool		*/
+			/*yy:field	isAuto		bool		*/
 			/*yy:field	isConst		bool		*/
 			/*yy:field	isExtern	bool		*/
 			/*yy:field	isInline	bool		*/
@@ -700,7 +720,7 @@ package cc // import "modernc.org/cc/v4"
 			|	ParameterList ',' ParameterDeclaration
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
-			/*yy:field	typ	Type	*/
+			/*yy:field	typer	*/
 			/*yy:example int f(int i __attribute__((a))) {} */
 /*yy:case Decl       */ ParameterDeclaration:
 				DeclarationSpecifiers Declarator
@@ -714,11 +734,12 @@ package cc // import "modernc.org/cc/v4"
 			|	IdentifierList ',' IDENTIFIER
 
 			/* [0], 6.7.6 Type names */
+			/*yy:field	typer	*/
 			/*yy:example int i = (int)x; */
 			TypeName:
 				SpecifierQualifierList AbstractDeclarator
 
-			/*yy:field	typ	Type	*/
+			/*yy:field	typer	*/
 			/*yy:example void f(int*); */
 /*yy:case Ptr        */ AbstractDeclarator:
 				Pointer
@@ -885,6 +906,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Empty      */ |	';'
 
 			/* [0], 6.9.1 Function definitions */
+			/*yy:field	scope	*Scope	*/
 			/*yy:example int f() {} */
 			FunctionDefinition:
 				DeclarationSpecifiers Declarator DeclarationList CompoundStatement

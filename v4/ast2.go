@@ -83,3 +83,7 @@ func (n *DirectDeclarator) isFn() bool {
 
 	return false
 }
+
+// ResolvedTo returns the node n resolved to when n.Case is
+// PrimaryExpressionIdent.
+func (n *PrimaryExpression) ResolvedTo() Node { return n.resolvedTo }

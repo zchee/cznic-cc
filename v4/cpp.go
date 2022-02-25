@@ -1106,6 +1106,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		switch nm {
 		case "__FILE__":
 			r := m.replacementList[0]
+			r.Ch = rune(STRINGLITERAL)
 			r.s = t.s
 			r.pos = t.pos
 			s := fmt.Sprintf(`"%s"`, t.Position().Filename)
@@ -1115,9 +1116,10 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 			}
 		case "__LINE__":
 			r := m.replacementList[0]
+			r.Ch = rune(PPNUMBER)
 			r.s = t.s
 			r.pos = t.pos
-			s := fmt.Sprintf(`"%d"`, t.Position().Line)
+			s := fmt.Sprintf(`%d`, t.Position().Line)
 			if !bytes.Equal(t.Sep(), r.Sep()) || string(r.Src()) != s {
 				r.Set(t.Sep(), []byte(s))
 				m.replacementList[0] = r
@@ -1147,6 +1149,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 	switch nm {
 	case "__FILE__":
 		nmt := t
+		t.Ch = rune(STRINGLITERAL)
 		t.Set(t.Sep(), []byte(fmt.Sprintf(`"%s"`, t.Position().Filename)))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		if err != nil {
@@ -1158,7 +1161,8 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		return m
 	case "__LINE__":
 		nmt := t
-		t.Set(t.Sep(), []byte(fmt.Sprintf(`"%d"`, t.Position().Line)))
+		t.Ch = rune(PPNUMBER)
+		t.Set(t.Sep(), []byte(fmt.Sprintf(`%d`, t.Position().Line)))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		if err != nil {
 			c.eh("%v", errorf("", err))
@@ -1169,6 +1173,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		return m
 	case "__DATE__":
 		nmt := t
+		t.Ch = rune(STRINGLITERAL)
 		t.Set(t.Sep(), []byte(time.Now().Format("\"Jan _2 2006\"")))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		if err != nil {
@@ -1180,6 +1185,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		return m
 	case "__TIME__":
 		nmt := t
+		t.Ch = rune(STRINGLITERAL)
 		t.Set(t.Sep(), []byte(time.Now().Format("\"15:04:05\"")))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		if err != nil {

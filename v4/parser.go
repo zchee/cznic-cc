@@ -200,12 +200,10 @@ func (p *parser) tok(t Token) (r Token) {
 		}
 	case rune(PPNUMBER):
 		switch s := string(r.Src()); {
-		case strings.ContainsAny(s, ".+-ijpIJP"):
+		case strings.ContainsAny(s, ".+-ijpIJPEe"):
 			r.Ch = rune(FLOATCONST)
 		case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
 			r.Ch = rune(INTCONST)
-		case strings.ContainsAny(s, "Ee"):
-			r.Ch = rune(FLOATCONST)
 		default:
 			r.Ch = rune(INTCONST)
 		}
@@ -238,7 +236,7 @@ func (p *parser) shift0() (r Token) {
 func (p *parser) shift(checkTypeName bool) (r Token) {
 	r = p.shift0()
 	// if r.Ch != ' ' && r.Ch != '\n' {
-	// 	trc("%v (%v: %v: %v: %v:)", &r, origin(2), origin(3), origin(4), origin(5))
+	// 	trc("%v: %v", r.Position(), r)
 	// }
 	switch {
 	case r.Ch == rune(STRINGLITERAL) && p.rune(false) == rune(STRINGLITERAL):
@@ -322,6 +320,7 @@ func (p *parser) parse() (ast *AST, err error) {
 			ABI:             p.cpp.cfg.ABI,
 			TranslationUnit: tu,
 			EOF:             t,
+			scope:           p.scope,
 		}, errors.err()
 	default:
 		t := p.shift(false)
@@ -405,7 +404,10 @@ again:
 //  function-definition:
 // 	declaration-specifiers declarator declaration-list_opt compound-statement
 func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) (r *FunctionDefinition) {
-	defer func() { p.fnScope = nil }()
+	defer func() {
+		r.scope = p.fnScope
+		p.fnScope = nil
+	}()
 	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: p.declarationListOpt(), CompoundStatement: p.compoundStatement(true, d)}
 }
 
@@ -2156,7 +2158,7 @@ func (p *parser) primaryExpression(checkTypeName bool) (r *PrimaryExpression) {
 	case rune(FLOATCONST):
 		return &PrimaryExpression{Case: PrimaryExpressionFloat, Token: p.shift(false)}
 	case rune(IDENTIFIER):
-		return &PrimaryExpression{Case: PrimaryExpressionIdent, Token: p.shift(false)}
+		return &PrimaryExpression{Case: PrimaryExpressionIdent, Token: p.shift(false), resolutionScope: p.scope}
 	case rune(INTCONST):
 		return &PrimaryExpression{Case: PrimaryExpressionInt, Token: p.shift(false)}
 	case rune(LONGCHARCONST):
@@ -2457,7 +2459,12 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					Declarator: x,
 					Token2:     p.must(')'),
 				}
-				return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+				r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+				if declare {
+					r.visible = visible(p.seq) // [0]6.2.1,7
+					p.scope.declare(r.Name(), r)
+				}
+				return r
 			default:
 				t := p.shift(false)
 				p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
@@ -2475,7 +2482,12 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					},
 					Token2: p.must(')'),
 				}
-				return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+				r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+				if declare {
+					r.visible = visible(p.seq) // [0]6.2.1,7
+					p.scope.declare(r.Name(), r)
+				}
+				return r
 			default:
 				t := p.shift(false)
 				p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
@@ -2508,7 +2520,12 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 						},
 						Token2: p.must(')'),
 					}
-					return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+					r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+					if declare {
+						r.visible = visible(p.seq) // [0]6.2.1,7
+						p.scope.declare(r.Name(), r)
+					}
+					return r
 				default:
 					t := p.shift(false)
 					p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
@@ -2519,7 +2536,12 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 				case *Declarator:
 					x.Pointer = ptr
 					dd := &DirectDeclarator{Case: DirectDeclaratorDecl, Token: lparen, Declarator: x, Token2: p.must(')')}
-					return &Declarator{Pointer: ptr0, DirectDeclarator: dd}
+					r := &Declarator{Pointer: ptr0, DirectDeclarator: dd}
+					if declare {
+						r.visible = visible(p.seq) // [0]6.2.1,7
+						p.scope.declare(r.Name(), r)
+					}
+					return r
 				default:
 					t := p.shift(false)
 					p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
@@ -2554,7 +2576,12 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 						},
 						Token2: p.must(')'),
 					}
-					return &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+					r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
+					if declare {
+						r.visible = visible(p.seq) // [0]6.2.1,7
+						p.scope.declare(r.Name(), r)
+					}
+					return r
 				default:
 					t := p.shift(false)
 					p.cpp.eh("%v: unexpected %v, expected declarator or abstract declarator", t.Position(), runeName(t.Ch))
@@ -3331,6 +3358,21 @@ func (s *Scope) ident(t Token) Node {
 					return x
 				}
 			case *Enumerator:
+				if t.seq >= int32(x.visible) {
+					return x
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Scope) builtin(t Token) *Declarator {
+	nm := "__builtin_" + string(t.Src())
+	for ; s != nil; s = s.Parent {
+		for _, v := range s.Nodes[nm] {
+			switch x := v.(type) {
+			case *Declarator:
 				if t.seq >= int32(x.visible) {
 					return x
 				}
