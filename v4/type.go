@@ -217,7 +217,7 @@ type Type interface {
 
 	String() string
 
-	str(*strings.Builder) *strings.Builder
+	str(b *strings.Builder, useTag bool) *strings.Builder
 }
 
 type InvalidType struct{}
@@ -229,9 +229,9 @@ func (n *InvalidType) Align() int { return 1 }
 func (n *InvalidType) FieldAlign() int { return 1 }
 
 // String implements Type.
-func (n *InvalidType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *InvalidType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *InvalidType) str(b *strings.Builder) *strings.Builder {
+func (n *InvalidType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("<invalid type>")
 	return b
 }
@@ -281,9 +281,9 @@ func (n *PredefinedType) FieldAlign() int {
 }
 
 // String implements Type.
-func (n *PredefinedType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *PredefinedType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *PredefinedType) str(b *strings.Builder) *strings.Builder {
+func (n *PredefinedType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString(n.kind.String())
 	return b
 }
@@ -365,16 +365,16 @@ func (n *FunctionType) Size() int64 {
 } // gcc compatibility
 
 // String implements Type.
-func (n *FunctionType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *FunctionType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *FunctionType) str(b *strings.Builder) *strings.Builder {
+func (n *FunctionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("function(")
 	switch {
 	case n.maxArgs == 0:
 		b.WriteString("void")
 	default:
 		for i, v := range n.fp {
-			v.Type().str(b)
+			v.Type().str(b, true)
 			if i != len(n.fp)-1 {
 				b.WriteString(", ")
 			}
@@ -383,7 +383,7 @@ func (n *FunctionType) str(b *strings.Builder) *strings.Builder {
 	b.WriteByte(')')
 	if n.Result().Kind() != Void {
 		b.WriteString(" returning ")
-		n.Result().str(b)
+		n.Result().str(b, true)
 	}
 	return b
 }
@@ -452,11 +452,11 @@ func (n *PointerType) Size() int64 {
 }
 
 // String implements Type.
-func (n *PointerType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *PointerType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *PointerType) str(b *strings.Builder) *strings.Builder {
+func (n *PointerType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("pointer to ")
-	n.elem.Type().str(b)
+	n.elem.Type().str(b, true)
 	return b
 }
 
@@ -575,15 +575,15 @@ func (n *StructType) Size() int64 {
 }
 
 // String implements Type.
-func (n *StructType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *StructType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *StructType) str(b *strings.Builder) *strings.Builder {
+func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("struct")
 	if n.tag != "" {
 		b.WriteByte(' ')
 		b.WriteString(n.tag)
 	}
-	if n.forward != nil {
+	if n.forward != nil || useTag {
 		return b
 	}
 
@@ -593,7 +593,7 @@ func (n *StructType) str(b *strings.Builder) *strings.Builder {
 			b.WriteString(v.declarator.Name())
 			b.WriteByte(' ')
 		}
-		v.Type().str(b)
+		v.Type().str(b, true)
 		if i != len(n.fields)-1 {
 			b.WriteString("; ")
 		}
@@ -689,15 +689,15 @@ func (n *UnionType) Size() int64 {
 }
 
 // String implements Type.
-func (n *UnionType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *UnionType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *UnionType) str(b *strings.Builder) *strings.Builder {
+func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("union")
 	if n.tag != "" {
 		b.WriteByte(' ')
 		b.WriteString(n.tag)
 	}
-	if n.forward != nil {
+	if n.forward != nil || useTag {
 		return b
 	}
 
@@ -707,7 +707,7 @@ func (n *UnionType) str(b *strings.Builder) *strings.Builder {
 			b.WriteString(v.declarator.Name())
 			b.WriteByte(' ')
 		}
-		v.Type().str(b)
+		v.Type().str(b, true)
 		if i != len(n.fields)-1 {
 			b.WriteString("; ")
 		}
@@ -775,14 +775,14 @@ func (n *ArrayType) Size() int64 {
 }
 
 // String implements Type.
-func (n *ArrayType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *ArrayType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *ArrayType) str(b *strings.Builder) *strings.Builder {
+func (n *ArrayType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("array of ")
 	if !n.IsIncomplete() {
 		fmt.Fprintf(b, "%d ", n.elems)
 	}
-	n.Elem().str(b)
+	n.Elem().str(b, true)
 	return b
 }
 
@@ -853,9 +853,9 @@ func (n *EnumType) Size() int64 {
 }
 
 // String implements Type.
-func (n *EnumType) String() string { return n.str(&strings.Builder{}).String() }
+func (n *EnumType) String() string { return n.str(&strings.Builder{}, false).String() }
 
-func (n *EnumType) str(b *strings.Builder) *strings.Builder {
+func (n *EnumType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("enum ")
 	if n.tag != "" {
 		b.WriteString(n.tag)

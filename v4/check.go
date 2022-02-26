@@ -104,6 +104,60 @@ func newCtx(ast *AST) *ctx {
 	return c
 }
 
+func (c *ctx) convert(v Value, t Type) (r Value) {
+	if v == nil || v == UnknownValue {
+		return UnknownValue
+	}
+
+	switch t.Kind() {
+	case Int:
+		m := Int64Value(1)<<t.Size() - 1
+		switch x := v.(type) {
+		case Int64Value:
+			if x < 0 {
+				return x | ^m
+			}
+
+			return x & m
+		case UInt64Value:
+			y := Int64Value(x)
+			if y < 0 {
+				return y | ^m
+			}
+
+			return y & m
+		default:
+			c.errors.add(errorf("TODO TYPE %T", x))
+		}
+	case ULong:
+		m := UInt64Value(1)<<t.Size() - 1
+		switch x := v.(type) {
+		case Int64Value:
+			return UInt64Value(x) & m
+		case UInt64Value:
+			return x & m
+		default:
+			c.errors.add(errorf("TODO TYPE %T", x))
+		}
+	default:
+		c.errors.add(errorf("TODO %v", t.Kind()))
+	}
+	return UnknownValue
+}
+
+func (c *ctx) decay(t Type, decay bool) Type {
+	if !decay || t == nil {
+		return t
+	}
+
+	switch t.Kind() {
+	case Function, Array:
+		return newPointerType(c.ast, t)
+	default:
+		return t
+	}
+}
+
 func (c *ctx) newPredefinedType(kind Kind) *PredefinedType { return newPredefinedType(c.ast, kind) }
 
 func (c *ctx) wcharT(n Node) Type {
@@ -619,9 +673,7 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 	case DirectDeclaratorDecl: // '(' Declarator ')'
 		return n.Declarator.check(c, t)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		n.AssignmentExpression.check(c, true)
-		//TODO elems
-		return n.DirectDeclarator.check(c, newArrayType(t, -1))
+		return n.DirectDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression)))
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -637,6 +689,31 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 	return t //TODO-
+}
+
+func arraySize(c *ctx, n *AssignmentExpression) int64 {
+	switch t := n.check(c, true); {
+	case isIntegerType(t):
+		switch x := n.eval(c).(type) {
+		case Int64Value:
+			if x >= 0 {
+				return int64(x)
+			}
+
+			c.errors.add(errorf("%v: invalid array size: %v", n.Position(), x))
+		case UInt64Value:
+			if x <= math.MaxInt64 {
+				return int64(x)
+			}
+
+			c.errors.add(errorf("%v: invalid array size: %v", n.Position(), x))
+		default:
+			c.errors.add(errorf("TODO %T", x))
+		}
+	default:
+		c.errors.add(errorf("TODO %v", t.Kind()))
+	}
+	return -1
 }
 
 //  ParameterTypeList:
@@ -737,9 +814,7 @@ func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	case DirectAbstractDeclaratorDecl: // '(' AbstractDeclarator ')'
 		return n.AbstractDeclarator.check(c, t)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		n.AssignmentExpression.check(c, true)
-		//TODO elems
-		return n.DirectAbstractDeclarator.check(c, newArrayType(t, -1))
+		return n.DirectAbstractDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression)))
 	case DirectAbstractDeclaratorStaticArr: // DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectAbstractDeclaratorArrStatic: // DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -1261,7 +1336,14 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 			}
 		}()
 
-		n.typ = n.StructDeclarationList.check(c, tag, n.StructOrUnion.Case == StructOrUnionUnion)
+		switch {
+		case n.StructOrUnion.Case == StructOrUnionUnion:
+			n.typ = newUnionType(tag, nil, -1, 1)
+		default:
+			n.typ = newStructType(tag, nil, -1, 1)
+		}
+
+		n.StructDeclarationList.check(c, n)
 	case StructOrUnionSpecifierTag: // StructOrUnion IDENTIFIER
 		if x := n.resolutionScope.structOrUnion(n.Token); x != nil {
 			if n.StructOrUnion.Case != x.StructOrUnion.Case {
@@ -1303,13 +1385,13 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 //  StructDeclarationList:
 //          StructDeclaration
 //  |       StructDeclarationList StructDeclaration
-func (n *StructDeclarationList) check(c *ctx, tag string, isUnion bool) (r Type) {
+func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 	if n == nil {
-		return invalidType
+		return
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if s.typ == nil || s.typ == invalidType {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -1319,12 +1401,13 @@ func (n *StructDeclarationList) check(c *ctx, tag string, isUnion bool) (r Type)
 		fields = append(fields, n.StructDeclaration.check(c)...)
 	}
 
+	isUnion := s.StructOrUnion.Case == StructOrUnionUnion
 	var brk int64
 	maxAlignBytes := 1
 	for _, f := range fields {
 		if f == nil {
 			c.errors.add(errorf("TODO %T", n))
-			return nil
+			return
 		}
 
 		switch {
@@ -1364,9 +1447,15 @@ func (n *StructDeclarationList) check(c *ctx, tag string, isUnion bool) (r Type)
 	brk = roundup(brk, int64(maxAlignBytes*8))
 	switch {
 	case isUnion:
-		return newUnionType(tag, fields, brk>>3, maxAlignBytes)
+		t := s.typ.(*UnionType)
+		t.fields = fields
+		t.size = brk >> 3
+		t.align = maxAlignBytes
 	default:
-		return newStructType(tag, fields, brk>>3, maxAlignBytes)
+		t := s.typ.(*StructType)
+		t.fields = fields
+		t.size = brk >> 3
+		t.align = maxAlignBytes
 	}
 }
 
@@ -2108,9 +2197,9 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 		case Ptr:
 			switch {
 			case decay:
-				n.typ = t
-			default:
 				n.typ = t.(*PointerType).Elem()
+			default:
+				n.typ = t
 			}
 		default:
 			c.errors.add(errorf("%v: operand shall be a pointer: %s", n.CastExpression.Position(), t))
@@ -2191,6 +2280,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 	}
 
 	defer func() {
+		r = c.decay(r, decay)
 		if r == nil || r == invalidType {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
@@ -2208,7 +2298,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 		case isPointerType(t2) && isIntegerType(t1):
 			n.typ = t2.(*PointerType).Elem()
 		default:
-			c.errors.add(errorf("%v: one of the expressions shall be a pointer and the other shall have integer type: %s and %s", n.Position(), t1, t2))
+			c.errors.add(errorf("%v: one of the expressions shall be a pointer and the other shall have integer type: %s and %s", n.Token.Position(), t1, t2))
 			n.typ = c.intT
 		}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
@@ -2339,6 +2429,7 @@ out:
 		switch x := n.resolutionScope.ident(n.Token).(type) {
 		case *Declarator:
 			d = x
+			n.typ = d.Type()
 		case *Enumerator:
 			n.resolvedTo = x
 			n.val = x.val
@@ -2411,6 +2502,7 @@ out:
 	}
 
 	if len(suff) > 1 || len(cplx) > 1 {
+		trc("%v: %v %v %q", n.Position(), n.Case, runeName(n.Token.Ch), n.Token.Src())
 		c.errors.add(errorf("%v: invalid number format", n.Position()))
 		return nil, nil
 	}

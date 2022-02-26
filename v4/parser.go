@@ -200,10 +200,12 @@ func (p *parser) tok(t Token) (r Token) {
 		}
 	case rune(PPNUMBER):
 		switch s := string(r.Src()); {
-		case strings.ContainsAny(s, ".+-ijpIJPEe"):
+		case strings.ContainsAny(s, ".+-ijpIJP"):
 			r.Ch = rune(FLOATCONST)
 		case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
 			r.Ch = rune(INTCONST)
+		case strings.ContainsAny(s, "Ee"):
+			r.Ch = rune(FLOATCONST)
 		default:
 			r.Ch = rune(INTCONST)
 		}
