@@ -111,7 +111,7 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 
 	switch t.Kind() {
 	case Int:
-		m := Int64Value(1)<<t.Size() - 1
+		m := Int64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
 			if x < 0 {
@@ -130,7 +130,7 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 			c.errors.add(errorf("TODO TYPE %T", x))
 		}
 	case ULong:
-		m := UInt64Value(1)<<t.Size() - 1
+		m := UInt64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
 			return UInt64Value(x) & m
@@ -151,7 +151,9 @@ func (c *ctx) decay(t Type, decay bool) Type {
 	}
 
 	switch t.Kind() {
-	case Function, Array:
+	case Array:
+		return newPointerType(c.ast, t.(*ArrayType).Elem())
+	case Function:
 		return newPointerType(c.ast, t)
 	default:
 		return t
@@ -692,6 +694,10 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 }
 
 func arraySize(c *ctx, n *AssignmentExpression) int64 {
+	if n == nil {
+		return -1
+	}
+
 	switch t := n.check(c, true); {
 	case isIntegerType(t):
 		switch x := n.eval(c).(type) {
@@ -854,7 +860,7 @@ func (n *Pointer) check(c *ctx, t Type) (r Type) {
 	case PointerTypeQual: // '*' TypeQualifiers
 		return newPointerType(c.ast, t)
 	case PointerPtr: // '*' TypeQualifiers Pointer
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.Pointer.check(c, newPointerType(c.ast, t))
 	case PointerBlock: // '^' TypeQualifiers
 		c.errors.add(errorf("TODO %v", n.Case))
 	default:
@@ -1156,6 +1162,7 @@ func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 		return n.TypeName.check(c)
 	case TypeSpecifierAtomic: // AtomicTypeSpecifier
 		*isAtomic = true
+		return n.AtomicTypeSpecifier.check(c)
 	case TypeSpecifierFloat32: // "_Float32"
 		// ok
 	case TypeSpecifierFloat64: // "_Float64"
@@ -1170,12 +1177,20 @@ func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 	return nil
 }
 
+func (n *AtomicTypeSpecifier) check(c *ctx) (r Type) {
+	return n.TypeName.check(c)
+}
+
 //  EnumSpecifier:
 //          "enum" IDENTIFIER '{' EnumeratorList ',' '}'  // Case EnumSpecifierDef
 //  |       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	if n == nil {
 		return invalidType
+	}
+
+	if n.typ != nil {
+		return n.Type()
 	}
 
 	defer func() {
@@ -1324,6 +1339,10 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 		return invalidType
 	}
 
+	if n.typ != nil {
+		return n.Type()
+	}
+
 	tag := ""
 	if n.Token.s != nil {
 		tag = string(n.Token.Src())
@@ -1400,6 +1419,14 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 	for ; n != nil; n = n.StructDeclarationList {
 		fields = append(fields, n.StructDeclaration.check(c)...)
 	}
+	// for _, v := range fields {
+	// 	switch {
+	// 	case v.declarator == nil:
+	// 		trc("-: - %s", v.Type())
+	// 	default:
+	// 		trc("%v: %s %s", v.declarator.Position(), v.Name(), v.Type())
+	// 	}
+	// }
 
 	isUnion := s.StructOrUnion.Case == StructOrUnionUnion
 	var brk int64
@@ -1462,7 +1489,12 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 func (n *StructDeclaration) check(c *ctx) (r []*Field) {
 	var isAtomic, isConst, isVolatile bool
 	t := n.SpecifierQualifierList.check(c, &isAtomic, &isConst, &isVolatile)
-	return n.StructDeclaratorList.check(c, t, isAtomic, isConst, isVolatile)
+	switch {
+	case n.StructDeclaratorList == nil:
+		return []*Field{{typ: newTyper(t)}}
+	default:
+		return n.StructDeclaratorList.check(c, t, isAtomic, isConst, isVolatile)
+	}
 }
 
 func (n *SpecifierQualifierList) check(c *ctx, isAtomic, isConst, isVolatile *bool) (r Type) {
@@ -2201,6 +2233,7 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 			default:
 				n.typ = t
 			}
+			n.typ = c.decay(n.Type(), decay)
 		default:
 			c.errors.add(errorf("%v: operand shall be a pointer: %s", n.CastExpression.Position(), t))
 		}
@@ -2328,7 +2361,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 			st := t.(*StructType)
 			f := st.Field(nm)
 			if f == nil {
-				c.errors.add(errorf("%v: type %s has no member named %s", n.Position(), st, nm))
+				c.errors.add(errorf("%v: type %s has no member named %s", n.Token.Position(), st, nm))
 				break
 			}
 
@@ -2337,13 +2370,13 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 			st := t.(*UnionType)
 			f := st.Field(nm)
 			if f == nil {
-				c.errors.add(errorf("%v: type %s has no member named %s", n.Position(), st, nm))
+				c.errors.add(errorf("%v: type %s has no member named %s", n.Token.Position(), st, nm))
 				break
 			}
 
 			n.typ = f.Type()
 		default:
-			c.errors.add(errorf("%v: expected a struct or union: %s", n.PostfixExpression.Position(), t))
+			c.errors.add(errorf("%v: expected a struct or union: %s", n.Token.Position(), t))
 		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		nm := string(n.Token2.Src())
@@ -2354,7 +2387,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 				st := et.(*StructType)
 				f := st.Field(nm)
 				if f == nil {
-					c.errors.add(errorf("%v: type %s has no member named %s", n.Position(), st, nm))
+					c.errors.add(errorf("%v: type %s has no member named %s", n.Token.Position(), st, nm))
 					break
 				}
 
@@ -2363,16 +2396,16 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 				st := et.(*UnionType)
 				f := st.Field(nm)
 				if f == nil {
-					c.errors.add(errorf("%v: type %s has no member named %s", n.Position(), st, nm))
+					c.errors.add(errorf("%v: type %s has no member named %s", n.Token.Position(), st, nm))
 					break
 				}
 
 				n.typ = f.Type()
 			default:
-				c.errors.add(errorf("%v: expected a pointer to struct or union: %s", n.PostfixExpression.Position(), t))
+				c.errors.add(errorf("%v: expected a pointer to struct or union: %s", n.Token.Position(), t))
 			}
 		default:
-			c.errors.add(errorf("%v: expected a pointer: %s", n.PostfixExpression.Position(), t))
+			c.errors.add(errorf("%v: expected a pointer: %s", n.Token.Position(), t))
 		}
 	case
 		PostfixExpressionInc, // PostfixExpression "++"

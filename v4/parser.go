@@ -2705,6 +2705,7 @@ func (p *parser) pointer(opt bool) (r *Pointer) {
 	for p.rune(false) == '*' {
 		p := p.pointer(false)
 		prev.Pointer = p
+		prev.Case = PointerPtr
 		prev = p
 	}
 	return r

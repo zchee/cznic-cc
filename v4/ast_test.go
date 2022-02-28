@@ -7816,7 +7816,7 @@ func ExamplePointer_ptr() {
 	fmt.Println(exampleAST(176, "int **p;"))
 	// Output:
 	// &cc.Pointer{
-	// · Case: PointerTypeQual,
+	// · Case: PointerPtr,
 	// · Pointer: &cc.Pointer{
 	// · · Case: PointerTypeQual,
 	// · · Token: example.c:1:6: '*' "*",

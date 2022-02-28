@@ -21,6 +21,8 @@ var (
 
 var (
 	UnknownValue unknownValue
+	oneValue     = Int64Value(1)
+	zeroValue    = Int64Value(0)
 )
 
 type Value interface {
@@ -96,7 +98,14 @@ func (n *LogicalOrExpression) eval(c *ctx) (r Value) {
 		case LogicalOrExpressionLAnd: // LogicalAndExpression
 			n.val = n.LogicalAndExpression.eval(c)
 		case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
-			c.errors.add(errorf("TODO %v", n.Case))
+			switch v := c.convert(n.LogicalAndExpression.eval(c), n.Type()); {
+			case isZero(v):
+				c.errors.add(errorf("TODO %v", n.Case))
+			case isNonzero(v):
+				n.val = oneValue
+			default:
+				c.errors.add(errorf("TODO %v", n.Case))
+			}
 		default:
 			c.errors.add(errorf("internal error: %v", n.Case))
 		}
@@ -111,7 +120,21 @@ func (n *LogicalAndExpression) eval(c *ctx) (r Value) {
 		case LogicalAndExpressionOr: // InclusiveOrExpression
 			n.val = n.InclusiveOrExpression.eval(c)
 		case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
-			c.errors.add(errorf("TODO %v", n.Case))
+			switch v := n.LogicalAndExpression.eval(c); {
+			case isZero(v):
+				c.errors.add(errorf("TODO %v", n.Case))
+			case isNonzero(v):
+				switch w := n.InclusiveOrExpression.eval(c); {
+				case isZero(w):
+					c.errors.add(errorf("TODO %v", n.Case))
+				case isNonzero(w):
+					n.val = oneValue
+				default:
+					c.errors.add(errorf("TODO %v", n.Case))
+				}
+			default:
+				c.errors.add(errorf("TODO %v", n.Case))
+			}
 		default:
 			c.errors.add(errorf("internal error: %v", n.Case))
 		}
@@ -197,7 +220,7 @@ func (n *EqualityExpression) eval(c *ctx) (r Value) {
 				case unknownValue:
 					// ok
 				case Int64Value:
-					n.val = c.convert(bool2int(x == y), c.intT)
+					n.val = bool2int(x == y)
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -233,11 +256,11 @@ func (n *RelationalExpression) eval(c *ctx) (r Value) {
 					// ok
 				case Int64Value:
 					if x < y {
-						n.val = Int64Value(1)
+						n.val = oneValue
 						break
 					}
 
-					n.val = Int64Value(0)
+					n.val = zeroValue
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}

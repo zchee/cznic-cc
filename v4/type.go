@@ -6,6 +6,7 @@ package cc // import "modernc.org/cc/v4"
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -37,6 +38,7 @@ var (
 		ComplexUInt:       true,
 		ComplexUShort:     true,
 		Double:            true,
+		Enum:              true,
 		Float:             true,
 		Int:               true,
 		Long:              true,
@@ -465,12 +467,14 @@ type Field struct {
 	declarator  *Declarator // Can be nil.
 	mask        uint64      // Non zero only for bit fields.
 	offsetBytes int64
+	parent      *Field
 	typ         typer
 	valueBits   int64
 
 	// Additional bit offset to offset bytes. Non zero only for bit fields but can
 	// be zero even for a bit field, for example, the first bit field after a non
 	// bit field will have offsetBits zero.
+	depth      int
 	offsetBits int
 
 	isBitField bool
@@ -488,35 +492,87 @@ func (n *Field) Name() string {
 	return ""
 }
 
-type StructType struct {
-	fields  []*Field
-	forward *StructOrUnionSpecifier
-	m       map[string]*Field
-	size    int64
-	tag     string
+type structType struct {
+	fields []*Field
+	m      map[string]*Field
+	size   int64
+	tag    string
 
 	align int
 }
 
-func newStructType(tag string, fields []*Field, size int64, align int) *StructType {
-	return &StructType{tag: tag, fields: fields, size: size, align: align}
-}
-
-// Field returns member field nm of n or nil if n does not have such member.
-func (n *StructType) Field(nm string) *Field {
+func (n *structType) field(nm string) *Field {
 	if f := n.m[nm]; f != nil {
 		return f
 	}
 
 	if n.m == nil {
+		m := map[string][]*Field{}
+		n.collectFields(m, nil, 0, 0)
 		n.m = map[string]*Field{}
-	}
-	for _, f := range n.fields {
-		if nm := f.Name(); nm != "" {
-			n.m[nm] = f
+		for k, v := range m {
+			sort.Slice(v, func(i, j int) bool { return v[i].depth < v[j].depth })
+			switch {
+			case len(v) != 1:
+				if v[0].depth < v[1].depth {
+					n.m[k] = v[0]
+				}
+			default:
+				n.m[k] = v[0]
+			}
 		}
 	}
 	return n.m[nm]
+}
+
+func (n *structType) collectFields(m map[string][]*Field, parent *Field, depth int, off int64) {
+	for _, f := range n.fields {
+		if nm := f.Name(); nm != "" {
+			switch {
+			case depth != 0:
+				f2 := *f
+				f2.offsetBytes += off
+				f2.depth = depth
+				f2.parent = parent
+				m[nm] = append(m[nm], &f2)
+			default:
+				m[nm] = append(m[nm], f)
+			}
+		}
+		switch f.Type().Kind() {
+		case Struct:
+			f.Type().(*StructType).collectFields(m, f, depth+1, f.offsetBytes)
+		case Union:
+			f.Type().(*UnionType).collectFields(m, f, depth+1, f.offsetBytes)
+		}
+	}
+}
+
+type StructType struct {
+	forward *StructOrUnionSpecifier
+	structType
+}
+
+func newStructType(tag string, fields []*Field, size int64, align int) (r *StructType) {
+	r = &StructType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
+	return r
+}
+
+// Field returns member field nm of n or nil if n does not have such member.
+func (n *StructType) Field(nm string) *Field {
+	if n == nil {
+		return nil
+	}
+
+	if n.forward != nil {
+		if x, ok := n.forward.typ.(*StructType); ok {
+			return x.Field(nm)
+		}
+
+		return nil
+	}
+
+	return n.field(nm)
 }
 
 // Align implements Type.
@@ -603,34 +659,29 @@ func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type UnionType struct {
-	fields  []*Field
 	forward *StructOrUnionSpecifier
-	m       map[string]*Field
-	size    int64
-	tag     string
-
-	align int
+	structType
 }
 
 func newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
-	return &UnionType{tag: tag, fields: fields, size: size, align: align}
+	return &UnionType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
 }
 
 // Field returns member field nm of n or nil if n does not have such member.
 func (n *UnionType) Field(nm string) *Field {
-	if f := n.m[nm]; f != nil {
-		return f
+	if n == nil {
+		return nil
 	}
 
-	if n.m == nil {
-		n.m = map[string]*Field{}
-	}
-	for _, f := range n.fields {
-		if nm := f.Name(); nm != "" {
-			n.m[nm] = f
+	if n.forward != nil {
+		if x, ok := n.forward.typ.(*StructType); ok {
+			return x.Field(nm)
 		}
+
+		return nil
 	}
-	return n.m[nm]
+
+	return n.field(nm)
 }
 
 // Align implements Type.
