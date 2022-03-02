@@ -302,7 +302,7 @@ func (n *AsmArgList) check(c *ctx) {
 func (n *AsmExpressionList) check(c *ctx) {
 	for ; n != nil; n = n.AsmExpressionList {
 		n.AsmIndex.check(c)
-		n.AssignmentExpression.check(c, true)
+		n.AssignmentExpression.check(c, true, true)
 	}
 }
 
@@ -313,7 +313,7 @@ func (n *AsmIndex) check(c *ctx) {
 		return
 	}
 
-	n.Expression.check(c, true)
+	n.Expression.check(c, true, false)
 }
 
 func (n *AsmQualifierList) check(c *ctx) {
@@ -430,7 +430,7 @@ func (n *LabeledStatement) check(c *ctx) {
 	case LabeledStatementLabel: // IDENTIFIER ':' Statement
 		n.Statement.check(c)
 	case LabeledStatementCaseLabel: // "case" ConstantExpression ':' Statement
-		n.ConstantExpression.check(c)
+		n.ConstantExpression.check(c, false)
 		n.Statement.check(c)
 	case LabeledStatementRange: // "case" ConstantExpression "..." ConstantExpression ':' Statement
 		c.errors.add(errorf("TODO %v", n.Case))
@@ -448,20 +448,20 @@ func (n *IterationStatement) check(c *ctx) {
 
 	switch n.Case {
 	case IterationStatementWhile: // "while" '(' Expression ')' Statement
-		n.Expression.check(c, true)
+		n.Expression.check(c, true, false)
 		n.Statement.check(c)
 	case IterationStatementDo: // "do" Statement "while" '(' Expression ')' ';'
 		n.Statement.check(c)
-		n.Expression.check(c, true)
+		n.Expression.check(c, true, false)
 	case IterationStatementFor: // "for" '(' Expression ';' Expression ';' Expression ')' Statement
-		n.Expression.check(c, true)
-		n.Expression2.check(c, true)
-		n.Expression3.check(c, true)
+		n.Expression.check(c, true, false)
+		n.Expression2.check(c, true, false)
+		n.Expression3.check(c, true, false)
 		n.Statement.check(c)
 	case IterationStatementForDecl: // "for" '(' Declaration Expression ';' Expression ')' Statement
 		n.Declaration.check(c)
-		n.Expression.check(c, true)
-		n.Expression2.check(c, true)
+		n.Expression.check(c, true, false)
+		n.Expression2.check(c, true, false)
 		n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -485,13 +485,13 @@ out:
 
 		c.errors.add(errorf("%v: undefined label: %s", n.Token2.Position(), n.Token2.Src()))
 	case JumpStatementGotoExpr: // "goto" '*' Expression ';'
-		n.Expression.check(c, true)
+		n.Expression.check(c, true, false)
 	case JumpStatementContinue: // "continue" ';'
 		//TODO
 	case JumpStatementBreak: // "break" ';'
 		//TODO
 	case JumpStatementReturn: // "return" Expression ';'
-		n.Expression.check(c, true)
+		n.Expression.check(c, true, false)
 		//TODO check assignable to fn result
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -505,14 +505,14 @@ func (n *SelectionStatement) check(c *ctx) {
 
 	switch n.Case {
 	case SelectionStatementIf: // "if" '(' Expression ')' Statement
-		n.Expression.check(c, true)
+		n.Expression.check(c, true, false)
 		n.Statement.check(c)
 	case SelectionStatementIfElse: // "if" '(' Expression ')' Statement "else" Statement
-		n.Expression.check(c, true)
+		n.Expression.check(c, true, false)
 		n.Statement.check(c)
 		n.Statement2.check(c)
 	case SelectionStatementSwitch: // "switch" '(' Expression ')' Statement
-		n.Expression.check(c, true)
+		n.Expression.check(c, true, false)
 		n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -524,7 +524,7 @@ func (n *ExpressionStatement) check(c *ctx) (r Type) {
 		return
 	}
 
-	return n.Expression.check(c, true)
+	return n.Expression.check(c, true, false)
 }
 
 //  Declaration:
@@ -583,7 +583,7 @@ func (n *Initializer) check(c *ctx, t Type) {
 
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		n.AssignmentExpression.check(c, true)
+		n.AssignmentExpression.check(c, true, false)
 		//TODO
 	case InitializerInitList: // '{' InitializerList ',' '}'
 		c.errors.add(errorf("TODO %v", n.Case))
@@ -698,7 +698,7 @@ func arraySize(c *ctx, n *AssignmentExpression) int64 {
 		return -1
 	}
 
-	switch t := n.check(c, true); {
+	switch t := n.check(c, true, false); {
 	case isIntegerType(t):
 		switch x := n.eval(c).(type) {
 		case Int64Value:
@@ -986,7 +986,7 @@ func (n *AttributeValue) check(c *ctx) {
 //  |       ArgumentExpressionList ',' AssignmentExpression
 func (n *ArgumentExpressionList) check(c *ctx) {
 	for ; n != nil; n = n.ArgumentExpressionList {
-		n.AssignmentExpression.check(c, true)
+		n.AssignmentExpression.check(c, true, false)
 	}
 }
 
@@ -998,7 +998,7 @@ func (n *AlignmentSpecifier) check(c *ctx) (r Type) {
 	case AlignmentSpecifierType: // "_Alignas" '(' TypeName ')'
 		return n.TypeName.check(c)
 	case AlignmentSpecifierExpr: // "_Alignas" '(' ConstantExpression ')'
-		_, t := n.ConstantExpression.check(c)
+		_, t := n.ConstantExpression.check(c, false)
 		return t
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -1157,7 +1157,7 @@ func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 
 		c.errors.add(errorf("%v: undefined type name: %s", n.Position(), n.Token.Src()))
 	case TypeSpecifierTypeofExpr: // "typeof" '(' Expression ')'
-		return n.Expression.check(c, true)
+		return n.Expression.check(c, true, false)
 	case TypeSpecifierTypeofType: // "typeof" '(' TypeName ')'
 		return n.TypeName.check(c)
 	case TypeSpecifierAtomic: // AtomicTypeSpecifier
@@ -1325,7 +1325,7 @@ func (n *Enumerator) check(c *ctx) {
 	case EnumeratorIdent: // IDENTIFIER
 		// ok
 	case EnumeratorExpr: // IDENTIFIER '=' ConstantExpression
-		n.val, n.typ = n.ConstantExpression.check(c)
+		n.val, n.typ = n.ConstantExpression.check(c, false)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -1416,8 +1416,8 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 	}()
 
 	var fields []*Field
-	for ; n != nil; n = n.StructDeclarationList {
-		fields = append(fields, n.StructDeclaration.check(c)...)
+	for l := n; l != nil; l = l.StructDeclarationList {
+		fields = append(fields, l.StructDeclaration.check(c)...)
 	}
 	// for _, v := range fields {
 	// 	switch {
@@ -1429,7 +1429,7 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 	// }
 
 	isUnion := s.StructOrUnion.Case == StructOrUnionUnion
-	var brk int64
+	var brk, unionBits int64
 	maxAlignBytes := 1
 	for _, f := range fields {
 		if f == nil {
@@ -1443,6 +1443,7 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 			switch {
 			case isUnion:
 				f.mask = (uint64(1)<<f.valueBits - 1)
+				unionBits = mathutil.MaxInt64(unionBits, 8*f.accessBytes)
 			default:
 				brkOffBytes := brk >> 3
 				if mod := brkOffBytes % f.accessBytes; mod != 0 {
@@ -1466,7 +1467,10 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 			f.accessBytes = sz
 			f.offsetBytes = brk >> 3
 			f.valueBits = 8 * sz
-			if !isUnion {
+			switch {
+			case isUnion:
+				unionBits = mathutil.MaxInt64(unionBits, 8*sz)
+			default:
 				brk += 8 * sz
 			}
 		}
@@ -1476,7 +1480,7 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 	case isUnion:
 		t := s.typ.(*UnionType)
 		t.fields = fields
-		t.size = brk >> 3
+		t.size = unionBits >> 3
 		t.align = maxAlignBytes
 	default:
 		t := s.typ.(*StructType)
@@ -1574,7 +1578,7 @@ func (n *StructDeclarator) check(c *ctx, t Type, isAtomic, isConst, isVolatile b
 	case StructDeclaratorDecl: // Declarator
 		return &Field{declarator: n.Declarator, typ: newTyper(n.Declarator.check(c, t))}
 	case StructDeclaratorBitField: // Declarator ':' ConstantExpression
-		v, t := n.ConstantExpression.check(c)
+		v, t := n.ConstantExpression.check(c, false)
 		if !isIntegerType(t) {
 			c.errors.add(errorf("%v: expected integer expression: %s", n.ConstantExpression.Position(), t))
 			break
@@ -1612,7 +1616,7 @@ func (n *StructDeclarator) check(c *ctx, t Type, isAtomic, isConst, isVolatile b
 //  |       UnaryExpression "&=" AssignmentExpression   // Case AssignmentExpressionAnd
 //  |       UnaryExpression "^=" AssignmentExpression   // Case AssignmentExpressionXor
 //  |       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
-func (n *AssignmentExpression) check(c *ctx, decay bool) (r Type) {
+func (n *AssignmentExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1625,7 +1629,7 @@ func (n *AssignmentExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
-		n.typ = n.ConditionalExpression.check(c, decay)
+		n.typ = n.ConditionalExpression.check(c, decay, isAsmArgList)
 	case
 		AssignmentExpressionAssign, // UnaryExpression '=' AssignmentExpression
 		AssignmentExpressionMul,    // UnaryExpression "*=" AssignmentExpression
@@ -1639,9 +1643,9 @@ func (n *AssignmentExpression) check(c *ctx, decay bool) (r Type) {
 		AssignmentExpressionXor,    // UnaryExpression "^=" AssignmentExpression
 		AssignmentExpressionOr:     // UnaryExpression "|=" AssignmentExpression
 
-		n.typ = n.UnaryExpression.check(c, decay)
+		n.typ = n.UnaryExpression.check(c, decay, isAsmArgList)
 		a := n.Type()
-		b := n.AssignmentExpression.check(c, decay)
+		b := n.AssignmentExpression.check(c, decay, isAsmArgList)
 		if !isModifiableLvalue(n.Type()) {
 			c.errors.add(errorf("%v: left operand shall be a modifiable lvalue", n.UnaryExpression.Position()))
 			break
@@ -1684,7 +1688,7 @@ func (n *AssignmentExpression) check(c *ctx, decay bool) (r Type) {
 //  ConditionalExpression:
 //          LogicalOrExpression                                           // Case ConditionalExpressionLOr
 //  |       LogicalOrExpression '?' Expression ':' ConditionalExpression  // Case ConditionalExpressionCond
-func (n *ConditionalExpression) check(c *ctx, decay bool) (r Type) {
+func (n *ConditionalExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1697,13 +1701,13 @@ func (n *ConditionalExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case ConditionalExpressionLOr: // LogicalOrExpression
-		n.typ = n.LogicalOrExpression.check(c, decay)
+		n.typ = n.LogicalOrExpression.check(c, decay, isAsmArgList)
 	case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
-		t1 := n.LogicalOrExpression.check(c, true)
+		t1 := n.LogicalOrExpression.check(c, true, isAsmArgList)
 		if !isScalarType(t1) {
 			c.errors.add(errorf("%v: operand shall have scalar type: %s", n.LogicalOrExpression.Position(), t1))
 		}
-		switch t2, t3 := n.Expression.check(c, true), n.ConditionalExpression.check(c, true); {
+		switch t2, t3 := n.Expression.check(c, true, isAsmArgList), n.ConditionalExpression.check(c, true, isAsmArgList); {
 		case
 			// both operands have arithmetic type;
 			isArithmeticType(t2) && isArithmeticType(t3):
@@ -1743,7 +1747,7 @@ func (n *ConditionalExpression) check(c *ctx, decay bool) (r Type) {
 //  LogicalOrExpression:
 //          LogicalAndExpression                           // Case LogicalOrExpressionLAnd
 //  |       LogicalOrExpression "||" LogicalAndExpression  // Case LogicalOrExpressionLOr
-func (n *LogicalOrExpression) check(c *ctx, decay bool) (r Type) {
+func (n *LogicalOrExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1756,9 +1760,9 @@ func (n *LogicalOrExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case LogicalOrExpressionLAnd: // LogicalAndExpression
-		n.typ = n.LogicalAndExpression.check(c, decay)
+		n.typ = n.LogicalAndExpression.check(c, decay, isAsmArgList)
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
-		switch a, b := n.LogicalOrExpression.check(c, true), n.LogicalAndExpression.check(c, true); {
+		switch a, b := n.LogicalOrExpression.check(c, true, isAsmArgList), n.LogicalAndExpression.check(c, true, isAsmArgList); {
 		case !isScalarType(a):
 			c.errors.add(errorf("%v: operand shall be a scalar: %s", n.LogicalOrExpression.Position(), a))
 		case !isScalarType(b):
@@ -1775,7 +1779,7 @@ func (n *LogicalOrExpression) check(c *ctx, decay bool) (r Type) {
 //  LogicalAndExpression:
 //          InclusiveOrExpression                            // Case LogicalAndExpressionOr
 //  |       LogicalAndExpression "&&" InclusiveOrExpression  // Case LogicalAndExpressionLAnd
-func (n *LogicalAndExpression) check(c *ctx, decay bool) (r Type) {
+func (n *LogicalAndExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1788,9 +1792,9 @@ func (n *LogicalAndExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case LogicalAndExpressionOr: // InclusiveOrExpression
-		n.typ = n.InclusiveOrExpression.check(c, decay)
+		n.typ = n.InclusiveOrExpression.check(c, decay, isAsmArgList)
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
-		switch a, b := n.LogicalAndExpression.check(c, true), n.InclusiveOrExpression.check(c, true); {
+		switch a, b := n.LogicalAndExpression.check(c, true, isAsmArgList), n.InclusiveOrExpression.check(c, true, isAsmArgList); {
 		case !isScalarType(a):
 			c.errors.add(errorf("%v: operand shall be a scalar: %s", n.LogicalAndExpression.Position(), a))
 		case !isScalarType(b):
@@ -1807,7 +1811,7 @@ func (n *LogicalAndExpression) check(c *ctx, decay bool) (r Type) {
 //  InclusiveOrExpression:
 //          ExclusiveOrExpression                            // Case InclusiveOrExpressionXor
 //  |       InclusiveOrExpression '|' ExclusiveOrExpression  // Case InclusiveOrExpressionOr
-func (n *InclusiveOrExpression) check(c *ctx, decay bool) (r Type) {
+func (n *InclusiveOrExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1820,9 +1824,9 @@ func (n *InclusiveOrExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case InclusiveOrExpressionXor: // ExclusiveOrExpression
-		n.typ = n.ExclusiveOrExpression.check(c, decay)
+		n.typ = n.ExclusiveOrExpression.check(c, decay, isAsmArgList)
 	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
-		switch a, b := n.InclusiveOrExpression.check(c, true), n.ExclusiveOrExpression.check(c, true); {
+		switch a, b := n.InclusiveOrExpression.check(c, true, isAsmArgList), n.ExclusiveOrExpression.check(c, true, isAsmArgList); {
 		case !isIntegerType(a):
 			c.errors.add(errorf("%v: operand shall be a scalar: %s", n.InclusiveOrExpression.Position(), a))
 		case !isIntegerType(b):
@@ -1839,7 +1843,7 @@ func (n *InclusiveOrExpression) check(c *ctx, decay bool) (r Type) {
 //  ExclusiveOrExpression:
 //          AndExpression                            // Case ExclusiveOrExpressionAnd
 //  |       ExclusiveOrExpression '^' AndExpression  // Case ExclusiveOrExpressionXor
-func (n *ExclusiveOrExpression) check(c *ctx, decay bool) (r Type) {
+func (n *ExclusiveOrExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1852,9 +1856,9 @@ func (n *ExclusiveOrExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case ExclusiveOrExpressionAnd: // AndExpression
-		n.typ = n.AndExpression.check(c, decay)
+		n.typ = n.AndExpression.check(c, decay, isAsmArgList)
 	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
-		switch a, b := n.ExclusiveOrExpression.check(c, true), n.AndExpression.check(c, true); {
+		switch a, b := n.ExclusiveOrExpression.check(c, true, isAsmArgList), n.AndExpression.check(c, true, isAsmArgList); {
 		case !isIntegerType(a):
 			c.errors.add(errorf("%v: operand shall be integer: %s", n.ExclusiveOrExpression.Position(), a))
 		case !isIntegerType(b):
@@ -1871,7 +1875,7 @@ func (n *ExclusiveOrExpression) check(c *ctx, decay bool) (r Type) {
 //  AndExpression:
 //          EqualityExpression                    // Case AndExpressionEq
 //  |       AndExpression '&' EqualityExpression  // Case AndExpressionAnd
-func (n *AndExpression) check(c *ctx, decay bool) (r Type) {
+func (n *AndExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1884,10 +1888,10 @@ func (n *AndExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case AndExpressionEq: // EqualityExpression
-		n.typ = n.EqualityExpression.check(c, decay)
+		n.typ = n.EqualityExpression.check(c, decay, isAsmArgList)
 	case AndExpressionAnd: // AndExpression '&' EqualityExpression
 		// Each of the operands shall have integer type.
-		switch a, b := n.AndExpression.check(c, true), n.EqualityExpression.check(c, true); {
+		switch a, b := n.AndExpression.check(c, true, isAsmArgList), n.EqualityExpression.check(c, true, isAsmArgList); {
 		case !isIntegerType(a):
 			c.errors.add(errorf("%v: operand shall be integer: %s", n.AndExpression.Position(), a))
 		case !isIntegerType(b):
@@ -1905,7 +1909,7 @@ func (n *AndExpression) check(c *ctx, decay bool) (r Type) {
 //          RelationalExpression                          // Case EqualityExpressionRel
 //  |       EqualityExpression "==" RelationalExpression  // Case EqualityExpressionEq
 //  |       EqualityExpression "!=" RelationalExpression  // Case EqualityExpressionNeq
-func (n *EqualityExpression) check(c *ctx, decay bool) (r Type) {
+func (n *EqualityExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1918,12 +1922,12 @@ func (n *EqualityExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case EqualityExpressionRel: // RelationalExpression
-		n.typ = n.RelationalExpression.check(c, decay)
+		n.typ = n.RelationalExpression.check(c, decay, isAsmArgList)
 	case
 		EqualityExpressionEq,  // EqualityExpression "==" RelationalExpression
 		EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
 
-		switch a, b := n.EqualityExpression.check(c, true), n.RelationalExpression.check(c, true); {
+		switch a, b := n.EqualityExpression.check(c, true, isAsmArgList), n.RelationalExpression.check(c, true, isAsmArgList); {
 		case
 			// both operands have arithmetic type;
 			isArithmeticType(a) && isArithmeticType(b),
@@ -1954,7 +1958,7 @@ func (n *EqualityExpression) check(c *ctx, decay bool) (r Type) {
 //  |       RelationalExpression '>' ShiftExpression   // Case RelationalExpressionGt
 //  |       RelationalExpression "<=" ShiftExpression  // Case RelationalExpressionLeq
 //  |       RelationalExpression ">=" ShiftExpression  // Case RelationalExpressionGeq
-func (n *RelationalExpression) check(c *ctx, decay bool) (r Type) {
+func (n *RelationalExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -1967,7 +1971,7 @@ func (n *RelationalExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case RelationalExpressionShift: // ShiftExpression
-		n.typ = n.ShiftExpression.check(c, decay)
+		n.typ = n.ShiftExpression.check(c, decay, isAsmArgList)
 	case
 		RelationalExpressionLt,  // RelationalExpression '<' ShiftExpression
 		RelationalExpressionGt,  // RelationalExpression '>' ShiftExpression
@@ -1975,7 +1979,7 @@ func (n *RelationalExpression) check(c *ctx, decay bool) (r Type) {
 		RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
 
 		n.typ = c.intT
-		switch a, b := n.RelationalExpression.check(c, true), n.ShiftExpression.check(c, true); {
+		switch a, b := n.RelationalExpression.check(c, true, isAsmArgList), n.ShiftExpression.check(c, true, isAsmArgList); {
 		case
 			// both operands have real type;
 			isRealType(a) && isRealType(b),
@@ -2000,7 +2004,7 @@ func (n *RelationalExpression) check(c *ctx, decay bool) (r Type) {
 //          AdditiveExpression                       // Case ShiftExpressionAdd
 //  |       ShiftExpression "<<" AdditiveExpression  // Case ShiftExpressionLsh
 //  |       ShiftExpression ">>" AdditiveExpression  // Case ShiftExpressionRsh
-func (n *ShiftExpression) check(c *ctx, decay bool) (r Type) {
+func (n *ShiftExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2013,12 +2017,12 @@ func (n *ShiftExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case ShiftExpressionAdd: // AdditiveExpression
-		n.typ = n.AdditiveExpression.check(c, decay)
+		n.typ = n.AdditiveExpression.check(c, decay, isAsmArgList)
 	case
 		ShiftExpressionLsh, // ShiftExpression "<<" AdditiveExpression
 		ShiftExpressionRsh: // ShiftExpression ">>" AdditiveExpression
 
-		switch a, b := n.ShiftExpression.check(c, true), n.AdditiveExpression.check(c, true); {
+		switch a, b := n.ShiftExpression.check(c, true, isAsmArgList), n.AdditiveExpression.check(c, true, isAsmArgList); {
 		case !isScalarType(a):
 			c.errors.add(errorf("%v: operand shall be a scalar: %s", n.ShiftExpression.Position(), a))
 		case !isScalarType(b):
@@ -2036,7 +2040,7 @@ func (n *ShiftExpression) check(c *ctx, decay bool) (r Type) {
 //          MultiplicativeExpression                         // Case AdditiveExpressionMul
 //  |       AdditiveExpression '+' MultiplicativeExpression  // Case AdditiveExpressionAdd
 //  |       AdditiveExpression '-' MultiplicativeExpression  // Case AdditiveExpressionSub
-func (n *AdditiveExpression) check(c *ctx, decay bool) (r Type) {
+func (n *AdditiveExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2049,9 +2053,9 @@ func (n *AdditiveExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case AdditiveExpressionMul: // MultiplicativeExpression
-		n.typ = n.MultiplicativeExpression.check(c, decay)
+		n.typ = n.MultiplicativeExpression.check(c, decay, isAsmArgList)
 	case AdditiveExpressionAdd: // AdditiveExpression '+' MultiplicativeExpression
-		switch a, b := n.AdditiveExpression.check(c, true), n.MultiplicativeExpression.check(c, true); {
+		switch a, b := n.AdditiveExpression.check(c, true, isAsmArgList), n.MultiplicativeExpression.check(c, true, isAsmArgList); {
 		case
 			// For addition, either both operands shall have arithmetic type
 			isArithmeticType(a) && isArithmeticType(b):
@@ -2067,7 +2071,7 @@ func (n *AdditiveExpression) check(c *ctx, decay bool) (r Type) {
 			c.errors.add(errorf("%v: invalid operands: %s and %s", n.Token.Position(), a, b))
 		}
 	case AdditiveExpressionSub: // AdditiveExpression '-' MultiplicativeExpression
-		switch a, b := n.AdditiveExpression.check(c, true), n.MultiplicativeExpression.check(c, true); {
+		switch a, b := n.AdditiveExpression.check(c, true, isAsmArgList), n.MultiplicativeExpression.check(c, true, isAsmArgList); {
 		case
 			// both operands have arithmetic type;
 			isArithmeticType(a) && isArithmeticType(b):
@@ -2096,7 +2100,7 @@ func (n *AdditiveExpression) check(c *ctx, decay bool) (r Type) {
 //  |       MultiplicativeExpression '*' CastExpression  // Case MultiplicativeExpressionMul
 //  |       MultiplicativeExpression '/' CastExpression  // Case MultiplicativeExpressionDiv
 //  |       MultiplicativeExpression '%' CastExpression  // Case MultiplicativeExpressionMod
-func (n *MultiplicativeExpression) check(c *ctx, decay bool) (r Type) {
+func (n *MultiplicativeExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2109,13 +2113,13 @@ func (n *MultiplicativeExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case MultiplicativeExpressionCast: // CastExpression
-		n.typ = n.CastExpression.check(c, decay)
+		n.typ = n.CastExpression.check(c, decay, isAsmArgList)
 	case
 		MultiplicativeExpressionMul, // MultiplicativeExpression '*' CastExpression
 		MultiplicativeExpressionDiv: // MultiplicativeExpression '/' CastExpression
 
 		// Each of the operands shall have arithmetic type.
-		switch a, b := n.MultiplicativeExpression.check(c, true), n.CastExpression.check(c, true); {
+		switch a, b := n.MultiplicativeExpression.check(c, true, isAsmArgList), n.CastExpression.check(c, true, isAsmArgList); {
 		case !isArithmeticType(a):
 			c.errors.add(errorf("%v: operand shall have arithmetic type: %s", n.MultiplicativeExpression.Position(), a))
 		case !isArithmeticType(b):
@@ -2124,7 +2128,7 @@ func (n *MultiplicativeExpression) check(c *ctx, decay bool) (r Type) {
 			n.typ = usualArithmeticConversions(a, b)
 		}
 	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
-		switch a, b := n.MultiplicativeExpression.check(c, true), n.CastExpression.check(c, true); {
+		switch a, b := n.MultiplicativeExpression.check(c, true, isAsmArgList), n.CastExpression.check(c, true, isAsmArgList); {
 		case !isIntegerType(a):
 			c.errors.add(errorf("%v: operand shall have integer type: %s", n.MultiplicativeExpression.Position(), a))
 		case !isIntegerType(b):
@@ -2141,7 +2145,7 @@ func (n *MultiplicativeExpression) check(c *ctx, decay bool) (r Type) {
 //  CastExpression:
 //          UnaryExpression                  // Case CastExpressionUnary
 //  |       '(' TypeName ')' CastExpression  // Case CastExpressionCast
-func (n *CastExpression) check(c *ctx, decay bool) (r Type) {
+func (n *CastExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2154,10 +2158,10 @@ func (n *CastExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case CastExpressionUnary: // UnaryExpression
-		n.typ = n.UnaryExpression.check(c, decay)
+		n.typ = n.UnaryExpression.check(c, decay, isAsmArgList)
 	case CastExpressionCast: // '(' TypeName ')' CastExpression
 		n.typ = n.TypeName.check(c)
-		n.CastExpression.check(c, true)
+		n.CastExpression.check(c, true, isAsmArgList)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2187,7 +2191,7 @@ func (n *TypeName) check(c *ctx) (r Type) {
 //  |       "_Alignof" '(' TypeName ')'  // Case UnaryExpressionAlignofType
 //  |       "__imag__" UnaryExpression   // Case UnaryExpressionImag
 //  |       "__real__" UnaryExpression   // Case UnaryExpressionReal
-func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
+func (n *UnaryExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2200,17 +2204,17 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case UnaryExpressionPostfix: // PostfixExpression
-		n.typ = n.PostfixExpression.check(c, decay)
+		n.typ = n.PostfixExpression.check(c, decay, isAsmArgList)
 	case
 		UnaryExpressionInc, // "++" UnaryExpression
 		UnaryExpressionDec: // "--" UnaryExpression
 
-		n.typ = n.UnaryExpression.check(c, true)
+		n.typ = n.UnaryExpression.check(c, true, isAsmArgList)
 		if !isRealType(n.Type()) && !isPointerType(n.Type()) {
 			c.errors.add(errorf("%v: operand shall have real or pointer type: %s", n.UnaryExpression.Position(), n.Type()))
 		}
 	case UnaryExpressionAddrof: // '&' CastExpression
-		switch t := n.CastExpression.check(c, false); {
+		switch t := n.CastExpression.check(c, false, isAsmArgList); {
 		case
 			// The operand of the unary & operator shall be either a function designator,
 			t.Kind() == Function,
@@ -2225,7 +2229,7 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 			c.errors.add(errorf("%v: invalid operand: %s", n.CastExpression.Position(), t))
 		}
 	case UnaryExpressionDeref: // '*' CastExpression
-		switch t := n.CastExpression.check(c, true); t.Kind() {
+		switch t := n.CastExpression.check(c, true, isAsmArgList); t.Kind() {
 		case Ptr:
 			switch {
 			case decay:
@@ -2241,12 +2245,12 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 		UnaryExpressionPlus,  // '+' CastExpression
 		UnaryExpressionMinus: // '-' CastExpression
 
-		n.typ = integerPromotion(n.CastExpression.check(c, true))
+		n.typ = integerPromotion(n.CastExpression.check(c, true, isAsmArgList))
 		if !isArithmeticType(n.Type()) {
 			c.errors.add(errorf("%v: expected arithmetic type: %s", n.Position(), n.CastExpression.Type()))
 		}
 	case UnaryExpressionCpl: // '~' CastExpression
-		t := n.CastExpression.check(c, true)
+		t := n.CastExpression.check(c, true, isAsmArgList)
 		if !isIntegerType(t) {
 			c.errors.add(errorf("%v: expected integer type: %s", n.Position(), n.CastExpression.Type()))
 			break
@@ -2254,13 +2258,13 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 
 		n.typ = integerPromotion(t)
 	case UnaryExpressionNot: // '!' CastExpression
-		t := n.CastExpression.check(c, true)
+		t := n.CastExpression.check(c, true, isAsmArgList)
 		if !isScalarType(t) {
 			c.errors.add(errorf("%v: expected scalar type: %s", n.Position(), n.CastExpression.Type()))
 		}
 		n.typ = c.intT
 	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
-		t := n.UnaryExpression.check(c, false)
+		t := n.UnaryExpression.check(c, false, isAsmArgList)
 		if t.IsIncomplete() {
 			c.errors.add(errorf("%v: sizeof incomplete type: %s", n.UnaryExpression.Position(), t))
 		}
@@ -2276,7 +2280,7 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
 		c.errors.add(errorf("TODO %v", n.Case))
 	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
-		t := n.UnaryExpression.check(c, true)
+		t := n.UnaryExpression.check(c, true, isAsmArgList)
 		n.val, n.typ = UInt64Value(t.Align()), c.sizeT(n)
 	case UnaryExpressionAlignofType: // "_Alignof" '(' TypeName ')'
 		t := n.TypeName.check(c)
@@ -2285,7 +2289,7 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 		UnaryExpressionImag, // "__imag__" UnaryExpression
 		UnaryExpressionReal: // "__real__" UnaryExpression
 
-		t := n.UnaryExpression.check(c, true)
+		t := n.UnaryExpression.check(c, true, isAsmArgList)
 		if !isComplexType(t) {
 			c.errors.add(errorf("%v: expected complex type: %s", n.Position(), t))
 			break
@@ -2307,7 +2311,7 @@ func (n *UnaryExpression) check(c *ctx, decay bool) (r Type) {
 //  |       PostfixExpression "++"                            // Case PostfixExpressionInc
 //  |       PostfixExpression "--"                            // Case PostfixExpressionDec
 //  |       '(' TypeName ')' '{' InitializerList ',' '}'      // Case PostfixExpressionComplit
-func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
+func (n *PostfixExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2321,23 +2325,35 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 
 	switch n.Case {
 	case PostfixExpressionPrimary: // PrimaryExpression
-		n.typ = n.PrimaryExpression.check(c, decay)
+		n.typ = n.PrimaryExpression.check(c, decay, isAsmArgList)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		// One of the expressions shall have type ‘‘pointer to object type’’, the other
 		// expression shall have integer type, and the result has type ‘‘type’’.
-		switch t1, t2 := n.PostfixExpression.check(c, decay), n.Expression.check(c, decay); {
+		switch t1, t2 := n.PostfixExpression.check(c, true, isAsmArgList), n.Expression.check(c, true, false); {
 		case isPointerType(t1) && isIntegerType(t2):
-			n.typ = t1.(*PointerType).Elem()
+			switch {
+			case decay:
+				n.typ = t1.(*PointerType).Elem()
+			default:
+				n.typ = t1
+				decay = true
+			}
 		case isPointerType(t2) && isIntegerType(t1):
-			n.typ = t2.(*PointerType).Elem()
+			switch {
+			case decay:
+				n.typ = t2.(*PointerType).Elem()
+			default:
+				n.typ = t2
+				decay = true
+			}
 		default:
 			c.errors.add(errorf("%v: one of the expressions shall be a pointer and the other shall have integer type: %s and %s", n.Token.Position(), t1, t2))
 			n.typ = c.intT
 		}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
-		t := n.PostfixExpression.check(c, true)
+		t := n.PostfixExpression.check(c, true, isAsmArgList)
 		n.ArgumentExpressionList.check(c)
-		if t == nil {
+		if t == nil || isAsmArgList {
 			break
 		}
 
@@ -2356,7 +2372,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 		//TODO check args
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		nm := string(n.Token2.Src())
-		switch t := n.PostfixExpression.check(c, true); t.Kind() {
+		switch t := n.PostfixExpression.check(c, true, isAsmArgList); t.Kind() {
 		case Struct:
 			st := t.(*StructType)
 			f := st.Field(nm)
@@ -2380,7 +2396,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 		nm := string(n.Token2.Src())
-		switch t := n.PostfixExpression.check(c, true); t.Kind() {
+		switch t := n.PostfixExpression.check(c, true, isAsmArgList); t.Kind() {
 		case Ptr:
 			switch et := t.(*PointerType).Elem(); et.Kind() {
 			case Struct:
@@ -2410,7 +2426,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 	case
 		PostfixExpressionInc, // PostfixExpression "++"
 		PostfixExpressionDec: // PostfixExpression "--"
-		switch t := n.PostfixExpression.check(c, true); {
+		switch t := n.PostfixExpression.check(c, true, isAsmArgList); {
 		case
 			// The operand of the postfix increment or decrement operator shall have
 			// qualified or unqualified real or pointer type and shall be a modifiable
@@ -2444,7 +2460,7 @@ func (n *PostfixExpression) check(c *ctx, decay bool) (r Type) {
 //  |       '(' Expression ')'         // Case PrimaryExpressionExpr
 //  |       '(' CompoundStatement ')'  // Case PrimaryExpressionStmt
 //  |       GenericSelection           // Case PrimaryExpressionGeneric
-func (n *PrimaryExpression) check(c *ctx, decay bool) (r Type) {
+func (n *PrimaryExpression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2502,7 +2518,7 @@ out:
 		n.typ = c.pwcharT(n)
 		//TODO n.val =
 	case PrimaryExpressionExpr: // '(' Expression ')'
-		n.typ = n.Expression.check(c, decay)
+		n.typ = n.Expression.check(c, decay, isAsmArgList)
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
 		n.typ = n.CompoundStatement.check(c)
 	case PrimaryExpressionGeneric: // GenericSelection
@@ -2691,7 +2707,7 @@ func (n *PrimaryExpression) intConst2(c *ctx, s string, val uint64, list ...Kind
 //  Expression:
 //          AssignmentExpression
 //  |       Expression ',' AssignmentExpression
-func (n *Expression) check(c *ctx, decay bool) (r Type) {
+func (n *Expression) check(c *ctx, decay, isAsmArgList bool) (r Type) {
 	if n == nil {
 		return invalidType
 	}
@@ -2704,14 +2720,14 @@ func (n *Expression) check(c *ctx, decay bool) (r Type) {
 	}()
 
 	for ; n != nil; n = n.Expression {
-		n0.typ = n.AssignmentExpression.check(c, decay)
+		n0.typ = n.AssignmentExpression.check(c, decay, isAsmArgList)
 	}
 	return n0.Type()
 }
 
 //  ConstantExpression:
 //          ConditionalExpression
-func (n *ConstantExpression) check(c *ctx) (v Value, r Type) {
+func (n *ConstantExpression) check(c *ctx, isAsmArgList bool) (v Value, r Type) {
 	if n == nil {
 		return UnknownValue, invalidType
 	}
@@ -2722,7 +2738,7 @@ func (n *ConstantExpression) check(c *ctx) (v Value, r Type) {
 		}
 	}()
 
-	n.typ = n.ConditionalExpression.check(c, true)
+	n.typ = n.ConditionalExpression.check(c, true, isAsmArgList)
 	if n.eval(c) == UnknownValue {
 		c.errors.add(errorf("%v: cannot evaluate constant expression", n.Position()))
 	}
