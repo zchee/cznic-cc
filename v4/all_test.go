@@ -94,9 +94,10 @@ void __builtin_exit(int status);
 int __builtin_printf(const char *format, ...);
 void __ccgo_dmesg(char*, ...);
 
-#define __builtin_va_copy(dst, src) dst = src //TODO
-#define __builtin_va_end(ap) __ccgo_va_end(ap) //TODO
-#define __builtin_va_start(ap, v) __ccgo_va_start(ap) //TODO
+// No operations, only for tests.
+#define __builtin_va_copy(dst, src)
+#define __builtin_va_end(ap)
+#define __builtin_va_start(ap, v)
 
 //TODO #define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
 //TODO __builtin___stpcpy_chk (check.go:1818:check:)
