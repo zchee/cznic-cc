@@ -77,10 +77,10 @@ func (n *ConditionalExpression) eval(c *ctx) (r Value) {
 		switch n.Case {
 		case ConditionalExpressionLOr: // LogicalOrExpression
 			n.val = n.LogicalOrExpression.eval(c)
-		case ConditionalExpressionCond: // LogicalOrExpression '?' Expression ':' ConditionalExpression
+		case ConditionalExpressionCond: // LogicalOrExpression '?' ExpressionList ':' ConditionalExpression
 			switch val := n.LogicalOrExpression.eval(c); {
 			case isZero(val):
-				n.val = c.convert(n.Expression.eval(c), n.Type())
+				n.val = c.convert(n.ExpressionList.eval(c), n.Type())
 			case isNonzero(val):
 				n.val = c.convert(n.ConditionalExpression.eval(c), n.Type())
 			}
@@ -615,7 +615,7 @@ func (n *PrimaryExpression) eval(c *ctx) (r Value) {
 		case PrimaryExpressionLString: // LONGSTRINGLITERAL
 			c.errors.add(errorf("TODO %v", n.Case))
 		case PrimaryExpressionExpr: // '(' Expression ')'
-			n.val = n.Expression.eval(c)
+			n.val = n.ExpressionList.eval(c)
 		case PrimaryExpressionStmt: // '(' CompoundStatement ')'
 			c.errors.add(errorf("TODO %v", n.Case))
 		case PrimaryExpressionGeneric: // GenericSelection
@@ -627,12 +627,12 @@ func (n *PrimaryExpression) eval(c *ctx) (r Value) {
 	return n.Value()
 }
 
-func (n *Expression) eval(c *ctx) (r Value) {
+func (n *ExpressionList) eval(c *ctx) (r Value) {
 	n0 := n
 	if n.val == nil {
 		n.val = UnknownValue
-		for ; n != nil; n = n.Expression {
-			n0.typ = n.AssignmentExpression.typ
+		for ; n != nil; n = n.ExpressionList {
+			n0.typ = n.AssignmentExpression.Type()
 			n0.val = n.AssignmentExpression.eval(c)
 		}
 	}

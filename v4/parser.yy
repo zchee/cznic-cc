@@ -152,7 +152,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example char *c = L"x" L"y"; */
 /*yy:case LString    */ |	LONGSTRINGLITERAL
 			/*yy:example int i = (x+y); */
-/*yy:case Expr       */ |	'(' Expression ')'
+/*yy:case Expr       */ |	'(' ExpressionList ')'
 			/*yy:example int i = ({x();}); */
 /*yy:case Stmt       */	|	'(' CompoundStatement ')'
 			/*yy:example int i = _Generic(x, int: y)(42); */
@@ -177,11 +177,11 @@ package cc // import "modernc.org/cc/v4"
 		        /* [0], 6.5.2 Postfix operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Primary    */ PostfixExpression:
 				PrimaryExpression
 			/*yy:example int i = x[y]; */
-/*yy:case Index      */ |	PostfixExpression '[' Expression ']'
+/*yy:case Index      */ |	PostfixExpression '[' ExpressionList ']'
 			/*yy:example int i = x(y); */
 /*yy:case Call       */ |	PostfixExpression '(' ArgumentExpressionList ')'
 			/*yy:example int i = x.y; */
@@ -208,7 +208,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.3 Unary operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Postfix    */ UnaryExpression:
 				PostfixExpression
 			/*yy:example int i = ++x; */
@@ -245,7 +245,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.4 Cast operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = 42; */
+			/*yy:example*/
 /*yy:case Unary      */ CastExpression:
 				UnaryExpression
 			/*yy:example int i = (__attribute__((a)) int)3.14; */
@@ -254,7 +254,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.5 Multiplicative operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x;*/
+			/*yy:example*/
 /*yy:case Cast       */ MultiplicativeExpression:
 				CastExpression
 			/*yy:example int i = x * y;*/
@@ -267,7 +267,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.6 Additive operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Mul        */ AdditiveExpression:
 				MultiplicativeExpression
 			/*yy:example int i = x+y; */
@@ -278,7 +278,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.7 Bitwise shift operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Add        */ ShiftExpression:
 				AdditiveExpression
 			/*yy:example int i = x << y; */
@@ -289,7 +289,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.8 Relational operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Shift      */ RelationalExpression:
 				ShiftExpression        
 			/*yy:example int i = x < y; */
@@ -304,7 +304,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.9 Equality operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Rel        */ EqualityExpression:
 				RelationalExpression
 			/*yy:example int i = x == y; */
@@ -315,7 +315,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.10 Bitwise AND operator */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Eq         */ AndExpression:
 				EqualityExpression
 			/*yy:example int i = x & y; */
@@ -324,7 +324,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.11 Bitwise exclusive OR operator */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case And        */ ExclusiveOrExpression:
 				AndExpression
 			/*yy:example int i = x^y; */
@@ -333,7 +333,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.12 Bitwise inclusive OR operator */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Xor        */ InclusiveOrExpression:
 				ExclusiveOrExpression
 			/*yy:example int i = x|y; */
@@ -342,7 +342,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.13 Logical AND operator */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x;	*/
+			/*yy:example*/
 /*yy:case Or         */ LogicalAndExpression:
 				InclusiveOrExpression
 			/*yy:example int i = x && y;	*/
@@ -351,7 +351,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.14 Logical OR operator */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x;*/
+			/*yy:example*/
 /*yy:case LAnd       */ LogicalOrExpression:
 				LogicalAndExpression
 			/*yy:example int i = x || y;	*/
@@ -360,16 +360,17 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.5.15 Conditional operator */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*  yy:example int i = x; */
+			/*yy:example*/
 /*yy:case LOr        */ ConditionalExpression:
 				LogicalOrExpression
 			/*yy:example int i = x ? y : z; */
-/*yy:case Cond       */ |	LogicalOrExpression '?' Expression ':' ConditionalExpression
+/*yy:case Cond       */ |	LogicalOrExpression '?' ExpressionList ':' ConditionalExpression
 
 			/* [0], 6.5.16 Assignment operators */
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
-			/*yy:example int i = x; */
+			/*yy:example*/
 /*yy:case Cond       */ AssignmentExpression:
 				ConditionalExpression
 			/*yy:example int f() { x = y; } */
@@ -399,11 +400,10 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/
 			/*yy:example int f() { i = x; }; */
-			//yy:list
-/*yy:case Assign     */ Expression:
+/*yy:case Assign     */ ExpressionList:
 				AssignmentExpression
 			/*yy:example int f() { x, y; }; */
-/*yy:case Comma      */ |	Expression ',' AssignmentExpression
+/*yy:case Comma      */ |	ExpressionList ',' AssignmentExpression
 
 			/* [0], 6.6 Constant expressions */
 			/*yy:field	typer	*/
@@ -526,7 +526,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example typedef int T; T i; */
 /*yy:case TypeName*/	|	TYPENAME
 			/*yy:example typeof(42) i; */
-/*yy:case TypeofExpr */ |	"typeof" '(' Expression ')'
+/*yy:case TypeofExpr */ |	"typeof" '(' ExpressionList ')'
 			/*yy:example typedef int T; typeof(T) i; */
 /*yy:case TypeofType */ |	"typeof" '(' TypeName ')'
 			/*yy:example _Atomic(int) i; */
@@ -852,40 +852,40 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	declarationSpecifiers	*DeclarationSpecifiers	*/
 			/*yy:example int f() { g(); }*/
 			ExpressionStatement:
-				Expression ';'
+				ExpressionList ';'
 
 			/* [0], 6.8.4 Selection statements */
 			/*yy:example int f() { if(x) y(); } */
 /*yy:case If         */ SelectionStatement:
-				"if" '(' Expression ')' Statement %prec BELOW_ELSE
+				"if" '(' ExpressionList ')' Statement %prec BELOW_ELSE
 			/*yy:example int f() { if(x) y(); else z(); } */
-/*yy:case IfElse     */ |	"if" '(' Expression ')' Statement "else" Statement
+/*yy:case IfElse     */ |	"if" '(' ExpressionList ')' Statement "else" Statement
 			/*yy:example int f() { switch(i) case 42: x(); } */
-/*yy:case Switch     */ |	"switch" '(' Expression ')' Statement
+/*yy:case Switch     */ |	"switch" '(' ExpressionList ')' Statement
 
 			/* [0], 6.8.5 Iteration statements */
 			/*yy:example int f() { while(x) y(); } */
 /*yy:case While      */ IterationStatement:
-				"while" '(' Expression ')' Statement
+				"while" '(' ExpressionList ')' Statement
 			/*yy:example int f() { do x(); while(y); } */
-/*yy:case Do         */ |	"do" Statement "while" '(' Expression ')' ';'
+/*yy:case Do         */ |	"do" Statement "while" '(' ExpressionList ')' ';'
 			/*yy:example int f() { for( i = 0; i < 10; i++) x(); } */
-/*yy:case For        */ |	"for" '(' Expression ';' Expression ';' Expression ')' Statement
+/*yy:case For        */ |	"for" '(' ExpressionList ';' ExpressionList ';' ExpressionList ')' Statement
 			/*yy:example int f() { for( int i = 0; i < 10; i++) x(); } */
-/*yy:case ForDecl    */ |	"for" '(' Declaration Expression ';' Expression ')' Statement
+/*yy:case ForDecl    */ |	"for" '(' Declaration ExpressionList ';' ExpressionList ')' Statement
 
 			/* [0], 6.8.6 Jump statements */
 			/*yy:example int f() { L: goto L; } */
 /*yy:case Goto       */ JumpStatement:
 				"goto" IDENTIFIER ';'
 			/*yy:example int f() { L: x(); void *p = &&L; goto *p; } */
-/*yy:case GotoExpr   */ |	"goto" '*' Expression ';'
+/*yy:case GotoExpr   */ |	"goto" '*' ExpressionList ';'
 			/*yy:example int f() { for(;;) if (i) continue; } */
 /*yy:case Continue   */ |	"continue" ';'
 			/*yy:example int f() { for(;;) if (i) break; } */
 /*yy:case Break      */ |	"break" ';'
 			/*yy:example int f() { if (i) return x; } */
-/*yy:case Return     */ |	"return" Expression ';'
+/*yy:case Return     */ |	"return" ExpressionList ';'
 
 			/* [0], 6.9 External definitions */
 			/*yy:list*/
@@ -921,7 +921,7 @@ package cc // import "modernc.org/cc/v4"
 
 			/*yy:example asm("nop": [a] b); */
 			AsmIndex:
-				'[' Expression ']'
+				'[' ExpressionList ']'
 
 			/*yy:example asm("nop": a); */
 			AsmExpressionList:

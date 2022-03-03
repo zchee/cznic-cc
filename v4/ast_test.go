@@ -35,69 +35,21 @@ func ExampleAbstractDeclarator_decl() {
 	// }
 }
 
-func ExampleAdditiveExpression_mul() {
-	fmt.Println(exampleAST(48, "int i = x;"))
-	// Output:
-	// &cc.AdditiveExpression{
-	// · Case: AdditiveExpressionMul,
-	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.CastExpression{
-	// · · · Case: CastExpressionUnary,
-	// · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · Case: UnaryExpressionPostfix,
-	// · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleAdditiveExpression_add() {
 	fmt.Println(exampleAST(49, "int i = x+y;"))
 	// Output:
 	// &cc.AdditiveExpression{
 	// · AdditiveExpression: &cc.AdditiveExpression{
 	// · · Case: AdditiveExpressionMul,
-	// · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · Case: MultiplicativeExpressionCast,
-	// · · · CastExpression: &cc.CastExpression{
-	// · · · · Case: CastExpressionUnary,
-	// · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Case: AdditiveExpressionAdd,
-	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.CastExpression{
-	// · · · Case: CastExpressionUnary,
-	// · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · Case: UnaryExpressionPostfix,
-	// · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:11: IDENTIFIER "y",
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:10: '+' "+",
 	// }
@@ -109,39 +61,15 @@ func ExampleAdditiveExpression_sub() {
 	// &cc.AdditiveExpression{
 	// · AdditiveExpression: &cc.AdditiveExpression{
 	// · · Case: AdditiveExpressionMul,
-	// · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · Case: MultiplicativeExpressionCast,
-	// · · · CastExpression: &cc.CastExpression{
-	// · · · · Case: CastExpressionUnary,
-	// · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Case: AdditiveExpressionSub,
-	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.CastExpression{
-	// · · · Case: CastExpressionUnary,
-	// · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · Case: UnaryExpressionPostfix,
-	// · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:11: IDENTIFIER "y",
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:10: '-' "-",
 	// }
@@ -173,92 +101,14 @@ func ExampleAlignmentSpecifier_expr() {
 	// &cc.AlignmentSpecifier{
 	// · Case: AlignmentSpecifierExpr,
 	// · ConstantExpression: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:10: INTCONST "0ll",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:10: INTCONST "0ll",
 	// · · },
 	// · },
 	// · Token: example.c:1:1: ALIGNAS "_Alignas",
 	// · Token2: example.c:1:9: '(' "(",
 	// · Token3: example.c:1:13: ')' ")",
-	// }
-}
-
-func ExampleAndExpression_eq() {
-	fmt.Println(exampleAST(62, "int i = x;"))
-	// Output:
-	// &cc.AndExpression{
-	// · Case: AndExpressionEq,
-	// · EqualityExpression: &cc.EqualityExpression{
-	// · · Case: EqualityExpressionRel,
-	// · · RelationalExpression: &cc.RelationalExpression{
-	// · · · Case: RelationalExpressionShift,
-	// · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · Case: AdditiveExpressionMul,
-	// · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: ShiftExpressionAdd,
-	// · · · },
-	// · · },
-	// · },
 	// }
 }
 
@@ -268,63 +118,15 @@ func ExampleAndExpression_and() {
 	// &cc.AndExpression{
 	// · AndExpression: &cc.AndExpression{
 	// · · Case: AndExpressionEq,
-	// · · EqualityExpression: &cc.EqualityExpression{
-	// · · · Case: EqualityExpressionRel,
-	// · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · Case: RelationalExpressionShift,
-	// · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · · Case: ShiftExpressionAdd,
-	// · · · · },
-	// · · · },
+	// · · EqualityExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Case: AndExpressionAnd,
-	// · EqualityExpression: &cc.EqualityExpression{
-	// · · Case: EqualityExpressionRel,
-	// · · RelationalExpression: &cc.RelationalExpression{
-	// · · · Case: RelationalExpressionShift,
-	// · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · Case: AdditiveExpressionMul,
-	// · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: ShiftExpressionAdd,
-	// · · · },
-	// · · },
+	// · EqualityExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:13: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:11: '&' "&",
 	// }
@@ -334,54 +136,9 @@ func ExampleArgumentExpressionList_case0() {
 	fmt.Println(exampleAST(24, "int i = f(x);"))
 	// Output:
 	// &cc.ArgumentExpressionList{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -391,105 +148,15 @@ func ExampleArgumentExpressionList_case1() {
 	// Output:
 	// &cc.ArgumentExpressionList{
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:14: IDENTIFIER "y",
 	// · · },
 	// · · Token: example.c:1:12: ',' ",",
 	// · },
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -510,54 +177,9 @@ func ExampleAsmArgList_case0() {
 	// Output:
 	// &cc.AsmArgList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:12: IDENTIFIER "a",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:12: IDENTIFIER "a",
 	// · · },
 	// · },
 	// · Token: example.c:1:10: ':' ":",
@@ -570,107 +192,17 @@ func ExampleAsmArgList_case1() {
 	// &cc.AsmArgList{
 	// · AsmArgList: &cc.AsmArgList{
 	// · · AsmExpressionList: &cc.AsmExpressionList{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "b",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:16: IDENTIFIER "b",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:14: ':' ":",
 	// · },
 	// · AsmExpressionList: &cc.AsmExpressionList{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:12: IDENTIFIER "a",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:12: IDENTIFIER "a",
 	// · · },
 	// · },
 	// · Token: example.c:1:10: ':' ":",
@@ -681,54 +213,9 @@ func ExampleAsmExpressionList_case0() {
 	fmt.Println(exampleAST(250, "asm(\"nop\": a);"))
 	// Output:
 	// &cc.AsmExpressionList{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:12: IDENTIFIER "a",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:12: IDENTIFIER "a",
 	// · },
 	// }
 }
@@ -738,105 +225,15 @@ func ExampleAsmExpressionList_case1() {
 	// Output:
 	// &cc.AsmExpressionList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:15: IDENTIFIER "b",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:15: IDENTIFIER "b",
 	// · · },
 	// · · Token: example.c:1:13: ',' ",",
 	// · },
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:12: IDENTIFIER "a",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:12: IDENTIFIER "a",
 	// · },
 	// }
 }
@@ -845,55 +242,10 @@ func ExampleAsmIndex_case0() {
 	fmt.Println(exampleAST(249, "asm(\"nop\": [a] b);"))
 	// Output:
 	// &cc.AsmIndex{
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:13: IDENTIFIER "a",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:13: IDENTIFIER "a",
 	// · · },
 	// · },
 	// · Token: example.c:1:12: '[' "[",
@@ -970,124 +322,19 @@ func ExampleAsmStatement_case0() {
 	// }
 }
 
-func ExampleAssignmentExpression_cond() {
-	fmt.Println(exampleAST(74, "int i = x;"))
-	// Output:
-	// &cc.AssignmentExpression{
-	// · Case: AssignmentExpressionCond,
-	// · ConditionalExpression: &cc.ConditionalExpression{
-	// · · Case: ConditionalExpressionLOr,
-	// · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · Case: LogicalOrExpressionLAnd,
-	// · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · Case: LogicalAndExpressionOr,
-	// · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleAssignmentExpression_assign() {
 	fmt.Println(exampleAST(75, "int f() { x = y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:15: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:15: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionAssign,
 	// · Token: example.c:1:13: '=' "=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1096,66 +343,15 @@ func ExampleAssignmentExpression_mul() {
 	fmt.Println(exampleAST(76, "int f() { x *= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionMul,
 	// · Token: example.c:1:13: MULASSIGN "*=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1164,66 +360,15 @@ func ExampleAssignmentExpression_div() {
 	fmt.Println(exampleAST(77, "int f() { x /= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionDiv,
 	// · Token: example.c:1:13: DIVASSIGN "/=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1232,66 +377,15 @@ func ExampleAssignmentExpression_mod() {
 	fmt.Println(exampleAST(78, "int f() { x %= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionMod,
 	// · Token: example.c:1:13: MODASSIGN "%=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1300,66 +394,15 @@ func ExampleAssignmentExpression_add() {
 	fmt.Println(exampleAST(79, "int f() { x += y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionAdd,
 	// · Token: example.c:1:13: ADDASSIGN "+=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1368,66 +411,15 @@ func ExampleAssignmentExpression_sub() {
 	fmt.Println(exampleAST(80, "int f() { x -= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionSub,
 	// · Token: example.c:1:13: SUBASSIGN "-=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1436,66 +428,15 @@ func ExampleAssignmentExpression_lsh() {
 	fmt.Println(exampleAST(81, "int f() { x <<= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:17: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionLsh,
 	// · Token: example.c:1:13: LSHASSIGN "<<=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1504,66 +445,15 @@ func ExampleAssignmentExpression_rsh() {
 	fmt.Println(exampleAST(82, "int f() { x >>= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:17: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionRsh,
 	// · Token: example.c:1:13: RSHASSIGN ">>=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1572,66 +462,15 @@ func ExampleAssignmentExpression_and() {
 	fmt.Println(exampleAST(83, "int f() { x &= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionAnd,
 	// · Token: example.c:1:13: ANDASSIGN "&=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1640,66 +479,15 @@ func ExampleAssignmentExpression_xor() {
 	fmt.Println(exampleAST(84, "int f() { x ^= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionXor,
 	// · Token: example.c:1:13: XORASSIGN "^=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1708,66 +496,15 @@ func ExampleAssignmentExpression_or() {
 	fmt.Println(exampleAST(85, "int f() { x |= y; }"))
 	// Output:
 	// &cc.AssignmentExpression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:16: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "y",
 	// · },
 	// · Case: AssignmentExpressionOr,
 	// · Token: example.c:1:13: ORASSIGN "|=",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -1878,54 +615,9 @@ func ExampleAttributeValue_expr() {
 	// Output:
 	// &cc.AttributeValue{
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:24: IDENTIFIER "b",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:24: IDENTIFIER "b",
 	// · · },
 	// · },
 	// · Case: AttributeValueExpr,
@@ -2001,60 +693,18 @@ func ExampleBlockItem_stmt() {
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "g",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:12: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:13: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:11: IDENTIFIER "g",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:12: '(' "(",
+	// · · · · · Token2: example.c:1:13: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:14: ';' ";",
@@ -2181,41 +831,14 @@ func ExampleBlockItemList_case1() {
 	// }
 }
 
-func ExampleCastExpression_unary() {
-	fmt.Println(exampleAST(42, "int i = 42;"))
-	// Output:
-	// &cc.CastExpression{
-	// · Case: CastExpressionUnary,
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionInt,
-	// · · · · Token: example.c:1:9: INTCONST "42",
-	// · · · },
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleCastExpression_cast() {
 	fmt.Println(exampleAST(43, "int i = (__attribute__((a)) int)3.14;"))
 	// Output:
 	// &cc.CastExpression{
 	// · Case: CastExpressionCast,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionFloat,
-	// · · · · · Token: example.c:1:33: FLOATCONST "3.14",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionFloat,
+	// · · Token: example.c:1:33: FLOATCONST "3.14",
 	// · },
 	// · Token: example.c:1:9: '(' "(",
 	// · Token2: example.c:1:32: ')' ")",
@@ -2296,201 +919,24 @@ func ExampleCompoundStatement_case0() {
 	// }
 }
 
-func ExampleConditionalExpression_lOr() {
-	fmt.Println(exampleAST(72, "int i = x;"))
-	// Output:
-	// &cc.ConditionalExpression{
-	// · Case: ConditionalExpressionLOr,
-	// · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · Case: LogicalOrExpressionLAnd,
-	// · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · Case: LogicalAndExpressionOr,
-	// · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · Case: InclusiveOrExpressionXor,
-	// · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · Case: AndExpressionEq,
-	// · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · },
-	// · · · },
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleConditionalExpression_cond() {
 	fmt.Println(exampleAST(73, "int i = x ? y : z;"))
 	// Output:
 	// &cc.ConditionalExpression{
 	// · Case: ConditionalExpressionCond,
-	// · ConditionalExpression: &cc.ConditionalExpression{
-	// · · Case: ConditionalExpressionLOr,
-	// · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · Case: LogicalOrExpressionLAnd,
-	// · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · Case: LogicalAndExpressionOr,
-	// · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "z",
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ConditionalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:17: IDENTIFIER "z",
+	// · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:13: IDENTIFIER "y",
 	// · · },
 	// · },
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · },
-	// · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · Case: LogicalOrExpressionLAnd,
-	// · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · Case: LogicalAndExpressionOr,
-	// · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · Case: InclusiveOrExpressionXor,
-	// · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · Case: AndExpressionEq,
-	// · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · },
-	// · · · },
-	// · · },
+	// · LogicalOrExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: IDENTIFIER "x",
 	// · },
 	// · Token: example.c:1:11: '?' "?",
 	// · Token2: example.c:1:15: ':' ":",
@@ -2501,51 +947,9 @@ func ExampleConstantExpression_case0() {
 	fmt.Println(exampleAST(88, "struct { int i:3; };"))
 	// Output:
 	// &cc.ConstantExpression{
-	// · ConditionalExpression: &cc.ConditionalExpression{
-	// · · Case: ConditionalExpressionLOr,
-	// · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · Case: LogicalOrExpressionLAnd,
-	// · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · Case: LogicalAndExpressionOr,
-	// · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · Token: example.c:1:16: INTCONST "3",
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · ConditionalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionInt,
+	// · · Token: example.c:1:16: INTCONST "3",
 	// · },
 	// }
 }
@@ -2852,51 +1256,9 @@ func ExampleDesignation_case0() {
 	// · · Designator: &cc.Designator{
 	// · · · Case: DesignatorIndex,
 	// · · · ConstantExpression: &cc.ConstantExpression{
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:14: INTCONST "42",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionInt,
+	// · · · · · Token: example.c:1:14: INTCONST "42",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:13: '[' "[",
@@ -2913,51 +1275,9 @@ func ExampleDesignator_index() {
 	// &cc.Designator{
 	// · Case: DesignatorIndex,
 	// · ConstantExpression: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:14: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:14: INTCONST "42",
 	// · · },
 	// · },
 	// · Token: example.c:1:13: '[' "[",
@@ -2971,99 +1291,15 @@ func ExampleDesignator_index2() {
 	// &cc.Designator{
 	// · Case: DesignatorIndex2,
 	// · ConstantExpression: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:14: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:14: INTCONST "42",
 	// · · },
 	// · },
 	// · ConstantExpression2: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:21: INTCONST "278",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:21: INTCONST "278",
 	// · · },
 	// · },
 	// · Token: example.c:1:13: '[' "[",
@@ -3099,51 +1335,9 @@ func ExampleDesignatorList_case0() {
 	// · Designator: &cc.Designator{
 	// · · Case: DesignatorIndex,
 	// · · ConstantExpression: &cc.ConstantExpression{
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:14: INTCONST "42",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionInt,
+	// · · · · Token: example.c:1:14: INTCONST "42",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:13: '[' "[",
@@ -3159,51 +1353,9 @@ func ExampleDesignatorList_case1() {
 	// · Designator: &cc.Designator{
 	// · · Case: DesignatorIndex,
 	// · · ConstantExpression: &cc.ConstantExpression{
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:19: INTCONST "42",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionInt,
+	// · · · · Token: example.c:1:19: INTCONST "42",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:18: '[' "[",
@@ -3213,51 +1365,9 @@ func ExampleDesignatorList_case1() {
 	// · · Designator: &cc.Designator{
 	// · · · Case: DesignatorIndex,
 	// · · · ConstantExpression: &cc.ConstantExpression{
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:23: INTCONST "12",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionInt,
+	// · · · · · Token: example.c:1:23: INTCONST "12",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:22: '[' "[",
@@ -3288,54 +1398,9 @@ func ExampleDirectAbstractDeclarator_arr() {
 	fmt.Println(exampleAST(192, "void f(int[const 42]);"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:18: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionInt,
+	// · · Token: example.c:1:18: INTCONST "42",
 	// · },
 	// · Case: DirectAbstractDeclaratorArr,
 	// · Token: example.c:1:11: '[' "[",
@@ -3354,54 +1419,9 @@ func ExampleDirectAbstractDeclarator_staticArr() {
 	fmt.Println(exampleAST(193, "void f(int[static const 42]);"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:25: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionInt,
+	// · · Token: example.c:1:25: INTCONST "42",
 	// · },
 	// · Case: DirectAbstractDeclaratorStaticArr,
 	// · Token: example.c:1:11: '[' "[",
@@ -3421,54 +1441,9 @@ func ExampleDirectAbstractDeclarator_arrStatic() {
 	fmt.Println(exampleAST(194, "void f(int[const static 42]);"))
 	// Output:
 	// &cc.DirectAbstractDeclarator{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:25: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionInt,
+	// · · Token: example.c:1:25: INTCONST "42",
 	// · },
 	// · Case: DirectAbstractDeclaratorArr,
 	// · Token: example.c:1:11: '[' "[",
@@ -3549,54 +1524,9 @@ func ExampleDirectDeclarator_arr() {
 	fmt.Println(exampleAST(169, "int i[const 42];"))
 	// Output:
 	// &cc.DirectDeclarator{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:13: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionInt,
+	// · · Token: example.c:1:13: INTCONST "42",
 	// · },
 	// · Case: DirectDeclaratorArr,
 	// · DirectDeclarator: &cc.DirectDeclarator{
@@ -3619,54 +1549,9 @@ func ExampleDirectDeclarator_staticArr() {
 	fmt.Println(exampleAST(170, "int i[static const 42];"))
 	// Output:
 	// &cc.DirectDeclarator{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:20: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionInt,
+	// · · Token: example.c:1:20: INTCONST "42",
 	// · },
 	// · Case: DirectDeclaratorStaticArr,
 	// · DirectDeclarator: &cc.DirectDeclarator{
@@ -3690,54 +1575,9 @@ func ExampleDirectDeclarator_arrStatic() {
 	fmt.Println(exampleAST(171, "int i[const static 42];"))
 	// Output:
 	// &cc.DirectDeclarator{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:20: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionInt,
+	// · · Token: example.c:1:20: INTCONST "42",
 	// · },
 	// · Case: DirectDeclaratorArrStatic,
 	// · DirectDeclarator: &cc.DirectDeclarator{
@@ -3874,51 +1714,9 @@ func ExampleEnumerator_expr() {
 	// &cc.Enumerator{
 	// · Case: EnumeratorExpr,
 	// · ConstantExpression: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:13: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:13: INTCONST "42",
 	// · · },
 	// · },
 	// · Token: example.c:1:9: IDENTIFIER "a",
@@ -3955,39 +1753,6 @@ func ExampleEnumeratorList_case1() {
 	// }
 }
 
-func ExampleEqualityExpression_rel() {
-	fmt.Println(exampleAST(59, "int i = x;"))
-	// Output:
-	// &cc.EqualityExpression{
-	// · Case: EqualityExpressionRel,
-	// · RelationalExpression: &cc.RelationalExpression{
-	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.ShiftExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · Case: CastExpressionUnary,
-	// · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ShiftExpressionAdd,
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleEqualityExpression_eq() {
 	fmt.Println(exampleAST(60, "int i = x == y;"))
 	// Output:
@@ -3995,56 +1760,14 @@ func ExampleEqualityExpression_eq() {
 	// · Case: EqualityExpressionEq,
 	// · EqualityExpression: &cc.EqualityExpression{
 	// · · Case: EqualityExpressionRel,
-	// · · RelationalExpression: &cc.RelationalExpression{
-	// · · · Case: RelationalExpressionShift,
-	// · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · Case: AdditiveExpressionMul,
-	// · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: ShiftExpressionAdd,
-	// · · · },
+	// · · RelationalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
-	// · RelationalExpression: &cc.RelationalExpression{
-	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.ShiftExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · Case: CastExpressionUnary,
-	// · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ShiftExpressionAdd,
-	// · · },
+	// · RelationalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:11: EQ "==",
 	// }
@@ -4057,97 +1780,16 @@ func ExampleEqualityExpression_neq() {
 	// · Case: EqualityExpressionNeq,
 	// · EqualityExpression: &cc.EqualityExpression{
 	// · · Case: EqualityExpressionRel,
-	// · · RelationalExpression: &cc.RelationalExpression{
-	// · · · Case: RelationalExpressionShift,
-	// · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · Case: AdditiveExpressionMul,
-	// · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: ShiftExpressionAdd,
-	// · · · },
+	// · · RelationalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
-	// · RelationalExpression: &cc.RelationalExpression{
-	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.ShiftExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · Case: CastExpressionUnary,
-	// · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ShiftExpressionAdd,
-	// · · },
+	// · RelationalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:11: NEQ "!=",
-	// }
-}
-
-func ExampleExclusiveOrExpression_and() {
-	fmt.Println(exampleAST(64, "int i = x;"))
-	// Output:
-	// &cc.ExclusiveOrExpression{
-	// · AndExpression: &cc.AndExpression{
-	// · · Case: AndExpressionEq,
-	// · · EqualityExpression: &cc.EqualityExpression{
-	// · · · Case: EqualityExpressionRel,
-	// · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · Case: RelationalExpressionShift,
-	// · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · · Case: ShiftExpressionAdd,
-	// · · · · },
-	// · · · },
-	// · · },
-	// · },
-	// · Case: ExclusiveOrExpressionAnd,
 	// }
 }
 
@@ -4155,69 +1797,15 @@ func ExampleExclusiveOrExpression_xor() {
 	fmt.Println(exampleAST(65, "int i = x^y;"))
 	// Output:
 	// &cc.ExclusiveOrExpression{
-	// · AndExpression: &cc.AndExpression{
-	// · · Case: AndExpressionEq,
-	// · · EqualityExpression: &cc.EqualityExpression{
-	// · · · Case: EqualityExpressionRel,
-	// · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · Case: RelationalExpressionShift,
-	// · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "y",
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · · Case: ShiftExpressionAdd,
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AndExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "y",
 	// · },
 	// · Case: ExclusiveOrExpressionXor,
 	// · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · AndExpression: &cc.AndExpression{
-	// · · · Case: AndExpressionEq,
-	// · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · Case: EqualityExpressionRel,
-	// · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · Case: RelationalExpressionShift,
-	// · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AndExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · · Case: ExclusiveOrExpressionAnd,
 	// · },
@@ -4225,178 +1813,37 @@ func ExampleExclusiveOrExpression_xor() {
 	// }
 }
 
-func ExampleExpression_assign() {
+func ExampleExpressionList_assign() {
 	fmt.Println(exampleAST(86, "int f() { i = x; };"))
 	// Output:
-	// &cc.Expression{
+	// &cc.ExpressionList{
 	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:15: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:15: IDENTIFIER "x",
 	// · · },
 	// · · Case: AssignmentExpressionAssign,
 	// · · Token: example.c:1:13: '=' "=",
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:11: IDENTIFIER "i",
-	// · · · · },
-	// · · · },
+	// · · UnaryExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:11: IDENTIFIER "i",
 	// · · },
 	// · },
 	// }
 }
 
-func ExampleExpression_comma() {
+func ExampleExpressionList_comma() {
 	fmt.Println(exampleAST(87, "int f() { x, y; };"))
 	// Output:
-	// &cc.Expression{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// &cc.ExpressionList{
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:11: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:12: ',' ",",
@@ -4407,60 +1854,18 @@ func ExampleExpressionStatement_case0() {
 	fmt.Println(exampleAST(227, "int f() { g(); }"))
 	// Output:
 	// &cc.ExpressionStatement{
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "g",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:12: '(' "(",
-	// · · · · · · · · · · · · · · · · · Token2: example.c:1:13: ')' ")",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · Case: PostfixExpressionCall,
+	// · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · Case: PostfixExpressionPrimary,
+	// · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:11: IDENTIFIER "g",
 	// · · · · },
 	// · · · },
+	// · · · Token: example.c:1:12: '(' "(",
+	// · · · Token2: example.c:1:13: ')' ")",
 	// · · },
 	// · },
 	// · Token: example.c:1:14: ';' ";",
@@ -4620,54 +2025,9 @@ func ExampleGenericAssociation_type() {
 	fmt.Println(exampleAST(14, "int i = _Generic(x, int: y)(42);"))
 	// Output:
 	// &cc.GenericAssociation{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:26: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:26: IDENTIFIER "y",
 	// · },
 	// · Case: GenericAssociationType,
 	// · Token: example.c:1:24: ':' ":",
@@ -4687,54 +2047,9 @@ func ExampleGenericAssociation_default() {
 	fmt.Println(exampleAST(15, "int i = _Generic(x, default: y)(42);"))
 	// Output:
 	// &cc.GenericAssociation{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:30: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:30: IDENTIFIER "y",
 	// · },
 	// · Case: GenericAssociationDefault,
 	// · Token: example.c:1:21: DEFAULT "default",
@@ -4747,54 +2062,9 @@ func ExampleGenericAssociationList_case0() {
 	// Output:
 	// &cc.GenericAssociationList{
 	// · GenericAssociation: &cc.GenericAssociation{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:26: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:26: IDENTIFIER "y",
 	// · · },
 	// · · Case: GenericAssociationType,
 	// · · Token: example.c:1:24: ':' ":",
@@ -4816,54 +2086,9 @@ func ExampleGenericAssociationList_case1() {
 	// Output:
 	// &cc.GenericAssociationList{
 	// · GenericAssociation: &cc.GenericAssociation{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:26: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:26: IDENTIFIER "y",
 	// · · },
 	// · · Case: GenericAssociationType,
 	// · · Token: example.c:1:24: ':' ":",
@@ -4879,54 +2104,9 @@ func ExampleGenericAssociationList_case1() {
 	// · },
 	// · GenericAssociationList: &cc.GenericAssociationList{
 	// · · GenericAssociation: &cc.GenericAssociation{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:36: IDENTIFIER "z",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:36: IDENTIFIER "z",
 	// · · · },
 	// · · · Case: GenericAssociationType,
 	// · · · Token: example.c:1:34: ':' ":",
@@ -4949,105 +2129,15 @@ func ExampleGenericSelection_case0() {
 	fmt.Println(exampleAST(11, "int i = _Generic(x, int: y)(42);"))
 	// Output:
 	// &cc.GenericSelection{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:18: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:18: IDENTIFIER "x",
 	// · },
 	// · GenericAssociationList: &cc.GenericAssociationList{
 	// · · GenericAssociation: &cc.GenericAssociation{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:26: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:26: IDENTIFIER "y",
 	// · · · },
 	// · · · Case: GenericAssociationType,
 	// · · · Token: example.c:1:24: ':' ":",
@@ -5089,122 +2179,20 @@ func ExampleIdentifierList_case1() {
 	// }
 }
 
-func ExampleInclusiveOrExpression_xor() {
-	fmt.Println(exampleAST(66, "int i = x;"))
-	// Output:
-	// &cc.InclusiveOrExpression{
-	// · Case: InclusiveOrExpressionXor,
-	// · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · AndExpression: &cc.AndExpression{
-	// · · · Case: AndExpressionEq,
-	// · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · Case: EqualityExpressionRel,
-	// · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · Case: RelationalExpressionShift,
-	// · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Case: ExclusiveOrExpressionAnd,
-	// · },
-	// }
-}
-
 func ExampleInclusiveOrExpression_or() {
 	fmt.Println(exampleAST(67, "int i = x|y;"))
 	// Output:
 	// &cc.InclusiveOrExpression{
 	// · Case: InclusiveOrExpressionOr,
-	// · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · AndExpression: &cc.AndExpression{
-	// · · · Case: AndExpressionEq,
-	// · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · Case: EqualityExpressionRel,
-	// · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · Case: RelationalExpressionShift,
-	// · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "y",
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Case: ExclusiveOrExpressionAnd,
+	// · ExclusiveOrExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "y",
 	// · },
 	// · InclusiveOrExpression: &cc.InclusiveOrExpression{
 	// · · Case: InclusiveOrExpressionXor,
-	// · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · AndExpression: &cc.AndExpression{
-	// · · · · Case: AndExpressionEq,
-	// · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · Case: EqualityExpressionRel,
-	// · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ExclusiveOrExpressionAnd,
+	// · · ExclusiveOrExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:10: '|' "|",
@@ -5249,54 +2237,9 @@ func ExampleInitDeclarator_init() {
 	// · · },
 	// · },
 	// · Initializer: &cc.Initializer{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:28: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:28: IDENTIFIER "x",
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
@@ -5367,54 +2310,9 @@ func ExampleInitializer_expr() {
 	fmt.Println(exampleAST(197, "int i = x;"))
 	// Output:
 	// &cc.Initializer{
-	// · AssignmentExpression: &cc.AssignmentExpression{
-	// · · Case: AssignmentExpressionCond,
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AssignmentExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: IDENTIFIER "x",
 	// · },
 	// · Case: InitializerExpr,
 	// }
@@ -5424,57 +2322,12 @@ func ExampleInitializer_initList() {
 	fmt.Println(exampleAST(198, "int i[] = { x };"))
 	// Output:
 	// &cc.Initializer{
-	// · Case: InitializerExpr,
+	// · Case: InitializerInitList,
 	// · InitializerList: &cc.InitializerList{
 	// · · Initializer: &cc.Initializer{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:13: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:13: IDENTIFIER "x",
 	// · · · },
 	// · · · Case: InitializerExpr,
 	// · · },
@@ -5493,51 +2346,9 @@ func ExampleInitializerList_case0() {
 	// · · · Designator: &cc.Designator{
 	// · · · · Case: DesignatorIndex,
 	// · · · · ConstantExpression: &cc.ConstantExpression{
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · · Token: example.c:1:14: INTCONST "10",
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
+	// · · · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · · · Case: PrimaryExpressionInt,
+	// · · · · · · Token: example.c:1:14: INTCONST "10",
 	// · · · · · },
 	// · · · · },
 	// · · · · Token: example.c:1:13: '[' "[",
@@ -5547,54 +2358,9 @@ func ExampleInitializerList_case0() {
 	// · · Token: example.c:1:18: '=' "=",
 	// · },
 	// · Initializer: &cc.Initializer{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:20: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:20: IDENTIFIER "x",
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
@@ -5610,51 +2376,9 @@ func ExampleInitializerList_case1() {
 	// · · · Designator: &cc.Designator{
 	// · · · · Case: DesignatorIndex,
 	// · · · · ConstantExpression: &cc.ConstantExpression{
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · · Token: example.c:1:14: INTCONST "10",
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
+	// · · · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · · · Case: PrimaryExpressionInt,
+	// · · · · · · Token: example.c:1:14: INTCONST "10",
 	// · · · · · },
 	// · · · · },
 	// · · · · Token: example.c:1:13: '[' "[",
@@ -5664,54 +2388,9 @@ func ExampleInitializerList_case1() {
 	// · · Token: example.c:1:18: '=' "=",
 	// · },
 	// · Initializer: &cc.Initializer{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:20: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:20: IDENTIFIER "x",
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
@@ -5721,51 +2400,9 @@ func ExampleInitializerList_case1() {
 	// · · · · Designator: &cc.Designator{
 	// · · · · · Case: DesignatorIndex,
 	// · · · · · ConstantExpression: &cc.ConstantExpression{
-	// · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:24: INTCONST "20",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionInt,
+	// · · · · · · · Token: example.c:1:24: INTCONST "20",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · · Token: example.c:1:23: '[' "[",
@@ -5775,54 +2412,9 @@ func ExampleInitializerList_case1() {
 	// · · · Token: example.c:1:28: '=' "=",
 	// · · },
 	// · · Initializer: &cc.Initializer{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:30: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:30: IDENTIFIER "y",
 	// · · · },
 	// · · · Case: InitializerExpr,
 	// · · },
@@ -5836,114 +2428,27 @@ func ExampleIterationStatement_while() {
 	// Output:
 	// &cc.IterationStatement{
 	// · Case: IterationStatementWhile,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:17: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:20: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:21: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:22: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:20: IDENTIFIER "y",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:21: '(' "(",
+	// · · · · · Token2: example.c:1:22: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:23: ';' ";",
@@ -5960,114 +2465,27 @@ func ExampleIterationStatement_do() {
 	// Output:
 	// &cc.IterationStatement{
 	// · Case: IterationStatementDo,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:25: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:25: IDENTIFIER "y",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:15: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:16: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:15: '(' "(",
+	// · · · · · Token2: example.c:1:16: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:17: ';' ";",
@@ -6086,260 +2504,65 @@ func ExampleIterationStatement_for() {
 	// Output:
 	// &cc.IterationStatement{
 	// · Case: IterationStatementFor,
-	// · Expression: &cc.Expression{
+	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:20: INTCONST "0",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionInt,
+	// · · · · Token: example.c:1:20: INTCONST "0",
 	// · · · },
 	// · · · Case: AssignmentExpressionAssign,
 	// · · · Token: example.c:1:18: '=' "=",
-	// · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · Case: UnaryExpressionPostfix,
-	// · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:16: IDENTIFIER "i",
-	// · · · · · },
-	// · · · · },
+	// · · · UnaryExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:16: IDENTIFIER "i",
 	// · · · },
 	// · · },
 	// · },
-	// · Expression2: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionLt,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:23: IDENTIFIER "i",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:27: INTCONST "10",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Token: example.c:1:25: '<' "<",
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · ExpressionList2: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.RelationalExpression{
+	// · · · Case: RelationalExpressionLt,
+	// · · · RelationalExpression: &cc.RelationalExpression{
+	// · · · · Case: RelationalExpressionShift,
+	// · · · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:23: IDENTIFIER "i",
 	// · · · · },
 	// · · · },
+	// · · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionInt,
+	// · · · · Token: example.c:1:27: INTCONST "10",
+	// · · · },
+	// · · · Token: example.c:1:25: '<' "<",
 	// · · },
 	// · },
-	// · Expression3: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionInc,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:31: IDENTIFIER "i",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:32: INC "++",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · ExpressionList3: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · Case: PostfixExpressionInc,
+	// · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · Case: PostfixExpressionPrimary,
+	// · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:31: IDENTIFIER "i",
 	// · · · · },
 	// · · · },
+	// · · · Token: example.c:1:32: INC "++",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:36: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:37: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:38: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:36: IDENTIFIER "x",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:37: '(' "(",
+	// · · · · · Token2: example.c:1:38: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:39: ';' ";",
@@ -6376,54 +2599,9 @@ func ExampleIterationStatement_forDecl() {
 	// · · · · · },
 	// · · · · },
 	// · · · · Initializer: &cc.Initializer{
-	// · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:24: INTCONST "0",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
+	// · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · Case: PrimaryExpressionInt,
+	// · · · · · · Token: example.c:1:24: INTCONST "0",
 	// · · · · · },
 	// · · · · · Case: InitializerExpr,
 	// · · · · },
@@ -6432,195 +2610,51 @@ func ExampleIterationStatement_forDecl() {
 	// · · },
 	// · · Token: example.c:1:25: ';' ";",
 	// · },
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionLt,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:27: IDENTIFIER "i",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:31: INTCONST "10",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Token: example.c:1:29: '<' "<",
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.RelationalExpression{
+	// · · · Case: RelationalExpressionLt,
+	// · · · RelationalExpression: &cc.RelationalExpression{
+	// · · · · Case: RelationalExpressionShift,
+	// · · · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:27: IDENTIFIER "i",
 	// · · · · },
 	// · · · },
+	// · · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionInt,
+	// · · · · Token: example.c:1:31: INTCONST "10",
+	// · · · },
+	// · · · Token: example.c:1:29: '<' "<",
 	// · · },
 	// · },
-	// · Expression2: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionInc,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:35: IDENTIFIER "i",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:36: INC "++",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · ExpressionList2: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · Case: PostfixExpressionInc,
+	// · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · Case: PostfixExpressionPrimary,
+	// · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:35: IDENTIFIER "i",
 	// · · · · },
 	// · · · },
+	// · · · Token: example.c:1:36: INC "++",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:40: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:41: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:42: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:40: IDENTIFIER "x",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:41: '(' "(",
+	// · · · · · Token2: example.c:1:42: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:43: ';' ";",
@@ -6649,55 +2683,10 @@ func ExampleJumpStatement_gotoExpr() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementGotoExpr,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:40: IDENTIFIER "p",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:40: IDENTIFIER "p",
 	// · · },
 	// · },
 	// · Token: example.c:1:34: GOTO "goto",
@@ -6731,55 +2720,10 @@ func ExampleJumpStatement_return() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementReturn,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:25: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:25: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:18: RETURN "return",
@@ -6865,110 +2809,26 @@ func ExampleLabeledStatement_caseLabel() {
 	// &cc.LabeledStatement{
 	// · Case: LabeledStatementCaseLabel,
 	// · ConstantExpression: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:26: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:26: INTCONST "42",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:30: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:31: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:32: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:30: IDENTIFIER "x",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:31: '(' "(",
+	// · · · · · Token2: example.c:1:32: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:33: ';' ";",
@@ -6985,158 +2845,32 @@ func ExampleLabeledStatement_range() {
 	// &cc.LabeledStatement{
 	// · Case: LabeledStatementRange,
 	// · ConstantExpression: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:26: INTCONST "42",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:26: INTCONST "42",
 	// · · },
 	// · },
 	// · ConstantExpression2: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:33: INTCONST "56",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:33: INTCONST "56",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:37: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:38: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:39: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:37: IDENTIFIER "x",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:38: '(' "(",
+	// · · · · · Token2: example.c:1:39: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:40: ';' ";",
@@ -7156,60 +2890,18 @@ func ExampleLabeledStatement_default() {
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:30: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:31: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:32: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:30: IDENTIFIER "x",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:31: '(' "(",
+	// · · · · · Token2: example.c:1:32: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:33: ';' ";",
@@ -7220,182 +2912,23 @@ func ExampleLabeledStatement_default() {
 	// }
 }
 
-func ExampleLogicalAndExpression_or() {
-	fmt.Println(exampleAST(68, "int i = x;"))
-	// Output:
-	// &cc.LogicalAndExpression{
-	// · Case: LogicalAndExpressionOr,
-	// · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · Case: InclusiveOrExpressionXor,
-	// · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · AndExpression: &cc.AndExpression{
-	// · · · · Case: AndExpressionEq,
-	// · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · Case: EqualityExpressionRel,
-	// · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ExclusiveOrExpressionAnd,
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleLogicalAndExpression_lAnd() {
 	fmt.Println(exampleAST(69, "int i = x && y;"))
 	// Output:
 	// &cc.LogicalAndExpression{
 	// · Case: LogicalAndExpressionLAnd,
-	// · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · Case: InclusiveOrExpressionXor,
-	// · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · AndExpression: &cc.AndExpression{
-	// · · · · Case: AndExpressionEq,
-	// · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · Case: EqualityExpressionRel,
-	// · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ExclusiveOrExpressionAnd,
-	// · · },
+	// · InclusiveOrExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · LogicalAndExpression: &cc.LogicalAndExpression{
 	// · · Case: LogicalAndExpressionOr,
-	// · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · Case: InclusiveOrExpressionXor,
-	// · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · AndExpression: &cc.AndExpression{
-	// · · · · · Case: AndExpressionEq,
-	// · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · },
+	// · · InclusiveOrExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: ANDAND "&&",
-	// }
-}
-
-func ExampleLogicalOrExpression_lAnd() {
-	fmt.Println(exampleAST(70, "int i = x;"))
-	// Output:
-	// &cc.LogicalOrExpression{
-	// · Case: LogicalOrExpressionLAnd,
-	// · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · Case: LogicalAndExpressionOr,
-	// · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · Case: InclusiveOrExpressionXor,
-	// · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · AndExpression: &cc.AndExpression{
-	// · · · · · Case: AndExpressionEq,
-	// · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · },
-	// · · },
-	// · },
 	// }
 }
 
@@ -7404,111 +2937,18 @@ func ExampleLogicalOrExpression_lOr() {
 	// Output:
 	// &cc.LogicalOrExpression{
 	// · Case: LogicalOrExpressionLOr,
-	// · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · Case: LogicalAndExpressionOr,
-	// · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · Case: InclusiveOrExpressionXor,
-	// · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · AndExpression: &cc.AndExpression{
-	// · · · · · Case: AndExpressionEq,
-	// · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · },
-	// · · },
+	// · LogicalAndExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · LogicalOrExpression: &cc.LogicalOrExpression{
 	// · · Case: LogicalOrExpressionLAnd,
-	// · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · Case: LogicalAndExpressionOr,
-	// · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · Case: InclusiveOrExpressionXor,
-	// · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · Case: AndExpressionEq,
-	// · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · },
-	// · · · },
+	// · · LogicalAndExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: OROR "||",
-	// }
-}
-
-func ExampleMultiplicativeExpression_cast() {
-	fmt.Println(exampleAST(44, "int i = x;"))
-	// Output:
-	// &cc.MultiplicativeExpression{
-	// · Case: MultiplicativeExpressionCast,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · },
-	// · · · },
-	// · · },
-	// · },
 	// }
 }
 
@@ -7517,33 +2957,15 @@ func ExampleMultiplicativeExpression_mul() {
 	// Output:
 	// &cc.MultiplicativeExpression{
 	// · Case: MultiplicativeExpressionMul,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:13: IDENTIFIER "y",
 	// · },
 	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
 	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.CastExpression{
-	// · · · Case: CastExpressionUnary,
-	// · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · Case: UnaryExpressionPostfix,
-	// · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · CastExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: '*' "*",
@@ -7555,33 +2977,15 @@ func ExampleMultiplicativeExpression_div() {
 	// Output:
 	// &cc.MultiplicativeExpression{
 	// · Case: MultiplicativeExpressionDiv,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:13: IDENTIFIER "y",
 	// · },
 	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
 	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.CastExpression{
-	// · · · Case: CastExpressionUnary,
-	// · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · Case: UnaryExpressionPostfix,
-	// · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · CastExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: '/' "/",
@@ -7593,33 +2997,15 @@ func ExampleMultiplicativeExpression_mod() {
 	// Output:
 	// &cc.MultiplicativeExpression{
 	// · Case: MultiplicativeExpressionMod,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:13: IDENTIFIER "y",
 	// · },
 	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
 	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.CastExpression{
-	// · · · Case: CastExpressionUnary,
-	// · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · Case: UnaryExpressionPostfix,
-	// · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · CastExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: '%' "%",
@@ -7841,72 +3227,15 @@ func ExamplePointer_block() {
 	// }
 }
 
-func ExamplePostfixExpression_primary() {
-	fmt.Println(exampleAST(16, "int i = x;"))
-	// Output:
-	// &cc.PostfixExpression{
-	// · Case: PostfixExpressionPrimary,
-	// · PrimaryExpression: &cc.PrimaryExpression{
-	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
-	// · },
-	// }
-}
-
 func ExamplePostfixExpression_index() {
 	fmt.Println(exampleAST(17, "int i = x[y];"))
 	// Output:
 	// &cc.PostfixExpression{
 	// · Case: PostfixExpressionIndex,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:11: IDENTIFIER "y",
 	// · · },
 	// · },
 	// · PostfixExpression: &cc.PostfixExpression{
@@ -7926,54 +3255,9 @@ func ExamplePostfixExpression_call() {
 	// Output:
 	// &cc.PostfixExpression{
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:11: IDENTIFIER "y",
 	// · · },
 	// · },
 	// · Case: PostfixExpressionCall,
@@ -8062,54 +3346,9 @@ func ExamplePostfixExpression_complit() {
 	// · Case: PostfixExpressionComplit,
 	// · InitializerList: &cc.InitializerList{
 	// · · Initializer: &cc.Initializer{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:17: IDENTIFIER "y",
 	// · · · },
 	// · · · Case: InitializerExpr,
 	// · · },
@@ -8206,75 +3445,21 @@ func ExamplePrimaryExpression_expr() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionExpr,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:10: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: AdditiveExpressionAdd,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:12: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Token: example.c:1:11: '+' "+",
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.AdditiveExpression{
+	// · · · AdditiveExpression: &cc.AdditiveExpression{
+	// · · · · Case: AdditiveExpressionMul,
+	// · · · · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:10: IDENTIFIER "x",
 	// · · · · },
 	// · · · },
+	// · · · Case: AdditiveExpressionAdd,
+	// · · · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:12: IDENTIFIER "y",
+	// · · · },
+	// · · · Token: example.c:1:11: '+' "+",
 	// · · },
 	// · },
 	// · Token: example.c:1:9: '(' "(",
@@ -8294,60 +3479,18 @@ func ExamplePrimaryExpression_stmt() {
 	// · · · · Statement: &cc.Statement{
 	// · · · · · Case: StatementExpr,
 	// · · · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · · · Expression: &cc.Expression{
-	// · · · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:12: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · · · · Token2: example.c:1:13: ')' ")",
-	// · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
+	// · · · · · · ExpressionList: &cc.ExpressionList{
+	// · · · · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · · · · Case: PostfixExpressionCall,
+	// · · · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · · · · Token: example.c:1:11: IDENTIFIER "x",
 	// · · · · · · · · · },
 	// · · · · · · · · },
+	// · · · · · · · · Token: example.c:1:12: '(' "(",
+	// · · · · · · · · Token2: example.c:1:13: ')' ")",
 	// · · · · · · · },
 	// · · · · · · },
 	// · · · · · · Token: example.c:1:14: ';' ";",
@@ -8367,156 +3510,8 @@ func ExamplePrimaryExpression_generic() {
 	fmt.Println(exampleAST(10, "int i = _Generic(x, int: y)(42);"))
 	// Output:
 	// &cc.PrimaryExpression{
-	// · Case: PrimaryExpressionGeneric,
-	// · GenericSelection: &cc.GenericSelection{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:18: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · GenericAssociationList: &cc.GenericAssociationList{
-	// · · · GenericAssociation: &cc.GenericAssociation{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · Token: example.c:1:26: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Case: GenericAssociationType,
-	// · · · · Token: example.c:1:24: ':' ":",
-	// · · · · TypeName: &cc.TypeName{
-	// · · · · · SpecifierQualifierList: &cc.SpecifierQualifierList{
-	// · · · · · · Case: SpecifierQualifierListTypeSpec,
-	// · · · · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · · · · Case: TypeSpecifierInt,
-	// · · · · · · · Token: example.c:1:21: INT "int",
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Token: example.c:1:9: GENERIC "_Generic",
-	// · · Token2: example.c:1:17: '(' "(",
-	// · · Token3: example.c:1:19: ',' ",",
-	// · · Token4: example.c:1:27: ')' ")",
-	// · },
-	// }
-}
-
-func ExampleRelationalExpression_shift() {
-	fmt.Println(exampleAST(54, "int i = x;"))
-	// Output:
-	// &cc.RelationalExpression{
-	// · Case: RelationalExpressionShift,
-	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · Case: AdditiveExpressionMul,
-	// · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · Case: MultiplicativeExpressionCast,
-	// · · · · CastExpression: &cc.CastExpression{
-	// · · · · · Case: CastExpressionUnary,
-	// · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Case: ShiftExpressionAdd,
-	// · },
+	// · Case: PrimaryExpressionInt,
+	// · Token: example.c:1:29: INTCONST "42",
 	// }
 }
 
@@ -8527,50 +3522,14 @@ func ExampleRelationalExpression_lt() {
 	// · Case: RelationalExpressionLt,
 	// · RelationalExpression: &cc.RelationalExpression{
 	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.ShiftExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · Case: CastExpressionUnary,
-	// · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ShiftExpressionAdd,
+	// · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
-	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · Case: AdditiveExpressionMul,
-	// · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · Case: MultiplicativeExpressionCast,
-	// · · · · CastExpression: &cc.CastExpression{
-	// · · · · · Case: CastExpressionUnary,
-	// · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Case: ShiftExpressionAdd,
+	// · ShiftExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:13: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:11: '<' "<",
 	// }
@@ -8583,50 +3542,14 @@ func ExampleRelationalExpression_gt() {
 	// · Case: RelationalExpressionGt,
 	// · RelationalExpression: &cc.RelationalExpression{
 	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.ShiftExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · Case: CastExpressionUnary,
-	// · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ShiftExpressionAdd,
+	// · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
-	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · Case: AdditiveExpressionMul,
-	// · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · Case: MultiplicativeExpressionCast,
-	// · · · · CastExpression: &cc.CastExpression{
-	// · · · · · Case: CastExpressionUnary,
-	// · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Case: ShiftExpressionAdd,
+	// · ShiftExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:13: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:11: '>' ">",
 	// }
@@ -8639,50 +3562,14 @@ func ExampleRelationalExpression_leq() {
 	// · Case: RelationalExpressionLeq,
 	// · RelationalExpression: &cc.RelationalExpression{
 	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.ShiftExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · Case: CastExpressionUnary,
-	// · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ShiftExpressionAdd,
+	// · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
-	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · Case: AdditiveExpressionMul,
-	// · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · Case: MultiplicativeExpressionCast,
-	// · · · · CastExpression: &cc.CastExpression{
-	// · · · · · Case: CastExpressionUnary,
-	// · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Case: ShiftExpressionAdd,
+	// · ShiftExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:11: LEQ "<=",
 	// }
@@ -8695,50 +3582,14 @@ func ExampleRelationalExpression_geq() {
 	// · Case: RelationalExpressionGeq,
 	// · RelationalExpression: &cc.RelationalExpression{
 	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.ShiftExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · Case: CastExpressionUnary,
-	// · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Case: ShiftExpressionAdd,
+	// · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · },
-	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · Case: AdditiveExpressionMul,
-	// · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · Case: MultiplicativeExpressionCast,
-	// · · · · CastExpression: &cc.CastExpression{
-	// · · · · · Case: CastExpressionUnary,
-	// · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · · Case: ShiftExpressionAdd,
+	// · ShiftExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · Token: example.c:1:11: GEQ ">=",
 	// }
@@ -8749,114 +3600,27 @@ func ExampleSelectionStatement_if() {
 	// Output:
 	// &cc.SelectionStatement{
 	// · Case: SelectionStatementIf,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:14: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:18: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:19: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:18: '(' "(",
+	// · · · · · Token2: example.c:1:19: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:20: ';' ";",
@@ -8873,114 +3637,27 @@ func ExampleSelectionStatement_ifElse() {
 	// Output:
 	// &cc.SelectionStatement{
 	// · Case: SelectionStatementIfElse,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:14: IDENTIFIER "x",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:18: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:19: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:18: '(' "(",
+	// · · · · · Token2: example.c:1:19: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:20: ';' ";",
@@ -8989,60 +3666,18 @@ func ExampleSelectionStatement_ifElse() {
 	// · Statement2: &cc.Statement{
 	// · · Case: StatementExpr,
 	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · Expression: &cc.Expression{
-	// · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · Case: AssignmentExpressionCond,
-	// · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:27: IDENTIFIER "z",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:28: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · Token2: example.c:1:29: ')' ")",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
+	// · · · ExpressionList: &cc.ExpressionList{
+	// · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · Case: PostfixExpressionCall,
+	// · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · Token: example.c:1:27: IDENTIFIER "z",
 	// · · · · · · },
 	// · · · · · },
+	// · · · · · Token: example.c:1:28: '(' "(",
+	// · · · · · Token2: example.c:1:29: ')' ")",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:30: ';' ";",
@@ -9060,55 +3695,10 @@ func ExampleSelectionStatement_switch() {
 	// Output:
 	// &cc.SelectionStatement{
 	// · Case: SelectionStatementSwitch,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:18: IDENTIFIER "i",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:18: IDENTIFIER "i",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -9116,110 +3706,26 @@ func ExampleSelectionStatement_switch() {
 	// · · LabeledStatement: &cc.LabeledStatement{
 	// · · · Case: LabeledStatementCaseLabel,
 	// · · · ConstantExpression: &cc.ConstantExpression{
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:26: INTCONST "42",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
+	// · · · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionInt,
+	// · · · · · Token: example.c:1:26: INTCONST "42",
 	// · · · · },
 	// · · · },
 	// · · · Statement: &cc.Statement{
 	// · · · · Case: StatementExpr,
 	// · · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · · Expression: &cc.Expression{
-	// · · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:30: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:31: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · · · Token2: example.c:1:32: ')' ")",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
+	// · · · · · ExpressionList: &cc.ExpressionList{
+	// · · · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · · · Case: PostfixExpressionCall,
+	// · · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · · · Token: example.c:1:30: IDENTIFIER "x",
 	// · · · · · · · · },
 	// · · · · · · · },
+	// · · · · · · · Token: example.c:1:31: '(' "(",
+	// · · · · · · · Token2: example.c:1:32: ')' ")",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · · Token: example.c:1:33: ';' ";",
@@ -9235,76 +3741,19 @@ func ExampleSelectionStatement_switch() {
 	// }
 }
 
-func ExampleShiftExpression_add() {
-	fmt.Println(exampleAST(51, "int i = x;"))
-	// Output:
-	// &cc.ShiftExpression{
-	// · AdditiveExpression: &cc.AdditiveExpression{
-	// · · Case: AdditiveExpressionMul,
-	// · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · Case: MultiplicativeExpressionCast,
-	// · · · CastExpression: &cc.CastExpression{
-	// · · · · Case: CastExpressionUnary,
-	// · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
-	// · },
-	// · Case: ShiftExpressionAdd,
-	// }
-}
-
 func ExampleShiftExpression_lsh() {
 	fmt.Println(exampleAST(52, "int i = x << y;"))
 	// Output:
 	// &cc.ShiftExpression{
-	// · AdditiveExpression: &cc.AdditiveExpression{
-	// · · Case: AdditiveExpressionMul,
-	// · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · Case: MultiplicativeExpressionCast,
-	// · · · CastExpression: &cc.CastExpression{
-	// · · · · Case: CastExpressionUnary,
-	// · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AdditiveExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · Case: ShiftExpressionLsh,
 	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · Case: AdditiveExpressionMul,
-	// · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · Case: MultiplicativeExpressionCast,
-	// · · · · CastExpression: &cc.CastExpression{
-	// · · · · · Case: CastExpressionUnary,
-	// · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AdditiveExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · · Case: ShiftExpressionAdd,
 	// · },
@@ -9316,45 +3765,15 @@ func ExampleShiftExpression_rsh() {
 	fmt.Println(exampleAST(53, "int i = x >> y;"))
 	// Output:
 	// &cc.ShiftExpression{
-	// · AdditiveExpression: &cc.AdditiveExpression{
-	// · · Case: AdditiveExpressionMul,
-	// · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · Case: MultiplicativeExpressionCast,
-	// · · · CastExpression: &cc.CastExpression{
-	// · · · · Case: CastExpressionUnary,
-	// · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:14: IDENTIFIER "y",
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · },
+	// · AdditiveExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:14: IDENTIFIER "y",
 	// · },
 	// · Case: ShiftExpressionRsh,
 	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · Case: AdditiveExpressionMul,
-	// · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · Case: MultiplicativeExpressionCast,
-	// · · · · CastExpression: &cc.CastExpression{
-	// · · · · · Case: CastExpressionUnary,
-	// · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · AdditiveExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionIdent,
+	// · · · Token: example.c:1:9: IDENTIFIER "x",
 	// · · },
 	// · · Case: ShiftExpressionAdd,
 	// · },
@@ -9433,60 +3852,18 @@ func ExampleStatement_labeled() {
 	// · · Statement: &cc.Statement{
 	// · · · Case: StatementExpr,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Expression: &cc.Expression{
-	// · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · Token: example.c:1:15: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · · Token2: example.c:1:16: ')' ")",
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
+	// · · · · ExpressionList: &cc.ExpressionList{
+	// · · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionCall,
+	// · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
 	// · · · · · · · },
 	// · · · · · · },
+	// · · · · · · Token: example.c:1:15: '(' "(",
+	// · · · · · · Token2: example.c:1:16: ')' ")",
 	// · · · · · },
 	// · · · · },
 	// · · · · Token: example.c:1:17: ';' ";",
@@ -9510,60 +3887,18 @@ func ExampleStatement_compound() {
 	// · · · · Statement: &cc.Statement{
 	// · · · · · Case: StatementExpr,
 	// · · · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · · · Expression: &cc.Expression{
-	// · · · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:13: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:14: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · · · · Token2: example.c:1:15: ')' ")",
-	// · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
+	// · · · · · · ExpressionList: &cc.ExpressionList{
+	// · · · · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · · · · Case: PostfixExpressionCall,
+	// · · · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · · · · Token: example.c:1:13: IDENTIFIER "y",
 	// · · · · · · · · · },
 	// · · · · · · · · },
+	// · · · · · · · · Token: example.c:1:14: '(' "(",
+	// · · · · · · · · Token2: example.c:1:15: ')' ")",
 	// · · · · · · · },
 	// · · · · · · },
 	// · · · · · · Token: example.c:1:16: ';' ";",
@@ -9595,114 +3930,27 @@ func ExampleStatement_selection() {
 	// · Case: StatementSelection,
 	// · SelectionStatement: &cc.SelectionStatement{
 	// · · Case: SelectionStatementIf,
-	// · · Expression: &cc.Expression{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · ExpressionList: &cc.ExpressionList{
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:14: IDENTIFIER "x",
 	// · · · },
 	// · · },
 	// · · Statement: &cc.Statement{
 	// · · · Case: StatementExpr,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Expression: &cc.Expression{
-	// · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
-	// · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · Token: example.c:1:18: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · · Token2: example.c:1:19: ')' ")",
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
+	// · · · · ExpressionList: &cc.ExpressionList{
+	// · · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionCall,
+	// · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
 	// · · · · · · · },
 	// · · · · · · },
+	// · · · · · · Token: example.c:1:18: '(' "(",
+	// · · · · · · Token2: example.c:1:19: ')' ")",
 	// · · · · · },
 	// · · · · },
 	// · · · · Token: example.c:1:20: ';' ";",
@@ -9725,60 +3973,18 @@ func ExampleStatement_iteration() {
 	// · · Statement: &cc.Statement{
 	// · · · Case: StatementExpr,
 	// · · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · · Expression: &cc.Expression{
-	// · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionCall,
-	// · · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:19: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · · Token: example.c:1:20: '(' "(",
-	// · · · · · · · · · · · · · · · · · · · · Token2: example.c:1:21: ')' ")",
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
+	// · · · · ExpressionList: &cc.ExpressionList{
+	// · · · · · AssignmentExpression: &cc.PostfixExpression{
+	// · · · · · · Case: PostfixExpressionCall,
+	// · · · · · · PostfixExpression: &cc.PostfixExpression{
+	// · · · · · · · Case: PostfixExpressionPrimary,
+	// · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
+	// · · · · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · · · · Token: example.c:1:19: IDENTIFIER "x",
 	// · · · · · · · },
 	// · · · · · · },
+	// · · · · · · Token: example.c:1:20: '(' "(",
+	// · · · · · · Token2: example.c:1:21: ')' ")",
 	// · · · · · },
 	// · · · · },
 	// · · · · Token: example.c:1:22: ';' ";",
@@ -9800,55 +4006,10 @@ func ExampleStatement_jump() {
 	// · Case: StatementJump,
 	// · JumpStatement: &cc.JumpStatement{
 	// · · Case: JumpStatementReturn,
-	// · · Expression: &cc.Expression{
-	// · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · Case: AssignmentExpressionCond,
-	// · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · Token: example.c:1:18: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
+	// · · ExpressionList: &cc.ExpressionList{
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:18: IDENTIFIER "x",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:11: RETURN "return",
@@ -10103,51 +4264,9 @@ func ExampleStructDeclarator_bitField() {
 	// &cc.StructDeclarator{
 	// · Case: StructDeclaratorBitField,
 	// · ConstantExpression: &cc.ConstantExpression{
-	// · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · Case: ConditionalExpressionLOr,
-	// · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · Token: example.c:1:15: INTCONST "3",
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · · ConditionalExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:15: INTCONST "3",
 	// · · },
 	// · },
 	// · Declarator: &cc.Declarator{
@@ -10730,55 +4849,10 @@ func ExampleTypeSpecifier_typeofExpr() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierTypeofExpr,
-	// · Expression: &cc.Expression{
-	// · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · Case: AssignmentExpressionCond,
-	// · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · Case: ConditionalExpressionLOr,
-	// · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · · · · · · · · · · · · Token: example.c:1:8: INTCONST "42",
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · },
+	// · ExpressionList: &cc.ExpressionList{
+	// · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · Case: PrimaryExpressionInt,
+	// · · · Token: example.c:1:8: INTCONST "42",
 	// · · },
 	// · },
 	// · Token: example.c:1:1: TYPEOF "typeof",
@@ -10854,36 +4928,15 @@ func ExampleTypeSpecifier_float64x() {
 	// }
 }
 
-func ExampleUnaryExpression_postfix() {
-	fmt.Println(exampleAST(26, "int i = x;"))
-	// Output:
-	// &cc.UnaryExpression{
-	// · Case: UnaryExpressionPostfix,
-	// · PostfixExpression: &cc.PostfixExpression{
-	// · · Case: PostfixExpressionPrimary,
-	// · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
-	// · · },
-	// · },
-	// }
-}
-
 func ExampleUnaryExpression_inc() {
 	fmt.Println(exampleAST(27, "int i = ++x;"))
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionInc,
 	// · Token: example.c:1:9: INC "++",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -10894,15 +4947,9 @@ func ExampleUnaryExpression_dec() {
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionDec,
 	// · Token: example.c:1:9: DEC "--",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -10912,18 +4959,9 @@ func ExampleUnaryExpression_addrof() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionAddrof,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:11: IDENTIFIER "x",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:11: IDENTIFIER "x",
 	// · },
 	// · Token: example.c:1:10: '&' "&",
 	// }
@@ -10934,18 +4972,9 @@ func ExampleUnaryExpression_deref() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionDeref,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:10: IDENTIFIER "x",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:10: IDENTIFIER "x",
 	// · },
 	// · Token: example.c:1:9: '*' "*",
 	// }
@@ -10956,18 +4985,9 @@ func ExampleUnaryExpression_plus() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionPlus,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:10: IDENTIFIER "x",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:10: IDENTIFIER "x",
 	// · },
 	// · Token: example.c:1:9: '+' "+",
 	// }
@@ -10978,18 +4998,9 @@ func ExampleUnaryExpression_minus() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionMinus,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:10: IDENTIFIER "x",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:10: IDENTIFIER "x",
 	// · },
 	// · Token: example.c:1:9: '-' "-",
 	// }
@@ -11000,18 +5011,9 @@ func ExampleUnaryExpression_cpl() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionCpl,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:10: IDENTIFIER "x",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:10: IDENTIFIER "x",
 	// · },
 	// · Token: example.c:1:9: '~' "~",
 	// }
@@ -11022,18 +5024,9 @@ func ExampleUnaryExpression_not() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionNot,
-	// · CastExpression: &cc.CastExpression{
-	// · · Case: CastExpressionUnary,
-	// · · UnaryExpression: &cc.UnaryExpression{
-	// · · · Case: UnaryExpressionPostfix,
-	// · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · Case: PostfixExpressionPrimary,
-	// · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:10: IDENTIFIER "x",
-	// · · · · },
-	// · · · },
-	// · · },
+	// · CastExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:10: IDENTIFIER "x",
 	// · },
 	// · Token: example.c:1:9: '!' "!",
 	// }
@@ -11045,15 +5038,9 @@ func ExampleUnaryExpression_sizeofExpr() {
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionSizeofExpr,
 	// · Token: example.c:1:9: SIZEOF "sizeof",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:16: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:16: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -11094,67 +5081,16 @@ func ExampleUnaryExpression_alignofExpr() {
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionAlignofExpr,
 	// · Token: example.c:1:9: ALIGNOF "_Alignof",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionExpr,
-	// · · · · Expression: &cc.Expression{
-	// · · · · · AssignmentExpression: &cc.AssignmentExpression{
-	// · · · · · · Case: AssignmentExpressionCond,
-	// · · · · · · ConditionalExpression: &cc.ConditionalExpression{
-	// · · · · · · · Case: ConditionalExpressionLOr,
-	// · · · · · · · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · · · · · · · Case: LogicalOrExpressionLAnd,
-	// · · · · · · · · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · · · · · · · · Case: LogicalAndExpressionOr,
-	// · · · · · · · · · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · · · · · · · · · Case: InclusiveOrExpressionXor,
-	// · · · · · · · · · · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · · · · · · · · · · AndExpression: &cc.AndExpression{
-	// · · · · · · · · · · · · Case: AndExpressionEq,
-	// · · · · · · · · · · · · EqualityExpression: &cc.EqualityExpression{
-	// · · · · · · · · · · · · · Case: EqualityExpressionRel,
-	// · · · · · · · · · · · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · · · · · · · · · · · Case: RelationalExpressionShift,
-	// · · · · · · · · · · · · · · ShiftExpression: &cc.ShiftExpression{
-	// · · · · · · · · · · · · · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · · · · · · · · · · · · · Case: AdditiveExpressionMul,
-	// · · · · · · · · · · · · · · · · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · · · · · · · · · · · · · · · · Case: MultiplicativeExpressionCast,
-	// · · · · · · · · · · · · · · · · · CastExpression: &cc.CastExpression{
-	// · · · · · · · · · · · · · · · · · · Case: CastExpressionUnary,
-	// · · · · · · · · · · · · · · · · · · UnaryExpression: &cc.UnaryExpression{
-	// · · · · · · · · · · · · · · · · · · · Case: UnaryExpressionPostfix,
-	// · · · · · · · · · · · · · · · · · · · PostfixExpression: &cc.PostfixExpression{
-	// · · · · · · · · · · · · · · · · · · · · Case: PostfixExpressionPrimary,
-	// · · · · · · · · · · · · · · · · · · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · · · · · · · · · · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · · · · · · · · · · · · · Token: example.c:1:18: IDENTIFIER "x",
-	// · · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · · · Case: ShiftExpressionAdd,
-	// · · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · · },
-	// · · · · · · · · · · · · },
-	// · · · · · · · · · · · },
-	// · · · · · · · · · · · Case: ExclusiveOrExpressionAnd,
-	// · · · · · · · · · · },
-	// · · · · · · · · · },
-	// · · · · · · · · },
-	// · · · · · · · },
-	// · · · · · · },
-	// · · · · · },
-	// · · · · },
-	// · · · · Token: example.c:1:17: '(' "(",
-	// · · · · Token2: example.c:1:19: ')' ")",
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionExpr,
+	// · · ExpressionList: &cc.ExpressionList{
+	// · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:18: IDENTIFIER "x",
 	// · · · },
 	// · · },
+	// · · Token: example.c:1:17: '(' "(",
+	// · · Token2: example.c:1:19: ')' ")",
 	// · },
 	// }
 }
@@ -11185,15 +5121,9 @@ func ExampleUnaryExpression_imag() {
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionImag,
 	// · Token: example.c:1:12: IMAG "__imag__",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:21: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:21: IDENTIFIER "x",
 	// · },
 	// }
 }
@@ -11204,15 +5134,9 @@ func ExampleUnaryExpression_real() {
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionReal,
 	// · Token: example.c:1:12: REAL "__real__",
-	// · UnaryExpression: &cc.UnaryExpression{
-	// · · Case: UnaryExpressionPostfix,
-	// · · PostfixExpression: &cc.PostfixExpression{
-	// · · · Case: PostfixExpressionPrimary,
-	// · · · PrimaryExpression: &cc.PrimaryExpression{
-	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:21: IDENTIFIER "x",
-	// · · · },
-	// · · },
+	// · UnaryExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:21: IDENTIFIER "x",
 	// · },
 	// }
 }
