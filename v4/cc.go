@@ -60,7 +60,7 @@ func NewConfig(goos, goarch string) (r *Config, err error) {
 	includePaths = append([]string{""}, includePaths...)
 	includePaths = append(includePaths, sysIncludePaths...)
 	includePaths = includePaths[:len(includePaths):len(includePaths)]
-	abi, err := newABI(goos, goarch)
+	abi, err := NewABI(goos, goarch)
 	if err != nil {
 		return nil, err
 	}

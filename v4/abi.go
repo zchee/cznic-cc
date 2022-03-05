@@ -5,9 +5,8 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
-	"fmt"
-
 	"encoding/binary"
+	"fmt"
 )
 
 var (
@@ -375,7 +374,8 @@ type abiType struct {
 	fieldAlign int
 }
 
-func newABI(os, arch string) (*ABI, error) {
+// NewABI creates an ABI based on the os+arch pair.
+func NewABI(os, arch string) (*ABI, error) {
 	byteOrder, ok := byteOrders[arch]
 	if !ok {
 		return nil, fmt.Errorf("unsupported arch: %s", arch)
