@@ -3619,6 +3619,7 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 
 			defer os.Remove(fn)
 
+			// cmd := exec.Command(cfg.CC, "-Werror-implicit-function-declaration", "-c", "-o", filepath.Join(tmp, "test.o"), fn)
 			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), fn)
 			var buf bytes.Buffer
 			cmd.Stderr = &buf

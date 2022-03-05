@@ -2102,20 +2102,20 @@ func (p *parser) unaryExpression(lp Token, tn *TypeName, rp Token, checkTypeName
 // 	( type-name ) { initializer-list }
 // 	( type-name ) { initializer-list , }
 // 	__builtin_types_compatible_p ( type-name , type-name )
-func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token, checkTypeName bool) ExpressionNode {
-	var r *PostfixExpression
+func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token, checkTypeName bool) (r ExpressionNode) {
+	var r0 *PostfixExpression
 	switch {
 	case tn != nil:
-		r = &PostfixExpression{Case: PostfixExpressionComplit, Token: lp, TypeName: tn, Token2: rp, Token3: p.must('{'), InitializerList: p.initializerList()}
+		r0 = &PostfixExpression{Case: PostfixExpressionComplit, Token: lp, TypeName: tn, Token2: rp, Token3: p.must('{'), InitializerList: p.initializerList()}
 		switch p.rune(false) {
 		case eof:
 			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 			return nil
 		case ',':
-			r.Token4 = p.shift(false)
+			r0.Token4 = p.shift(false)
 			fallthrough
 		default:
-			r.Token5 = p.must('}')
+			r0.Token5 = p.must('}')
 		}
 	default:
 		switch p.rune(false) {
@@ -2125,27 +2125,31 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token, checkTypeNa
 		case '(':
 			switch ch := p.peek(1, true).Ch; {
 			case p.isExpression(ch) || ch == '{':
-				r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression(checkTypeName)}
+				r0 = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression(checkTypeName)}
 			case p.isSpecifierQualifer(ch, true):
-				r = &PostfixExpression{Case: PostfixExpressionComplit, Token: p.shift(false), TypeName: p.typeName(), Token2: p.must(')'), Token3: p.must('{'), InitializerList: p.initializerList()}
+				r0 = &PostfixExpression{Case: PostfixExpressionComplit, Token: p.shift(false), TypeName: p.typeName(), Token2: p.must(')'), Token3: p.must('{'), InitializerList: p.initializerList()}
 				switch p.rune(false) {
 				case eof:
 					p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 					return nil
 				case ',':
-					r.Token4 = p.shift(false)
+					r0.Token4 = p.shift(false)
 					fallthrough
 				default:
-					r.Token5 = p.must('}')
-					return r
+					r0.Token5 = p.must('}')
+					return r0
 				}
 			default:
 				t := p.shift(false)
 				p.cpp.eh("%v: unexpected %v, expected postfix expression", t.Position(), runeName(t.Ch))
 			}
 		default:
-			r = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression(checkTypeName)}
+			r0 = &PostfixExpression{Case: PostfixExpressionPrimary, PrimaryExpression: p.primaryExpression(checkTypeName)}
 		}
+	}
+	r = r0
+	if r0.Case == PostfixExpressionPrimary && r0.PrimaryExpression != nil {
+		r = r0.PrimaryExpression
 	}
 	for {
 		switch p.rune(false) {
@@ -2171,10 +2175,6 @@ func (p *parser) postfixExpression(lp Token, tn *TypeName, rp Token, checkTypeNa
 		case rune(DEC):
 			r = &PostfixExpression{Case: PostfixExpressionDec, PostfixExpression: r, Token: p.shift(false)}
 		default:
-			if r.Case == PostfixExpressionPrimary && r.PostfixExpression == nil {
-				return r.PrimaryExpression
-			}
-
 			return r
 		}
 	}

@@ -18,6 +18,8 @@ import (
 const (
 	decay flags = 1 << iota
 	asmArgList
+	implicitFuncDef
+	ignoreUndefined
 )
 
 type flags int
@@ -41,6 +43,7 @@ type ctx struct {
 	builtinTypes map[string]Type
 	errors       errors
 	fnScope      *Scope
+	implicitFunc Type
 	intT         Type
 	pcharT       Type
 	ptrDiffT0    Type
@@ -120,6 +123,7 @@ func newCtx(ast *AST) *ctx {
 	}
 	c.intT = c.ast.kinds[Int]
 	c.pcharT = newPointerType(ast, c.ast.kinds[Char])
+	c.implicitFunc = newPointerType(ast, newFunctionType(c, c.intT, nil, false))
 	return c
 }
 
@@ -994,7 +998,7 @@ func (n *AttributeValue) check(c *ctx) {
 	case AttributeValueIdent: // IDENTIFIER
 		// ok
 	case AttributeValueExpr: // IDENTIFIER '(' ArgumentExpressionList ')'
-		n.ArgumentExpressionList.check(c)
+		n.ArgumentExpressionList.check(c, decay|ignoreUndefined)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -1003,9 +1007,9 @@ func (n *AttributeValue) check(c *ctx) {
 //  ArgumentExpressionList:
 //          AssignmentExpression
 //  |       ArgumentExpressionList ',' AssignmentExpression
-func (n *ArgumentExpressionList) check(c *ctx) {
+func (n *ArgumentExpressionList) check(c *ctx, mode flags) {
 	for ; n != nil; n = n.ArgumentExpressionList {
-		n.AssignmentExpression.check(c, decay)
+		n.AssignmentExpression.check(c, mode)
 	}
 }
 
@@ -2370,8 +2374,11 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 			n.typ = c.intT
 		}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
+		if isName(n.PostfixExpression) {
+			mode = mode.add(implicitFuncDef)
+		}
 		t := n.PostfixExpression.check(c, mode.add(decay))
-		n.ArgumentExpressionList.check(c)
+		n.ArgumentExpressionList.check(c, decay)
 		if t == nil || mode.has(asmArgList) {
 			break
 		}
@@ -2468,6 +2475,23 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 	return n.Type()
 }
 
+func isName(n Node) bool {
+	for {
+		switch x := n.(type) {
+		case *ExpressionList:
+			if x.ExpressionList != nil {
+				return false
+			}
+
+			n = x.AssignmentExpression
+		case *PrimaryExpression:
+			return x.Case == PrimaryExpressionIdent
+		default:
+			return false
+		}
+	}
+}
+
 //  PrimaryExpression:
 //          IDENTIFIER                 // Case PrimaryExpressionIdent
 //  |       INTCONST                   // Case PrimaryExpressionInt
@@ -2504,7 +2528,18 @@ out:
 			n.typ = x.typ
 			break out
 		default:
-			if d = n.resolutionScope.builtin(n.Token); d == nil {
+			d = n.resolutionScope.builtin(n.Token)
+			if d == nil {
+				if mode.has(implicitFuncDef) {
+					n.typ = c.implicitFunc
+					break out
+				}
+
+				if mode.has(ignoreUndefined) {
+					n.typ = c.intT
+					break out
+				}
+
 				c.errors.add(errorf("%v: undefined: %s", n.Position(), n.Token.Src()))
 				break out
 			}
@@ -2561,7 +2596,6 @@ out:
 	}
 
 	if len(suff) > 1 || len(cplx) > 1 {
-		trc("%v: %v %v %q", n.Position(), n.Case, runeName(n.Token.Ch), n.Token.Src())
 		c.errors.add(errorf("%v: invalid number format", n.Position()))
 		return nil, nil
 	}
