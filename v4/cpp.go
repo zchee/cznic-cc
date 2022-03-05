@@ -160,7 +160,7 @@ type groupPart interface{}
 func (p *cppParser) groupPart(inIfSection bool) groupPart {
 	switch p.rune() {
 	case '#':
-		switch verb := string(p.line[1].Src()); verb {
+		switch verb := p.line[1].SrcStr(); verb {
 		case "if", "ifdef", "ifndef":
 			return p.ifSection()
 		case "include", "include_next", "define", "undef", "line", "error", "pragma", "\n":
@@ -172,14 +172,14 @@ func (p *cppParser) groupPart(inIfSection bool) groupPart {
 					break
 				}
 
-				ln, err := strconv.ParseUint(string(gp[2].Src()), 10, 31)
+				ln, err := strconv.ParseUint(gp[2].SrcStr(), 10, 31)
 				if err != nil {
 					break
 				}
 
 				fn := gp[0].Position().Filename
 				if len(gp) >= 4 && gp[3].Ch == rune(STRINGLITERAL) {
-					fn = string(gp[3].Src())
+					fn = gp[3].SrcStr()
 					fn = fn[1 : len(fn)-1]
 				}
 
@@ -254,7 +254,7 @@ func (p *cppParser) ifSection() *ifSection {
 // endif-line:
 // 	# endif new-line
 func (p *cppParser) endifLine() []Token {
-	if p.rune() != '#' || string(p.line[1].Src()) != "endif" {
+	if p.rune() != '#' || p.line[1].SrcStr() != "endif" {
 		p.eh("%v: expected #endif", p.pos())
 		return nil
 	}
@@ -271,7 +271,7 @@ type elseGroup struct {
 
 // elseGroup parses else-group.
 func (p *cppParser) elseGroup() (r *elseGroup) {
-	if p.rune() == '#' && string(p.line[1].Src()) == "else" {
+	if p.rune() == '#' && p.line[1].SrcStr() == "else" {
 		return &elseGroup{p.shift(), p.group(true)}
 	}
 
@@ -291,7 +291,7 @@ type elifGroup struct {
 //	elif-group
 //	elif-groups elif-group
 func (p *cppParser) elifGroups() (r []elifGroup) {
-	for p.rune() == '#' && string(p.line[1].Src()) == "elif" {
+	for p.rune() == '#' && p.line[1].SrcStr() == "elif" {
 		r = append(r, elifGroup{p.shift(), p.group(true)})
 	}
 	return r
@@ -395,7 +395,7 @@ type Macro struct {
 func newMacro(nm Token, params []Token, replList []cppToken, minArgs, varArg int, isFnLike bool) (*Macro, error) {
 	var fp []string
 	for _, v := range params {
-		fp = append(fp, string(v.Src()))
+		fp = append(fp, v.SrcStr())
 	}
 	if len(fp) > 1 {
 		m := map[string]struct{}{}
@@ -759,7 +759,7 @@ more:
 
 	T := t.Token
 	HS := t.hs
-	src := string(T.Src())
+	src := T.SrcStr()
 	if eval && src == "defined" {
 		TS = c.parseDefined(TS)
 		goto more
@@ -852,7 +852,7 @@ more:
 	IS = IS[1:]
 	if t.Ch == '#' {
 		if t2, skip := IS.peekNonBlank(); t2.Ch == rune(IDENTIFIER) {
-			if i := m.is(string(t2.Src())); i >= 0 {
+			if i := m.is(t2.SrcStr()); i >= 0 {
 				// if IS is # • T • IS’ and T is FP[i] then
 				//	return subst(IS’,FP,AP,HS,OS • stringize(select(i,AP )));
 				IS = IS[skip+1:]
@@ -869,7 +869,7 @@ more:
 	if t.Ch == rune(PPPASTE) {
 		t2, skip := IS.peekNonBlank()
 		if t2.Ch == rune(IDENTIFIER) {
-			if i := m.is(string(t2.Src())); i >= 0 {
+			if i := m.is(t2.SrcStr()); i >= 0 {
 				// if IS is ## • T • IS’ and T is FP[i] then
 				if i >= len(AP) || len(AP[i]) == 0 {
 					//	if select(i,AP ) is {} then /* only if actuals can be empty */
@@ -895,13 +895,13 @@ more:
 
 	if t.Ch == rune(IDENTIFIER) {
 		if t2, skip := IS.peekNonBlank(); t2.Ch == rune(PPPASTE) {
-			if i := m.is(string(t.Src())); i >= 0 {
+			if i := m.is(t.SrcStr()); i >= 0 {
 				// if IS is T • ##^HS’ • IS’ and T is FP[i] then
 				//	if select(i,AP ) is {} then /* only if actuals can be empty */
 				if i >= len(AP) || len(AP[i]) == 0 {
 					IS = IS[skip+1:] // ##
 					t2, skip := IS.peekNonBlank()
-					if j := m.is(string(t2.Src())); j >= 0 {
+					if j := m.is(t2.SrcStr()); j >= 0 {
 						//		if IS’ is T’ • IS’’ and T’ is FP[j] then
 						//			return subst(IS’’,FP,AP,HS,OS • select(j,AP));
 						IS = IS[skip+1:]
@@ -923,7 +923,7 @@ more:
 	}
 
 	if len(FP) != 0 || m.VarArg >= 0 {
-		if i := m.is(string(t.Src())); i >= 0 {
+		if i := m.is(t.SrcStr()); i >= 0 {
 			// if IS is T • IS’ and T is FP[i] then
 			//	return subst(IS’,FP,AP,HS,OS • expand(select(i,AP )));
 			switch arg, ok := expandedArgs[i]; {
@@ -1031,7 +1031,7 @@ func (c *cpp) stringize(t cppToken, s0 cppTokens) (r cppToken) {
 	// whether a \ character is inserted before the \ character beginning a
 	// universal character name.
 	for _, v := range s {
-		s := string(v.Src())
+		s := v.SrcStr()
 		switch v.Ch {
 		case rune(CHARCONST), rune(STRINGLITERAL), rune(LONGCHARCONST), rune(LONGSTRINGLITERAL):
 			s = strings.ReplaceAll(s, `\`, `\\`)
@@ -1054,7 +1054,7 @@ func (c *cpp) parsePragma(ts tokenSequence) {
 
 	t2, skip := ts.peekNonBlank()
 	ts.skip(skip + 1)
-	s := string(t2.Src())
+	s := t2.SrcStr()
 	switch t2.Ch {
 	case rune(STRINGLITERAL):
 		// ok
@@ -1110,7 +1110,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 			r.s = t.s
 			r.pos = t.pos
 			s := fmt.Sprintf(`"%s"`, t.Position().Filename)
-			if !bytes.Equal(t.Sep(), r.Sep()) || string(r.Src()) != s {
+			if !bytes.Equal(t.Sep(), r.Sep()) || r.SrcStr() != s {
 				r.Set(t.Sep(), []byte(s))
 				m.replacementList[0] = r
 			}
@@ -1120,7 +1120,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 			r.s = t.s
 			r.pos = t.pos
 			s := fmt.Sprintf(`%d`, t.Position().Line)
-			if !bytes.Equal(t.Sep(), r.Sep()) || string(r.Src()) != s {
+			if !bytes.Equal(t.Sep(), r.Sep()) || r.SrcStr() != s {
 				r.Set(t.Sep(), []byte(s))
 				m.replacementList[0] = r
 			}
@@ -1229,7 +1229,7 @@ func (c *cpp) parseDefined(ts tokenSequence) (r tokenSequence) {
 		return ts
 	}
 
-	nm := string(t.Src())
+	nm := t.SrcStr()
 	oneTok := Token{s: t.s, Ch: rune(PPNUMBER)}
 	oneTok.Set(nil, one)
 	zeroTok := Token{s: t.s, Ch: rune(PPNUMBER)}
@@ -1400,7 +1400,7 @@ func (c *cpp) nextLine() (r textLine) {
 				break
 			}
 
-			switch string(x[1].Src()) {
+			switch x[1].SrcStr() {
 			case "define":
 				c.define(x)
 			case "undef":
@@ -1685,7 +1685,7 @@ func (c *cpp) hasFile(t Token, fn string) bool {
 func (c *cpp) includeArg(s cppTokens) string {
 	switch t := s[0]; t.Ch {
 	case rune(STRINGLITERAL), rune(HEADER_NAME):
-		return string(t.Src())
+		return t.SrcStr()
 	case '<':
 		b := t.Src()
 		s = s[1:]
@@ -1721,7 +1721,7 @@ func (c *cpp) sysInclue(n Node, nm string) {
 
 func (c *cpp) ifGroup(ig *ifGroup) bool {
 	ln := ig.line[:len(ig.line)-1] // Remove new-line
-	switch string(ln[1].Src()) {
+	switch ln[1].SrcStr() {
 	case "ifdef":
 		if len(ln) < 3 { // '#' "ifdef" IDENTIFIER
 			c.eh("%v: expected identifier", ln[1].Position())
@@ -1729,7 +1729,7 @@ func (c *cpp) ifGroup(ig *ifGroup) bool {
 		}
 
 		t := ln[2]
-		return c.macro(t, string(t.Src())) != nil
+		return c.macro(t, t.SrcStr()) != nil
 	case "ifndef":
 		if len(ln) < 3 { // '#' "ifndef" IDENTIFIER
 			c.eh("%v: expected identifier", ln[1].Position())
@@ -1737,7 +1737,7 @@ func (c *cpp) ifGroup(ig *ifGroup) bool {
 		}
 
 		t := ln[2]
-		return c.macro(t, string(t.Src())) == nil
+		return c.macro(t, t.SrcStr()) == nil
 	case "if":
 		if len(ln) < 3 { // '#' "if" <expr>
 			c.eh("%v: expected expression", ln[1].Position())
@@ -2464,7 +2464,7 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 		return int64(r)
 	case rune(IDENTIFIER):
 		s.shift()
-		switch string(t.Src()) {
+		switch t.SrcStr() {
 		case "__has_include":
 			t0 := t
 			var arg string
@@ -2488,7 +2488,7 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 			switch t := s.token(); t.Ch {
 			case rune(STRINGLITERAL):
 				s.shift()
-				arg = string(t.Src())
+				arg = t.SrcStr()
 			default:
 				for {
 					b = append(b, t.Src()...)
@@ -2565,7 +2565,7 @@ func (c *cpp) primaryExpression(s *cppTokens, eval bool) interface{} {
 //		u ul ull l lu ll llu
 func (c *cpp) intConst(t Token) (r interface{}) {
 	var n uint64
-	s0 := string(t.Src())
+	s0 := t.SrcStr()
 	s := strings.TrimRight(s0, "uUlL")
 	var err error
 	switch {
@@ -2635,7 +2635,7 @@ func (c *cpp) undef(ln controlLine) {
 		return
 	}
 
-	nm := string(ln[2].Src())
+	nm := ln[2].SrcStr()
 	if _, ok := protectedMacros[nm]; !ok {
 		delete(c.macros, nm)
 	}
@@ -2749,7 +2749,7 @@ func (c *cpp) defineObjectMacro(nm Token, ln []Token) {
 
 func (c *cpp) newMacro(nm Token, params []Token, replList []cppToken, minArgs, varArg int, isFnLike bool) {
 	// trc("nm %q, params %v, replList %v, minArgs %v, varArg %v, isFnLike %v", nm.Src(), toksDump(params), toksDump(replList), minArgs, varArg, isFnLike)
-	s := string(nm.Src())
+	s := nm.SrcStr()
 	if _, ok := protectedMacros[s]; ok {
 		if nm.Position().Filename != "<predefined>" {
 			return

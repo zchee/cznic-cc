@@ -169,7 +169,7 @@ func toksDump(v interface{}) string {
 		// 	delta = -1
 		// }
 		for _, v := range x {
-			s := string(v.Src())
+			s := v.SrcStr()
 			// if hs := v.hs.String(); hs != "[]" {
 			// 	s = fmt.Sprintf("%s^%s", s, hs)
 			// }
@@ -188,7 +188,7 @@ func toksDump(v interface{}) string {
 		return fmt.Sprintf("%s[%T %v]", s0, x, &t)
 	case []Token:
 		for _, v := range x {
-			a = append(a, string(v.Src()))
+			a = append(a, v.SrcStr())
 		}
 	case textLine:
 		return toksDump([]Token(x))
@@ -239,7 +239,7 @@ func toksTrim(s cppTokens) cppTokens {
 }
 
 func charConst(eh errHandler, tok Token) rune {
-	s := string(tok.Src())
+	s := tok.SrcStr()
 	switch tok.Ch {
 	case rune(LONGCHARCONST):
 		s = s[1:] // Remove leading 'L'.

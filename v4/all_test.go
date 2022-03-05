@@ -2520,7 +2520,7 @@ def
 		if g, e := string(tok.Sep()), test.sep; g != e {
 			t.Fatalf("%v %q %q", itest, g, e)
 		}
-		if g, e := string(tok.Src()), test.src; g != e {
+		if g, e := tok.SrcStr(), test.src; g != e {
 			t.Fatalf("%v %q %q", itest, g, e)
 		}
 
@@ -2529,13 +2529,13 @@ def
 		if g, e := string(tok.Sep()), test.sep; g != e {
 			t.Fatalf("%v %q %q", itest, g, e)
 		}
-		if g, e := string(tok.Src()), test.src; g != e {
+		if g, e := tok.SrcStr(), test.src; g != e {
 			t.Fatalf("%v %q %q", itest, g, e)
 		}
 		if g, e := string(tok2.Sep()), "xyz0123"; g != e {
 			t.Fatalf("%v %q %q", itest, g, e)
 		}
-		if g, e := string(tok2.Src()), "456789"; g != e {
+		if g, e := tok2.SrcStr(), "456789"; g != e {
 			t.Fatalf("%v %q %q", itest, g, e)
 		}
 	}
@@ -3213,7 +3213,7 @@ func TestStrCatSep(t *testing.T) {
 		depth := mathutil.MaxInt
 		findNode("PrimaryExpression", ast.TranslationUnit, 0, &n, &depth)
 		tok := n.(*PrimaryExpression).Token
-		if g, e := string(tok.Src()), v.lit; g != e {
+		if g, e := tok.SrcStr(), v.lit; g != e {
 			t.Errorf("%v: %q %q", i, g, e)
 		}
 		if g, e := string(tok.Sep()), v.sep; g != e {

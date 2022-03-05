@@ -1223,7 +1223,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 
 	tag := ""
 	if n.Token2.s != nil {
-		tag = string(n.Token2.Src())
+		tag = n.Token2.SrcStr()
 	}
 	switch n.Case {
 	case EnumSpecifierDef: // "enum" IDENTIFIER '{' EnumeratorList ',' '}'
@@ -1368,7 +1368,7 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 
 	tag := ""
 	if n.Token.s != nil {
-		tag = string(n.Token.Src())
+		tag = n.Token.SrcStr()
 	}
 	switch n.Case {
 	case StructOrUnionSpecifierDef: // StructOrUnion IDENTIFIER '{' StructDeclarationList '}'
@@ -2397,7 +2397,7 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 		n.typ = pt.Elem().(*FunctionType).Result()
 		//TODO check args
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-		nm := string(n.Token2.Src())
+		nm := n.Token2.SrcStr()
 		switch t := n.PostfixExpression.check(c, mode.add(decay)); t.Kind() {
 		case Struct:
 			st := t.(*StructType)
@@ -2421,7 +2421,7 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("%v: expected a struct or union: %s", n.Token.Position(), t))
 		}
 	case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
-		nm := string(n.Token2.Src())
+		nm := n.Token2.SrcStr()
 		switch t := n.PostfixExpression.check(c, mode.add(decay)); t.Kind() {
 		case Ptr:
 			switch et := t.(*PointerType).Elem(); et.Kind() {
@@ -2575,7 +2575,7 @@ out:
 }
 
 func (n *PrimaryExpression) floatConst(c *ctx) (v Value, t Type) {
-	s0 := string(n.Token.Src())
+	s0 := n.Token.SrcStr()
 	s := s0
 	var cplx, suff string
 out:
@@ -2668,7 +2668,7 @@ func (n *PrimaryExpression) charConst(c *ctx) (v Value, t Type) {
 }
 
 func (n *PrimaryExpression) intConst(c *ctx) (v Value, t Type) {
-	s0 := string(n.Token.Src())
+	s0 := n.Token.SrcStr()
 	s := strings.TrimRight(s0, "uUlL")
 	prefix := 0
 	var base int

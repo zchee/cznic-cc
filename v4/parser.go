@@ -199,7 +199,7 @@ func (p *parser) tok(t Token) (r Token) {
 			break
 		}
 	case rune(PPNUMBER):
-		switch s := string(r.Src()); {
+		switch s := r.SrcStr(); {
 		case strings.ContainsAny(s, ".+-ijpIJP"):
 			r.Ch = rune(FLOATCONST)
 		case strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X"):
@@ -493,7 +493,7 @@ func (p *parser) labelDeclarationListOpt() (r *LabelDeclarationList) {
 func (p *parser) labelDeclaration() (r *LabelDeclaration) {
 	r = &LabelDeclaration{Token: p.shift(false), IdentifierList: p.identifierList(), Token2: p.must(';')}
 	for l := r.IdentifierList; l != nil; l = l.IdentifierList {
-		p.scope.declare(string(l.Token2.Src()), r)
+		p.scope.declare(l.Token2.SrcStr(), r)
 	}
 	return r
 }
@@ -765,7 +765,7 @@ func (p *parser) labeledStatement() (r *LabeledStatement) {
 			t := p.shift(false)
 			p.cpp.eh("%v: unexpected label", t.Position())
 		default:
-			p.fnScope.declare(string(r.Token.Src()), r)
+			p.fnScope.declare(r.Token.SrcStr(), r)
 		}
 		return r
 	default:
@@ -3149,7 +3149,7 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 		case '{':
 			r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), Token3: p.shift(false), EnumeratorList: p.enumeratorList()}
 			r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
-			p.scope.declare(string(r.Token2.Src()), r)
+			p.scope.declare(r.Token2.SrcStr(), r)
 		default:
 			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false), resolutionScope: p.scope}
 		}
@@ -3222,7 +3222,7 @@ func (p *parser) enumerator() (r *Enumerator) {
 		return nil
 	}
 	r.visible = visible(r.Token.seq + 1)
-	p.scope.declare(string(r.Token.Src()), r)
+	p.scope.declare(r.Token.SrcStr(), r)
 	return r
 }
 
@@ -3248,7 +3248,7 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 			return nil
 		case '{':
-			p.scope.declare(string(r.Token.Src()), r)
+			p.scope.declare(r.Token.SrcStr(), r)
 			r.Case = StructOrUnionSpecifierDef
 			r.Token2 = p.shift(false)
 			r.StructDeclarationList = p.structDeclarationList()
@@ -3433,7 +3433,7 @@ func (s *Scope) ident(t Token) Node {
 }
 
 func (s *Scope) builtin(t Token) *Declarator {
-	nm := "__builtin_" + string(t.Src())
+	nm := "__builtin_" + t.SrcStr()
 	for ; s != nil; s = s.Parent {
 		for _, v := range s.Nodes[nm] {
 			switch x := v.(type) {

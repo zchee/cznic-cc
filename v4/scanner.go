@@ -207,6 +207,12 @@ func (t *Token) Src() []byte {
 	return t.s.buf[t.src : t.src+n : t.src+n]
 }
 
+// SrcStr returns the source representation of t as a string.
+// To avoid allocations, consider using Src.
+func (t *Token) SrcStr() string {
+	return string(t.Src())
+}
+
 // Set sets the values Sep and Src will report.
 func (t *Token) Set(sep, src []byte) error {
 	if uint64(len(sep)+len(src)) > math.MaxUint32 {
