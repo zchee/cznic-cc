@@ -11,11 +11,12 @@ import (
 
 var (
 	byteOrders = map[string]binary.ByteOrder{
-		"amd64": binary.LittleEndian,
-		"386":   binary.LittleEndian,
-		"arm":   binary.LittleEndian,
-		"arm64": binary.LittleEndian,
-		"s390x": binary.BigEndian,
+		"386":     binary.LittleEndian,
+		"amd64":   binary.LittleEndian,
+		"arm":     binary.LittleEndian,
+		"arm64":   binary.LittleEndian,
+		"riscv64": binary.LittleEndian,
+		"s390x":   binary.BigEndian,
 	}
 
 	signedChars = map[[2]string]bool{
@@ -125,6 +126,30 @@ var (
 			ULong:      {8, 8, 8},
 			LongLong:   {8, 8, 8},
 			ULongLong:  {8, 8, 8},
+			Float:      {4, 4, 4},
+			Double:     {8, 8, 8},
+			LongDouble: {16, 16, 16},
+			Int128:     {16, 16, 16},
+			UInt128:    {16, 16, 16},
+		},
+		// gcc (Ubuntu 11.2.0-7ubuntu2) 11.2.0
+		{"linux", "riscv64"}: {
+			Void:       {1, 1, 1},
+			Bool:       {1, 1, 1},
+			Char:       {1, 1, 1},
+			SChar:      {1, 1, 1},
+			UChar:      {1, 1, 1},
+			Short:      {2, 2, 2},
+			UShort:     {2, 2, 2},
+			Enum:       {4, 4, 4},
+			Int:        {4, 4, 4},
+			UInt:       {4, 4, 4},
+			Long:       {8, 8, 8},
+			ULong:      {8, 8, 8},
+			LongLong:   {8, 8, 8},
+			ULongLong:  {8, 8, 8},
+			Ptr:        {8, 8, 8},
+			Function:   {8, 8, 8},
 			Float:      {4, 4, 4},
 			Double:     {8, 8, 8},
 			LongDouble: {16, 16, 16},
