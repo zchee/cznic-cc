@@ -387,7 +387,7 @@ again:
 		rune(ASM),
 		rune(ATTRIBUTE):
 
-		return &ExternalDeclaration{Case: ExternalDeclarationDecl, Declaration: p.declaration(ds, d)}
+		return &ExternalDeclaration{Case: ExternalDeclarationDecl, Declaration: p.declaration(ds, d, true)}
 	case '{':
 		return &ExternalDeclaration{Case: ExternalDeclarationFuncDef, FunctionDefinition: p.functionDefinition(ds, d)}
 	default:
@@ -424,7 +424,7 @@ func (p *parser) declarationListOpt() (r *DeclarationList) {
 			return r
 		}
 
-		dl := &DeclarationList{Declaration: p.declaration(nil, nil)}
+		dl := &DeclarationList{Declaration: p.declaration(nil, nil, false)}
 		switch {
 		case r == nil:
 			r = dl
@@ -491,7 +491,7 @@ func (p *parser) labelDeclarationListOpt() (r *LabelDeclarationList) {
 //  label-declaration
 // 	__label__ identifier-list ;
 func (p *parser) labelDeclaration() (r *LabelDeclaration) {
-	r = &LabelDeclaration{Token: p.shift(false), IdentifierList: p.identifierList(), Token2: p.must(';')}
+	r = &LabelDeclaration{Token: p.shift(false), IdentifierList: p.identifierList(false), Token2: p.must(';')}
 	for l := r.IdentifierList; l != nil; l = l.IdentifierList {
 		p.scope.declare(l.Token2.SrcStr(), r)
 	}
@@ -555,7 +555,7 @@ again:
 		case '{':
 			return &BlockItem{Case: BlockItemFuncDef, DeclarationSpecifiers: ds, Declarator: d, CompoundStatement: p.compoundStatement(true, d)}
 		default:
-			return &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(ds, d)}
+			return &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(ds, d, true)}
 		}
 	default:
 		t := p.shift(false)
@@ -795,7 +795,7 @@ func (p *parser) iterationStatement() (r *IterationStatement) {
 	case rune(FOR):
 		switch ch := p.peek(2, true).Ch; {
 		case p.isDeclarationSpecifier(ch, true):
-			return &IterationStatement{Case: IterationStatementForDecl, Token: p.shift(false), Token2: p.must('('), Declaration: p.declaration(nil, nil), ExpressionList: p.expression(true), Token3: p.must(';'), ExpressionList2: p.expression(true), Token4: p.must(')'), Statement: p.statement(true)}
+			return &IterationStatement{Case: IterationStatementForDecl, Token: p.shift(false), Token2: p.must('('), Declaration: p.declaration(nil, nil, true), ExpressionList: p.expression(true), Token3: p.must(';'), ExpressionList2: p.expression(true), Token4: p.must(')'), Statement: p.statement(true)}
 		}
 
 		return &IterationStatement{Case: IterationStatementFor, Token: p.shift(false), Token2: p.must('('), ExpressionList: p.expression(true), Token3: p.must(';'), ExpressionList2: p.expression(true), Token4: p.must(';'), ExpressionList3: p.expression(true), Token5: p.must(')'), Statement: p.statement(true)}
@@ -989,7 +989,7 @@ func (p *parser) isExpression(ch rune) bool {
 //
 //  declaration:
 // 	declaration-specifiers init-declarator-list_opt attribute-specifier-list_opt;
-func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Declaration) {
+func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator, declare bool) (r *Declaration) {
 	if ds == nil {
 		var ok bool
 		if ds, ok = p.declarationSpecifiers(); !ok {
@@ -997,7 +997,7 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator) (r *Decla
 		}
 	}
 
-	return &Declaration{DeclarationSpecifiers: ds, InitDeclaratorList: p.initDeclaratorListOpt(ds, d), AttributeSpecifierList: p.attributeSpecifierListOpt(), Token: p.must(';')}
+	return &Declaration{DeclarationSpecifiers: ds, InitDeclaratorList: p.initDeclaratorListOpt(ds, d, declare), AttributeSpecifierList: p.attributeSpecifierListOpt(), Token: p.must(';')}
 }
 
 //  attribute-specifier-list:
@@ -1083,7 +1083,7 @@ func (p *parser) attributeValue() (r *AttributeValue) {
 //  init-declarator-list:
 // 	init-declarator
 // 	init-declarator-list , init-declarator
-func (p *parser) initDeclaratorListOpt(ds *DeclarationSpecifiers, d *Declarator) (r *InitDeclaratorList) {
+func (p *parser) initDeclaratorListOpt(ds *DeclarationSpecifiers, d *Declarator, declare bool) (r *InitDeclaratorList) {
 	switch {
 	case d == nil:
 		switch p.rune(false) {
@@ -1097,17 +1097,17 @@ func (p *parser) initDeclaratorListOpt(ds *DeclarationSpecifiers, d *Declarator)
 			'*',
 			rune(IDENTIFIER):
 
-			d = p.declarator(nil, ds, true)
+			d = p.declarator(nil, ds, declare)
 		default:
 			p.cpp.eh("%v: unexpected %v, expected direct-declarator", p.toks[0].Position(), runeName(p.rune(false)))
 			p.shift(false)
 			return nil
 		}
 	}
-	r = &InitDeclaratorList{InitDeclarator: p.initDeclarator(ds, d)}
+	r = &InitDeclaratorList{InitDeclarator: p.initDeclarator(ds, d, declare)}
 	prev := r
 	for p.rune(false) == ',' {
-		idl := &InitDeclaratorList{Token: p.shift(false), AttributeSpecifierList: p.attributeSpecifierListOpt(), InitDeclarator: p.initDeclarator(ds, nil)}
+		idl := &InitDeclaratorList{Token: p.shift(false), AttributeSpecifierList: p.attributeSpecifierListOpt(), InitDeclarator: p.initDeclarator(ds, nil, declare)}
 		prev.InitDeclaratorList = idl
 		prev = idl
 	}
@@ -1117,9 +1117,9 @@ func (p *parser) initDeclaratorListOpt(ds *DeclarationSpecifiers, d *Declarator)
 //  init-declarator:
 // 	declarator asm-register-var_opt
 // 	declarator asm-register-var_opt = initializer
-func (p *parser) initDeclarator(ds *DeclarationSpecifiers, d *Declarator) (r *InitDeclarator) {
+func (p *parser) initDeclarator(ds *DeclarationSpecifiers, d *Declarator, declare bool) (r *InitDeclarator) {
 	if d == nil {
-		d = p.declarator(nil, ds, true)
+		d = p.declarator(nil, ds, declare)
 	}
 
 	r = &InitDeclarator{Case: InitDeclaratorDecl, Declarator: d}
@@ -2335,7 +2335,7 @@ func (p *parser) directDeclarator2(dd *DirectDeclarator, declare bool) (r *Direc
 
 				switch p.peek(1, true).Ch {
 				case rune(IDENTIFIER):
-					r = &DirectDeclarator{Case: DirectDeclaratorFuncIdent, DirectDeclarator: r, Token: p.shift(false), IdentifierList: p.identifierList(), Token2: p.must(')')}
+					r = &DirectDeclarator{Case: DirectDeclaratorFuncIdent, DirectDeclarator: r, Token: p.shift(false), IdentifierList: p.identifierList(true), Token2: p.must(')')}
 				default:
 					r = &DirectDeclarator{Case: DirectDeclaratorFuncParam, DirectDeclarator: r, Token: p.shift(false), ParameterTypeList: p.parameterTypeListOpt(), Token2: p.must(')')}
 				}
@@ -2380,21 +2380,33 @@ func (p *parser) directDeclarator2(dd *DirectDeclarator, declare bool) (r *Direc
 //  identifier-list:
 // 	identifier
 // 	identifier-list , identifier
-func (p *parser) identifierList() (r *IdentifierList) {
+func (p *parser) identifierList(declare bool) (r *IdentifierList) {
 	switch p.rune(true) {
 	case eof:
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 		return nil
 	case rune(IDENTIFIER):
 		r = &IdentifierList{Token2: p.shift(false)}
+		if declare {
+			param := &Parameter{name: r.Token2, visible: visible(r.Token2.seq)}
+			p.scope.declare(r.Token2.SrcStr(), param)
+			r.parameters = append(r.parameters, param)
+		}
 	default:
 		t := p.shift(false)
 		p.cpp.eh("%v: unexpected %v, expected identifier", t.Position(), runeName(t.Ch))
+		return nil
 	}
 
+	r0 := r
 	prev := r
 	for p.rune(false) == ',' {
 		il := &IdentifierList{Token: p.shift(false), Token2: p.must(rune(IDENTIFIER))}
+		if declare {
+			param := &Parameter{name: il.Token2, visible: visible(il.Token2.seq)}
+			p.scope.declare(il.Token2.SrcStr(), param)
+			r0.parameters = append(r0.parameters, param)
+		}
 		prev.IdentifierList = il
 		prev = il
 	}
@@ -3405,7 +3417,7 @@ func newScope(parent *Scope) (r *Scope) {
 }
 
 func (s *Scope) declare(nm string, n Node) {
-	// trc("%v: %q %T, visible %v (scope %p)", n.Position(), nm, n, n.(interface{ Visible() int }).Visible(), s)
+	// trc("%v: %q %T, visible %v (scope %p) (%v:)", n.Position(), nm, n, n.(interface{ Visible() int }).Visible(), s, origin(2))
 	if s.Nodes != nil {
 		s.Nodes[nm] = append(s.Nodes[nm], n)
 		return
@@ -3423,6 +3435,10 @@ func (s *Scope) ident(t Token) Node {
 					return x
 				}
 			case *Enumerator:
+				if t.seq >= int32(x.visible) {
+					return x
+				}
+			case *Parameter:
 				if t.seq >= int32(x.visible) {
 					return x
 				}

@@ -2462,6 +2462,7 @@ func (n *GenericSelection) Position() (r token.Position) {
 //	        IDENTIFIER
 //	|       IdentifierList ',' IDENTIFIER
 type IdentifierList struct {
+	parameters     []*Parameter
 	IdentifierList *IdentifierList
 	Token          Token
 	Token2         Token

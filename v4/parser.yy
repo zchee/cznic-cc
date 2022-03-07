@@ -727,6 +727,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int f(int*) {} */
 /*yy:case Abstract   */ |	DeclarationSpecifiers AbstractDeclarator
 
+			/*yy:field	parameters	[]*Parameter	*/
 			/*yy:example int f(i) int i; {}*/
 			IdentifierList:
 				IDENTIFIER

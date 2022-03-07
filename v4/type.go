@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"modernc.org/token"
 )
 
 var (
@@ -315,15 +317,60 @@ func (n *PredefinedType) Size() int64 {
 	return -1
 }
 
+// Parameter represents a function parameter.
+type Parameter struct {
+	Declarator         *Declarator         // Can be nil.
+	AbstractDeclarator *AbstractDeclarator // Can be nil
+	name               Token
+	typer
+	visible
+}
+
+// Position implements Node.
+func (n *Parameter) Position() (r token.Position) {
+	if n.Declarator != nil {
+		return n.Declarator.Position()
+	}
+
+	if n.AbstractDeclarator != nil {
+		return n.AbstractDeclarator.Position()
+	}
+
+	return n.name.Position()
+}
+
+// Name returns the name token of n. The result can a zero value, like in `void
+// f(int) { ... }`.
+func (n *Parameter) Name() Token {
+	if n.Declarator != nil {
+		return n.Declarator.DirectDeclarator.name().Token
+	}
+
+	return n.name
+}
+
 type FunctionType struct {
 	result  typer
-	fp      []*ParameterDeclaration
+	fp      []*Parameter
 	minArgs int
 	maxArgs int // -1: unlimited
 }
 
-func newFunctionType(c *ctx, result Type, fp []*ParameterDeclaration, isVariadic bool) *FunctionType {
-	r := &FunctionType{result: newTyper(result), fp: fp, minArgs: len(fp), maxArgs: len(fp)}
+func newFunctionType(c *ctx, result Type, fp []*ParameterDeclaration, isVariadic bool) (r *FunctionType) {
+	r = &FunctionType{result: newTyper(result), minArgs: len(fp), maxArgs: len(fp)}
+	for _, n := range fp {
+		p := &Parameter{}
+		p.typ = n.Type()
+		switch n.Case {
+		case ParameterDeclarationDecl: // DeclarationSpecifiers Declarator
+			p.Declarator = n.Declarator
+		case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclarator
+			p.AbstractDeclarator = n.AbstractDeclarator
+		default:
+			c.errors.add(errorf("internal error: %v", n.Case))
+		}
+		r.fp = append(r.fp, p)
+	}
 	if isVariadic {
 		r.maxArgs = -1
 	}
@@ -491,6 +538,8 @@ func (n *Field) Name() string {
 
 	return ""
 }
+
+func (n *Field) Offset() int64 { return n.offsetBytes }
 
 type structType struct {
 	fields []*Field

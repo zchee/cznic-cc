@@ -16,10 +16,14 @@ import (
 )
 
 const (
+	// type check
 	decay flags = 1 << iota
 	asmArgList
 	implicitFuncDef
 	ignoreUndefined
+
+	// eval
+	addrOf
 )
 
 type flags int
@@ -33,7 +37,7 @@ type ExpressionNode interface {
 	Type() Type
 	Value() Value
 	check(*ctx, flags) Type
-	eval(*ctx) Value
+	eval(*ctx, flags) Value
 }
 
 const longDoublePrec = 256 // mantissa bits
@@ -133,7 +137,7 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 	}
 
 	switch t.Kind() {
-	case Int:
+	case Int, Long:
 		m := Int64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
@@ -152,13 +156,39 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 		default:
 			c.errors.add(errorf("TODO TYPE %T", x))
 		}
-	case ULong:
+	case ULong, UInt:
 		m := UInt64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
 			return UInt64Value(x) & m
 		case UInt64Value:
 			return x & m
+		default:
+			c.errors.add(errorf("TODO TYPE %T", x))
+		}
+	case Bool:
+		switch x := v.(type) {
+		case Int64Value:
+			if x != 0 {
+				return oneValue
+			}
+
+			return zeroValue
+		case UInt64Value:
+			if x != 0 {
+				return oneValue
+			}
+
+			return zeroValue
+		default:
+			c.errors.add(errorf("TODO TYPE %T", x))
+		}
+	case Ptr:
+		switch x := v.(type) {
+		case Int64Value:
+			return UInt64Value(x)
+		case UInt64Value:
+			return x
 		default:
 			c.errors.add(errorf("TODO TYPE %T", x))
 		}
@@ -241,7 +271,8 @@ type typer struct{ typ Type }
 
 func newTyper(t Type) typer { return typer{typ: t} }
 
-// Type returns the type of a node or nil, if the type is unknown/undetermined.
+// Type returns the type of a node or an *InvalidType type value, if the type
+// is unknown/undetermined.
 func (t typer) Type() Type {
 	if t.typ != nil {
 		return t.typ
@@ -325,7 +356,7 @@ func (n *AsmArgList) check(c *ctx) {
 func (n *AsmExpressionList) check(c *ctx) {
 	for ; n != nil; n = n.AsmExpressionList {
 		n.AsmIndex.check(c)
-		n.AssignmentExpression.check(c, decay|asmArgList)
+		n.AssignmentExpression.check(c, decay|asmArgList|ignoreUndefined)
 	}
 }
 
@@ -366,7 +397,29 @@ func (n *AsmQualifier) check(c *ctx) {
 func (n *FunctionDefinition) check(c *ctx) {
 	d := n.Declarator
 	d.check(c, n.DeclarationSpecifiers.check(c, &d.isExtern, &d.isStatic, &d.isAtomic, &d.isThreadLocal, &d.isConst, &d.isVolatile, &d.isInline, &d.isRegister, &d.isAuto))
-	n.DeclarationList.check(c)
+	if n.DeclarationList != nil {
+		switch d.DirectDeclarator.Case {
+		case DirectDeclaratorFuncIdent:
+			ft, ok := d.Type().(*FunctionType)
+			if !ok {
+				break
+			}
+
+			m := n.DeclarationList.check(c)
+			for _, param := range d.DirectDeclarator.IdentifierList.parameters {
+				switch d := m[param.name.SrcStr()]; {
+				case d == nil:
+					param.typ = c.intT
+				default:
+					param.Declarator = d
+					param.typ = d.Type()
+				}
+				ft.fp = append(ft.fp, param)
+			}
+		default:
+			c.errors.add(errorf("%v: unexpected declaration-list", n.DeclarationList.Position()))
+		}
+	}
 	c.fnScope = n.scope
 	defer func() { c.fnScope = nil }()
 	n.CompoundStatement.check(c)
@@ -375,10 +428,24 @@ func (n *FunctionDefinition) check(c *ctx) {
 //  DeclarationList:
 //          Declaration
 //  |       DeclarationList Declaration
-func (n *DeclarationList) check(c *ctx) {
+func (n *DeclarationList) check(c *ctx) (m map[string]*Declarator) {
 	for ; n != nil; n = n.DeclarationList {
 		n.Declaration.check(c)
+		if m == nil {
+			m = map[string]*Declarator{}
+		}
+		for l := n.Declaration.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
+			d := l.InitDeclarator.Declarator
+			nm := d.Name()
+			if x := m[nm]; x != nil {
+				c.errors.add(errorf("%v: %s redeclared, previous declaration at %v:", d.Position(), nm, x.Position()))
+				continue
+			}
+
+			m[nm] = d
+		}
 	}
+	return m
 }
 
 //  CompoundStatement:
@@ -723,7 +790,7 @@ func arraySize(c *ctx, n ExpressionNode) int64 {
 
 	switch t := n.check(c, decay); {
 	case isIntegerType(t):
-		switch x := n.eval(c).(type) {
+		switch x := n.eval(c, 0).(type) {
 		case Int64Value:
 			if x >= 0 {
 				return int64(x)
@@ -1348,7 +1415,7 @@ func (n *Enumerator) check(c *ctx) {
 		// ok
 	case EnumeratorExpr: // IDENTIFIER '=' ConstantExpression
 		n.typ = n.ConstantExpression.check(c, decay)
-		n.val = n.ConstantExpression.eval(c)
+		n.val = n.ConstantExpression.eval(c, 0)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2525,7 +2592,11 @@ out:
 		case *Enumerator:
 			n.resolvedTo = x
 			n.val = x.val
-			n.typ = x.typ
+			n.typ = x.Type()
+			break out
+		case *Parameter:
+			n.resolvedTo = x
+			n.typ = c.decay(x.Type(), mode)
 			break out
 		default:
 			d = n.resolutionScope.builtin(n.Token)
@@ -2783,7 +2854,7 @@ func (n *ConstantExpression) check(c *ctx, mode flags) (r Type) {
 	}()
 
 	n.typ = n.ConditionalExpression.check(c, mode)
-	if n.eval(c) == UnknownValue {
+	if n.eval(c, 0) == UnknownValue {
 		c.errors.add(errorf("%v: cannot evaluate constant expression", n.Position()))
 	}
 	return n.Type()

@@ -3566,7 +3566,7 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 
 				if err != nil {
 					fails = append(fails, apth)
-					t.Errorf("%v: %v", apth, err)
+					t.Errorf("%v:\n%v", apth, err)
 				}
 
 			}()
