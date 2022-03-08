@@ -56,10 +56,11 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 #error __PTRDIFF_TYPE__ undefined
 #endif
 
+#define __FUNCTION__ __func__
+#define __PRETTY_FUNCTION__ __func__
 #define __builtin_offsetof(type, member) ((size_t)&(((type*)0)->member))
 #define __builtin_types_compatible_p(t1, t2) (sizeof(t1) == sizeof(t2))
 #define __extension__
-
 
 #ifndef __builtin_va_list
 #define __builtin_va_list __builtin_va_list
@@ -3484,7 +3485,6 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 }
 
 func TestTranslate(t *testing.T) {
-	return //TODO-
 	cfg := defaultCfg()
 	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
 	cfg.FS = cFS

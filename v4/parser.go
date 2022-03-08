@@ -101,11 +101,12 @@ var keywords = map[string]rune{
 }
 
 type parser struct {
-	cpp     *cpp
-	scope   *Scope
-	fnScope *Scope
-	prevNL  Token
-	toks    []Token
+	cpp        *cpp
+	fnScope    *Scope
+	funcTokens []Token
+	prevNL     Token
+	scope      *Scope
+	toks       []Token
 
 	seq int32
 }
@@ -116,10 +117,23 @@ func newParser(cfg *Config, sources []Source) (*parser, error) {
 		return nil, err
 	}
 
+	funcTokens := []Token{
+		{Ch: rune(STATIC)},
+		{Ch: rune(CONST)},
+		{Ch: rune(CHAR)},
+		{Ch: rune(IDENTIFIER)},
+		{Ch: '['},
+		{Ch: ']'},
+		{Ch: '='},
+		{Ch: rune(STRINGLITERAL)},
+		{Ch: ';'},
+	}
+	funcTokens = funcTokens[:len(funcTokens):len(funcTokens)]
 	cpp.rune()
 	return &parser{
-		cpp:   cpp,
-		scope: &Scope{},
+		cpp:        cpp,
+		funcTokens: funcTokens,
+		scope:      &Scope{},
 	}, nil
 }
 
@@ -467,7 +481,42 @@ func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundSt
 			}
 		}
 	}
-	return &CompoundStatement{Token: p.must('{'), LabelDeclarationList: p.labelDeclarationListOpt(), BlockItemList: p.blockItemListOpt(), Token2: p.must('}')}
+	lbrace := p.must('{')
+	if isFnScope && d != nil {
+		//TODO p.injectFuncTokens(lbrace, d.Name())
+	}
+	return &CompoundStatement{Token: lbrace, LabelDeclarationList: p.labelDeclarationListOpt(), BlockItemList: p.blockItemListOpt(), Token2: p.must('}')}
+}
+
+var funcTokensText = [][]byte{
+	[]byte("static"),
+	[]byte("const"),
+	[]byte("char"),
+	[]byte("__func__"),
+	[]byte("["),
+	[]byte("]"),
+	[]byte("="),
+	[]byte("function-name"),
+	[]byte(";"),
+}
+
+func (p *parser) injectFuncTokens(lbrace Token, nm string) {
+	if p.funcTokens[0].s != lbrace.s {
+		for i := range p.funcTokens {
+			p := &p.funcTokens[i]
+			p.s = lbrace.s
+			p.pos = lbrace.pos
+			p.seq = lbrace.seq
+			switch {
+			case i == 7:
+				p.Set(nil, []byte(nm))
+			default:
+				p.Set(nil, funcTokensText[i])
+			}
+		}
+	}
+	p.rune(false)
+	p.toks = append(p.funcTokens, p.toks...)
 }
 
 //  label-declaration-list
@@ -3402,6 +3451,18 @@ func (p *parser) structOrUnion() *StructOrUnion {
 }
 
 // Scope binds names to declaring nodes.
+//
+// The dynamic type of a Node in the Nodes map is one of
+//
+//  Node type           Binded by
+//  -----------------   ---------
+//  *Declarator         Parse
+//  *EnumType           Translate
+//  *LabelDeclaration   Parse
+//  *LabeledStatement   Parse
+//  *Parameter          Parse
+//  *StructType         Translate
+//  *UnionType          Translate
 type Scope struct {
 	childs []*Scope
 	Nodes  map[string][]Node
