@@ -20,9 +20,10 @@ var (
 	}
 
 	signedChars = map[[2]string]bool{
-		{"linux", "arm"}:   false,
-		{"linux", "arm64"}: false,
-		{"linux", "s390x"}: false,
+		{"linux", "arm"}:     false,
+		{"linux", "arm64"}:   false,
+		{"linux", "s390x"}:   false,
+		{"linux", "riscv64"}: false,
 
 		{"darwin", "amd64"}:  true,
 		{"darwin", "arm64"}:  true,
