@@ -489,15 +489,15 @@ func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundSt
 }
 
 var funcTokensText = [][]byte{
-	[]byte("static"),
-	[]byte("const"),
-	[]byte("char"),
-	[]byte("__func__"),
-	[]byte("["),
-	[]byte("]"),
-	[]byte("="),
-	[]byte("function-name"),
-	[]byte(";"),
+	[]byte("static"),        // 0
+	[]byte("const"),         // 1
+	[]byte("char"),          // 2
+	[]byte("__func__"),      // 3
+	[]byte("["),             // 4
+	[]byte("]"),             // 5
+	[]byte("="),             // 6
+	[]byte("function-name"), // 7
+	[]byte(";"),             // 8
 }
 
 func (p *parser) injectFuncTokens(lbrace Token, nm string) {
@@ -507,14 +507,12 @@ func (p *parser) injectFuncTokens(lbrace Token, nm string) {
 			p.s = lbrace.s
 			p.pos = lbrace.pos
 			p.seq = lbrace.seq
-			switch {
-			case i == 7:
-				p.Set(nil, []byte(nm))
-			default:
+			if i != 7 {
 				p.Set(nil, funcTokensText[i])
 			}
 		}
 	}
+	p.funcTokens[7].Set(nil, []byte(nm))
 	p.rune(false)
 	p.toks = append(p.funcTokens, p.toks...)
 }
