@@ -482,10 +482,10 @@ func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundSt
 		}
 	}
 	lbrace := p.must('{')
-	if isFnScope && d != nil {
-		//TODO p.injectFuncTokens(lbrace, d.Name())
+	if isFnScope && d != nil && !p.cpp.cfg.doNotInjectFunc {
+		p.injectFuncTokens(lbrace, d.Name())
 	}
-	return &CompoundStatement{Token: lbrace, LabelDeclarationList: p.labelDeclarationListOpt(), BlockItemList: p.blockItemListOpt(), Token2: p.must('}')}
+	return &CompoundStatement{Token: lbrace, BlockItemList: p.blockItemListOpt(), Token2: p.must('}')}
 }
 
 var funcTokensText = [][]byte{
@@ -512,37 +512,9 @@ func (p *parser) injectFuncTokens(lbrace Token, nm string) {
 			}
 		}
 	}
-	p.funcTokens[7].Set(nil, []byte(nm))
+	p.funcTokens[7].Set(nil, []byte(`"`+nm+`"`))
 	p.rune(false)
 	p.toks = append(p.funcTokens, p.toks...)
-}
-
-//  label-declaration-list
-//	label-declaration
-//	label-declaration-list label-declaration
-func (p *parser) labelDeclarationListOpt() (r *LabelDeclarationList) {
-	var prev *LabelDeclarationList
-	for p.rune(false) == rune(LABEL) {
-		ldl := &LabelDeclarationList{LabelDeclaration: p.labelDeclaration()}
-		switch {
-		case r == nil:
-			r = ldl
-		default:
-			prev.LabelDeclarationList = ldl
-		}
-		prev = ldl
-	}
-	return r
-}
-
-//  label-declaration
-// 	__label__ identifier-list ;
-func (p *parser) labelDeclaration() (r *LabelDeclaration) {
-	r = &LabelDeclaration{Token: p.shift(false), IdentifierList: p.identifierList(false), Token2: p.must(';')}
-	for l := r.IdentifierList; l != nil; l = l.IdentifierList {
-		p.scope.declare(l.Token2.SrcStr(), r)
-	}
-	return r
 }
 
 //  block-item-list:
@@ -604,11 +576,23 @@ again:
 		default:
 			return &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(ds, d, true)}
 		}
+	case ch == rune(LABEL):
+		return &BlockItem{Case: BlockItemLabel, LabelDeclaration: p.labelDeclaration()}
 	default:
 		t := p.shift(false)
 		p.cpp.eh("%v: unexpected %v, expected block item", t.Position(), runeName(t.Ch))
 		return nil
 	}
+}
+
+//  label-declaration
+// 	__label__ identifier-list ;
+func (p *parser) labelDeclaration() (r *LabelDeclaration) {
+	r = &LabelDeclaration{Token: p.shift(false), IdentifierList: p.identifierList(false), Token2: p.must(';')}
+	for l := r.IdentifierList; l != nil; l = l.IdentifierList {
+		p.scope.declare(l.Token2.SrcStr(), r)
+	}
+	return r
 }
 
 // [0], 6.8 Statements and blocks

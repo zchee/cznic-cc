@@ -820,6 +820,7 @@ type BlockItemCase int
 // Values of type BlockItemCase
 const (
 	BlockItemDecl BlockItemCase = iota
+	BlockItemLabel
 	BlockItemStmt
 	BlockItemFuncDef
 )
@@ -829,6 +830,8 @@ func (n BlockItemCase) String() string {
 	switch n {
 	case BlockItemDecl:
 		return "BlockItemDecl"
+	case BlockItemLabel:
+		return "BlockItemLabel"
 	case BlockItemStmt:
 		return "BlockItemStmt"
 	case BlockItemFuncDef:
@@ -842,6 +845,7 @@ func (n BlockItemCase) String() string {
 //
 //	BlockItem:
 //	        Declaration                                         // Case BlockItemDecl
+//	|       LabelDeclaration                                    // Case BlockItemLabel
 //	|       Statement                                           // Case BlockItemStmt
 //	|       DeclarationSpecifiers Declarator CompoundStatement  // Case BlockItemFuncDef
 type BlockItem struct {
@@ -850,6 +854,7 @@ type BlockItem struct {
 	Declaration           *Declaration
 	DeclarationSpecifiers *DeclarationSpecifiers
 	Declarator            *Declarator
+	LabelDeclaration      *LabelDeclaration
 	Statement             *Statement
 }
 
@@ -865,7 +870,7 @@ func (n *BlockItem) Position() (r token.Position) {
 	switch n.Case {
 	case 0:
 		return n.Declaration.Position()
-	case 2:
+	case 3:
 		if p := n.DeclarationSpecifiers.Position(); p.IsValid() {
 			return p
 		}
@@ -876,6 +881,8 @@ func (n *BlockItem) Position() (r token.Position) {
 
 		return n.CompoundStatement.Position()
 	case 1:
+		return n.LabelDeclaration.Position()
+	case 2:
 		return n.Statement.Position()
 	default:
 		panic("internal error")
@@ -975,12 +982,11 @@ func (n *CastExpression) Position() (r token.Position) {
 // CompoundStatement represents data reduced by production:
 //
 //	CompoundStatement:
-//	        '{' LabelDeclarationList BlockItemList '}'
+//	        '{' BlockItemList '}'
 type CompoundStatement struct {
-	BlockItemList        *BlockItemList
-	LabelDeclarationList *LabelDeclarationList
-	Token                Token
-	Token2               Token
+	BlockItemList *BlockItemList
+	Token         Token
+	Token2        Token
 }
 
 // String implements fmt.Stringer.
@@ -993,10 +999,6 @@ func (n *CompoundStatement) Position() (r token.Position) {
 	}
 
 	if p := n.Token.Position(); p.IsValid() {
-		return p
-	}
-
-	if p := n.LabelDeclarationList.Position(); p.IsValid() {
 		return p
 	}
 
@@ -3030,28 +3032,6 @@ func (n *LabelDeclaration) Position() (r token.Position) {
 	}
 
 	return n.Token2.Position()
-}
-
-// LabelDeclarationList represents data reduced by productions:
-//
-//	LabelDeclarationList:
-//	        LabelDeclaration
-//	|       LabelDeclarationList LabelDeclaration
-type LabelDeclarationList struct {
-	LabelDeclaration     *LabelDeclaration
-	LabelDeclarationList *LabelDeclarationList
-}
-
-// String implements fmt.Stringer.
-func (n *LabelDeclarationList) String() string { return PrettyString(n) }
-
-// Position reports the position of the first component of n, if available.
-func (n *LabelDeclarationList) Position() (r token.Position) {
-	if n == nil {
-		return r
-	}
-
-	return n.LabelDeclaration.Position()
 }
 
 // LabeledStatementCase represents case numbers of production LabeledStatement

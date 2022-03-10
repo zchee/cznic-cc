@@ -826,13 +826,11 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.8.2 Compound statement */
 			/*yy:example int f() { __label__ L; int i; } 		*/
 			CompoundStatement:
-				'{' LabelDeclarationList BlockItemList '}'
+				'{' BlockItemList '}'
 
-			/*yy:example int f() { __label__ L; int i; } 		*/
-			LabelDeclarationList:
-				LabelDeclaration
-			/*yy:example int f() { __label__ L; __label__ L2; int i; } 	*/
-			|	LabelDeclarationList LabelDeclaration
+			/*yy:example int f() { __label__ L, M; L: x(); M: y(); } */
+			LabelDeclaration:
+				"__label__" IdentifierList ';'
 
 			/*yy:example int f() { int i; }*/
 			BlockItemList:
@@ -843,6 +841,8 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int f() { int i; }*/
 /*yy:case Decl       */ BlockItem:
 				Declaration
+			/*yy:example int f() { __label__ L; int i; } 		*/
+/*yy:case Label      */ |	LabelDeclaration
 			/*yy:example int f() { g(); }*/
 /*yy:case Stmt       */ |	Statement
 			/*yy:example int f() { int g() {} }*/
@@ -957,10 +957,6 @@ package cc // import "modernc.org/cc/v4"
 				AsmQualifier
 			/*yy:example asm inline volatile ("nop"); */
 			|	AsmQualifierList AsmQualifier
-
-			/*yy:example int f() { __label__ L, M; L: x(); M: y(); } */
-			LabelDeclaration:
-				"__label__" IdentifierList ';'
 
 // https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html#Attribute-Syntax
 //

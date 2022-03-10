@@ -43,13 +43,13 @@ func ExampleAdditiveExpression_add() {
 	// · · Case: AdditiveExpressionMul,
 	// · · MultiplicativeExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · Case: AdditiveExpressionAdd,
 	// · MultiplicativeExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "y",
+	// · · Token: example.c:1:11: identifier "y",
 	// · },
 	// · Token: example.c:1:10: '+' "+",
 	// }
@@ -63,13 +63,13 @@ func ExampleAdditiveExpression_sub() {
 	// · · Case: AdditiveExpressionMul,
 	// · · MultiplicativeExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · Case: AdditiveExpressionSub,
 	// · MultiplicativeExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "y",
+	// · · Token: example.c:1:11: identifier "y",
 	// · },
 	// · Token: example.c:1:10: '-' "-",
 	// }
@@ -80,7 +80,7 @@ func ExampleAlignmentSpecifier_type() {
 	// Output:
 	// &cc.AlignmentSpecifier{
 	// · Case: AlignmentSpecifierType,
-	// · Token: example.c:1:1: ALIGNAS "_Alignas",
+	// · Token: example.c:1:1: '_Alignas' "_Alignas",
 	// · Token2: example.c:1:9: '(' "(",
 	// · Token3: example.c:1:16: ')' ")",
 	// · TypeName: &cc.TypeName{
@@ -88,7 +88,7 @@ func ExampleAlignmentSpecifier_type() {
 	// · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierDouble,
-	// · · · · Token: example.c:1:10: DOUBLE "double",
+	// · · · · Token: example.c:1:10: 'double' "double",
 	// · · · },
 	// · · },
 	// · },
@@ -103,10 +103,10 @@ func ExampleAlignmentSpecifier_expr() {
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:10: INTCONST "0ll",
+	// · · · Token: example.c:1:10: integer constant "0ll",
 	// · · },
 	// · },
-	// · Token: example.c:1:1: ALIGNAS "_Alignas",
+	// · Token: example.c:1:1: '_Alignas' "_Alignas",
 	// · Token2: example.c:1:9: '(' "(",
 	// · Token3: example.c:1:13: ')' ")",
 	// }
@@ -120,13 +120,13 @@ func ExampleAndExpression_and() {
 	// · · Case: AndExpressionEq,
 	// · · EqualityExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · Case: AndExpressionAnd,
 	// · EqualityExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · Token: example.c:1:13: identifier "y",
 	// · },
 	// · Token: example.c:1:11: '&' "&",
 	// }
@@ -138,7 +138,7 @@ func ExampleArgumentExpressionList_case0() {
 	// &cc.ArgumentExpressionList{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -150,13 +150,13 @@ func ExampleArgumentExpressionList_case1() {
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · · Token: example.c:1:14: identifier "y",
 	// · · },
 	// · · Token: example.c:1:12: ',' ",",
 	// · },
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -165,9 +165,9 @@ func ExampleAsm_case0() {
 	fmt.Println(exampleAST(254, "asm(\"nop\");"))
 	// Output:
 	// &cc.Asm{
-	// · Token: example.c:1:1: ASM "asm",
+	// · Token: example.c:1:1: 'asm' "asm",
 	// · Token2: example.c:1:4: '(' "(",
-	// · Token3: example.c:1:5: STRINGLITERAL "\"nop\"",
+	// · Token3: example.c:1:5: string literal "\"nop\"",
 	// · Token4: example.c:1:10: ')' ")",
 	// }
 }
@@ -179,7 +179,7 @@ func ExampleAsmArgList_case0() {
 	// · AsmExpressionList: &cc.AsmExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:12: IDENTIFIER "a",
+	// · · · Token: example.c:1:12: identifier "a",
 	// · · },
 	// · },
 	// · Token: example.c:1:10: ':' ":",
@@ -194,7 +194,7 @@ func ExampleAsmArgList_case1() {
 	// · · AsmExpressionList: &cc.AsmExpressionList{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:16: IDENTIFIER "b",
+	// · · · · Token: example.c:1:16: identifier "b",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:14: ':' ":",
@@ -202,7 +202,7 @@ func ExampleAsmArgList_case1() {
 	// · AsmExpressionList: &cc.AsmExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:12: IDENTIFIER "a",
+	// · · · Token: example.c:1:12: identifier "a",
 	// · · },
 	// · },
 	// · Token: example.c:1:10: ':' ":",
@@ -215,7 +215,7 @@ func ExampleAsmExpressionList_case0() {
 	// &cc.AsmExpressionList{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:12: IDENTIFIER "a",
+	// · · Token: example.c:1:12: identifier "a",
 	// · },
 	// }
 }
@@ -227,13 +227,13 @@ func ExampleAsmExpressionList_case1() {
 	// · AsmExpressionList: &cc.AsmExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:15: IDENTIFIER "b",
+	// · · · Token: example.c:1:15: identifier "b",
 	// · · },
 	// · · Token: example.c:1:13: ',' ",",
 	// · },
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:12: IDENTIFIER "a",
+	// · · Token: example.c:1:12: identifier "a",
 	// · },
 	// }
 }
@@ -245,7 +245,7 @@ func ExampleAsmIndex_case0() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:13: IDENTIFIER "a",
+	// · · · Token: example.c:1:13: identifier "a",
 	// · · },
 	// · },
 	// · Token: example.c:1:12: '[' "[",
@@ -258,7 +258,7 @@ func ExampleAsmQualifier_volatile() {
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierVolatile,
-	// · Token: example.c:1:5: VOLATILE "volatile",
+	// · Token: example.c:1:5: 'volatile' "volatile",
 	// }
 }
 
@@ -267,7 +267,7 @@ func ExampleAsmQualifier_inline() {
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierInline,
-	// · Token: example.c:1:5: INLINE "inline",
+	// · Token: example.c:1:5: 'inline' "inline",
 	// }
 }
 
@@ -276,7 +276,7 @@ func ExampleAsmQualifier_goto() {
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierGoto,
-	// · Token: example.c:1:5: GOTO "goto",
+	// · Token: example.c:1:5: 'goto' "goto",
 	// }
 }
 
@@ -286,7 +286,7 @@ func ExampleAsmQualifierList_case0() {
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
 	// · · Case: AsmQualifierInline,
-	// · · Token: example.c:1:5: INLINE "inline",
+	// · · Token: example.c:1:5: 'inline' "inline",
 	// · },
 	// }
 }
@@ -297,12 +297,12 @@ func ExampleAsmQualifierList_case1() {
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
 	// · · Case: AsmQualifierInline,
-	// · · Token: example.c:1:5: INLINE "inline",
+	// · · Token: example.c:1:5: 'inline' "inline",
 	// · },
 	// · AsmQualifierList: &cc.AsmQualifierList{
 	// · · AsmQualifier: &cc.AsmQualifier{
 	// · · · Case: AsmQualifierVolatile,
-	// · · · Token: example.c:1:12: VOLATILE "volatile",
+	// · · · Token: example.c:1:12: 'volatile' "volatile",
 	// · · },
 	// · },
 	// }
@@ -313,9 +313,9 @@ func ExampleAsmStatement_case0() {
 	// Output:
 	// &cc.AsmStatement{
 	// · Asm: &cc.Asm{
-	// · · Token: example.c:1:12: ASM "asm",
+	// · · Token: example.c:1:12: 'asm' "asm",
 	// · · Token2: example.c:1:15: '(' "(",
-	// · · Token3: example.c:1:16: STRINGLITERAL "\"nop\"",
+	// · · Token3: example.c:1:16: string literal "\"nop\"",
 	// · · Token4: example.c:1:21: ')' ")",
 	// · },
 	// · Token: example.c:1:22: ';' ";",
@@ -328,13 +328,13 @@ func ExampleAssignmentExpression_assign() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:15: IDENTIFIER "y",
+	// · · Token: example.c:1:15: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionAssign,
 	// · Token: example.c:1:13: '=' "=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -345,13 +345,13 @@ func ExampleAssignmentExpression_mul() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionMul,
-	// · Token: example.c:1:13: MULASSIGN "*=",
+	// · Token: example.c:1:13: '*=' "*=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -362,13 +362,13 @@ func ExampleAssignmentExpression_div() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionDiv,
-	// · Token: example.c:1:13: DIVASSIGN "/=",
+	// · Token: example.c:1:13: '/=' "/=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -379,13 +379,13 @@ func ExampleAssignmentExpression_mod() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionMod,
-	// · Token: example.c:1:13: MODASSIGN "%=",
+	// · Token: example.c:1:13: '%=' "%=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -396,13 +396,13 @@ func ExampleAssignmentExpression_add() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionAdd,
-	// · Token: example.c:1:13: ADDASSIGN "+=",
+	// · Token: example.c:1:13: '+=' "+=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -413,13 +413,13 @@ func ExampleAssignmentExpression_sub() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionSub,
-	// · Token: example.c:1:13: SUBASSIGN "-=",
+	// · Token: example.c:1:13: '-=' "-=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -430,13 +430,13 @@ func ExampleAssignmentExpression_lsh() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:17: IDENTIFIER "y",
+	// · · Token: example.c:1:17: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionLsh,
-	// · Token: example.c:1:13: LSHASSIGN "<<=",
+	// · Token: example.c:1:13: '<<=' "<<=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -447,13 +447,13 @@ func ExampleAssignmentExpression_rsh() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:17: IDENTIFIER "y",
+	// · · Token: example.c:1:17: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionRsh,
-	// · Token: example.c:1:13: RSHASSIGN ">>=",
+	// · Token: example.c:1:13: '>>=' ">>=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -464,13 +464,13 @@ func ExampleAssignmentExpression_and() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionAnd,
-	// · Token: example.c:1:13: ANDASSIGN "&=",
+	// · Token: example.c:1:13: '&=' "&=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -481,13 +481,13 @@ func ExampleAssignmentExpression_xor() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionXor,
-	// · Token: example.c:1:13: XORASSIGN "^=",
+	// · Token: example.c:1:13: '^=' "^=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -498,13 +498,13 @@ func ExampleAssignmentExpression_or() {
 	// &cc.AssignmentExpression{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "y",
+	// · · Token: example.c:1:16: identifier "y",
 	// · },
 	// · Case: AssignmentExpressionOr,
-	// · Token: example.c:1:13: ORASSIGN "|=",
+	// · Token: example.c:1:13: '|=' "|=",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -513,7 +513,7 @@ func ExampleAtomicTypeSpecifier_case0() {
 	fmt.Println(exampleAST(155, "_Atomic(int) i;"))
 	// Output:
 	// &cc.AtomicTypeSpecifier{
-	// · Token: example.c:1:1: ATOMIC "_Atomic",
+	// · Token: example.c:1:1: '_Atomic' "_Atomic",
 	// · Token2: example.c:1:8: '(' "(",
 	// · Token3: example.c:1:12: ')' ")",
 	// · TypeName: &cc.TypeName{
@@ -521,7 +521,7 @@ func ExampleAtomicTypeSpecifier_case0() {
 	// · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:9: INT "int",
+	// · · · · Token: example.c:1:9: 'int' "int",
 	// · · · },
 	// · · },
 	// · },
@@ -529,16 +529,16 @@ func ExampleAtomicTypeSpecifier_case0() {
 }
 
 func ExampleAttributeSpecifier_case0() {
-	fmt.Println(exampleAST(266, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(265, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeSpecifier{
 	// · AttributeValueList: &cc.AttributeValueList{
 	// · · AttributeValue: &cc.AttributeValue{
 	// · · · Case: AttributeValueIdent,
-	// · · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · · Token: example.c:1:22: identifier "a",
 	// · · },
 	// · },
-	// · Token: example.c:1:7: ATTRIBUTE "__attribute__",
+	// · Token: example.c:1:7: '__attribute__' "__attribute__",
 	// · Token2: example.c:1:20: '(' "(",
 	// · Token3: example.c:1:21: '(' "(",
 	// · Token4: example.c:1:23: ')' ")",
@@ -547,17 +547,17 @@ func ExampleAttributeSpecifier_case0() {
 }
 
 func ExampleAttributeSpecifierList_case0() {
-	fmt.Println(exampleAST(267, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(266, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeSpecifierList{
 	// · AttributeSpecifier: &cc.AttributeSpecifier{
 	// · · AttributeValueList: &cc.AttributeValueList{
 	// · · · AttributeValue: &cc.AttributeValue{
 	// · · · · Case: AttributeValueIdent,
-	// · · · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · · · Token: example.c:1:22: identifier "a",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:7: ATTRIBUTE "__attribute__",
+	// · · Token: example.c:1:7: '__attribute__' "__attribute__",
 	// · · Token2: example.c:1:20: '(' "(",
 	// · · Token3: example.c:1:21: '(' "(",
 	// · · Token4: example.c:1:23: ')' ")",
@@ -567,17 +567,17 @@ func ExampleAttributeSpecifierList_case0() {
 }
 
 func ExampleAttributeSpecifierList_case1() {
-	fmt.Println(exampleAST(268, "int i __attribute__((a)) __attribute__((b));"))
+	fmt.Println(exampleAST(267, "int i __attribute__((a)) __attribute__((b));"))
 	// Output:
 	// &cc.AttributeSpecifierList{
 	// · AttributeSpecifier: &cc.AttributeSpecifier{
 	// · · AttributeValueList: &cc.AttributeValueList{
 	// · · · AttributeValue: &cc.AttributeValue{
 	// · · · · Case: AttributeValueIdent,
-	// · · · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · · · Token: example.c:1:22: identifier "a",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:7: ATTRIBUTE "__attribute__",
+	// · · Token: example.c:1:7: '__attribute__' "__attribute__",
 	// · · Token2: example.c:1:20: '(' "(",
 	// · · Token3: example.c:1:21: '(' "(",
 	// · · Token4: example.c:1:23: ')' ")",
@@ -588,10 +588,10 @@ func ExampleAttributeSpecifierList_case1() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:41: IDENTIFIER "b",
+	// · · · · · Token: example.c:1:41: identifier "b",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:26: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:26: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:39: '(' "(",
 	// · · · Token3: example.c:1:40: '(' "(",
 	// · · · Token4: example.c:1:42: ')' ")",
@@ -602,54 +602,54 @@ func ExampleAttributeSpecifierList_case1() {
 }
 
 func ExampleAttributeValue_ident() {
-	fmt.Println(exampleAST(262, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(261, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeValue{
 	// · Case: AttributeValueIdent,
-	// · Token: example.c:1:22: IDENTIFIER "a",
+	// · Token: example.c:1:22: identifier "a",
 	// }
 }
 
 func ExampleAttributeValue_expr() {
-	fmt.Println(exampleAST(263, "int i __attribute__((a(b)));"))
+	fmt.Println(exampleAST(262, "int i __attribute__((a(b)));"))
 	// Output:
 	// &cc.AttributeValue{
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:24: IDENTIFIER "b",
+	// · · · Token: example.c:1:24: identifier "b",
 	// · · },
 	// · },
 	// · Case: AttributeValueExpr,
-	// · Token: example.c:1:22: IDENTIFIER "a",
+	// · Token: example.c:1:22: identifier "a",
 	// · Token2: example.c:1:23: '(' "(",
 	// · Token3: example.c:1:25: ')' ")",
 	// }
 }
 
 func ExampleAttributeValueList_case0() {
-	fmt.Println(exampleAST(264, "int i __attribute__((a));"))
+	fmt.Println(exampleAST(263, "int i __attribute__((a));"))
 	// Output:
 	// &cc.AttributeValueList{
 	// · AttributeValue: &cc.AttributeValue{
 	// · · Case: AttributeValueIdent,
-	// · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · Token: example.c:1:22: identifier "a",
 	// · },
 	// }
 }
 
 func ExampleAttributeValueList_case1() {
-	fmt.Println(exampleAST(265, "int i __attribute__((a, b));"))
+	fmt.Println(exampleAST(264, "int i __attribute__((a, b));"))
 	// Output:
 	// &cc.AttributeValueList{
 	// · AttributeValue: &cc.AttributeValue{
 	// · · Case: AttributeValueIdent,
-	// · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · Token: example.c:1:22: identifier "a",
 	// · },
 	// · AttributeValueList: &cc.AttributeValueList{
 	// · · AttributeValue: &cc.AttributeValue{
 	// · · · Case: AttributeValueIdent,
-	// · · · Token: example.c:1:25: IDENTIFIER "b",
+	// · · · Token: example.c:1:25: identifier "b",
 	// · · },
 	// · · Token: example.c:1:23: ',' ",",
 	// · },
@@ -657,30 +657,113 @@ func ExampleAttributeValueList_case1() {
 }
 
 func ExampleBlockItem_decl() {
-	fmt.Println(exampleAST(224, "int f() { int i; }"))
+	fmt.Println(exampleAST(223, "int f() { int i; }"))
 	// Output:
 	// &cc.BlockItem{
 	// · Case: BlockItemDecl,
 	// · Declaration: &cc.Declaration{
 	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:11: INT "int",
+	// · · · Case: DeclarationSpecifiersStorage,
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · },
+	// · · · · },
+	// · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · Case: TypeQualifierConst,
+	// · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · },
+	// · · · },
+	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · Case: StorageClassSpecifierStatic,
+	// · · · · Token: example.c:1:9: 'static' "static",
 	// · · · },
 	// · · },
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · · InitDeclarator: &cc.InitDeclarator{
-	// · · · · Case: InitDeclaratorDecl,
+	// · · · · Case: InitDeclaratorInit,
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:15: IDENTIFIER "i",
+	// · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · Token2: example.c:1:9: ']' "]",
 	// · · · · · },
 	// · · · · },
+	// · · · · Initializer: &cc.Initializer{
+	// · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · },
+	// · · · · · Case: InitializerExpr,
+	// · · · · },
+	// · · · · Token: example.c:1:9: '=' "=",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:16: ';' ";",
+	// · · Token: example.c:1:9: ';' ";",
+	// · },
+	// }
+}
+
+func ExampleBlockItem_label() {
+	fmt.Println(exampleAST(224, "int f() { __label__ L; int i; }"))
+	// Output:
+	// &cc.BlockItem{
+	// · Case: BlockItemDecl,
+	// · Declaration: &cc.Declaration{
+	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · Case: DeclarationSpecifiersStorage,
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · },
+	// · · · · },
+	// · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · Case: TypeQualifierConst,
+	// · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · },
+	// · · · },
+	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · Case: StorageClassSpecifierStatic,
+	// · · · · Token: example.c:1:9: 'static' "static",
+	// · · · },
+	// · · },
+	// · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · Case: InitDeclaratorInit,
+	// · · · · Declarator: &cc.Declarator{
+	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · Token2: example.c:1:9: ']' "]",
+	// · · · · · },
+	// · · · · },
+	// · · · · Initializer: &cc.Initializer{
+	// · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · },
+	// · · · · · Case: InitializerExpr,
+	// · · · · },
+	// · · · · Token: example.c:1:9: '=' "=",
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:9: ';' ";",
 	// · },
 	// }
 }
@@ -689,23 +772,54 @@ func ExampleBlockItem_stmt() {
 	fmt.Println(exampleAST(225, "int f() { g(); }"))
 	// Output:
 	// &cc.BlockItem{
-	// · Case: BlockItemStmt,
-	// · Statement: &cc.Statement{
-	// · · Case: StatementExpr,
-	// · · ExpressionStatement: &cc.ExpressionStatement{
-	// · · · ExpressionList: &cc.ExpressionList{
-	// · · · · AssignmentExpression: &cc.PostfixExpression{
-	// · · · · · Case: PostfixExpressionCall,
-	// · · · · · PostfixExpression: &cc.PrimaryExpression{
-	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:11: IDENTIFIER "g",
+	// · Case: BlockItemDecl,
+	// · Declaration: &cc.Declaration{
+	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · Case: DeclarationSpecifiersStorage,
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · Token: example.c:1:9: 'char' "char",
 	// · · · · · },
-	// · · · · · Token: example.c:1:12: '(' "(",
-	// · · · · · Token2: example.c:1:13: ')' ")",
+	// · · · · },
+	// · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · Case: TypeQualifierConst,
+	// · · · · · Token: example.c:1:9: 'const' "const",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:14: ';' ";",
+	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · Case: StorageClassSpecifierStatic,
+	// · · · · Token: example.c:1:9: 'static' "static",
+	// · · · },
 	// · · },
+	// · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · Case: InitDeclaratorInit,
+	// · · · · Declarator: &cc.Declarator{
+	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · Token2: example.c:1:9: ']' "]",
+	// · · · · · },
+	// · · · · },
+	// · · · · Initializer: &cc.Initializer{
+	// · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · },
+	// · · · · · Case: InitializerExpr,
+	// · · · · },
+	// · · · · Token: example.c:1:9: '=' "=",
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:9: ';' ";",
 	// · },
 	// }
 }
@@ -714,89 +828,111 @@ func ExampleBlockItem_funcDef() {
 	fmt.Println(exampleAST(226, "int f() { int g() {} }"))
 	// Output:
 	// &cc.BlockItem{
-	// · Case: BlockItemFuncDef,
-	// · CompoundStatement: &cc.CompoundStatement{
-	// · · Token: example.c:1:19: '{' "{",
-	// · · Token2: example.c:1:20: '}' "}",
-	// · },
-	// · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · Case: DeclarationSpecifiersTypeSpec,
-	// · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:11: INT "int",
-	// · · },
-	// · },
-	// · Declarator: &cc.Declarator{
-	// · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · Case: DirectDeclaratorFuncParam,
-	// · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:15: IDENTIFIER "g",
+	// · Case: BlockItemDecl,
+	// · Declaration: &cc.Declaration{
+	// · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · Case: DeclarationSpecifiersStorage,
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · },
+	// · · · · },
+	// · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · Case: TypeQualifierConst,
+	// · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:16: '(' "(",
-	// · · · Token2: example.c:1:17: ')' ")",
+	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · Case: StorageClassSpecifierStatic,
+	// · · · · Token: example.c:1:9: 'static' "static",
+	// · · · },
 	// · · },
+	// · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · Case: InitDeclaratorInit,
+	// · · · · Declarator: &cc.Declarator{
+	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · Token2: example.c:1:9: ']' "]",
+	// · · · · · },
+	// · · · · },
+	// · · · · Initializer: &cc.Initializer{
+	// · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · },
+	// · · · · · Case: InitializerExpr,
+	// · · · · },
+	// · · · · Token: example.c:1:9: '=' "=",
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:9: ';' ";",
 	// · },
 	// }
 }
 
 func ExampleBlockItemList_case0() {
-	fmt.Println(exampleAST(222, "int f() { int i; }"))
+	fmt.Println(exampleAST(221, "int f() { int i; }"))
 	// Output:
 	// &cc.BlockItemList{
 	// · BlockItem: &cc.BlockItem{
 	// · · Case: BlockItemDecl,
 	// · · Declaration: &cc.Declaration{
 	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:11: INT "int",
+	// · · · · Case: DeclarationSpecifiersStorage,
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · · Case: TypeQualifierConst,
+	// · · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · · },
+	// · · · · },
+	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · · Case: StorageClassSpecifierStatic,
+	// · · · · · Token: example.c:1:9: 'static' "static",
 	// · · · · },
 	// · · · },
 	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · · · InitDeclarator: &cc.InitDeclarator{
-	// · · · · · Case: InitDeclaratorDecl,
+	// · · · · · Case: InitDeclaratorInit,
 	// · · · · · Declarator: &cc.Declarator{
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:15: IDENTIFIER "i",
+	// · · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · · },
+	// · · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · · Token2: example.c:1:9: ']' "]",
 	// · · · · · · },
 	// · · · · · },
-	// · · · · },
-	// · · · },
-	// · · · Token: example.c:1:16: ';' ";",
-	// · · },
-	// · },
-	// }
-}
-
-func ExampleBlockItemList_case1() {
-	fmt.Println(exampleAST(223, "int f() { int i; double j; }"))
-	// Output:
-	// &cc.BlockItemList{
-	// · BlockItem: &cc.BlockItem{
-	// · · Case: BlockItemDecl,
-	// · · Declaration: &cc.Declaration{
-	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:11: INT "int",
-	// · · · · },
-	// · · · },
-	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
-	// · · · · InitDeclarator: &cc.InitDeclarator{
-	// · · · · · Case: InitDeclaratorDecl,
-	// · · · · · Declarator: &cc.Declarator{
-	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:15: IDENTIFIER "i",
+	// · · · · · Initializer: &cc.Initializer{
+	// · · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · · Token: example.c:1:9: string literal "\"f\"",
 	// · · · · · · },
+	// · · · · · · Case: InitializerExpr,
 	// · · · · · },
+	// · · · · · Token: example.c:1:9: '=' "=",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:16: ';' ";",
+	// · · · Token: example.c:1:9: ';' ";",
 	// · · },
 	// · },
 	// · BlockItemList: &cc.BlockItemList{
@@ -806,8 +942,8 @@ func ExampleBlockItemList_case1() {
 	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
 	// · · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · · · Case: TypeSpecifierDouble,
-	// · · · · · · Token: example.c:1:18: DOUBLE "double",
+	// · · · · · · Case: TypeSpecifierInt,
+	// · · · · · · Token: example.c:1:11: 'int' "int",
 	// · · · · · },
 	// · · · · },
 	// · · · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -816,12 +952,122 @@ func ExampleBlockItemList_case1() {
 	// · · · · · · Declarator: &cc.Declarator{
 	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · · Token: example.c:1:25: IDENTIFIER "j",
+	// · · · · · · · · Token: example.c:1:15: identifier "i",
 	// · · · · · · · },
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
-	// · · · · Token: example.c:1:26: ';' ";",
+	// · · · · Token: example.c:1:16: ';' ";",
+	// · · · },
+	// · · },
+	// · },
+	// }
+}
+
+func ExampleBlockItemList_case1() {
+	fmt.Println(exampleAST(222, "int f() { int i; double j; }"))
+	// Output:
+	// &cc.BlockItemList{
+	// · BlockItem: &cc.BlockItem{
+	// · · Case: BlockItemDecl,
+	// · · Declaration: &cc.Declaration{
+	// · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · Case: DeclarationSpecifiersStorage,
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · · Case: TypeQualifierConst,
+	// · · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · · },
+	// · · · · },
+	// · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · · Case: StorageClassSpecifierStatic,
+	// · · · · · Token: example.c:1:9: 'static' "static",
+	// · · · · },
+	// · · · },
+	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · Case: InitDeclaratorInit,
+	// · · · · · Declarator: &cc.Declarator{
+	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · · },
+	// · · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · · Token2: example.c:1:9: ']' "]",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · Initializer: &cc.Initializer{
+	// · · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · · },
+	// · · · · · · Case: InitializerExpr,
+	// · · · · · },
+	// · · · · · Token: example.c:1:9: '=' "=",
+	// · · · · },
+	// · · · },
+	// · · · Token: example.c:1:9: ';' ";",
+	// · · },
+	// · },
+	// · BlockItemList: &cc.BlockItemList{
+	// · · BlockItem: &cc.BlockItem{
+	// · · · Case: BlockItemDecl,
+	// · · · Declaration: &cc.Declaration{
+	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · Case: TypeSpecifierInt,
+	// · · · · · · Token: example.c:1:11: 'int' "int",
+	// · · · · · },
+	// · · · · },
+	// · · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · · Case: InitDeclaratorDecl,
+	// · · · · · · Declarator: &cc.Declarator{
+	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · Token: example.c:1:15: identifier "i",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · },
+	// · · · · },
+	// · · · · Token: example.c:1:16: ';' ";",
+	// · · · },
+	// · · },
+	// · · BlockItemList: &cc.BlockItemList{
+	// · · · BlockItem: &cc.BlockItem{
+	// · · · · Case: BlockItemDecl,
+	// · · · · Declaration: &cc.Declaration{
+	// · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · Case: TypeSpecifierDouble,
+	// · · · · · · · Token: example.c:1:18: 'double' "double",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · · · Case: InitDeclaratorDecl,
+	// · · · · · · · Declarator: &cc.Declarator{
+	// · · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · · Token: example.c:1:25: identifier "j",
+	// · · · · · · · · },
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · Token: example.c:1:26: ';' ";",
+	// · · · · },
 	// · · · },
 	// · · },
 	// · },
@@ -835,7 +1081,7 @@ func ExampleCastExpression_cast() {
 	// · Case: CastExpressionCast,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionFloat,
-	// · · Token: example.c:1:33: FLOATCONST "3.14",
+	// · · Token: example.c:1:33: floating point constant "3.14",
 	// · },
 	// · Token: example.c:1:9: '(' "(",
 	// · Token2: example.c:1:32: ')' ")",
@@ -846,7 +1092,7 @@ func ExampleCastExpression_cast() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:29: INT "int",
+	// · · · · · Token: example.c:1:29: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · TypeQualifier: &cc.TypeQualifier{
@@ -855,10 +1101,10 @@ func ExampleCastExpression_cast() {
 	// · · · · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · · · · Case: AttributeValueIdent,
-	// · · · · · · · · Token: example.c:1:25: IDENTIFIER "a",
+	// · · · · · · · · Token: example.c:1:25: identifier "a",
 	// · · · · · · · },
 	// · · · · · · },
-	// · · · · · · Token: example.c:1:10: ATTRIBUTE "__attribute__",
+	// · · · · · · Token: example.c:1:10: '__attribute__' "__attribute__",
 	// · · · · · · Token2: example.c:1:23: '(' "(",
 	// · · · · · · Token3: example.c:1:24: '(' "(",
 	// · · · · · · Token4: example.c:1:26: ')' ")",
@@ -881,34 +1127,90 @@ func ExampleCompoundStatement_case0() {
 	// · · · Case: BlockItemDecl,
 	// · · · Declaration: &cc.Declaration{
 	// · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
-	// · · · · · Case: DeclarationSpecifiersTypeSpec,
-	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
-	// · · · · · · Case: TypeSpecifierInt,
-	// · · · · · · Token: example.c:1:24: INT "int",
+	// · · · · · Case: DeclarationSpecifiersStorage,
+	// · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · · · Case: TypeQualifierConst,
+	// · · · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · · · Case: StorageClassSpecifierStatic,
+	// · · · · · · Token: example.c:1:9: 'static' "static",
 	// · · · · · },
 	// · · · · },
 	// · · · · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · · · · InitDeclarator: &cc.InitDeclarator{
-	// · · · · · · Case: InitDeclaratorDecl,
+	// · · · · · · Case: InitDeclaratorInit,
 	// · · · · · · Declarator: &cc.Declarator{
 	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
-	// · · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · · Token: example.c:1:28: IDENTIFIER "i",
+	// · · · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · · · },
+	// · · · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · · · Token2: example.c:1:9: ']' "]",
 	// · · · · · · · },
 	// · · · · · · },
+	// · · · · · · Initializer: &cc.Initializer{
+	// · · · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · · · },
+	// · · · · · · · Case: InitializerExpr,
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:9: '=' "=",
 	// · · · · · },
 	// · · · · },
-	// · · · · Token: example.c:1:29: ';' ";",
+	// · · · · Token: example.c:1:9: ';' ";",
 	// · · · },
 	// · · },
-	// · },
-	// · LabelDeclarationList: &cc.LabelDeclarationList{
-	// · · LabelDeclaration: &cc.LabelDeclaration{
-	// · · · IdentifierList: &cc.IdentifierList{
-	// · · · · Token2: example.c:1:21: IDENTIFIER "L",
+	// · · BlockItemList: &cc.BlockItemList{
+	// · · · BlockItem: &cc.BlockItem{
+	// · · · · Case: BlockItemLabel,
+	// · · · · LabelDeclaration: &cc.LabelDeclaration{
+	// · · · · · IdentifierList: &cc.IdentifierList{
+	// · · · · · · Token2: example.c:1:21: identifier "L",
+	// · · · · · },
+	// · · · · · Token: example.c:1:11: '__label__' "__label__",
+	// · · · · · Token2: example.c:1:22: ';' ";",
+	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:11: LABEL "__label__",
-	// · · · Token2: example.c:1:22: ';' ";",
+	// · · · BlockItemList: &cc.BlockItemList{
+	// · · · · BlockItem: &cc.BlockItem{
+	// · · · · · Case: BlockItemDecl,
+	// · · · · · Declaration: &cc.Declaration{
+	// · · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · · Case: TypeSpecifierInt,
+	// · · · · · · · · Token: example.c:1:24: 'int' "int",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · · · · Case: InitDeclaratorDecl,
+	// · · · · · · · · Declarator: &cc.Declarator{
+	// · · · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · · · Token: example.c:1:28: identifier "i",
+	// · · · · · · · · · },
+	// · · · · · · · · },
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:29: ';' ";",
+	// · · · · · },
+	// · · · · },
+	// · · · },
 	// · · },
 	// · },
 	// · Token: example.c:1:9: '{' "{",
@@ -923,17 +1225,17 @@ func ExampleConditionalExpression_cond() {
 	// · Case: ConditionalExpressionCond,
 	// · ConditionalExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:17: IDENTIFIER "z",
+	// · · Token: example.c:1:17: identifier "z",
 	// · },
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · · Token: example.c:1:13: identifier "y",
 	// · · },
 	// · },
 	// · LogicalOrExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '?' "?",
 	// · Token2: example.c:1:15: ':' ":",
@@ -946,7 +1248,7 @@ func ExampleConstantExpression_case0() {
 	// &cc.ConstantExpression{
 	// · ConditionalExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionInt,
-	// · · Token: example.c:1:16: INTCONST "3",
+	// · · Token: example.c:1:16: integer constant "3",
 	// · },
 	// }
 }
@@ -959,7 +1261,7 @@ func ExampleDeclaration_case0() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:1: INT "int",
+	// · · · Token: example.c:1:1: 'int' "int",
 	// · · },
 	// · },
 	// · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -968,7 +1270,7 @@ func ExampleDeclaration_case0() {
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · · Token: example.c:1:5: identifier "i",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -979,10 +1281,10 @@ func ExampleDeclaration_case0() {
 	// · · · · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · · · · Case: AttributeValueIdent,
-	// · · · · · · · · Token: example.c:1:25: IDENTIFIER "a",
+	// · · · · · · · · Token: example.c:1:25: identifier "a",
 	// · · · · · · · },
 	// · · · · · · },
-	// · · · · · · Token: example.c:1:10: ATTRIBUTE "__attribute__",
+	// · · · · · · Token: example.c:1:10: '__attribute__' "__attribute__",
 	// · · · · · · Token2: example.c:1:23: '(' "(",
 	// · · · · · · Token3: example.c:1:24: '(' "(",
 	// · · · · · · Token4: example.c:1:26: ')' ")",
@@ -993,7 +1295,7 @@ func ExampleDeclaration_case0() {
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:8: IDENTIFIER "j",
+	// · · · · · · Token: example.c:1:8: identifier "j",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -1013,7 +1315,7 @@ func ExampleDeclarationList_case0() {
 	// · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:10: INT "int",
+	// · · · · Token: example.c:1:10: 'int' "int",
 	// · · · },
 	// · · },
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -1022,7 +1324,7 @@ func ExampleDeclarationList_case0() {
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:14: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:14: identifier "i",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -1041,7 +1343,7 @@ func ExampleDeclarationList_case1() {
 	// · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:13: INT "int",
+	// · · · · Token: example.c:1:13: 'int' "int",
 	// · · · },
 	// · · },
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -1050,7 +1352,7 @@ func ExampleDeclarationList_case1() {
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:17: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:17: identifier "i",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -1063,7 +1365,7 @@ func ExampleDeclarationList_case1() {
 	// · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:20: INT "int",
+	// · · · · · Token: example.c:1:20: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -1072,7 +1374,7 @@ func ExampleDeclarationList_case1() {
 	// · · · · · Declarator: &cc.Declarator{
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:24: IDENTIFIER "j",
+	// · · · · · · · Token: example.c:1:24: identifier "j",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
@@ -1092,10 +1394,10 @@ func ExampleDeclarationSpecifiers_storage() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:16: IDENTIFIER "a",
+	// · · · · · Token: example.c:1:16: identifier "a",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:1: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:1: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:14: '(' "(",
 	// · · · Token3: example.c:1:15: '(' "(",
 	// · · · Token4: example.c:1:17: ')' ")",
@@ -1109,12 +1411,12 @@ func ExampleDeclarationSpecifiers_storage() {
 	// · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:27: INT "int",
+	// · · · · Token: example.c:1:27: 'int' "int",
 	// · · · },
 	// · · },
 	// · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · Case: StorageClassSpecifierStatic,
-	// · · · Token: example.c:1:20: STATIC "static",
+	// · · · Token: example.c:1:20: 'static' "static",
 	// · · },
 	// · },
 	// }
@@ -1127,7 +1429,7 @@ func ExampleDeclarationSpecifiers_typeSpec() {
 	// · Case: DeclarationSpecifiersTypeSpec,
 	// · TypeSpecifier: &cc.TypeSpecifier{
 	// · · Case: TypeSpecifierInt,
-	// · · Token: example.c:1:1: INT "int",
+	// · · Token: example.c:1:1: 'int' "int",
 	// · },
 	// }
 }
@@ -1141,12 +1443,12 @@ func ExampleDeclarationSpecifiers_typeQual() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:10: INT "int",
+	// · · · Token: example.c:1:10: 'int' "int",
 	// · · },
 	// · },
 	// · TypeQualifier: &cc.TypeQualifier{
 	// · · Case: TypeQualifierVolatile,
-	// · · Token: example.c:1:1: VOLATILE "volatile",
+	// · · Token: example.c:1:1: 'volatile' "volatile",
 	// · },
 	// }
 }
@@ -1160,12 +1462,12 @@ func ExampleDeclarationSpecifiers_func() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:8: INT "int",
+	// · · · Token: example.c:1:8: 'int' "int",
 	// · · },
 	// · },
 	// · FunctionSpecifier: &cc.FunctionSpecifier{
 	// · · Case: FunctionSpecifierInline,
-	// · · Token: example.c:1:1: INLINE "inline",
+	// · · Token: example.c:1:1: 'inline' "inline",
 	// · },
 	// }
 }
@@ -1176,7 +1478,7 @@ func ExampleDeclarationSpecifiers_alignSpec() {
 	// &cc.DeclarationSpecifiers{
 	// · AlignmentSpecifier: &cc.AlignmentSpecifier{
 	// · · Case: AlignmentSpecifierType,
-	// · · Token: example.c:1:1: ALIGNAS "_Alignas",
+	// · · Token: example.c:1:1: '_Alignas' "_Alignas",
 	// · · Token2: example.c:1:9: '(' "(",
 	// · · Token3: example.c:1:16: ')' ")",
 	// · · TypeName: &cc.TypeName{
@@ -1184,7 +1486,7 @@ func ExampleDeclarationSpecifiers_alignSpec() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierDouble,
-	// · · · · · Token: example.c:1:10: DOUBLE "double",
+	// · · · · · Token: example.c:1:10: 'double' "double",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -1194,7 +1496,7 @@ func ExampleDeclarationSpecifiers_alignSpec() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:18: INT "int",
+	// · · · Token: example.c:1:18: 'int' "int",
 	// · · },
 	// · },
 	// }
@@ -1209,10 +1511,10 @@ func ExampleDeclarationSpecifiers_attr() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:16: IDENTIFIER "a",
+	// · · · · · Token: example.c:1:16: identifier "a",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:1: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:1: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:14: '(' "(",
 	// · · · Token3: example.c:1:15: '(' "(",
 	// · · · Token4: example.c:1:17: ')' ")",
@@ -1224,7 +1526,7 @@ func ExampleDeclarationSpecifiers_attr() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:20: INT "int",
+	// · · · Token: example.c:1:20: 'int' "int",
 	// · · },
 	// · },
 	// }
@@ -1236,7 +1538,7 @@ func ExampleDeclarator_case0() {
 	// &cc.Declarator{
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
-	// · · Token: example.c:1:6: IDENTIFIER "p",
+	// · · Token: example.c:1:6: identifier "p",
 	// · },
 	// · Pointer: &cc.Pointer{
 	// · · Case: PointerTypeQual,
@@ -1255,7 +1557,7 @@ func ExampleDesignation_case0() {
 	// · · · ConstantExpression: &cc.ConstantExpression{
 	// · · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · · Case: PrimaryExpressionInt,
-	// · · · · · Token: example.c:1:14: INTCONST "42",
+	// · · · · · Token: example.c:1:14: integer constant "42",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:13: '[' "[",
@@ -1274,7 +1576,7 @@ func ExampleDesignator_index() {
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:14: INTCONST "42",
+	// · · · Token: example.c:1:14: integer constant "42",
 	// · · },
 	// · },
 	// · Token: example.c:1:13: '[' "[",
@@ -1290,17 +1592,17 @@ func ExampleDesignator_index2() {
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:14: INTCONST "42",
+	// · · · Token: example.c:1:14: integer constant "42",
 	// · · },
 	// · },
 	// · ConstantExpression2: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:21: INTCONST "278",
+	// · · · Token: example.c:1:21: integer constant "278",
 	// · · },
 	// · },
 	// · Token: example.c:1:13: '[' "[",
-	// · Token2: example.c:1:17: DDD "...",
+	// · Token2: example.c:1:17: '...' "...",
 	// · Token3: example.c:1:24: ']' "]",
 	// }
 }
@@ -1311,7 +1613,7 @@ func ExampleDesignator_field() {
 	// &cc.Designator{
 	// · Case: DesignatorField,
 	// · Token: example.c:1:16: '.' ".",
-	// · Token2: example.c:1:17: IDENTIFIER "fld",
+	// · Token2: example.c:1:17: identifier "fld",
 	// }
 }
 
@@ -1320,7 +1622,7 @@ func ExampleDesignator_field2() {
 	// Output:
 	// &cc.Designator{
 	// · Case: DesignatorField2,
-	// · Token: example.c:1:16: IDENTIFIER "fld",
+	// · Token: example.c:1:16: identifier "fld",
 	// · Token2: example.c:1:19: ':' ":",
 	// }
 }
@@ -1334,7 +1636,7 @@ func ExampleDesignatorList_case0() {
 	// · · ConstantExpression: &cc.ConstantExpression{
 	// · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionInt,
-	// · · · · Token: example.c:1:14: INTCONST "42",
+	// · · · · Token: example.c:1:14: integer constant "42",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:13: '[' "[",
@@ -1352,7 +1654,7 @@ func ExampleDesignatorList_case1() {
 	// · · ConstantExpression: &cc.ConstantExpression{
 	// · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionInt,
-	// · · · · Token: example.c:1:19: INTCONST "42",
+	// · · · · Token: example.c:1:19: integer constant "42",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:18: '[' "[",
@@ -1364,7 +1666,7 @@ func ExampleDesignatorList_case1() {
 	// · · · ConstantExpression: &cc.ConstantExpression{
 	// · · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · · Case: PrimaryExpressionInt,
-	// · · · · · Token: example.c:1:23: INTCONST "12",
+	// · · · · · Token: example.c:1:23: integer constant "12",
 	// · · · · },
 	// · · · },
 	// · · · Token: example.c:1:22: '[' "[",
@@ -1397,7 +1699,7 @@ func ExampleDirectAbstractDeclarator_arr() {
 	// &cc.DirectAbstractDeclarator{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionInt,
-	// · · Token: example.c:1:18: INTCONST "42",
+	// · · Token: example.c:1:18: integer constant "42",
 	// · },
 	// · Case: DirectAbstractDeclaratorArr,
 	// · Token: example.c:1:11: '[' "[",
@@ -1406,7 +1708,7 @@ func ExampleDirectAbstractDeclarator_arr() {
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:12: CONST "const",
+	// · · · Token: example.c:1:12: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -1418,17 +1720,17 @@ func ExampleDirectAbstractDeclarator_staticArr() {
 	// &cc.DirectAbstractDeclarator{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionInt,
-	// · · Token: example.c:1:25: INTCONST "42",
+	// · · Token: example.c:1:25: integer constant "42",
 	// · },
 	// · Case: DirectAbstractDeclaratorStaticArr,
 	// · Token: example.c:1:11: '[' "[",
-	// · Token2: example.c:1:12: STATIC "static",
+	// · Token2: example.c:1:12: 'static' "static",
 	// · Token3: example.c:1:27: ']' "]",
 	// · TypeQualifiers: &cc.TypeQualifiers{
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:19: CONST "const",
+	// · · · Token: example.c:1:19: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -1440,17 +1742,17 @@ func ExampleDirectAbstractDeclarator_arrStatic() {
 	// &cc.DirectAbstractDeclarator{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionInt,
-	// · · Token: example.c:1:25: INTCONST "42",
+	// · · Token: example.c:1:25: integer constant "42",
 	// · },
 	// · Case: DirectAbstractDeclaratorArr,
 	// · Token: example.c:1:11: '[' "[",
-	// · Token2: example.c:1:18: STATIC "static",
+	// · Token2: example.c:1:18: 'static' "static",
 	// · Token3: example.c:1:27: ']' "]",
 	// · TypeQualifiers: &cc.TypeQualifiers{
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:12: CONST "const",
+	// · · · Token: example.c:1:12: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -1481,7 +1783,7 @@ func ExampleDirectAbstractDeclarator_func() {
 	// · · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · · Case: TypeSpecifierChar,
-	// · · · · · · Token: example.c:1:12: CHAR "char",
+	// · · · · · · Token: example.c:1:12: 'char' "char",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -1497,7 +1799,7 @@ func ExampleDirectDeclarator_ident() {
 	// Output:
 	// &cc.DirectDeclarator{
 	// · Case: DirectDeclaratorIdent,
-	// · Token: example.c:1:5: IDENTIFIER "i",
+	// · Token: example.c:1:5: identifier "i",
 	// }
 }
 
@@ -1509,7 +1811,7 @@ func ExampleDirectDeclarator_decl() {
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:6: IDENTIFIER "f",
+	// · · · Token: example.c:1:6: identifier "f",
 	// · · },
 	// · },
 	// · Token: example.c:1:5: '(' "(",
@@ -1523,12 +1825,12 @@ func ExampleDirectDeclarator_arr() {
 	// &cc.DirectDeclarator{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionInt,
-	// · · Token: example.c:1:13: INTCONST "42",
+	// · · Token: example.c:1:13: integer constant "42",
 	// · },
 	// · Case: DirectDeclaratorArr,
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
-	// · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · Token: example.c:1:5: identifier "i",
 	// · },
 	// · Token: example.c:1:6: '[' "[",
 	// · Token3: example.c:1:15: ']' "]",
@@ -1536,7 +1838,7 @@ func ExampleDirectDeclarator_arr() {
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:7: CONST "const",
+	// · · · Token: example.c:1:7: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -1548,21 +1850,21 @@ func ExampleDirectDeclarator_staticArr() {
 	// &cc.DirectDeclarator{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionInt,
-	// · · Token: example.c:1:20: INTCONST "42",
+	// · · Token: example.c:1:20: integer constant "42",
 	// · },
 	// · Case: DirectDeclaratorStaticArr,
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
-	// · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · Token: example.c:1:5: identifier "i",
 	// · },
 	// · Token: example.c:1:6: '[' "[",
-	// · Token2: example.c:1:7: STATIC "static",
+	// · Token2: example.c:1:7: 'static' "static",
 	// · Token3: example.c:1:22: ']' "]",
 	// · TypeQualifiers: &cc.TypeQualifiers{
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:14: CONST "const",
+	// · · · Token: example.c:1:14: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -1574,21 +1876,21 @@ func ExampleDirectDeclarator_arrStatic() {
 	// &cc.DirectDeclarator{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionInt,
-	// · · Token: example.c:1:20: INTCONST "42",
+	// · · Token: example.c:1:20: integer constant "42",
 	// · },
 	// · Case: DirectDeclaratorArrStatic,
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
-	// · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · Token: example.c:1:5: identifier "i",
 	// · },
 	// · Token: example.c:1:6: '[' "[",
-	// · Token2: example.c:1:13: STATIC "static",
+	// · Token2: example.c:1:13: 'static' "static",
 	// · Token3: example.c:1:22: ']' "]",
 	// · TypeQualifiers: &cc.TypeQualifiers{
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:7: CONST "const",
+	// · · · Token: example.c:1:7: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -1601,7 +1903,7 @@ func ExampleDirectDeclarator_star() {
 	// · Case: DirectDeclaratorStar,
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
-	// · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · Token: example.c:1:5: identifier "i",
 	// · },
 	// · Token: example.c:1:6: '[' "[",
 	// · Token2: example.c:1:13: '*' "*",
@@ -1610,7 +1912,7 @@ func ExampleDirectDeclarator_star() {
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:7: CONST "const",
+	// · · · Token: example.c:1:7: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -1623,7 +1925,7 @@ func ExampleDirectDeclarator_funcParam() {
 	// · Case: DirectDeclaratorFuncParam,
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
-	// · · Token: example.c:1:5: IDENTIFIER "f",
+	// · · Token: example.c:1:5: identifier "f",
 	// · },
 	// · ParameterTypeList: &cc.ParameterTypeList{
 	// · · Case: ParameterTypeListList,
@@ -1634,13 +1936,13 @@ func ExampleDirectDeclarator_funcParam() {
 	// · · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · · Case: TypeSpecifierInt,
-	// · · · · · · Token: example.c:1:7: INT "int",
+	// · · · · · · Token: example.c:1:7: 'int' "int",
 	// · · · · · },
 	// · · · · },
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:11: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:11: identifier "i",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -1658,10 +1960,10 @@ func ExampleDirectDeclarator_funcIdent() {
 	// · Case: DirectDeclaratorFuncIdent,
 	// · DirectDeclarator: &cc.DirectDeclarator{
 	// · · Case: DirectDeclaratorIdent,
-	// · · Token: example.c:1:5: IDENTIFIER "f",
+	// · · Token: example.c:1:5: identifier "f",
 	// · },
 	// · IdentifierList: &cc.IdentifierList{
-	// · · Token2: example.c:1:7: IDENTIFIER "a",
+	// · · Token2: example.c:1:7: identifier "a",
 	// · },
 	// · Token: example.c:1:6: '(' "(",
 	// · Token2: example.c:1:8: ')' ")",
@@ -1676,11 +1978,11 @@ func ExampleEnumSpecifier_def() {
 	// · EnumeratorList: &cc.EnumeratorList{
 	// · · Enumerator: &cc.Enumerator{
 	// · · · Case: EnumeratorIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "a",
+	// · · · Token: example.c:1:9: identifier "a",
 	// · · },
 	// · },
-	// · Token: example.c:1:1: ENUM "enum",
-	// · Token2: example.c:1:6: IDENTIFIER "e",
+	// · Token: example.c:1:1: 'enum' "enum",
+	// · Token2: example.c:1:6: identifier "e",
 	// · Token3: example.c:1:8: '{' "{",
 	// · Token5: example.c:1:10: '}' "}",
 	// }
@@ -1691,8 +1993,8 @@ func ExampleEnumSpecifier_tag() {
 	// Output:
 	// &cc.EnumSpecifier{
 	// · Case: EnumSpecifierTag,
-	// · Token: example.c:1:1: ENUM "enum",
-	// · Token2: example.c:1:6: IDENTIFIER "e",
+	// · Token: example.c:1:1: 'enum' "enum",
+	// · Token2: example.c:1:6: identifier "e",
 	// }
 }
 
@@ -1701,7 +2003,7 @@ func ExampleEnumerator_ident() {
 	// Output:
 	// &cc.Enumerator{
 	// · Case: EnumeratorIdent,
-	// · Token: example.c:1:9: IDENTIFIER "a",
+	// · Token: example.c:1:9: identifier "a",
 	// }
 }
 
@@ -1713,10 +2015,10 @@ func ExampleEnumerator_expr() {
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:13: INTCONST "42",
+	// · · · Token: example.c:1:13: integer constant "42",
 	// · · },
 	// · },
-	// · Token: example.c:1:9: IDENTIFIER "a",
+	// · Token: example.c:1:9: identifier "a",
 	// · Token2: example.c:1:11: '=' "=",
 	// }
 }
@@ -1727,7 +2029,7 @@ func ExampleEnumeratorList_case0() {
 	// &cc.EnumeratorList{
 	// · Enumerator: &cc.Enumerator{
 	// · · Case: EnumeratorIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "a",
+	// · · Token: example.c:1:9: identifier "a",
 	// · },
 	// }
 }
@@ -1738,12 +2040,12 @@ func ExampleEnumeratorList_case1() {
 	// &cc.EnumeratorList{
 	// · Enumerator: &cc.Enumerator{
 	// · · Case: EnumeratorIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "a",
+	// · · Token: example.c:1:9: identifier "a",
 	// · },
 	// · EnumeratorList: &cc.EnumeratorList{
 	// · · Enumerator: &cc.Enumerator{
 	// · · · Case: EnumeratorIdent,
-	// · · · Token: example.c:1:12: IDENTIFIER "b",
+	// · · · Token: example.c:1:12: identifier "b",
 	// · · },
 	// · · Token: example.c:1:10: ',' ",",
 	// · },
@@ -1759,14 +2061,14 @@ func ExampleEqualityExpression_eq() {
 	// · · Case: EqualityExpressionRel,
 	// · · RelationalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · RelationalExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
-	// · Token: example.c:1:11: EQ "==",
+	// · Token: example.c:1:11: '==' "==",
 	// }
 }
 
@@ -1779,14 +2081,14 @@ func ExampleEqualityExpression_neq() {
 	// · · Case: EqualityExpressionRel,
 	// · · RelationalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · RelationalExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
-	// · Token: example.c:1:11: NEQ "!=",
+	// · Token: example.c:1:11: '!=' "!=",
 	// }
 }
 
@@ -1796,13 +2098,13 @@ func ExampleExclusiveOrExpression_xor() {
 	// &cc.ExclusiveOrExpression{
 	// · AndExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "y",
+	// · · Token: example.c:1:11: identifier "y",
 	// · },
 	// · Case: ExclusiveOrExpressionXor,
 	// · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
 	// · · AndExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · · Case: ExclusiveOrExpressionAnd,
 	// · },
@@ -1817,13 +2119,13 @@ func ExampleExpressionList_assign() {
 	// · AssignmentExpression: &cc.AssignmentExpression{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:15: IDENTIFIER "x",
+	// · · · Token: example.c:1:15: identifier "x",
 	// · · },
 	// · · Case: AssignmentExpressionAssign,
 	// · · Token: example.c:1:13: '=' "=",
 	// · · UnaryExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:11: IDENTIFIER "i",
+	// · · · Token: example.c:1:11: identifier "i",
 	// · · },
 	// · },
 	// }
@@ -1835,12 +2137,12 @@ func ExampleExpressionList_comma() {
 	// &cc.ExpressionList{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · · Token: example.c:1:11: identifier "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:12: ',' ",",
@@ -1856,7 +2158,7 @@ func ExampleExpressionStatement_case0() {
 	// · · · Case: PostfixExpressionCall,
 	// · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "g",
+	// · · · · Token: example.c:1:11: identifier "g",
 	// · · · },
 	// · · · Token: example.c:1:12: '(' "(",
 	// · · · Token2: example.c:1:13: ')' ")",
@@ -1873,6 +2175,59 @@ func ExampleExternalDeclaration_funcDef() {
 	// · Case: ExternalDeclarationFuncDef,
 	// · FunctionDefinition: &cc.FunctionDefinition{
 	// · · CompoundStatement: &cc.CompoundStatement{
+	// · · · BlockItemList: &cc.BlockItemList{
+	// · · · · BlockItem: &cc.BlockItem{
+	// · · · · · Case: BlockItemDecl,
+	// · · · · · Declaration: &cc.Declaration{
+	// · · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · · Case: DeclarationSpecifiersStorage,
+	// · · · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · · · · · },
+	// · · · · · · · · },
+	// · · · · · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · · · · · Case: TypeQualifierConst,
+	// · · · · · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · · · · · },
+	// · · · · · · · },
+	// · · · · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · · · · · Case: StorageClassSpecifierStatic,
+	// · · · · · · · · Token: example.c:1:9: 'static' "static",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · · · · Case: InitDeclaratorInit,
+	// · · · · · · · · Declarator: &cc.Declarator{
+	// · · · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · · · · · },
+	// · · · · · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · · · · · Token2: example.c:1:9: ']' "]",
+	// · · · · · · · · · },
+	// · · · · · · · · },
+	// · · · · · · · · Initializer: &cc.Initializer{
+	// · · · · · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · · · · · },
+	// · · · · · · · · · Case: InitializerExpr,
+	// · · · · · · · · },
+	// · · · · · · · · Token: example.c:1:9: '=' "=",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · · Token: example.c:1:9: ';' ";",
+	// · · · · · },
+	// · · · · },
+	// · · · },
 	// · · · Token: example.c:1:9: '{' "{",
 	// · · · Token2: example.c:1:10: '}' "}",
 	// · · },
@@ -1880,7 +2235,7 @@ func ExampleExternalDeclaration_funcDef() {
 	// · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:1: INT "int",
+	// · · · · Token: example.c:1:1: 'int' "int",
 	// · · · },
 	// · · },
 	// · · Declarator: &cc.Declarator{
@@ -1888,7 +2243,7 @@ func ExampleExternalDeclaration_funcDef() {
 	// · · · · Case: DirectDeclaratorFuncParam,
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:5: IDENTIFIER "f",
+	// · · · · · Token: example.c:1:5: identifier "f",
 	// · · · · },
 	// · · · · Token: example.c:1:6: '(' "(",
 	// · · · · Token2: example.c:1:7: ')' ")",
@@ -1910,27 +2265,27 @@ func ExampleExternalDeclaration_decl() {
 	// · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:10: INT "int",
+	// · · · · · Token: example.c:1:10: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
 	// · · · · Case: StorageClassSpecifierRegister,
-	// · · · · Token: example.c:1:1: REGISTER "register",
+	// · · · · Token: example.c:1:1: 'register' "register",
 	// · · · },
 	// · · },
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · · InitDeclarator: &cc.InitDeclarator{
 	// · · · · Asm: &cc.Asm{
-	// · · · · · Token: example.c:1:16: ASM "asm",
+	// · · · · · Token: example.c:1:16: 'asm' "asm",
 	// · · · · · Token2: example.c:1:19: '(' "(",
-	// · · · · · Token3: example.c:1:20: STRINGLITERAL "\"r0\"",
+	// · · · · · Token3: example.c:1:20: string literal "\"r0\"",
 	// · · · · · Token4: example.c:1:24: ')' ")",
 	// · · · · },
 	// · · · · Case: InitDeclaratorDecl,
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:14: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:14: identifier "i",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -1946,9 +2301,9 @@ func ExampleExternalDeclaration_asmStmt() {
 	// &cc.ExternalDeclaration{
 	// · AsmStatement: &cc.AsmStatement{
 	// · · Asm: &cc.Asm{
-	// · · · Token: example.c:1:1: ASM "asm",
+	// · · · Token: example.c:1:1: 'asm' "asm",
 	// · · · Token2: example.c:1:4: '(' "(",
-	// · · · Token3: example.c:1:5: STRINGLITERAL "\"nop\"",
+	// · · · Token3: example.c:1:5: string literal "\"nop\"",
 	// · · · Token4: example.c:1:10: ')' ")",
 	// · · },
 	// · · Token: example.c:1:11: ';' ";",
@@ -1973,6 +2328,59 @@ func ExampleFunctionDefinition_case0() {
 	// Output:
 	// &cc.FunctionDefinition{
 	// · CompoundStatement: &cc.CompoundStatement{
+	// · · BlockItemList: &cc.BlockItemList{
+	// · · · BlockItem: &cc.BlockItem{
+	// · · · · Case: BlockItemDecl,
+	// · · · · Declaration: &cc.Declaration{
+	// · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · Case: DeclarationSpecifiersStorage,
+	// · · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · · Case: DeclarationSpecifiersTypeQual,
+	// · · · · · · · DeclarationSpecifiers: &cc.DeclarationSpecifiers{
+	// · · · · · · · · Case: DeclarationSpecifiersTypeSpec,
+	// · · · · · · · · TypeSpecifier: &cc.TypeSpecifier{
+	// · · · · · · · · · Case: TypeSpecifierChar,
+	// · · · · · · · · · Token: example.c:1:9: 'char' "char",
+	// · · · · · · · · },
+	// · · · · · · · },
+	// · · · · · · · TypeQualifier: &cc.TypeQualifier{
+	// · · · · · · · · Case: TypeQualifierConst,
+	// · · · · · · · · Token: example.c:1:9: 'const' "const",
+	// · · · · · · · },
+	// · · · · · · },
+	// · · · · · · StorageClassSpecifier: &cc.StorageClassSpecifier{
+	// · · · · · · · Case: StorageClassSpecifierStatic,
+	// · · · · · · · Token: example.c:1:9: 'static' "static",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · InitDeclaratorList: &cc.InitDeclaratorList{
+	// · · · · · · InitDeclarator: &cc.InitDeclarator{
+	// · · · · · · · Case: InitDeclaratorInit,
+	// · · · · · · · Declarator: &cc.Declarator{
+	// · · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · · Case: DirectDeclaratorArr,
+	// · · · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
+	// · · · · · · · · · · Case: DirectDeclaratorIdent,
+	// · · · · · · · · · · Token: example.c:1:9: identifier "__func__",
+	// · · · · · · · · · },
+	// · · · · · · · · · Token: example.c:1:9: '[' "[",
+	// · · · · · · · · · Token2: example.c:1:9: ']' "]",
+	// · · · · · · · · },
+	// · · · · · · · },
+	// · · · · · · · Initializer: &cc.Initializer{
+	// · · · · · · · · AssignmentExpression: &cc.PrimaryExpression{
+	// · · · · · · · · · Case: PrimaryExpressionString,
+	// · · · · · · · · · Token: example.c:1:9: string literal "\"f\"",
+	// · · · · · · · · },
+	// · · · · · · · · Case: InitializerExpr,
+	// · · · · · · · },
+	// · · · · · · · Token: example.c:1:9: '=' "=",
+	// · · · · · · },
+	// · · · · · },
+	// · · · · · Token: example.c:1:9: ';' ";",
+	// · · · · },
+	// · · · },
+	// · · },
 	// · · Token: example.c:1:9: '{' "{",
 	// · · Token2: example.c:1:10: '}' "}",
 	// · },
@@ -1980,7 +2388,7 @@ func ExampleFunctionDefinition_case0() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:1: INT "int",
+	// · · · Token: example.c:1:1: 'int' "int",
 	// · · },
 	// · },
 	// · Declarator: &cc.Declarator{
@@ -1988,7 +2396,7 @@ func ExampleFunctionDefinition_case0() {
 	// · · · Case: DirectDeclaratorFuncParam,
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:5: IDENTIFIER "f",
+	// · · · · Token: example.c:1:5: identifier "f",
 	// · · · },
 	// · · · Token: example.c:1:6: '(' "(",
 	// · · · Token2: example.c:1:7: ')' ")",
@@ -2002,7 +2410,7 @@ func ExampleFunctionSpecifier_inline() {
 	// Output:
 	// &cc.FunctionSpecifier{
 	// · Case: FunctionSpecifierInline,
-	// · Token: example.c:1:1: INLINE "inline",
+	// · Token: example.c:1:1: 'inline' "inline",
 	// }
 }
 
@@ -2011,7 +2419,7 @@ func ExampleFunctionSpecifier_noreturn() {
 	// Output:
 	// &cc.FunctionSpecifier{
 	// · Case: FunctionSpecifierNoreturn,
-	// · Token: example.c:1:1: NORETURN "_Noreturn",
+	// · Token: example.c:1:1: '_Noreturn' "_Noreturn",
 	// }
 }
 
@@ -2021,7 +2429,7 @@ func ExampleGenericAssociation_type() {
 	// &cc.GenericAssociation{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:26: IDENTIFIER "y",
+	// · · Token: example.c:1:26: identifier "y",
 	// · },
 	// · Case: GenericAssociationType,
 	// · Token: example.c:1:24: ':' ":",
@@ -2030,7 +2438,7 @@ func ExampleGenericAssociation_type() {
 	// · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:21: INT "int",
+	// · · · · Token: example.c:1:21: 'int' "int",
 	// · · · },
 	// · · },
 	// · },
@@ -2043,10 +2451,10 @@ func ExampleGenericAssociation_default() {
 	// &cc.GenericAssociation{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:30: IDENTIFIER "y",
+	// · · Token: example.c:1:30: identifier "y",
 	// · },
 	// · Case: GenericAssociationDefault,
-	// · Token: example.c:1:21: DEFAULT "default",
+	// · Token: example.c:1:21: 'default' "default",
 	// · Token2: example.c:1:28: ':' ":",
 	// }
 }
@@ -2058,7 +2466,7 @@ func ExampleGenericAssociationList_case0() {
 	// · GenericAssociation: &cc.GenericAssociation{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:26: IDENTIFIER "y",
+	// · · · Token: example.c:1:26: identifier "y",
 	// · · },
 	// · · Case: GenericAssociationType,
 	// · · Token: example.c:1:24: ':' ":",
@@ -2067,7 +2475,7 @@ func ExampleGenericAssociationList_case0() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:21: INT "int",
+	// · · · · · Token: example.c:1:21: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -2082,7 +2490,7 @@ func ExampleGenericAssociationList_case1() {
 	// · GenericAssociation: &cc.GenericAssociation{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:26: IDENTIFIER "y",
+	// · · · Token: example.c:1:26: identifier "y",
 	// · · },
 	// · · Case: GenericAssociationType,
 	// · · Token: example.c:1:24: ':' ":",
@@ -2091,7 +2499,7 @@ func ExampleGenericAssociationList_case1() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:21: INT "int",
+	// · · · · · Token: example.c:1:21: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -2100,7 +2508,7 @@ func ExampleGenericAssociationList_case1() {
 	// · · GenericAssociation: &cc.GenericAssociation{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:36: IDENTIFIER "z",
+	// · · · · Token: example.c:1:36: identifier "z",
 	// · · · },
 	// · · · Case: GenericAssociationType,
 	// · · · Token: example.c:1:34: ':' ":",
@@ -2109,7 +2517,7 @@ func ExampleGenericAssociationList_case1() {
 	// · · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · · Case: TypeSpecifierFloat,
-	// · · · · · · Token: example.c:1:29: FLOAT "float",
+	// · · · · · · Token: example.c:1:29: 'float' "float",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -2125,13 +2533,13 @@ func ExampleGenericSelection_case0() {
 	// &cc.GenericSelection{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:18: IDENTIFIER "x",
+	// · · Token: example.c:1:18: identifier "x",
 	// · },
 	// · GenericAssociationList: &cc.GenericAssociationList{
 	// · · GenericAssociation: &cc.GenericAssociation{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:26: IDENTIFIER "y",
+	// · · · · Token: example.c:1:26: identifier "y",
 	// · · · },
 	// · · · Case: GenericAssociationType,
 	// · · · Token: example.c:1:24: ':' ":",
@@ -2140,13 +2548,13 @@ func ExampleGenericSelection_case0() {
 	// · · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · · Case: TypeSpecifierInt,
-	// · · · · · · Token: example.c:1:21: INT "int",
+	// · · · · · · Token: example.c:1:21: 'int' "int",
 	// · · · · · },
 	// · · · · },
 	// · · · },
 	// · · },
 	// · },
-	// · Token: example.c:1:9: GENERIC "_Generic",
+	// · Token: example.c:1:9: '_Generic' "_Generic",
 	// · Token2: example.c:1:17: '(' "(",
 	// · Token3: example.c:1:19: ',' ",",
 	// · Token4: example.c:1:27: ')' ")",
@@ -2157,7 +2565,7 @@ func ExampleIdentifierList_case0() {
 	fmt.Println(exampleAST(186, "int f(i) int i; {}"))
 	// Output:
 	// &cc.IdentifierList{
-	// · Token2: example.c:1:7: IDENTIFIER "i",
+	// · Token2: example.c:1:7: identifier "i",
 	// }
 }
 
@@ -2167,9 +2575,9 @@ func ExampleIdentifierList_case1() {
 	// &cc.IdentifierList{
 	// · IdentifierList: &cc.IdentifierList{
 	// · · Token: example.c:1:8: ',' ",",
-	// · · Token2: example.c:1:10: IDENTIFIER "j",
+	// · · Token2: example.c:1:10: identifier "j",
 	// · },
-	// · Token2: example.c:1:7: IDENTIFIER "i",
+	// · Token2: example.c:1:7: identifier "i",
 	// }
 }
 
@@ -2180,13 +2588,13 @@ func ExampleInclusiveOrExpression_or() {
 	// · Case: InclusiveOrExpressionOr,
 	// · ExclusiveOrExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "y",
+	// · · Token: example.c:1:11: identifier "y",
 	// · },
 	// · InclusiveOrExpression: &cc.InclusiveOrExpression{
 	// · · Case: InclusiveOrExpressionXor,
 	// · · ExclusiveOrExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:10: '|' "|",
@@ -2198,16 +2606,16 @@ func ExampleInitDeclarator_decl() {
 	// Output:
 	// &cc.InitDeclarator{
 	// · Asm: &cc.Asm{
-	// · · Token: example.c:1:16: ASM "asm",
+	// · · Token: example.c:1:16: 'asm' "asm",
 	// · · Token2: example.c:1:19: '(' "(",
-	// · · Token3: example.c:1:20: STRINGLITERAL "\"r0\"",
+	// · · Token3: example.c:1:20: string literal "\"r0\"",
 	// · · Token4: example.c:1:24: ')' ")",
 	// · },
 	// · Case: InitDeclaratorDecl,
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:14: IDENTIFIER "i",
+	// · · · Token: example.c:1:14: identifier "i",
 	// · · },
 	// · },
 	// }
@@ -2218,22 +2626,22 @@ func ExampleInitDeclarator_init() {
 	// Output:
 	// &cc.InitDeclarator{
 	// · Asm: &cc.Asm{
-	// · · Token: example.c:1:16: ASM "asm",
+	// · · Token: example.c:1:16: 'asm' "asm",
 	// · · Token2: example.c:1:19: '(' "(",
-	// · · Token3: example.c:1:20: STRINGLITERAL "\"r0\"",
+	// · · Token3: example.c:1:20: string literal "\"r0\"",
 	// · · Token4: example.c:1:24: ')' ")",
 	// · },
 	// · Case: InitDeclaratorInit,
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:14: IDENTIFIER "i",
+	// · · · Token: example.c:1:14: identifier "i",
 	// · · },
 	// · },
 	// · Initializer: &cc.Initializer{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:28: IDENTIFIER "x",
+	// · · · Token: example.c:1:28: identifier "x",
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
@@ -2250,7 +2658,7 @@ func ExampleInitDeclaratorList_case0() {
 	// · · Declarator: &cc.Declarator{
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · Token: example.c:1:5: identifier "i",
 	// · · · },
 	// · · },
 	// · },
@@ -2266,7 +2674,7 @@ func ExampleInitDeclaratorList_case1() {
 	// · · Declarator: &cc.Declarator{
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · Token: example.c:1:5: identifier "i",
 	// · · · },
 	// · · },
 	// · },
@@ -2276,10 +2684,10 @@ func ExampleInitDeclaratorList_case1() {
 	// · · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · · Case: AttributeValueIdent,
-	// · · · · · · Token: example.c:1:23: IDENTIFIER "a",
+	// · · · · · · Token: example.c:1:23: identifier "a",
 	// · · · · · },
 	// · · · · },
-	// · · · · Token: example.c:1:8: ATTRIBUTE "__attribute__",
+	// · · · · Token: example.c:1:8: '__attribute__' "__attribute__",
 	// · · · · Token2: example.c:1:21: '(' "(",
 	// · · · · Token3: example.c:1:22: '(' "(",
 	// · · · · Token4: example.c:1:24: ')' ")",
@@ -2291,7 +2699,7 @@ func ExampleInitDeclaratorList_case1() {
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:27: IDENTIFIER "j",
+	// · · · · · Token: example.c:1:27: identifier "j",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -2306,7 +2714,7 @@ func ExampleInitializer_expr() {
 	// &cc.Initializer{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Case: InitializerExpr,
 	// }
@@ -2321,7 +2729,7 @@ func ExampleInitializer_initList() {
 	// · · Initializer: &cc.Initializer{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:13: IDENTIFIER "x",
+	// · · · · Token: example.c:1:13: identifier "x",
 	// · · · },
 	// · · · Case: InitializerExpr,
 	// · · },
@@ -2342,7 +2750,7 @@ func ExampleInitializerList_case0() {
 	// · · · · ConstantExpression: &cc.ConstantExpression{
 	// · · · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · Token: example.c:1:14: INTCONST "10",
+	// · · · · · · Token: example.c:1:14: integer constant "10",
 	// · · · · · },
 	// · · · · },
 	// · · · · Token: example.c:1:13: '[' "[",
@@ -2354,7 +2762,7 @@ func ExampleInitializerList_case0() {
 	// · Initializer: &cc.Initializer{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:20: IDENTIFIER "x",
+	// · · · Token: example.c:1:20: identifier "x",
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
@@ -2372,7 +2780,7 @@ func ExampleInitializerList_case1() {
 	// · · · · ConstantExpression: &cc.ConstantExpression{
 	// · · · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · Token: example.c:1:14: INTCONST "10",
+	// · · · · · · Token: example.c:1:14: integer constant "10",
 	// · · · · · },
 	// · · · · },
 	// · · · · Token: example.c:1:13: '[' "[",
@@ -2384,7 +2792,7 @@ func ExampleInitializerList_case1() {
 	// · Initializer: &cc.Initializer{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:20: IDENTIFIER "x",
+	// · · · Token: example.c:1:20: identifier "x",
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
@@ -2396,7 +2804,7 @@ func ExampleInitializerList_case1() {
 	// · · · · · ConstantExpression: &cc.ConstantExpression{
 	// · · · · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · · Token: example.c:1:24: INTCONST "20",
+	// · · · · · · · Token: example.c:1:24: integer constant "20",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · · Token: example.c:1:23: '[' "[",
@@ -2408,7 +2816,7 @@ func ExampleInitializerList_case1() {
 	// · · Initializer: &cc.Initializer{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:30: IDENTIFIER "y",
+	// · · · · Token: example.c:1:30: identifier "y",
 	// · · · },
 	// · · · Case: InitializerExpr,
 	// · · },
@@ -2425,7 +2833,7 @@ func ExampleIterationStatement_while() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:17: IDENTIFIER "x",
+	// · · · Token: example.c:1:17: identifier "x",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -2436,7 +2844,7 @@ func ExampleIterationStatement_while() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:20: IDENTIFIER "y",
+	// · · · · · · Token: example.c:1:20: identifier "y",
 	// · · · · · },
 	// · · · · · Token: example.c:1:21: '(' "(",
 	// · · · · · Token2: example.c:1:22: ')' ")",
@@ -2445,7 +2853,7 @@ func ExampleIterationStatement_while() {
 	// · · · Token: example.c:1:23: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: WHILE "while",
+	// · Token: example.c:1:11: 'while' "while",
 	// · Token2: example.c:1:16: '(' "(",
 	// · Token3: example.c:1:18: ')' ")",
 	// }
@@ -2459,7 +2867,7 @@ func ExampleIterationStatement_do() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:25: IDENTIFIER "y",
+	// · · · Token: example.c:1:25: identifier "y",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -2470,7 +2878,7 @@ func ExampleIterationStatement_do() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:14: IDENTIFIER "x",
+	// · · · · · · Token: example.c:1:14: identifier "x",
 	// · · · · · },
 	// · · · · · Token: example.c:1:15: '(' "(",
 	// · · · · · Token2: example.c:1:16: ')' ")",
@@ -2479,8 +2887,8 @@ func ExampleIterationStatement_do() {
 	// · · · Token: example.c:1:17: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: DO "do",
-	// · Token2: example.c:1:19: WHILE "while",
+	// · Token: example.c:1:11: 'do' "do",
+	// · Token2: example.c:1:19: 'while' "while",
 	// · Token3: example.c:1:24: '(' "(",
 	// · Token4: example.c:1:26: ')' ")",
 	// · Token5: example.c:1:27: ';' ";",
@@ -2496,13 +2904,13 @@ func ExampleIterationStatement_for() {
 	// · · AssignmentExpression: &cc.AssignmentExpression{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionInt,
-	// · · · · Token: example.c:1:20: INTCONST "0",
+	// · · · · Token: example.c:1:20: integer constant "0",
 	// · · · },
 	// · · · Case: AssignmentExpressionAssign,
 	// · · · Token: example.c:1:18: '=' "=",
 	// · · · UnaryExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:16: IDENTIFIER "i",
+	// · · · · Token: example.c:1:16: identifier "i",
 	// · · · },
 	// · · },
 	// · },
@@ -2513,12 +2921,12 @@ func ExampleIterationStatement_for() {
 	// · · · · Case: RelationalExpressionShift,
 	// · · · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:23: IDENTIFIER "i",
+	// · · · · · Token: example.c:1:23: identifier "i",
 	// · · · · },
 	// · · · },
 	// · · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionInt,
-	// · · · · Token: example.c:1:27: INTCONST "10",
+	// · · · · Token: example.c:1:27: integer constant "10",
 	// · · · },
 	// · · · Token: example.c:1:25: '<' "<",
 	// · · },
@@ -2528,9 +2936,9 @@ func ExampleIterationStatement_for() {
 	// · · · Case: PostfixExpressionInc,
 	// · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:31: IDENTIFIER "i",
+	// · · · · Token: example.c:1:31: identifier "i",
 	// · · · },
-	// · · · Token: example.c:1:32: INC "++",
+	// · · · Token: example.c:1:32: '++' "++",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -2541,7 +2949,7 @@ func ExampleIterationStatement_for() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:36: IDENTIFIER "x",
+	// · · · · · · Token: example.c:1:36: identifier "x",
 	// · · · · · },
 	// · · · · · Token: example.c:1:37: '(' "(",
 	// · · · · · Token2: example.c:1:38: ')' ")",
@@ -2550,7 +2958,7 @@ func ExampleIterationStatement_for() {
 	// · · · Token: example.c:1:39: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: FOR "for",
+	// · Token: example.c:1:11: 'for' "for",
 	// · Token2: example.c:1:14: '(' "(",
 	// · Token3: example.c:1:21: ';' ";",
 	// · Token4: example.c:1:29: ';' ";",
@@ -2568,7 +2976,7 @@ func ExampleIterationStatement_forDecl() {
 	// · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:16: INT "int",
+	// · · · · Token: example.c:1:16: 'int' "int",
 	// · · · },
 	// · · },
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -2577,13 +2985,13 @@ func ExampleIterationStatement_forDecl() {
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:20: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:20: identifier "i",
 	// · · · · · },
 	// · · · · },
 	// · · · · Initializer: &cc.Initializer{
 	// · · · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionInt,
-	// · · · · · · Token: example.c:1:24: INTCONST "0",
+	// · · · · · · Token: example.c:1:24: integer constant "0",
 	// · · · · · },
 	// · · · · · Case: InitializerExpr,
 	// · · · · },
@@ -2599,12 +3007,12 @@ func ExampleIterationStatement_forDecl() {
 	// · · · · Case: RelationalExpressionShift,
 	// · · · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:27: IDENTIFIER "i",
+	// · · · · · Token: example.c:1:27: identifier "i",
 	// · · · · },
 	// · · · },
 	// · · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionInt,
-	// · · · · Token: example.c:1:31: INTCONST "10",
+	// · · · · Token: example.c:1:31: integer constant "10",
 	// · · · },
 	// · · · Token: example.c:1:29: '<' "<",
 	// · · },
@@ -2614,9 +3022,9 @@ func ExampleIterationStatement_forDecl() {
 	// · · · Case: PostfixExpressionInc,
 	// · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:35: IDENTIFIER "i",
+	// · · · · Token: example.c:1:35: identifier "i",
 	// · · · },
-	// · · · Token: example.c:1:36: INC "++",
+	// · · · Token: example.c:1:36: '++' "++",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -2627,7 +3035,7 @@ func ExampleIterationStatement_forDecl() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:40: IDENTIFIER "x",
+	// · · · · · · Token: example.c:1:40: identifier "x",
 	// · · · · · },
 	// · · · · · Token: example.c:1:41: '(' "(",
 	// · · · · · Token2: example.c:1:42: ')' ")",
@@ -2636,7 +3044,7 @@ func ExampleIterationStatement_forDecl() {
 	// · · · Token: example.c:1:43: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: FOR "for",
+	// · Token: example.c:1:11: 'for' "for",
 	// · Token2: example.c:1:14: '(' "(",
 	// · Token3: example.c:1:33: ';' ";",
 	// · Token4: example.c:1:38: ')' ")",
@@ -2648,8 +3056,8 @@ func ExampleJumpStatement_goto() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementGoto,
-	// · Token: example.c:1:14: GOTO "goto",
-	// · Token2: example.c:1:19: IDENTIFIER "L",
+	// · Token: example.c:1:14: 'goto' "goto",
+	// · Token2: example.c:1:19: identifier "L",
 	// · Token3: example.c:1:20: ';' ";",
 	// }
 }
@@ -2662,10 +3070,10 @@ func ExampleJumpStatement_gotoExpr() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:40: IDENTIFIER "p",
+	// · · · Token: example.c:1:40: identifier "p",
 	// · · },
 	// · },
-	// · Token: example.c:1:34: GOTO "goto",
+	// · Token: example.c:1:34: 'goto' "goto",
 	// · Token2: example.c:1:39: '*' "*",
 	// · Token3: example.c:1:41: ';' ";",
 	// }
@@ -2676,7 +3084,7 @@ func ExampleJumpStatement_continue() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementContinue,
-	// · Token: example.c:1:26: CONTINUE "continue",
+	// · Token: example.c:1:26: 'continue' "continue",
 	// · Token2: example.c:1:34: ';' ";",
 	// }
 }
@@ -2686,7 +3094,7 @@ func ExampleJumpStatement_break() {
 	// Output:
 	// &cc.JumpStatement{
 	// · Case: JumpStatementBreak,
-	// · Token: example.c:1:26: BREAK "break",
+	// · Token: example.c:1:26: 'break' "break",
 	// · Token2: example.c:1:31: ';' ";",
 	// }
 }
@@ -2699,64 +3107,27 @@ func ExampleJumpStatement_return() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:25: IDENTIFIER "x",
+	// · · · Token: example.c:1:25: identifier "x",
 	// · · },
 	// · },
-	// · Token: example.c:1:18: RETURN "return",
+	// · Token: example.c:1:18: 'return' "return",
 	// · Token2: example.c:1:26: ';' ";",
 	// }
 }
 
 func ExampleLabelDeclaration_case0() {
-	fmt.Println(exampleAST(261, "int f() { __label__ L, M; L: x(); M: y(); }"))
+	fmt.Println(exampleAST(220, "int f() { __label__ L, M; L: x(); M: y(); }"))
 	// Output:
 	// &cc.LabelDeclaration{
 	// · IdentifierList: &cc.IdentifierList{
 	// · · IdentifierList: &cc.IdentifierList{
 	// · · · Token: example.c:1:22: ',' ",",
-	// · · · Token2: example.c:1:24: IDENTIFIER "M",
+	// · · · Token2: example.c:1:24: identifier "M",
 	// · · },
-	// · · Token2: example.c:1:21: IDENTIFIER "L",
+	// · · Token2: example.c:1:21: identifier "L",
 	// · },
-	// · Token: example.c:1:11: LABEL "__label__",
+	// · Token: example.c:1:11: '__label__' "__label__",
 	// · Token2: example.c:1:25: ';' ";",
-	// }
-}
-
-func ExampleLabelDeclarationList_case0() {
-	fmt.Println(exampleAST(220, "int f() { __label__ L; int i; }"))
-	// Output:
-	// &cc.LabelDeclarationList{
-	// · LabelDeclaration: &cc.LabelDeclaration{
-	// · · IdentifierList: &cc.IdentifierList{
-	// · · · Token2: example.c:1:21: IDENTIFIER "L",
-	// · · },
-	// · · Token: example.c:1:11: LABEL "__label__",
-	// · · Token2: example.c:1:22: ';' ";",
-	// · },
-	// }
-}
-
-func ExampleLabelDeclarationList_case1() {
-	fmt.Println(exampleAST(221, "int f() { __label__ L; __label__ L2; int i; }"))
-	// Output:
-	// &cc.LabelDeclarationList{
-	// · LabelDeclaration: &cc.LabelDeclaration{
-	// · · IdentifierList: &cc.IdentifierList{
-	// · · · Token2: example.c:1:21: IDENTIFIER "L",
-	// · · },
-	// · · Token: example.c:1:11: LABEL "__label__",
-	// · · Token2: example.c:1:22: ';' ";",
-	// · },
-	// · LabelDeclarationList: &cc.LabelDeclarationList{
-	// · · LabelDeclaration: &cc.LabelDeclaration{
-	// · · · IdentifierList: &cc.IdentifierList{
-	// · · · · Token2: example.c:1:34: IDENTIFIER "L2",
-	// · · · },
-	// · · · Token: example.c:1:24: LABEL "__label__",
-	// · · · Token2: example.c:1:36: ';' ";",
-	// · · },
-	// · },
 	// }
 }
 
@@ -2769,12 +3140,12 @@ func ExampleLabeledStatement_label() {
 	// · · Case: StatementJump,
 	// · · JumpStatement: &cc.JumpStatement{
 	// · · · Case: JumpStatementGoto,
-	// · · · Token: example.c:1:14: GOTO "goto",
-	// · · · Token2: example.c:1:19: IDENTIFIER "L",
+	// · · · Token: example.c:1:14: 'goto' "goto",
+	// · · · Token2: example.c:1:19: identifier "L",
 	// · · · Token3: example.c:1:20: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: IDENTIFIER "L",
+	// · Token: example.c:1:11: identifier "L",
 	// · Token2: example.c:1:12: ':' ":",
 	// }
 }
@@ -2787,7 +3158,7 @@ func ExampleLabeledStatement_caseLabel() {
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:26: INTCONST "42",
+	// · · · Token: example.c:1:26: integer constant "42",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -2798,7 +3169,7 @@ func ExampleLabeledStatement_caseLabel() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:30: IDENTIFIER "x",
+	// · · · · · · Token: example.c:1:30: identifier "x",
 	// · · · · · },
 	// · · · · · Token: example.c:1:31: '(' "(",
 	// · · · · · Token2: example.c:1:32: ')' ")",
@@ -2807,7 +3178,7 @@ func ExampleLabeledStatement_caseLabel() {
 	// · · · Token: example.c:1:33: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:21: CASE "case",
+	// · Token: example.c:1:21: 'case' "case",
 	// · Token2: example.c:1:28: ':' ":",
 	// }
 }
@@ -2820,13 +3191,13 @@ func ExampleLabeledStatement_range() {
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:26: INTCONST "42",
+	// · · · Token: example.c:1:26: integer constant "42",
 	// · · },
 	// · },
 	// · ConstantExpression2: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:33: INTCONST "56",
+	// · · · Token: example.c:1:33: integer constant "56",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -2837,7 +3208,7 @@ func ExampleLabeledStatement_range() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:37: IDENTIFIER "x",
+	// · · · · · · Token: example.c:1:37: identifier "x",
 	// · · · · · },
 	// · · · · · Token: example.c:1:38: '(' "(",
 	// · · · · · Token2: example.c:1:39: ')' ")",
@@ -2846,8 +3217,8 @@ func ExampleLabeledStatement_range() {
 	// · · · Token: example.c:1:40: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:21: CASE "case",
-	// · Token2: example.c:1:29: DDD "...",
+	// · Token: example.c:1:21: 'case' "case",
+	// · Token2: example.c:1:29: '...' "...",
 	// · Token3: example.c:1:35: ':' ":",
 	// }
 }
@@ -2865,7 +3236,7 @@ func ExampleLabeledStatement_default() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:30: IDENTIFIER "x",
+	// · · · · · · Token: example.c:1:30: identifier "x",
 	// · · · · · },
 	// · · · · · Token: example.c:1:31: '(' "(",
 	// · · · · · Token2: example.c:1:32: ')' ")",
@@ -2874,7 +3245,7 @@ func ExampleLabeledStatement_default() {
 	// · · · Token: example.c:1:33: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:21: DEFAULT "default",
+	// · Token: example.c:1:21: 'default' "default",
 	// · Token2: example.c:1:28: ':' ":",
 	// }
 }
@@ -2886,16 +3257,16 @@ func ExampleLogicalAndExpression_lAnd() {
 	// · Case: LogicalAndExpressionLAnd,
 	// · InclusiveOrExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
 	// · LogicalAndExpression: &cc.LogicalAndExpression{
 	// · · Case: LogicalAndExpressionOr,
 	// · · InclusiveOrExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: ANDAND "&&",
+	// · Token: example.c:1:11: '&&' "&&",
 	// }
 }
 
@@ -2906,16 +3277,16 @@ func ExampleLogicalOrExpression_lOr() {
 	// · Case: LogicalOrExpressionLOr,
 	// · LogicalAndExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
 	// · LogicalOrExpression: &cc.LogicalOrExpression{
 	// · · Case: LogicalOrExpressionLAnd,
 	// · · LogicalAndExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: OROR "||",
+	// · Token: example.c:1:11: '||' "||",
 	// }
 }
 
@@ -2926,13 +3297,13 @@ func ExampleMultiplicativeExpression_mul() {
 	// · Case: MultiplicativeExpressionMul,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · Token: example.c:1:13: identifier "y",
 	// · },
 	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
 	// · · Case: MultiplicativeExpressionCast,
 	// · · CastExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: '*' "*",
@@ -2946,13 +3317,13 @@ func ExampleMultiplicativeExpression_div() {
 	// · Case: MultiplicativeExpressionDiv,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · Token: example.c:1:13: identifier "y",
 	// · },
 	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
 	// · · Case: MultiplicativeExpressionCast,
 	// · · CastExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: '/' "/",
@@ -2966,13 +3337,13 @@ func ExampleMultiplicativeExpression_mod() {
 	// · Case: MultiplicativeExpressionMod,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · Token: example.c:1:13: identifier "y",
 	// · },
 	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
 	// · · Case: MultiplicativeExpressionCast,
 	// · · CastExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · Token: example.c:1:11: '%' "%",
@@ -2988,10 +3359,10 @@ func ExampleParameterDeclaration_decl() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:28: IDENTIFIER "a",
+	// · · · · · Token: example.c:1:28: identifier "a",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:13: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:13: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:26: '(' "(",
 	// · · · Token3: example.c:1:27: '(' "(",
 	// · · · Token4: example.c:1:29: ')' ")",
@@ -3003,13 +3374,13 @@ func ExampleParameterDeclaration_decl() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:7: INT "int",
+	// · · · Token: example.c:1:7: 'int' "int",
 	// · · },
 	// · },
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:11: IDENTIFIER "i",
+	// · · · Token: example.c:1:11: identifier "i",
 	// · · },
 	// · },
 	// }
@@ -3031,7 +3402,7 @@ func ExampleParameterDeclaration_abstract() {
 	// · · Case: DeclarationSpecifiersTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:7: INT "int",
+	// · · · Token: example.c:1:7: 'int' "int",
 	// · · },
 	// · },
 	// }
@@ -3047,13 +3418,13 @@ func ExampleParameterList_case0() {
 	// · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:7: INT "int",
+	// · · · · Token: example.c:1:7: 'int' "int",
 	// · · · },
 	// · · },
 	// · · Declarator: &cc.Declarator{
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "i",
+	// · · · · Token: example.c:1:11: identifier "i",
 	// · · · },
 	// · · },
 	// · },
@@ -3070,13 +3441,13 @@ func ExampleParameterList_case1() {
 	// · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:7: INT "int",
+	// · · · · Token: example.c:1:7: 'int' "int",
 	// · · · },
 	// · · },
 	// · · Declarator: &cc.Declarator{
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:11: IDENTIFIER "i",
+	// · · · · Token: example.c:1:11: identifier "i",
 	// · · · },
 	// · · },
 	// · },
@@ -3087,13 +3458,13 @@ func ExampleParameterList_case1() {
 	// · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:14: INT "int",
+	// · · · · · Token: example.c:1:14: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:18: IDENTIFIER "j",
+	// · · · · · Token: example.c:1:18: identifier "j",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -3114,13 +3485,13 @@ func ExampleParameterTypeList_list() {
 	// · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:7: INT "int",
+	// · · · · · Token: example.c:1:7: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:11: IDENTIFIER "i",
+	// · · · · · Token: example.c:1:11: identifier "i",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -3140,19 +3511,19 @@ func ExampleParameterTypeList_var() {
 	// · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:7: INT "int",
+	// · · · · · Token: example.c:1:7: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:11: IDENTIFIER "i",
+	// · · · · · Token: example.c:1:11: identifier "i",
 	// · · · · },
 	// · · · },
 	// · · },
 	// · },
 	// · Token: example.c:1:12: ',' ",",
-	// · Token2: example.c:1:14: DDD "...",
+	// · Token2: example.c:1:14: '...' "...",
 	// }
 }
 
@@ -3188,7 +3559,7 @@ func ExamplePointer_block() {
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierNonnull,
-	// · · · Token: example.c:1:22: NONNULL "_Nonnull",
+	// · · · Token: example.c:1:22: '_Nonnull' "_Nonnull",
 	// · · },
 	// · },
 	// }
@@ -3202,12 +3573,12 @@ func ExamplePostfixExpression_index() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:11: IDENTIFIER "y",
+	// · · · Token: example.c:1:11: identifier "y",
 	// · · },
 	// · },
 	// · PostfixExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:10: '[' "[",
 	// · Token2: example.c:1:12: ']' "]",
@@ -3221,13 +3592,13 @@ func ExamplePostfixExpression_call() {
 	// · ArgumentExpressionList: &cc.ArgumentExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:11: IDENTIFIER "y",
+	// · · · Token: example.c:1:11: identifier "y",
 	// · · },
 	// · },
 	// · Case: PostfixExpressionCall,
 	// · PostfixExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:10: '(' "(",
 	// · Token2: example.c:1:12: ')' ")",
@@ -3241,10 +3612,10 @@ func ExamplePostfixExpression_select() {
 	// · Case: PostfixExpressionSelect,
 	// · PostfixExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:10: '.' ".",
-	// · Token2: example.c:1:11: IDENTIFIER "y",
+	// · Token2: example.c:1:11: identifier "y",
 	// }
 }
 
@@ -3255,10 +3626,10 @@ func ExamplePostfixExpression_pSelect() {
 	// · Case: PostfixExpressionPSelect,
 	// · PostfixExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
-	// · Token: example.c:1:10: ARROW "->",
-	// · Token2: example.c:1:12: IDENTIFIER "y",
+	// · Token: example.c:1:10: '->' "->",
+	// · Token2: example.c:1:12: identifier "y",
 	// }
 }
 
@@ -3269,9 +3640,9 @@ func ExamplePostfixExpression_inc() {
 	// · Case: PostfixExpressionInc,
 	// · PostfixExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
-	// · Token: example.c:1:10: INC "++",
+	// · Token: example.c:1:10: '++' "++",
 	// }
 }
 
@@ -3282,9 +3653,9 @@ func ExamplePostfixExpression_dec() {
 	// · Case: PostfixExpressionDec,
 	// · PostfixExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
-	// · Token: example.c:1:10: DEC "--",
+	// · Token: example.c:1:10: '--' "--",
 	// }
 }
 
@@ -3297,7 +3668,7 @@ func ExamplePostfixExpression_complit() {
 	// · · Initializer: &cc.Initializer{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:17: IDENTIFIER "y",
+	// · · · · Token: example.c:1:17: identifier "y",
 	// · · · },
 	// · · · Case: InitializerExpr,
 	// · · },
@@ -3319,7 +3690,7 @@ func ExamplePostfixExpression_complit() {
 	// · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:10: INT "int",
+	// · · · · Token: example.c:1:10: 'int' "int",
 	// · · · },
 	// · · },
 	// · },
@@ -3331,7 +3702,7 @@ func ExamplePrimaryExpression_ident() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionIdent,
-	// · Token: example.c:1:9: IDENTIFIER "x",
+	// · Token: example.c:1:9: identifier "x",
 	// }
 }
 
@@ -3340,7 +3711,7 @@ func ExamplePrimaryExpression_int() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionInt,
-	// · Token: example.c:1:9: INTCONST "42",
+	// · Token: example.c:1:9: integer constant "42",
 	// }
 }
 
@@ -3349,7 +3720,7 @@ func ExamplePrimaryExpression_float() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionFloat,
-	// · Token: example.c:1:9: FLOATCONST "3.14",
+	// · Token: example.c:1:9: floating point constant "3.14",
 	// }
 }
 
@@ -3358,7 +3729,7 @@ func ExamplePrimaryExpression_char() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionChar,
-	// · Token: example.c:1:9: CHARCONST "'x'",
+	// · Token: example.c:1:9: character constant "'x'",
 	// }
 }
 
@@ -3367,7 +3738,7 @@ func ExamplePrimaryExpression_lChar() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionLChar,
-	// · Token: example.c:1:9: LONGCHARCONST "L'x'",
+	// · Token: example.c:1:9: long character constant "L'x'",
 	// }
 }
 
@@ -3376,7 +3747,7 @@ func ExamplePrimaryExpression_string() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionString,
-	// · Token: example.c:1:11: STRINGLITERAL "\"xy\"",
+	// · Token: example.c:1:11: string literal "\"xy\"",
 	// }
 }
 
@@ -3385,7 +3756,7 @@ func ExamplePrimaryExpression_lString() {
 	// Output:
 	// &cc.PrimaryExpression{
 	// · Case: PrimaryExpressionLString,
-	// · Token: example.c:1:11: LONGSTRINGLITERAL "L\"xy\"",
+	// · Token: example.c:1:11: long string literal "L\"xy\"",
 	// }
 }
 
@@ -3400,13 +3771,13 @@ func ExamplePrimaryExpression_expr() {
 	// · · · · Case: AdditiveExpressionMul,
 	// · · · · MultiplicativeExpression: &cc.PrimaryExpression{
 	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:10: IDENTIFIER "x",
+	// · · · · · Token: example.c:1:10: identifier "x",
 	// · · · · },
 	// · · · },
 	// · · · Case: AdditiveExpressionAdd,
 	// · · · MultiplicativeExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:12: IDENTIFIER "y",
+	// · · · · Token: example.c:1:12: identifier "y",
 	// · · · },
 	// · · · Token: example.c:1:11: '+' "+",
 	// · · },
@@ -3433,7 +3804,7 @@ func ExamplePrimaryExpression_stmt() {
 	// · · · · · · · · Case: PostfixExpressionCall,
 	// · · · · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · · · · · · · · Token: example.c:1:11: identifier "x",
 	// · · · · · · · · },
 	// · · · · · · · · Token: example.c:1:12: '(' "(",
 	// · · · · · · · · Token2: example.c:1:13: ')' ")",
@@ -3460,13 +3831,13 @@ func ExamplePrimaryExpression_generic() {
 	// · GenericSelection: &cc.GenericSelection{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:18: IDENTIFIER "x",
+	// · · · Token: example.c:1:18: identifier "x",
 	// · · },
 	// · · GenericAssociationList: &cc.GenericAssociationList{
 	// · · · GenericAssociation: &cc.GenericAssociation{
 	// · · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:26: IDENTIFIER "y",
+	// · · · · · Token: example.c:1:26: identifier "y",
 	// · · · · },
 	// · · · · Case: GenericAssociationType,
 	// · · · · Token: example.c:1:24: ':' ":",
@@ -3475,13 +3846,13 @@ func ExamplePrimaryExpression_generic() {
 	// · · · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · · · Case: TypeSpecifierInt,
-	// · · · · · · · Token: example.c:1:21: INT "int",
+	// · · · · · · · Token: example.c:1:21: 'int' "int",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:9: GENERIC "_Generic",
+	// · · Token: example.c:1:9: '_Generic' "_Generic",
 	// · · Token2: example.c:1:17: '(' "(",
 	// · · Token3: example.c:1:19: ',' ",",
 	// · · Token4: example.c:1:27: ')' ")",
@@ -3498,12 +3869,12 @@ func ExampleRelationalExpression_lt() {
 	// · · Case: RelationalExpressionShift,
 	// · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · Token: example.c:1:13: identifier "y",
 	// · },
 	// · Token: example.c:1:11: '<' "<",
 	// }
@@ -3518,12 +3889,12 @@ func ExampleRelationalExpression_gt() {
 	// · · Case: RelationalExpressionShift,
 	// · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · Token: example.c:1:13: identifier "y",
 	// · },
 	// · Token: example.c:1:11: '>' ">",
 	// }
@@ -3538,14 +3909,14 @@ func ExampleRelationalExpression_leq() {
 	// · · Case: RelationalExpressionShift,
 	// · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
-	// · Token: example.c:1:11: LEQ "<=",
+	// · Token: example.c:1:11: '<=' "<=",
 	// }
 }
 
@@ -3558,14 +3929,14 @@ func ExampleRelationalExpression_geq() {
 	// · · Case: RelationalExpressionShift,
 	// · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
-	// · Token: example.c:1:11: GEQ ">=",
+	// · Token: example.c:1:11: '>=' ">=",
 	// }
 }
 
@@ -3577,7 +3948,7 @@ func ExampleSelectionStatement_if() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:14: IDENTIFIER "x",
+	// · · · Token: example.c:1:14: identifier "x",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -3588,7 +3959,7 @@ func ExampleSelectionStatement_if() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:17: IDENTIFIER "y",
+	// · · · · · · Token: example.c:1:17: identifier "y",
 	// · · · · · },
 	// · · · · · Token: example.c:1:18: '(' "(",
 	// · · · · · Token2: example.c:1:19: ')' ")",
@@ -3597,7 +3968,7 @@ func ExampleSelectionStatement_if() {
 	// · · · Token: example.c:1:20: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: IF "if",
+	// · Token: example.c:1:11: 'if' "if",
 	// · Token2: example.c:1:13: '(' "(",
 	// · Token3: example.c:1:15: ')' ")",
 	// }
@@ -3611,7 +3982,7 @@ func ExampleSelectionStatement_ifElse() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:14: IDENTIFIER "x",
+	// · · · Token: example.c:1:14: identifier "x",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -3622,7 +3993,7 @@ func ExampleSelectionStatement_ifElse() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:17: IDENTIFIER "y",
+	// · · · · · · Token: example.c:1:17: identifier "y",
 	// · · · · · },
 	// · · · · · Token: example.c:1:18: '(' "(",
 	// · · · · · Token2: example.c:1:19: ')' ")",
@@ -3639,7 +4010,7 @@ func ExampleSelectionStatement_ifElse() {
 	// · · · · · Case: PostfixExpressionCall,
 	// · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · Token: example.c:1:27: IDENTIFIER "z",
+	// · · · · · · Token: example.c:1:27: identifier "z",
 	// · · · · · },
 	// · · · · · Token: example.c:1:28: '(' "(",
 	// · · · · · Token2: example.c:1:29: ')' ")",
@@ -3648,10 +4019,10 @@ func ExampleSelectionStatement_ifElse() {
 	// · · · Token: example.c:1:30: ';' ";",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: IF "if",
+	// · Token: example.c:1:11: 'if' "if",
 	// · Token2: example.c:1:13: '(' "(",
 	// · Token3: example.c:1:15: ')' ")",
-	// · Token4: example.c:1:22: ELSE "else",
+	// · Token4: example.c:1:22: 'else' "else",
 	// }
 }
 
@@ -3663,7 +4034,7 @@ func ExampleSelectionStatement_switch() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:18: IDENTIFIER "i",
+	// · · · Token: example.c:1:18: identifier "i",
 	// · · },
 	// · },
 	// · Statement: &cc.Statement{
@@ -3673,7 +4044,7 @@ func ExampleSelectionStatement_switch() {
 	// · · · ConstantExpression: &cc.ConstantExpression{
 	// · · · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · · · Case: PrimaryExpressionInt,
-	// · · · · · Token: example.c:1:26: INTCONST "42",
+	// · · · · · Token: example.c:1:26: integer constant "42",
 	// · · · · },
 	// · · · },
 	// · · · Statement: &cc.Statement{
@@ -3684,7 +4055,7 @@ func ExampleSelectionStatement_switch() {
 	// · · · · · · · Case: PostfixExpressionCall,
 	// · · · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · Token: example.c:1:30: IDENTIFIER "x",
+	// · · · · · · · · Token: example.c:1:30: identifier "x",
 	// · · · · · · · },
 	// · · · · · · · Token: example.c:1:31: '(' "(",
 	// · · · · · · · Token2: example.c:1:32: ')' ")",
@@ -3693,11 +4064,11 @@ func ExampleSelectionStatement_switch() {
 	// · · · · · Token: example.c:1:33: ';' ";",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:21: CASE "case",
+	// · · · Token: example.c:1:21: 'case' "case",
 	// · · · Token2: example.c:1:28: ':' ":",
 	// · · },
 	// · },
-	// · Token: example.c:1:11: SWITCH "switch",
+	// · Token: example.c:1:11: 'switch' "switch",
 	// · Token2: example.c:1:17: '(' "(",
 	// · Token3: example.c:1:19: ')' ")",
 	// }
@@ -3709,17 +4080,17 @@ func ExampleShiftExpression_lsh() {
 	// &cc.ShiftExpression{
 	// · AdditiveExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
 	// · Case: ShiftExpressionLsh,
 	// · ShiftExpression: &cc.ShiftExpression{
 	// · · AdditiveExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · · Case: ShiftExpressionAdd,
 	// · },
-	// · Token: example.c:1:11: LSH "<<",
+	// · Token: example.c:1:11: '<<' "<<",
 	// }
 }
 
@@ -3729,17 +4100,17 @@ func ExampleShiftExpression_rsh() {
 	// &cc.ShiftExpression{
 	// · AdditiveExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: IDENTIFIER "y",
+	// · · Token: example.c:1:14: identifier "y",
 	// · },
 	// · Case: ShiftExpressionRsh,
 	// · ShiftExpression: &cc.ShiftExpression{
 	// · · AdditiveExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: IDENTIFIER "x",
+	// · · · Token: example.c:1:9: identifier "x",
 	// · · },
 	// · · Case: ShiftExpressionAdd,
 	// · },
-	// · Token: example.c:1:11: RSH ">>",
+	// · Token: example.c:1:11: '>>' ">>",
 	// }
 }
 
@@ -3750,7 +4121,7 @@ func ExampleSpecifierQualifierList_typeSpec() {
 	// · Case: SpecifierQualifierListTypeSpec,
 	// · TypeSpecifier: &cc.TypeSpecifier{
 	// · · Case: TypeSpecifierInt,
-	// · · Token: example.c:1:9: INT "int",
+	// · · Token: example.c:1:9: 'int' "int",
 	// · },
 	// }
 }
@@ -3764,12 +4135,12 @@ func ExampleSpecifierQualifierList_typeQual() {
 	// · · Case: SpecifierQualifierListTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:15: INT "int",
+	// · · · Token: example.c:1:15: 'int' "int",
 	// · · },
 	// · },
 	// · TypeQualifier: &cc.TypeQualifier{
 	// · · Case: TypeQualifierConst,
-	// · · Token: example.c:1:9: CONST "const",
+	// · · Token: example.c:1:9: 'const' "const",
 	// · },
 	// }
 }
@@ -3780,7 +4151,7 @@ func ExampleSpecifierQualifierList_alignSpec() {
 	// &cc.SpecifierQualifierList{
 	// · AlignmentSpecifier: &cc.AlignmentSpecifier{
 	// · · Case: AlignmentSpecifierType,
-	// · · Token: example.c:1:9: ALIGNAS "_Alignas",
+	// · · Token: example.c:1:9: '_Alignas' "_Alignas",
 	// · · Token2: example.c:1:17: '(' "(",
 	// · · Token3: example.c:1:24: ')' ")",
 	// · · TypeName: &cc.TypeName{
@@ -3788,7 +4159,7 @@ func ExampleSpecifierQualifierList_alignSpec() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierDouble,
-	// · · · · · Token: example.c:1:18: DOUBLE "double",
+	// · · · · · Token: example.c:1:18: 'double' "double",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -3798,7 +4169,7 @@ func ExampleSpecifierQualifierList_alignSpec() {
 	// · · Case: SpecifierQualifierListTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:26: INT "int",
+	// · · · Token: example.c:1:26: 'int' "int",
 	// · · },
 	// · },
 	// }
@@ -3819,7 +4190,7 @@ func ExampleStatement_labeled() {
 	// · · · · · · Case: PostfixExpressionCall,
 	// · · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:14: IDENTIFIER "x",
+	// · · · · · · · Token: example.c:1:14: identifier "x",
 	// · · · · · · },
 	// · · · · · · Token: example.c:1:15: '(' "(",
 	// · · · · · · Token2: example.c:1:16: ')' ")",
@@ -3828,7 +4199,7 @@ func ExampleStatement_labeled() {
 	// · · · · Token: example.c:1:17: ';' ";",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:11: IDENTIFIER "L",
+	// · · Token: example.c:1:11: identifier "L",
 	// · · Token2: example.c:1:12: ':' ":",
 	// · },
 	// }
@@ -3851,7 +4222,7 @@ func ExampleStatement_compound() {
 	// · · · · · · · · Case: PostfixExpressionCall,
 	// · · · · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · · · Token: example.c:1:13: IDENTIFIER "y",
+	// · · · · · · · · · Token: example.c:1:13: identifier "y",
 	// · · · · · · · · },
 	// · · · · · · · · Token: example.c:1:14: '(' "(",
 	// · · · · · · · · Token2: example.c:1:15: ')' ")",
@@ -3889,7 +4260,7 @@ func ExampleStatement_selection() {
 	// · · ExpressionList: &cc.ExpressionList{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:14: IDENTIFIER "x",
+	// · · · · Token: example.c:1:14: identifier "x",
 	// · · · },
 	// · · },
 	// · · Statement: &cc.Statement{
@@ -3900,7 +4271,7 @@ func ExampleStatement_selection() {
 	// · · · · · · Case: PostfixExpressionCall,
 	// · · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:17: IDENTIFIER "y",
+	// · · · · · · · Token: example.c:1:17: identifier "y",
 	// · · · · · · },
 	// · · · · · · Token: example.c:1:18: '(' "(",
 	// · · · · · · Token2: example.c:1:19: ')' ")",
@@ -3909,7 +4280,7 @@ func ExampleStatement_selection() {
 	// · · · · Token: example.c:1:20: ';' ";",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:11: IF "if",
+	// · · Token: example.c:1:11: 'if' "if",
 	// · · Token2: example.c:1:13: '(' "(",
 	// · · Token3: example.c:1:15: ')' ")",
 	// · },
@@ -3931,7 +4302,7 @@ func ExampleStatement_iteration() {
 	// · · · · · · Case: PostfixExpressionCall,
 	// · · · · · · PostfixExpression: &cc.PrimaryExpression{
 	// · · · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · · · Token: example.c:1:19: IDENTIFIER "x",
+	// · · · · · · · Token: example.c:1:19: identifier "x",
 	// · · · · · · },
 	// · · · · · · Token: example.c:1:20: '(' "(",
 	// · · · · · · Token2: example.c:1:21: ')' ")",
@@ -3940,7 +4311,7 @@ func ExampleStatement_iteration() {
 	// · · · · Token: example.c:1:22: ';' ";",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:11: FOR "for",
+	// · · Token: example.c:1:11: 'for' "for",
 	// · · Token2: example.c:1:14: '(' "(",
 	// · · Token3: example.c:1:15: ';' ";",
 	// · · Token4: example.c:1:16: ';' ";",
@@ -3959,10 +4330,10 @@ func ExampleStatement_jump() {
 	// · · ExpressionList: &cc.ExpressionList{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:18: IDENTIFIER "x",
+	// · · · · Token: example.c:1:18: identifier "x",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:11: RETURN "return",
+	// · · Token: example.c:1:11: 'return' "return",
 	// · · Token2: example.c:1:19: ';' ";",
 	// · },
 	// }
@@ -3974,9 +4345,9 @@ func ExampleStatement_asm() {
 	// &cc.Statement{
 	// · AsmStatement: &cc.AsmStatement{
 	// · · Asm: &cc.Asm{
-	// · · · Token: example.c:1:11: ASM "asm",
+	// · · · Token: example.c:1:11: 'asm' "asm",
 	// · · · Token2: example.c:1:14: '(' "(",
-	// · · · Token3: example.c:1:15: STRINGLITERAL "\"nop\"",
+	// · · · Token3: example.c:1:15: string literal "\"nop\"",
 	// · · · Token4: example.c:1:20: ')' ")",
 	// · · },
 	// · · Token: example.c:1:21: ';' ";",
@@ -3990,7 +4361,7 @@ func ExampleStorageClassSpecifier_typedef() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: StorageClassSpecifierTypedef,
-	// · Token: example.c:1:1: TYPEDEF "typedef",
+	// · Token: example.c:1:1: 'typedef' "typedef",
 	// }
 }
 
@@ -3999,7 +4370,7 @@ func ExampleStorageClassSpecifier_extern() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: StorageClassSpecifierExtern,
-	// · Token: example.c:1:1: EXTERN "extern",
+	// · Token: example.c:1:1: 'extern' "extern",
 	// }
 }
 
@@ -4008,7 +4379,7 @@ func ExampleStorageClassSpecifier_static() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: StorageClassSpecifierStatic,
-	// · Token: example.c:1:1: STATIC "static",
+	// · Token: example.c:1:1: 'static' "static",
 	// }
 }
 
@@ -4017,7 +4388,7 @@ func ExampleStorageClassSpecifier_auto() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: StorageClassSpecifierAuto,
-	// · Token: example.c:1:1: AUTO "auto",
+	// · Token: example.c:1:1: 'auto' "auto",
 	// }
 }
 
@@ -4026,7 +4397,7 @@ func ExampleStorageClassSpecifier_register() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: StorageClassSpecifierRegister,
-	// · Token: example.c:1:1: REGISTER "register",
+	// · Token: example.c:1:1: 'register' "register",
 	// }
 }
 
@@ -4035,7 +4406,7 @@ func ExampleStorageClassSpecifier_threadLocal() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Case: StorageClassSpecifierThreadLocal,
-	// · Token: example.c:1:1: THREADLOCAL "_Thread_local",
+	// · Token: example.c:1:1: '_Thread_local' "_Thread_local",
 	// }
 }
 
@@ -4044,10 +4415,10 @@ func ExampleStorageClassSpecifier_declspec() {
 	// Output:
 	// &cc.StorageClassSpecifier{
 	// · Declspecs: []cc.Token{ // len 1
-	// · · 0: example.c:1:12: IDENTIFIER "foo",
+	// · · 0: example.c:1:12: identifier "foo",
 	// · },
 	// · Case: StorageClassSpecifierDeclspec,
-	// · Token: example.c:1:1: DECLSPEC "__declspec",
+	// · Token: example.c:1:1: '__declspec' "__declspec",
 	// · Token2: example.c:1:11: '(' "(",
 	// · Token3: example.c:1:15: ')' ")",
 	// }
@@ -4062,10 +4433,10 @@ func ExampleStructDeclaration_case0() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:30: IDENTIFIER "a",
+	// · · · · · Token: example.c:1:30: identifier "a",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:15: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:15: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:28: '(' "(",
 	// · · · Token3: example.c:1:29: '(' "(",
 	// · · · Token4: example.c:1:31: ')' ")",
@@ -4076,7 +4447,7 @@ func ExampleStructDeclaration_case0() {
 	// · · Case: SpecifierQualifierListTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:9: INT "int",
+	// · · · Token: example.c:1:9: 'int' "int",
 	// · · },
 	// · },
 	// · StructDeclaratorList: &cc.StructDeclaratorList{
@@ -4085,7 +4456,7 @@ func ExampleStructDeclaration_case0() {
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:13: IDENTIFIER "i",
+	// · · · · · Token: example.c:1:13: identifier "i",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -4105,7 +4476,7 @@ func ExampleStructDeclarationList_case0() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:28: INT "int",
+	// · · · · · Token: example.c:1:28: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · TypeQualifier: &cc.TypeQualifier{
@@ -4114,10 +4485,10 @@ func ExampleStructDeclarationList_case0() {
 	// · · · · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · · · · Case: AttributeValueIdent,
-	// · · · · · · · · Token: example.c:1:24: IDENTIFIER "a",
+	// · · · · · · · · Token: example.c:1:24: identifier "a",
 	// · · · · · · · },
 	// · · · · · · },
-	// · · · · · · Token: example.c:1:9: ATTRIBUTE "__attribute__",
+	// · · · · · · Token: example.c:1:9: '__attribute__' "__attribute__",
 	// · · · · · · Token2: example.c:1:22: '(' "(",
 	// · · · · · · Token3: example.c:1:23: '(' "(",
 	// · · · · · · Token4: example.c:1:25: ')' ")",
@@ -4133,7 +4504,7 @@ func ExampleStructDeclarationList_case0() {
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:32: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:32: identifier "i",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -4152,7 +4523,7 @@ func ExampleStructDeclarationList_case1() {
 	// · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:9: INT "int",
+	// · · · · Token: example.c:1:9: 'int' "int",
 	// · · · },
 	// · · },
 	// · · StructDeclaratorList: &cc.StructDeclaratorList{
@@ -4161,7 +4532,7 @@ func ExampleStructDeclarationList_case1() {
 	// · · · · Declarator: &cc.Declarator{
 	// · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · Token: example.c:1:13: IDENTIFIER "i",
+	// · · · · · · Token: example.c:1:13: identifier "i",
 	// · · · · · },
 	// · · · · },
 	// · · · },
@@ -4174,7 +4545,7 @@ func ExampleStructDeclarationList_case1() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierDouble,
-	// · · · · · Token: example.c:1:16: DOUBLE "double",
+	// · · · · · Token: example.c:1:16: 'double' "double",
 	// · · · · },
 	// · · · },
 	// · · · StructDeclaratorList: &cc.StructDeclaratorList{
@@ -4183,7 +4554,7 @@ func ExampleStructDeclarationList_case1() {
 	// · · · · · Declarator: &cc.Declarator{
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:23: IDENTIFIER "d",
+	// · · · · · · · Token: example.c:1:23: identifier "d",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
@@ -4202,7 +4573,7 @@ func ExampleStructDeclarator_decl() {
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:13: IDENTIFIER "i",
+	// · · · Token: example.c:1:13: identifier "i",
 	// · · },
 	// · },
 	// }
@@ -4216,13 +4587,13 @@ func ExampleStructDeclarator_bitField() {
 	// · ConstantExpression: &cc.ConstantExpression{
 	// · · ConditionalExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:15: INTCONST "3",
+	// · · · Token: example.c:1:15: integer constant "3",
 	// · · },
 	// · },
 	// · Declarator: &cc.Declarator{
 	// · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · Case: DirectDeclaratorIdent,
-	// · · · Token: example.c:1:13: IDENTIFIER "i",
+	// · · · Token: example.c:1:13: identifier "i",
 	// · · },
 	// · },
 	// · Token: example.c:1:14: ':' ":",
@@ -4238,7 +4609,7 @@ func ExampleStructDeclaratorList_case0() {
 	// · · Declarator: &cc.Declarator{
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:13: IDENTIFIER "i",
+	// · · · · Token: example.c:1:13: identifier "i",
 	// · · · },
 	// · · },
 	// · },
@@ -4254,7 +4625,7 @@ func ExampleStructDeclaratorList_case1() {
 	// · · Declarator: &cc.Declarator{
 	// · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · Case: DirectDeclaratorIdent,
-	// · · · · Token: example.c:1:13: IDENTIFIER "i",
+	// · · · · Token: example.c:1:13: identifier "i",
 	// · · · },
 	// · · },
 	// · },
@@ -4264,7 +4635,7 @@ func ExampleStructDeclaratorList_case1() {
 	// · · · Declarator: &cc.Declarator{
 	// · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · Token: example.c:1:16: IDENTIFIER "j",
+	// · · · · · Token: example.c:1:16: identifier "j",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -4278,7 +4649,7 @@ func ExampleStructOrUnion_struct() {
 	// Output:
 	// &cc.StructOrUnion{
 	// · Case: StructOrUnionStruct,
-	// · Token: example.c:1:1: STRUCT "struct",
+	// · Token: example.c:1:1: 'struct' "struct",
 	// }
 }
 
@@ -4287,7 +4658,7 @@ func ExampleStructOrUnion_union() {
 	// Output:
 	// &cc.StructOrUnion{
 	// · Case: StructOrUnionUnion,
-	// · Token: example.c:1:1: UNION "union",
+	// · Token: example.c:1:1: 'union' "union",
 	// }
 }
 
@@ -4300,10 +4671,10 @@ func ExampleStructOrUnionSpecifier_def() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:36: IDENTIFIER "a",
+	// · · · · · Token: example.c:1:36: identifier "a",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:21: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:21: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:34: '(' "(",
 	// · · · Token3: example.c:1:35: '(' "(",
 	// · · · Token4: example.c:1:37: ')' ")",
@@ -4317,7 +4688,7 @@ func ExampleStructOrUnionSpecifier_def() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:12: INT "int",
+	// · · · · · Token: example.c:1:12: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · StructDeclaratorList: &cc.StructDeclaratorList{
@@ -4326,7 +4697,7 @@ func ExampleStructOrUnionSpecifier_def() {
 	// · · · · · Declarator: &cc.Declarator{
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:16: IDENTIFIER "i",
+	// · · · · · · · Token: example.c:1:16: identifier "i",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
@@ -4336,9 +4707,9 @@ func ExampleStructOrUnionSpecifier_def() {
 	// · },
 	// · StructOrUnion: &cc.StructOrUnion{
 	// · · Case: StructOrUnionStruct,
-	// · · Token: example.c:1:1: STRUCT "struct",
+	// · · Token: example.c:1:1: 'struct' "struct",
 	// · },
-	// · Token: example.c:1:8: IDENTIFIER "s",
+	// · Token: example.c:1:8: identifier "s",
 	// · Token2: example.c:1:10: '{' "{",
 	// · Token3: example.c:1:19: '}' "}",
 	// }
@@ -4353,10 +4724,10 @@ func ExampleStructOrUnionSpecifier_tag() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:23: IDENTIFIER "a",
+	// · · · · · Token: example.c:1:23: identifier "a",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:8: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:8: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:21: '(' "(",
 	// · · · Token3: example.c:1:22: '(' "(",
 	// · · · Token4: example.c:1:24: ')' ")",
@@ -4366,9 +4737,9 @@ func ExampleStructOrUnionSpecifier_tag() {
 	// · Case: StructOrUnionSpecifierTag,
 	// · StructOrUnion: &cc.StructOrUnion{
 	// · · Case: StructOrUnionStruct,
-	// · · Token: example.c:1:1: STRUCT "struct",
+	// · · Token: example.c:1:1: 'struct' "struct",
 	// · },
-	// · Token: example.c:1:27: IDENTIFIER "s",
+	// · Token: example.c:1:27: identifier "s",
 	// }
 }
 
@@ -4383,7 +4754,7 @@ func ExampleTranslationUnit_case0() {
 	// · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:1: INT "int",
+	// · · · · · Token: example.c:1:1: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -4392,7 +4763,7 @@ func ExampleTranslationUnit_case0() {
 	// · · · · · Declarator: &cc.Declarator{
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · · · · Token: example.c:1:5: identifier "i",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
@@ -4414,7 +4785,7 @@ func ExampleTranslationUnit_case1() {
 	// · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:1: INT "int",
+	// · · · · · Token: example.c:1:1: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -4423,7 +4794,7 @@ func ExampleTranslationUnit_case1() {
 	// · · · · · Declarator: &cc.Declarator{
 	// · · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · Token: example.c:1:5: IDENTIFIER "i",
+	// · · · · · · · Token: example.c:1:5: identifier "i",
 	// · · · · · · },
 	// · · · · · },
 	// · · · · },
@@ -4439,7 +4810,7 @@ func ExampleTranslationUnit_case1() {
 	// · · · · · Case: DeclarationSpecifiersTypeSpec,
 	// · · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · · Case: TypeSpecifierInt,
-	// · · · · · · Token: example.c:1:8: INT "int",
+	// · · · · · · Token: example.c:1:8: 'int' "int",
 	// · · · · · },
 	// · · · · },
 	// · · · · InitDeclaratorList: &cc.InitDeclaratorList{
@@ -4448,7 +4819,7 @@ func ExampleTranslationUnit_case1() {
 	// · · · · · · Declarator: &cc.Declarator{
 	// · · · · · · · DirectDeclarator: &cc.DirectDeclarator{
 	// · · · · · · · · Case: DirectDeclaratorIdent,
-	// · · · · · · · · Token: example.c:1:12: IDENTIFIER "j",
+	// · · · · · · · · Token: example.c:1:12: identifier "j",
 	// · · · · · · · },
 	// · · · · · · },
 	// · · · · · },
@@ -4468,7 +4839,7 @@ func ExampleTypeName_case0() {
 	// · · Case: SpecifierQualifierListTypeSpec,
 	// · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · Case: TypeSpecifierInt,
-	// · · · Token: example.c:1:10: INT "int",
+	// · · · Token: example.c:1:10: 'int' "int",
 	// · · },
 	// · },
 	// }
@@ -4479,7 +4850,7 @@ func ExampleTypeQualifier_const() {
 	// Output:
 	// &cc.TypeQualifier{
 	// · Case: TypeQualifierConst,
-	// · Token: example.c:1:1: CONST "const",
+	// · Token: example.c:1:1: 'const' "const",
 	// }
 }
 
@@ -4488,7 +4859,7 @@ func ExampleTypeQualifier_restrict() {
 	// Output:
 	// &cc.TypeQualifier{
 	// · Case: TypeQualifierRestrict,
-	// · Token: example.c:1:1: RESTRICT "restrict",
+	// · Token: example.c:1:1: 'restrict' "restrict",
 	// }
 }
 
@@ -4497,7 +4868,7 @@ func ExampleTypeQualifier_volatile() {
 	// Output:
 	// &cc.TypeQualifier{
 	// · Case: TypeQualifierVolatile,
-	// · Token: example.c:1:1: VOLATILE "volatile",
+	// · Token: example.c:1:1: 'volatile' "volatile",
 	// }
 }
 
@@ -4506,7 +4877,7 @@ func ExampleTypeQualifier_atomic() {
 	// Output:
 	// &cc.TypeQualifier{
 	// · Case: TypeQualifierAtomic,
-	// · Token: example.c:1:1: ATOMIC "_Atomic",
+	// · Token: example.c:1:1: '_Atomic' "_Atomic",
 	// }
 }
 
@@ -4515,7 +4886,7 @@ func ExampleTypeQualifier_nonnull() {
 	// Output:
 	// &cc.TypeQualifier{
 	// · Case: TypeQualifierNonnull,
-	// · Token: example.c:1:1: NONNULL "_Nonnull",
+	// · Token: example.c:1:1: '_Nonnull' "_Nonnull",
 	// }
 }
 
@@ -4528,10 +4899,10 @@ func ExampleTypeQualifier_attr() {
 	// · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · Case: AttributeValueIdent,
-	// · · · · · Token: example.c:1:25: IDENTIFIER "a",
+	// · · · · · Token: example.c:1:25: identifier "a",
 	// · · · · },
 	// · · · },
-	// · · · Token: example.c:1:10: ATTRIBUTE "__attribute__",
+	// · · · Token: example.c:1:10: '__attribute__' "__attribute__",
 	// · · · Token2: example.c:1:23: '(' "(",
 	// · · · Token3: example.c:1:24: '(' "(",
 	// · · · Token4: example.c:1:26: ')' ")",
@@ -4549,7 +4920,7 @@ func ExampleTypeQualifiers_typeQual() {
 	// · Case: TypeQualifiersTypeQual,
 	// · TypeQualifier: &cc.TypeQualifier{
 	// · · Case: TypeQualifierConst,
-	// · · Token: example.c:1:26: CONST "const",
+	// · · Token: example.c:1:26: 'const' "const",
 	// · },
 	// · TypeQualifiers: &cc.TypeQualifiers{
 	// · · Case: TypeQualifiersTypeQual,
@@ -4559,10 +4930,10 @@ func ExampleTypeQualifiers_typeQual() {
 	// · · · · · AttributeValueList: &cc.AttributeValueList{
 	// · · · · · · AttributeValue: &cc.AttributeValue{
 	// · · · · · · · Case: AttributeValueIdent,
-	// · · · · · · · Token: example.c:1:22: IDENTIFIER "a",
+	// · · · · · · · Token: example.c:1:22: identifier "a",
 	// · · · · · · },
 	// · · · · · },
-	// · · · · · Token: example.c:1:7: ATTRIBUTE "__attribute__",
+	// · · · · · Token: example.c:1:7: '__attribute__' "__attribute__",
 	// · · · · · Token2: example.c:1:20: '(' "(",
 	// · · · · · Token3: example.c:1:21: '(' "(",
 	// · · · · · Token4: example.c:1:23: ')' ")",
@@ -4582,13 +4953,13 @@ func ExampleTypeQualifiers_case1() {
 	// · Case: TypeQualifiersTypeQual,
 	// · TypeQualifier: &cc.TypeQualifier{
 	// · · Case: TypeQualifierVolatile,
-	// · · Token: example.c:1:13: VOLATILE "volatile",
+	// · · Token: example.c:1:13: 'volatile' "volatile",
 	// · },
 	// · TypeQualifiers: &cc.TypeQualifiers{
 	// · · Case: TypeQualifiersTypeQual,
 	// · · TypeQualifier: &cc.TypeQualifier{
 	// · · · Case: TypeQualifierConst,
-	// · · · Token: example.c:1:7: CONST "const",
+	// · · · Token: example.c:1:7: 'const' "const",
 	// · · },
 	// · },
 	// }
@@ -4599,7 +4970,7 @@ func ExampleTypeSpecifier_void() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierVoid,
-	// · Token: example.c:1:1: VOID "void",
+	// · Token: example.c:1:1: 'void' "void",
 	// }
 }
 
@@ -4608,7 +4979,7 @@ func ExampleTypeSpecifier_char() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierChar,
-	// · Token: example.c:1:1: CHAR "char",
+	// · Token: example.c:1:1: 'char' "char",
 	// }
 }
 
@@ -4617,7 +4988,7 @@ func ExampleTypeSpecifier_short() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierShort,
-	// · Token: example.c:1:1: SHORT "short",
+	// · Token: example.c:1:1: 'short' "short",
 	// }
 }
 
@@ -4626,7 +4997,7 @@ func ExampleTypeSpecifier_int() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierInt,
-	// · Token: example.c:1:1: INT "int",
+	// · Token: example.c:1:1: 'int' "int",
 	// }
 }
 
@@ -4635,7 +5006,7 @@ func ExampleTypeSpecifier_int128() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierInt128,
-	// · Token: example.c:1:1: INT128 "__int128",
+	// · Token: example.c:1:1: '__int128' "__int128",
 	// }
 }
 
@@ -4644,7 +5015,7 @@ func ExampleTypeSpecifier_uint128() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierUint128,
-	// · Token: example.c:1:1: UINT128 "__uint128_t",
+	// · Token: example.c:1:1: '__uint128_t' "__uint128_t",
 	// }
 }
 
@@ -4653,7 +5024,7 @@ func ExampleTypeSpecifier_long() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierLong,
-	// · Token: example.c:1:1: LONG "long",
+	// · Token: example.c:1:1: 'long' "long",
 	// }
 }
 
@@ -4662,7 +5033,7 @@ func ExampleTypeSpecifier_float() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat,
-	// · Token: example.c:1:1: FLOAT "float",
+	// · Token: example.c:1:1: 'float' "float",
 	// }
 }
 
@@ -4671,7 +5042,7 @@ func ExampleTypeSpecifier_float16() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat16,
-	// · Token: example.c:1:1: FLOAT16 "_Float16",
+	// · Token: example.c:1:1: '_Float16' "_Float16",
 	// }
 }
 
@@ -4680,7 +5051,7 @@ func ExampleTypeSpecifier_decimal64() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierDecimal64,
-	// · Token: example.c:1:1: DECIMAL64 "_Decimal64",
+	// · Token: example.c:1:1: '_Decimal64' "_Decimal64",
 	// }
 }
 
@@ -4689,7 +5060,7 @@ func ExampleTypeSpecifier_float128() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat128,
-	// · Token: example.c:1:1: FLOAT128 "_Float128",
+	// · Token: example.c:1:1: '_Float128' "_Float128",
 	// }
 }
 
@@ -4698,7 +5069,7 @@ func ExampleTypeSpecifier_float128x() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat128x,
-	// · Token: example.c:1:1: FLOAT128X "_Float128x",
+	// · Token: example.c:1:1: '_Float128x' "_Float128x",
 	// }
 }
 
@@ -4707,7 +5078,7 @@ func ExampleTypeSpecifier_double() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierDouble,
-	// · Token: example.c:1:1: DOUBLE "double",
+	// · Token: example.c:1:1: 'double' "double",
 	// }
 }
 
@@ -4716,7 +5087,7 @@ func ExampleTypeSpecifier_signed() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierSigned,
-	// · Token: example.c:1:1: SIGNED "signed",
+	// · Token: example.c:1:1: 'signed' "signed",
 	// }
 }
 
@@ -4725,7 +5096,7 @@ func ExampleTypeSpecifier_unsigned() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierUnsigned,
-	// · Token: example.c:1:1: UNSIGNED "unsigned",
+	// · Token: example.c:1:1: 'unsigned' "unsigned",
 	// }
 }
 
@@ -4734,7 +5105,7 @@ func ExampleTypeSpecifier_bool() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierBool,
-	// · Token: example.c:1:1: BOOL "_Bool",
+	// · Token: example.c:1:1: '_Bool' "_Bool",
 	// }
 }
 
@@ -4743,7 +5114,7 @@ func ExampleTypeSpecifier_complex() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierComplex,
-	// · Token: example.c:1:1: COMPLEX "_Complex",
+	// · Token: example.c:1:1: '_Complex' "_Complex",
 	// }
 }
 
@@ -4752,7 +5123,7 @@ func ExampleTypeSpecifier_imaginary() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierImaginary,
-	// · Token: example.c:1:1: IMAGINARY "_Imaginary",
+	// · Token: example.c:1:1: '_Imaginary' "_Imaginary",
 	// }
 }
 
@@ -4765,9 +5136,9 @@ func ExampleTypeSpecifier_structOrUnion() {
 	// · · Case: StructOrUnionSpecifierTag,
 	// · · StructOrUnion: &cc.StructOrUnion{
 	// · · · Case: StructOrUnionStruct,
-	// · · · Token: example.c:1:1: STRUCT "struct",
+	// · · · Token: example.c:1:1: 'struct' "struct",
 	// · · },
-	// · · Token: example.c:1:8: IDENTIFIER "s",
+	// · · Token: example.c:1:8: identifier "s",
 	// · },
 	// }
 }
@@ -4779,8 +5150,8 @@ func ExampleTypeSpecifier_enum() {
 	// · Case: TypeSpecifierEnum,
 	// · EnumSpecifier: &cc.EnumSpecifier{
 	// · · Case: EnumSpecifierTag,
-	// · · Token: example.c:1:1: ENUM "enum",
-	// · · Token2: example.c:1:6: IDENTIFIER "e",
+	// · · Token: example.c:1:1: 'enum' "enum",
+	// · · Token2: example.c:1:6: identifier "e",
 	// · },
 	// }
 }
@@ -4790,7 +5161,7 @@ func ExampleTypeSpecifier_typeName() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierInt,
-	// · Token: example.c:1:9: INT "int",
+	// · Token: example.c:1:9: 'int' "int",
 	// }
 }
 
@@ -4802,10 +5173,10 @@ func ExampleTypeSpecifier_typeofExpr() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionInt,
-	// · · · Token: example.c:1:8: INTCONST "42",
+	// · · · Token: example.c:1:8: integer constant "42",
 	// · · },
 	// · },
-	// · Token: example.c:1:1: TYPEOF "typeof",
+	// · Token: example.c:1:1: 'typeof' "typeof",
 	// · Token2: example.c:1:7: '(' "(",
 	// · Token3: example.c:1:10: ')' ")",
 	// }
@@ -4816,7 +5187,7 @@ func ExampleTypeSpecifier_typeofType() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierInt,
-	// · Token: example.c:1:9: INT "int",
+	// · Token: example.c:1:9: 'int' "int",
 	// }
 }
 
@@ -4825,7 +5196,7 @@ func ExampleTypeSpecifier_atomic() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · AtomicTypeSpecifier: &cc.AtomicTypeSpecifier{
-	// · · Token: example.c:1:1: ATOMIC "_Atomic",
+	// · · Token: example.c:1:1: '_Atomic' "_Atomic",
 	// · · Token2: example.c:1:8: '(' "(",
 	// · · Token3: example.c:1:12: ')' ")",
 	// · · TypeName: &cc.TypeName{
@@ -4833,7 +5204,7 @@ func ExampleTypeSpecifier_atomic() {
 	// · · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · · Case: TypeSpecifierInt,
-	// · · · · · Token: example.c:1:9: INT "int",
+	// · · · · · Token: example.c:1:9: 'int' "int",
 	// · · · · },
 	// · · · },
 	// · · },
@@ -4847,7 +5218,7 @@ func ExampleTypeSpecifier_float32() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat32,
-	// · Token: example.c:1:1: FLOAT32 "_Float32",
+	// · Token: example.c:1:1: '_Float32' "_Float32",
 	// }
 }
 
@@ -4856,7 +5227,7 @@ func ExampleTypeSpecifier_float64() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat64,
-	// · Token: example.c:1:1: FLOAT64 "_Float64",
+	// · Token: example.c:1:1: '_Float64' "_Float64",
 	// }
 }
 
@@ -4865,7 +5236,7 @@ func ExampleTypeSpecifier_float32x() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat32x,
-	// · Token: example.c:1:1: FLOAT32X "_Float32x",
+	// · Token: example.c:1:1: '_Float32x' "_Float32x",
 	// }
 }
 
@@ -4874,7 +5245,7 @@ func ExampleTypeSpecifier_float64x() {
 	// Output:
 	// &cc.TypeSpecifier{
 	// · Case: TypeSpecifierFloat64x,
-	// · Token: example.c:1:1: FLOAT64X "_Float64x",
+	// · Token: example.c:1:1: '_Float64x' "_Float64x",
 	// }
 }
 
@@ -4883,10 +5254,10 @@ func ExampleUnaryExpression_inc() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionInc,
-	// · Token: example.c:1:9: INC "++",
+	// · Token: example.c:1:9: '++' "++",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -4896,10 +5267,10 @@ func ExampleUnaryExpression_dec() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionDec,
-	// · Token: example.c:1:9: DEC "--",
+	// · Token: example.c:1:9: '--' "--",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// }
 }
@@ -4911,7 +5282,7 @@ func ExampleUnaryExpression_addrof() {
 	// · Case: UnaryExpressionAddrof,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:11: IDENTIFIER "x",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// · Token: example.c:1:10: '&' "&",
 	// }
@@ -4924,7 +5295,7 @@ func ExampleUnaryExpression_deref() {
 	// · Case: UnaryExpressionDeref,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:10: IDENTIFIER "x",
+	// · · Token: example.c:1:10: identifier "x",
 	// · },
 	// · Token: example.c:1:9: '*' "*",
 	// }
@@ -4937,7 +5308,7 @@ func ExampleUnaryExpression_plus() {
 	// · Case: UnaryExpressionPlus,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:10: IDENTIFIER "x",
+	// · · Token: example.c:1:10: identifier "x",
 	// · },
 	// · Token: example.c:1:9: '+' "+",
 	// }
@@ -4950,7 +5321,7 @@ func ExampleUnaryExpression_minus() {
 	// · Case: UnaryExpressionMinus,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:10: IDENTIFIER "x",
+	// · · Token: example.c:1:10: identifier "x",
 	// · },
 	// · Token: example.c:1:9: '-' "-",
 	// }
@@ -4963,7 +5334,7 @@ func ExampleUnaryExpression_cpl() {
 	// · Case: UnaryExpressionCpl,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:10: IDENTIFIER "x",
+	// · · Token: example.c:1:10: identifier "x",
 	// · },
 	// · Token: example.c:1:9: '~' "~",
 	// }
@@ -4976,7 +5347,7 @@ func ExampleUnaryExpression_not() {
 	// · Case: UnaryExpressionNot,
 	// · CastExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:10: IDENTIFIER "x",
+	// · · Token: example.c:1:10: identifier "x",
 	// · },
 	// · Token: example.c:1:9: '!' "!",
 	// }
@@ -4987,10 +5358,10 @@ func ExampleUnaryExpression_sizeofExpr() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionSizeofExpr,
-	// · Token: example.c:1:9: SIZEOF "sizeof",
+	// · Token: example.c:1:9: 'sizeof' "sizeof",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:16: IDENTIFIER "x",
+	// · · Token: example.c:1:16: identifier "x",
 	// · },
 	// }
 }
@@ -5000,7 +5371,7 @@ func ExampleUnaryExpression_sizeofType() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionSizeofType,
-	// · Token: example.c:1:9: SIZEOF "sizeof",
+	// · Token: example.c:1:9: 'sizeof' "sizeof",
 	// · Token2: example.c:1:15: '(' "(",
 	// · Token3: example.c:1:19: ')' ")",
 	// · TypeName: &cc.TypeName{
@@ -5008,7 +5379,7 @@ func ExampleUnaryExpression_sizeofType() {
 	// · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:16: INT "int",
+	// · · · · Token: example.c:1:16: 'int' "int",
 	// · · · },
 	// · · },
 	// · },
@@ -5020,8 +5391,8 @@ func ExampleUnaryExpression_labelAddr() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionLabelAddr,
-	// · Token: example.c:1:14: ANDAND "&&",
-	// · Token2: example.c:1:16: IDENTIFIER "L",
+	// · Token: example.c:1:14: '&&' "&&",
+	// · Token2: example.c:1:16: identifier "L",
 	// }
 }
 
@@ -5030,13 +5401,13 @@ func ExampleUnaryExpression_alignofExpr() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionAlignofExpr,
-	// · Token: example.c:1:9: ALIGNOF "_Alignof",
+	// · Token: example.c:1:9: '_Alignof' "_Alignof",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionExpr,
 	// · · ExpressionList: &cc.ExpressionList{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:18: IDENTIFIER "x",
+	// · · · · Token: example.c:1:18: identifier "x",
 	// · · · },
 	// · · },
 	// · · Token: example.c:1:17: '(' "(",
@@ -5050,7 +5421,7 @@ func ExampleUnaryExpression_alignofType() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionAlignofType,
-	// · Token: example.c:1:9: ALIGNOF "_Alignof",
+	// · Token: example.c:1:9: '_Alignof' "_Alignof",
 	// · Token2: example.c:1:17: '(' "(",
 	// · Token3: example.c:1:21: ')' ")",
 	// · TypeName: &cc.TypeName{
@@ -5058,7 +5429,7 @@ func ExampleUnaryExpression_alignofType() {
 	// · · · Case: SpecifierQualifierListTypeSpec,
 	// · · · TypeSpecifier: &cc.TypeSpecifier{
 	// · · · · Case: TypeSpecifierInt,
-	// · · · · Token: example.c:1:18: INT "int",
+	// · · · · Token: example.c:1:18: 'int' "int",
 	// · · · },
 	// · · },
 	// · },
@@ -5070,10 +5441,10 @@ func ExampleUnaryExpression_imag() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionImag,
-	// · Token: example.c:1:12: IMAG "__imag__",
+	// · Token: example.c:1:12: '__imag__' "__imag__",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:21: IDENTIFIER "x",
+	// · · Token: example.c:1:21: identifier "x",
 	// · },
 	// }
 }
@@ -5083,10 +5454,10 @@ func ExampleUnaryExpression_real() {
 	// Output:
 	// &cc.UnaryExpression{
 	// · Case: UnaryExpressionReal,
-	// · Token: example.c:1:12: REAL "__real__",
+	// · Token: example.c:1:12: '__real__' "__real__",
 	// · UnaryExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:21: IDENTIFIER "x",
+	// · · Token: example.c:1:21: identifier "x",
 	// · },
 	// }
 }

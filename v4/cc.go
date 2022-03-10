@@ -164,7 +164,8 @@ type Config struct {
 	Predefined      string // The predefined macros from CC, filled by NewConfig.
 	SysIncludePaths []string
 
-	fakeIncludes bool // testing
+	doNotInjectFunc bool // testing
+	fakeIncludes    bool // testing
 }
 
 type errors []string

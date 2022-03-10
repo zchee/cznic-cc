@@ -803,6 +803,8 @@ func arraySize(c *ctx, n ExpressionNode) int64 {
 			}
 
 			c.errors.add(errorf("%v: invalid array size: %v", n.Position(), x))
+		case unknownValue:
+			// VLA
 		default:
 			c.errors.add(errorf("TODO %T", x))
 		}
@@ -1294,12 +1296,15 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	}
 	switch n.Case {
 	case EnumSpecifierDef: // "enum" IDENTIFIER '{' EnumeratorList ',' '}'
-		list := n.EnumeratorList.check(c)
 		var t Type
 		min := int64(math.MaxInt64)
 		var iota, max uint64
-		for _, v := range list {
-			switch x := v.val.(type) {
+		var list []*Enumerator
+		for l := n.EnumeratorList; l != nil; l = l.EnumeratorList {
+			en := l.Enumerator
+			list = append(list, en)
+			en.check(c)
+			switch x := l.Enumerator.Value().(type) {
 			case nil:
 				iota++
 			case Int64Value:
@@ -1393,21 +1398,6 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	return n.Type()
 }
 
-//  EnumeratorList:
-//          Enumerator
-//  |       EnumeratorList ',' Enumerator
-func (n *EnumeratorList) check(c *ctx) (r []*Enumerator) {
-	if n == nil {
-		return nil
-	}
-
-	for ; n != nil; n = n.EnumeratorList {
-		n.Enumerator.check(c)
-		r = append(r, n.Enumerator)
-	}
-	return r
-}
-
 func (n *Enumerator) check(c *ctx) {
 	n.typ = c.intT //TODO
 	switch n.Case {
@@ -1415,7 +1405,6 @@ func (n *Enumerator) check(c *ctx) {
 		// ok
 	case EnumeratorExpr: // IDENTIFIER '=' ConstantExpression
 		n.typ = n.ConstantExpression.check(c, decay)
-		n.val = n.ConstantExpression.eval(c, 0)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}

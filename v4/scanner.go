@@ -38,113 +38,100 @@ type tokCh int
 const (
 	_ tokCh = iota + unicodePrivateAreaFirst
 
-	ACCUM
-	ADDASSIGN
-	ALIGNAS
-	ALIGNOF
-	ANDAND
-	ANDASSIGN
-	ARROW
-	ASM
-	ATOMIC
-	ATTRIBUTE
-	AUTO
-	BOOL
-	BREAK
-	BUILTINCHOOSEEXPR
-	BUILTINTYPESCOMPATIBLE
-	CASE
-	CHAR
-	CHARCONST
-	COMPLEX
-	CONST
-	CONTINUE
-	DDD
-	DEC
-	DECIMAL128
-	DECIMAL32
-	DECIMAL64
-	DECLSPEC
-	DEFAULT
-	DIVASSIGN
-	DO
-	DOUBLE
-	ELSE
-	ENUM
-	EQ
-	EXTERN
-	FLOAT
-	FLOAT128
-	FLOAT128X
-	FLOAT16
-	FLOAT32
-	FLOAT32X
-	FLOAT64
-	FLOAT64X
-	FLOAT80
-	FLOATCONST
-	FOR
-	FRACT
-	GENERIC
-	GEQ
-	GOTO
-	HEADER_NAME
-	IDENTIFIER
-	IF
-	IMAG
-	IMAGINARY
-	INC
-	INLINE
-	INT
-	INT128
-	INT16
-	INT32
-	INT64
-	INT8
-	INTCONST
-	LABEL
-	LEQ
-	LONG
-	LONGCHARCONST
-	LONGSTRINGLITERAL
-	LSH
-	LSHASSIGN
-	MODASSIGN
-	MULASSIGN
-	NEQ
-	NONNULL
-	NORETURN
-	ORASSIGN
-	OROR
-	PPNUMBER
-	PPPASTE
-	PRAGMASTDC
-	REAL
-	REGISTER
-	RESTRICT
-	RETURN
-	RSH
-	RSHASSIGN
-	SAT
-	SHORT
-	SIGNED
-	SIZEOF
-	STATIC
-	STRINGLITERAL
-	STRUCT
-	SUBASSIGN
-	SWITCH
-	THREADLOCAL
-	TYPEDEF
-	TYPENAME
-	TYPEOF
-	UINT128
-	UNION
-	UNSIGNED
-	VOID
-	VOLATILE
-	WHILE
-	XORASSIGN
+	ADDASSIGN         // '+='
+	ALIGNAS           // '_Alignas'
+	ALIGNOF           // '_Alignof'
+	ANDAND            // '&&'
+	ANDASSIGN         // '&='
+	ARROW             // '->'
+	ASM               // 'asm'
+	ATOMIC            // '_Atomic'
+	ATTRIBUTE         // '__attribute__'
+	AUTO              // 'auto'
+	BOOL              // '_Bool'
+	BREAK             // 'break'
+	CASE              // 'case'
+	CHAR              // 'char'
+	CHARCONST         // character constant
+	COMPLEX           // '_Complex'
+	CONST             // 'const'
+	CONTINUE          // 'continue'
+	DDD               // '...'
+	DEC               // '--'
+	DECIMAL64         // '_Decimal64'
+	DECLSPEC          // '__declspec'
+	DEFAULT           // 'default'
+	DIVASSIGN         // '/='
+	DO                // 'do'
+	DOUBLE            // 'double'
+	ELSE              // 'else'
+	ENUM              // 'enum'
+	EQ                // '=='
+	EXTERN            // 'extern'
+	FLOAT             // 'float'
+	FLOAT128          // '_Float128'
+	FLOAT128X         // '_Float128x'
+	FLOAT16           // '_Float16'
+	FLOAT32           // '_Float32'
+	FLOAT32X          // '_Float32x'
+	FLOAT64           // '_Float64'
+	FLOAT64X          // '_Float64x'
+	FLOATCONST        // floating point constant
+	FOR               // 'for'
+	GENERIC           // '_Generic'
+	GEQ               // '>='
+	GOTO              // 'goto'
+	HEADER_NAME       // <header-name>
+	IDENTIFIER        // identifier
+	IF                // 'if'
+	IMAG              // '__imag__'
+	IMAGINARY         // '_Imaginary'
+	INC               // '++'
+	INLINE            // 'inline'
+	INT               // 'int'
+	INT128            // '__int128'
+	INTCONST          // integer constant
+	LABEL             // '__label__'
+	LEQ               // '<='
+	LONG              // 'long'
+	LONGCHARCONST     // long character constant
+	LONGSTRINGLITERAL // long string literal
+	LSH               // '<<'
+	LSHASSIGN         // '<<='
+	MODASSIGN         // '%='
+	MULASSIGN         // '*='
+	NEQ               // '!='
+	NONNULL           // '_Nonnull'
+	NORETURN          // '_Noreturn'
+	ORASSIGN          // '|='
+	OROR              // '||'
+	PPNUMBER          // preprocessing number
+	PPPASTE           // '##'
+	REAL              // '__real__'
+	REGISTER          // 'register'
+	RESTRICT          // 'restrict'
+	RETURN            // 'return'
+	RSH               // '>>'
+	RSHASSIGN         // '>>='
+	SHORT             // 'short'
+	SIGNED            // 'signed'
+	SIZEOF            // 'sizeof'
+	STATIC            // 'static'
+	STRINGLITERAL     // string literal
+	STRUCT            // 'struct'
+	SUBASSIGN         // '-='
+	SWITCH            // 'switch'
+	THREADLOCAL       // '_Thread_local'
+	TYPEDEF           // 'typedef'
+	TYPENAME          // type name
+	TYPEOF            // 'typeof'
+	UINT128           // '__uint128_t'
+	UNION             // 'union'
+	UNSIGNED          // 'unsigned'
+	VOID              // 'void'
+	VOLATILE          // 'volatile'
+	WHILE             // 'while'
+	XORASSIGN         // '^='
 )
 
 // Node is implemented by Token and AST nodes.

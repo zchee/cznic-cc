@@ -310,7 +310,30 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 		case RelationalExpressionLeq: // RelationalExpression "<=" ShiftExpression
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 		case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
-			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
+			if !isArithmeticType(n.RelationalExpression.Type()) || !isArithmeticType(n.ShiftExpression.Type()) {
+				break
+			}
+
+			switch x := c.convert(n.RelationalExpression.eval(c, mode), n.Type()).(type) {
+			case unknownValue:
+				// ok
+			case Int64Value:
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), n.Type()).(type) {
+				case unknownValue:
+					// ok
+				case Int64Value:
+					if x >= y {
+						n.val = oneValue
+						break
+					}
+
+					n.val = zeroValue
+				default:
+					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
+				}
+			default:
+				c.errors.add(errorf("TODO %v TYPE %T", n.Case, x))
+			}
 		default:
 			c.errors.add(errorf("internal error: %v", n.Case))
 		}
@@ -338,6 +361,8 @@ func (n *ShiftExpression) eval(c *ctx, mode flags) (r Value) {
 				case unknownValue:
 					// nop
 				case Int64Value:
+					n.val = c.convert(x<<y, n.Type())
+				case UInt64Value:
 					n.val = c.convert(x<<y, n.Type())
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
@@ -582,7 +607,7 @@ func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
 		case UnaryExpressionPostfix: // PostfixExpression
 			n.val = n.PostfixExpression.eval(c, mode)
 		case UnaryExpressionInc: // "++" UnaryExpression
-			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
+			// nop
 		case UnaryExpressionDec: // "--" UnaryExpression
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 		case UnaryExpressionAddrof: // '&' CastExpression
@@ -739,7 +764,12 @@ func (n *PrimaryExpression) eval(c *ctx, mode flags) (r Value) {
 
 		switch n.Case {
 		case PrimaryExpressionIdent: // IDENTIFIER
-			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
+			switch n.resolvedTo.(type) {
+			case *Declarator, *Parameter:
+				// ok
+			default:
+				c.errors.add(errorf("TODO %v %T", n.Case, n.resolvedTo))
+			}
 		case PrimaryExpressionInt: // INTCONST
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 		case PrimaryExpressionFloat: // FLOATCONST
