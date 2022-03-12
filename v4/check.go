@@ -48,6 +48,7 @@ type ctx struct {
 	errors       errors
 	fnScope      *Scope
 	implicitFunc Type
+	int64T       Type
 	intT         Type
 	pcharT       Type
 	ptrDiffT0    Type
@@ -126,6 +127,7 @@ func newCtx(ast *AST) *ctx {
 		c.ast.kinds[v.Kind()] = v
 	}
 	c.intT = c.ast.kinds[Int]
+	c.int64T = c.ast.kinds[LongLong]
 	c.pcharT = newPointerType(ast, c.ast.kinds[Char])
 	c.implicitFunc = newPointerType(ast, newFunctionType(c, c.intT, nil, false))
 	return c
@@ -137,7 +139,7 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 	}
 
 	switch t.Kind() {
-	case Int, Long:
+	case Int, Long, LongLong:
 		m := Int64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
@@ -156,7 +158,7 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 		default:
 			c.errors.add(errorf("TODO TYPE %T", x))
 		}
-	case ULong, UInt:
+	case ULong, UInt, ULongLong:
 		m := UInt64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
@@ -1297,41 +1299,29 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	switch n.Case {
 	case EnumSpecifierDef: // "enum" IDENTIFIER '{' EnumeratorList ',' '}'
 		var t Type
-		min := int64(math.MaxInt64)
-		var iota, max uint64
+		var iota, min int64
+		var max uint64
 		var list []*Enumerator
 		for l := n.EnumeratorList; l != nil; l = l.EnumeratorList {
 			en := l.Enumerator
 			list = append(list, en)
-			en.check(c)
-			switch x := l.Enumerator.Value().(type) {
-			case nil:
-				iota++
+			iota = en.check(c, iota)
+			switch x := en.Value().(type) {
 			case Int64Value:
 				v := int64(x)
 				min = mathutil.MinInt64(min, v)
 				if v >= 0 {
-					iota = uint64(v)
+					max = mathutil.MaxUint64(max, uint64(v))
 				}
 			case UInt64Value:
 				v := uint64(x)
 				max = mathutil.MaxUint64(max, v)
-				iota = v
 			}
 		}
-		max = mathutil.MaxUint64(max, iota)
 		switch {
-		case min >= math.MinInt8 && max < math.MaxInt8:
-			t = c.ast.kinds[SChar]
-		case min >= 0 && max < math.MaxUint8:
-			t = c.ast.kinds[UChar]
-		case min >= math.MinInt16 && max < math.MaxInt16:
-			t = c.ast.kinds[Short]
-		case min >= 0 && max < math.MaxUint16:
-			t = c.ast.kinds[UShort]
-		case min >= math.MinInt32 && max < math.MaxInt32:
+		case min >= math.MinInt32 && max <= math.MaxInt32:
 			t = c.intT
-		case min >= 0 && max < math.MaxUint32:
+		case min >= 0 && max <= math.MaxUint32:
 			t = c.ast.kinds[UInt]
 		case min >= math.MinInt64 && max < math.MaxInt64:
 			t = c.ast.kinds[Long]
@@ -1344,37 +1334,8 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 				t = c.ast.kinds[ULongLong]
 			}
 		}
-		switch {
-		case c.ast.ABI.isSignedInteger(t.Kind()):
-			var iota Int64Value
-			for _, v := range list {
-				v.typ = t
-				switch x := v.val.(type) {
-				case nil:
-					v.val = iota
-				case Int64Value:
-					iota = x
-				case UInt64Value:
-					iota = Int64Value(x)
-					v.val = iota
-				}
-				iota++
-			}
-		default:
-			var iota UInt64Value
-			for _, v := range list {
-				v.typ = t
-				switch x := v.val.(type) {
-				case nil:
-					v.val = iota
-				case Int64Value:
-					iota = UInt64Value(x)
-					v.val = iota
-				case UInt64Value:
-					iota = x
-				}
-				iota++
-			}
+		for _, v := range list {
+			v.typ = t
 		}
 		n.typ = newEnumType(tag, t, list)
 	case EnumSpecifierTag: // "enum" IDENTIFIER
@@ -1398,16 +1359,27 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	return n.Type()
 }
 
-func (n *Enumerator) check(c *ctx) {
-	n.typ = c.intT //TODO
+func (n *Enumerator) check(c *ctx, iota int64) int64 {
 	switch n.Case {
 	case EnumeratorIdent: // IDENTIFIER
-		// ok
+		n.typ = c.int64T
+		n.val = Int64Value(iota)
 	case EnumeratorExpr: // IDENTIFIER '=' ConstantExpression
 		n.typ = n.ConstantExpression.check(c, decay)
+		switch n.val = n.ConstantExpression.Value(); x := n.Value().(type) {
+		case Int64Value:
+			return int64(x) + 1
+		case UInt64Value:
+			return int64(x) + 1
+		case unknownValue:
+			// ok
+		default:
+			c.errors.add(errorf("internal error: %T", x))
+		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
+	return iota + 1
 }
 
 //  StructOrUnionSpecifier:
@@ -2398,7 +2370,7 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 	defer func() {
 		r = c.decay(r, decay)
 		if r == nil || r == invalidType {
-			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			c.errors.add(errorf("TODO %T missed/failed type check %v", n, n.Case))
 		}
 	}()
 
@@ -2436,6 +2408,7 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 		t := n.PostfixExpression.check(c, mode.add(decay))
 		n.ArgumentExpressionList.check(c, decay)
 		if t == nil || mode.has(asmArgList) {
+			n.typ = c.intT
 			break
 		}
 
