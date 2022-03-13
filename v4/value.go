@@ -11,16 +11,17 @@ import (
 var (
 	_ Value = (*ComplexLongDoubleValue)(nil)
 	_ Value = (*LongDoubleValue)(nil)
+	_ Value = (*UnknownValue)(nil)
+	_ Value = (*ZeroValue)(nil)
 	_ Value = Complex128Value(0)
 	_ Value = Complex64Value(0)
 	_ Value = Float64Value(0)
 	_ Value = Int64Value(0)
 	_ Value = StringValue("")
+	_ Value = UInt64Value(0)
 	_ Value = UTF16StringValue(nil)
 	_ Value = UTF32StringValue(nil)
-	_ Value = UInt64Value(0)
 	_ Value = VoidValue{}
-	_ Value = (*UnknownValue)(nil)
 )
 
 var (
@@ -28,8 +29,11 @@ var (
 	// comparable.
 	Unknown Value = &UnknownValue{}
 
-	oneValue  = Int64Value(1)
-	zeroValue = Int64Value(0)
+	// Zero is a singleton representing a zero value of a type. Zero is comparable.
+	Zero Value = &ZeroValue{}
+
+	int1 = Int64Value(1)
+	int0 = Int64Value(0)
 )
 
 type Value interface {
@@ -38,9 +42,15 @@ type Value interface {
 
 type UnknownValue struct{}
 
-func (n *UnknownValue) isValue() {}
+func (*UnknownValue) isValue() {}
 
 func (*UnknownValue) String() string { return "<unknown value>" }
+
+type ZeroValue struct{}
+
+func (*ZeroValue) isValue() {}
+
+func (*ZeroValue) String() string { return "{}" }
 
 type ComplexLongDoubleValue struct {
 	Re *big.Float
@@ -51,43 +61,43 @@ func (n *ComplexLongDoubleValue) isValue() {}
 
 type LongDoubleValue big.Float
 
-func (n *LongDoubleValue) isValue() {}
+func (*LongDoubleValue) isValue() {}
 
 type Complex128Value complex128
 
-func (n Complex128Value) isValue() {}
+func (Complex128Value) isValue() {}
 
 type Complex64Value complex64
 
-func (n Complex64Value) isValue() {}
+func (Complex64Value) isValue() {}
 
 type Float64Value float64
 
-func (n Float64Value) isValue() {}
+func (Float64Value) isValue() {}
 
 type Int64Value int64
 
-func (n Int64Value) isValue() {}
+func (Int64Value) isValue() {}
 
 type UInt64Value int64
 
-func (n UInt64Value) isValue() {}
+func (UInt64Value) isValue() {}
 
 type VoidValue struct{}
 
-func (n VoidValue) isValue() {}
+func (VoidValue) isValue() {}
 
 type StringValue string
 
-func (n StringValue) isValue() {}
+func (StringValue) isValue() {}
 
 type UTF16StringValue []uint16
 
-func (n UTF16StringValue) isValue() {}
+func (UTF16StringValue) isValue() {}
 
 type UTF32StringValue []rune
 
-func (n UTF32StringValue) isValue() {}
+func (UTF32StringValue) isValue() {}
 
 func (n *ConstantExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
@@ -137,12 +147,12 @@ func (n *LogicalOrExpression) eval(c *ctx, mode flags) (r Value) {
 			case isZero(v):
 				switch v := c.convert(n.LogicalAndExpression.eval(c, mode), n.Type()); {
 				case isZero(v):
-					n.val = zeroValue
+					n.val = int0
 				case isNonzero(v):
-					n.val = oneValue
+					n.val = int1
 				}
 			case isNonzero(v):
-				n.val = oneValue
+				n.val = int1
 			}
 		default:
 			c.errors.add(errorf("internal error: %v", n.Case))
@@ -165,13 +175,13 @@ func (n *LogicalAndExpression) eval(c *ctx, mode flags) (r Value) {
 		case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
 			switch v := n.LogicalAndExpression.eval(c, mode); {
 			case isZero(v):
-				n.val = zeroValue
+				n.val = int0
 			case isNonzero(v):
 				switch w := n.InclusiveOrExpression.eval(c, mode); {
 				case isZero(w):
-					n.val = zeroValue
+					n.val = int0
 				case isNonzero(w):
-					n.val = oneValue
+					n.val = int1
 				}
 			}
 		default:
@@ -381,11 +391,11 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 					// ok
 				case Int64Value:
 					if x < y {
-						n.val = oneValue
+						n.val = int1
 						break
 					}
 
-					n.val = zeroValue
+					n.val = int0
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -402,11 +412,11 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 					// ok
 				case Int64Value:
 					if x > y {
-						n.val = oneValue
+						n.val = int1
 						break
 					}
 
-					n.val = zeroValue
+					n.val = int0
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -423,11 +433,11 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 					// ok
 				case Int64Value:
 					if x <= y {
-						n.val = oneValue
+						n.val = int1
 						break
 					}
 
-					n.val = zeroValue
+					n.val = int0
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -444,11 +454,11 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 					// ok
 				case Int64Value:
 					if x >= y {
-						n.val = oneValue
+						n.val = int1
 						break
 					}
 
-					n.val = zeroValue
+					n.val = int0
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}

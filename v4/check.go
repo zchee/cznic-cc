@@ -169,16 +169,16 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 		switch x := v.(type) {
 		case Int64Value:
 			if x != 0 {
-				return oneValue
+				return int1
 			}
 
-			return zeroValue
+			return int0
 		case UInt64Value:
 			if x != 0 {
-				return oneValue
+				return int1
 			}
 
-			return zeroValue
+			return int0
 		}
 	case Ptr:
 		switch x := v.(type) {
@@ -281,8 +281,10 @@ type valuer struct{ val Value }
 // Value returns the value of a node or UnknownValue if it is undetermined. The
 // dynamic type of a Value is one of
 //
-//	*ComplexLongDoubleValue)
-//	*LongDoubleValue
+//	*ComplexLongDoubleValue
+//	*LongDoubleValue)
+//	*UnknownValue)
+//	*ZeroValue
 //	Complex128Value
 //	Complex64Value
 //	Float64Value
@@ -291,7 +293,6 @@ type valuer struct{ val Value }
 //	UInt64Value
 //	UTF16StringValue
 //	UTF32StringValue
-//	UnknownValue
 //	VoidValue
 func (v valuer) Value() Value {
 	if v.val != nil {
@@ -680,22 +681,77 @@ func (n *Initializer) check(c *ctx, t Type) {
 		return
 	}
 
+	n.typ = t
 	// The type of the entity to be initialized shall be an array of unknown size
 	// or an object type that is not a variable length array type.
-	switch {
-	case t.Kind() == Array:
-		if at := t.(*ArrayType); at.IsVLA() {
-			c.errors.add(errorf("%v: cannot initalize a variable length array", n.Position()))
-			return
-		}
-	}
-
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
-		n.AssignmentExpression.check(c, decay)
-		n.val = c.convert(n.AssignmentExpression.Value(), t)
+		et := n.AssignmentExpression.check(c, 0)
+		n.val = n.AssignmentExpression.Value()
+		switch x := n.Type().(type) {
+		case *ArrayType:
+			if x.IsVLA() {
+				c.errors.add(errorf("%v: cannot initalize a variable length array", n.Position()))
+				return
+			}
+
+			switch y := et.(type) {
+			case *ArrayType:
+				if x.Elem().Kind() != y.Elem().Kind() {
+					c.errors.add(errorf("TODO %v <- %T %v", n.Type(), n.Value(), y))
+					break
+				}
+
+				if x.IsIncomplete() && !y.IsIncomplete() {
+					x.elems = y.elems
+				}
+			default:
+				c.errors.add(errorf("TODO %T %T", n, y))
+			}
+		case *StructType:
+			switch y := et.(type) {
+			default:
+				c.errors.add(errorf("TODO %T %T", n, y))
+			}
+		case *UnionType:
+			c.errors.add(errorf("TODO %T %T", n, x))
+		default:
+			switch y := et.(type) {
+			case *PredefinedType:
+				n.val = c.convert(n.val, t)
+			default:
+				c.errors.add(errorf("TODO %v <- %T %v", n.Type(), n.Value(), y))
+			}
+		}
 	case InitializerInitList: // '{' InitializerList ',' '}'
-		n.InitializerList.check(c, t)
+		switch x := n.Type().(type) {
+		case *ArrayType:
+			if x.IsVLA() {
+				c.errors.add(errorf("%v: cannot initalize a variable length array", n.Position()))
+				return
+			}
+
+			if n.InitializerList == nil {
+				c.errors.add(errorf("TODO %T %T", n, x))
+				return
+			}
+		case *StructType:
+			if n.InitializerList == nil {
+				c.errors.add(errorf("TODO %T %T", n, x))
+				return
+			}
+		case *UnionType:
+			if n.InitializerList == nil {
+				c.errors.add(errorf("TODO %T %T", n, x))
+				return
+			}
+		default:
+			if n.InitializerList == nil {
+				c.errors.add(errorf("TODO %T %T", n, x))
+				return
+			}
+		}
+		n.InitializerList.check(c, n.Type())
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -703,26 +759,24 @@ func (n *Initializer) check(c *ctx, t Type) {
 
 func (n *InitializerList) check(c *ctx, currObj Type) {
 	if n == nil {
+		c.errors.add(errorf("internal error: %T", n))
 		return
 	}
 
 	switch x := currObj.(type) {
 	case *ArrayType:
+		if x.IsVLA() {
+			c.errors.add(errorf("%v: cannot initalize a variable length array", n.Position()))
+			return
+		}
+
 		c.errors.add(errorf("TODO %T %T", n, x))
-		return
 	case *StructType:
 		c.errors.add(errorf("TODO %T %T", n, x))
-		return
 	case *UnionType:
 		c.errors.add(errorf("TODO %T %T", n, x))
-		return
 	default:
-		switch {
-		case n.InitializerList == nil: // single initializer in list
-			n.Initializer.check(c, currObj)
-		default:
-			c.errors.add(errorf("TODO %T %T", n, x))
-		}
+		c.errors.add(errorf("TODO %T %T", n, x))
 	}
 
 	//TODO for ; n != nil; n = n.InitializerList {

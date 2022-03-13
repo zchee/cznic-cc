@@ -503,8 +503,8 @@ func bits2AccessBytes(n int64) int64 {
 
 func bool2int(b bool) Int64Value {
 	if b {
-		return oneValue
+		return int1
 	}
 
-	return zeroValue
+	return int0
 }
