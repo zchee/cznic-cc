@@ -525,6 +525,7 @@ type Field struct {
 	// bit field will have offsetBits zero.
 	depth      int
 	offsetBits int
+	ordinal    int // index into .fields in structType
 
 	isBitField bool
 }
@@ -821,12 +822,15 @@ func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 type ArrayType struct {
 	elem  typer
 	elems int64
+	expr  ExpressionNode
 }
 
-func newArrayType(elem Type, elems int64) (r *ArrayType) {
-	r = &ArrayType{elem: newTyper(elem), elems: elems}
+func newArrayType(elem Type, elems int64, expr ExpressionNode) (r *ArrayType) {
+	r = &ArrayType{elem: newTyper(elem), elems: elems, expr: expr}
 	return r
 }
+
+func (n *ArrayType) IsVLA() bool { return n.elems < 0 && n.expr != nil && n.expr.Value() == Unknown }
 
 // Elem reports the element type of n.
 func (n *ArrayType) Elem() Type { return n.elem.Type() }

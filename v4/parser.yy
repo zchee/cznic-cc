@@ -763,6 +763,9 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Func       */ |	DirectAbstractDeclarator '(' ParameterTypeList ')'
 
 			/* [0], 6.7.8 Initialization */
+			/*yy:field	off	int64	*/
+			/*yy:field	typer	*/
+			/*yy:field	valuer	*/
 			/*yy:example int i = x; */
 /*yy:case Expr       */ Initializer:
 				AssignmentExpression

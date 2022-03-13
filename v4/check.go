@@ -680,24 +680,57 @@ func (n *Initializer) check(c *ctx, t Type) {
 		return
 	}
 
+	// The type of the entity to be initialized shall be an array of unknown size
+	// or an object type that is not a variable length array type.
+	switch {
+	case t.Kind() == Array:
+		if at := t.(*ArrayType); at.IsVLA() {
+			c.errors.add(errorf("%v: cannot initalize a variable length array", n.Position()))
+			return
+		}
+	}
+
 	switch n.Case {
 	case InitializerExpr: // AssignmentExpression
 		n.AssignmentExpression.check(c, decay)
-		//TODO
+		n.val = c.convert(n.AssignmentExpression.Value(), t)
 	case InitializerInitList: // '{' InitializerList ',' '}'
-		c.errors.add(errorf("TODO %v", n.Case))
+		n.InitializerList.check(c, t)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
 }
 
-func (n *InitializerList) check(c *ctx, t Type) {
-	for ; n != nil; n = n.InitializerList {
-		if n.Designation != nil {
-			n.Designation.check(c)
-		}
-		n.Initializer.check(c, t) //TODO
+func (n *InitializerList) check(c *ctx, currObj Type) {
+	if n == nil {
+		return
 	}
+
+	switch x := currObj.(type) {
+	case *ArrayType:
+		c.errors.add(errorf("TODO %T %T", n, x))
+		return
+	case *StructType:
+		c.errors.add(errorf("TODO %T %T", n, x))
+		return
+	case *UnionType:
+		c.errors.add(errorf("TODO %T %T", n, x))
+		return
+	default:
+		switch {
+		case n.InitializerList == nil: // single initializer in list
+			n.Initializer.check(c, currObj)
+		default:
+			c.errors.add(errorf("TODO %T %T", n, x))
+		}
+	}
+
+	//TODO for ; n != nil; n = n.InitializerList {
+	//TODO 	if n.Designation != nil {
+	//TODO 		n.Designation.check(c)
+	//TODO 	}
+	//TODO 	n.Initializer.check(c, currObj) //TODO
+	//TODO }
 }
 
 func (n *Designation) check(c *ctx) {
@@ -774,7 +807,7 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 	case DirectDeclaratorDecl: // '(' Declarator ')'
 		return n.Declarator.check(c, t)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		return n.DirectDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression)))
+		return n.DirectDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -921,7 +954,7 @@ func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	case DirectAbstractDeclaratorDecl: // '(' AbstractDeclarator ')'
 		return n.AbstractDeclarator.check(c, t)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		return n.DirectAbstractDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression)))
+		return n.DirectAbstractDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
 	case DirectAbstractDeclaratorStaticArr: // DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectAbstractDeclaratorArrStatic: // DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -1489,12 +1522,13 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 	isUnion := s.StructOrUnion.Case == StructOrUnionUnion
 	var brk, unionBits int64
 	maxAlignBytes := 1
-	for _, f := range fields {
+	for i, f := range fields {
 		if f == nil {
 			c.errors.add(errorf("TODO %T", n))
 			return
 		}
 
+		f.ordinal = i
 		switch {
 		case f.isBitField:
 			f.accessBytes = bits2AccessBytes(f.valueBits)
@@ -1688,6 +1722,7 @@ func (n *AssignmentExpression) check(c *ctx, mode flags) (r Type) {
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
 		n.typ = n.ConditionalExpression.check(c, mode)
+		n.val = n.ConditionalExpression.eval(c, mode)
 	case
 		AssignmentExpressionAssign, // UnaryExpression '=' AssignmentExpression
 		AssignmentExpressionMul,    // UnaryExpression "*=" AssignmentExpression
@@ -2741,15 +2776,15 @@ func (n *PrimaryExpression) stringConst(c *ctx) (v Value, t Type) {
 	}, n.Token)
 	switch n.Case {
 	case PrimaryExpressionString:
-		return StringValue(s), newArrayType(c.ast.kinds[Char], int64(len(s)))
+		return StringValue(s), newArrayType(c.ast.kinds[Char], int64(len(s)), nil)
 	case PrimaryExpressionLString:
 		switch t = c.wcharT(n); t.Size() {
 		case 2:
 			v := UTF16StringValue(utf16.Encode([]rune(s)))
-			return v, newArrayType(t, int64(len(v)))
+			return v, newArrayType(t, int64(len(v)), nil)
 		case 4:
 			v := UTF32StringValue([]rune(s))
-			return v, newArrayType(t, int64(len(v)))
+			return v, newArrayType(t, int64(len(v)), nil)
 		}
 	default:
 		c.errors.add(errorf("TODO %v", n.Case))
