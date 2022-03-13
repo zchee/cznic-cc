@@ -238,6 +238,36 @@ func toksTrim(s cppTokens) cppTokens {
 	return s
 }
 
+func stringConst(eh errHandler, tok Token) string {
+	s := tok.SrcStr()
+	switch tok.Ch {
+	case rune(LONGSTRINGLITERAL):
+		s = s[1:] // Remove leading 'L'.
+		fallthrough
+	case rune(STRINGLITERAL):
+		var buf strings.Builder
+		for i := 1; i < len(s)-1; {
+			switch c := s[i]; c {
+			case '\\':
+				r, n := decodeEscapeSequence(eh, tok, s[i:])
+				switch {
+				case r < 0:
+					buf.WriteByte(byte(-r))
+				default:
+					buf.WriteRune(r)
+				}
+				i += n
+			default:
+				buf.WriteByte(c)
+				i++
+			}
+		}
+		buf.WriteByte(0)
+		return buf.String()
+	}
+	panic(todo("internal error"))
+}
+
 func charConst(eh errHandler, tok Token) rune {
 	s := tok.SrcStr()
 	switch tok.Ch {

@@ -416,9 +416,9 @@ func NewABI(os, arch string) (*ABI, error) {
 	for k, v := range types0 {
 		types[k] = v
 	}
-	for ck := Invalid; ck < maxKind; ck++ {
+	for ck := InvalidKind; ck < maxKind; ck++ {
 		rk := correspondingRealKinds[ck]
-		if rk == Invalid {
+		if rk == InvalidKind {
 			continue
 		}
 

@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 
 	"modernc.org/mathutil"
 )
@@ -134,12 +135,12 @@ func newCtx(ast *AST) *ctx {
 }
 
 func (c *ctx) convert(v Value, t Type) (r Value) {
-	if v == nil || v == UnknownValue {
-		return UnknownValue
+	if v == nil || v == Unknown {
+		return Unknown
 	}
 
 	switch t.Kind() {
-	case Int, Long, LongLong:
+	case Int, Long, LongLong, Char, SChar, Short:
 		m := Int64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
@@ -155,18 +156,14 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 			}
 
 			return y & m
-		default:
-			c.errors.add(errorf("TODO TYPE %T", x))
 		}
-	case ULong, UInt, ULongLong:
+	case ULong, UInt, ULongLong, UChar, UShort:
 		m := UInt64Value(1)<<(8*t.Size()) - 1
 		switch x := v.(type) {
 		case Int64Value:
 			return UInt64Value(x) & m
 		case UInt64Value:
 			return x & m
-		default:
-			c.errors.add(errorf("TODO TYPE %T", x))
 		}
 	case Bool:
 		switch x := v.(type) {
@@ -182,8 +179,6 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 			}
 
 			return zeroValue
-		default:
-			c.errors.add(errorf("TODO TYPE %T", x))
 		}
 	case Ptr:
 		switch x := v.(type) {
@@ -191,13 +186,11 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 			return UInt64Value(x)
 		case UInt64Value:
 			return x
-		default:
-			c.errors.add(errorf("TODO TYPE %T", x))
 		}
-	default:
-		c.errors.add(errorf("TODO %v", t.Kind()))
+	case Void:
+		return VoidValue{}
 	}
-	return UnknownValue
+	return Unknown
 }
 
 func (c *ctx) decay(t Type, mode flags) Type {
@@ -280,18 +273,32 @@ func (t typer) Type() Type {
 		return t.typ
 	}
 
-	return invalidType
+	return Invalid
 }
 
 type valuer struct{ val Value }
 
-// Value returns the value of a node or UnknownValue if it is undetermined.
+// Value returns the value of a node or UnknownValue if it is undetermined. The
+// dynamic type of a Value is one of
+//
+//	*ComplexLongDoubleValue)
+//	*LongDoubleValue
+//	Complex128Value
+//	Complex64Value
+//	Float64Value
+//	Int64Value
+//	StringValue
+//	UInt64Value
+//	UTF16StringValue
+//	UTF32StringValue
+//	UnknownValue
+//	VoidValue
 func (v valuer) Value() Value {
 	if v.val != nil {
 		return v.val
 	}
 
-	return UnknownValue
+	return Unknown
 }
 
 type AST struct {
@@ -467,7 +474,7 @@ func (n *CompoundStatement) check(c *ctx) (r Type) {
 
 func (n *BlockItem) check(c *ctx) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	switch n.Case {
@@ -489,7 +496,7 @@ func (n *BlockItem) check(c *ctx) (r Type) {
 
 func (n *Statement) check(c *ctx) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	switch n.Case {
@@ -510,7 +517,7 @@ func (n *Statement) check(c *ctx) (r Type) {
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
-	return invalidType
+	return Invalid
 }
 
 func (n *LabeledStatement) check(c *ctx) {
@@ -731,7 +738,7 @@ func (n *Declarator) check(c *ctx, t Type) (r Type) {
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -756,7 +763,7 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -805,7 +812,7 @@ func arraySize(c *ctx, n ExpressionNode) int64 {
 			}
 
 			c.errors.add(errorf("%v: invalid array size: %v", n.Position(), x))
-		case unknownValue:
+		case *UnknownValue:
 			// VLA
 		default:
 			c.errors.add(errorf("TODO %T", x))
@@ -878,7 +885,7 @@ func (n *AbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -905,7 +912,7 @@ func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -945,7 +952,7 @@ func (n *Pointer) check(c *ctx, t Type) (r Type) {
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -987,7 +994,7 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 	var ts []TypeSpecifierCase
 
 	defer func(n *DeclarationSpecifiers) {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			//panic(todo("%v: %v %v", n.Position(), ts, TypeString(r)))
 			c.errors.add(errorf("TODO %T missed/failed type check: %v", n, ts))
 		}
@@ -1199,7 +1206,7 @@ func (n *StorageClassSpecifier) check(c *ctx, isExtern, isStatic, isThreadLocal,
 //  |       "_Float64x"                      // Case TypeSpecifierFloat64x
 func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	switch n.Case {
@@ -1279,7 +1286,7 @@ func (n *AtomicTypeSpecifier) check(c *ctx) (r Type) {
 //  |       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	if n.typ != nil {
@@ -1287,7 +1294,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -1371,7 +1378,7 @@ func (n *Enumerator) check(c *ctx, iota int64) int64 {
 			return int64(x) + 1
 		case UInt64Value:
 			return int64(x) + 1
-		case unknownValue:
+		case *UnknownValue:
 			// ok
 		default:
 			c.errors.add(errorf("internal error: %T", x))
@@ -1387,7 +1394,7 @@ func (n *Enumerator) check(c *ctx, iota int64) int64 {
 //  |       StructOrUnion IDENTIFIER                                // Case StructOrUnionSpecifierTag
 func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	if n.typ != nil {
@@ -1401,7 +1408,7 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 	switch n.Case {
 	case StructOrUnionSpecifierDef: // StructOrUnion IDENTIFIER '{' StructDeclarationList '}'
 		defer func() {
-			if r == nil || r == invalidType {
+			if r == nil || r == Invalid {
 				c.errors.add(errorf("TODO %T missed/failed type check", n))
 			}
 		}()
@@ -1461,7 +1468,7 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 	}
 
 	defer func() {
-		if s.typ == nil || s.typ == invalidType {
+		if s.typ == nil || s.typ == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -1560,7 +1567,7 @@ func (n *SpecifierQualifierList) check(c *ctx, isAtomic, isConst, isVolatile *bo
 	var ts []TypeSpecifierCase
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO missed/failed type check %v: %v %T", n.Position(), ts, n))
 		}
 	}()
@@ -1669,11 +1676,11 @@ func (n *StructDeclarator) check(c *ctx, t Type, isAtomic, isConst, isVolatile b
 //  |       UnaryExpression "|=" AssignmentExpression   // Case AssignmentExpressionOr
 func (n *AssignmentExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -1741,13 +1748,16 @@ func (n *AssignmentExpression) check(c *ctx, mode flags) (r Type) {
 //  |       LogicalOrExpression '?' ExpressionList ':' ConditionalExpression  // Case ConditionalExpressionCond
 func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -1800,13 +1810,16 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 //  |       LogicalOrExpression "||" LogicalAndExpression  // Case LogicalOrExpressionLOr
 func (n *LogicalOrExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -1832,13 +1845,16 @@ func (n *LogicalOrExpression) check(c *ctx, mode flags) (r Type) {
 //  |       LogicalAndExpression "&&" InclusiveOrExpression  // Case LogicalAndExpressionLAnd
 func (n *LogicalAndExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -1864,13 +1880,16 @@ func (n *LogicalAndExpression) check(c *ctx, mode flags) (r Type) {
 //  |       InclusiveOrExpression '|' ExclusiveOrExpression  // Case InclusiveOrExpressionOr
 func (n *InclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -1896,13 +1915,16 @@ func (n *InclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 //  |       ExclusiveOrExpression '^' AndExpression  // Case ExclusiveOrExpressionXor
 func (n *ExclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -1928,13 +1950,16 @@ func (n *ExclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 //  |       AndExpression '&' EqualityExpression  // Case AndExpressionAnd
 func (n *AndExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -1962,13 +1987,16 @@ func (n *AndExpression) check(c *ctx, mode flags) (r Type) {
 //  |       EqualityExpression "!=" RelationalExpression  // Case EqualityExpressionNeq
 func (n *EqualityExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2011,13 +2039,16 @@ func (n *EqualityExpression) check(c *ctx, mode flags) (r Type) {
 //  |       RelationalExpression ">=" ShiftExpression  // Case RelationalExpressionGeq
 func (n *RelationalExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2057,13 +2088,16 @@ func (n *RelationalExpression) check(c *ctx, mode flags) (r Type) {
 //  |       ShiftExpression ">>" AdditiveExpression  // Case ShiftExpressionRsh
 func (n *ShiftExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2093,13 +2127,16 @@ func (n *ShiftExpression) check(c *ctx, mode flags) (r Type) {
 //  |       AdditiveExpression '-' MultiplicativeExpression  // Case AdditiveExpressionSub
 func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2153,13 +2190,16 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 //  |       MultiplicativeExpression '%' CastExpression  // Case MultiplicativeExpressionMod
 func (n *MultiplicativeExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2198,13 +2238,16 @@ func (n *MultiplicativeExpression) check(c *ctx, mode flags) (r Type) {
 //  |       '(' TypeName ')' CastExpression  // Case CastExpressionCast
 func (n *CastExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2244,13 +2287,16 @@ func (n *TypeName) check(c *ctx) (r Type) {
 //  |       "__real__" UnaryExpression   // Case UnaryExpressionReal
 func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2364,14 +2410,18 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 //  |       '(' TypeName ')' '{' InitializerList ',' '}'      // Case PostfixExpressionComplit
 func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		r = c.decay(r, decay)
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check %v", n, n.Case))
+			return
 		}
+
+		r = c.decay(r, mode)
+		n.typ = r
+		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2534,13 +2584,17 @@ func isName(n Node) bool {
 //  |       GenericSelection           // Case PrimaryExpressionGeneric
 func (n *PrimaryExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			return
 		}
+
+		n.typ = c.decay(r, mode)
+		r = n.Type()
 	}()
 
 out:
@@ -2558,7 +2612,7 @@ out:
 			break out
 		case *Parameter:
 			n.resolvedTo = x
-			n.typ = c.decay(x.Type(), mode)
+			n.typ = x.Type()
 			break out
 		default:
 			d = n.resolutionScope.builtin(n.Token)
@@ -2579,7 +2633,7 @@ out:
 		}
 
 		n.resolvedTo = d
-		n.typ = c.decay(d.Type(), mode)
+		n.typ = d.Type()
 	case PrimaryExpressionInt: // INTCONST
 		n.val, n.typ = n.intConst(c)
 	case PrimaryExpressionFloat: // FLOATCONST
@@ -2588,13 +2642,11 @@ out:
 		n.val, n.typ = n.charConst(c)
 	case PrimaryExpressionLChar: // LONGCHARCONST
 		n.typ = c.wcharT(n)
-		//TODO n.val =
+		n.val, n.typ = n.charConst(c)
 	case PrimaryExpressionString: // STRINGLITERAL
-		n.typ = c.pcharT
-		//TODO n.val =
+		n.val, n.typ = n.stringConst(c)
 	case PrimaryExpressionLString: // LONGSTRINGLITERAL
-		n.typ = c.pwcharT(n)
-		//TODO n.val =
+		n.val, n.typ = n.stringConst(c)
 	case PrimaryExpressionExpr: // '(' ExpressionList ')'
 		n.typ = n.ExpressionList.check(c, mode)
 	case PrimaryExpressionStmt: // '(' CompoundStatement ')'
@@ -2683,6 +2735,28 @@ out:
 	return nil, nil
 }
 
+func (n *PrimaryExpression) stringConst(c *ctx) (v Value, t Type) {
+	s := stringConst(func(msg string, args ...interface{}) {
+		c.errors.add(errorf(msg, args...))
+	}, n.Token)
+	switch n.Case {
+	case PrimaryExpressionString:
+		return StringValue(s), newArrayType(c.ast.kinds[Char], int64(len(s)))
+	case PrimaryExpressionLString:
+		switch t = c.wcharT(n); t.Size() {
+		case 2:
+			v := UTF16StringValue(utf16.Encode([]rune(s)))
+			return v, newArrayType(t, int64(len(v)))
+		case 4:
+			v := UTF32StringValue([]rune(s))
+			return v, newArrayType(t, int64(len(v)))
+		}
+	default:
+		c.errors.add(errorf("TODO %v", n.Case))
+	}
+	return n.Value(), n.Type()
+}
+
 func (n *PrimaryExpression) charConst(c *ctx) (v Value, t Type) {
 	n.typ = c.intT
 	switch n.Case {
@@ -2722,7 +2796,7 @@ func (n *PrimaryExpression) intConst(c *ctx) (v Value, t Type) {
 	if err != nil {
 		trc("%v: `%s` %v `%s`", n.Position(), n.Token.Src(), base, err) //TODO-
 		c.errors.add(errorf("%v: %v", n.Position(), err))
-		return UnknownValue, c.intT
+		return Unknown, c.intT
 	}
 
 	suffix := s0[prefix+len(s):]
@@ -2754,7 +2828,7 @@ func (n *PrimaryExpression) intConst(c *ctx) (v Value, t Type) {
 	default:
 		trc("`%s`", suffix)
 		c.errors.add(errorf("%v: invalid suffix", n.Position()))
-		return UnknownValue, c.intT
+		return Unknown, c.intT
 	}
 }
 
@@ -2778,7 +2852,7 @@ func (n *PrimaryExpression) intConst2(c *ctx, s string, val uint64, list ...Kind
 	}
 
 	c.errors.add(errorf("%v: invalid integer constant", n.Position()))
-	return UnknownValue, c.intT
+	return Unknown, c.intT
 }
 
 //  ExpressionList:
@@ -2786,12 +2860,12 @@ func (n *PrimaryExpression) intConst2(c *ctx, s string, val uint64, list ...Kind
 //  |       ExpressionList ',' AssignmentExpression
 func (n *ExpressionList) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	n0 := n
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
@@ -2806,17 +2880,17 @@ func (n *ExpressionList) check(c *ctx, mode flags) (r Type) {
 //          ConditionalExpression
 func (n *ConstantExpression) check(c *ctx, mode flags) (r Type) {
 	if n == nil {
-		return invalidType
+		return Invalid
 	}
 
 	defer func() {
-		if r == nil || r == invalidType {
+		if r == nil || r == Invalid {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 		}
 	}()
 
 	n.typ = n.ConditionalExpression.check(c, mode)
-	if n.eval(c, 0) == UnknownValue {
+	if n.Value() == Unknown {
 		c.errors.add(errorf("%v: cannot evaluate constant expression", n.Position()))
 	}
 	return n.Type()

@@ -119,7 +119,7 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Invalid-0]
+	_ = x[InvalidKind-0]
 	_ = x[Array-1]
 	_ = x[Bool-2]
 	_ = x[Char-3]
@@ -162,9 +162,9 @@ func _() {
 	_ = x[maxKind-40]
 }
 
-const _Kind_name = "Invalidarray_Boolchar_Complex char_Complex double_Complex float_Complex int_Complex long_Complex long double_Complex long long_Complex short_Complex unsigned_Complex unsigned shortdoubleenumfloat_Float128_Float32_Float32x_Float64_Float64xfunctionint__int128longlong doublelong longpointersigned charshortstructunsigned charunsignedunsigned __int128unsigned longunsigned long longunsigned shortunionvoidmaxKind"
+const _Kind_name = "InvalidKindarray_Boolchar_Complex char_Complex double_Complex float_Complex int_Complex long_Complex long double_Complex long long_Complex short_Complex unsigned_Complex unsigned shortdoubleenumfloat_Float128_Float32_Float32x_Float64_Float64xfunctionint__int128longlong doublelong longpointersigned charshortstructunsigned charunsignedunsigned __int128unsigned longunsigned long longunsigned shortunionvoidmaxKind"
 
-var _Kind_index = [...]uint16{0, 7, 12, 17, 21, 34, 49, 63, 75, 88, 108, 126, 140, 157, 180, 186, 190, 195, 204, 212, 221, 229, 238, 246, 249, 257, 261, 272, 281, 288, 299, 304, 310, 323, 331, 348, 361, 379, 393, 398, 402, 409}
+var _Kind_index = [...]uint16{0, 11, 16, 21, 25, 38, 53, 67, 79, 92, 112, 130, 144, 161, 184, 190, 194, 199, 208, 216, 225, 233, 242, 250, 253, 261, 265, 276, 285, 292, 303, 308, 314, 327, 335, 352, 365, 383, 397, 402, 406, 413}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

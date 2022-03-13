@@ -24,7 +24,9 @@ var (
 )
 
 var (
-	invalidType = &InvalidType{}
+	// Invalid is a singleton representing an invalid/undetermined type.  Invalid
+	// is comparable.
+	Invalid Type = &InvalidType{}
 
 	arithmeticKinds = [maxKind]bool{
 		Bool:              true,
@@ -144,7 +146,7 @@ var (
 type Kind int
 
 const (
-	Invalid Kind = iota
+	InvalidKind Kind = iota
 
 	Array             // array
 	Bool              // _Bool
@@ -233,7 +235,7 @@ func (n *InvalidType) Align() int { return 1 }
 func (n *InvalidType) FieldAlign() int { return 1 }
 
 // String implements Type.
-func (n *InvalidType) String() string { return n.str(&strings.Builder{}, false).String() }
+func (n *InvalidType) String() string { return "<invalid type>" }
 
 func (n *InvalidType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	b.WriteString("<invalid type>")
@@ -244,7 +246,7 @@ func (n *InvalidType) str(b *strings.Builder, useTag bool) *strings.Builder {
 func (n *InvalidType) IsIncomplete() bool { return true }
 
 // Kind implements Type.
-func (n *InvalidType) Kind() Kind { return Invalid }
+func (n *InvalidType) Kind() Kind { return InvalidKind }
 
 // Size implements Type.
 func (n *InvalidType) Size() int64 { return -1 }
@@ -865,7 +867,7 @@ func (n *ArrayType) Size() int64 {
 		return -1
 	}
 
-	if n.Elem().Kind() != Invalid {
+	if n.Elem().Kind() != InvalidKind {
 		if a, b := n.elems, n.Elem().Size(); a >= 0 && b > 0 {
 			return a * b
 		}
@@ -998,8 +1000,8 @@ func usualArithmeticConversions(a, b Type) (r Type) {
 	}
 	ak := a.Kind()
 	bk := b.Kind()
-	if ak == Invalid || bk == Invalid {
-		return invalidType
+	if ak == InvalidKind || bk == InvalidKind {
+		return Invalid
 	}
 
 	// First, if the corresponding real type of either operand is long double, the
