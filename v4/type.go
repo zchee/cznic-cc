@@ -553,6 +553,15 @@ type structType struct {
 	align int
 }
 
+func (n *structType) next(i int) *Field {
+	for ; i < len(n.fields); i++ {
+		if f := n.fields[i]; f.declarator != nil {
+			return f
+		}
+	}
+	return nil
+}
+
 func (n *structType) field(nm string) *Field {
 	if f := n.m[nm]; f != nil {
 		return f
@@ -864,6 +873,9 @@ func (n *ArrayType) IsIncomplete() bool {
 
 // Kind implements Type.
 func (n *ArrayType) Kind() Kind { return Array }
+
+// Len reports the number of elements in n or a negative value if n is incomplete.
+func (n *ArrayType) Len() int64 { return n.elems }
 
 // Size implements Type.
 func (n *ArrayType) Size() int64 {

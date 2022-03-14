@@ -1085,7 +1085,8 @@ func (n *AssignmentExpression) eval(c *ctx, mode flags) (r Value) {
 			AssignmentExpressionXor, // UnaryExpression "^=" AssignmentExpression
 			AssignmentExpressionOr:  // UnaryExpression "|=" AssignmentExpression
 
-			//nop
+			n.UnaryExpression.eval(c, mode)
+			n.AssignmentExpression.eval(c, mode)
 		default:
 			c.errors.add(errorf("internal error: %v", n.Case))
 		}
