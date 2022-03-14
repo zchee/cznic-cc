@@ -694,7 +694,7 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 		exprT := n.AssignmentExpression.check(c, decay)
 		if exprT == Invalid {
 			n.val = Unknown
-			c.errors.add(errorf("TODO %T <- %v", t, exprT))
+			c.errors.add(errorf("TODO %T <- %T", t, exprT))
 			return
 		}
 
@@ -714,7 +714,7 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 				return
 			}
 
-			c.errors.add(errorf("TODO %T <- %T %v", x, n.Value(), exprT))
+			c.errors.add(errorf("TODO %T <- %T %T", x, n.Value(), exprT))
 		case *PredefinedType:
 			n.val = c.convert(n.Value(), t)
 		case *StructType:
@@ -722,7 +722,7 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 		case *UnionType:
 			n.checkExprUnion(c, x, exprT)
 		default:
-			c.errors.add(errorf("TODO %T <- %T %v", x, n.Value(), exprT))
+			c.errors.add(errorf("TODO %T <- %T %T", x, n.Value(), exprT))
 		}
 	case InitializerInitList: // '{' InitializerList ',' '}'
 		if n.InitializerList == nil {
@@ -736,19 +736,107 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 	}
 }
 
+func (n *Initializer) checkExprArray(c *ctx, t *ArrayType, exprT Type) {
+	if n.Case != InitializerExpr {
+		c.errors.add(errorf("internal error: %T %v", n, n.Case))
+		return
+	}
+
+	v := n.Value()
+	switch x := t.Elem().(type) {
+	case *ArrayType:
+		n.check(c, x.Elem(), n.off)
+		if t.IsIncomplete() {
+			t.elems = 1
+		}
+	case
+		*EnumType,
+		*PointerType,
+		*StructType,
+		*UnionType:
+
+		n.check(c, x, n.off)
+		if t.IsIncomplete() {
+			t.elems = 1
+		}
+	case *PredefinedType:
+		// [0]6.7.8/14 An array of character type may be initialized by a character
+		// string literal, optionally enclosed in braces. Successive characters of the
+		// character string literal (including the terminating null character if there
+		// is room or if the array is of unknown size) initialize the elements of the
+		// array.
+		switch x.Kind() {
+		case Char, SChar, UChar:
+			if x, ok := v.(StringValue); ok {
+				if t.IsIncomplete() {
+					t.elems = int64(len(x))
+				}
+				if max, sz := t.Len(), int64(len(x)); sz > max {
+					n.val = x[:max]
+				}
+				return
+			}
+		}
+
+		// [0]6.7.8/15 An array with element type compatible with wchar_t may be
+		// initialized by a wide string literal, optionally enclosed in braces.
+		// Successive wide characters of the wide string literal (including the
+		// terminating null wide character if there is room or if the array is of
+		// unknown size) initialize the elements of the array.
+		if isIntegerType(x) && x.Size() == c.wcharT(n).Size() {
+			switch x := v.(type) {
+			case UTF16StringValue:
+				if t.IsIncomplete() {
+					t.elems = int64(len(x))
+				}
+				if max, sz := t.Len(), int64(len(x)); sz > max {
+					n.val = x[:max]
+				}
+				return
+			case UTF32StringValue:
+				if t.IsIncomplete() {
+					t.elems = int64(len(x))
+				}
+				if max, sz := t.Len(), int64(len(x)); sz > max {
+					n.val = x[:max]
+				}
+				return
+			}
+		}
+
+		n.check(c, x, n.off)
+		if t.IsIncomplete() {
+			t.elems = 1
+		}
+	default:
+		c.errors.add(errorf("TODO []%T <- %T %T", x, v, exprT))
+	}
+}
+
 func (n *Initializer) checkExprStruct(c *ctx, t *StructType, exprT Type) {
 	if n.Case != InitializerExpr {
 		c.errors.add(errorf("internal error: %T %v", n, n.Case))
 		return
 	}
 
-	f := t.next(0)
-	if f == nil {
-		c.errors.add(errorf("TODO %v <- %T %v", t, n.Value(), exprT))
-		return
+	switch x := exprT.(type) {
+	case
+		*PointerType,
+		*PredefinedType:
+
+		f := t.next(0)
+		if f == nil {
+			c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), exprT))
+			return
+		}
+
+		n.check(c, f.Type(), n.off)
+	case *StructType:
+		//TODO check same type
+	default:
+		c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), x))
 	}
 
-	n.check(c, f.Type(), n.off)
 }
 
 func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type) {
@@ -758,68 +846,22 @@ func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type) {
 	}
 
 	switch x := exprT.(type) {
+	case
+		*PointerType,
+		*PredefinedType:
+
+		f := t.next(0)
+		if f == nil {
+			c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), exprT))
+			return
+		}
+
+		n.check(c, f.Type(), n.off)
+	case *UnionType:
+		//TODO check same type
 	default:
-		c.errors.add(errorf("TODO %v <- %T %v", t, n.Value(), x))
+		c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), x))
 	}
-}
-
-func (n *Initializer) checkExprArray(c *ctx, t *ArrayType, exprT Type) {
-	if n.Case != InitializerExpr {
-		c.errors.add(errorf("internal error: %T %v", n, n.Case))
-		return
-	}
-
-	v := n.Value()
-	elemT := t.Elem()
-
-	// [0]6.7.8/14 An array of character type may be initialized by a character
-	// string literal, optionally enclosed in braces. Successive characters of the
-	// character string literal (including the terminating null character if there
-	// is room or if the array is of unknown size) initialize the elements of the
-	// array.
-	switch elemT.Kind() {
-	case Char, SChar, UChar:
-		if x, ok := v.(StringValue); ok {
-			if t.IsIncomplete() {
-				t.elems = int64(len(x))
-			}
-			if max, sz := t.Len(), int64(len(x)); sz > max {
-				n.val = x[:max]
-			}
-			return
-		}
-	case Struct:
-		n.checkExprStruct(c, elemT.(*StructType), exprT)
-		return
-	}
-
-	// [0]6.7.8/15 An array with element type compatible with wchar_t may be
-	// initialized by a wide string literal, optionally enclosed in braces.
-	// Successive wide characters of the wide string literal (including the
-	// terminating null wide character if there is room or if the array is of
-	// unknown size) initialize the elements of the array.
-	if isIntegerType(elemT) && elemT.Size() == c.wcharT(n).Size() {
-		switch x := v.(type) {
-		case UTF16StringValue:
-			if t.IsIncomplete() {
-				t.elems = int64(len(x))
-			}
-			if max, sz := t.Len(), int64(len(x)); sz > max {
-				n.val = x[:max]
-			}
-			return
-		case UTF32StringValue:
-			if t.IsIncomplete() {
-				t.elems = int64(len(x))
-			}
-			if max, sz := t.Len(), int64(len(x)); sz > max {
-				n.val = x[:max]
-			}
-			return
-		}
-	}
-
-	c.errors.add(errorf("TODO %T <- %T %v", t, v, exprT))
 }
 
 func (n *InitializerList) check(c *ctx, currObj Type, off int64) *InitializerList {
@@ -831,6 +873,8 @@ func (n *InitializerList) check(c *ctx, currObj Type, off int64) *InitializerLis
 	switch x := currObj.(type) {
 	case *ArrayType:
 		return n.checkArray(c, x, off)
+	case *PointerType:
+		return n.checkPointer(c, x, off)
 	case *PredefinedType:
 		return n.checkPredefined(c, x, off)
 	case *StructType:
@@ -882,13 +926,23 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64) *Initializ
 	}
 }
 
+func (n *InitializerList) checkPointer(c *ctx, t *PointerType, off int64) *InitializerList {
+	if isScalarType(t) {
+		n.Initializer.check(c, t, off)
+		return n.InitializerList
+	}
+
+	c.errors.add(errorf("TODO %T <- ...", t))
+	return nil
+}
+
 func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64) *InitializerList {
 	if isScalarType(t) {
 		n.Initializer.check(c, t, off)
 		return n.InitializerList
 	}
 
-	c.errors.add(errorf("TODO %v <- ...", t))
+	c.errors.add(errorf("TODO %T <- ...", t))
 	return nil
 }
 
@@ -3120,7 +3174,7 @@ func (n *ConstantExpression) check(c *ctx, mode flags) (r Type) {
 	}()
 
 	n.typ = n.ConditionalExpression.check(c, mode)
-	if n.Value() == Unknown {
+	if n.val = n.ConditionalExpression.eval(c, mode); n.Value() == Unknown {
 		c.errors.add(errorf("%v: cannot evaluate constant expression", n.Position()))
 	}
 	return n.Type()
