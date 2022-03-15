@@ -207,6 +207,10 @@ type Type interface {
 	// Align reports the minimum alignment required by a type.
 	Align() int
 
+	// Decay returns a pointer to array element for array types, a pointer to a
+	// function for function types and itself for all other type kinds.
+	Decay() Type
+
 	// FieldAlign reports the minimum alignment required by a type when it's used
 	// in a struct/union.
 	FieldAlign() int
@@ -217,22 +221,56 @@ type Type interface {
 	// Kind reports the kind of a type.
 	Kind() Kind
 
+	// Name returns the type name of a type or an empty string. C types are
+	// associated with names using typedef.
+	Name() string
+
 	// Size reports the size of a type in bytes. Incomplete or invalid types may
 	// report a negative size.
 	Size() int64
 
+	// String produces a human readable representation of a type or an
+	// approximation of the same. The particular form is not specified and
+	// may change. Namely, the returned value is not suitable for directly
+	// determining type identity.
 	String() string
 
+	// Undecay reverses Decay() if the type is a pointer and was produced by
+	// Decay() and the result was different than the Decay() receiver. Otherwise
+	// Undecay() returns its receiver.
+	Undecay() Type
+
+	setName(string)
 	str(b *strings.Builder, useTag bool) *strings.Builder
 }
+
+type namer string
+
+// Name implements Type.
+func (n namer) Name() string { return string(n) }
+
+// setName implements Type.
+func (n *namer) setName(nm string) { *n = namer(nm) }
 
 type InvalidType struct{}
 
 // Align implements Type.
 func (n *InvalidType) Align() int { return 1 }
 
+// Decay implements Type.
+func (n *InvalidType) Decay() Type { return n }
+
+// Undecay implements Type.
+func (n *InvalidType) Undecay() Type { return n }
+
 // FieldAlign implements Type.
 func (n *InvalidType) FieldAlign() int { return 1 }
+
+// Name implements Type.
+func (n *InvalidType) Name() string { return "" }
+
+// setName implements Type.
+func (n *InvalidType) setName(nm string) {}
 
 // String implements Type.
 func (n *InvalidType) String() string { return "<invalid type>" }
@@ -252,12 +290,13 @@ func (n *InvalidType) Kind() Kind { return InvalidKind }
 func (n *InvalidType) Size() int64 { return -1 }
 
 type PredefinedType struct {
-	ast  *AST
+	c    *ctx
 	kind Kind
+	namer
 }
 
-func newPredefinedType(ast *AST, kind Kind) *PredefinedType {
-	return &PredefinedType{ast: ast, kind: kind}
+func (c *ctx) newPredefinedType(kind Kind) *PredefinedType {
+	return &PredefinedType{c: c, kind: kind}
 }
 
 // Align implements Type.
@@ -266,12 +305,18 @@ func (n *PredefinedType) Align() int {
 		return 1
 	}
 
-	if x, ok := n.ast.ABI.types[n.kind]; ok {
+	if x, ok := n.c.ast.ABI.types[n.kind]; ok {
 		return x.align
 	}
 
 	return 1
 }
+
+// Decay implements Type.
+func (n *PredefinedType) Decay() Type { return n }
+
+// Undecay implements Type.
+func (n *PredefinedType) Undecay() Type { return n }
 
 // FieldAlign implements Type.
 func (n *PredefinedType) FieldAlign() int {
@@ -279,7 +324,7 @@ func (n *PredefinedType) FieldAlign() int {
 		return 1
 	}
 
-	if x, ok := n.ast.ABI.types[n.kind]; ok {
+	if x, ok := n.c.ast.ABI.types[n.kind]; ok {
 		return x.fieldAlign
 	}
 
@@ -290,6 +335,11 @@ func (n *PredefinedType) FieldAlign() int {
 func (n *PredefinedType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *PredefinedType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if s := n.Name(); s != "" {
+		b.WriteString(s)
+		return b
+	}
+
 	b.WriteString(n.kind.String())
 	return b
 }
@@ -312,7 +362,7 @@ func (n *PredefinedType) Size() int64 {
 		return -1
 	}
 
-	if x, ok := n.ast.ABI.types[n.kind]; ok {
+	if x, ok := n.c.ast.ABI.types[n.kind]; ok {
 		return x.size
 	}
 
@@ -352,14 +402,17 @@ func (n *Parameter) Name() Token {
 }
 
 type FunctionType struct {
-	result  typer
-	fp      []*Parameter
+	c      *ctx
+	result typer
+	fp     []*Parameter
+	namer
+
 	minArgs int
 	maxArgs int // -1: unlimited
 }
 
-func newFunctionType(c *ctx, result Type, fp []*ParameterDeclaration, isVariadic bool) (r *FunctionType) {
-	r = &FunctionType{result: newTyper(result), minArgs: len(fp), maxArgs: len(fp)}
+func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadic bool) (r *FunctionType) {
+	r = &FunctionType{c: c, result: newTyper(result), minArgs: len(fp), maxArgs: len(fp)}
 	for _, n := range fp {
 		p := &Parameter{}
 		p.typ = n.Type()
@@ -391,6 +444,12 @@ func (n *FunctionType) Result() Type { return n.result.Type() }
 // Align implements Type.
 func (n *FunctionType) Align() int { return 1 }
 
+// Decay implements Type.
+func (n *FunctionType) Decay() Type { return n.c.newPointerType2(n, n) }
+
+// Undecay implements Type.
+func (n *FunctionType) Undecay() Type { return n }
+
 // FieldAlign implements Type.
 func (n *FunctionType) FieldAlign() int { return 1 }
 
@@ -419,6 +478,11 @@ func (n *FunctionType) Size() int64 {
 func (n *FunctionType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *FunctionType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if s := n.Name(); s != "" {
+		b.WriteString(s)
+		return b
+	}
+
 	b.WriteString("function(")
 	switch {
 	case n.maxArgs == 0:
@@ -440,12 +504,20 @@ func (n *FunctionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type PointerType struct {
-	ast  *AST
+	c    *ctx
 	elem typer
+	namer
+	undecay Type
 }
 
-func newPointerType(ast *AST, elem Type) *PointerType {
-	return &PointerType{ast: ast, elem: newTyper(elem)}
+func (c *ctx) newPointerType(elem Type) (r *PointerType) {
+	r = &PointerType{c: c, elem: newTyper(elem)}
+	r.undecay = r
+	return r
+}
+
+func (c *ctx) newPointerType2(elem, undecay Type) *PointerType {
+	return &PointerType{c: c, elem: newTyper(elem), undecay: undecay}
 }
 
 // Elem returns the type n points to.
@@ -457,12 +529,18 @@ func (n *PointerType) Align() int {
 		return 1
 	}
 
-	if x, ok := n.ast.ABI.types[Ptr]; ok {
+	if x, ok := n.c.ast.ABI.types[Ptr]; ok {
 		return x.align
 	}
 
 	return 1
 }
+
+// Decay implements Type.
+func (n *PointerType) Decay() Type { return n }
+
+// Undecay implements Type.
+func (n *PointerType) Undecay() Type { return n.undecay }
 
 // FieldAlign implements Type.
 func (n *PointerType) FieldAlign() int {
@@ -470,7 +548,7 @@ func (n *PointerType) FieldAlign() int {
 		return 1
 	}
 
-	if x, ok := n.ast.ABI.types[Ptr]; ok {
+	if x, ok := n.c.ast.ABI.types[Ptr]; ok {
 		return x.fieldAlign
 	}
 
@@ -495,7 +573,7 @@ func (n *PointerType) Size() int64 {
 		return -1
 	}
 
-	if x, ok := n.ast.ABI.types[Ptr]; ok {
+	if x, ok := n.c.ast.ABI.types[Ptr]; ok {
 		return x.size
 	}
 
@@ -506,6 +584,11 @@ func (n *PointerType) Size() int64 {
 func (n *PointerType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *PointerType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if s := n.Name(); s != "" {
+		b.WriteString(s)
+		return b
+	}
+
 	b.WriteString("pointer to ")
 	n.elem.Type().str(b, true)
 	return b
@@ -611,10 +694,11 @@ func (n *structType) collectFields(m map[string][]*Field, parent *Field, depth i
 
 type StructType struct {
 	forward *StructOrUnionSpecifier
+	namer
 	structType
 }
 
-func newStructType(tag string, fields []*Field, size int64, align int) (r *StructType) {
+func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) (r *StructType) {
 	r = &StructType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
 	return r
 }
@@ -648,6 +732,12 @@ func (n *StructType) Align() int {
 
 	return n.align
 }
+
+// Decay implements Type.
+func (n *StructType) Decay() Type { return n }
+
+// Undecay implements Type.
+func (n *StructType) Undecay() Type { return n }
 
 // FieldAlign implements Type.
 func (n *StructType) FieldAlign() int {
@@ -695,6 +785,11 @@ func (n *StructType) Size() int64 {
 func (n *StructType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if s := n.Name(); s != "" {
+		b.WriteString(s)
+		return b
+	}
+
 	b.WriteString("struct")
 	if n.tag != "" {
 		b.WriteByte(' ')
@@ -721,10 +816,11 @@ func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 
 type UnionType struct {
 	forward *StructOrUnionSpecifier
+	namer
 	structType
 }
 
-func newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
+func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
 	return &UnionType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
 }
 
@@ -757,6 +853,12 @@ func (n *UnionType) Align() int {
 
 	return n.align
 }
+
+// Decay implements Type.
+func (n *UnionType) Decay() Type { return n }
+
+// Undecay implements Type.
+func (n *UnionType) Undecay() Type { return n }
 
 // FieldAlign implements Type.
 func (n *UnionType) FieldAlign() int {
@@ -804,6 +906,11 @@ func (n *UnionType) Size() int64 {
 func (n *UnionType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if s := n.Name(); s != "" {
+		b.WriteString(s)
+		return b
+	}
+
 	b.WriteString("union")
 	if n.tag != "" {
 		b.WriteByte(' ')
@@ -829,17 +936,25 @@ func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type ArrayType struct {
+	c     *ctx
 	elem  typer
 	elems int64
 	expr  ExpressionNode
+	namer
 }
 
-func newArrayType(elem Type, elems int64, expr ExpressionNode) (r *ArrayType) {
-	r = &ArrayType{elem: newTyper(elem), elems: elems, expr: expr}
+func (c *ctx) newArrayType(elem Type, elems int64, expr ExpressionNode) (r *ArrayType) {
+	r = &ArrayType{c: c, elem: newTyper(elem), elems: elems, expr: expr}
 	return r
 }
 
 func (n *ArrayType) IsVLA() bool { return n.elems < 0 && n.expr != nil && n.expr.Value() == Unknown }
+
+// Decay implements Type.
+func (n *ArrayType) Decay() Type { return n.c.newPointerType2(n.Elem(), n) }
+
+// Undecay implements Type.
+func (n *ArrayType) Undecay() Type { return n }
 
 // Elem reports the element type of n.
 func (n *ArrayType) Elem() Type { return n.elem.Type() }
@@ -907,11 +1022,12 @@ func (n *ArrayType) str(b *strings.Builder, useTag bool) *strings.Builder {
 type EnumType struct {
 	enums   []*Enumerator
 	forward *EnumSpecifier
-	tag     string
-	typ     typer
+	namer
+	tag string
+	typ typer
 }
 
-func newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
+func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
 	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums}
 }
 
@@ -927,6 +1043,12 @@ func (n *EnumType) Align() int {
 
 	return n.typ.Type().Align()
 }
+
+// Decay implements Type.
+func (n *EnumType) Decay() Type { return n }
+
+// Undecay implements Type.
+func (n *EnumType) Undecay() Type { return n }
 
 // FieldAlign implements Type.
 func (n *EnumType) FieldAlign() int {
@@ -1102,7 +1224,7 @@ func usualArithmeticConversions(a, b Type) (r Type) {
 		panic(todo("internal error: %s and %s", a, b))
 	}
 
-	ast := a.(*PredefinedType).ast
+	ast := a.(*PredefinedType).c.ast
 	abi := ast.ABI
 
 	ak = integerPromotionKind(ak)
@@ -1203,7 +1325,7 @@ func integerPromotionKind(k Kind) Kind {
 func integerPromotion(t Type) Type {
 	switch t.Kind() {
 	case Char, SChar, UChar, Short, UShort:
-		return t.(*PredefinedType).ast.kinds[Int]
+		return t.(*PredefinedType).c.ast.kinds[Int]
 	default:
 		return t
 	}

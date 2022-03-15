@@ -53,6 +53,7 @@ type ctx struct {
 	intT         Type
 	pcharT       Type
 	ptrDiffT0    Type
+	pvoidT       Type
 	pwcharT0     Type
 	sizeT0       Type
 	wcharT0      Type
@@ -129,8 +130,9 @@ func newCtx(ast *AST) *ctx {
 	}
 	c.intT = c.ast.kinds[Int]
 	c.int64T = c.ast.kinds[LongLong]
-	c.pcharT = newPointerType(ast, c.ast.kinds[Char])
-	c.implicitFunc = newPointerType(ast, newFunctionType(c, c.intT, nil, false))
+	c.pcharT = c.newPointerType(c.ast.kinds[Char])
+	c.pvoidT = c.newPointerType(c.ast.kinds[Void])
+	c.implicitFunc = c.newPointerType(c.newFunctionType(c.intT, nil, false))
 	return c
 }
 
@@ -198,17 +200,8 @@ func (c *ctx) decay(t Type, mode flags) Type {
 		return t
 	}
 
-	switch t.Kind() {
-	case Array:
-		return newPointerType(c.ast, t.(*ArrayType).Elem())
-	case Function:
-		return newPointerType(c.ast, t)
-	default:
-		return t
-	}
+	return t.Decay()
 }
-
-func (c *ctx) newPredefinedType(kind Kind) *PredefinedType { return newPredefinedType(c.ast, kind) }
 
 func (c *ctx) wcharT(n Node) Type {
 	if c.wcharT0 == nil {
@@ -257,7 +250,7 @@ func (c *ctx) sizeT(n Node) Type {
 
 func (c *ctx) pwcharT(n Node) Type {
 	if c.pwcharT0 == nil {
-		c.pwcharT0 = newPointerType(c.ast, c.wcharT(n))
+		c.pwcharT0 = c.newPointerType(c.wcharT(n))
 	}
 	return c.pwcharT0
 }
@@ -1025,7 +1018,11 @@ func (n *Declarator) check(c *ctx, t Type) (r Type) {
 		}
 	}()
 
-	n.typ = n.DirectDeclarator.check(c, n.Pointer.check(c, t))
+	r = n.DirectDeclarator.check(c, n.Pointer.check(c, t))
+	if n.isTypename {
+		r.setName(n.Name())
+	}
+	n.typ = r
 	return n.Type()
 }
 
@@ -1056,7 +1053,7 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 	case DirectDeclaratorDecl: // '(' Declarator ')'
 		return n.Declarator.check(c, t)
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		return n.DirectDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
+		return n.DirectDeclarator.check(c, c.newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -1065,9 +1062,9 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectDeclaratorFuncParam: // DirectDeclarator '(' ParameterTypeList ')'
 		fp, isVariadic := n.ParameterTypeList.check(c)
-		return n.DirectDeclarator.check(c, newFunctionType(c, t, fp, isVariadic))
+		return n.DirectDeclarator.check(c, c.newFunctionType(t, fp, isVariadic))
 	case DirectDeclaratorFuncIdent: // DirectDeclarator '(' IdentifierList ')'
-		return n.DirectDeclarator.check(c, newFunctionType(c, t, nil, false))
+		return n.DirectDeclarator.check(c, c.newFunctionType(t, nil, false))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -1203,7 +1200,7 @@ func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 	case DirectAbstractDeclaratorDecl: // '(' AbstractDeclarator ')'
 		return n.AbstractDeclarator.check(c, t)
 	case DirectAbstractDeclaratorArr: // DirectAbstractDeclarator '[' TypeQualifiers AssignmentExpression ']'
-		return n.DirectAbstractDeclarator.check(c, newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
+		return n.DirectAbstractDeclarator.check(c, c.newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
 	case DirectAbstractDeclaratorStaticArr: // DirectAbstractDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectAbstractDeclaratorArrStatic: // DirectAbstractDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
@@ -1212,7 +1209,7 @@ func (n *DirectAbstractDeclarator) check(c *ctx, t Type) (r Type) {
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectAbstractDeclaratorFunc: // DirectAbstractDeclarator '(' ParameterTypeList ')'
 		fp, isVariadic := n.ParameterTypeList.check(c)
-		return n.DirectAbstractDeclarator.check(c, newFunctionType(c, t, fp, isVariadic))
+		return n.DirectAbstractDeclarator.check(c, c.newFunctionType(t, fp, isVariadic))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -1241,9 +1238,9 @@ func (n *Pointer) check(c *ctx, t Type) (r Type) {
 
 	switch n.Case {
 	case PointerTypeQual: // '*' TypeQualifiers
-		return newPointerType(c.ast, t)
+		return c.newPointerType(t)
 	case PointerPtr: // '*' TypeQualifiers Pointer
-		return n.Pointer.check(c, newPointerType(c.ast, t))
+		return n.Pointer.check(c, c.newPointerType(t))
 	case PointerBlock: // '^' TypeQualifiers
 		c.errors.add(errorf("TODO %v", n.Case))
 	default:
@@ -1626,12 +1623,12 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 		for _, v := range list {
 			v.typ = t
 		}
-		n.typ = newEnumType(tag, t, list)
+		n.typ = c.newEnumType(tag, t, list)
 	case EnumSpecifierTag: // "enum" IDENTIFIER
 		if x := n.resolutionScope.enum(n.Token2); x != nil {
 			switch {
 			case x.typ == nil:
-				t := newEnumType(tag, nil, nil)
+				t := c.newEnumType(tag, nil, nil)
 				t.forward = x
 				n.typ = t
 			default:
@@ -1640,7 +1637,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 			break
 		}
 
-		n.typ = newEnumType(tag, nil, nil)
+		n.typ = c.newEnumType(tag, nil, nil)
 		c.ast.scope.declare(tag, n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -1697,9 +1694,9 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 
 		switch {
 		case n.StructOrUnion.Case == StructOrUnionUnion:
-			n.typ = newUnionType(tag, nil, -1, 1)
+			n.typ = c.newUnionType(tag, nil, -1, 1)
 		default:
-			n.typ = newStructType(tag, nil, -1, 1)
+			n.typ = c.newStructType(tag, nil, -1, 1)
 		}
 
 		n.StructDeclarationList.check(c, n)
@@ -1714,11 +1711,11 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 			case x.typ == nil:
 				switch {
 				case n.StructOrUnion.Case == StructOrUnionUnion:
-					t := newUnionType(tag, nil, -1, 1)
+					t := c.newUnionType(tag, nil, -1, 1)
 					t.forward = x
 					n.typ = t
 				default:
-					t := newStructType(tag, nil, -1, 1)
+					t := c.newStructType(tag, nil, -1, 1)
 					t.forward = x
 					n.typ = t
 				}
@@ -1730,9 +1727,9 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 
 		switch {
 		case n.StructOrUnion.Case == StructOrUnionUnion:
-			n.typ = newUnionType(tag, nil, -1, 1)
+			n.typ = c.newUnionType(tag, nil, -1, 1)
 		default:
-			n.typ = newStructType(tag, nil, -1, 1)
+			n.typ = c.newStructType(tag, nil, -1, 1)
 		}
 		c.ast.scope.declare(tag, n)
 	default:
@@ -2605,7 +2602,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 			// storage-class specifier.
 			isLvalue(t):
 
-			n.typ = newPointerType(c.ast, t)
+			n.typ = c.newPointerType(t)
 		default:
 			c.errors.add(errorf("%v: invalid operand: %s", n.CastExpression.Position(), t))
 		}
@@ -2659,7 +2656,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		n.val = UInt64Value(t.Size())
 		n.typ = c.sizeT(n)
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
-		c.errors.add(errorf("TODO %v", n.Case))
+		n.typ = c.pvoidT
 	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
 		t := n.UnaryExpression.check(c, mode.add(decay))
 		n.val, n.typ = UInt64Value(t.Align()), c.sizeT(n)
@@ -3025,15 +3022,15 @@ func (n *PrimaryExpression) stringConst(c *ctx) (v Value, t Type) {
 	}, n.Token)
 	switch n.Case {
 	case PrimaryExpressionString:
-		return StringValue(s), newArrayType(c.ast.kinds[Char], int64(len(s)), nil)
+		return StringValue(s), c.newArrayType(c.ast.kinds[Char], int64(len(s)), nil)
 	case PrimaryExpressionLString:
 		switch t = c.wcharT(n); t.Size() {
 		case 2:
 			v := UTF16StringValue(utf16.Encode([]rune(s)))
-			return v, newArrayType(t, int64(len(v)), nil)
+			return v, c.newArrayType(t, int64(len(v)), nil)
 		case 4:
 			v := UTF32StringValue([]rune(s))
-			return v, newArrayType(t, int64(len(v)), nil)
+			return v, c.newArrayType(t, int64(len(v)), nil)
 		}
 	default:
 		c.errors.add(errorf("TODO %v", n.Case))
