@@ -56,6 +56,7 @@ type ctx struct {
 	pvoidT       Type
 	pwcharT0     Type
 	sizeT0       Type
+	voidT        Type
 	wcharT0      Type
 }
 
@@ -131,7 +132,8 @@ func newCtx(ast *AST) *ctx {
 	c.intT = c.ast.kinds[Int]
 	c.int64T = c.ast.kinds[LongLong]
 	c.pcharT = c.newPointerType(c.ast.kinds[Char])
-	c.pvoidT = c.newPointerType(c.ast.kinds[Void])
+	c.voidT = c.ast.kinds[Void]
+	c.pvoidT = c.newPointerType(c.voidT)
 	c.implicitFunc = c.newPointerType(c.newFunctionType(c.intT, nil, false))
 	return c
 }
@@ -400,27 +402,23 @@ func (n *AsmQualifier) check(c *ctx) {
 func (n *FunctionDefinition) check(c *ctx) {
 	d := n.Declarator
 	d.check(c, n.DeclarationSpecifiers.check(c, &d.isExtern, &d.isStatic, &d.isAtomic, &d.isThreadLocal, &d.isConst, &d.isVolatile, &d.isInline, &d.isRegister, &d.isAuto))
-	if n.DeclarationList != nil {
-		switch d.DirectDeclarator.Case {
-		case DirectDeclaratorFuncIdent:
-			ft, ok := d.Type().(*FunctionType)
-			if !ok {
-				break
-			}
+	switch d.DirectDeclarator.Case {
+	case DirectDeclaratorFuncIdent:
+		ft, ok := d.Type().(*FunctionType)
+		if !ok {
+			break
+		}
 
-			m := n.DeclarationList.check(c)
-			for _, param := range d.DirectDeclarator.IdentifierList.parameters {
-				switch d := m[param.name.SrcStr()]; {
-				case d == nil:
-					param.typ = c.intT
-				default:
-					param.Declarator = d
-					param.typ = d.Type()
-				}
-				ft.fp = append(ft.fp, param)
+		m := n.DeclarationList.check(c)
+		for _, param := range d.DirectDeclarator.IdentifierList.parameters {
+			switch d := m[param.name.SrcStr()]; {
+			case d == nil:
+				param.typ = c.intT
+			default:
+				param.Declarator = d
+				param.typ = d.Type()
 			}
-		default:
-			c.errors.add(errorf("%v: unexpected declaration-list", n.DeclarationList.Position()))
+			ft.fp = append(ft.fp, param)
 		}
 	}
 	c.fnScope = n.scope
@@ -458,10 +456,9 @@ func (n *CompoundStatement) check(c *ctx) (r Type) {
 		return
 	}
 
+	r = c.voidT
 	for l := n.BlockItemList; l != nil; l = l.BlockItemList {
-		if t := l.BlockItem.check(c); t != nil {
-			r = t
-		}
+		r = l.BlockItem.check(c)
 	}
 	return r
 }
@@ -495,17 +492,17 @@ func (n *Statement) check(c *ctx) (r Type) {
 
 	switch n.Case {
 	case StatementLabeled: // LabeledStatement
-		n.LabeledStatement.check(c)
+		return n.LabeledStatement.check(c)
 	case StatementCompound: // CompoundStatement
-		n.CompoundStatement.check(c)
+		return n.CompoundStatement.check(c)
 	case StatementExpr: // ExpressionStatement
 		return n.ExpressionStatement.check(c)
 	case StatementSelection: // SelectionStatement
-		n.SelectionStatement.check(c)
+		return n.SelectionStatement.check(c)
 	case StatementIteration: // IterationStatement
-		n.IterationStatement.check(c)
+		return n.IterationStatement.check(c)
 	case StatementJump: // JumpStatement
-		n.JumpStatement.check(c)
+		return n.JumpStatement.check(c)
 	case StatementAsm: // AsmStatement
 		n.AsmStatement.check(c)
 	default:
@@ -514,54 +511,57 @@ func (n *Statement) check(c *ctx) (r Type) {
 	return Invalid
 }
 
-func (n *LabeledStatement) check(c *ctx) {
+func (n *LabeledStatement) check(c *ctx) (r Type) {
 	if n == nil {
-		return
+		return nil
 	}
 
 	switch n.Case {
 	case LabeledStatementLabel: // IDENTIFIER ':' Statement
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	case LabeledStatementCaseLabel: // "case" ConstantExpression ':' Statement
 		n.ConstantExpression.check(c, decay)
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	case LabeledStatementRange: // "case" ConstantExpression "..." ConstantExpression ':' Statement
 		c.errors.add(errorf("TODO %v", n.Case))
 	case LabeledStatementDefault: // "default" ':' Statement
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
+	return nil
 }
 
-func (n *IterationStatement) check(c *ctx) {
+func (n *IterationStatement) check(c *ctx) (r Type) {
 	if n == nil {
-		return
+		return nil
 	}
 
 	switch n.Case {
 	case IterationStatementWhile: // "while" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	case IterationStatementDo: // "do" Statement "while" '(' ExpressionList ')' ';'
-		n.Statement.check(c)
+		r = n.Statement.check(c)
 		n.ExpressionList.check(c, decay)
+		return r
 	case IterationStatementFor: // "for" '(' ExpressionList ';' ExpressionList ';' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
 		n.ExpressionList2.check(c, decay)
 		n.ExpressionList3.check(c, decay)
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	case IterationStatementForDecl: // "for" '(' Declaration ExpressionList ';' ExpressionList ')' Statement
 		n.Declaration.check(c)
 		n.ExpressionList.check(c, decay)
 		n.ExpressionList2.check(c, decay)
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
+	return nil
 }
 
-func (n *JumpStatement) check(c *ctx) {
+func (n *JumpStatement) check(c *ctx) (r Type) {
 	if n == nil {
 		return
 	}
@@ -584,32 +584,40 @@ out:
 	case JumpStatementBreak: // "break" ';'
 		//TODO
 	case JumpStatementReturn: // "return" ExpressionList ';'
-		n.ExpressionList.check(c, decay)
+		r = n.ExpressionList.check(c, decay)
 		//TODO check assignable to fn result
+		return r
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
+	return nil
 }
 
-func (n *SelectionStatement) check(c *ctx) {
+func (n *SelectionStatement) check(c *ctx) (r Type) {
 	if n == nil {
-		return
+		return nil
 	}
 
 	switch n.Case {
 	case SelectionStatementIf: // "if" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	case SelectionStatementIfElse: // "if" '(' ExpressionList ')' Statement "else" Statement
 		n.ExpressionList.check(c, decay)
-		n.Statement.check(c)
-		n.Statement2.check(c)
+		r1 := n.Statement.check(c)
+		r2 := n.Statement2.check(c)
+		if r1 != nil && r1 != Invalid {
+			return r1
+		}
+
+		return r2
 	case SelectionStatementSwitch: // "switch" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
-		n.Statement.check(c)
+		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
+	return nil
 }
 
 func (n *ExpressionStatement) check(c *ctx) (r Type) {
@@ -723,7 +731,7 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 			return
 		}
 
-		n.InitializerList.check(c, t, off)
+		n.InitializerList.check(c, t, off, false)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -817,7 +825,7 @@ func (n *Initializer) checkExprStruct(c *ctx, t *StructType, exprT Type) {
 		*PointerType,
 		*PredefinedType:
 
-		f := t.next(0)
+		f := t.field(0)
 		if f == nil {
 			c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), exprT))
 			return
@@ -843,7 +851,7 @@ func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type) {
 		*PointerType,
 		*PredefinedType:
 
-		f := t.next(0)
+		f := t.field(0)
 		if f == nil {
 			c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), exprT))
 			return
@@ -857,7 +865,7 @@ func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type) {
 	}
 }
 
-func (n *InitializerList) check(c *ctx, currObj Type, off int64) *InitializerList {
+func (n *InitializerList) check(c *ctx, currObj Type, off int64, designated bool) *InitializerList {
 	if n == nil || currObj == nil {
 		c.errors.add(errorf("internal error: %T %T", n, currObj))
 		return nil
@@ -869,7 +877,7 @@ func (n *InitializerList) check(c *ctx, currObj Type, off int64) *InitializerLis
 	case *PointerType:
 		return n.checkPointer(c, x, off)
 	case *PredefinedType:
-		return n.checkPredefined(c, x, off)
+		return n.checkPredefined(c, x, off, designated)
 	case *StructType:
 		return n.checkStruct(c, x, off)
 	case *UnionType:
@@ -920,6 +928,11 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64) *Initializ
 }
 
 func (n *InitializerList) checkPointer(c *ctx, t *PointerType, off int64) *InitializerList {
+	if n.Designation != nil {
+		c.errors.add(errorf("%v: unexpected designation", n.Designation.Position()))
+		return nil
+	}
+
 	if isScalarType(t) {
 		n.Initializer.check(c, t, off)
 		return n.InitializerList
@@ -929,7 +942,12 @@ func (n *InitializerList) checkPointer(c *ctx, t *PointerType, off int64) *Initi
 	return nil
 }
 
-func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64) *InitializerList {
+func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64, designated bool) *InitializerList {
+	if !designated && n.Designation != nil {
+		c.errors.add(errorf("%v: unexpected designation", n.Designation.Position()))
+		return nil
+	}
+
 	if isScalarType(t) {
 		n.Initializer.check(c, t, off)
 		return n.InitializerList
@@ -941,11 +959,25 @@ func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64) 
 
 func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64) *InitializerList {
 	st := &t.structType
-	f := st.next(0)
+	f := st.field(0)
 	for f != nil && n != nil {
 		if n.Designation != nil {
 			c.errors.add(errorf("TODO %T %T", n, n.Designation))
 			return nil
+
+			//TODO nm := n.Designation.DesignatorList.Designator.name(c)
+			//TODO if nm == "" {
+			//TODO 	return nil
+			//TODO }
+
+			//TODO if f = t.fieldByName(nm); f == nil || f.depth != 0 {
+			//TODO 	c.errors.add(errorf("%v: %v has no member named '%v'", n.Designation.DesignatorList.Designator.Position(), t, nm))
+			//TODO 	return nil
+			//TODO }
+
+			//TODO n = n.Designation.DesignatorList.DesignatorList.check(n, c, f.Type(), off+f.Offset())
+			//TODO f = st.field(f.ordinal + 1)
+			//TODO continue
 		}
 
 		if f == nil {
@@ -954,14 +986,40 @@ func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64) *Initial
 
 		n.Initializer.check(c, f.Type(), off+f.Offset())
 		n = n.InitializerList
-		f = st.next(f.ordinal + 1)
+		f = st.field(f.ordinal + 1)
 	}
 	return n
 }
 
+func (n *DesignatorList) check(l *InitializerList, c *ctx, t Type, off int64) *InitializerList {
+	for n != nil {
+		c.errors.add(errorf("TODO %T <- ...", n))
+		return nil
+	}
+
+	return l.check(c, t, off, true)
+}
+
+func (n *Designator) name(c *ctx) string {
+	switch n.Case {
+	case
+		DesignatorIndex,  // '[' ConstantExpression ']'
+		DesignatorIndex2: // '[' ConstantExpression "..." ConstantExpression ']'
+
+		c.errors.add(errorf("%v: expected field name"))
+	case DesignatorField: // '.' IDENTIFIER
+		return n.Token2.SrcStr()
+	case DesignatorField2: // IDENTIFIER ':'
+		return n.Token.SrcStr()
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
+	}
+	return ""
+}
+
 func (n *InitializerList) checkUnion(c *ctx, t *UnionType, off int64) *InitializerList {
 	st := &t.structType
-	f := st.next(0)
+	f := st.field(0)
 	if n.Designation != nil {
 		c.errors.add(errorf("TODO %T %T", n, n.Designation))
 		return nil
@@ -973,31 +1031,6 @@ func (n *InitializerList) checkUnion(c *ctx, t *UnionType, off int64) *Initializ
 
 	n.Initializer.check(c, f.Type(), off+f.Offset())
 	return n.InitializerList
-}
-
-func (n *Designation) check(c *ctx) {
-	n.DesignatorList.check(c)
-}
-
-func (n *DesignatorList) check(c *ctx) {
-	for ; n != nil; n = n.DesignatorList {
-		n.Designator.check(c)
-	}
-}
-
-func (n *Designator) check(c *ctx) {
-	switch n.Case {
-	case DesignatorIndex: // '[' ConstantExpression ']'
-		c.errors.add(errorf("TODO %v", n.Case))
-	case DesignatorIndex2: // '[' ConstantExpression "..." ConstantExpression ']'
-		c.errors.add(errorf("TODO %v", n.Case))
-	case DesignatorField: // '.' IDENTIFIER
-		c.errors.add(errorf("TODO %v", n.Case))
-	case DesignatorField2: // IDENTIFIER ':'
-		c.errors.add(errorf("TODO %v", n.Case))
-	default:
-		c.errors.add(errorf("internal error: %v", n.Case))
-	}
 }
 
 //  Declarator:
@@ -1020,7 +1053,7 @@ func (n *Declarator) check(c *ctx, t Type) (r Type) {
 
 	r = n.DirectDeclarator.check(c, n.Pointer.check(c, t))
 	if n.isTypename {
-		r.setName(n.Name())
+		r = r.setName(n.Name())
 	}
 	n.typ = r
 	return n.Type()
@@ -2048,8 +2081,14 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 		t1 := n.LogicalOrExpression.check(c, mode.add(decay))
 		if !isScalarType(t1) {
 			c.errors.add(errorf("%v: operand shall have scalar type: %s", n.LogicalOrExpression.Position(), t1))
+			break
 		}
-		switch t2, t3 := n.ExpressionList.check(c, mode.add(decay)), n.ConditionalExpression.check(c, mode.add(decay)); {
+
+		t2 := t1
+		if n.ExpressionList != nil {
+			t2 = n.ExpressionList.check(c, mode.add(decay))
+		}
+		switch t3 := n.ConditionalExpression.check(c, mode.add(decay)); {
 		case
 			// both operands have arithmetic type;
 			isArithmeticType(t2) && isArithmeticType(t3):
@@ -2828,7 +2867,7 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 		}
 	case PostfixExpressionComplit: // '(' TypeName ')' '{' InitializerList ',' '}'
 		n.typ = n.TypeName.check(c)
-		n.InitializerList.check(c, n.Type(), 0)
+		n.InitializerList.check(c, n.Type(), 0, false)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}

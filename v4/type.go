@@ -240,17 +240,14 @@ type Type interface {
 	// Undecay() returns its receiver.
 	Undecay() Type
 
-	setName(string)
+	setName(nm string) Type
 	str(b *strings.Builder, useTag bool) *strings.Builder
 }
 
 type namer string
 
-// Name implements Type.
+// Name implements Type
 func (n namer) Name() string { return string(n) }
-
-// setName implements Type.
-func (n *namer) setName(nm string) { *n = namer(nm) }
 
 type InvalidType struct{}
 
@@ -270,7 +267,7 @@ func (n *InvalidType) FieldAlign() int { return 1 }
 func (n *InvalidType) Name() string { return "" }
 
 // setName implements Type.
-func (n *InvalidType) setName(nm string) {}
+func (n *InvalidType) setName(nm string) Type { return n }
 
 // String implements Type.
 func (n *InvalidType) String() string { return "<invalid type>" }
@@ -297,6 +294,13 @@ type PredefinedType struct {
 
 func (c *ctx) newPredefinedType(kind Kind) *PredefinedType {
 	return &PredefinedType{c: c, kind: kind}
+}
+
+// setName implements Type.
+func (n *PredefinedType) setName(nm string) Type {
+	r := *n
+	r.namer = namer(nm)
+	return &r
 }
 
 // Align implements Type.
@@ -402,10 +406,10 @@ func (n *Parameter) Name() Token {
 }
 
 type FunctionType struct {
-	c      *ctx
-	result typer
-	fp     []*Parameter
+	c  *ctx
+	fp []*Parameter
 	namer
+	result typer
 
 	minArgs int
 	maxArgs int // -1: unlimited
@@ -436,6 +440,13 @@ func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadi
 		}
 	}
 	return r
+}
+
+// setName implements Type.
+func (n *FunctionType) setName(nm string) Type {
+	r := *n
+	r.namer = namer(nm)
+	return &r
 }
 
 // Result reports the result type of n.
@@ -514,6 +525,13 @@ func (c *ctx) newPointerType(elem Type) (r *PointerType) {
 	r = &PointerType{c: c, elem: newTyper(elem)}
 	r.undecay = r
 	return r
+}
+
+// setName implements Type.
+func (n *PointerType) setName(nm string) Type {
+	r := *n
+	r.namer = namer(nm)
+	return &r
 }
 
 func (c *ctx) newPointerType2(elem, undecay Type) *PointerType {
@@ -603,10 +621,10 @@ type Field struct {
 	typ         typer
 	valueBits   int64
 
+	depth int
 	// Additional bit offset to offset bytes. Non zero only for bit fields but can
 	// be zero even for a bit field, for example, the first bit field after a non
 	// bit field will have offsetBits zero.
-	depth      int
 	offsetBits int
 	ordinal    int // index into .fields in structType
 
@@ -636,7 +654,7 @@ type structType struct {
 	align int
 }
 
-func (n *structType) next(i int) *Field {
+func (n *structType) field(i int) *Field {
 	for ; i < len(n.fields); i++ {
 		if f := n.fields[i]; f.declarator != nil {
 			return f
@@ -645,7 +663,7 @@ func (n *structType) next(i int) *Field {
 	return nil
 }
 
-func (n *structType) field(nm string) *Field {
+func (n *structType) fieldByName(nm string) *Field {
 	if f := n.m[nm]; f != nil {
 		return f
 	}
@@ -703,7 +721,14 @@ func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) 
 	return r
 }
 
-// Field returns member field nm of n or nil if n does not have such member.
+// setName implements Type.
+func (n *StructType) setName(nm string) Type {
+	r := *n
+	r.namer = namer(nm)
+	return &r
+}
+
+// Field returns the shallowest member field by name, if any.
 func (n *StructType) Field(nm string) *Field {
 	if n == nil {
 		return nil
@@ -717,7 +742,7 @@ func (n *StructType) Field(nm string) *Field {
 		return nil
 	}
 
-	return n.field(nm)
+	return n.fieldByName(nm)
 }
 
 // Align implements Type.
@@ -824,6 +849,13 @@ func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *
 	return &UnionType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
 }
 
+// setName implements Type.
+func (n *UnionType) setName(nm string) Type {
+	r := *n
+	r.namer = namer(nm)
+	return &r
+}
+
 // Field returns member field nm of n or nil if n does not have such member.
 func (n *UnionType) Field(nm string) *Field {
 	if n == nil {
@@ -838,7 +870,7 @@ func (n *UnionType) Field(nm string) *Field {
 		return nil
 	}
 
-	return n.field(nm)
+	return n.fieldByName(nm)
 }
 
 // Align implements Type.
@@ -948,6 +980,13 @@ func (c *ctx) newArrayType(elem Type, elems int64, expr ExpressionNode) (r *Arra
 	return r
 }
 
+// setName implements Type.
+func (n *ArrayType) setName(nm string) Type {
+	r := *n
+	r.namer = namer(nm)
+	return &r
+}
+
 func (n *ArrayType) IsVLA() bool { return n.elems < 0 && n.expr != nil && n.expr.Value() == Unknown }
 
 // Decay implements Type.
@@ -1011,6 +1050,11 @@ func (n *ArrayType) Size() int64 {
 func (n *ArrayType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *ArrayType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if s := n.Name(); s != "" {
+		b.WriteString(s)
+		return b
+	}
+
 	b.WriteString("array of ")
 	if !n.IsIncomplete() {
 		fmt.Fprintf(b, "%d ", n.elems)
@@ -1029,6 +1073,13 @@ type EnumType struct {
 
 func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
 	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums}
+}
+
+// setName implements Type.
+func (n *EnumType) setName(nm string) Type {
+	r := *n
+	r.namer = namer(nm)
+	return &r
 }
 
 // Align implements Type.
@@ -1096,6 +1147,11 @@ func (n *EnumType) Size() int64 {
 func (n *EnumType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *EnumType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if s := n.Name(); s != "" {
+		b.WriteString(s)
+		return b
+	}
+
 	b.WriteString("enum ")
 	if n.tag != "" {
 		b.WriteString(n.tag)
