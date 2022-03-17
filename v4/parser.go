@@ -501,15 +501,13 @@ var funcTokensText = [][]byte{
 }
 
 func (p *parser) injectFuncTokens(lbrace Token, nm string) {
-	if p.funcTokens[0].s != lbrace.s {
-		for i := range p.funcTokens {
-			p := &p.funcTokens[i]
-			p.s = lbrace.s
-			p.pos = lbrace.pos
-			p.seq = lbrace.seq
-			if i != 7 {
-				p.Set(nil, funcTokensText[i])
-			}
+	for i := range p.funcTokens {
+		p := &p.funcTokens[i]
+		p.s = lbrace.s
+		p.pos = lbrace.pos
+		p.seq = lbrace.seq
+		if i != 7 {
+			p.Set(nil, funcTokensText[i])
 		}
 	}
 	p.funcTokens[7].Set(nil, []byte(`"`+nm+`"`))

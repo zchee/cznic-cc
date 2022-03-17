@@ -863,7 +863,7 @@ func (n *UnionType) Field(nm string) *Field {
 	}
 
 	if n.forward != nil {
-		if x, ok := n.forward.typ.(*StructType); ok {
+		if x, ok := n.forward.typ.(*UnionType); ok {
 			return x.Field(nm)
 		}
 
