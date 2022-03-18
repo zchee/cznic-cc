@@ -10,7 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
+	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
@@ -25,15 +25,12 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/pmezard/go-difflib/difflib"
-	"modernc.org/ccorpus"
-	"modernc.org/httpfs"
+	"modernc.org/ccorpus2"
 	"modernc.org/mathutil"
 )
 
 var (
-	cfs         = ccorpus.FileSystem()
-	cFS         = &corpusFS{cfs}
-	corpus      = map[string][]byte{}
+	cfs         = ccorpus2.FS
 	corpusIndex []string
 	re          *regexp.Regexp
 	defaultCfg0 *Config
@@ -150,73 +147,17 @@ func init() {
 		panic(errorf("NewConfig: %v", err))
 	}
 
-	var chars int
-	if err := walk("/", func(pth string, fi os.FileInfo) error {
-		if fi.IsDir() {
-			return nil
-		}
-
-		f, err := cfs.Open(pth)
-		if err != nil {
-			return errorf("%v: %v", pth, err)
-		}
-
-		b, err := io.ReadAll(f)
-		if err != nil {
-			return errorf("%v: %v", pth, err)
-		}
-
-		switch filepath.Ext(pth) {
-		case ".c", ".h":
-			if len(b) != 0 && b[len(b)-1] != '\n' {
-				b = append(b, '\n')
-			}
-		}
-		chars += len(b)
-		corpus[pth] = b
+	if err := walk("assets", func(pth string, fi os.FileInfo) error {
 		corpusIndex = append(corpusIndex, pth)
 		return nil
 	}); err != nil {
 		panic(err)
 	}
-}
 
-type corpusFS struct {
-	*httpfs.FileSystem
-}
-
-func (c *corpusFS) Open(name string) (fs.File, error) {
-	name = filepath.ToSlash(name)
-	if !strings.HasPrefix(name, "/") {
-		name = "/" + name
-	}
-	f, err := c.FileSystem.Open(name)
-	if err != nil {
-		return nil, err
-	}
-
-	return fs.File(f), nil
 }
 
 func walk(dir string, f func(pth string, fi os.FileInfo) error) error {
-	if !strings.HasSuffix(dir, "/") {
-		dir += "/"
-	}
-	root, err := cfs.Open(dir)
-	if err != nil {
-		return err
-	}
-
-	fi, err := root.Stat()
-	if err != nil {
-		return err
-	}
-
-	if !fi.IsDir() {
-		return fmt.Errorf("%s: not a directory", fi.Name())
-	}
-
-	fis, err := root.Readdir(-1)
+	fis, err := cfs.ReadDir(dir)
 	if err != nil {
 		return err
 	}
@@ -224,11 +165,16 @@ func walk(dir string, f func(pth string, fi os.FileInfo) error) error {
 	for _, v := range fis {
 		switch {
 		case v.IsDir():
-			if err = walk(v.Name(), f); err != nil {
+			if err = walk(dir+"/"+v.Name(), f); err != nil {
 				return err
 			}
 		default:
-			if err = f(v.Name(), v); err != nil {
+			fi, err := v.Info()
+			if err != nil {
+				return err
+			}
+
+			if err = f(dir+"/"+v.Name(), fi); err != nil {
 				return err
 			}
 		}
@@ -427,7 +373,11 @@ func TestScanner(t *testing.T) {
 					p.Unlock()
 				}()
 
-				buf := corpus[path]
+				var buf []byte
+				if buf, err = getCorpusFile(path); err != nil {
+					return
+				}
+
 				chars0 += int64(len(buf))
 				var s *scanner
 				if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
@@ -456,6 +406,15 @@ func TestScanner(t *testing.T) {
 	t.Logf("files %v; tokens %v; bytes %v; heap %v; alloc %v", h(files), h(tokens), h(chars), h(m.HeapAlloc-m0.HeapAlloc), h(m.TotalAlloc-m0.TotalAlloc))
 }
 
+func getCorpusFile(path string) ([]byte, error) {
+	f, err := cfs.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return ioutil.ReadAll(f)
+}
+
 func h(v interface{}) string {
 	switch x := v.(type) {
 	case int64:
@@ -475,22 +434,23 @@ func BenchmarkScanner(b *testing.B) {
 		for _, path := range corpusIndex {
 			switch filepath.Ext(path) {
 			case ".c", ".h":
-				buf := corpus[path]
-				chars += int64(len(buf))
-				var s *scanner
-				var err error
-				if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
-					s.close()
-					b.Fatalf(msg, args...)
-				}); err != nil {
-					b.Fatal(path, err)
-				}
-				for {
-					tok := s.cppScan()
-					if tok.Ch == eof {
-						break
-					}
-				}
+				panic(todo(""))
+				// buf := corpus[path]
+				// chars += int64(len(buf))
+				// var s *scanner
+				// var err error
+				// if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+				// 	s.close()
+				// 	b.Fatalf(msg, args...)
+				// }); err != nil {
+				// 	b.Fatal(path, err)
+				// }
+				// for {
+				// 	tok := s.cppScan()
+				// 	if tok.Ch == eof {
+				// 		break
+				// 	}
+				// }
 			}
 		}
 		b.SetBytes(chars)
@@ -499,7 +459,7 @@ func BenchmarkScanner(b *testing.B) {
 
 var (
 	cppParseBlacklist = map[string]struct{}{
-		"/github.com/vnmakarov/mir/c-tests/new/endif.c": {}, // 1:1: unexpected #endif
+		"assets/github.com/vnmakarov/mir/c-tests/new/endif.c": {}, // 1:1: unexpected #endif
 	}
 	astSink []group
 )
@@ -518,10 +478,13 @@ func TestCPPParse0(t *testing.T) {
 
 		switch filepath.Ext(path) {
 		case ".c", ".h":
-			buf := corpus[path]
+			buf, err := getCorpusFile(path)
+			if err != nil {
+				t.Fatal(path, err)
+			}
+
 			chars += int64(len(buf))
 			var p *cppParser
-			var err error
 			if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
 				p.close()
 				t.Fatalf(msg, args...)
@@ -570,8 +533,11 @@ func TestCPPParse(t *testing.T) {
 		case ".c", ".h":
 			files++
 			p.exec(func() {
-				buf := corpus[path]
-				var err error
+				buf, err := getCorpusFile(path)
+				if err != nil {
+					t.Fatal(path, err)
+				}
+
 				var ast group
 				var eof Token
 
@@ -627,26 +593,27 @@ func BenchmarkCPPParse(b *testing.B) {
 
 			switch filepath.Ext(path) {
 			case ".c", ".h":
-				buf := corpus[path]
-				chars += int64(len(buf))
-				var p *cppParser
-				var err error
-				if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
-					p.close()
-					b.Fatalf(msg, args...)
-				}); err != nil {
-					b.Fatal(path, err)
-				}
+				panic(todo(""))
+				// buf := corpus[path]
+				// chars += int64(len(buf))
+				// var p *cppParser
+				// var err error
+				// if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+				// 	p.close()
+				// 	b.Fatalf(msg, args...)
+				// }); err != nil {
+				// 	b.Fatal(path, err)
+				// }
 
-				ast := p.preprocessingFile()
-				if len(ast) == 0 {
-					b.Fatalf("%v: empty AST", path)
-				}
+				// ast := p.preprocessingFile()
+				// if len(ast) == 0 {
+				// 	b.Fatalf("%v: empty AST", path)
+				// }
 
-				eol := ast[len(ast)-1]
-				if _, ok := eol.(eofLine); !ok {
-					b.Fatalf("%v: AST not terminated: %T", p.pos(), eol)
-				}
+				// eol := ast[len(ast)-1]
+				// if _, ok := eol.(eofLine); !ok {
+				// 	b.Fatalf("%v: AST not terminated: %T", p.pos(), eol)
+				// }
 			}
 		}
 		b.SetBytes(chars)
@@ -791,7 +758,7 @@ func TestInclude(t *testing.T) {
 func TestTranslationPhase4(t *testing.T) {
 	cfg := defaultCfg()
 	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
-	cfg.FS = cFS
+	cfg.FS = cfs
 	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
 		// assertions are deprecated, not supported.
@@ -818,12 +785,12 @@ func TestTranslationPhase4(t *testing.T) {
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", nil},
-		{cfg, "sqlite-amalgamation-3370200", nil},
+		{cfg, "sqlite-amalgamation-3380100", nil},
 		{cfg, "tcc-0.9.27/tests", blacklictTCC},
 		{cfg, "benchmarksgame-team.pages.debian.net", nil},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
-			f, o, s, n := testTranslationPhase4(t, v.cfg, "/"+v.dir, v.blacklist)
+			f, o, s, n := testTranslationPhase4(t, v.cfg, "assets/"+v.dir, v.blacklist)
 			files += f
 			ok += o
 			skip += s
@@ -883,7 +850,7 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 				[]Source{
 					{Name: "<predefined>", Value: cfg.Predefined},
 					{Name: "<builtin>", Value: builtin},
-					{Name: apth, FS: cFS},
+					{Name: apth, FS: cfs},
 				},
 				io.Discard,
 			); err == nil {
@@ -891,7 +858,7 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 				return
 			}
 
-			f, err2 := cFS.Open(apth)
+			f, err2 := cfs.Open(apth)
 			if err2 != nil {
 				err = errorf("", err2)
 				return
@@ -1156,7 +1123,7 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 func TestParse(t *testing.T) {
 	cfg := defaultCfg()
 	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
-	cfg.FS = cFS
+	cfg.FS = cfs
 	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
 		// Assertions are deprecated, not supported.
@@ -1179,12 +1146,12 @@ func TestParse(t *testing.T) {
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", nil},
-		{cfg, "sqlite-amalgamation-3370200", nil},
+		{cfg, "sqlite-amalgamation-3380100", nil},
 		{cfg, "tcc-0.9.27/tests/tests2", nil},
 		{cfg, "benchmarksgame-team.pages.debian.net", nil},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
-			f, o, s, n := testParse(t, v.cfg, "/"+v.dir, v.blacklist)
+			f, o, s, n := testParse(t, v.cfg, "assets/"+v.dir, v.blacklist)
 			files += f
 			ok += o
 			skip += s
@@ -1253,7 +1220,7 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 					[]Source{
 						{Name: "<predefined>", Value: cfg.Predefined},
 						{Name: "<builtin>", Value: builtin},
-						{Name: apth, FS: cFS},
+						{Name: apth, FS: cfs},
 					},
 				); err == nil {
 					atomic.AddInt32(&ok, 1)
@@ -1265,7 +1232,7 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 				return
 			}
 
-			f, err2 := cFS.Open(apth)
+			f, err2 := cfs.Open(apth)
 			if err2 != nil {
 				err = errorf("", err2)
 				return
@@ -1316,7 +1283,7 @@ func TestTranslate(t *testing.T) {
 	return //TODO-
 	cfg := defaultCfg()
 	cfg.SysIncludePaths = append(cfg.SysIncludePaths, "Include") // benchmarksgame
-	cfg.FS = cFS
+	cfg.FS = cfs
 	blacklistCompCert := map[string]struct{}{}
 	blacklistGCC := map[string]struct{}{
 		// Assertions are deprecated, not supported.
@@ -1339,12 +1306,12 @@ func TestTranslate(t *testing.T) {
 		{cfg, "github.com/cxgo", nil},
 		{cfg, "github.com/gcc-mirror/gcc/gcc/testsuite", blacklistGCC},
 		{cfg, "github.com/vnmakarov", nil},
-		{cfg, "sqlite-amalgamation-3370200", nil},
+		{cfg, "sqlite-amalgamation-3380100", nil},
 		{cfg, "tcc-0.9.27/tests/tests2", nil},
 		{cfg, "benchmarksgame-team.pages.debian.net", nil},
 	} {
 		t.Run(v.dir, func(t *testing.T) {
-			f, o, s, n := testTranslate(t, v.cfg, "/"+v.dir, v.blacklist)
+			f, o, s, n := testTranslate(t, v.cfg, "assets/"+v.dir, v.blacklist)
 			files += f
 			ok += o
 			skip += s
@@ -1414,7 +1381,7 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 					[]Source{
 						{Name: "<predefined>", Value: cfg.Predefined},
 						{Name: "<builtin>", Value: builtin},
-						{Name: apth, FS: cFS},
+						{Name: apth, FS: cfs},
 					},
 				); err == nil {
 					atomic.AddInt32(&ok, 1)
@@ -1426,7 +1393,7 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 				return
 			}
 
-			f, err2 := cFS.Open(apth)
+			f, err2 := cfs.Open(apth)
 			if err2 != nil {
 				err = errorf("", err2)
 				return
@@ -1448,7 +1415,6 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 
 			defer os.Remove(fn)
 
-			// cmd := exec.Command(cfg.CC, "-Werror-implicit-function-declaration", "-c", "-o", filepath.Join(tmp, "test.o"), fn)
 			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), fn)
 			var buf bytes.Buffer
 			cmd.Stderr = &buf
