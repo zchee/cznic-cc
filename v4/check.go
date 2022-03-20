@@ -835,6 +835,7 @@ func (n *Initializer) checkExprStruct(c *ctx, t *StructType, exprT Type, off int
 
 	switch x := exprT.(type) {
 	case
+		*EnumType,
 		*PointerType,
 		*PredefinedType:
 
@@ -846,9 +847,9 @@ func (n *Initializer) checkExprStruct(c *ctx, t *StructType, exprT Type, off int
 
 		n.check(c, f.Type(), off)
 	case *StructType:
-		//TODO check same type
-	case *UnionType:
-		//TODO check same type
+		if !t.isCompatible(x) {
+			c.errors.add(errorf("%v: incompatible types: %s and %s", n.AssignmentExpression.Position(), t, x))
+		}
 	default:
 		c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), x))
 	}
@@ -874,7 +875,9 @@ func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type, off int64
 
 		n.check(c, f.Type(), off)
 	case *UnionType:
-		//TODO check same type
+		if !t.isCompatible(x) {
+			c.errors.add(errorf("%v: incompatible types: %s and %s", n.AssignmentExpression.Position(), t, x))
+		}
 	default:
 		c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), x))
 	}

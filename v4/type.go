@@ -305,7 +305,7 @@ func (c *ctx) newPredefinedType(kind Kind) *PredefinedType {
 func (n *PredefinedType) isCompatible(t Type) bool {
 	switch x := t.(type) {
 	case *PredefinedType:
-		return n.Kind() == x.Kind()
+		return n == x || n.Kind() == x.Kind()
 	default:
 		return false
 	}
@@ -460,6 +460,10 @@ func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadi
 func (n *FunctionType) isCompatible(t Type) bool {
 	switch x := t.(type) {
 	case *FunctionType:
+		if n == x {
+			return true
+		}
+
 		if len(n.fp) != len(x.fp) || n.minArgs != x.minArgs || n.maxArgs != x.maxArgs || !n.Result().isCompatible(x.Result()) {
 			return false
 		}
@@ -564,7 +568,7 @@ func (c *ctx) newPointerType(elem Type) (r *PointerType) {
 func (n *PointerType) isCompatible(t Type) bool {
 	switch x := t.(type) {
 	case *PointerType:
-		return n.Elem().isCompatible(x.Elem())
+		return n == x || n.Elem().isCompatible(x.Elem())
 	default:
 		return false
 	}
@@ -698,6 +702,10 @@ type structType struct {
 }
 
 func (n *structType) isCompatible(m *structType) bool {
+	if n == m {
+		return true
+	}
+
 	if n.size != m.size || n.tag != m.tag || len(n.fields) != len(m.fields) {
 		return false
 	}
@@ -789,7 +797,7 @@ func (n *StructType) isCompatible(t Type) bool {
 			return n.isCompatible(x.forward.Type())
 		}
 
-		return n.structType.isCompatible(&x.structType)
+		return n == x || n.structType.isCompatible(&x.structType)
 	default:
 		return false
 	}
@@ -934,7 +942,7 @@ func (n *UnionType) isCompatible(t Type) bool {
 			return n.isCompatible(x.forward.Type())
 		}
 
-		return n.structType.isCompatible(&x.structType)
+		return n == x || n.structType.isCompatible(&x.structType)
 	default:
 		return false
 	}
