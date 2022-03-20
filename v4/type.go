@@ -41,6 +41,7 @@ var (
 		ComplexShort:      true,
 		ComplexUInt:       true,
 		ComplexUShort:     true,
+		Decimal64:         true,
 		Double:            true,
 		Enum:              true,
 		Float:             true,
@@ -124,6 +125,7 @@ var (
 	realKinds = [maxKind]bool{
 		Bool:       true,
 		Char:       true,
+		Decimal64:  true,
 		Double:     true,
 		Enum:       true,
 		Float:      true,
@@ -161,6 +163,7 @@ const (
 	ComplexShort      // _Complex short
 	ComplexUInt       // _Complex unsigned
 	ComplexUShort     // _Complex unsigned short
+	Decimal64         // _Decimal64
 	Double            // double
 	Enum              // enum
 	Float             // float
@@ -240,6 +243,7 @@ type Type interface {
 	// Undecay() returns its receiver.
 	Undecay() Type
 
+	isCompatible(Type) bool
 	setName(nm string) Type
 	str(b *strings.Builder, useTag bool) *strings.Builder
 }
@@ -269,6 +273,8 @@ func (n *InvalidType) Name() string { return "" }
 // setName implements Type.
 func (n *InvalidType) setName(nm string) Type { return n }
 
+func (n *InvalidType) isCompatible(Type) bool { return false }
+
 // String implements Type.
 func (n *InvalidType) String() string { return "<invalid type>" }
 
@@ -294,6 +300,15 @@ type PredefinedType struct {
 
 func (c *ctx) newPredefinedType(kind Kind) *PredefinedType {
 	return &PredefinedType{c: c, kind: kind}
+}
+
+func (n *PredefinedType) isCompatible(t Type) bool {
+	switch x := t.(type) {
+	case *PredefinedType:
+		return n.Kind() == x.Kind()
+	default:
+		return false
+	}
 }
 
 // setName implements Type.
@@ -442,6 +457,25 @@ func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadi
 	return r
 }
 
+func (n *FunctionType) isCompatible(t Type) bool {
+	switch x := t.(type) {
+	case *FunctionType:
+		if len(n.fp) != len(x.fp) || n.minArgs != x.minArgs || n.maxArgs != x.maxArgs || !n.Result().isCompatible(x.Result()) {
+			return false
+		}
+
+		for i, v := range n.fp {
+			if !v.Type().isCompatible(x.fp[i].Type()) {
+				return false
+			}
+		}
+
+		return true
+	default:
+		return false
+	}
+}
+
 // setName implements Type.
 func (n *FunctionType) setName(nm string) Type {
 	r := *n
@@ -525,6 +559,15 @@ func (c *ctx) newPointerType(elem Type) (r *PointerType) {
 	r = &PointerType{c: c, elem: newTyper(elem)}
 	r.undecay = r
 	return r
+}
+
+func (n *PointerType) isCompatible(t Type) bool {
+	switch x := t.(type) {
+	case *PointerType:
+		return n.Elem().isCompatible(x.Elem())
+	default:
+		return false
+	}
 }
 
 // setName implements Type.
@@ -654,6 +697,20 @@ type structType struct {
 	align int
 }
 
+func (n *structType) isCompatible(m *structType) bool {
+	if n.size != m.size || n.tag != m.tag || len(n.fields) != len(m.fields) {
+		return false
+	}
+
+	for i, v := range n.fields {
+		if w := m.fields[i]; v.Name() != w.Name() || !v.Type().isCompatible(w.Type()) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (n *structType) field(i int) *Field {
 	for ; i < len(n.fields); i++ {
 		if f := n.fields[i]; f.declarator != nil {
@@ -719,6 +776,23 @@ type StructType struct {
 func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) (r *StructType) {
 	r = &StructType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
 	return r
+}
+
+func (n *StructType) isCompatible(t Type) bool {
+	if n.forward != nil {
+		return n.forward.Type().isCompatible(t)
+	}
+
+	switch x := t.(type) {
+	case *StructType:
+		if x.forward != nil {
+			return n.isCompatible(x.forward.Type())
+		}
+
+		return n.structType.isCompatible(&x.structType)
+	default:
+		return false
+	}
 }
 
 // setName implements Type.
@@ -847,6 +921,23 @@ type UnionType struct {
 
 func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
 	return &UnionType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
+}
+
+func (n *UnionType) isCompatible(t Type) bool {
+	if n.forward != nil {
+		return n.forward.Type().isCompatible(t)
+	}
+
+	switch x := t.(type) {
+	case *UnionType:
+		if x.forward != nil {
+			return n.isCompatible(x.forward.Type())
+		}
+
+		return n.structType.isCompatible(&x.structType)
+	default:
+		return false
+	}
 }
 
 // setName implements Type.
@@ -980,6 +1071,15 @@ func (c *ctx) newArrayType(elem Type, elems int64, expr ExpressionNode) (r *Arra
 	return r
 }
 
+func (n *ArrayType) isCompatible(t Type) bool {
+	switch x := t.(type) {
+	case *ArrayType:
+		return (n.Len() == x.Len() || n.Len() < 0 && x.Len() < 0) && n.Elem().isCompatible(x.Elem())
+	default:
+		return false
+	}
+}
+
 // setName implements Type.
 func (n *ArrayType) setName(nm string) Type {
 	r := *n
@@ -1073,6 +1173,27 @@ type EnumType struct {
 
 func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
 	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums}
+}
+
+func (n *EnumType) isCompatible(t Type) bool {
+	if n.forward != nil {
+		return n.forward.Type().isCompatible(t)
+	}
+
+	switch x := t.(type) {
+	case *EnumType:
+		if x.forward != nil {
+			return n.isCompatible(x.forward.Type())
+		}
+
+		if n.tag != x.tag {
+			return false
+		}
+
+		return n.isCompatible(x.typ.Type()) //TODO members and values must be the same
+	default:
+		return false
+	}
 }
 
 // setName implements Type.
@@ -1214,6 +1335,14 @@ func usualArithmeticConversions(a, b Type) (r Type) {
 	}
 
 	if bk == LongDouble {
+		return b
+	}
+
+	if ak == Decimal64 {
+		return a
+	}
+
+	if bk == Decimal64 {
 		return b
 	}
 

@@ -29,7 +29,9 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 )
 
@@ -286,4 +288,71 @@ func Translate(cfg *Config, sources []Source) (*AST, error) {
 	}
 
 	return ast, nil
+}
+
+// NodeSource returns the source form of s. Non-empty separators preceding
+// tokens are replaced by a single ' '.
+func NodeSource(s ...Node) string {
+	var a []Token
+	for _, n := range s {
+		nodeSource(n, &a)
+	}
+	sort.Slice(a, func(i, j int) bool { return a[i].seq < a[j].seq })
+	var b strings.Builder
+	for _, t := range a {
+		if len(t.Sep()) != 0 {
+			b.WriteByte(' ')
+		}
+		b.Write(t.Src())
+	}
+	return b.String()
+}
+
+func nodeSource(n Node, a *[]Token) {
+	if n == nil {
+		return
+	}
+
+	t := reflect.TypeOf(n)
+	v := reflect.ValueOf(n)
+	var zero reflect.Value
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+		v = v.Elem()
+		if v == zero {
+			return
+		}
+	}
+
+	if t.Kind() != reflect.Struct {
+		return
+	}
+
+	if x, ok := n.(Token); ok && x.seq != 0 {
+		*a = append(*a, x)
+		return
+	}
+
+	nf := t.NumField()
+	for i := 0; i < nf; i++ {
+		f := t.Field(i)
+		if !f.IsExported() {
+			continue
+		}
+
+		if strings.HasPrefix(f.Name, "Token") {
+			if x, ok := v.Field(i).Interface().(Token); ok && x.seq != 0 {
+				*a = append(*a, x)
+			}
+			continue
+		}
+
+		if v == zero || v.IsZero() {
+			continue
+		}
+
+		if m, ok := v.Field(i).Interface().(Node); ok {
+			nodeSource(m, a)
+		}
+	}
 }

@@ -2418,6 +2418,8 @@ func (n *GenericAssociationList) Position() (r token.Position) {
 //	GenericSelection:
 //	        "_Generic" '(' AssignmentExpression ',' GenericAssociationList ')'
 type GenericSelection struct {
+	assoc *GenericAssociation
+	typer
 	AssignmentExpression   ExpressionNode
 	GenericAssociationList *GenericAssociationList
 	Token                  Token

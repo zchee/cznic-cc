@@ -167,8 +167,8 @@ func (p *parser) next() {
 		case '\n':
 			p.prevNL = t
 		default:
-			t.seq = p.seq
 			p.seq++
+			t.seq = p.seq
 			p.toks = append(p.toks, p.tok(t))
 			return
 		}
@@ -234,7 +234,6 @@ func (p *parser) shift0() (r Token) {
 		sep = append(sep, r.Sep()...)
 		r.Set(sep, r.Src())
 	}
-	r.seq = p.seq
 	if r.Ch != eof {
 		switch {
 		case len(p.toks) == 1:
@@ -243,7 +242,6 @@ func (p *parser) shift0() (r Token) {
 			p.toks = p.toks[1:]
 		}
 		p.prevNL.Ch = 0
-		p.seq++
 		p.rune(false)
 	}
 	return r
@@ -297,7 +295,6 @@ func (p *parser) peek(i int, checkTypeName bool) (r Token) {
 	switch {
 	case checkTypeName:
 		r = p.toks[i]
-		r.seq = p.seq + int32(i)
 		p.checkTypeName(&r)
 		return r
 	default:
@@ -502,12 +499,12 @@ var funcTokensText = [][]byte{
 
 func (p *parser) injectFuncTokens(lbrace Token, nm string) {
 	for i := range p.funcTokens {
-		p := &p.funcTokens[i]
-		p.s = lbrace.s
-		p.pos = lbrace.pos
-		p.seq = lbrace.seq
+		pt := &p.funcTokens[i]
+		pt.s = lbrace.s
+		pt.pos = lbrace.pos
+		pt.seq = lbrace.seq
 		if i != 7 {
-			p.Set(nil, funcTokensText[i])
+			pt.Set(nil, funcTokensText[i])
 		}
 	}
 	p.funcTokens[7].Set(nil, []byte(`"`+nm+`"`))

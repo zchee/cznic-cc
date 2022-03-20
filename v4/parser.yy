@@ -159,6 +159,8 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Generic    */ |	GenericSelection
 
 			/*yy:example int i = _Generic(x, int: y)(42); */
+			/*yy:field	assoc	*GenericAssociation	*/
+			/*yy:field	typer	*/
 			GenericSelection:
 				"_Generic" '(' AssignmentExpression ',' GenericAssociationList ')'
 
