@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"math"
 	"os"
+	"path/filepath"
 	"unicode"
 	"unicode/utf8"
 
@@ -262,7 +263,7 @@ func newScannerSource(src Source) (s *scannerSource, err error) {
 		}
 	case nil:
 		if fs := src.FS; fs != nil {
-			if f, err := fs.Open(src.Name); err == nil {
+			if f, err := fs.Open(filepath.ToSlash(src.Name)); err == nil {
 				return newScannerSource(Source{src.Name, f, nil})
 			}
 		}
