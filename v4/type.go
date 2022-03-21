@@ -678,6 +678,13 @@ type Field struct {
 	isBitField bool
 }
 
+func (n *Field) path() (r []int) {
+	if n.parent != nil {
+		r = n.parent.path()
+	}
+	return append(r, n.ordinal)
+}
+
 // Type reports the type of f.
 func (n *Field) Type() Type { return n.typ.Type() }
 
@@ -698,7 +705,8 @@ type structType struct {
 	size   int64
 	tag    string
 
-	align int
+	align   int
+	isUnion bool
 }
 
 func (n *structType) isCompatible(m *structType) bool {
@@ -719,12 +727,11 @@ func (n *structType) isCompatible(m *structType) bool {
 	return true
 }
 
-func (n *structType) field(i int) *Field {
-	for ; i < len(n.fields); i++ {
-		if f := n.fields[i]; f.declarator != nil {
-			return f
-		}
+func (n *structType) fieldByIndex(i int) *Field {
+	if i >= 0 && i < len(n.fields) {
+		return n.fields[i]
 	}
+
 	return nil
 }
 
@@ -743,6 +750,15 @@ func (n *structType) fieldByName(nm string) *Field {
 			case len(v) != 1:
 				if v[0].depth < v[1].depth {
 					n.m[k] = v[0]
+					break
+				}
+
+				if n.isUnion && v[0].depth == v[1].depth {
+					p0 := v[0].path()
+					p1 := v[1].path()
+					if p0[0] == 0 && p1[0] != 0 {
+						n.m[k] = v[0]
+					}
 				}
 			default:
 				n.m[k] = v[0]
@@ -810,15 +826,46 @@ func (n *StructType) setName(nm string) Type {
 	return &r
 }
 
-// Field returns the shallowest member field by name, if any.
-func (n *StructType) Field(nm string) *Field {
+// FieldByIndex returns a member field by index, if any.
+func (n *StructType) FieldByIndex(i int) *Field {
 	if n == nil {
 		return nil
 	}
 
 	if n.forward != nil {
 		if x, ok := n.forward.typ.(*StructType); ok {
-			return x.Field(nm)
+			return x.FieldByIndex(i)
+		}
+
+		return nil
+	}
+
+	return n.fieldByIndex(i)
+}
+
+// NamedFieldByIndex returns the first named member field at or after index, if any.
+func (n *StructType) NamedFieldByIndex(i int) (r *Field) {
+	for ; ; i++ {
+		r = n.FieldByIndex(i)
+		if r == nil {
+			return nil
+		}
+
+		if r.Name() != "" {
+			return r
+		}
+	}
+}
+
+// FieldByName returns the shallowest member field by name, if any.
+func (n *StructType) FieldByName(nm string) *Field {
+	if n == nil {
+		return nil
+	}
+
+	if n.forward != nil {
+		if x, ok := n.forward.typ.(*StructType); ok {
+			return x.FieldByName(nm)
 		}
 
 		return nil
@@ -892,6 +939,11 @@ func (n *StructType) Size() int64 {
 func (n *StructType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if n.forward != nil {
+		b.WriteString(n.forward.Type().String())
+		return b
+	}
+
 	if s := n.Name(); s != "" {
 		b.WriteString(s)
 		return b
@@ -901,9 +953,9 @@ func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	if n.tag != "" {
 		b.WriteByte(' ')
 		b.WriteString(n.tag)
-	}
-	if n.forward != nil || useTag {
-		return b
+		if useTag {
+			return b
+		}
 	}
 
 	b.WriteString(" {")
@@ -928,7 +980,7 @@ type UnionType struct {
 }
 
 func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
-	return &UnionType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
+	return &UnionType{structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true}}
 }
 
 func (n *UnionType) isCompatible(t Type) bool {
@@ -955,15 +1007,46 @@ func (n *UnionType) setName(nm string) Type {
 	return &r
 }
 
-// Field returns member field nm of n or nil if n does not have such member.
-func (n *UnionType) Field(nm string) *Field {
+// FieldByIndex returns a member field by index, if any.
+func (n *UnionType) FieldByIndex(i int) *Field {
 	if n == nil {
 		return nil
 	}
 
 	if n.forward != nil {
 		if x, ok := n.forward.typ.(*UnionType); ok {
-			return x.Field(nm)
+			return x.FieldByIndex(i)
+		}
+
+		return nil
+	}
+
+	return n.fieldByIndex(i)
+}
+
+// NamedFieldByIndex returns the first named member field at or after index, if any.
+func (n *UnionType) NamedFieldByIndex(i int) (r *Field) {
+	for ; ; i++ {
+		r = n.FieldByIndex(i)
+		if r == nil {
+			return nil
+		}
+
+		if r.Name() != "" {
+			return r
+		}
+	}
+}
+
+// FieldByName returns member field nm of n or nil if n does not have such member.
+func (n *UnionType) FieldByName(nm string) *Field {
+	if n == nil {
+		return nil
+	}
+
+	if n.forward != nil {
+		if x, ok := n.forward.typ.(*UnionType); ok {
+			return x.FieldByName(nm)
 		}
 
 		return nil
@@ -1037,6 +1120,11 @@ func (n *UnionType) Size() int64 {
 func (n *UnionType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if n.forward != nil {
+		b.WriteString(n.forward.Type().String())
+		return b
+	}
+
 	if s := n.Name(); s != "" {
 		b.WriteString(s)
 		return b
@@ -1046,9 +1134,9 @@ func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	if n.tag != "" {
 		b.WriteByte(' ')
 		b.WriteString(n.tag)
-	}
-	if n.forward != nil || useTag {
-		return b
+		if useTag {
+			return b
+		}
 	}
 
 	b.WriteString(" {")

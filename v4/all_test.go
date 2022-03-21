@@ -56,7 +56,7 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 #define __FUNCTION__ __func__
 #define __PRETTY_FUNCTION__ __func__
 #define __builtin_offsetof(type, member) ((size_t)&(((type*)0)->member))
-#define __builtin_types_compatible_p(t1, t2) (sizeof(t1) == sizeof(t2))
+#define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl()
 #define __extension__
 
 #ifndef __builtin_va_list

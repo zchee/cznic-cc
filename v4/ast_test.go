@@ -2137,15 +2137,15 @@ func ExampleExpressionList_comma() {
 	// &cc.ExpressionList{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: identifier "y",
+	// · · Token: example.c:1:11: identifier "x",
 	// · },
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:11: identifier "x",
+	// · · · Token: example.c:1:14: identifier "y",
 	// · · },
+	// · · Token: example.c:1:12: ',' ",",
 	// · },
-	// · Token: example.c:1:12: ',' ",",
 	// }
 }
 

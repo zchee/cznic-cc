@@ -963,10 +963,14 @@ func (p *parser) asmIndexOpt() *AsmIndex {
 // 	assignment-expression
 // 	expression , assignment-expression
 func (p *parser) expression(opt bool) (r *ExpressionList) {
+	var prev *ExpressionList
 	if p.isExpression(p.rune(false)) {
 		r = &ExpressionList{AssignmentExpression: p.assignmentExpression(true)}
+		prev = r
 		for p.rune(false) == ',' {
-			r = &ExpressionList{ExpressionList: r, Token: p.shift(false), AssignmentExpression: p.assignmentExpression(true)}
+			el := &ExpressionList{Token: p.shift(false), AssignmentExpression: p.assignmentExpression(true)}
+			prev.ExpressionList = el
+			prev = el
 		}
 		return r
 	}

@@ -916,7 +916,7 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 				case UInt64Value:
 					switch y := n.PostfixExpression.Type().(*PointerType).Elem().(type) {
 					case *StructType:
-						if f := y.Field(n.Token2.SrcStr()); f != nil {
+						if f := y.FieldByName(n.Token2.SrcStr()); f != nil {
 							n.val = c.convert(x+UInt64Value(f.Offset()), n.Type())
 						}
 					default:
