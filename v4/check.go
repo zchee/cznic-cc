@@ -746,7 +746,7 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 			return
 		}
 
-		n.InitializerList.check(c, t, off, nil, true)
+		n.InitializerList.check(c, t, off, true)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -886,7 +886,7 @@ func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type, off int64
 	}
 }
 
-func (n *InitializerList) check(c *ctx, currObj Type, off int64, dl *DesignatorList, outer bool) *InitializerList {
+func (n *InitializerList) check(c *ctx, currObj Type, off int64, outer bool) *InitializerList {
 	if n == nil || currObj == nil {
 		c.errors.add(errorf("internal error: %T %T", n, currObj))
 		return nil
@@ -894,57 +894,28 @@ func (n *InitializerList) check(c *ctx, currObj Type, off int64, dl *DesignatorL
 
 	switch x := currObj.(type) {
 	case *ArrayType:
-		return n.checkArray(c, x, off, dl, outer)
+		return n.checkArray(c, x, off, outer)
 	case *EnumType:
-		return n.checkEnum(c, x, off, dl, outer)
+		return n.checkEnum(c, x, off, outer)
 	case *PointerType:
-		return n.checkPointer(c, x, off, dl, outer)
+		return n.checkPointer(c, x, off, outer)
 	case *PredefinedType:
-		return n.checkPredefined(c, x, off, dl, outer)
+		return n.checkPredefined(c, x, off, outer)
 	case *StructType:
-		return n.checkStruct(c, x, off, dl, outer)
+		return n.checkStruct(c, x, off, outer)
 	case *UnionType:
-		return n.checkUnion(c, x, off, dl, outer)
+		return n.checkUnion(c, x, off, outer)
 	default:
 		c.errors.add(errorf("TODO %T <- ...", x))
 	}
 	return nil
 }
 
-func (n *InitializerList) checkEnum(c *ctx, t *EnumType, off int64, dl *DesignatorList, outer bool) *InitializerList {
-	if dl != nil {
-		c.errors.add(errorf("TODO %T %T", n, dl.Position()))
-		return nil
-	}
-
-	if n.Designation != nil {
-		if !outer {
-			return n
-		}
-
-		c.errors.add(errorf("%v: unexpected designation", n.Designation.Position()))
-		return nil
-	}
-
-	if isScalarType(t) {
-		n.Initializer.check(c, t, off)
-		return n.InitializerList
-	}
-
-	c.errors.add(errorf("TODO %T <- ...", t))
-	return nil
-}
-
-func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, dl *DesignatorList, outer bool) *InitializerList {
+func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool) *InitializerList {
 	elemT := t.Elem()
-	if dl != nil {
-		c.errors.add(errorf("TODO %T %T", n, dl.Position()))
-		return nil
-	}
-
 	switch {
 	case t.IsIncomplete():
-		var x, y, max int64
+		var x, y int64
 		for ; n != nil; n = n.InitializerList {
 			if n.Designation != nil {
 				if !outer {
@@ -952,25 +923,23 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, dl *Design
 				}
 
 				dl := n.Designation.DesignatorList
-				if x, y = dl.Designator.index(c); x < 0 {
+				x, y = dl.Designator.index(c)
+				if x < 0 {
 					return nil
 				}
 
-				if dl.DesignatorList != nil {
-					c.errors.add(errorf("TODO %T %T", n, n.Designation))
+				if dl := dl.DesignatorList; dl != nil {
+					//TODO if n = n.checkDesignatorList(dl, c, f.Type(), off+f.Offset()); n == nil { return nil }
+					c.errors.add(errorf("TODO %T", n))
 					return nil
 				}
 
-				if y >= 0 {
-					x = y
-				}
+				x = mathutil.MaxInt64(x, y)
 			}
-
-			max = mathutil.MaxInt64(max, x)
+			t.elems = mathutil.MaxInt64(t.elems, x)
 			n.Initializer.check(c, elemT, off+x*elemT.Size())
 		}
-		t.elems = max + 1
-		return n
+		return nil
 	default:
 		var x, y int64
 		for ; n != nil; n = n.InitializerList {
@@ -980,30 +949,29 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, dl *Design
 				}
 
 				dl := n.Designation.DesignatorList
-				if x, y = dl.Designator.index(c); x < 0 {
+				x, y = dl.Designator.index(c)
+				if x < 0 {
 					return nil
 				}
 
 				if x >= t.elems {
-					c.errors.add(errorf("%v: index %v out of range for array of %v elements", x, t.elems))
+					c.errors.add(errorf("%v: index %v out of range for array of %v elements", dl.Designator.Position(), x, t.elems))
 					return nil
 				}
 
 				if y >= t.elems {
-					c.errors.add(errorf("%v: index %v out of range for array of %v elements", y, t.elems))
+					c.errors.add(errorf("%v: index %v out of range for array of %v elements", dl.Designator.Position(), y, t.elems))
 					return nil
 				}
 
-				if dl.DesignatorList != nil {
-					c.errors.add(errorf("TODO %T %T", n, n.Designation))
+				if dl := dl.DesignatorList; dl != nil {
+					//TODO if n = n.checkDesignatorList(dl, c, f.Type(), off+f.Offset()); n == nil { return nil }
+					c.errors.add(errorf("TODO %T", n))
 					return nil
 				}
 
-				if y >= 0 {
-					x = y
-				}
+				x = mathutil.MaxInt64(x, y)
 			}
-
 			if x >= t.elems {
 				c.errors.add(errorf("%v: index %v out of range for array of %v elements", x, t.elems))
 				return nil
@@ -1022,10 +990,22 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, dl *Design
 func (n *Designator) index(c *ctx) (lo, hi int64) {
 	switch n.Case {
 	case DesignatorIndex: // '[' ConstantExpression ']'
-		return arrayIndex(c, n.ConstantExpression), -1
+		lo = arrayIndex(c, n.ConstantExpression)
+		hi = arrayIndex(c, n.ConstantExpression2)
+		if lo < 0 {
+			c.errors.add(errorf("%v: array indices cannot be negative"))
+			return -1, -1
+		}
+
+		return lo, -1
 	case DesignatorIndex2: // '[' ConstantExpression "..." ConstantExpression ']'
 		lo = arrayIndex(c, n.ConstantExpression)
 		hi = arrayIndex(c, n.ConstantExpression2)
+		if lo < 0 || hi < 0 {
+			c.errors.add(errorf("%v: array indices cannot be negative"))
+			return -1, -1
+		}
+
 		if lo >= 0 && hi >= 0 && lo >= hi {
 			c.errors.add(errorf("%v: first index shall be smaller than second index"))
 			return -1, -1
@@ -1062,12 +1042,7 @@ func arrayIndex(c *ctx, n ExpressionNode) int64 {
 	return -1
 }
 
-func (n *InitializerList) checkPointer(c *ctx, t *PointerType, off int64, dl *DesignatorList, outer bool) *InitializerList {
-	if dl != nil {
-		c.errors.add(errorf("TODO %T %T", n, dl.Position()))
-		return nil
-	}
-
+func (n *InitializerList) checkEnum(c *ctx, t *EnumType, off int64, outer bool) *InitializerList {
 	if n.Designation != nil {
 		if !outer {
 			return n
@@ -1086,12 +1061,7 @@ func (n *InitializerList) checkPointer(c *ctx, t *PointerType, off int64, dl *De
 	return nil
 }
 
-func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64, dl *DesignatorList, outer bool) *InitializerList {
-	if dl != nil {
-		c.errors.add(errorf("TODO %T %T", n, dl.Position()))
-		return nil
-	}
-
+func (n *InitializerList) checkPointer(c *ctx, t *PointerType, off int64, outer bool) *InitializerList {
 	if n.Designation != nil {
 		if !outer {
 			return n
@@ -1110,28 +1080,29 @@ func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64, 
 	return nil
 }
 
-func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64, dl *DesignatorList, outer bool) *InitializerList {
-	if dl != nil {
-		nm := dl.Designator.name(c)
-		if nm == "" {
-			return nil
+func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64, outer bool) *InitializerList {
+	if n.Designation != nil {
+		if !outer {
+			return n
 		}
 
-		f := t.FieldByName(nm)
-		if f == nil || f.depth != 0 {
-			c.errors.add(errorf("%v: %v has no member named '%v'", n.Designation.DesignatorList.Designator.Position(), t, nm))
-			return nil
-		}
-
-		il := *n
-		il.Designation = nil
-		return il.check(c, f.Type(), off+f.Offset(), dl.DesignatorList, false)
+		c.errors.add(errorf("%v: unexpected designation", n.Designation.Position()))
+		return nil
 	}
 
+	if isScalarType(t) {
+		n.Initializer.check(c, t, off)
+		return n.InitializerList
+	}
+
+	c.errors.add(errorf("TODO %T <- ...", t))
+	return nil
+}
+
+func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64, outer bool) *InitializerList {
 	f := t.NamedFieldByIndex(0)
 	for f != nil && n != nil {
-		switch {
-		case n.Designation != nil:
+		if n.Designation != nil {
 			if !outer {
 				return n
 			}
@@ -1143,24 +1114,53 @@ func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64, dl *Desi
 			}
 
 			if f = t.FieldByName(nm); f == nil || f.depth != 0 {
-				c.errors.add(errorf("%v: %v has no member named '%v'", n.Designation.DesignatorList.Designator.Position(), t, nm))
+				c.errors.add(errorf("%v: %v has no member %v", n.Position(), t, nm))
 				return nil
 			}
 
-			il := *n
-			il.Designation = nil
-			n = il.check(c, f.Type(), off+f.Offset(), dl.DesignatorList, false)
-		default:
-			if f == nil {
-				return nil
+			if dl := dl.DesignatorList; dl != nil {
+				if n = n.checkDesignatorList(dl, c, f.Type(), off+f.Offset()); n == nil {
+					return nil
+				}
 			}
-
-			n.Initializer.check(c, f.Type(), off+f.Offset())
-			n = n.InitializerList
 		}
+
+		if f == nil {
+			return nil
+		}
+
+		n.Initializer.check(c, f.Type(), off+f.Offset())
+		n = n.InitializerList
 		f = t.NamedFieldByIndex(f.ordinal + 1)
 	}
 	return n
+}
+
+func (n *InitializerList) checkDesignatorList(dl *DesignatorList, c *ctx, t Type, off int64) *InitializerList {
+	for ; dl != nil; dl = dl.DesignatorList {
+		switch x := t.(type) {
+		case *StructType:
+			nm := dl.Designator.name(c)
+			if nm == "" {
+				return nil
+			}
+
+			f := x.FieldByName(nm)
+			if f == nil {
+				c.errors.add(errorf("%v: type %s has no member %s", dl.Designator.Position(), t, nm))
+				return nil
+			}
+
+			t = f.Type()
+			off += f.Offset()
+		default:
+			c.errors.add(errorf("TODO %T", x))
+			return nil
+		}
+	}
+	n2 := *n
+	n2.Designation = nil
+	return n2.check(c, t, off, false)
 }
 
 func (n *Designator) name(c *ctx) string {
@@ -1180,12 +1180,7 @@ func (n *Designator) name(c *ctx) string {
 	return ""
 }
 
-func (n *InitializerList) checkUnion(c *ctx, t *UnionType, off int64, dl *DesignatorList, outer bool) *InitializerList {
-	if dl != nil {
-		c.errors.add(errorf("TODO %T %T", n, dl.Position()))
-		return nil
-	}
-
+func (n *InitializerList) checkUnion(c *ctx, t *UnionType, off int64, outer bool) *InitializerList {
 	f := t.NamedFieldByIndex(0)
 	if n.Designation != nil {
 		if !outer {
@@ -1198,14 +1193,14 @@ func (n *InitializerList) checkUnion(c *ctx, t *UnionType, off int64, dl *Design
 			return nil
 		}
 
-		if f = t.FieldByName(nm); f == nil {
-			c.errors.add(errorf("%v: %v has no member named '%v'", n.Designation.DesignatorList.Designator.Position(), t, nm))
+		if f = t.FieldByName(nm); f == nil || f.depth != 0 {
+			c.errors.add(errorf("%v: %v has no member %v", n.Position(), t, nm))
 			return nil
 		}
 
-		il := *n
-		il.Designation = nil
-		return il.check(c, f.Type(), off+f.Offset(), dl.DesignatorList, false)
+		if dl := dl.DesignatorList; dl != nil {
+			return n.checkDesignatorList(dl, c, f.Type(), off+f.Offset())
+		}
 	}
 
 	if f == nil {
@@ -3039,7 +3034,7 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 			break
 		}
 
-		n.InitializerList.check(c, n.Type(), 0, nil, true)
+		n.InitializerList.check(c, n.Type(), 0, true)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
