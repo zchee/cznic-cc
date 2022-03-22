@@ -107,6 +107,7 @@ func (n *ConstantExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *ConditionalExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -123,9 +124,9 @@ func (n *ConditionalExpression) eval(c *ctx, mode flags) (r Value) {
 			n.val = n.LogicalOrExpression.eval(c, mode)
 		case ConditionalExpressionCond: // LogicalOrExpression '?' ExpressionList ':' ConditionalExpression
 			switch val := n.LogicalOrExpression.eval(c, mode); {
-			case isZero(val):
-				n.val = c.convert(n.ExpressionList.eval(c, mode), n.Type())
 			case isNonzero(val):
+				n.val = c.convert(n.ExpressionList.eval(c, mode), n.Type())
+			case isZero(val):
 				n.val = c.convert(n.ConditionalExpression.eval(c, mode), n.Type())
 			}
 		default:
@@ -136,6 +137,7 @@ func (n *ConditionalExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *LogicalOrExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -170,6 +172,7 @@ func (n *LogicalOrExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *LogicalAndExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -204,6 +207,7 @@ func (n *LogicalAndExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *InclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -251,6 +255,7 @@ func (n *InclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *ExclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -298,6 +303,7 @@ func (n *ExclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *AndExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -345,6 +351,7 @@ func (n *AndExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -399,6 +406,7 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -505,6 +513,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *ShiftExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -585,6 +594,7 @@ func (n *ShiftExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *AdditiveExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -659,6 +669,7 @@ func (n *AdditiveExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -711,8 +722,6 @@ func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 						n.val = c.convert(x/y, n.Type())
 						break
 					}
-
-					c.errors.add(errorf("%v: integer division by zero", n.Token.Position()))
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -725,8 +734,6 @@ func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 						n.val = c.convert(x/y, n.Type())
 						break
 					}
-
-					c.errors.add(errorf("%v: integer division by zero", n.Token.Position()))
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -746,8 +753,6 @@ func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 						n.val = c.convert(x%y, n.Type())
 						break
 					}
-
-					c.errors.add(errorf("%v: integer division by zero", n.Token.Position()))
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -760,8 +765,6 @@ func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 						n.val = c.convert(x%y, n.Type())
 						break
 					}
-
-					c.errors.add(errorf("%v: integer division by zero", n.Token.Position()))
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
 				}
@@ -776,6 +779,7 @@ func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *CastExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -807,6 +811,7 @@ func (n *CastExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -874,9 +879,9 @@ func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
 				c.errors.add(errorf("TODO %v TYPE %T", n.Case, x))
 			}
 		case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
-			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
+			// nop
 		case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
-			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
+			// nop
 		case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
 			// nop
 		case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
@@ -895,6 +900,7 @@ func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -1038,6 +1044,7 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *PrimaryExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -1126,6 +1133,7 @@ func (n *ExpressionList) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *AssignmentExpression) eval(c *ctx, mode flags) (r Value) {
+	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {

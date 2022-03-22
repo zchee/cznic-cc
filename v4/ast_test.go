@@ -39,12 +39,9 @@ func ExampleAdditiveExpression_add() {
 	fmt.Println(exampleAST(49, "int i = x+y;"))
 	// Output:
 	// &cc.AdditiveExpression{
-	// · AdditiveExpression: &cc.AdditiveExpression{
-	// · · Case: AdditiveExpressionMul,
-	// · · MultiplicativeExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · AdditiveExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Case: AdditiveExpressionAdd,
 	// · MultiplicativeExpression: &cc.PrimaryExpression{
@@ -59,12 +56,9 @@ func ExampleAdditiveExpression_sub() {
 	fmt.Println(exampleAST(50, "int i = x-y;"))
 	// Output:
 	// &cc.AdditiveExpression{
-	// · AdditiveExpression: &cc.AdditiveExpression{
-	// · · Case: AdditiveExpressionMul,
-	// · · MultiplicativeExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · AdditiveExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Case: AdditiveExpressionSub,
 	// · MultiplicativeExpression: &cc.PrimaryExpression{
@@ -116,12 +110,9 @@ func ExampleAndExpression_and() {
 	fmt.Println(exampleAST(63, "int i = x & y;"))
 	// Output:
 	// &cc.AndExpression{
-	// · AndExpression: &cc.AndExpression{
-	// · · Case: AndExpressionEq,
-	// · · EqualityExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · AndExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Case: AndExpressionAnd,
 	// · EqualityExpression: &cc.PrimaryExpression{
@@ -2057,12 +2048,9 @@ func ExampleEqualityExpression_eq() {
 	// Output:
 	// &cc.EqualityExpression{
 	// · Case: EqualityExpressionEq,
-	// · EqualityExpression: &cc.EqualityExpression{
-	// · · Case: EqualityExpressionRel,
-	// · · RelationalExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · EqualityExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · RelationalExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
@@ -2077,12 +2065,9 @@ func ExampleEqualityExpression_neq() {
 	// Output:
 	// &cc.EqualityExpression{
 	// · Case: EqualityExpressionNeq,
-	// · EqualityExpression: &cc.EqualityExpression{
-	// · · Case: EqualityExpressionRel,
-	// · · RelationalExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · EqualityExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · RelationalExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
@@ -2101,12 +2086,9 @@ func ExampleExclusiveOrExpression_xor() {
 	// · · Token: example.c:1:11: identifier "y",
 	// · },
 	// · Case: ExclusiveOrExpressionXor,
-	// · ExclusiveOrExpression: &cc.ExclusiveOrExpression{
-	// · · AndExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
-	// · · Case: ExclusiveOrExpressionAnd,
+	// · ExclusiveOrExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:10: '^' "^",
 	// }
@@ -2590,12 +2572,9 @@ func ExampleInclusiveOrExpression_or() {
 	// · · Case: PrimaryExpressionIdent,
 	// · · Token: example.c:1:11: identifier "y",
 	// · },
-	// · InclusiveOrExpression: &cc.InclusiveOrExpression{
-	// · · Case: InclusiveOrExpressionXor,
-	// · · ExclusiveOrExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · InclusiveOrExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:10: '|' "|",
 	// }
@@ -2917,12 +2896,9 @@ func ExampleIterationStatement_for() {
 	// · ExpressionList2: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.RelationalExpression{
 	// · · · Case: RelationalExpressionLt,
-	// · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · Case: RelationalExpressionShift,
-	// · · · · ShiftExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:23: identifier "i",
-	// · · · · },
+	// · · · RelationalExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:23: identifier "i",
 	// · · · },
 	// · · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionInt,
@@ -3003,12 +2979,9 @@ func ExampleIterationStatement_forDecl() {
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.RelationalExpression{
 	// · · · Case: RelationalExpressionLt,
-	// · · · RelationalExpression: &cc.RelationalExpression{
-	// · · · · Case: RelationalExpressionShift,
-	// · · · · ShiftExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:27: identifier "i",
-	// · · · · },
+	// · · · RelationalExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:27: identifier "i",
 	// · · · },
 	// · · · ShiftExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionInt,
@@ -3259,12 +3232,9 @@ func ExampleLogicalAndExpression_lAnd() {
 	// · · Case: PrimaryExpressionIdent,
 	// · · Token: example.c:1:14: identifier "y",
 	// · },
-	// · LogicalAndExpression: &cc.LogicalAndExpression{
-	// · · Case: LogicalAndExpressionOr,
-	// · · InclusiveOrExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · LogicalAndExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '&&' "&&",
 	// }
@@ -3279,12 +3249,9 @@ func ExampleLogicalOrExpression_lOr() {
 	// · · Case: PrimaryExpressionIdent,
 	// · · Token: example.c:1:14: identifier "y",
 	// · },
-	// · LogicalOrExpression: &cc.LogicalOrExpression{
-	// · · Case: LogicalOrExpressionLAnd,
-	// · · LogicalAndExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · LogicalOrExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '||' "||",
 	// }
@@ -3299,12 +3266,9 @@ func ExampleMultiplicativeExpression_mul() {
 	// · · Case: PrimaryExpressionIdent,
 	// · · Token: example.c:1:13: identifier "y",
 	// · },
-	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '*' "*",
 	// }
@@ -3319,12 +3283,9 @@ func ExampleMultiplicativeExpression_div() {
 	// · · Case: PrimaryExpressionIdent,
 	// · · Token: example.c:1:13: identifier "y",
 	// · },
-	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '/' "/",
 	// }
@@ -3339,12 +3300,9 @@ func ExampleMultiplicativeExpression_mod() {
 	// · · Case: PrimaryExpressionIdent,
 	// · · Token: example.c:1:13: identifier "y",
 	// · },
-	// · MultiplicativeExpression: &cc.MultiplicativeExpression{
-	// · · Case: MultiplicativeExpressionCast,
-	// · · CastExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · MultiplicativeExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '%' "%",
 	// }
@@ -3767,12 +3725,9 @@ func ExamplePrimaryExpression_expr() {
 	// · Case: PrimaryExpressionExpr,
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.AdditiveExpression{
-	// · · · AdditiveExpression: &cc.AdditiveExpression{
-	// · · · · Case: AdditiveExpressionMul,
-	// · · · · MultiplicativeExpression: &cc.PrimaryExpression{
-	// · · · · · Case: PrimaryExpressionIdent,
-	// · · · · · Token: example.c:1:10: identifier "x",
-	// · · · · },
+	// · · · AdditiveExpression: &cc.PrimaryExpression{
+	// · · · · Case: PrimaryExpressionIdent,
+	// · · · · Token: example.c:1:10: identifier "x",
 	// · · · },
 	// · · · Case: AdditiveExpressionAdd,
 	// · · · MultiplicativeExpression: &cc.PrimaryExpression{
@@ -3865,12 +3820,9 @@ func ExampleRelationalExpression_lt() {
 	// Output:
 	// &cc.RelationalExpression{
 	// · Case: RelationalExpressionLt,
-	// · RelationalExpression: &cc.RelationalExpression{
-	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · RelationalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
@@ -3885,12 +3837,9 @@ func ExampleRelationalExpression_gt() {
 	// Output:
 	// &cc.RelationalExpression{
 	// · Case: RelationalExpressionGt,
-	// · RelationalExpression: &cc.RelationalExpression{
-	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · RelationalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
@@ -3905,12 +3854,9 @@ func ExampleRelationalExpression_leq() {
 	// Output:
 	// &cc.RelationalExpression{
 	// · Case: RelationalExpressionLeq,
-	// · RelationalExpression: &cc.RelationalExpression{
-	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · RelationalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
@@ -3925,12 +3871,9 @@ func ExampleRelationalExpression_geq() {
 	// Output:
 	// &cc.RelationalExpression{
 	// · Case: RelationalExpressionGeq,
-	// · RelationalExpression: &cc.RelationalExpression{
-	// · · Case: RelationalExpressionShift,
-	// · · ShiftExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
+	// · RelationalExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · ShiftExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
@@ -4083,12 +4026,9 @@ func ExampleShiftExpression_lsh() {
 	// · · Token: example.c:1:14: identifier "y",
 	// · },
 	// · Case: ShiftExpressionLsh,
-	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
-	// · · Case: ShiftExpressionAdd,
+	// · ShiftExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '<<' "<<",
 	// }
@@ -4103,12 +4043,9 @@ func ExampleShiftExpression_rsh() {
 	// · · Token: example.c:1:14: identifier "y",
 	// · },
 	// · Case: ShiftExpressionRsh,
-	// · ShiftExpression: &cc.ShiftExpression{
-	// · · AdditiveExpression: &cc.PrimaryExpression{
-	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:9: identifier "x",
-	// · · },
-	// · · Case: ShiftExpressionAdd,
+	// · ShiftExpression: &cc.PrimaryExpression{
+	// · · Case: PrimaryExpressionIdent,
+	// · · Token: example.c:1:9: identifier "x",
 	// · },
 	// · Token: example.c:1:11: '>>' ">>",
 	// }

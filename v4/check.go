@@ -648,6 +648,12 @@ func (n *ExpressionStatement) check(c *ctx) (r Type) {
 func (n *Declaration) check(c *ctx) {
 	var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto bool
 	t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto)
+	var attr *Attributes
+	if n.InitDeclaratorList != nil && n.InitDeclaratorList.InitDeclaratorList == nil {
+		if attr = n.InitDeclaratorList.InitDeclarator.AttributeSpecifierList.check(c); attr != nil && attr.VectorSize > 0 {
+			t = t.setAttr(attr)
+		}
+	}
 	for l := n.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
 		l.InitDeclarator.check(c, t, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto)
 	}
@@ -881,7 +887,6 @@ func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type, off int64
 			c.errors.add(errorf("%v: incompatible types: %s and %s", n.AssignmentExpression.Position(), t, x))
 		}
 	default:
-		trc("%v: %s <- %s", n.Position(), t, exprT)
 		c.errors.add(errorf("TODO %T <- %T %T", t, n.Value(), x))
 	}
 }
@@ -1113,7 +1118,7 @@ func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64, outer bo
 				return nil
 			}
 
-			if f = t.FieldByName(nm); f == nil || f.depth != 0 {
+			if f = t.FieldByName(nm); f == nil {
 				c.errors.add(errorf("%v: %v has no member %v", n.Position(), t, nm))
 				return nil
 			}
@@ -1193,7 +1198,7 @@ func (n *InitializerList) checkUnion(c *ctx, t *UnionType, off int64, outer bool
 			return nil
 		}
 
-		if f = t.FieldByName(nm); f == nil || f.depth != 0 {
+		if f = t.FieldByName(nm); f == nil {
 			c.errors.add(errorf("%v: %v has no member %v", n.Position(), t, nm))
 			return nil
 		}
@@ -1537,36 +1542,72 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 //  AttributeSpecifierList:
 //          AttributeSpecifier
 //  |       AttributeSpecifierList AttributeSpecifier
-func (n *AttributeSpecifierList) check(c *ctx) {
+func (n *AttributeSpecifierList) check(c *ctx) *Attributes {
+	var attr Attributes
 	for ; n != nil; n = n.AttributeSpecifierList {
-		n.AttributeSpecifier.check(c)
+		n.AttributeSpecifier.check(c, &attr)
 	}
+	if attr != (Attributes{}) {
+		return &attr
+	}
+
+	return nil
 }
 
 //  AttributeSpecifier:
 //          "__attribute__" '(' '(' AttributeValueList ')' ')'
-func (n *AttributeSpecifier) check(c *ctx) {
-	n.AttributeValueList.check(c)
+func (n *AttributeSpecifier) check(c *ctx, attr *Attributes) {
+	n.AttributeValueList.check(c, attr)
 }
 
 //  AttributeValueList:
 //          AttributeValue
 //  |       AttributeValueList ',' AttributeValue
-func (n *AttributeValueList) check(c *ctx) {
+func (n *AttributeValueList) check(c *ctx, attr *Attributes) {
 	for ; n != nil; n = n.AttributeValueList {
-		n.AttributeValue.check(c)
+		n.AttributeValue.check(c, attr)
 	}
 }
 
 //  AttributeValue:
 //          IDENTIFIER                                 // Case AttributeValueIdent
 //  |       IDENTIFIER '(' ArgumentExpressionList ')'  // Case AttributeValueExpr
-func (n *AttributeValue) check(c *ctx) {
+func (n *AttributeValue) check(c *ctx, attr *Attributes) {
 	switch n.Case {
 	case AttributeValueIdent: // IDENTIFIER
 		// ok
 	case AttributeValueExpr: // IDENTIFIER '(' ArgumentExpressionList ')'
 		n.ArgumentExpressionList.check(c, decay|ignoreUndefined)
+		switch n.Token.SrcStr() {
+		case "vector_size":
+			if n.ArgumentExpressionList.ArgumentExpressionList != nil {
+				c.errors.add(errorf("%v: expected one expression", n.ArgumentExpressionList.Position()))
+				break
+			}
+
+			var sz int64
+			switch x := n.ArgumentExpressionList.AssignmentExpression.Value().(type) {
+			case Int64Value:
+				sz = int64(x)
+			case UInt64Value:
+				sz = int64(x)
+			default:
+				c.errors.add(errorf("%v: expected a constant integer value", n.ArgumentExpressionList.AssignmentExpression.Position()))
+				return
+			}
+
+			if attr.VectorSize > 0 {
+				c.errors.add(errorf("%v: multiple vector_size specifications", n.ArgumentExpressionList.AssignmentExpression.Position()))
+				return
+			}
+
+			if sz <= 0 {
+				c.errors.add(errorf("%v: vector_size must be positive", n.ArgumentExpressionList.AssignmentExpression.Position()))
+				return
+			}
+
+			attr.VectorSize = sz
+		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2197,7 +2238,7 @@ func (n *AssignmentExpression) check(c *ctx, mode flags) (r Type) {
 		n.typ = n.UnaryExpression.check(c, mode)
 		a := n.Type()
 		b := n.AssignmentExpression.check(c, mode)
-		if !isModifiableLvalue(n.Type()) {
+		if !isModifiableLvalue(a) {
 			c.errors.add(errorf("%v: left operand shall be a modifiable lvalue", n.UnaryExpression.Position()))
 			break
 		}
@@ -2566,7 +2607,9 @@ func (n *RelationalExpression) check(c *ctx, mode flags) (r Type) {
 			//
 			// both operands are pointers to qualified or unqualified versions of
 			// compatible incomplete types
-			isPointerType(a) && isPointerType(b):
+			//
+			// gcc allows mixing ints and pointers
+			isScalarType(a) && isScalarType(b):
 
 			// ok
 		default:
@@ -2854,19 +2897,30 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		}
 		n.typ = c.intT
 	case UnaryExpressionSizeofExpr: // "sizeof" UnaryExpression
+		n.typ = c.sizeT(n)
 		t := n.UnaryExpression.check(c, mode.del(decay))
+		if t.Kind() == Function {
+			t = c.newPointerType(t)
+		}
 		if t.IsIncomplete() {
+			if x, ok := t.(*ArrayType); ok && x.IsVLA() {
+				break
+			}
+
 			c.errors.add(errorf("%v: sizeof incomplete type: %s", n.UnaryExpression.Position(), t))
 		}
 		n.val = UInt64Value(t.Size())
-		n.typ = c.sizeT(n)
 	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
+		n.typ = c.sizeT(n)
 		t := n.TypeName.check(c)
 		if t.IsIncomplete() {
+			if x, ok := t.(*ArrayType); ok && x.IsVLA() {
+				break
+			}
+
 			c.errors.add(errorf("%v: sizeof incomplete type: %s", n.TypeName.Position(), t))
 		}
 		n.val = UInt64Value(t.Size())
-		n.typ = c.sizeT(n)
 	case UnaryExpressionLabelAddr: // "&&" IDENTIFIER
 		n.typ = c.pvoidT
 	case UnaryExpressionAlignofExpr: // "_Alignof" UnaryExpression
@@ -2929,6 +2983,10 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 			n.typ = t1.(*PointerType).Elem()
 		case isPointerType(t2) && isIntegerType(t1):
 			n.typ = t2.(*PointerType).Elem()
+		case isVectorType(t1) && isIntegerType(t2):
+			n.typ = t1
+		case isVectorType(t2) && isIntegerType(t1):
+			n.typ = t2
 		default:
 			c.errors.add(errorf("%v: one of the expressions shall be a pointer and the other shall have integer type: %s and %s", n.Token.Position(), t1, t2))
 			n.typ = c.intT

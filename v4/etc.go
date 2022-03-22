@@ -508,3 +508,11 @@ func bool2int(b bool) Int64Value {
 
 	return int0
 }
+
+func pos(n Node) (r token.Position) {
+	if n != nil {
+		r = token.Position(n.Position())
+		r.Filename = filepath.Base(r.Filename)
+	}
+	return r
+}

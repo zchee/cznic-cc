@@ -210,6 +210,8 @@ type Type interface {
 	// Align reports the minimum alignment required by a type.
 	Align() int
 
+	Attributes() *Attributes
+
 	// Decay returns a pointer to array element for array types, a pointer to a
 	// function for function types and itself for all other type kinds.
 	Decay() Type
@@ -244,6 +246,7 @@ type Type interface {
 	Undecay() Type
 
 	isCompatible(Type) bool
+	setAttr(*Attributes) Type
 	setName(nm string) Type
 	str(b *strings.Builder, useTag bool) *strings.Builder
 }
@@ -254,6 +257,12 @@ type namer string
 func (n namer) Name() string { return string(n) }
 
 type InvalidType struct{}
+
+// setAttr implements Type.
+func (n InvalidType) setAttr(*Attributes) Type { return Invalid }
+
+// Attributes implements Type.
+func (n *InvalidType) Attributes() *Attributes { return nil }
 
 // Align implements Type.
 func (n *InvalidType) Align() int { return 1 }
@@ -293,6 +302,7 @@ func (n *InvalidType) Kind() Kind { return InvalidKind }
 func (n *InvalidType) Size() int64 { return -1 }
 
 type PredefinedType struct {
+	attributer
 	c    *ctx
 	kind Kind
 	namer
@@ -300,6 +310,13 @@ type PredefinedType struct {
 
 func (c *ctx) newPredefinedType(kind Kind) *PredefinedType {
 	return &PredefinedType{c: c, kind: kind}
+}
+
+// setAttr implements Type.
+func (n *PredefinedType) setAttr(a *Attributes) Type {
+	m := *n
+	m.attributer.p = a
+	return &m
 }
 
 func (n *PredefinedType) isCompatible(t Type) bool {
@@ -421,6 +438,7 @@ func (n *Parameter) Name() Token {
 }
 
 type FunctionType struct {
+	attributer
 	c  *ctx
 	fp []*Parameter
 	namer
@@ -456,6 +474,9 @@ func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadi
 	}
 	return r
 }
+
+// setAttr implements Type.
+func (n *FunctionType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
 
 func (n *FunctionType) isCompatible(t Type) bool {
 	switch x := t.(type) {
@@ -553,6 +574,7 @@ func (n *FunctionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type PointerType struct {
+	attributer
 	c    *ctx
 	elem typer
 	namer
@@ -563,6 +585,13 @@ func (c *ctx) newPointerType(elem Type) (r *PointerType) {
 	r = &PointerType{c: c, elem: newTyper(elem)}
 	r.undecay = r
 	return r
+}
+
+// setAttr implements Type.
+func (n *PointerType) setAttr(a *Attributes) Type {
+	m := *n
+	m.attributer.p = a
+	return &m
 }
 
 func (n *PointerType) isCompatible(t Type) bool {
@@ -709,6 +738,19 @@ type structType struct {
 	isUnion bool
 }
 
+func (n *structType) isIncomplete() bool {
+	for _, v := range n.fields {
+		if v.Type().IsIncomplete() {
+			if x, ok := v.Type().(*ArrayType); ok && x.IsVLA() {
+				continue
+			}
+
+			return true
+		}
+	}
+	return false
+}
+
 func (n *structType) isCompatible(m *structType) bool {
 	if n == m {
 		return true
@@ -792,15 +834,20 @@ func (n *structType) collectFields(m map[string][]*Field, parent *Field, depth i
 }
 
 type StructType struct {
+	attributer
+	c       *ctx
 	forward *StructOrUnionSpecifier
 	namer
 	structType
 }
 
 func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) (r *StructType) {
-	r = &StructType{structType: structType{tag: tag, fields: fields, size: size, align: align}}
+	r = &StructType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align}}
 	return r
 }
+
+// setAttr implements Type.
+func (n *StructType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
 
 func (n *StructType) isCompatible(t Type) bool {
 	if n.forward != nil {
@@ -884,6 +931,10 @@ func (n *StructType) Align() int {
 		return n.forward.Type().Align()
 	}
 
+	if n.IsIncomplete() {
+		return n.c.intT.Align()
+	}
+
 	return n.align
 }
 
@@ -916,7 +967,7 @@ func (n *StructType) IsIncomplete() bool {
 		return n.forward.Type().IsIncomplete()
 	}
 
-	return n.Size() < 0
+	return n.isIncomplete()
 }
 
 // Kind implements Type.
@@ -974,14 +1025,19 @@ func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type UnionType struct {
+	attributer
+	c       *ctx
 	forward *StructOrUnionSpecifier
 	namer
 	structType
 }
 
 func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
-	return &UnionType{structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true}}
+	return &UnionType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true}}
 }
+
+// setAttr implements Type.
+func (n *UnionType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
 
 func (n *UnionType) isCompatible(t Type) bool {
 	if n.forward != nil {
@@ -1065,6 +1121,10 @@ func (n *UnionType) Align() int {
 		return n.forward.Type().Align()
 	}
 
+	if n.IsIncomplete() {
+		return n.c.intT.Align()
+	}
+
 	return n.align
 }
 
@@ -1097,7 +1157,7 @@ func (n *UnionType) IsIncomplete() bool {
 		return n.forward.Type().IsIncomplete()
 	}
 
-	return n.Size() < 0
+	return n.isIncomplete()
 }
 
 // Kind implements Type.
@@ -1155,6 +1215,7 @@ func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type ArrayType struct {
+	attributer
 	c     *ctx
 	elem  typer
 	elems int64
@@ -1166,6 +1227,9 @@ func (c *ctx) newArrayType(elem Type, elems int64, expr ExpressionNode) (r *Arra
 	r = &ArrayType{c: c, elem: newTyper(elem), elems: elems, expr: expr}
 	return r
 }
+
+// setAttr implements Type.
+func (n *ArrayType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
 
 func (n *ArrayType) isCompatible(t Type) bool {
 	switch x := t.(type) {
@@ -1183,7 +1247,21 @@ func (n *ArrayType) setName(nm string) Type {
 	return &r
 }
 
-func (n *ArrayType) IsVLA() bool { return n.elems < 0 && n.expr != nil && n.expr.Value() == Unknown }
+func (n *ArrayType) IsVLA() bool {
+	for {
+		if n.elems < 0 && n.expr != nil && n.expr.Value() == Unknown {
+			return true
+		}
+
+		x, ok := n.Elem().(*ArrayType)
+		if !ok {
+			break
+		}
+
+		n = x
+	}
+	return false
+}
 
 // Decay implements Type.
 func (n *ArrayType) Decay() Type { return n.c.newPointerType2(n.Elem(), n) }
@@ -1260,6 +1338,7 @@ func (n *ArrayType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type EnumType struct {
+	attributer
 	enums   []*Enumerator
 	forward *EnumSpecifier
 	namer
@@ -1270,6 +1349,9 @@ type EnumType struct {
 func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
 	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums}
 }
+
+// setAttr implements Type.
+func (n *EnumType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
 
 func (n *EnumType) isCompatible(t Type) bool {
 	if n.forward != nil {
@@ -1390,6 +1472,8 @@ func isModifiableLvalue(t Type) bool {
 }
 
 func isPointerType(t Type) bool { return t.Kind() == Ptr }
+
+func isVectorType(t Type) bool { a := t.Attributes(); return a != nil && a.VectorSize > 0 }
 
 func isIntegerType(t Type) bool { return integerKinds[t.Kind()] }
 
@@ -1611,3 +1695,12 @@ func integerPromotion(t Type) Type {
 		return t
 	}
 }
+
+type Attributes struct {
+	VectorSize int64
+}
+
+type attributer struct{ p *Attributes }
+
+// Attributes implemets Type.
+func (n attributer) Attributes() *Attributes { return n.p }
