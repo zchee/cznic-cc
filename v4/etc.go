@@ -516,3 +516,10 @@ func pos(n Node) (r token.Position) {
 	}
 	return r
 }
+
+func position(n Node) (r token.Position) {
+	if n != nil {
+		r = token.Position(n.Position())
+	}
+	return r
+}

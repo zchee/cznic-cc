@@ -650,7 +650,7 @@ func (n *Declaration) check(c *ctx) {
 	t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto)
 	var attr *Attributes
 	if n.InitDeclaratorList != nil && n.InitDeclaratorList.InitDeclaratorList == nil {
-		if attr = n.InitDeclaratorList.InitDeclarator.AttributeSpecifierList.check(c); attr != nil && attr.VectorSize > 0 {
+		if attr = n.InitDeclaratorList.InitDeclarator.AttributeSpecifierList.check(c); attr != nil {
 			t = t.setAttr(attr)
 		}
 	}
@@ -905,6 +905,10 @@ func (n *InitializerList) check(c *ctx, currObj Type, off int64, outer bool) *In
 	case *PointerType:
 		return n.checkPointer(c, x, off, outer)
 	case *PredefinedType:
+		if x.VectorSize() > 0 {
+			return n.checkArray(c, x.vector, off, outer)
+		}
+
 		return n.checkPredefined(c, x, off, outer)
 	case *StructType:
 		return n.checkStruct(c, x, off, outer)
@@ -1030,21 +1034,32 @@ func arrayIndex(c *ctx, n ExpressionNode) int64 {
 		return -1
 	}
 
+	v, ok := int64Value(c, n)
+	if !ok || v < 0 {
+		c.errors.add(errorf("%v: invalid array index", n.Position()))
+		return -1
+	}
+
+	return v
+}
+
+func int64Value(c *ctx, n ExpressionNode) (int64, bool) {
+	if n == nil {
+		return 0, false
+	}
+
 	switch t := n.check(c, decay); {
 	case isIntegerType(t):
 		switch x := n.eval(c, 0).(type) {
 		case Int64Value:
-			if x >= 0 {
-				return int64(x)
-			}
+			return int64(x), true
 		case UInt64Value:
 			if x <= math.MaxInt64 {
-				return int64(x)
+				return int64(x), true
 			}
 		}
 	}
-	c.errors.add(errorf("%v: invalid array index", n.Position()))
-	return -1
+	return 0, false
 }
 
 func (n *InitializerList) checkEnum(c *ctx, t *EnumType, off int64, outer bool) *InitializerList {
@@ -1292,30 +1307,17 @@ func arraySize(c *ctx, n ExpressionNode) int64 {
 		return -1
 	}
 
-	switch t := n.check(c, decay); {
-	case isIntegerType(t):
-		switch x := n.eval(c, 0).(type) {
-		case Int64Value:
-			if x >= 0 {
-				return int64(x)
-			}
-
-			c.errors.add(errorf("%v: invalid array size: %v", n.Position(), x))
-		case UInt64Value:
-			if x <= math.MaxInt64 {
-				return int64(x)
-			}
-
-			c.errors.add(errorf("%v: invalid array size: %v", n.Position(), x))
-		case *UnknownValue:
-			// VLA
-		default:
-			c.errors.add(errorf("TODO %T", x))
-		}
-	default:
-		c.errors.add(errorf("TODO %v", t.Kind()))
+	v, ok := int64Value(c, n)
+	if !ok { // VLA
+		return -1
 	}
-	return -1
+
+	if v < 0 {
+		c.errors.add(errorf("%v: invalid array size", n.Position()))
+		return -1
+	}
+
+	return v
 }
 
 //  ParameterTypeList:
@@ -1486,15 +1488,23 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 		return c.intT
 	}
 
+	n0 := n
+	var attr *Attributes
 	var ts []TypeSpecifierCase
 
 	defer func(n *DeclarationSpecifiers) {
 		if r == nil || r == Invalid {
 			//panic(todo("%v: %v %v", n.Position(), ts, TypeString(r)))
 			c.errors.add(errorf("TODO %T missed/failed type check: %v", n, ts))
+			return
+		}
+
+		if attr != nil {
+			r = r.setAttr(attr)
 		}
 	}(n)
 
+	var attrs []*Attributes
 	for ; n != nil; n = n.DeclarationSpecifiers {
 		switch n.Case {
 		case DeclarationSpecifiersStorage: // StorageClassSpecifier DeclarationSpecifiers
@@ -1510,11 +1520,22 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 			n.AlignmentSpecifier.check(c)
 			//TODO use returned type
 		case DeclarationSpecifiersAttr:
-			n.AttributeSpecifierList.check(c)
+			if attr := n.AttributeSpecifierList.check(c); attr != nil {
+				attrs = append(attrs, attr)
+			}
 		default:
 			c.errors.add(errorf("internal error: %v", n.Case))
 		}
 	}
+	switch len(attrs) {
+	case 0:
+		// ok
+	case 1:
+		attr = attrs[0]
+	default:
+		c.errors.add(errorf("TODO %T", n0.Position()))
+	}
+
 	t, ok := c.builtinTypes[ts2String(ts)]
 	if ok {
 		return t
@@ -1547,7 +1568,7 @@ func (n *AttributeSpecifierList) check(c *ctx) *Attributes {
 	for ; n != nil; n = n.AttributeSpecifierList {
 		n.AttributeSpecifier.check(c, &attr)
 	}
-	if attr != (Attributes{}) {
+	if attr.isNonZero {
 		return &attr
 	}
 
@@ -1579,34 +1600,62 @@ func (n *AttributeValue) check(c *ctx, attr *Attributes) {
 	case AttributeValueExpr: // IDENTIFIER '(' ArgumentExpressionList ')'
 		n.ArgumentExpressionList.check(c, decay|ignoreUndefined)
 		switch n.Token.SrcStr() {
-		case "vector_size":
+		case "aligned":
+			e := n.ArgumentExpressionList.AssignmentExpression
 			if n.ArgumentExpressionList.ArgumentExpressionList != nil {
-				c.errors.add(errorf("%v: expected one expression", n.ArgumentExpressionList.Position()))
+				c.errors.add(errorf("%v: expected one expression", e.Position()))
 				break
 			}
 
-			var sz int64
-			switch x := n.ArgumentExpressionList.AssignmentExpression.Value().(type) {
-			case Int64Value:
-				sz = int64(x)
-			case UInt64Value:
-				sz = int64(x)
-			default:
-				c.errors.add(errorf("%v: expected a constant integer value", n.ArgumentExpressionList.AssignmentExpression.Position()))
+			v, ok := int64Value(c, e)
+			if !ok {
+				c.errors.add(errorf("%v: expected a constant integer value", e.Position()))
 				return
 			}
 
-			if attr.VectorSize > 0 {
-				c.errors.add(errorf("%v: multiple vector_size specifications", n.ArgumentExpressionList.AssignmentExpression.Position()))
+			if attr.Aligned() > 0 {
+				c.errors.add(errorf("%v: multiple 'aligned' specifications", e.Position()))
 				return
 			}
 
-			if sz <= 0 {
-				c.errors.add(errorf("%v: vector_size must be positive", n.ArgumentExpressionList.AssignmentExpression.Position()))
+			if v <= 0 {
+				c.errors.add(errorf("%v: alignment must be positive", e.Position()))
 				return
 			}
 
-			attr.VectorSize = sz
+			attr.setAligned(v)
+		case
+			"__vector_size__",
+			"vector_size":
+
+			e := n.ArgumentExpressionList.AssignmentExpression
+			if n.ArgumentExpressionList.ArgumentExpressionList != nil {
+				c.errors.add(errorf("%v: expected one expression", e.Position()))
+				break
+			}
+
+			v, ok := int64Value(c, e)
+			if !ok {
+				c.errors.add(errorf("%v: expected a constant integer value", e.Position()))
+				return
+			}
+
+			if attr.VectorSize() > 0 {
+				c.errors.add(errorf("%v: multiple 'vector_size' specifications", e.Position()))
+				return
+			}
+
+			if v <= 0 {
+				c.errors.add(errorf("%v: vector size must be positive", e.Position()))
+				return
+			}
+
+			if v&(v-1) != 0 {
+				c.errors.add(errorf("%v: vector size must be a power of two: %v", e.Position(), v))
+				return
+			}
+
+			attr.setVectorSize(v)
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -2027,6 +2076,7 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 		}
 
 		f.ordinal = i
+
 		switch {
 		case f.isBitField:
 			f.accessBytes = bits2AccessBytes(f.valueBits)
@@ -2047,6 +2097,9 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 			}
 		default:
 			sz := f.Type().Size()
+			if f.Type().IsIncomplete() && f.Type().Kind() == Array { // Flexible array member
+				sz = 0
+			}
 			al := f.Type().Align()
 			if al > maxAlignBytes {
 				maxAlignBytes = al
@@ -3134,7 +3187,9 @@ func (n *PrimaryExpression) check(c *ctx, mode flags) (r Type) {
 
 	defer func() {
 		if r == nil || r == Invalid {
-			c.errors.add(errorf("TODO %T missed/failed type check %v", n, n.Case))
+			if !mode.has(ignoreUndefined) {
+				c.errors.add(errorf("TODO %T missed/failed type check %v", n, n.Case))
+			}
 			return
 		}
 

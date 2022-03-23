@@ -44,7 +44,13 @@ var (
 		Decimal64:         true,
 		Double:            true,
 		Enum:              true,
+		Float128:          true,
+		Float32:           true,
+		Float32x:          true,
+		Float64:           true,
+		Float64x:          true,
 		Float:             true,
+		Int128:            true,
 		Int:               true,
 		Long:              true,
 		LongDouble:        true,
@@ -52,12 +58,22 @@ var (
 		SChar:             true,
 		Short:             true,
 		UChar:             true,
+		UInt128:           true,
 		UInt:              true,
 		ULong:             true,
 		ULongLong:         true,
 		UShort:            true,
-		Int128:            true,
-		UInt128:           true,
+	}
+
+	floatinPointKinds = [maxKind]bool{
+		Double:     true,
+		Float128:   true,
+		Float32:    true,
+		Float32x:   true,
+		Float64:    true,
+		Float64x:   true,
+		Float:      true,
+		LongDouble: true,
 	}
 
 	integerKinds = [maxKind]bool{
@@ -245,6 +261,10 @@ type Type interface {
 	// Undecay() returns its receiver.
 	Undecay() Type
 
+	// VectorSize reports N from __attribute__((vector_size(N))). Valid if
+	// > 0.
+	VectorSize() int64
+
 	isCompatible(Type) bool
 	setAttr(*Attributes) Type
 	setName(nm string) Type
@@ -260,6 +280,9 @@ type InvalidType struct{}
 
 // setAttr implements Type.
 func (n InvalidType) setAttr(*Attributes) Type { return Invalid }
+
+// VectorSize implements Type.
+func (n InvalidType) VectorSize() int64 { return -1 }
 
 // Attributes implements Type.
 func (n *InvalidType) Attributes() *Attributes { return nil }
@@ -306,15 +329,30 @@ type PredefinedType struct {
 	c    *ctx
 	kind Kind
 	namer
+	vector *ArrayType
 }
 
 func (c *ctx) newPredefinedType(kind Kind) *PredefinedType {
 	return &PredefinedType{c: c, kind: kind}
 }
 
+// VectorSize implements Type.
+func (n *PredefinedType) VectorSize() int64 {
+	if a := n.Attributes(); a != nil {
+		return a.VectorSize()
+	}
+
+	return -1
+}
+
 // setAttr implements Type.
 func (n *PredefinedType) setAttr(a *Attributes) Type {
+	var vec *ArrayType
+	if sz := a.VectorSize(); sz > 0 {
+		vec = n.c.newArrayType(n, sz/n.Size(), nil)
+	}
 	m := *n
+	m.vector = vec
 	m.attributer.p = a
 	return &m
 }
@@ -339,6 +377,12 @@ func (n *PredefinedType) setName(nm string) Type {
 func (n *PredefinedType) Align() int {
 	if n == nil {
 		return 1
+	}
+
+	if n.attributer.p != nil {
+		if v := n.attributer.p.Aligned(); v > 0 {
+			return int(v)
+		}
 	}
 
 	if x, ok := n.c.ast.ABI.types[n.kind]; ok {
@@ -398,6 +442,12 @@ func (n *PredefinedType) Size() int64 {
 		return -1
 	}
 
+	if isIntegerType(n) || isFloatingPointType(n) {
+		if v := n.VectorSize(); v > 0 {
+			return v
+		}
+	}
+
 	if x, ok := n.c.ast.ABI.types[n.kind]; ok {
 		return x.size
 	}
@@ -443,6 +493,7 @@ type FunctionType struct {
 	fp []*Parameter
 	namer
 	result typer
+	vectorSizer
 
 	minArgs int
 	maxArgs int // -1: unlimited
@@ -476,7 +527,11 @@ func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadi
 }
 
 // setAttr implements Type.
-func (n *FunctionType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
+func (n *FunctionType) setAttr(a *Attributes) Type {
+	m := *n
+	m.attributer.p = a
+	return &m
+}
 
 func (n *FunctionType) isCompatible(t Type) bool {
 	switch x := t.(type) {
@@ -512,7 +567,15 @@ func (n *FunctionType) setName(nm string) Type {
 func (n *FunctionType) Result() Type { return n.result.Type() }
 
 // Align implements Type.
-func (n *FunctionType) Align() int { return 1 }
+func (n *FunctionType) Align() int {
+	if n.attributer.p != nil {
+		if v := n.attributer.p.Aligned(); v > 0 {
+			return int(v)
+		}
+	}
+
+	return 1
+}
 
 // Decay implements Type.
 func (n *FunctionType) Decay() Type { return n.c.newPointerType2(n, n) }
@@ -579,6 +642,7 @@ type PointerType struct {
 	elem typer
 	namer
 	undecay Type
+	vectorSizer
 }
 
 func (c *ctx) newPointerType(elem Type) (r *PointerType) {
@@ -621,6 +685,12 @@ func (n *PointerType) Elem() Type { return n.elem.Type() }
 func (n *PointerType) Align() int {
 	if n == nil {
 		return 1
+	}
+
+	if n.attributer.p != nil {
+		if v := n.attributer.p.Aligned(); v > 0 {
+			return int(v)
+		}
 	}
 
 	if x, ok := n.c.ast.ABI.types[Ptr]; ok {
@@ -739,9 +809,13 @@ type structType struct {
 }
 
 func (n *structType) isIncomplete() bool {
-	for _, v := range n.fields {
+	for i, v := range n.fields {
 		if v.Type().IsIncomplete() {
 			if x, ok := v.Type().(*ArrayType); ok && x.IsVLA() {
+				continue
+			}
+
+			if i == len(n.fields)-1 && v.Type().Kind() == Array { // Flexible array member.
 				continue
 			}
 
@@ -839,6 +913,7 @@ type StructType struct {
 	forward *StructOrUnionSpecifier
 	namer
 	structType
+	vectorSizer
 }
 
 func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) (r *StructType) {
@@ -847,7 +922,11 @@ func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) 
 }
 
 // setAttr implements Type.
-func (n *StructType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
+func (n *StructType) setAttr(a *Attributes) Type {
+	m := *n
+	m.attributer.p = a
+	return &m
+}
 
 func (n *StructType) isCompatible(t Type) bool {
 	if n.forward != nil {
@@ -929,6 +1008,12 @@ func (n *StructType) Align() int {
 
 	if n.forward != nil {
 		return n.forward.Type().Align()
+	}
+
+	if n.attributer.p != nil {
+		if v := n.attributer.p.Aligned(); v > 0 {
+			return int(v)
+		}
 	}
 
 	if n.IsIncomplete() {
@@ -1030,6 +1115,7 @@ type UnionType struct {
 	forward *StructOrUnionSpecifier
 	namer
 	structType
+	vectorSizer
 }
 
 func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
@@ -1037,7 +1123,11 @@ func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *
 }
 
 // setAttr implements Type.
-func (n *UnionType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
+func (n *UnionType) setAttr(a *Attributes) Type {
+	m := *n
+	m.attributer.p = a
+	return &m
+}
 
 func (n *UnionType) isCompatible(t Type) bool {
 	if n.forward != nil {
@@ -1119,6 +1209,12 @@ func (n *UnionType) Align() int {
 
 	if n.forward != nil {
 		return n.forward.Type().Align()
+	}
+
+	if n.attributer.p != nil {
+		if v := n.attributer.p.Aligned(); v > 0 {
+			return int(v)
+		}
 	}
 
 	if n.IsIncomplete() {
@@ -1214,6 +1310,11 @@ func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	return b
 }
 
+type vectorSizer struct{}
+
+// VectorSize implements Type.
+func (vectorSizer) VectorSize() int64 { return -1 }
+
 type ArrayType struct {
 	attributer
 	c     *ctx
@@ -1221,6 +1322,7 @@ type ArrayType struct {
 	elems int64
 	expr  ExpressionNode
 	namer
+	vectorSizer
 }
 
 func (c *ctx) newArrayType(elem Type, elems int64, expr ExpressionNode) (r *ArrayType) {
@@ -1229,7 +1331,11 @@ func (c *ctx) newArrayType(elem Type, elems int64, expr ExpressionNode) (r *Arra
 }
 
 // setAttr implements Type.
-func (n *ArrayType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
+func (n *ArrayType) setAttr(a *Attributes) Type {
+	m := *n
+	m.attributer.p = a
+	return &m
+}
 
 func (n *ArrayType) isCompatible(t Type) bool {
 	switch x := t.(type) {
@@ -1276,6 +1382,12 @@ func (n *ArrayType) Elem() Type { return n.elem.Type() }
 func (n *ArrayType) Align() int {
 	if n == nil {
 		return 1
+	}
+
+	if n.attributer.p != nil {
+		if v := n.attributer.p.Aligned(); v > 0 {
+			return int(v)
+		}
 	}
 
 	return n.elem.Type().Align()
@@ -1344,6 +1456,7 @@ type EnumType struct {
 	namer
 	tag string
 	typ typer
+	vectorSizer
 }
 
 func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
@@ -1351,7 +1464,11 @@ func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
 }
 
 // setAttr implements Type.
-func (n *EnumType) setAttr(a *Attributes) Type { n.attributer.p = a; return n }
+func (n *EnumType) setAttr(a *Attributes) Type {
+	m := *n
+	m.attributer.p = a
+	return &m
+}
 
 func (n *EnumType) isCompatible(t Type) bool {
 	if n.forward != nil {
@@ -1389,6 +1506,12 @@ func (n *EnumType) Align() int {
 
 	if n.forward != nil {
 		return n.forward.Type().Align()
+	}
+
+	if n.attributer.p != nil {
+		if v := n.attributer.p.Aligned(); v > 0 {
+			return int(v)
+		}
 	}
 
 	return n.typ.Type().Align()
@@ -1473,9 +1596,11 @@ func isModifiableLvalue(t Type) bool {
 
 func isPointerType(t Type) bool { return t.Kind() == Ptr }
 
-func isVectorType(t Type) bool { a := t.Attributes(); return a != nil && a.VectorSize > 0 }
+func isVectorType(t Type) bool { a := t.Attributes(); return a != nil && a.vectorSize > 0 }
 
 func isIntegerType(t Type) bool { return integerKinds[t.Kind()] }
+
+func isFloatingPointType(t Type) bool { return floatinPointKinds[t.Kind()] }
 
 func isComplexType(t Type) bool { return complexKinds[t.Kind()] }
 
@@ -1696,9 +1821,36 @@ func integerPromotion(t Type) Type {
 	}
 }
 
+// Attributes represent selected values from __attribute__ constructs.
+//
+// See also https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html
 type Attributes struct {
-	VectorSize int64
+	aligned    int64
+	vectorSize int64
+
+	isNonZero bool
 }
+
+func newAttributes() *Attributes {
+	return &Attributes{
+		aligned:    -1,
+		vectorSize: -1,
+	}
+}
+
+func (n *Attributes) setAligned(v int64)    { n.aligned = v; n.isNonZero = true }
+func (n *Attributes) setVectorSize(v int64) { n.vectorSize = v; n.isNonZero = true }
+
+// Aligned returns N from __attribute__(aligned(N)) or -1 if not
+// present/valid.
+func (n *Attributes) Aligned() int64 { return n.aligned }
+
+// VectorSize returns N from __attribute__(vector_size(N)) or -1 if not
+// present/valid.
+//
+// The vector_size attribute is only applicable to integral and floating
+// scalars, otherwise it's ignored.
+func (n *Attributes) VectorSize() int64 { return n.vectorSize }
 
 type attributer struct{ p *Attributes }
 

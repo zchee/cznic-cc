@@ -3416,34 +3416,56 @@ func (s *Scope) declare(nm string, n Node) {
 }
 
 func (s *Scope) ident(t Token) Node {
+	a := s.idents(t)
+	switch len(a) {
+	case 1:
+		return a[0]
+	case 0:
+		return nil
+	}
+
+	if _, ok := a[0].(*Declarator); !ok {
+		return a[0]
+	}
+
+	for _, v := range a {
+		if x, ok := v.(*Declarator); ok && !x.Type().IsIncomplete() {
+			return x
+		}
+	}
+
+	return a[0]
+}
+
+func (s *Scope) idents(t Token) (r []Node) {
 	for ; s != nil; s = s.Parent {
 		for _, v := range s.Nodes[string(t.Src())] {
 			switch x := v.(type) {
 			case *Declarator:
 				if t.seq >= int32(x.visible) {
-					if x.isExtern && x.Type() != Invalid && x.Type().IsIncomplete() { // gcc 20001018-1.c
-						for s = s.Parent; s != nil; s = s.Parent {
+					r = append(r, x)
+					if x.isExtern {
+						for s := s.Parent; s != nil; s = s.Parent {
 							for _, v := range s.Nodes[string(t.Src())] {
-								switch y := v.(type) {
-								case *Declarator:
-									if y.isExtern && y.Type() != Invalid && !y.Type().IsIncomplete() {
-										return y
-									}
+								if x, ok := v.(*Declarator); ok && x.isExtern {
+									r = append(r, x)
 								}
 							}
 						}
 					}
-					return x
 				}
 			case *Enumerator:
 				if t.seq >= int32(x.visible) {
-					return x
+					r = append(r, x)
 				}
 			case *Parameter:
 				if t.seq >= int32(x.visible) {
-					return x
+					r = append(r, x)
 				}
 			}
+		}
+		if len(r) != 0 {
+			return r
 		}
 	}
 	return nil
