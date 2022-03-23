@@ -375,7 +375,7 @@ func (n *AsmIndex) check(c *ctx) {
 		return
 	}
 
-	n.ExpressionList.check(c, decay|asmArgList)
+	n.ExpressionList.check(c, decay|asmArgList|ignoreUndefined)
 }
 
 func (n *AsmQualifierList) check(c *ctx) {

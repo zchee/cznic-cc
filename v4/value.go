@@ -982,6 +982,21 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 					default:
 						c.errors.add(errorf("TODO %v %T", n.Case, x))
 					}
+				case UTF16StringValue:
+					switch x := n.ExpressionList.eval(c, 0).(type) {
+					case *UnknownValue:
+						// nop
+					case Int64Value:
+						if x >= 0 && x < Int64Value(len(v)) {
+							n.val = c.convert(Int64Value(v[x]), n.Type())
+						}
+					case UInt64Value:
+						if x < UInt64Value(len(v)) {
+							n.val = c.convert(Int64Value(v[x]), n.Type())
+						}
+					default:
+						c.errors.add(errorf("TODO %v %T", n.Case, x))
+					}
 				case UInt64Value:
 					// nop
 				default:
