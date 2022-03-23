@@ -87,3 +87,6 @@ func (n *DirectDeclarator) isFn() bool {
 // ResolvedTo returns the node n resolved to when n.Case is
 // PrimaryExpressionIdent.
 func (n *PrimaryExpression) ResolvedTo() Node { return n.resolvedTo }
+
+// Associated returns the selected association of n, if any.
+func (n *GenericSelection) Associated() *GenericAssociation { return n.assoc }
