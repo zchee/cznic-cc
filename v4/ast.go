@@ -1274,6 +1274,7 @@ type Declarator struct {
 	isConst          bool
 	isExtern         bool
 	isInline         bool
+	isNoreturn       bool
 	isParam          bool
 	isRegister       bool
 	isStatic         bool

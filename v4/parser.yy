@@ -659,6 +659,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	isConst		bool		*/
 			/*yy:field	isExtern	bool		*/
 			/*yy:field	isInline	bool		*/
+			/*yy:field	isNoreturn	bool		*/
 			/*yy:field	isParam		bool		*/
 			/*yy:field	isRegister	bool		*/
 			/*yy:field	isStatic	bool		*/
