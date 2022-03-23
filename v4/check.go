@@ -1462,7 +1462,7 @@ func (n *Pointer) check(c *ctx, t Type) (r Type) {
 	case PointerPtr: // '*' TypeQualifiers Pointer
 		return n.Pointer.check(c, c.newPointerType(t))
 	case PointerBlock: // '^' TypeQualifiers
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.Pointer.check(c, c.newPointerType(t))
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
