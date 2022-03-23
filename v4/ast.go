@@ -1277,6 +1277,7 @@ type Declarator struct {
 	isNoreturn       bool
 	isParam          bool
 	isRegister       bool
+	isRestrict       bool
 	isStatic         bool
 	isThreadLocal    bool
 	isTypename       bool

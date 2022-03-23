@@ -662,6 +662,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:field	isNoreturn	bool		*/
 			/*yy:field	isParam		bool		*/
 			/*yy:field	isRegister	bool		*/
+			/*yy:field	isRestrict	bool		*/
 			/*yy:field	isStatic	bool		*/
 			/*yy:field	isThreadLocal	bool		*/
 			/*yy:field	isTypename	bool		*/
