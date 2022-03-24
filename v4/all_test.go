@@ -5,7 +5,10 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
+	"archive/tar"
+	"bufio"
 	"bytes"
+	"compress/gzip"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -35,6 +38,22 @@ var (
 	re          *regexp.Regexp
 	defaultCfg0 *Config
 	builtin     = `
+
+#define __extension__
+
+#ifndef __builtin_va_list
+#define __builtin_va_list __builtin_va_list
+typedef void *__builtin_va_list;
+#endif
+
+#ifndef __builtin_va_arg
+#define __builtin_va_arg __builtin_va_arg
+#define __builtin_va_arg(va, type) (*(type*)__builtin_va_arg_impl(va))
+#endif
+
+#define __builtin_offsetof(type, member) ((size_t)&(((type*)0)->member))
+#define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl()
+
 #ifdef __SIZE_TYPE__
 typedef __SIZE_TYPE__ size_t;
 #else
@@ -55,84 +74,10 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 
 #define __FUNCTION__ __func__
 #define __PRETTY_FUNCTION__ __func__
-#define __builtin_offsetof(type, member) ((size_t)&(((type*)0)->member))
-#define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl()
-#define __extension__
-
-#ifndef __builtin_va_list
-#define __builtin_va_list __builtin_va_list
-typedef void *__builtin_va_list;
-#endif
-
-#ifndef __builtin_va_arg
-#define __builtin_va_arg(va, type) (*(type*)__builtin_va_arg_sink(0, va))
-void *__builtin_va_arg_sink(int, ...);
-#endif
 
 #ifdef __clang__
-#define __builtin_bit_cast(type, arg) (*(type*)&arg)
 #define __builtin_convertvector(src, type) (*(type*)&src)
-#define __builtin_bit_cast(type, arg) (*(type*)&arg)
-#elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #endif
-
-#ifdef __UINT16_TYPE__
-__UINT16_TYPE__ __builtin_bswap16 (__UINT16_TYPE__);
-#endif
-
-#ifdef __UINT32_TYPE__
-__UINT32_TYPE__ __builtin_bswap32 (__UINT32_TYPE__);
-#endif
-
-#ifdef __UINT64_TYPE__
-__UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
-#endif
-
-void __builtin_exit(int status);
-int __builtin_printf(const char *format, ...);
-void __ccgo_dmesg(char*, ...);
-
-// No operations, only for tests.
-#define __builtin_va_copy(dst, src)
-#define __builtin_va_end(ap)
-#define __builtin_va_start(ap, v)
-
-//TODO #define __builtin_constant_p(x) __builtin_constant_p_impl(0, x)
-
-char *__builtin_strchr(const char *s, int c);
-char *__builtin_strcpy(char *dest, const char *src);
-double __builtin_copysign ( double x, double y );
-double __builtin_copysignl (long double x, long double y );
-double __builtin_huge_val (void);
-double __builtin_inf (void);
-double __builtin_nan (const char *str);
-float __builtin_copysignf ( float x, float y );
-float __builtin_huge_valf (void);
-float __builtin_inff (void);
-float __builtin_nanf (const char *str);
-int __builtin___snprintf_chk (char *s, size_t maxlen, int flag, size_t os, const char *fmt, ...);
-int __builtin_abs(int j);
-int __builtin_add_overflow();
-int __builtin_clz (unsigned);
-int __builtin_isunordered(double x, double y);
-int __builtin_memcmp(const void *s1, const void *s2, size_t n);
-int __builtin_mul_overflow(); //TODO
-int __builtin_popcount (unsigned int x);
-int __builtin_strcmp(const char *s1, const char *s2);
-int __builtin_sub_overflow(); //TODO 
-long __builtin_expect (long exp, long c);
-size_t __builtin_object_size (void * ptr, int type);
-size_t __builtin_strlen(const char *s);
-void *__builtin___memcpy_chk (void *dest, const void *src, size_t n, size_t os);
-void *__builtin_malloc(size_t size);
-void *__builtin_memcpy(void *dest, const void *src, size_t n);
-void *__builtin_memset(void *s, int c, size_t n);
-void __builtin_abort(void);
-void __builtin_bzero(void *s, size_t n);
-void __builtin_free(void *ptr);
-void __builtin_prefetch (const void *addr, ...);
-void __builtin_trap (void);
-void __builtin_unreachable (void);
 
 `
 
@@ -1437,4 +1382,150 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 	// fmt.Fprintf(os.Stderr, "%v: files %v, skip %v, ok %v, fails %v\n", dir, files, skip, ok, len(fails))
 	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
 	return files, ok, skip, int32(len(fails))
+}
+
+func buildDefs(D, U []string) string {
+	var a []string
+	for _, v := range D {
+		if i := strings.IndexByte(v, '='); i > 0 {
+			a = append(a, fmt.Sprintf("#define %s %s", v[:i], v[i+1:]))
+			continue
+		}
+
+		a = append(a, fmt.Sprintf("#define %s 1", v))
+	}
+	for _, v := range U {
+		a = append(a, fmt.Sprintf("#undef %s", v))
+	}
+	return strings.Join(a, "\n")
+}
+
+func shell(cmd string, args ...string) ([]byte, error) {
+	wd, err := absCwd()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("execute %s %q in %s\n", cmd, args, wd)
+	var b echoWriter
+	c := exec.Command(cmd, args...)
+	c.Stdout = &b
+	c.Stderr = &b
+	err = c.Run()
+	return b.w.Bytes(), err
+}
+
+func absCwd() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	if wd, err = filepath.Abs(wd); err != nil {
+		return "", err
+	}
+
+	return wd, nil
+}
+
+type echoWriter struct {
+	w bytes.Buffer
+}
+
+func (w *echoWriter) Write(b []byte) (int, error) {
+	os.Stdout.Write(b)
+	return w.w.Write(b)
+}
+
+func mustShell(t *testing.T, cmd string, args ...string) []byte {
+	b, err := shell(cmd, args...)
+	if err != nil {
+		t.Fatalf("%v %s\noutput: %s\nerr: %s", cmd, args, b, err)
+	}
+
+	return b
+}
+
+func mustUntarFile(t *testing.T, dst, src string, canOverwrite func(fn string, fi os.FileInfo) bool) {
+	if err := untarFile(dst, src, canOverwrite); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func untarFile(dst, src string, canOverwrite func(fn string, fi os.FileInfo) bool) error {
+	f, err := cfs.Open(src)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	return untar(dst, bufio.NewReader(f), canOverwrite)
+}
+
+func untar(dst string, r io.Reader, canOverwrite func(fn string, fi os.FileInfo) bool) error {
+	dst = filepath.FromSlash(dst)
+	gr, err := gzip.NewReader(r)
+	if err != nil {
+		return err
+	}
+
+	tr := tar.NewReader(gr)
+	for {
+		hdr, err := tr.Next()
+		if err != nil {
+			if err != io.EOF {
+				return err
+			}
+
+			return nil
+		}
+
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			dir := filepath.Join(dst, hdr.Name)
+			if err = os.MkdirAll(dir, 0770); err != nil {
+				return err
+			}
+		case tar.TypeSymlink, tar.TypeXGlobalHeader:
+			// skip
+		case tar.TypeReg, tar.TypeRegA:
+			dir := filepath.Dir(filepath.Join(dst, hdr.Name))
+			if _, err := os.Stat(dir); err != nil {
+				if !os.IsNotExist(err) {
+					return err
+				}
+
+				if err = os.MkdirAll(dir, 0770); err != nil {
+					return err
+				}
+			}
+
+			fn := filepath.Join(dst, hdr.Name)
+			f, err := os.OpenFile(fn, os.O_CREATE|os.O_WRONLY, os.FileMode(hdr.Mode))
+			if err != nil {
+				return err
+			}
+
+			w := bufio.NewWriter(f)
+			if _, err = io.Copy(w, tr); err != nil {
+				return err
+			}
+
+			if err := w.Flush(); err != nil {
+				return err
+			}
+
+			if err := f.Close(); err != nil {
+				return err
+			}
+
+			if err := os.Chtimes(fn, hdr.AccessTime, hdr.ModTime); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unexpected tar header typeflag %#02x", hdr.Typeflag)
+		}
+	}
+
 }

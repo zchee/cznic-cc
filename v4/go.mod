@@ -7,6 +7,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0
 	modernc.org/ccorpus2 v0.0.3
 	modernc.org/mathutil v1.4.1
+	modernc.org/opt v0.1.1
 	modernc.org/strutil v1.1.1
 	modernc.org/token v1.0.0
 )

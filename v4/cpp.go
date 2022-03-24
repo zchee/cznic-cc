@@ -1574,7 +1574,7 @@ func (c *cpp) include(ln controlLine) {
 		return
 	}
 
-	c.includeLevel++
+	c.includeLevel++ //TODO ineffective
 	defer func() { c.includeLevel-- }()
 
 	s0 := cppTokens(tokens2CppTokens(ln[2:], true))
@@ -1594,12 +1594,8 @@ func (c *cpp) include(ln controlLine) {
 	case strings.HasPrefix(raw, `"`) && strings.HasSuffix(raw, `"`):
 		nm := raw[1 : len(raw)-1]
 		for _, v := range c.cfg.IncludePaths {
-			switch {
-			case v == "":
+			if v == "" {
 				v, _ = filepath.Split(ln[2].Position().Filename)
-			case !filepath.IsAbs(v):
-				x, _ := filepath.Split(ln[2].Position().Filename)
-				v = filepath.Join(x, v)
 			}
 			pth := filepath.Join(v, nm)
 			if g, err := c.group(Source{pth, nil, c.cfg.FS}); err == nil {
@@ -1613,10 +1609,6 @@ func (c *cpp) include(ln controlLine) {
 	case strings.HasPrefix(raw, "<") && strings.HasSuffix(raw, ">"):
 		nm := raw[1 : len(raw)-1]
 		for _, v := range c.cfg.SysIncludePaths {
-			if !filepath.IsAbs(v) {
-				x, _ := filepath.Split(ln[2].Position().Filename)
-				v = filepath.Join(x, v)
-			}
 			pth := filepath.Join(v, nm)
 			if g, err := c.group(Source{pth, nil, c.cfg.FS}); err == nil {
 				c.push(g)
@@ -1682,7 +1674,7 @@ func (c *cpp) hasFile(t Token, fn string) bool {
 	return !fi.IsDir()
 }
 
-func (c *cpp) includeArg(s cppTokens) string {
+func (c *cpp) includeArg(s cppTokens) (r string) {
 	switch t := s[0]; t.Ch {
 	case rune(STRINGLITERAL), rune(HEADER_NAME):
 		return t.SrcStr()

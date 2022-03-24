@@ -58,21 +58,21 @@ func NewConfig(goos, goarch string) (r *Config, err error) {
 	case "freebsd/386":
 		sysIncludePaths = append(sysIncludePaths, "/usr/local/include")
 	}
-	sysIncludePaths = sysIncludePaths[:len(sysIncludePaths):len(sysIncludePaths)]
-	includePaths = append([]string{""}, includePaths...)
-	includePaths = append(includePaths, sysIncludePaths...)
-	includePaths = includePaths[:len(includePaths):len(includePaths)]
 	abi, err := NewABI(goos, goarch)
 	if err != nil {
 		return nil, err
 	}
 
+	includePaths = includePaths[:len(includePaths):len(includePaths)]
+	sysIncludePaths = sysIncludePaths[:len(sysIncludePaths):len(sysIncludePaths)]
 	return &Config{
-		ABI:             abi,
-		CC:              cc,
-		IncludePaths:    includePaths,
-		Predefined:      predefined,
-		SysIncludePaths: sysIncludePaths,
+		ABI:                 abi,
+		CC:                  cc,
+		Predefined:          predefined,
+		HostIncludePaths:    includePaths,
+		HostSysIncludePaths: sysIncludePaths,
+		IncludePaths:        append([]string{""}, append(includePaths, sysIncludePaths...)...),
+		SysIncludePaths:     sysIncludePaths,
 	}, nil
 }
 
@@ -158,13 +158,15 @@ type Source struct {
 //
 // If FS is nil, os.Open is used to open named files.
 type Config struct {
-	ABI             *ABI
-	CC              string // The configured C compiler, filled by NewConfig.
-	FS              fs.FS
-	IncludePaths    []string
-	PragmaHandler   func([]Token) error
-	Predefined      string // The predefined macros from CC, filled by NewConfig.
-	SysIncludePaths []string
+	ABI                 *ABI
+	CC                  string // The configured C compiler, filled by NewConfig.
+	FS                  fs.FS
+	HostIncludePaths    []string
+	HostSysIncludePaths []string
+	IncludePaths        []string
+	PragmaHandler       func([]Token) error
+	Predefined          string // The predefined macros from CC, filled by NewConfig.
+	SysIncludePaths     []string
 
 	doNotInjectFunc bool // testing
 	fakeIncludes    bool // testing
