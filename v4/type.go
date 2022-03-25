@@ -478,14 +478,14 @@ func (n *Parameter) Position() (r token.Position) {
 	return n.name.Position()
 }
 
-// Name returns the name token of n. The result can be a zero value, like in
+// Name returns the name of n. The result can be a zero value, like in
 // `void f(int) { ... }`.
-func (n *Parameter) Name() Token {
+func (n *Parameter) Name() string {
 	if n.Declarator != nil {
-		return n.Declarator.DirectDeclarator.name().Token
+		return n.Declarator.DirectDeclarator.name().Token.SrcStr()
 	}
 
-	return n.name
+	return n.name.SrcStr()
 }
 
 type FunctionType struct {
