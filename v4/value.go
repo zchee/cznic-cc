@@ -79,7 +79,7 @@ type Int64Value int64
 
 func (Int64Value) isValue() {}
 
-type UInt64Value int64
+type UInt64Value uint64
 
 func (UInt64Value) isValue() {}
 
@@ -107,7 +107,6 @@ func (n *ConstantExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *ConditionalExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -137,7 +136,6 @@ func (n *ConditionalExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *LogicalOrExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -172,7 +170,6 @@ func (n *LogicalOrExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *LogicalAndExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -207,7 +204,6 @@ func (n *LogicalAndExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *InclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -255,7 +251,6 @@ func (n *InclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *ExclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -303,7 +298,6 @@ func (n *ExclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *AndExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -351,7 +345,6 @@ func (n *AndExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -367,14 +360,29 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 		case EqualityExpressionRel: // RelationalExpression
 			n.val = n.RelationalExpression.eval(c, mode)
 		case EqualityExpressionEq: // EqualityExpression "==" RelationalExpression
-			switch x := c.convert(n.EqualityExpression.eval(c, mode), n.Type()).(type) {
+			t1 := n.EqualityExpression.Type()
+			t2 := n.RelationalExpression.Type()
+			if isArithmeticType(t1) && isArithmeticType(t2) {
+				t1 = usualArithmeticConversions(t1, t2)
+				t2 = t1
+			}
+			switch x := c.convert(n.EqualityExpression.eval(c, mode), t1).(type) {
 			case *UnknownValue:
 				// ok
 			case Int64Value:
-				switch y := c.convert(n.RelationalExpression.eval(c, mode), n.Type()).(type) {
+				switch y := c.convert(n.RelationalExpression.eval(c, mode), t2).(type) {
 				case *UnknownValue:
 					// ok
 				case Int64Value:
+					n.val = bool2int(x == y)
+				default:
+					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
+				}
+			case UInt64Value:
+				switch y := c.convert(n.RelationalExpression.eval(c, mode), t2).(type) {
+				case *UnknownValue:
+					// ok
+				case UInt64Value:
 					n.val = bool2int(x == y)
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
@@ -383,14 +391,29 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 				c.errors.add(errorf("TODO %v TYPE %T", n.Case, x))
 			}
 		case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
-			switch x := c.convert(n.EqualityExpression.eval(c, mode), n.Type()).(type) {
+			t1 := n.EqualityExpression.Type()
+			t2 := n.RelationalExpression.Type()
+			if isArithmeticType(t1) && isArithmeticType(t2) {
+				t1 = usualArithmeticConversions(t1, t2)
+				t2 = t1
+			}
+			switch x := c.convert(n.EqualityExpression.eval(c, mode), t1).(type) {
 			case *UnknownValue:
 				// ok
 			case Int64Value:
-				switch y := c.convert(n.RelationalExpression.eval(c, mode), n.Type()).(type) {
+				switch y := c.convert(n.RelationalExpression.eval(c, mode), t2).(type) {
 				case *UnknownValue:
 					// ok
 				case Int64Value:
+					n.val = bool2int(x != y)
+				default:
+					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
+				}
+			case UInt64Value:
+				switch y := c.convert(n.RelationalExpression.eval(c, mode), t2).(type) {
+				case *UnknownValue:
+					// ok
+				case UInt64Value:
 					n.val = bool2int(x != y)
 				default:
 					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
@@ -406,7 +429,6 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -422,14 +444,34 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 		case RelationalExpressionShift: // ShiftExpression
 			n.val = n.ShiftExpression.eval(c, mode)
 		case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
-			switch x := c.convert(n.RelationalExpression.eval(c, mode), n.Type()).(type) {
+			t1 := n.RelationalExpression.Type()
+			t2 := n.ShiftExpression.Type()
+			if isArithmeticType(t1) && isArithmeticType(t2) {
+				t1 = usualArithmeticConversions(t1, t2)
+				t2 = t1
+			}
+			switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {
 			case *UnknownValue:
 				// ok
 			case Int64Value:
-				switch y := c.convert(n.ShiftExpression.eval(c, mode), n.Type()).(type) {
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t1).(type) {
 				case *UnknownValue:
 					// ok
 				case Int64Value:
+					if x < y {
+						n.val = int1
+						break
+					}
+
+					n.val = int0
+				default:
+					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
+				}
+			case UInt64Value:
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t2).(type) {
+				case *UnknownValue:
+					// ok
+				case UInt64Value:
 					if x < y {
 						n.val = int1
 						break
@@ -443,14 +485,34 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 				c.errors.add(errorf("TODO %v TYPE %T", n.Case, x))
 			}
 		case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
-			switch x := c.convert(n.RelationalExpression.eval(c, mode), n.Type()).(type) {
+			t1 := n.RelationalExpression.Type()
+			t2 := n.ShiftExpression.Type()
+			if isArithmeticType(t1) && isArithmeticType(t2) {
+				t1 = usualArithmeticConversions(t1, t2)
+				t2 = t1
+			}
+			switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {
 			case *UnknownValue:
 				// ok
 			case Int64Value:
-				switch y := c.convert(n.ShiftExpression.eval(c, mode), n.Type()).(type) {
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t2).(type) {
 				case *UnknownValue:
 					// ok
 				case Int64Value:
+					if x > y {
+						n.val = int1
+						break
+					}
+
+					n.val = int0
+				default:
+					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
+				}
+			case UInt64Value:
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t2).(type) {
+				case *UnknownValue:
+					// ok
+				case UInt64Value:
 					if x > y {
 						n.val = int1
 						break
@@ -464,14 +526,34 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 				c.errors.add(errorf("TODO %v TYPE %T", n.Case, x))
 			}
 		case RelationalExpressionLeq: // RelationalExpression "<=" ShiftExpression
-			switch x := c.convert(n.RelationalExpression.eval(c, mode), n.Type()).(type) {
+			t1 := n.RelationalExpression.Type()
+			t2 := n.ShiftExpression.Type()
+			if isArithmeticType(t1) && isArithmeticType(t2) {
+				t1 = usualArithmeticConversions(t1, t2)
+				t2 = t1
+			}
+			switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {
 			case *UnknownValue:
 				// ok
 			case Int64Value:
-				switch y := c.convert(n.ShiftExpression.eval(c, mode), n.Type()).(type) {
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t2).(type) {
 				case *UnknownValue:
 					// ok
 				case Int64Value:
+					if x <= y {
+						n.val = int1
+						break
+					}
+
+					n.val = int0
+				default:
+					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
+				}
+			case UInt64Value:
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t2).(type) {
+				case *UnknownValue:
+					// ok
+				case UInt64Value:
 					if x <= y {
 						n.val = int1
 						break
@@ -485,14 +567,34 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 				c.errors.add(errorf("TODO %v TYPE %T", n.Case, x))
 			}
 		case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
-			switch x := c.convert(n.RelationalExpression.eval(c, mode), n.Type()).(type) {
+			t1 := n.RelationalExpression.Type()
+			t2 := n.ShiftExpression.Type()
+			if isArithmeticType(t1) && isArithmeticType(t2) {
+				t1 = usualArithmeticConversions(t1, t2)
+				t2 = t1
+			}
+			switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {
 			case *UnknownValue:
 				// ok
 			case Int64Value:
-				switch y := c.convert(n.ShiftExpression.eval(c, mode), n.Type()).(type) {
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t2).(type) {
 				case *UnknownValue:
 					// ok
 				case Int64Value:
+					if x >= y {
+						n.val = int1
+						break
+					}
+
+					n.val = int0
+				default:
+					c.errors.add(errorf("TODO %v TYPE %T", n.Case, y))
+				}
+			case UInt64Value:
+				switch y := c.convert(n.ShiftExpression.eval(c, mode), t2).(type) {
+				case *UnknownValue:
+					// ok
+				case UInt64Value:
 					if x >= y {
 						n.val = int1
 						break
@@ -513,7 +615,6 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *ShiftExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -594,7 +695,6 @@ func (n *ShiftExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *AdditiveExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -669,7 +769,6 @@ func (n *AdditiveExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -779,7 +878,6 @@ func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *CastExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -811,7 +909,6 @@ func (n *CastExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -900,7 +997,6 @@ func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -916,7 +1012,19 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 			case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
 				c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
-				c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
+				switch x := n.PostfixExpression.eval(c, mode).(type) {
+				// case UInt64Value:
+				// 	switch y := n.PostfixExpression.Type().(*PointerType).Elem().(type) {
+				// 	case *StructType:
+				// 		if f := y.FieldByName(n.Token2.SrcStr()); f != nil {
+				// 			n.val = c.convert(x+UInt64Value(f.Offset()), n.Type())
+				// 		}
+				// 	default:
+				// 		c.errors.add(errorf("TODO %v %v %T %v: %T", n.Case, mode.has(addrOf), x, n.Token.Position(), y))
+				// 	}
+				default:
+					c.errors.add(errorf("TODO %v %v %T %v:", n.Case, mode.has(addrOf), x, n.Token.Position()))
+				}
 			case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 				switch x := n.PostfixExpression.eval(c, mode.del(addrOf)).(type) {
 				case UInt64Value:
@@ -1059,7 +1167,6 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *PrimaryExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {
@@ -1148,7 +1255,6 @@ func (n *ExpressionList) eval(c *ctx, mode flags) (r Value) {
 }
 
 func (n *AssignmentExpression) eval(c *ctx, mode flags) (r Value) {
-	// defer func() { trc("%v: %T.%v %T(%[4]v) (%b)", pos(n), n, n.Case, r, mode) }() //TODO-
 	if n.val == nil {
 		n.val = Unknown
 		if mode.has(dontEval) {

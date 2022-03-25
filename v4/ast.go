@@ -1103,15 +1103,39 @@ func (n *ConstantExpression) Position() (r token.Position) {
 	return n.ConditionalExpression.Position()
 }
 
-// Declaration represents data reduced by production:
+// DeclarationCase represents case numbers of production Declaration
+type DeclarationCase int
+
+// Values of type DeclarationCase
+const (
+	DeclarationDecl DeclarationCase = iota
+	DeclarationAssert
+)
+
+// String implements fmt.Stringer
+func (n DeclarationCase) String() string {
+	switch n {
+	case DeclarationDecl:
+		return "DeclarationDecl"
+	case DeclarationAssert:
+		return "DeclarationAssert"
+	default:
+		return fmt.Sprintf("DeclarationCase(%v)", int(n))
+	}
+}
+
+// Declaration represents data reduced by productions:
 //
 //	Declaration:
-//	        DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
+//	        DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'  // Case DeclarationDecl
+//	|       StaticAssertDeclaration                                              // Case DeclarationAssert
 type Declaration struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	DeclarationSpecifiers  *DeclarationSpecifiers
-	InitDeclaratorList     *InitDeclaratorList
-	Token                  Token
+	AttributeSpecifierList  *AttributeSpecifierList
+	Case                    DeclarationCase `PrettyPrint:"stringer,zero"`
+	DeclarationSpecifiers   *DeclarationSpecifiers
+	InitDeclaratorList      *InitDeclaratorList
+	StaticAssertDeclaration *StaticAssertDeclaration
+	Token                   Token
 }
 
 // String implements fmt.Stringer.
@@ -1123,19 +1147,26 @@ func (n *Declaration) Position() (r token.Position) {
 		return r
 	}
 
-	if p := n.DeclarationSpecifiers.Position(); p.IsValid() {
-		return p
-	}
+	switch n.Case {
+	case 0:
+		if p := n.DeclarationSpecifiers.Position(); p.IsValid() {
+			return p
+		}
 
-	if p := n.InitDeclaratorList.Position(); p.IsValid() {
-		return p
-	}
+		if p := n.InitDeclaratorList.Position(); p.IsValid() {
+			return p
+		}
 
-	if p := n.AttributeSpecifierList.Position(); p.IsValid() {
-		return p
-	}
+		if p := n.AttributeSpecifierList.Position(); p.IsValid() {
+			return p
+		}
 
-	return n.Token.Position()
+		return n.Token.Position()
+	case 1:
+		return n.StaticAssertDeclaration.Position()
+	default:
+		panic("internal error")
+	}
 }
 
 // DeclarationList represents data reduced by productions:
@@ -4215,6 +4246,51 @@ func (n *Statement) Position() (r token.Position) {
 	}
 }
 
+// StaticAssertDeclaration represents data reduced by production:
+//
+//	StaticAssertDeclaration:
+//	        "_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')'
+type StaticAssertDeclaration struct {
+	ConstantExpression ExpressionNode
+	Token              Token
+	Token2             Token
+	Token3             Token
+	Token4             Token
+	Token5             Token
+}
+
+// String implements fmt.Stringer.
+func (n *StaticAssertDeclaration) String() string { return PrettyString(n) }
+
+// Position reports the position of the first component of n, if available.
+func (n *StaticAssertDeclaration) Position() (r token.Position) {
+	if n == nil {
+		return r
+	}
+
+	if p := n.Token.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token2.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.ConstantExpression.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token3.Position(); p.IsValid() {
+		return p
+	}
+
+	if p := n.Token4.Position(); p.IsValid() {
+		return p
+	}
+
+	return n.Token5.Position()
+}
+
 // StorageClassSpecifierCase represents case numbers of production StorageClassSpecifier
 type StorageClassSpecifierCase int
 
@@ -4296,15 +4372,39 @@ func (n *StorageClassSpecifier) Position() (r token.Position) {
 	}
 }
 
-// StructDeclaration represents data reduced by production:
+// StructDeclarationCase represents case numbers of production StructDeclaration
+type StructDeclarationCase int
+
+// Values of type StructDeclarationCase
+const (
+	StructDeclarationDecl StructDeclarationCase = iota
+	StructDeclarationAssert
+)
+
+// String implements fmt.Stringer
+func (n StructDeclarationCase) String() string {
+	switch n {
+	case StructDeclarationDecl:
+		return "StructDeclarationDecl"
+	case StructDeclarationAssert:
+		return "StructDeclarationAssert"
+	default:
+		return fmt.Sprintf("StructDeclarationCase(%v)", int(n))
+	}
+}
+
+// StructDeclaration represents data reduced by productions:
 //
 //	StructDeclaration:
-//	        SpecifierQualifierList StructDeclaratorList ';'
+//	        SpecifierQualifierList StructDeclaratorList ';'  // Case StructDeclarationDecl
+//	|       StaticAssertDeclaration                          // Case StructDeclarationAssert
 type StructDeclaration struct {
-	AttributeSpecifierList *AttributeSpecifierList
-	SpecifierQualifierList *SpecifierQualifierList
-	StructDeclaratorList   *StructDeclaratorList
-	Token                  Token
+	AttributeSpecifierList  *AttributeSpecifierList
+	Case                    StructDeclarationCase `PrettyPrint:"stringer,zero"`
+	SpecifierQualifierList  *SpecifierQualifierList
+	StaticAssertDeclaration *StaticAssertDeclaration
+	StructDeclaratorList    *StructDeclaratorList
+	Token                   Token
 }
 
 // String implements fmt.Stringer.
@@ -4316,15 +4416,22 @@ func (n *StructDeclaration) Position() (r token.Position) {
 		return r
 	}
 
-	if p := n.SpecifierQualifierList.Position(); p.IsValid() {
-		return p
-	}
+	switch n.Case {
+	case 0:
+		if p := n.SpecifierQualifierList.Position(); p.IsValid() {
+			return p
+		}
 
-	if p := n.StructDeclaratorList.Position(); p.IsValid() {
-		return p
-	}
+		if p := n.StructDeclaratorList.Position(); p.IsValid() {
+			return p
+		}
 
-	return n.Token.Position()
+		return n.Token.Position()
+	case 1:
+		return n.StaticAssertDeclaration.Position()
+	default:
+		panic("internal error")
+	}
 }
 
 // StructDeclarationList represents data reduced by productions:

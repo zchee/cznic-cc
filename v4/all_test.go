@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -1019,14 +1020,12 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 			fmt.Fprintln(os.Stderr, pth)
 		}
 
-		_, err = Parse(
-			cfg,
-			[]Source{
-				{Name: "<predefined>", Value: cfg.Predefined},
-				{Name: "<builtin>", Value: builtin},
-				{Name: pth},
-			},
-		)
+		sources := []Source{
+			{Name: "<predefined>", Value: cfg.Predefined},
+			{Name: "<builtin>", Value: builtin},
+			{Name: pth},
+		}
+		_, err = Parse(cfg, sources)
 		switch {
 		case strings.Contains(pth, ".fail."):
 			if err == nil {
@@ -1528,4 +1527,143 @@ func untar(dst string, r io.Reader, canOverwrite func(fn string, fi os.FileInfo)
 		}
 	}
 
+}
+
+func TestMake(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	oldCC := os.Getenv("CC")
+
+	defer os.Setenv("CC", oldCC)
+
+	tmp := t.TempDir()
+	cc := filepath.Join(tmp, "fakecc")
+	if runtime.GOOS == "windows" {
+		cc += ".exe"
+	}
+	mustShell(t, "go", "build", "-o", cc, "fakecc.go")
+	os.Setenv("CC", cc)
+	os.Setenv("FAKE_CC_CC", defaultCfg().CC)
+	var files, ok, skip, fails int32
+	unix := []string{"darwin", "freebsd", "linux", "netbsd", "openbsd"}
+	for _, v := range []struct {
+		archive string
+		dir     string
+		cfg     *makeCfg
+		filter  []string
+	}{
+		//TODO {"ftp.pcre.org/pub/pcre.tar.gz", "pcre", &makeCfg{configure: []string{"--disable-cpp"}}, unix},
+		//TODO {"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, unix},
+		{"github.com/madler/zlib.tar.gz", "zlib", nil, unix},
+		// {"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", nil, unix},
+		//TODO gmp
+		//TODO mpfr
+		//TODO mpc
+		//TODO hdf5
+		//TODO redis
+		//TODO tk
+	} {
+		if !filter(v.filter) {
+			continue
+		}
+
+		t.Run(v.dir, func(t *testing.T) {
+			f, o, s, n := testMake(t, "assets/"+v.archive, v.dir, v.cfg)
+			files += f
+			ok += o
+			skip += s
+			fails += n
+		})
+	}
+	t.Logf("TOTAL: files %v, skip %v, ok %v, fails %v", files, skip, ok, fails)
+}
+
+var (
+	goos   = runtime.GOOS
+	goarch = runtime.GOARCH
+	osarch = fmt.Sprintf("%s/%s", goos, goarch)
+)
+
+func filter(f []string) bool {
+	for _, v := range f {
+		if v == goos || v == osarch {
+			return true
+		}
+	}
+
+	return false
+}
+
+type makeCfg struct {
+	configure []string
+}
+
+func testMake(t *testing.T, archive, dir string, mcfg *makeCfg) (files, ok, skip, nfails int32) {
+	tmp := t.TempDir()
+	mustUntarFile(t, tmp, archive, nil)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newWd := filepath.Join(tmp, dir)
+	if err := os.Chdir(newWd); err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := os.Chdir(wd); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	fn := filepath.Join(newWd, "_fake_cc.log")
+	os.Setenv("FAKE_CC_LOG", fn)
+	var args []string
+	if mcfg != nil {
+		args = mcfg.configure
+	}
+	mustShell(t, "./configure", args...)
+	mustShell(t, "make")
+	logf, err := os.ReadFile(fn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lines := bytes.Split(logf, []byte{'\n'})
+	for _, b := range lines {
+		if b = bytes.TrimSpace(b); len(b) == 0 {
+			continue
+		}
+
+		var a []string
+		if err := json.NewDecoder(bytes.NewReader(b)).Decode(&a); err != nil {
+			trc("", a)
+			t.Fatal(err)
+		}
+
+		if len(a) == 0 {
+			t.Fatal("unexpected empty line")
+		}
+
+		if *oTrace {
+			fmt.Printf("%s\n", strings.Join(a, " "))
+		}
+		files++
+		switch a[0] {
+		case "FAIL":
+			t.Errorf("%s", strings.Join(a, " "))
+			nfails++
+		case "PASS":
+			ok++
+		case "SKIP":
+			skip++
+		default:
+			t.Fatalf("unexpected report tag %q", a[0])
+		}
+	}
+	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, nfails)
+	return files, ok, skip, nfails
 }

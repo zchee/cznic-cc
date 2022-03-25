@@ -40,6 +40,7 @@ edit:
 editor: ast.go
 	gofmt -l -s -w *.go
 	go test -o /dev/null -c
+	go build -o /dev/null fakecc.go
 	go install 2>&1 | tee log
 
 mem:

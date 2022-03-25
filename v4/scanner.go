@@ -118,6 +118,7 @@ const (
 	SIGNED            // 'signed'
 	SIZEOF            // 'sizeof'
 	STATIC            // 'static'
+	STATICASSERT      // _Static_assert
 	STRINGLITERAL     // string literal
 	STRUCT            // 'struct'
 	SUBASSIGN         // '-='
@@ -577,6 +578,12 @@ func (s *scanner) cppScan0() (tok Token) {
 		case '"':
 			s.shift()
 			return s.stringLiteral(rune(LONGSTRINGLITERAL))
+		}
+	case 'u':
+		if s.peek(1) == '8' && s.peek(2) == '"' {
+			s.shift()
+			s.shift()
+			return s.stringLiteral(rune(STRINGLITERAL))
 		}
 	case eof:
 		s.closed = true

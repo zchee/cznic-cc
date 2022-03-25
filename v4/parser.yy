@@ -109,6 +109,7 @@ package cc // import "modernc.org/cc/v4"
 	SIGNED			"signed"
 	SIZEOF			"sizeof"
 	STATIC			"static"
+	STATICASSERT		"_Static_assert"
 	STRUCT			"struct"
 	SUBASSIGN		"-="
 	SWITCH			"switch"
@@ -416,8 +417,14 @@ package cc // import "modernc.org/cc/v4"
 
 			/* [0], 6.7 Declarations */
 			/*yy:example int i, j __attribute__((a)); */
-			Declaration:
+/*yy:case Decl      */ Declaration:
 				DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
+			/*yy:example _Static_assert(x > y, "abc") */
+/*yy:case Assert */     |	StaticAssertDeclaration
+
+			/*yy:example _Static_assert(x > y, "abc") */
+			StaticAssertDeclaration:
+				"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')'
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:field	isTypedef	bool				*/
@@ -574,8 +581,10 @@ package cc // import "modernc.org/cc/v4"
 		
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example struct{ int i __attribute__((a)); }; */
-			StructDeclaration:
+/*yy:case Decl */       StructDeclaration:
 				SpecifierQualifierList StructDeclaratorList ';'
+			/*yy:example struct{ int i; _Static_assert(x > y, "abc"); } */
+/*yy:case Assert */     |	StaticAssertDeclaration
 		
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
 			/*yy:example struct {int i;};*/

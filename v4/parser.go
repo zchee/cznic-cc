@@ -50,12 +50,13 @@ var keywords = map[string]rune{
 	"while":      rune(WHILE),
 
 	// C11
-	"_Alignas":      rune(ALIGNAS),
-	"_Alignof":      rune(ALIGNOF),
-	"_Atomic":       rune(ATOMIC),
-	"_Generic":      rune(GENERIC),
-	"_Noreturn":     rune(NORETURN),
-	"_Thread_local": rune(THREADLOCAL),
+	"_Alignas":       rune(ALIGNAS),
+	"_Alignof":       rune(ALIGNOF),
+	"_Atomic":        rune(ATOMIC),
+	"_Generic":       rune(GENERIC),
+	"_Noreturn":      rune(NORETURN),
+	"_Static_assert": rune(STATICASSERT),
+	"_Thread_local":  rune(THREADLOCAL),
 
 	// GCC/clang/other extensions.
 	"_Decimal64":    rune(DECIMAL64),
@@ -379,6 +380,8 @@ again:
 		return nil
 	case rune(ASM):
 		return &ExternalDeclaration{Case: ExternalDeclarationAsmStmt, AsmStatement: p.asmStatement()}
+	case rune(STATICASSERT):
+		return &ExternalDeclaration{Case: ExternalDeclarationDecl, Declaration: p.declaration(nil, nil, false)}
 	}
 
 	ds, ok := p.declarationSpecifiers()
@@ -573,6 +576,8 @@ again:
 		}
 	case ch == rune(LABEL):
 		return &BlockItem{Case: BlockItemLabel, LabelDeclaration: p.labelDeclaration()}
+	case ch == rune(STATICASSERT):
+		return &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(nil, nil, false)}
 	default:
 		t := p.shift(false)
 		p.cpp.eh("%v: unexpected %v, expected block item", t.Position(), runeName(t.Ch))
@@ -1019,7 +1024,12 @@ func (p *parser) isExpression(ch rune) bool {
 //
 //  declaration:
 // 	declaration-specifiers init-declarator-list_opt attribute-specifier-list_opt;
+//	static-assert-declaration
 func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator, declare bool) (r *Declaration) {
+	if p.rune(false) == rune(STATICASSERT) {
+		return &Declaration{Case: DeclarationAssert, StaticAssertDeclaration: p.staticAssertDeclaration()}
+	}
+
 	if ds == nil {
 		var ok bool
 		if ds, ok = p.declarationSpecifiers(); !ok {
@@ -1027,7 +1037,13 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator, declare b
 		}
 	}
 
-	return &Declaration{DeclarationSpecifiers: ds, InitDeclaratorList: p.initDeclaratorListOpt(ds, d, declare), AttributeSpecifierList: p.attributeSpecifierListOpt(), Token: p.must(';')}
+	return &Declaration{Case: DeclarationDecl, DeclarationSpecifiers: ds, InitDeclaratorList: p.initDeclaratorListOpt(ds, d, declare), AttributeSpecifierList: p.attributeSpecifierListOpt(), Token: p.must(';')}
+}
+
+//  static-assert-declaration
+//	_Static_assert ( constant-expression , string-literal )
+func (p *parser) staticAssertDeclaration() *StaticAssertDeclaration {
+	return &StaticAssertDeclaration{Token: p.must(rune(STATICASSERT)), Token2: p.must('('), ConstantExpression: p.constantExpression(), Token3: p.must(','), Token4: p.must(rune(STRINGLITERAL)), Token5: p.must(')')}
 }
 
 //  attribute-specifier-list:
@@ -3129,7 +3145,7 @@ func (p *parser) atomicTypeSpecifier() (r *AtomicTypeSpecifier) {
 // 	enum identifier_opt { enumerator-list , }
 // 	enum identifier
 func (p *parser) enumSpecifier() (r *EnumSpecifier) {
-	switch p.peek(1, true).Ch {
+	switch p.peek(1, false).Ch {
 	case eof:
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 		return nil
@@ -3283,8 +3299,21 @@ func (p *parser) structDeclarationList() (r *StructDeclarationList) {
 
 //  struct-declaration:
 // 	specifier-qualifier-list struct-declarator-list_opt ;
+//	static-assert-declaration ;
 func (p *parser) structDeclaration() (r *StructDeclaration) {
-	r = &StructDeclaration{SpecifierQualifierList: p.specifierQualifierList(), StructDeclaratorList: p.structDeclaratorListOpt(), AttributeSpecifierList: p.attributeSpecifierListOpt()}
+	if p.rune(false) == rune(STATICASSERT) {
+		r = &StructDeclaration{Case: StructDeclarationAssert, StaticAssertDeclaration: p.staticAssertDeclaration()}
+		switch p.rune(false) {
+		case ';':
+			r.Token = p.shift(false)
+		default:
+			t := p.toks[0]
+			p.cpp.eh("%v: unexpected %v, expected ';'", t.Position(), runeName(t.Ch))
+		}
+		return r
+	}
+
+	r = &StructDeclaration{Case: StructDeclarationDecl, SpecifierQualifierList: p.specifierQualifierList(), StructDeclaratorList: p.structDeclaratorListOpt(), AttributeSpecifierList: p.attributeSpecifierListOpt()}
 	switch p.rune(false) {
 	case ';':
 		r.Token = p.shift(false)

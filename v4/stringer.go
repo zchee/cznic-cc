@@ -87,26 +87,27 @@ func _() {
 	_ = x[SIGNED-57421]
 	_ = x[SIZEOF-57422]
 	_ = x[STATIC-57423]
-	_ = x[STRINGLITERAL-57424]
-	_ = x[STRUCT-57425]
-	_ = x[SUBASSIGN-57426]
-	_ = x[SWITCH-57427]
-	_ = x[THREADLOCAL-57428]
-	_ = x[TYPEDEF-57429]
-	_ = x[TYPENAME-57430]
-	_ = x[TYPEOF-57431]
-	_ = x[UINT128-57432]
-	_ = x[UNION-57433]
-	_ = x[UNSIGNED-57434]
-	_ = x[VOID-57435]
-	_ = x[VOLATILE-57436]
-	_ = x[WHILE-57437]
-	_ = x[XORASSIGN-57438]
+	_ = x[STATICASSERT-57424]
+	_ = x[STRINGLITERAL-57425]
+	_ = x[STRUCT-57426]
+	_ = x[SUBASSIGN-57427]
+	_ = x[SWITCH-57428]
+	_ = x[THREADLOCAL-57429]
+	_ = x[TYPEDEF-57430]
+	_ = x[TYPENAME-57431]
+	_ = x[TYPEOF-57432]
+	_ = x[UINT128-57433]
+	_ = x[UNION-57434]
+	_ = x[UNSIGNED-57435]
+	_ = x[VOID-57436]
+	_ = x[VOLATILE-57437]
+	_ = x[WHILE-57438]
+	_ = x[XORASSIGN-57439]
 }
 
-const _tokCh_name = "'+=''_Alignas''_Alignof''&&''&=''->''asm''_Atomic''__attribute__''auto''_Bool''break''case''char'character constant'_Complex''const''continue''...''--''_Decimal64''__declspec''default''/=''do''double''else''enum''==''extern''float''_Float128''_Float128x''_Float16''_Float32''_Float32x''_Float64''_Float64x'floating point constant'for''_Generic''>=''goto'<header-name>identifier'if''__imag__''_Imaginary''++''inline''int''__int128'integer constant'__label__''<=''long'long character constantlong string literal'<<''<<=''%=''*=''!=''_Nonnull''_Noreturn''|=''||'preprocessing number'##''__real__''register''restrict''return''>>''>>=''short''signed''sizeof''static'string literal'struct''-=''switch''_Thread_local''typedef'type name'typeof''__uint128_t''union''unsigned''void''volatile''while''^='"
+const _tokCh_name = "'+=''_Alignas''_Alignof''&&''&=''->''asm''_Atomic''__attribute__''auto''_Bool''break''case''char'character constant'_Complex''const''continue''...''--''_Decimal64''__declspec''default''/=''do''double''else''enum''==''extern''float''_Float128''_Float128x''_Float16''_Float32''_Float32x''_Float64''_Float64x'floating point constant'for''_Generic''>=''goto'<header-name>identifier'if''__imag__''_Imaginary''++''inline''int''__int128'integer constant'__label__''<=''long'long character constantlong string literal'<<''<<=''%=''*=''!=''_Nonnull''_Noreturn''|=''||'preprocessing number'##''__real__''register''restrict''return''>>''>>=''short''signed''sizeof''static'_Static_assertstring literal'struct''-=''switch''_Thread_local''typedef'type name'typeof''__uint128_t''union''unsigned''void''volatile''while''^='"
 
-var _tokCh_index = [...]uint16{0, 4, 14, 24, 28, 32, 36, 41, 50, 65, 71, 78, 85, 91, 97, 115, 125, 132, 142, 147, 151, 163, 175, 184, 188, 192, 200, 206, 212, 216, 224, 231, 242, 254, 264, 274, 285, 295, 306, 329, 334, 344, 348, 354, 367, 377, 381, 391, 403, 407, 415, 420, 430, 446, 457, 461, 467, 490, 509, 513, 518, 522, 526, 530, 540, 551, 555, 559, 579, 583, 593, 603, 613, 621, 625, 630, 637, 645, 653, 661, 675, 683, 687, 695, 710, 719, 728, 736, 749, 756, 766, 772, 782, 789, 793}
+var _tokCh_index = [...]uint16{0, 4, 14, 24, 28, 32, 36, 41, 50, 65, 71, 78, 85, 91, 97, 115, 125, 132, 142, 147, 151, 163, 175, 184, 188, 192, 200, 206, 212, 216, 224, 231, 242, 254, 264, 274, 285, 295, 306, 329, 334, 344, 348, 354, 367, 377, 381, 391, 403, 407, 415, 420, 430, 446, 457, 461, 467, 490, 509, 513, 518, 522, 526, 530, 540, 551, 555, 559, 579, 583, 593, 603, 613, 621, 625, 630, 637, 645, 653, 661, 675, 689, 697, 701, 709, 724, 733, 742, 750, 763, 770, 780, 786, 796, 803, 807}
 
 func (i tokCh) String() string {
 	i -= 57345

@@ -643,19 +643,36 @@ func (n *ExpressionStatement) check(c *ctx) (r Type) {
 	return n.ExpressionList.check(c, decay)
 }
 
-//  Declaration:
-//          DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 func (n *Declaration) check(c *ctx) {
-	var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, isNoreturn, isRestrict bool
-	t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict)
-	var attr *Attributes
-	if n.InitDeclaratorList != nil && n.InitDeclaratorList.InitDeclaratorList == nil {
-		if attr = n.InitDeclaratorList.InitDeclarator.AttributeSpecifierList.check(c); attr != nil {
-			t = t.setAttr(attr)
+	switch n.Case {
+	case DeclarationDecl: // DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
+		var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, isNoreturn, isRestrict bool
+		t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict)
+		var attr *Attributes
+		if n.InitDeclaratorList != nil && n.InitDeclaratorList.InitDeclaratorList == nil {
+			if attr = n.InitDeclaratorList.InitDeclarator.AttributeSpecifierList.check(c); attr != nil {
+				t = t.setAttr(attr)
+			}
 		}
+		for l := n.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
+			l.InitDeclarator.check(c, t, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto)
+		}
+	case DeclarationAssert: // StaticAssertDeclaration
+		n.StaticAssertDeclaration.check(c)
+	default:
+		c.errors.add(errorf("internal error: %v", n.Case))
 	}
-	for l := n.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
-		l.InitDeclarator.check(c, t, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto)
+}
+
+//  StaticAssertDeclaration:
+//          "_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')'
+func (n *StaticAssertDeclaration) check(c *ctx) {
+	n.ConstantExpression.check(c, decay)
+	if !isNonzero(n.ConstantExpression.Value()) {
+		s := stringConst(func(msg string, args ...interface{}) {
+			c.errors.add(errorf(msg, args...))
+		}, n.Token4)
+		c.errors.add(errorf("%v: assertion failed: %s", n.ConstantExpression.Position(), s[:len(s)-1]))
 	}
 }
 
@@ -2136,14 +2153,22 @@ func (n *StructDeclarationList) check(c *ctx, s *StructOrUnionSpecifier) {
 }
 
 func (n *StructDeclaration) check(c *ctx) (r []*Field) {
-	var isAtomic, isConst, isVolatile, isRestrict bool
-	t := n.SpecifierQualifierList.check(c, &isAtomic, &isConst, &isVolatile, &isRestrict)
-	switch {
-	case n.StructDeclaratorList == nil:
-		return []*Field{{typ: newTyper(t)}}
+	switch n.Case {
+	case StructDeclarationDecl: // DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
+		var isAtomic, isConst, isVolatile, isRestrict bool
+		t := n.SpecifierQualifierList.check(c, &isAtomic, &isConst, &isVolatile, &isRestrict)
+		switch {
+		case n.StructDeclaratorList == nil:
+			return []*Field{{typ: newTyper(t)}}
+		default:
+			return n.StructDeclaratorList.check(c, t, isAtomic, isConst, isVolatile, isRestrict)
+		}
+	case StructDeclarationAssert: // StaticAssertDeclaration
+		n.StaticAssertDeclaration.check(c)
 	default:
-		return n.StructDeclaratorList.check(c, t, isAtomic, isConst, isVolatile, isRestrict)
+		c.errors.add(errorf("internal error: %v", n.Case))
 	}
+	return nil
 }
 
 func (n *SpecifierQualifierList) check(c *ctx, isAtomic, isConst, isVolatile, isRestrict *bool) (r Type) {
