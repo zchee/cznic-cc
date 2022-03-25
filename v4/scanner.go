@@ -675,7 +675,8 @@ func (s *scanner) escapeSequence() bool {
 	return s.simpleEscapeSequence() ||
 		s.octalEscapeSequence() ||
 		s.hexadecimalEscapeSequence() ||
-		s.universalCharacterName()
+		s.universalCharacterName() ||
+		s.shift() != eof
 }
 
 // universalCharacterName scans universal-character-name.

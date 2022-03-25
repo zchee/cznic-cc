@@ -1558,12 +1558,13 @@ func TestMake(t *testing.T) {
 		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, unix},
 		{"github.com/madler/zlib.tar.gz", "zlib", nil, unix},
 		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", &makeCfg{configure: []string{"--enable-corefoundation=no"}}, unix},
-		//TODO gmp
+		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil, unix},
 		//TODO mpfr
 		//TODO mpc
 		//TODO hdf5
 		//TODO redis
 		//TODO tk
+		//TODO qbe
 	} {
 		if !filter(v.filter) {
 			continue
