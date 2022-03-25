@@ -566,6 +566,9 @@ func (n *FunctionType) setName(nm string) Type {
 // Result reports the result type of n.
 func (n *FunctionType) Result() Type { return n.result.Type() }
 
+// Parameters returns function type parameters.
+func (n *FunctionType) Parameters() []*Parameter { return n.fp }
+
 // Align implements Type.
 func (n *FunctionType) Align() int {
 	if n.attributer.p != nil {
