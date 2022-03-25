@@ -914,17 +914,21 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 		case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 			switch x := n.PostfixExpression.eval(c, mode).(type) {
-			// case UInt64Value:
-			// 	switch y := n.PostfixExpression.Type().(*PointerType).Elem().(type) {
-			// 	case *StructType:
-			// 		if f := y.FieldByName(n.Token2.SrcStr()); f != nil {
-			// 			n.val = c.convert(x+UInt64Value(f.Offset()), n.Type())
-			// 		}
-			// 	default:
-			// 		c.errors.add(errorf("TODO %v %v %T %v: %T", n.Case, mode.has(addrOf), x, n.Token.Position(), y))
-			// 	}
+			case UInt64Value:
+				switch y := n.PostfixExpression.Type().(*PointerType).Elem().(type) {
+				case *StructType:
+					if f := y.FieldByName(n.Token2.SrcStr()); f != nil {
+						n.val = c.convert(x+UInt64Value(f.Offset()), c.newPointerType(f.Type()))
+					}
+				case *UnionType:
+					if f := y.FieldByName(n.Token2.SrcStr()); f != nil {
+						n.val = c.convert(x+UInt64Value(f.Offset()), c.newPointerType(f.Type()))
+					}
+				default:
+					c.errors.add(errorf("TODO %v %v %T %v: %T", n.Case, mode.has(addrOf), x, n.Token.Position(), y))
+				}
 			default:
-				c.errors.add(errorf("TODO %v %v %T %v:", n.Case, mode.has(addrOf), x, n.Token.Position()))
+				c.errors.add(errorf("TODO %v %v %T", n.Case, mode.has(addrOf), x))
 			}
 		case PostfixExpressionPSelect: // PostfixExpression "->" IDENTIFIER
 			switch x := n.PostfixExpression.eval(c, mode.del(addrOf)).(type) {
@@ -932,13 +936,17 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 				switch y := n.PostfixExpression.Type().(*PointerType).Elem().(type) {
 				case *StructType:
 					if f := y.FieldByName(n.Token2.SrcStr()); f != nil {
-						n.val = c.convert(x+UInt64Value(f.Offset()), n.Type())
+						n.val = c.convert(x+UInt64Value(f.Offset()), c.newPointerType(f.Type()))
+					}
+				case *UnionType:
+					if f := y.FieldByName(n.Token2.SrcStr()); f != nil {
+						n.val = c.convert(x+UInt64Value(f.Offset()), c.newPointerType(f.Type()))
 					}
 				default:
-					c.errors.add(errorf("TODO %v %v %T %v: %T", n.Case, mode.has(addrOf), x, n.Token.Position(), y))
+					c.errors.add(errorf("TODO %v %v %T %T", n.Case, mode.has(addrOf), x, y))
 				}
 			default:
-				c.errors.add(errorf("TODO %v %v %T %v:", n.Case, mode.has(addrOf), x, n.Token.Position()))
+				c.errors.add(errorf("TODO %v %v %T", n.Case, mode.has(addrOf), x))
 			}
 		case PostfixExpressionInc: // PostfixExpression "++"
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))

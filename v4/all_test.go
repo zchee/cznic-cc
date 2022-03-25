@@ -1554,10 +1554,10 @@ func TestMake(t *testing.T) {
 		cfg     *makeCfg
 		filter  []string
 	}{
-		//TODO {"ftp.pcre.org/pub/pcre.tar.gz", "pcre", &makeCfg{configure: []string{"--disable-cpp"}}, unix},
-		//TODO {"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, unix},
+		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", &makeCfg{configure: []string{"--disable-cpp"}}, unix},
+		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, unix},
 		{"github.com/madler/zlib.tar.gz", "zlib", nil, unix},
-		// {"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", nil, unix},
+		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", nil, unix},
 		//TODO gmp
 		//TODO mpfr
 		//TODO mpc
