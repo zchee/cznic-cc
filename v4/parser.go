@@ -3472,11 +3472,13 @@ func (s *Scope) idents(t Token) (r []Node) {
 			switch x := v.(type) {
 			case *Declarator:
 				if t.seq >= int32(x.visible) {
+					x.resolved = s
 					r = append(r, x)
 					if x.isExtern {
 						for s := s.Parent; s != nil; s = s.Parent {
 							for _, v := range s.Nodes[string(t.Src())] {
 								if x, ok := v.(*Declarator); ok && x.isExtern {
+									x.resolved = s
 									r = append(r, x)
 								}
 							}
@@ -3485,10 +3487,12 @@ func (s *Scope) idents(t Token) (r []Node) {
 				}
 			case *Enumerator:
 				if t.seq >= int32(x.visible) {
+					x.resolved = s
 					r = append(r, x)
 				}
 			case *Parameter:
 				if t.seq >= int32(x.visible) {
+					x.resolved = s
 					r = append(r, x)
 				}
 			}

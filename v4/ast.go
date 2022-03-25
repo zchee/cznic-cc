@@ -1300,6 +1300,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 type Declarator struct {
 	typer
 	visible
+	resolver
 	isAtomic         bool
 	isAuto           bool
 	isConst          bool
@@ -1951,6 +1952,7 @@ func (n EnumeratorCase) String() string {
 //	|       IDENTIFIER '=' ConstantExpression  // Case EnumeratorExpr
 type Enumerator struct {
 	typer
+	resolver
 	valuer
 	visible
 	Case               EnumeratorCase `PrettyPrint:"stringer,zero"`

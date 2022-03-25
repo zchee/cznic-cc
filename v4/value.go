@@ -109,10 +109,6 @@ func (n *ConstantExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *ConditionalExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -138,10 +134,6 @@ func (n *ConditionalExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *LogicalOrExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -172,10 +164,6 @@ func (n *LogicalOrExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *LogicalAndExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -206,10 +194,6 @@ func (n *LogicalAndExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *InclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -253,10 +237,6 @@ func (n *InclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *ExclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -300,10 +280,6 @@ func (n *ExclusiveOrExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *AndExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -347,10 +323,6 @@ func (n *AndExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -431,10 +403,6 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -617,10 +585,6 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *ShiftExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -697,10 +661,6 @@ func (n *ShiftExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *AdditiveExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -771,10 +731,6 @@ func (n *AdditiveExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -880,10 +836,6 @@ func (n *MultiplicativeExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *CastExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			switch n.Case {
 			case CastExpressionUnary: // UnaryExpression
@@ -911,10 +863,6 @@ func (n *CastExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()
@@ -999,10 +947,6 @@ func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			switch n.Case {
 			case PostfixExpressionPrimary: // PrimaryExpression
@@ -1169,10 +1113,6 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 func (n *PrimaryExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			switch n.Case {
 			case PrimaryExpressionIdent: // IDENTIFIER
@@ -1242,10 +1182,6 @@ func (n *ExpressionList) eval(c *ctx, mode flags) (r Value) {
 	n0 := n
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		for ; n != nil; n = n.ExpressionList {
 			n0.typ = n.AssignmentExpression.Type()
 			n0.val = n.AssignmentExpression.eval(c, mode)
@@ -1257,10 +1193,6 @@ func (n *ExpressionList) eval(c *ctx, mode flags) (r Value) {
 func (n *AssignmentExpression) eval(c *ctx, mode flags) (r Value) {
 	if n.val == nil {
 		n.val = Unknown
-		if mode.has(dontEval) {
-			return n.Value()
-		}
-
 		if mode.has(addrOf) {
 			c.errors.add(errorf("TODO %v %v", n.Case, mode.has(addrOf)))
 			return n.Value()

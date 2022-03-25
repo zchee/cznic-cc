@@ -461,6 +461,7 @@ type Parameter struct {
 	AbstractDeclarator *AbstractDeclarator // Can be nil
 	name               Token
 	typer
+	resolver
 	visible
 }
 
@@ -477,8 +478,8 @@ func (n *Parameter) Position() (r token.Position) {
 	return n.name.Position()
 }
 
-// Name returns the name token of n. The result can a zero value, like in `void
-// f(int) { ... }`.
+// Name returns the name token of n. The result can be a zero value, like in
+// `void f(int) { ... }`.
 func (n *Parameter) Name() Token {
 	if n.Declarator != nil {
 		return n.Declarator.DirectDeclarator.name().Token

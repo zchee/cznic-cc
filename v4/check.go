@@ -25,7 +25,6 @@ const (
 
 	// eval
 	addrOf
-	dontEval // Eg X in _Generic(X, ...)
 )
 
 type flags int
@@ -273,6 +272,11 @@ func (t typer) Type() Type {
 
 	return Invalid
 }
+
+type resolver struct{ resolved *Scope }
+
+// ResolvedIn returns the scope an identifier was resolved in, if any.
+func (n resolver) ResolvedIn() *Scope { return n.resolved }
 
 type valuer struct{ val Value }
 
@@ -2302,7 +2306,6 @@ func (n *AssignmentExpression) check(c *ctx, mode flags) (r Type) {
 	switch n.Case {
 	case AssignmentExpressionCond: // ConditionalExpression
 		n.typ = n.ConditionalExpression.check(c, mode)
-		n.val = n.ConditionalExpression.eval(c, mode)
 	case
 		AssignmentExpressionAssign, // UnaryExpression '=' AssignmentExpression
 		AssignmentExpressionMul,    // UnaryExpression "*=" AssignmentExpression
@@ -2371,8 +2374,6 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2440,8 +2441,6 @@ func (n *LogicalOrExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2474,8 +2473,6 @@ func (n *LogicalAndExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2508,8 +2505,6 @@ func (n *InclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2542,8 +2537,6 @@ func (n *ExclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2576,8 +2569,6 @@ func (n *AndExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2611,8 +2602,6 @@ func (n *EqualityExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2664,8 +2653,6 @@ func (n *RelationalExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2716,8 +2703,6 @@ func (n *ShiftExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2754,8 +2739,6 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2819,8 +2802,6 @@ func (n *MultiplicativeExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2864,8 +2845,6 @@ func (n *CastExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -2913,8 +2892,6 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("TODO %T missed/failed type check", n))
 			return
 		}
-
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -3049,7 +3026,6 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 
 		r = c.decay(r, mode)
 		n.typ = r
-		n.eval(c, 0)
 	}()
 
 	switch n.Case {
@@ -3288,7 +3264,7 @@ out:
 }
 
 func (n *GenericSelection) check(c *ctx, mode flags) (r Type) {
-	n.assoc, n.typ = n.GenericAssociationList.check(c, mode, n.AssignmentExpression.check(c, mode.add(decay|dontEval)))
+	n.assoc, n.typ = n.GenericAssociationList.check(c, mode, n.AssignmentExpression.check(c, mode.add(decay)))
 	return n.Type()
 }
 
@@ -3299,7 +3275,7 @@ func (n *GenericAssociationList) check(c *ctx, mode flags, ctrl Type) (assoc *Ge
 		switch assoc = n.GenericAssociation; assoc.Case {
 		case GenericAssociationType: // TypeName ':' AssignmentExpression
 			if t := assoc.TypeName.check(c); ctrl.isCompatible(t) {
-				return assoc, assoc.AssignmentExpression.check(c, decay|dontEval)
+				return assoc, assoc.AssignmentExpression.check(c, decay)
 			}
 		case GenericAssociationDefault: //  "default" ':' AssignmentExpression
 			if deflt != nil {
@@ -3307,7 +3283,7 @@ func (n *GenericAssociationList) check(c *ctx, mode flags, ctrl Type) (assoc *Ge
 				break
 			}
 
-			assoc.AssignmentExpression.check(c, decay|dontEval)
+			assoc.AssignmentExpression.check(c, decay)
 			deflt = assoc
 		default:
 			c.errors.add(errorf("TODO internal error: %v", assoc.Case))

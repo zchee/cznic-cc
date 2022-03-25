@@ -623,9 +623,10 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example enum e {a, b}; */
 			|	EnumeratorList ',' Enumerator
 
-			/*yy:field	typer	*/
-			/*yy:field	valuer	*/
-			/*yy:field	visible	*/
+			/*yy:field	typer		*/
+			/*yy:field	resolver	*/
+			/*yy:field	valuer		*/
+			/*yy:field	visible		*/
 			/*yy:example enum e {a}; */
 /*yy:case Ident      */ Enumerator:
 				IDENTIFIER
@@ -663,6 +664,7 @@ package cc // import "modernc.org/cc/v4"
 			/* [0], 6.7.5 Declarators */
 			/*yy:field	typer				*/
 			/*yy:field	visible				*/
+			/*yy:field	resolver			*/
 			/*yy:field	isAtomic	bool		*/
 			/*yy:field	isAuto		bool		*/
 			/*yy:field	isConst		bool		*/
