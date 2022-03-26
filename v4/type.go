@@ -1485,6 +1485,15 @@ func (n *EnumType) setAttr(a *Attributes) Type {
 	return &m
 }
 
+// Type returns n's underlying integer type.
+func (n *EnumType) UnderlyingType() Type {
+	if n.forward != nil {
+		return n.forward.Type().(*EnumType).UnderlyingType()
+	}
+
+	return n.typ.Type()
+}
+
 func (n *EnumType) isCompatible(t Type) bool {
 	if n.forward != nil {
 		return n.forward.Type().isCompatible(t)

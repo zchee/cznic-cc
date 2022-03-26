@@ -149,6 +149,10 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 		return Unknown
 	}
 
+	if t.Kind() == Enum {
+		t = t.(*EnumType).UnderlyingType()
+	}
+
 	switch t.Kind() {
 	case Int, Long, LongLong, Char, SChar, Short:
 		m := Int64Value(1)<<(8*t.Size()) - 1
@@ -373,6 +377,7 @@ func (n *AsmExpressionList) check(c *ctx) {
 	for ; n != nil; n = n.AsmExpressionList {
 		n.AsmIndex.check(c)
 		n.AssignmentExpression.check(c, decay|asmArgList|ignoreUndefined)
+		n.AssignmentExpression.eval(c, decay|ignoreUndefined)
 	}
 }
 
@@ -745,7 +750,7 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 			return
 		}
 
-		n.val = n.AssignmentExpression.Value()
+		n.val = n.AssignmentExpression.eval(c, decay)
 		switch x := t.(type) {
 		case *ArrayType:
 			n.checkExprArray(c, x, exprT, off)
@@ -1695,6 +1700,7 @@ func (n *AttributeValue) check(c *ctx, attr *Attributes) {
 func (n *ArgumentExpressionList) check(c *ctx, mode flags) {
 	for ; n != nil; n = n.ArgumentExpressionList {
 		n.AssignmentExpression.check(c, mode)
+		n.AssignmentExpression.eval(c, mode)
 	}
 }
 
@@ -3548,6 +3554,7 @@ func (n *ExpressionList) check(c *ctx, mode flags) (r Type) {
 
 	for ; n != nil; n = n.ExpressionList {
 		n0.typ = n.AssignmentExpression.check(c, mode)
+		n.AssignmentExpression.eval(c, mode)
 	}
 	return n0.Type()
 }
@@ -3567,7 +3574,7 @@ func (n *ConstantExpression) check(c *ctx, mode flags) (r Type) {
 
 	n.typ = n.ConditionalExpression.check(c, mode)
 	if n.val = n.ConditionalExpression.eval(c, mode); n.Value() == Unknown {
-		c.errors.add(errorf("%v: cannot evaluate constant expression", n.Position()))
+		c.errors.add(errorf("%v: cannot evaluate constant expression: %s", n.Position(), NodeSource(n)))
 	}
 	return n.Type()
 }
