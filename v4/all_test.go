@@ -1554,13 +1554,10 @@ func TestMake(t *testing.T) {
 	switch goos {
 	case "darwin":
 		cfg.cflags = "-I/opt/homebrew/include"
-		cfg.configure = append(cfg.configure, "--with-gmp=/opt/homebrew/lib")
 	case "freebsd":
 		cfg.cflags = "-I/usr/local/include"
-		cfg.configure = append(cfg.configure, "--with-gmp=/usr/local/lib")
 	case "netbsd":
 		cfg.cflags = "-I/usr/pkg/include"
-		cfg.configure = append(cfg.configure, "--with-gmp=/usr/pkg/lib")
 	}
 	for _, v := range []struct {
 		archive string
@@ -1574,8 +1571,8 @@ func TestMake(t *testing.T) {
 		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", &makeCfg{configure: []string{"--enable-corefoundation=no"}}, unix},
 		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil, unix},
 		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, mpfr},
+		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil, mpfr},
 		//TODO {"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, unix},
-		//TODO mpc
 		//TODO redis
 		//TODO tk
 		//TODO qbe
