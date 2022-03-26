@@ -59,6 +59,8 @@ var keywords = map[string]rune{
 	"_Thread_local":  rune(THREADLOCAL),
 
 	// GCC/clang/other extensions.
+	"_Decimal128":   rune(DECIMAL128),
+	"_Decimal32":    rune(DECIMAL32),
 	"_Decimal64":    rune(DECIMAL64),
 	"_Float128":     rune(FLOAT128),
 	"_Float128x":    rune(FLOAT128X),
@@ -2994,8 +2996,11 @@ func (p *parser) isStorageClassSpecifier(ch rune) bool {
 //	atomic-type-specifier
 // 	_Bool
 // 	_Complex
+// 	_Decimal128
+// 	_Decimal32
 // 	_Decimal64
 // 	_Float128
+// 	_Float16
 // 	_Float32
 // 	_Float64
 // 	__float80
@@ -3073,8 +3078,12 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 		return &TypeSpecifier{Case: TypeSpecifierUint128, Token: p.shift(false)}
 	case rune(INT128):
 		return &TypeSpecifier{Case: TypeSpecifierInt128, Token: p.shift(false)}
+	case rune(DECIMAL32):
+		return &TypeSpecifier{Case: TypeSpecifierDecimal32, Token: p.shift(false)}
 	case rune(DECIMAL64):
 		return &TypeSpecifier{Case: TypeSpecifierDecimal64, Token: p.shift(false)}
+	case rune(DECIMAL128):
+		return &TypeSpecifier{Case: TypeSpecifierDecimal128, Token: p.shift(false)}
 	case rune(TYPEOF):
 		switch ch := p.peek(2, true).Ch; {
 		case p.isTypeSpecifier(ch, true):
@@ -3099,6 +3108,8 @@ func (p *parser) isTypeSpecifier(ch rune, typenameOk bool) bool {
 		rune(BOOL),
 		rune(CHAR),
 		rune(COMPLEX),
+		rune(DECIMAL128),
+		rune(DECIMAL32),
 		rune(DECIMAL64),
 		rune(DOUBLE),
 		rune(ENUM),

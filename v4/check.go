@@ -90,10 +90,14 @@ func newCtx(ast *AST) *ctx {
 		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierShort}):                                      c.newPredefinedType(ComplexShort),
 		ts2String([]TypeSpecifierCase{TypeSpecifierComplex, TypeSpecifierUnsigned}):                                   c.newPredefinedType(ComplexUInt),
 		ts2String([]TypeSpecifierCase{TypeSpecifierComplex}):                                                          complexdouble,
+		ts2String([]TypeSpecifierCase{TypeSpecifierDecimal128}):                                                       c.newPredefinedType(Decimal128),
+		ts2String([]TypeSpecifierCase{TypeSpecifierDecimal32}):                                                        c.newPredefinedType(Decimal32),
 		ts2String([]TypeSpecifierCase{TypeSpecifierDecimal64}):                                                        c.newPredefinedType(Decimal64),
 		ts2String([]TypeSpecifierCase{TypeSpecifierDouble, TypeSpecifierLong}):                                        c.newPredefinedType(LongDouble),
 		ts2String([]TypeSpecifierCase{TypeSpecifierDouble}):                                                           c.newPredefinedType(Double),
 		ts2String([]TypeSpecifierCase{TypeSpecifierFloat128}):                                                         c.newPredefinedType(Float128),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat128x}):                                                        c.newPredefinedType(Float128x),
+		ts2String([]TypeSpecifierCase{TypeSpecifierFloat16}):                                                          c.newPredefinedType(Float16),
 		ts2String([]TypeSpecifierCase{TypeSpecifierFloat32x}):                                                         c.newPredefinedType(Float32x),
 		ts2String([]TypeSpecifierCase{TypeSpecifierFloat32}):                                                          c.newPredefinedType(Float32),
 		ts2String([]TypeSpecifierCase{TypeSpecifierFloat64x}):                                                         c.newPredefinedType(Float64x),
@@ -1788,6 +1792,8 @@ func (n *StorageClassSpecifier) check(c *ctx, isExtern, isStatic, isThreadLocal,
 //  |       "long"                           // Case TypeSpecifierLong
 //  |       "float"                          // Case TypeSpecifierFloat
 //  |       "_Float16"                       // Case TypeSpecifierFloat16
+//  |       "_Decimal128"                    // Case TypeSpecifierDecimal128
+//  |       "_Decimal32"                     // Case TypeSpecifierDecimal32
 //  |       "_Decimal64"                     // Case TypeSpecifierDecimal64
 //  |       "_Float128"                      // Case TypeSpecifierFloat128
 //  |       "_Float128x"                     // Case TypeSpecifierFloat128x
@@ -1830,13 +1836,17 @@ func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 	case TypeSpecifierFloat: // "float"
 		// ok
 	case TypeSpecifierFloat16: // "_Float16"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
+	case TypeSpecifierDecimal128: // "_Decimal128"
+		// ok
+	case TypeSpecifierDecimal32: // "_Decimal32"
+		// ok
 	case TypeSpecifierDecimal64: // "_Decimal64"
 		// ok
 	case TypeSpecifierFloat128: // "_Float128"
 		// ok
 	case TypeSpecifierFloat128x: // "_Float128x"
-		c.errors.add(errorf("TODO %v", n.Case))
+		// ok
 	case TypeSpecifierDouble: // "double"
 		// ok
 	case TypeSpecifierSigned: // "signed"
@@ -3298,84 +3308,109 @@ func (n *GenericAssociationList) check(c *ctx, mode flags, ctrl Type) (assoc *Ge
 }
 
 func (n *PrimaryExpression) floatConst(c *ctx) (v Value, t Type) {
-	s0 := n.Token.SrcStr()
-	s := s0
-	var cplx, suff string
-out:
-	for i := len(s) - 1; i > 0; i-- {
-		switch s0[i] {
-		case 'l', 'L':
-			s = s[:i]
-			suff += "l"
-		case 'f', 'F':
-			s = s[:i]
-			suff += "f"
-		case 'i', 'I', 'j', 'J':
-			s = s[:i]
-			cplx += "i"
-		case 'd', 'D':
-			suff += "d"
-		default:
-			break out
-		}
+	s := strings.ToLower(n.Token.SrcStr())
+	val, err := strconv.ParseFloat(s, 64)
+	if err == nil {
+		return Float64Value(val), c.ast.kinds[Double]
 	}
 
-	if (len(suff) > 1 || len(cplx) > 1) && suff != "dd" {
-		c.errors.add(errorf("%v: invalid number format", n.Position()))
-		return nil, nil
-	}
+	// https://gcc.gnu.org/onlinedocs/gcc/Decimal-Float.html
+	//
+	// Use a suffix ‘df’ or ‘DF’ in a literal constant of type _Decimal32, ‘dd’ or
+	// ‘DD’ for _Decimal64, and ‘dl’ or ‘DL’ for _Decimal128.
 
-	var val float64
-	var err error
-	prec := uint(64)
-	if suff == "l" || suff == "dd" {
-		prec = longDoublePrec
-	}
+	// https://gcc.gnu.org/onlinedocs/gcc-9.1.0/gcc/Floating-Types.html
+	//
+	// Constants with these types use suffixes fn or Fn and fnx or Fnx.
+
 	var bf *big.Float
+	// Longer suffixes must come first.
 	switch {
-	case suff == "l" || suff == "dd" || strings.Contains(s, "p") || strings.Contains(s, "P"):
-		s = s[:len(s)-len(suff)]
-		bf, _, err = big.ParseFloat(strings.ToLower(s), 0, prec, big.ToNearestEven)
+	case strings.HasSuffix(s, "f128x"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("f128x")], 0, longDoublePrec, big.ToNearestEven)
 		if err == nil {
-			val, _ = bf.Float64()
+			return (*LongDoubleValue)(bf), c.ast.kinds[Float128x]
 		}
-	default:
-		val, err = strconv.ParseFloat(s, 64)
-	}
-	if err != nil {
-		c.errors.add(errorf("%v: %v", n.Position(), err))
-		return nil, nil
-	}
+	case strings.HasSuffix(s, "f32x"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("f32x")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Float32x]
+		}
+	case strings.HasSuffix(s, "f64x"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("f64x")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Float64x]
+		}
+	case strings.HasSuffix(s, "f128"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("f128")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Float128]
+		}
+	case strings.HasSuffix(s, "f16"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("f16")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Float16]
+		}
+	case strings.HasSuffix(s, "f32"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("f32")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Float32]
+		}
+	case strings.HasSuffix(s, "f64"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("f64")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Float64]
+		}
+	case
+		strings.HasSuffix(s, "il"),
+		strings.HasSuffix(s, "jl"),
+		strings.HasSuffix(s, "li"),
+		strings.HasSuffix(s, "lj"):
 
-	// [0]6.4.4.2
-	switch suff {
-	case "":
-		switch {
-		case cplx != "":
-			return Complex128Value(complex(0, val)), c.ast.kinds[ComplexDouble]
-		default:
-			return Float64Value(val), c.ast.kinds[Double]
+		bf, _, err = big.ParseFloat(s[:len(s)-len("il")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return &ComplexLongDoubleValue{Im: (*LongDoubleValue)(bf)}, c.ast.kinds[LongDouble]
 		}
-	case "f":
-		switch {
-		case cplx != "":
-			return Complex64Value(complex(0, float32(val))), c.ast.kinds[ComplexFloat]
-		default:
+	case
+		strings.HasSuffix(s, "fi"),
+		strings.HasSuffix(s, "fj"),
+		strings.HasSuffix(s, "if"),
+		strings.HasSuffix(s, "jf"):
+
+		if val, err = strconv.ParseFloat(s[:len(s)-len("fi")], 64); err == nil {
+			return Complex64Value(complex(0, val)), c.ast.kinds[Float]
+		}
+	case strings.HasSuffix(s, "df"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("df")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Decimal32]
+		}
+	case strings.HasSuffix(s, "dd"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("dd")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Decimal64]
+		}
+	case strings.HasSuffix(s, "dl"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("dl")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
+			return (*LongDoubleValue)(bf), c.ast.kinds[Decimal128]
+		}
+	case strings.HasSuffix(s, "f"):
+		if val, err = strconv.ParseFloat(s[:len(s)-len("f")], 64); err == nil {
 			return Float64Value(val), c.ast.kinds[Float]
 		}
-	case "l":
-		switch {
-		case cplx != "":
-			return &ComplexLongDoubleValue{big.NewFloat(0), bf}, c.ast.kinds[ComplexLongDouble]
-		default:
+	case strings.HasSuffix(s, "l"):
+		bf, _, err = big.ParseFloat(s[:len(s)-len("l")], 0, longDoublePrec, big.ToNearestEven)
+		if err == nil {
 			return (*LongDoubleValue)(bf), c.ast.kinds[LongDouble]
 		}
-	case "dd":
-		return (*LongDoubleValue)(bf), c.ast.kinds[Decimal64]
-	default:
-		c.errors.add(errorf("TODO %v", n.Case))
+	case strings.HasSuffix(s, "i"), strings.HasSuffix(s, "j"):
+		if val, err = strconv.ParseFloat(s[:len(s)-len("i")], 64); err == nil {
+			return Complex128Value(complex(0, val)), c.ast.kinds[ComplexDouble]
+		}
 	}
-	return nil, nil
+	c.errors.add(errorf("TODO %T %v %s FERR %v", n, n.Case, s, err))
+	return Unknown, Invalid
 }
 
 func (n *PrimaryExpression) stringConst(c *ctx) (v Value, t Type) {

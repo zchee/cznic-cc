@@ -1328,7 +1328,6 @@ out:
 			level--
 		case eof:
 			panic(todo("", &t))
-			// 			panic(todo("", &t))
 		default:
 			arg = append(arg, t)
 		}
@@ -1495,7 +1494,7 @@ func (c *cpp) elifGroup(eg elifGroup) bool {
 
 // includeNext executes an #include_next control-line: https://gcc.gnu.org/onlinedocs/cpp/Wrapper-Headers.html
 func (c *cpp) includeNext(ln controlLine) {
-	// eg. ["#" "include" "<stdio.h>" "\n"]
+	// eg. ["#" "include_next" "<stdio.h>" "\n"]
 	if len(ln) < 3 {
 		c.eh("%v: missing argument", ln[1].Position())
 		return
@@ -1697,7 +1696,7 @@ func (c *cpp) includeArg(s cppTokens) (r string) {
 	}
 }
 
-func (c *cpp) sysInclue(n Node, nm string) {
+func (c *cpp) sysInclude(n Node, nm string) {
 	var err error
 	var g group
 	for _, v := range c.cfg.SysIncludePaths {

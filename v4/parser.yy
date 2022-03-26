@@ -503,12 +503,12 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Float      */ |	"float"
 			/*yy:example _Float16 i; */
 /*yy:case Float16    */ |	"_Float16"
-// 			/*yy:example _Decimal32 i; */
-// /*yy:case Decimal32  */ |	"_Decimal32"
+			/*yy:example _Decimal32 i; */
+/*yy:case Decimal32  */ |	"_Decimal32"
 			/*yy:example _Decimal64 i; */
 /*yy:case Decimal64  */ |	"_Decimal64"
-// 			/*yy:example _Decimal128 i; */
-// /*yy:case Decimal128 */ |	"_Decimal128"
+			/*yy:example _Decimal128 i; */
+/*yy:case Decimal128 */ |	"_Decimal128"
 			/*yy:example _Float128 i; */
 /*yy:case Float128   */ |	"_Float128"
 			/*yy:example _Float128x i; */

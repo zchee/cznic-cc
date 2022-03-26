@@ -41,10 +41,14 @@ var (
 		ComplexShort:      true,
 		ComplexUInt:       true,
 		ComplexUShort:     true,
+		Decimal128:        true,
+		Decimal32:         true,
 		Decimal64:         true,
 		Double:            true,
 		Enum:              true,
 		Float128:          true,
+		Float128x:         true,
+		Float16:           true,
 		Float32:           true,
 		Float32x:          true,
 		Float64:           true,
@@ -68,6 +72,8 @@ var (
 	floatinPointKinds = [maxKind]bool{
 		Double:     true,
 		Float128:   true,
+		Float128x:  true,
+		Float16:    true,
 		Float32:    true,
 		Float32x:   true,
 		Float64:    true,
@@ -141,6 +147,7 @@ var (
 	realKinds = [maxKind]bool{
 		Bool:       true,
 		Char:       true,
+		Decimal32:  true,
 		Decimal64:  true,
 		Double:     true,
 		Enum:       true,
@@ -179,11 +186,15 @@ const (
 	ComplexShort      // _Complex short
 	ComplexUInt       // _Complex unsigned
 	ComplexUShort     // _Complex unsigned short
+	Decimal128        // _Decimal128
+	Decimal32         // _Decimal32
 	Decimal64         // _Decimal64
 	Double            // double
 	Enum              // enum
 	Float             // float
 	Float128          // _Float128
+	Float128x         // _Float128x
+	Float16           // _Float16
 	Float32           // _Float32
 	Float32x          // _Float32x
 	Float64           // _Float64
@@ -1644,6 +1655,22 @@ func usualArithmeticConversions(a, b Type) (r Type) {
 	}
 
 	if bk == LongDouble {
+		return b
+	}
+
+	if ak == Float128 {
+		return a
+	}
+
+	if bk == Float128 {
+		return b
+	}
+
+	if ak == Decimal128 {
+		return a
+	}
+
+	if bk == Decimal128 {
 		return b
 	}
 

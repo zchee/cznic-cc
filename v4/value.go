@@ -53,8 +53,8 @@ func (*ZeroValue) isValue() {}
 func (*ZeroValue) String() string { return "{}" }
 
 type ComplexLongDoubleValue struct {
-	Re *big.Float
-	Im *big.Float
+	Re *LongDoubleValue
+	Im *LongDoubleValue
 }
 
 func (n *ComplexLongDoubleValue) isValue() {}
