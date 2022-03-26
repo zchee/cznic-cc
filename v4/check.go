@@ -389,6 +389,7 @@ func (n *AsmIndex) check(c *ctx) {
 	}
 
 	n.ExpressionList.check(c, decay|asmArgList|ignoreUndefined)
+	n.ExpressionList.eval(c, decay|ignoreUndefined)
 }
 
 func (n *AsmQualifierList) check(c *ctx) {
@@ -564,20 +565,27 @@ func (n *IterationStatement) check(c *ctx) (r Type) {
 	switch n.Case {
 	case IterationStatementWhile: // "while" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		return n.Statement.check(c)
 	case IterationStatementDo: // "do" Statement "while" '(' ExpressionList ')' ';'
 		r = n.Statement.check(c)
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		return r
 	case IterationStatementFor: // "for" '(' ExpressionList ';' ExpressionList ';' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		n.ExpressionList2.check(c, decay)
+		n.ExpressionList2.eval(c, decay)
 		n.ExpressionList3.check(c, decay)
+		n.ExpressionList3.eval(c, decay)
 		return n.Statement.check(c)
 	case IterationStatementForDecl: // "for" '(' Declaration ExpressionList ';' ExpressionList ')' Statement
 		n.Declaration.check(c)
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		n.ExpressionList2.check(c, decay)
+		n.ExpressionList2.eval(c, decay)
 		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -603,12 +611,14 @@ out:
 		c.errors.add(errorf("%v: undefined label: %s", n.Token2.Position(), n.Token2.Src()))
 	case JumpStatementGotoExpr: // "goto" '*' ExpressionList ';'
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 	case JumpStatementContinue: // "continue" ';'
 		//TODO
 	case JumpStatementBreak: // "break" ';'
 		//TODO
 	case JumpStatementReturn: // "return" ExpressionList ';'
 		r = n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		//TODO check assignable to fn result
 		return r
 	default:
@@ -625,9 +635,11 @@ func (n *SelectionStatement) check(c *ctx) (r Type) {
 	switch n.Case {
 	case SelectionStatementIf: // "if" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		return n.Statement.check(c)
 	case SelectionStatementIfElse: // "if" '(' ExpressionList ')' Statement "else" Statement
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		r1 := n.Statement.check(c)
 		r2 := n.Statement2.check(c)
 		if r1 != nil && r1 != Invalid {
@@ -637,6 +649,7 @@ func (n *SelectionStatement) check(c *ctx) (r Type) {
 		return r2
 	case SelectionStatementSwitch: // "switch" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
+		n.ExpressionList.eval(c, decay)
 		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -653,7 +666,9 @@ func (n *ExpressionStatement) check(c *ctx) (r Type) {
 		return c.voidT
 	}
 
-	return n.ExpressionList.check(c, decay)
+	r = n.ExpressionList.check(c, decay)
+	n.ExpressionList.eval(c, decay)
+	return r
 }
 
 func (n *Declaration) check(c *ctx) {
@@ -977,6 +992,7 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool
 			}
 			t.elems = mathutil.MaxInt64(t.elems, x)
 			n.Initializer.check(c, elemT, off+x*elemT.Size())
+			x++
 		}
 		return nil
 	default:
@@ -2406,6 +2422,7 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 		t2 := t1
 		if n.ExpressionList != nil {
 			t2 = n.ExpressionList.check(c, mode)
+			n.ExpressionList.eval(c, decay)
 		}
 		switch t3 := n.ConditionalExpression.check(c, mode); {
 		case
@@ -3554,7 +3571,6 @@ func (n *ExpressionList) check(c *ctx, mode flags) (r Type) {
 
 	for ; n != nil; n = n.ExpressionList {
 		n0.typ = n.AssignmentExpression.check(c, mode)
-		n.AssignmentExpression.eval(c, mode)
 	}
 	return n0.Type()
 }

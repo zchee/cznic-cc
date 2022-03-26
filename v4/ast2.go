@@ -90,3 +90,6 @@ func (n *PrimaryExpression) ResolvedTo() Node { return n.resolvedTo }
 
 // Associated returns the selected association of n, if any.
 func (n *GenericSelection) Associated() *GenericAssociation { return n.assoc }
+
+// Offset returns the offset of n within it's containing type.
+func (n *Initializer) Offset() int64 { return n.off }

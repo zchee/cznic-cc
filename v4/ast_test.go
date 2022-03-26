@@ -4479,7 +4479,7 @@ func ExampleStructDeclaration_decl() {
 }
 
 func ExampleStructDeclaration_assert() {
-	fmt.Println(exampleAST(146, "struct{ int i; _Static_assert(x > y, \"abc\"); }"))
+	fmt.Println(exampleAST(146, "struct{ _Static_assert(x > y, \"abc\"); }"))
 	// Output:
 	// <nil>
 }
