@@ -41,6 +41,7 @@ var (
 	builtin     = `
 
 #define __extension__
+#define __restrict_arr restrict
 
 #ifndef __builtin_va_list
 #define __builtin_va_list __builtin_va_list
@@ -1548,6 +1549,19 @@ func TestMake(t *testing.T) {
 	os.Setenv("FAKE_CC_CC", defaultCfg().CC)
 	var files, ok, skip, fails int32
 	unix := []string{"darwin", "freebsd", "linux", "netbsd", "openbsd"}
+	mpfr := []string{"darwin/amd64", "linux"}
+	cfg := &makeCfg{configure: []string{"--disable-assembly"}}
+	switch goos {
+	case "darwin":
+		cfg.cflags = "-I/opt/homebrew/include"
+		cfg.configure = append(cfg.configure, "--with-gmp=/opt/homebrew/lib")
+	case "freebsd":
+		cfg.cflags = "-I/usr/local/include"
+		cfg.configure = append(cfg.configure, "--with-gmp=/usr/local/lib")
+	case "netbsd":
+		cfg.cflags = "-I/usr/pkg/include"
+		cfg.configure = append(cfg.configure, "--with-gmp=/usr/pkg/lib")
+	}
 	for _, v := range []struct {
 		archive string
 		dir     string
@@ -1559,9 +1573,9 @@ func TestMake(t *testing.T) {
 		{"github.com/madler/zlib.tar.gz", "zlib", nil, unix},
 		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", &makeCfg{configure: []string{"--enable-corefoundation=no"}}, unix},
 		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil, unix},
-		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, unix},
+		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, mpfr},
+		//TODO {"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, unix},
 		//TODO mpc
-		//TODO hdf5
 		//TODO redis
 		//TODO tk
 		//TODO qbe
@@ -1600,6 +1614,7 @@ func filter(f []string) bool {
 }
 
 type makeCfg struct {
+	cflags    string
 	configure []string
 }
 
@@ -1626,10 +1641,18 @@ func testMake(t *testing.T, archive, dir string, mcfg *makeCfg) (files, ok, skip
 	os.Setenv("FAKE_CC_LOG", fn)
 	var args []string
 	if mcfg != nil {
+		if mcfg.cflags != "" {
+			os.Setenv("CFLAGS", mcfg.cflags)
+		}
 		args = mcfg.configure
 	}
 	mustShell(t, "./configure", args...)
-	mustShell(t, "make")
+	switch goos {
+	case "darwin", "freebsd", "netbsd":
+		mustShell(t, "gmake")
+	default:
+		mustShell(t, "make")
+	}
 	logf, err := os.ReadFile(fn)
 	if err != nil {
 		t.Fatal(err)

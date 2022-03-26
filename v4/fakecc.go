@@ -25,6 +25,7 @@ const (
 	builtin = `
 
 #define __extension__
+#define __restrict_arr restrict
 
 #ifndef __builtin_va_list
 #define __builtin_va_list __builtin_va_list
