@@ -990,9 +990,9 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool
 
 				x = mathutil.MaxInt64(x, y)
 			}
+			n.Initializer.check(c, elemT, off+x*elemT.Size())
 			x++
 			t.elems = mathutil.MaxInt64(t.elems, x)
-			n.Initializer.check(c, elemT, off+x*elemT.Size())
 		}
 		return nil
 	default:
@@ -1219,8 +1219,35 @@ func (n *InitializerList) checkDesignatorList(dl *DesignatorList, c *ctx, t Type
 
 			t = f.Type()
 			off += f.Offset()
+		case *UnionType:
+			nm := dl.Designator.name(c)
+			if nm == "" {
+				return nil
+			}
+
+			f := x.FieldByName(nm)
+			if f == nil {
+				c.errors.add(errorf("%v: type %s has no member %s", dl.Designator.Position(), t, nm))
+				return nil
+			}
+
+			t = f.Type()
+			off += f.Offset()
+		case *ArrayType:
+			lo, hi := dl.Designator.index(c)
+			if lo < 0 {
+				return nil
+			}
+
+			if hi > lo {
+				c.errors.add(errorf("TODO: %T", x))
+				return nil
+			}
+
+			t = x.Elem()
+			off += lo * t.Size()
 		default:
-			c.errors.add(errorf("TODO %T", x))
+			c.errors.add(errorf("internal error: %T", x))
 			return nil
 		}
 	}
@@ -1332,9 +1359,9 @@ func (n *DirectDeclarator) check(c *ctx, t Type) (r Type) {
 	case DirectDeclaratorArr: // DirectDeclarator '[' TypeQualifiers AssignmentExpression ']'
 		return n.DirectDeclarator.check(c, c.newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
 	case DirectDeclaratorStaticArr: // DirectDeclarator '[' "static" TypeQualifiers AssignmentExpression ']'
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.DirectDeclarator.check(c, c.newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
 	case DirectDeclaratorArrStatic: // DirectDeclarator '[' TypeQualifiers "static" AssignmentExpression ']'
-		c.errors.add(errorf("TODO %v", n.Case))
+		return n.DirectDeclarator.check(c, c.newArrayType(t, arraySize(c, n.AssignmentExpression), n.AssignmentExpression))
 	case DirectDeclaratorStar: // DirectDeclarator '[' TypeQualifiers '*' ']'
 		c.errors.add(errorf("TODO %v", n.Case))
 	case DirectDeclaratorFuncParam: // DirectDeclarator '(' ParameterTypeList ')'

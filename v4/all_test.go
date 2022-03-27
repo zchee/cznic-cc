@@ -1631,12 +1631,37 @@ func TestMake(t *testing.T) {
 				"linux/amd64",
 			},
 		},
-		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, all},
-		//TODO redis
-		//TODO tk
+		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil,
+			[]string{
+				"darwin/ard64",
+				"freebsd/386",
+				"freebsd/amd64",
+				"linux/386",
+				"linux/amd64",
+				"linux/arm",
+				"linux/arm64",
+				"linux/riscv64",
+				"netbsd/amd64",
+				"openbsd/amd64",
+			},
+		},
+		{"musl.libc.org/releases/musl-1.2.2.tar.gz", "musl-1.2.2", nil,
+			[]string{
+				"linux/386",
+				"linux/amd64",
+				"linux/arm",
+				"linux/arm64",
+				"linux/riscv64",
+				"linux/s390x",
+			},
+		},
+		//TODO freebsd libc
+		//TODO netbsd libc
+		//TODO openbsd libc
 		//TODO qbe
 		//TODO quickjs
-		//TODO musl
+		//TODO redis
+		//TODO tk
 	} {
 		if !filter(v.filter) {
 			continue
