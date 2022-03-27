@@ -1408,6 +1408,7 @@ func shell(cmd string, args ...string) ([]byte, error) {
 
 	fmt.Printf("execute %s %q in %s\n", cmd, args, wd)
 	var b echoWriter
+	b.echo = testing.Verbose()
 	c := exec.Command(cmd, args...)
 	c.Stdout = &b
 	c.Stderr = &b
@@ -1429,11 +1430,14 @@ func absCwd() (string, error) {
 }
 
 type echoWriter struct {
-	w bytes.Buffer
+	w    bytes.Buffer
+	echo bool
 }
 
 func (w *echoWriter) Write(b []byte) (int, error) {
-	os.Stdout.Write(b)
+	if w.echo {
+		os.Stdout.Write(b)
+	}
 	return w.w.Write(b)
 }
 
@@ -1549,7 +1553,6 @@ func TestMake(t *testing.T) {
 	os.Setenv("FAKE_CC_CC", defaultCfg().CC)
 	var files, ok, skip, fails int32
 	unix := []string{"darwin", "freebsd", "linux", "netbsd", "openbsd"}
-	mpfr := []string{"darwin/amd64", "linux"}
 	cfg := &makeCfg{configure: []string{"--disable-assembly"}}
 	switch goos {
 	case "darwin":
@@ -1565,13 +1568,13 @@ func TestMake(t *testing.T) {
 		cfg     *makeCfg
 		filter  []string
 	}{
-		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", &makeCfg{configure: []string{"--disable-cpp"}}, unix},
+		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", cfg.add("--disable-cpp"), unix},
 		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, unix},
 		{"github.com/madler/zlib.tar.gz", "zlib", nil, unix},
-		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", &makeCfg{configure: []string{"--enable-corefoundation=no"}}, unix},
+		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", cfg.add("--enable-corefoundation=no"), unix},
 		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil, unix},
-		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, mpfr},
-		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil, mpfr},
+		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, unix},
+		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil, unix},
 		//TODO {"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, unix},
 		//TODO redis
 		//TODO tk
@@ -1613,6 +1616,12 @@ func filter(f []string) bool {
 type makeCfg struct {
 	cflags    string
 	configure []string
+}
+
+func (n *makeCfg) add(a ...string) *makeCfg {
+	m := *n
+	m.configure = append(m.configure, a...)
+	return &m
 }
 
 func testMake(t *testing.T, archive, dir string, mcfg *makeCfg) (files, ok, skip, nfails int32) {

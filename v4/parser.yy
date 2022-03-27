@@ -583,7 +583,7 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example struct{ int i __attribute__((a)); }; */
 /*yy:case Decl */       StructDeclaration:
 				SpecifierQualifierList StructDeclaratorList ';'
-			/*yy:example struct{ int i; _Static_assert(x > y, "abc"); } */
+			/*yy:example struct{ _Static_assert(x > y, "abc"); }; */
 /*yy:case Assert */     |	StaticAssertDeclaration
 		
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/

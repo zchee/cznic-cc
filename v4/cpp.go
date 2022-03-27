@@ -5,7 +5,6 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"os"
@@ -1110,20 +1109,14 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 			r.s = t.s
 			r.pos = t.pos
 			s := fmt.Sprintf(`"%s"`, t.Position().Filename)
-			if !bytes.Equal(t.Sep(), r.Sep()) || r.SrcStr() != s {
-				r.Set(t.Sep(), []byte(s))
-				m.replacementList[0] = r
-			}
+			r.Set(t.Sep(), []byte(s))
 		case "__LINE__":
 			r := m.replacementList[0]
 			r.Ch = rune(PPNUMBER)
 			r.s = t.s
 			r.pos = t.pos
 			s := fmt.Sprintf(`%d`, t.Position().Line)
-			if !bytes.Equal(t.Sep(), r.Sep()) || r.SrcStr() != s {
-				r.Set(t.Sep(), []byte(s))
-				m.replacementList[0] = r
-			}
+			r.Set(t.Sep(), []byte(s))
 		}
 		return m
 	}

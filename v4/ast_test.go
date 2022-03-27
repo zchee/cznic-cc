@@ -4479,9 +4479,33 @@ func ExampleStructDeclaration_decl() {
 }
 
 func ExampleStructDeclaration_assert() {
-	fmt.Println(exampleAST(146, "struct{ int i; _Static_assert(x > y, \"abc\"); }"))
+	fmt.Println(exampleAST(146, "struct{ _Static_assert(x > y, \"abc\"); };"))
 	// Output:
-	// <nil>
+	// &cc.StructDeclaration{
+	// · Case: StructDeclarationAssert,
+	// · StaticAssertDeclaration: &cc.StaticAssertDeclaration{
+	// · · ConstantExpression: &cc.ConstantExpression{
+	// · · · ConditionalExpression: &cc.RelationalExpression{
+	// · · · · Case: RelationalExpressionGt,
+	// · · · · RelationalExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:24: identifier "x",
+	// · · · · },
+	// · · · · ShiftExpression: &cc.PrimaryExpression{
+	// · · · · · Case: PrimaryExpressionIdent,
+	// · · · · · Token: example.c:1:28: identifier "y",
+	// · · · · },
+	// · · · · Token: example.c:1:26: '>' ">",
+	// · · · },
+	// · · },
+	// · · Token: example.c:1:9: _Static_assert "_Static_assert",
+	// · · Token2: example.c:1:23: '(' "(",
+	// · · Token3: example.c:1:29: ',' ",",
+	// · · Token4: example.c:1:31: string literal "\"abc\"",
+	// · · Token5: example.c:1:36: ')' ")",
+	// · },
+	// · Token: example.c:1:37: ';' ";",
+	// }
 }
 
 func ExampleStructDeclarationList_case0() {

@@ -1359,7 +1359,7 @@ func arraySize(c *ctx, n ExpressionNode) int64 {
 	}
 
 	if v < 0 {
-		c.errors.add(errorf("%v: invalid array size", n.Position()))
+		c.errors.add(errorf("%v: invalid array size, %s: %v", n.Position(), NodeSource(n), v))
 		return -1
 	}
 

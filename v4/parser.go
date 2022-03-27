@@ -1913,9 +1913,10 @@ func (p *parser) directAbstractDeclarator2(dad *DirectAbstractDeclarator) (r *Di
 		case '[':
 			ch := p.peek(1, true).Ch
 			switch {
+			case ch == ']':
+				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, DirectAbstractDeclarator: r, Token: p.shift(false), Token2: p.must(']')}
 			case p.isExpression(ch):
 				r = &DirectAbstractDeclarator{Case: DirectAbstractDeclaratorArr, DirectAbstractDeclarator: r, Token: p.shift(false), AssignmentExpression: p.assignmentExpression(true), Token2: p.must(']')}
-				continue
 			default:
 				t := p.shift(false)
 				p.cpp.eh("%v: unexpected %v, expected direct abstract declarator", t.Position(), runeName(t.Ch))
@@ -2350,6 +2351,8 @@ func (p *parser) directDeclarator2(dd *DirectDeclarator, declare bool) (r *Direc
 					r = &DirectDeclarator{Case: DirectDeclaratorArrStatic, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, Token2: p.shift(false), AssignmentExpression: p.assignmentExpression(true), Token3: p.must(']')}
 				case '*':
 					r = &DirectDeclarator{Case: DirectDeclaratorStar, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, Token2: p.shift(false), Token3: p.must(']')}
+				case ']':
+					r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, Token3: p.must(']')}
 				default:
 					r = &DirectDeclarator{Case: DirectDeclaratorArr, DirectDeclarator: r, Token: lbracket, TypeQualifiers: tql, AssignmentExpression: p.assignmentExpression(true), Token3: p.must(']')}
 				}
@@ -2704,7 +2707,7 @@ func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifier
 	switch ch := p.rune(true); {
 	case p.isTypeQualifier(ch):
 		r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifier: p.typeQualifier(false)}
-	case p.in(ch, ':', ')', ',', '[', rune(STATIC)) || p.isExpression(ch) || ch == rune(TYPENAME):
+	case p.in(ch, ':', ')', ',', '[', ']', rune(STATIC)) || p.isExpression(ch) || ch == rune(TYPENAME):
 		if opt {
 			return nil
 		}
@@ -2724,7 +2727,7 @@ func (p *parser) typeQualifierList(opt, acceptAttributes bool) (r *TypeQualifier
 	}
 	for {
 		switch ch := p.rune(false); {
-		case p.in(ch, ':', ')', ',', '[', rune(STATIC)) || p.isExpression(ch) || ch == rune(TYPENAME):
+		case p.in(ch, ':', ')', ',', '[', ']', rune(STATIC)) || p.isExpression(ch) || ch == rune(TYPENAME):
 			return r
 		case p.isTypeQualifier(ch):
 			r = &TypeQualifiers{Case: TypeQualifiersTypeQual, TypeQualifiers: r, TypeQualifier: p.typeQualifier(acceptAttributes)}
