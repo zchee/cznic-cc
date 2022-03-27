@@ -53,6 +53,10 @@ func (n *Declarator) IsAtomic() bool { return n.isAtomic }
 // was present in the declaration of n.
 func (n *Declarator) IsThreadLocal() bool { return n.isThreadLocal }
 
+// Alignas reports whether the _Alignas specifier was present in the
+// declaration specifiers of n, if non-zero.
+func (n *Declarator) Alignas() int { return n.alignas }
+
 // IsParam reports whether n is a function paramater.
 func (n *Declarator) IsParam() bool { return n.isParam }
 

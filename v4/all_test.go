@@ -1566,7 +1566,7 @@ func TestMake(t *testing.T) {
 		"netbsd/amd64",
 		"openbsd/amd64",
 	}
-	cfg := &makeCfg{}
+	cfg := &makeCfg{cc: cc}
 	switch goos {
 	case "darwin":
 		cfg.cflags = "-I/opt/homebrew/include"
@@ -1596,10 +1596,10 @@ func TestMake(t *testing.T) {
 				"openbsd/amd64",
 			},
 		},
-		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, all},
-		{"github.com/madler/zlib.tar.gz", "zlib", nil, all},
+		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", cfg, all},
+		{"github.com/madler/zlib.tar.gz", "zlib", cfg, all},
 		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", cfg.add("--enable-corefoundation=no"), all},
-		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil,
+		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", cfg,
 			[]string{
 				"darwin/amd64",
 				"darwin/ard64",
@@ -1613,7 +1613,7 @@ func TestMake(t *testing.T) {
 				"openbsd/amd64",
 			},
 		},
-		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil,
+		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", cfg,
 			[]string{
 				"darwin/amd64",
 				"darwin/ard64",
@@ -1623,7 +1623,7 @@ func TestMake(t *testing.T) {
 				"linux/s390x",
 			},
 		},
-		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil,
+		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", cfg,
 			[]string{
 				"darwin/amd64",
 				"darwin/ard64",
@@ -1631,7 +1631,7 @@ func TestMake(t *testing.T) {
 				"linux/amd64",
 			},
 		},
-		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil,
+		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", cfg,
 			[]string{
 				"darwin/ard64",
 				"freebsd/386",
@@ -1639,13 +1639,11 @@ func TestMake(t *testing.T) {
 				"linux/386",
 				"linux/amd64",
 				"linux/arm",
-				"linux/arm64",
-				"linux/riscv64",
 				"netbsd/amd64",
 				"openbsd/amd64",
 			},
 		},
-		{"musl.libc.org/releases/musl-1.2.2.tar.gz", "musl-1.2.2", nil,
+		{"musl.libc.org/releases/musl-1.2.2.tar.gz", "musl-1.2.2", cfg,
 			[]string{
 				"linux/386",
 				"linux/amd64",
@@ -1655,12 +1653,28 @@ func TestMake(t *testing.T) {
 				"linux/s390x",
 			},
 		},
+
+		//TODO need support for __auto_type: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/gcc/Typeof.html
+		//
+		// {"github.com/bellard/quickjs/archive/refs/heads/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(),
+		// 	[]string{
+		// 		"linux/386",
+		// 		"linux/amd64",
+		// 		"linux/arm",
+		// 		"linux/arm64",
+		// 		"linux/riscv64",
+		// 		"linux/s390x",
+		// 	},
+		// },
+
+		//TODO need support for __auto_type: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/gcc/Typeof.html
+		//
+		// {"download.redis.io/releases/redis-6.2.6.tar.gz", "redis-6.2.6", cfg.noConfigure(), all},
+
 		//TODO freebsd libc
 		//TODO netbsd libc
 		//TODO openbsd libc
 		//TODO qbe
-		//TODO quickjs
-		//TODO redis
 		//TODO tk
 	} {
 		if !filter(v.filter) {
@@ -1695,13 +1709,22 @@ func filter(f []string) bool {
 }
 
 type makeCfg struct {
+	cc        string
 	cflags    string
 	configure []string
+
+	disableConfigure bool
 }
 
 func (n *makeCfg) add(a ...string) *makeCfg {
 	m := *n
 	m.configure = append(m.configure[:len(m.configure):len(m.configure)], a...)
+	return &m
+}
+
+func (n *makeCfg) noConfigure() *makeCfg {
+	m := *n
+	m.disableConfigure = true
 	return &m
 }
 
@@ -1733,7 +1756,12 @@ func testMake(t *testing.T, archive, dir string, mcfg *makeCfg) (files, ok, skip
 		}
 		args = mcfg.configure
 	}
-	mustShell(t, "./configure", args...)
+	if !mcfg.disableConfigure {
+		mustShell(t, "./configure", args...)
+	}
+	if dir == "quickjs-master" {
+		mustShell(t, "sed", "-i", fmt.Sprintf("s|CC=$(CROSS_PREFIX)gcc|CC=$(CROSS_PREFIX)%s|", mcfg.cc), "Makefile")
+	}
 	switch goos {
 	case "darwin", "freebsd", "netbsd":
 		mustShell(t, "gmake")

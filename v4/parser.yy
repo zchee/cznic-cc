@@ -662,6 +662,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Noreturn   */ |	"_Noreturn"
 
 			/* [0], 6.7.5 Declarators */
+			/*yy:field	alignas		int		*/
 			/*yy:field	typer				*/
 			/*yy:field	visible				*/
 			/*yy:field	resolver			*/

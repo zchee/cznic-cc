@@ -1298,6 +1298,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	Declarator:
 //	        Pointer DirectDeclarator
 type Declarator struct {
+	alignas int
 	typer
 	visible
 	resolver

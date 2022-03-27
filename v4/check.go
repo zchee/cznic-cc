@@ -418,7 +418,7 @@ func (n *AsmQualifier) check(c *ctx) {
 //          DeclarationSpecifiers Declarator DeclarationList CompoundStatement
 func (n *FunctionDefinition) check(c *ctx) {
 	d := n.Declarator
-	d.check(c, n.DeclarationSpecifiers.check(c, &d.isExtern, &d.isStatic, &d.isAtomic, &d.isThreadLocal, &d.isConst, &d.isVolatile, &d.isInline, &d.isRegister, &d.isAuto, &d.isNoreturn, &d.isRestrict))
+	d.check(c, n.DeclarationSpecifiers.check(c, &d.isExtern, &d.isStatic, &d.isAtomic, &d.isThreadLocal, &d.isConst, &d.isVolatile, &d.isInline, &d.isRegister, &d.isAuto, &d.isNoreturn, &d.isRestrict, &d.alignas))
 	switch d.DirectDeclarator.Case {
 	case DirectDeclaratorFuncIdent:
 		ft, ok := d.Type().(*FunctionType)
@@ -494,8 +494,9 @@ func (n *BlockItem) check(c *ctx) (r Type) {
 		return n.Statement.check(c)
 	case BlockItemFuncDef: // DeclarationSpecifiers Declarator CompoundStatement
 		var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, isNoreturn, isRestrict bool
-		n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict))
-		if isExtern || isStatic || isAtomic || isThreadLocal || isConst || isVolatile || isRegister || isAuto || isRestrict {
+		var alignas int
+		n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict, &alignas))
+		if isExtern || isStatic || isAtomic || isThreadLocal || isConst || isVolatile || isRegister || isAuto || isRestrict || alignas != 0 {
 			c.errors.add(errorf("%v: invalid specifier/qualifer combination", n.Position()))
 		}
 	default:
@@ -675,7 +676,8 @@ func (n *Declaration) check(c *ctx) {
 	switch n.Case {
 	case DeclarationDecl: // DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 		var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, isNoreturn, isRestrict bool
-		t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict)
+		var alignas int
+		t := n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict, &alignas)
 		var attr *Attributes
 		if n.InitDeclaratorList != nil && n.InitDeclaratorList.InitDeclaratorList == nil {
 			if attr = n.InitDeclaratorList.InitDeclarator.AttributeSpecifierList.check(c); attr != nil {
@@ -683,7 +685,7 @@ func (n *Declaration) check(c *ctx) {
 			}
 		}
 		for l := n.InitDeclaratorList; l != nil; l = l.InitDeclaratorList {
-			l.InitDeclarator.check(c, t, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto)
+			l.InitDeclarator.check(c, t, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, alignas)
 		}
 	case DeclarationAssert: // StaticAssertDeclaration
 		n.StaticAssertDeclaration.check(c)
@@ -707,7 +709,7 @@ func (n *StaticAssertDeclaration) check(c *ctx) {
 //  InitDeclarator:
 //          Declarator Asm                  // Case InitDeclaratorDecl
 //  |       Declarator Asm '=' Initializer  // Case InitDeclaratorInit
-func (n *InitDeclarator) check(c *ctx, t Type, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto bool) {
+func (n *InitDeclarator) check(c *ctx, t Type, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto bool, alignas int) {
 	if t == nil {
 		c.errors.add(errorf("TODO %T internal error", n))
 		return
@@ -726,6 +728,7 @@ func (n *InitDeclarator) check(c *ctx, t Type, isExtern, isStatic, isAtomic, isT
 	n.Declarator.isStatic = isStatic
 	n.Declarator.isThreadLocal = isThreadLocal
 	n.Declarator.isVolatile = isVolatile
+	n.Declarator.alignas = alignas
 	t = n.Declarator.check(c, t)
 	if n.Asm != nil {
 		n.Asm.check(c)
@@ -1421,22 +1424,23 @@ func (n *ParameterList) check(c *ctx) (fp []*ParameterDeclaration) {
 //  |       DeclarationSpecifiers AbstractDeclarator  // Case ParameterDeclarationAbstract
 func (n *ParameterDeclaration) check(c *ctx) {
 	var isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, isNoreturn, isRestrict bool
+	var alignas int
 	switch n.Case {
 	case ParameterDeclarationDecl: // DeclarationSpecifiers Declarator
 		n.Declarator.isParam = true
-		n.typ = n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict))
+		n.typ = n.Declarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict, &alignas))
 		n.Declarator.isConst = isConst
 		n.Declarator.isVolatile = isVolatile
 		n.Declarator.isRegister = isRegister
 		n.Declarator.isRestrict = isRestrict
 		n.Declarator.isNoreturn = isNoreturn
-		if isExtern || isStatic || isAtomic || isThreadLocal || isInline || isAuto {
-			c.errors.add(errorf("%v: storage class or atomic specified or function specifier for parameter: abc", n.Declarator.Position()))
+		if isExtern || isStatic || isAtomic || isThreadLocal || isInline || isAuto || alignas != 0 {
+			c.errors.add(errorf("%v: invalid specifier(s) for parameter: abc", n.Declarator.Position()))
 		}
 	case ParameterDeclarationAbstract: // DeclarationSpecifiers AbstractDeclarator
-		n.typ = n.AbstractDeclarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict))
-		if isExtern || isStatic || isAtomic || isThreadLocal || isInline || isAuto || isNoreturn {
-			c.errors.add(errorf("%v: storage class or atomic or function specifier for unnamed parameter", n.Position()))
+		n.typ = n.AbstractDeclarator.check(c, n.DeclarationSpecifiers.check(c, &isExtern, &isStatic, &isAtomic, &isThreadLocal, &isConst, &isVolatile, &isInline, &isRegister, &isAuto, &isNoreturn, &isRestrict, &alignas))
+		if isExtern || isStatic || isAtomic || isThreadLocal || isInline || isAuto || isNoreturn || alignas != 0 {
+			c.errors.add(errorf("%v: invalid specifier(s) for unnamed parameter", n.Position()))
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -1558,7 +1562,7 @@ func ts2String(a []TypeSpecifierCase) string {
 //  |       FunctionSpecifier DeclarationSpecifiers      // Case DeclarationSpecifiersFunc
 //  |       AlignmentSpecifier DeclarationSpecifiers     // Case DeclarationSpecifiersAlignSpec
 //  |       "__attribute__"                              // Case DeclarationSpecifiersAttr
-func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, isNoreturn, isRestrict *bool) (r Type) {
+func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isThreadLocal, isConst, isVolatile, isInline, isRegister, isAuto, isNoreturn, isRestrict *bool, alignas *int) (r Type) {
 	if n == nil {
 		return c.intT
 	}
@@ -1592,8 +1596,9 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 		case DeclarationSpecifiersFunc: // FunctionSpecifier DeclarationSpecifiers
 			n.FunctionSpecifier.check(c, isInline, isNoreturn)
 		case DeclarationSpecifiersAlignSpec: // AlignmentSpecifier DeclarationSpecifiers
-			n.AlignmentSpecifier.check(c)
-			//TODO use returned type
+			if v := n.AlignmentSpecifier.check(c).Align(); v > 0 {
+				*alignas = v
+			}
 		case DeclarationSpecifiersAttr:
 			if attr := n.AttributeSpecifierList.check(c); attr != nil {
 				attrs = append(attrs, attr)
@@ -2219,7 +2224,8 @@ func (n *StructDeclaration) check(c *ctx) (r []*Field) {
 	switch n.Case {
 	case StructDeclarationDecl: // DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 		var isAtomic, isConst, isVolatile, isRestrict bool
-		t := n.SpecifierQualifierList.check(c, &isAtomic, &isConst, &isVolatile, &isRestrict)
+		var alignas int
+		t := n.SpecifierQualifierList.check(c, &isAtomic, &isConst, &isVolatile, &isRestrict, &alignas)
 		switch {
 		case n.StructDeclaratorList == nil:
 			return []*Field{{typ: newTyper(t)}}
@@ -2234,7 +2240,7 @@ func (n *StructDeclaration) check(c *ctx) (r []*Field) {
 	return nil
 }
 
-func (n *SpecifierQualifierList) check(c *ctx, isAtomic, isConst, isVolatile, isRestrict *bool) (r Type) {
+func (n *SpecifierQualifierList) check(c *ctx, isAtomic, isConst, isVolatile, isRestrict *bool, alignas *int) (r Type) {
 	if n == nil {
 		return c.intT
 	}
@@ -2255,7 +2261,9 @@ func (n *SpecifierQualifierList) check(c *ctx, isAtomic, isConst, isVolatile, is
 		case SpecifierQualifierListTypeQual: // TypeQualifier SpecifierQualifierList
 			n.TypeQualifier.check(c, isConst, isVolatile, isAtomic, isRestrict)
 		case SpecifierQualifierListAlignSpec: // AlignmentSpecifier SpecifierQualifierList
-			c.errors.add(errorf("TODO %v", n.Case))
+			if v := n.AlignmentSpecifier.check(c).Align(); v > 0 {
+				*alignas = v
+			}
 		default:
 			c.errors.add(errorf("internal error: %v", n.Case))
 		}
@@ -2921,7 +2929,8 @@ func (n *CastExpression) check(c *ctx, mode flags) (r Type) {
 
 func (n *TypeName) check(c *ctx) (r Type) {
 	var dummy bool
-	n.typ = n.AbstractDeclarator.check(c, n.SpecifierQualifierList.check(c, &dummy, &dummy, &dummy, &dummy))
+	var dummyInt int
+	n.typ = n.AbstractDeclarator.check(c, n.SpecifierQualifierList.check(c, &dummy, &dummy, &dummy, &dummy, &dummyInt))
 	return n.Type()
 }
 
