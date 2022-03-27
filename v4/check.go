@@ -3001,6 +3001,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 			c.errors.add(errorf("%v: sizeof incomplete type: %s", n.UnaryExpression.Position(), t))
 		}
 		n.val = UInt64Value(t.Size())
+		// c.errors.add(errorf("%v: sizeof %s %v: %v", n.UnaryExpression.Position(), NodeSource(n.UnaryExpression), t, n.Value())) //TODO- DBG
 	case UnaryExpressionSizeofType: // "sizeof" '(' TypeName ')'
 		n.typ = c.sizeT(n)
 		t := n.TypeName.check(c)

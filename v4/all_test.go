@@ -1552,12 +1552,27 @@ func TestMake(t *testing.T) {
 	os.Setenv("CC", cc)
 	os.Setenv("FAKE_CC_CC", defaultCfg().CC)
 	var files, ok, skip, fails int32
-	unix := []string{"darwin", "freebsd", "linux", "netbsd", "openbsd"}
-	cfg := &makeCfg{configure: []string{"--disable-assembly"}}
+	all := []string{
+		"darwin/amd64",
+		"darwin/ard64",
+		"freebsd/386",
+		"freebsd/amd64",
+		"linux/386",
+		"linux/amd64",
+		"linux/arm",
+		"linux/arm64",
+		"linux/riscv64",
+		"linux/s390x",
+		"netbsd/amd64",
+		"openbsd/amd64",
+		"windows/386",
+		"windows/amd64",
+	}
+	cfg := &makeCfg{}
 	switch goos {
 	case "darwin":
 		cfg.cflags = "-I/opt/homebrew/include"
-	case "freebsd":
+	case "freebsd", "openbsd;":
 		cfg.cflags = "-I/usr/local/include"
 	case "netbsd":
 		cfg.cflags = "-I/usr/pkg/include"
@@ -1568,14 +1583,14 @@ func TestMake(t *testing.T) {
 		cfg     *makeCfg
 		filter  []string
 	}{
-		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", cfg.add("--disable-cpp"), unix},
-		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, unix},
-		{"github.com/madler/zlib.tar.gz", "zlib", nil, unix},
-		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", cfg.add("--enable-corefoundation=no"), unix},
-		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil, unix},
-		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, unix},
-		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil, unix},
-		//TODO {"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, unix},
+		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", cfg.add("--disable-cpp"), all},
+		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, all},
+		{"github.com/madler/zlib.tar.gz", "zlib", nil, all},
+		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", cfg.add("--enable-corefoundation=no"), all},
+		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil, all},
+		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, all},
+		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil, all},
+		//TODO {"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, all},
 		//TODO redis
 		//TODO tk
 		//TODO qbe
@@ -1620,7 +1635,7 @@ type makeCfg struct {
 
 func (n *makeCfg) add(a ...string) *makeCfg {
 	m := *n
-	m.configure = append(m.configure, a...)
+	m.configure = append(m.configure[:len(m.configure):len(m.configure)], a...)
 	return &m
 }
 
