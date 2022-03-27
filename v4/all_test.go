@@ -1616,7 +1616,6 @@ func TestMake(t *testing.T) {
 		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", cfg,
 			[]string{
 				"darwin/amd64",
-				"darwin/arm64",
 				"linux/386",
 				"linux/amd64",
 				"linux/arm",
@@ -1626,14 +1625,12 @@ func TestMake(t *testing.T) {
 		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", cfg,
 			[]string{
 				"darwin/amd64",
-				"darwin/arm64",
 				"linux/386",
 				"linux/amd64",
 			},
 		},
 		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", cfg,
 			[]string{
-				"darwin/arm64",
 				"freebsd/386",
 				"freebsd/amd64",
 				"linux/386",
