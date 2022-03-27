@@ -1637,7 +1637,6 @@ func TestMake(t *testing.T) {
 				"freebsd/386",
 				"freebsd/amd64",
 				"linux/386",
-				"linux/amd64",
 				"linux/arm",
 				"netbsd/amd64",
 				"openbsd/amd64",
