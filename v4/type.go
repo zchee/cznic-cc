@@ -923,7 +923,7 @@ func (n *structType) collectFields(m map[string][]*Field, parent *Field, depth i
 }
 
 type StructType struct {
-	attributer
+	attr    attributer
 	c       *ctx
 	forward *StructOrUnionSpecifier
 	namer
@@ -936,10 +936,23 @@ func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) 
 	return r
 }
 
+// Attributes implemets Type.
+func (n *StructType) Attributes() *Attributes {
+	if n.forward != nil {
+		return n.forward.Type().Attributes()
+	}
+
+	return n.attr.p
+}
+
 // setAttr implements Type.
 func (n *StructType) setAttr(a *Attributes) Type {
+	if n.forward != nil {
+		return n.forward.Type().setAttr(a)
+	}
+
 	m := *n
-	m.attributer.p = a
+	m.attr.p = a
 	return &m
 }
 
@@ -1025,8 +1038,8 @@ func (n *StructType) Align() int {
 		return n.forward.Type().Align()
 	}
 
-	if n.attributer.p != nil {
-		if v := n.attributer.p.Aligned(); v > 0 {
+	if n.attr.p != nil {
+		if v := n.attr.p.Aligned(); v > 0 {
 			return int(v)
 		}
 	}
@@ -1091,7 +1104,7 @@ func (n *StructType) String() string { return n.str(&strings.Builder{}, false).S
 
 func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	if n.forward != nil {
-		b.WriteString(n.forward.Type().String())
+		n.forward.Type().str(b, useTag)
 		return b
 	}
 
@@ -1125,7 +1138,7 @@ func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type UnionType struct {
-	attributer
+	attr    attributer
 	c       *ctx
 	forward *StructOrUnionSpecifier
 	namer
@@ -1137,10 +1150,23 @@ func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *
 	return &UnionType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true}}
 }
 
+// Attributes implemets Type.
+func (n *UnionType) Attributes() *Attributes {
+	if n.forward != nil {
+		return n.forward.Type().Attributes()
+	}
+
+	return n.attr.p
+}
+
 // setAttr implements Type.
 func (n *UnionType) setAttr(a *Attributes) Type {
+	if n.forward != nil {
+		return n.forward.Type().setAttr(a)
+	}
+
 	m := *n
-	m.attributer.p = a
+	m.attr.p = a
 	return &m
 }
 
@@ -1226,8 +1252,8 @@ func (n *UnionType) Align() int {
 		return n.forward.Type().Align()
 	}
 
-	if n.attributer.p != nil {
-		if v := n.attributer.p.Aligned(); v > 0 {
+	if n.attr.p != nil {
+		if v := n.attr.p.Aligned(); v > 0 {
 			return int(v)
 		}
 	}
@@ -1292,7 +1318,7 @@ func (n *UnionType) String() string { return n.str(&strings.Builder{}, false).St
 
 func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	if n.forward != nil {
-		b.WriteString(n.forward.Type().String())
+		n.forward.Type().str(b, useTag)
 		return b
 	}
 
@@ -1465,7 +1491,7 @@ func (n *ArrayType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type EnumType struct {
-	attributer
+	attr    attributer
 	enums   []*Enumerator
 	forward *EnumSpecifier
 	namer
@@ -1478,10 +1504,23 @@ func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
 	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums}
 }
 
+// Attributes implemets Type.
+func (n *EnumType) Attributes() *Attributes {
+	if n.forward != nil {
+		return n.forward.Type().Attributes()
+	}
+
+	return n.attr.p
+}
+
 // setAttr implements Type.
 func (n *EnumType) setAttr(a *Attributes) Type {
+	if n.forward != nil {
+		return n.forward.Type().setAttr(a)
+	}
+
 	m := *n
-	m.attributer.p = a
+	m.attr.p = a
 	return &m
 }
 
@@ -1532,8 +1571,8 @@ func (n *EnumType) Align() int {
 		return n.forward.Type().Align()
 	}
 
-	if n.attributer.p != nil {
-		if v := n.attributer.p.Aligned(); v > 0 {
+	if n.attr.p != nil {
+		if v := n.attr.p.Aligned(); v > 0 {
 			return int(v)
 		}
 	}
@@ -1593,6 +1632,11 @@ func (n *EnumType) Size() int64 {
 func (n *EnumType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *EnumType) str(b *strings.Builder, useTag bool) *strings.Builder {
+	if n.forward != nil {
+		n.forward.Type().str(b, useTag)
+		return b
+	}
+
 	if s := n.Name(); s != "" {
 		b.WriteString(s)
 		return b

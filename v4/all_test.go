@@ -1565,8 +1565,6 @@ func TestMake(t *testing.T) {
 		"linux/s390x",
 		"netbsd/amd64",
 		"openbsd/amd64",
-		"windows/386",
-		"windows/amd64",
 	}
 	cfg := &makeCfg{}
 	switch goos {
@@ -1583,13 +1581,56 @@ func TestMake(t *testing.T) {
 		cfg     *makeCfg
 		filter  []string
 	}{
-		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", cfg.add("--disable-cpp"), all},
+		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", cfg.add("--disable-cpp"),
+			[]string{
+				"darwin/amd64",
+				"darwin/ard64",
+				"freebsd/386",
+				"freebsd/amd64",
+				"linux/386",
+				"linux/amd64",
+				"linux/arm",
+				"linux/arm64",
+				"linux/riscv64",
+				"linux/s390x",
+				"openbsd/amd64",
+			},
+		},
 		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", nil, all},
 		{"github.com/madler/zlib.tar.gz", "zlib", nil, all},
 		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", cfg.add("--enable-corefoundation=no"), all},
-		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil, all},
-		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil, all},
-		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil, all},
+		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", nil,
+			[]string{
+				"darwin/amd64",
+				"darwin/ard64",
+				"freebsd/amd64",
+				"linux/386",
+				"linux/amd64",
+				"linux/arm",
+				"linux/arm64",
+				"linux/riscv64",
+				"linux/s390x",
+				"openbsd/amd64",
+			},
+		},
+		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", nil,
+			[]string{
+				"darwin/amd64",
+				"darwin/ard64",
+				"linux/386",
+				"linux/amd64",
+				"linux/arm",
+				"linux/s390x",
+			},
+		},
+		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", nil,
+			[]string{
+				"darwin/amd64",
+				"darwin/ard64",
+				"linux/386",
+				"linux/amd64",
+			},
+		},
 		//TODO {"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, all},
 		//TODO redis
 		//TODO tk
