@@ -990,9 +990,9 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool
 
 				x = mathutil.MaxInt64(x, y)
 			}
-			t.elems = mathutil.MaxInt64(t.elems, x+1)
-			n.Initializer.check(c, elemT, off+x*elemT.Size())
 			x++
+			t.elems = mathutil.MaxInt64(t.elems, x)
+			n.Initializer.check(c, elemT, off+x*elemT.Size())
 		}
 		return nil
 	default:

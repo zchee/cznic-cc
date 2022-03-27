@@ -1631,7 +1631,7 @@ func TestMake(t *testing.T) {
 				"linux/amd64",
 			},
 		},
-		//TODO {"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, all},
+		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", nil, all},
 		//TODO redis
 		//TODO tk
 		//TODO qbe

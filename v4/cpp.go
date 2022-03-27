@@ -1319,6 +1319,8 @@ out:
 
 			arg = append(arg, t)
 			level--
+		case '\n':
+			continue
 		case eof:
 			panic(todo("", &t))
 		default:
