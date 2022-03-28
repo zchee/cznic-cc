@@ -49,6 +49,7 @@ const (
 	ATOMIC            // '_Atomic'
 	ATTRIBUTE         // '__attribute__'
 	AUTO              // 'auto'
+	AUTOTYPE          // '__auto_type'
 	BOOL              // '_Bool'
 	BREAK             // 'break'
 	CASE              // 'case'

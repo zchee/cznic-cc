@@ -76,6 +76,7 @@ var keywords = map[string]rune{
 	"__asm__":       rune(ASM),
 	"__attribute":   rune(ATTRIBUTE),
 	"__attribute__": rune(ATTRIBUTE),
+	"__auto_type":   rune(AUTOTYPE),
 	"__complex":     rune(COMPLEX),
 	"__complex__":   rune(COMPLEX),
 	"__const":       rune(CONST),
@@ -382,7 +383,7 @@ again:
 		return nil
 	case rune(ASM):
 		return &ExternalDeclaration{Case: ExternalDeclarationAsmStmt, AsmStatement: p.asmStatement()}
-	case rune(STATICASSERT):
+	case rune(STATICASSERT), rune(AUTOTYPE):
 		return &ExternalDeclaration{Case: ExternalDeclarationDecl, Declaration: p.declaration(nil, nil, false)}
 	}
 
@@ -578,7 +579,7 @@ again:
 		}
 	case ch == rune(LABEL):
 		return &BlockItem{Case: BlockItemLabel, LabelDeclaration: p.labelDeclaration()}
-	case ch == rune(STATICASSERT):
+	case ch == rune(STATICASSERT), ch == rune(AUTOTYPE):
 		return &BlockItem{Case: BlockItemDecl, Declaration: p.declaration(nil, nil, false)}
 	default:
 		t := p.shift(false)
@@ -1027,9 +1028,27 @@ func (p *parser) isExpression(ch rune) bool {
 //  declaration:
 // 	declaration-specifiers init-declarator-list_opt attribute-specifier-list_opt;
 //	static-assert-declaration
+//	__auto_type ident = initializer ;
 func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator, declare bool) (r *Declaration) {
-	if p.rune(false) == rune(STATICASSERT) {
+	switch p.rune(false) {
+	case rune(STATICASSERT):
 		return &Declaration{Case: DeclarationAssert, StaticAssertDeclaration: p.staticAssertDeclaration()}
+	case rune(AUTOTYPE):
+		nm := p.peek(1, true)
+		if nm.Ch != rune(IDENTIFIER) {
+			p.cpp.eh("%v: unexpected %v, expected identifier", nm.Position(), runeName(nm.Ch))
+			p.shift(false)
+			p.shift(false)
+			return nil
+		}
+
+		r = &Declaration{Case: DeclarationAuto, Token: p.shift(false), Declarator: p.declarator(nil, nil, false)}
+		r.Token2 = p.must('=')
+		r.Initializer = p.initializer()
+		r.Token3 = p.must(';')
+		r.Declarator.visible = visible(r.Token3.seq)
+		p.scope.declare(nm.SrcStr(), r.Declarator)
+		return r
 	}
 
 	if ds == nil {
@@ -1943,6 +1962,9 @@ func (p *parser) specifierQualifierList() (r *SpecifierQualifierList) {
 				return r
 			}
 
+			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeSpecifier: p.typeSpecifier()}
+			acceptTypeName = false
+		case ch == rune(ATOMIC) && p.peek(1, false).Ch == '(':
 			sql = &SpecifierQualifierList{Case: SpecifierQualifierListTypeSpec, TypeSpecifier: p.typeSpecifier()}
 			acceptTypeName = false
 		case p.isTypeSpecifier(ch, false):

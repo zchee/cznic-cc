@@ -35,6 +35,7 @@ package cc // import "modernc.org/cc/v4"
 	ATOMIC			"_Atomic"
 	ATTRIBUTE		"__attribute__"
 	AUTO			"auto"
+	AUTOTYPE		"__auto_type"
 	BOOL			"_Bool"
 	BREAK			"break"
 	BUILTINCHOOSEXPR	"__builtin_choose_expr"
@@ -421,6 +422,8 @@ package cc // import "modernc.org/cc/v4"
 				DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'
 			/*yy:example _Static_assert(x > y, "abc") */
 /*yy:case Assert */     |	StaticAssertDeclaration
+			/*yy:example __auto_type x = y; */
+/*yy:case Auto   */     |	"__auto_type" Declarator '=' Initializer ';'
 
 			/*yy:example _Static_assert(x > y, "abc") */
 			StaticAssertDeclaration:
@@ -779,6 +782,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Func       */ |	DirectAbstractDeclarator '(' ParameterTypeList ')'
 
 			/* [0], 6.7.8 Initialization */
+			/*yy:field	nelems	int64	*/
 			/*yy:field	off	int64	*/
 			/*yy:field	typer	*/
 			/*yy:field	valuer	*/

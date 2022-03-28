@@ -689,6 +689,13 @@ func (n *Declaration) check(c *ctx) {
 		}
 	case DeclarationAssert: // StaticAssertDeclaration
 		n.StaticAssertDeclaration.check(c)
+	case DeclarationAuto: // "__auto_type" Declarator '=' Initializer ';'
+		if n.Initializer.Case != InitializerExpr {
+			c.errors.add(errorf("%v: expected assignment expression", n.Initializer.Position()))
+			break
+		}
+
+		n.Declarator.typ = n.Initializer.AssignmentExpression.check(c, decay)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -1206,6 +1213,7 @@ func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64, outer bo
 }
 
 func (n *InitializerList) checkDesignatorList(dl *DesignatorList, c *ctx, t Type, off int64) *InitializerList {
+	ranged := false
 	for ; dl != nil; dl = dl.DesignatorList {
 		switch x := t.(type) {
 		case *StructType:
@@ -1249,8 +1257,32 @@ func (n *InitializerList) checkDesignatorList(dl *DesignatorList, c *ctx, t Type
 
 			t = x.Elem()
 			off += lo * t.Size()
-			//TODO pass hi
-			//TODO check lo, hi in range
+			if hi < 0 {
+				hi = lo
+			}
+			if e := x.Len(); e >= 0 {
+				if lo >= e {
+					c.errors.add(errorf("%v: index out of range: %v", dl.Position(), lo))
+					return nil
+				}
+
+				if hi >= e {
+					c.errors.add(errorf("%v: index out of range: %v", dl.Position(), hi))
+					return nil
+				}
+			}
+			switch {
+			case hi < 0:
+				n.Initializer.nelems = 1
+			default:
+				if ranged {
+					c.errors.add(errorf("%v: nested ranged desinations", dl.Position()))
+					return nil
+				}
+
+				n.Initializer.nelems = hi - lo + 1
+				ranged = true
+			}
 		default:
 			c.errors.add(errorf("internal error: %T", x))
 			return nil

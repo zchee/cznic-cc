@@ -1752,19 +1752,16 @@ func TestMake(t *testing.T) {
 			},
 		},
 		{"github.com/git/git/archive/refs/tags/v2.35.1.tar.gz", "git-2.35.1", cfg.noConfigure(), all},
-
-		//TODO need support for __auto_type: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/gcc/Typeof.html
-		//
-		// {"github.com/bellard/quickjs/archive/refs/heads/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(),
-		// 	[]string{
-		// 		"linux/386",
-		// 		"linux/amd64",
-		// 		"linux/arm",
-		// 		"linux/arm64",
-		// 		"linux/riscv64",
-		// 		"linux/s390x",
-		// 	},
-		// },
+		{"github.com/bellard/quickjs/archive/refs/heads/quickjs-master/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(),
+			[]string{
+				"linux/386",
+				"linux/amd64",
+				"linux/arm",
+				"linux/arm64",
+				"linux/riscv64",
+				"linux/s390x",
+			},
+		},
 
 		//TODO need support for __auto_type: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/gcc/Typeof.html
 		//

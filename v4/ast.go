@@ -1110,6 +1110,7 @@ type DeclarationCase int
 const (
 	DeclarationDecl DeclarationCase = iota
 	DeclarationAssert
+	DeclarationAuto
 )
 
 // String implements fmt.Stringer
@@ -1119,6 +1120,8 @@ func (n DeclarationCase) String() string {
 		return "DeclarationDecl"
 	case DeclarationAssert:
 		return "DeclarationAssert"
+	case DeclarationAuto:
+		return "DeclarationAuto"
 	default:
 		return fmt.Sprintf("DeclarationCase(%v)", int(n))
 	}
@@ -1129,13 +1132,18 @@ func (n DeclarationCase) String() string {
 //	Declaration:
 //	        DeclarationSpecifiers InitDeclaratorList AttributeSpecifierList ';'  // Case DeclarationDecl
 //	|       StaticAssertDeclaration                                              // Case DeclarationAssert
+//	|       "__auto_type" Declarator '=' Initializer ';'                         // Case DeclarationAuto
 type Declaration struct {
 	AttributeSpecifierList  *AttributeSpecifierList
 	Case                    DeclarationCase `PrettyPrint:"stringer,zero"`
 	DeclarationSpecifiers   *DeclarationSpecifiers
+	Declarator              *Declarator
 	InitDeclaratorList      *InitDeclaratorList
+	Initializer             *Initializer
 	StaticAssertDeclaration *StaticAssertDeclaration
 	Token                   Token
+	Token2                  Token
+	Token3                  Token
 }
 
 // String implements fmt.Stringer.
@@ -1164,6 +1172,24 @@ func (n *Declaration) Position() (r token.Position) {
 		return n.Token.Position()
 	case 1:
 		return n.StaticAssertDeclaration.Position()
+	case 2:
+		if p := n.Token.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Declarator.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Token2.Position(); p.IsValid() {
+			return p
+		}
+
+		if p := n.Initializer.Position(); p.IsValid() {
+			return p
+		}
+
+		return n.Token3.Position()
 	default:
 		panic("internal error")
 	}
@@ -2703,7 +2729,8 @@ func (n InitializerCase) String() string {
 //	        AssignmentExpression         // Case InitializerExpr
 //	|       '{' InitializerList ',' '}'  // Case InitializerInitList
 type Initializer struct {
-	off int64
+	nelems int64
+	off    int64
 	typer
 	valuer
 	AssignmentExpression ExpressionNode

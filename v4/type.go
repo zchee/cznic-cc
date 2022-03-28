@@ -1681,10 +1681,10 @@ func isRealType(t Type) bool { return realKinds[t.Kind()] }
 // [0] 6.3.1.8 Usual arithmetic conversions
 func usualArithmeticConversions(a, b Type) (r Type) {
 	if a.Kind() == Enum {
-		a = a.(*EnumType).typ.Type()
+		a = a.(*EnumType).UnderlyingType()
 	}
 	if b.Kind() == Enum {
-		b = b.(*EnumType).typ.Type()
+		b = b.(*EnumType).UnderlyingType()
 	}
 	ak := a.Kind()
 	bk := b.Kind()

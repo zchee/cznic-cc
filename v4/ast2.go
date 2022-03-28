@@ -97,3 +97,7 @@ func (n *GenericSelection) Associated() *GenericAssociation { return n.assoc }
 
 // Offset returns the offset of n within it's containing type.
 func (n *Initializer) Offset() int64 { return n.off }
+
+// Len returns the number of array elements initialized. It's normally one, but
+// can be more using the [lo ... hi] designator.
+func (n *Initializer) Len() int64 { return n.nelems }
