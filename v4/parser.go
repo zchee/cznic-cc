@@ -100,8 +100,7 @@ var keywords = map[string]rune{
 	"__uint128_t":   rune(UINT128),
 	"__volatile":    rune(VOLATILE),
 	"__volatile__":  rune(VOLATILE),
-	//TODO- "asm":           rune(ASM),
-	"typeof": rune(TYPEOF),
+	"typeof":        rune(TYPEOF),
 }
 
 type parser struct {
@@ -254,7 +253,7 @@ func (p *parser) shift0() (r Token) {
 func (p *parser) shift(checkTypeName bool) (r Token) {
 	r = p.shift0()
 	// if r.Ch != ' ' && r.Ch != '\n' {
-	// 	trc("%v: %v", r.Position(), r)
+	// 	trc("%v: %v", pos(r), r)
 	// }
 	switch {
 	case r.Ch == rune(STRINGLITERAL) && p.rune(false) == rune(STRINGLITERAL):

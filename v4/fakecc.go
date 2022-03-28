@@ -38,7 +38,7 @@ typedef void *__builtin_va_list;
 #endif
 
 #define __builtin_offsetof(type, member) ((size_t)&(((type*)0)->member))
-#define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl()
+#define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl((t1)0, (t2)0)
 
 #ifdef __SIZE_TYPE__
 typedef __SIZE_TYPE__ size_t;
@@ -129,6 +129,7 @@ func main() {
 	set.Arg("I", true, func(opt, arg string) error { I = append(I, arg); return nil })
 	set.Arg("U", true, func(opt, arg string) error { U = append(U, arg); return nil })
 	set.Opt("E", func(opt string) error { E = true; return nil })
+	set.Opt("pthread", func(opt string) error { D = append(D, "_REENTRANT"); return nil })
 	var inputs []string
 	if err := set.Parse(os.Args[1:], func(arg string) error {
 		if strings.HasPrefix(arg, "-") {

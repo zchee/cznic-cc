@@ -1133,6 +1133,8 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 
 		c.macros[nm] = m
 		return m
+	case "defined":
+		return nil
 	}
 
 	if _, ok := protectedMacros[nm]; !ok {

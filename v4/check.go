@@ -1791,11 +1791,13 @@ func (n *AttributeValue) check(c *ctx, attr *Attributes) {
 //  ArgumentExpressionList:
 //          AssignmentExpression
 //  |       ArgumentExpressionList ',' AssignmentExpression
-func (n *ArgumentExpressionList) check(c *ctx, mode flags) {
+func (n *ArgumentExpressionList) check(c *ctx, mode flags) (r []ExpressionNode) {
 	for ; n != nil; n = n.ArgumentExpressionList {
 		n.AssignmentExpression.check(c, mode)
 		n.AssignmentExpression.eval(c, mode)
+		r = append(r, n.AssignmentExpression)
 	}
+	return r
 }
 
 //  AlignmentSpecifier:
@@ -3143,6 +3145,7 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 		n.typ = r
 	}()
 
+out:
 	switch n.Case {
 	case PostfixExpressionPrimary: // PrimaryExpression
 		n.typ = n.PrimaryExpression.check(c, mode)
@@ -3164,7 +3167,38 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 			n.typ = c.intT
 		}
 	case PostfixExpressionCall: // PostfixExpression '(' ArgumentExpressionList ')'
-		if isName(n.PostfixExpression) {
+		switch isName(n.PostfixExpression) {
+		case "__builtin_types_compatible_p_impl":
+			n.typ = c.intT
+			args := n.ArgumentExpressionList.check(c, 0)
+			if len(args) != 2 {
+				c.errors.add(errorf("%v: expected two arguments: (%s)", n.Position(), NodeSource(n.ArgumentExpressionList)))
+				break out
+			}
+
+			switch {
+			case args[0].Type().isCompatible(args[1].Type()):
+				n.val = int1
+			default:
+				n.val = int0
+			}
+			break out
+		case "__builtin_constant_p":
+			n.typ = c.intT
+			args := n.ArgumentExpressionList.check(c, 0)
+			if len(args) != 1 {
+				c.errors.add(errorf("%v: expected one argument: (%s)", n.Position(), NodeSource(n.ArgumentExpressionList)))
+				break out
+			}
+
+			switch args[0].Value() {
+			case nil, Unknown:
+				n.val = int0
+			default:
+				n.val = int1
+			}
+			break out
+		default:
 			mode = mode.add(implicitFuncDef)
 		}
 		t := n.PostfixExpression.check(c, mode.add(decay))
@@ -3271,19 +3305,23 @@ func (n *PostfixExpression) check(c *ctx, mode flags) (r Type) {
 	return n.Type()
 }
 
-func isName(n Node) bool {
+func isName(n Node) string {
 	for {
 		switch x := n.(type) {
 		case *ExpressionList:
 			if x.ExpressionList != nil {
-				return false
+				return ""
 			}
 
 			n = x.AssignmentExpression
 		case *PrimaryExpression:
-			return x.Case == PrimaryExpressionIdent
+			if x.Case == PrimaryExpressionIdent {
+				return x.Token.SrcStr()
+			}
+
+			return ""
 		default:
-			return false
+			return ""
 		}
 	}
 }
