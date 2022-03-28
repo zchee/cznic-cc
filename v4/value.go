@@ -929,6 +929,8 @@ func (n *UnaryExpression) eval(c *ctx, mode flags) (r Value) {
 			n.val = c.convert(bool2int(x == 0), n.Type())
 		case UInt64Value:
 			n.val = c.convert(bool2int(x == 0), n.Type())
+		case StringValue, UTF16StringValue, UTF32StringValue:
+			n.val = c.convert(int0, n.Type())
 		default:
 			c.errors.add(errorf("TODO %v TYPE %T", n.Case, x))
 		}

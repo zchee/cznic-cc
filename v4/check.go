@@ -1249,14 +1249,22 @@ func (n *InitializerList) checkDesignatorList(dl *DesignatorList, c *ctx, t Type
 
 			t = x.Elem()
 			off += lo * t.Size()
+			//TODO pass hi
+			//TODO check lo, hi in range
 		default:
 			c.errors.add(errorf("internal error: %T", x))
 			return nil
 		}
 	}
-	n2 := *n
-	n2.Designation = nil
-	return n2.check(c, t, off, false)
+	switch {
+	case n.Initializer.Case == InitializerInitList:
+		n.Initializer.check(c, t, off)
+		return n.InitializerList
+	default:
+		n2 := *n
+		n2.Designation = nil
+		return n2.check(c, t, off, false)
+	}
 }
 
 func (n *Designator) name(c *ctx) string {

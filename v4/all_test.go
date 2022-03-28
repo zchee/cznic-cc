@@ -973,7 +973,7 @@ func TestParserBug(t *testing.T) {
 		// Type checking has to detect the fail.
 		"bitfield_declaration_ambiguity.fail.c": {},
 	}
-	t.Run("parser/bug", func(t *testing.T) { testParserBug(t, "testdata/parser/bug", nil) })
+	t.Run("bug", func(t *testing.T) { testParserBug(t, "testdata/bug", nil) })
 	t.Run("jhjourdan", func(t *testing.T) { testParserBug(t, "testdata/jhjourdan", blacklistJourdan) })
 }
 
@@ -1222,6 +1222,98 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 	// fmt.Fprintf(os.Stderr, "%v: files %v, skip %v, ok %v, fails %v\n", dir, files, skip, ok, len(fails))
 	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
 	return files, ok, skip, int32(len(fails))
+}
+
+func TestTranslateBug(t *testing.T) {
+	t.Run("bug", func(t *testing.T) { testTranslateBug(t, "testdata/bug", nil) })
+}
+
+func testTranslateBug(t *testing.T, dir string, blacklist map[string]struct{}) {
+	tmp := t.TempDir()
+	cfg := defaultCfg()
+	var fails []string
+	var files, ok, skip int
+	err := filepath.Walk(filepath.FromSlash(dir), func(pth string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if fi.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(pth) != ".c" {
+			return nil
+		}
+
+		switch {
+		case re != nil:
+			if !re.MatchString(pth) {
+				skip++
+				return nil
+			}
+		}
+
+		files++
+		switch {
+		case re != nil:
+			if !re.MatchString(pth) {
+				skip++
+				return nil
+			}
+		default:
+			if _, ok := blacklist[filepath.Base(pth)]; ok {
+				skip++
+				return nil
+			}
+		}
+
+		if *oTrace {
+			fmt.Fprintln(os.Stderr, pth)
+		}
+
+		sources := []Source{
+			{Name: "<predefined>", Value: cfg.Predefined},
+			{Name: "<builtin>", Value: builtin},
+			{Name: pth},
+		}
+		_, err = Translate(cfg, sources)
+		switch {
+		case strings.Contains(pth, ".fail."):
+			if err == nil {
+				fails = append(fails, pth)
+				t.Errorf("%v: missing error", pth)
+			} else {
+				if *oTrace {
+					t.Log(err)
+				}
+				ok++
+			}
+		case err == nil:
+			ok++
+		default:
+			cmd := exec.Command(cfg.CC, "-c", "-o", filepath.Join(tmp, "test.o"), pth)
+			var buf bytes.Buffer
+			cmd.Stderr = &buf
+			if err2 := cmd.Run(); err2 != nil {
+				t.Logf("%v: skip: %v: %s %v", pth, cfg.CC, buf.Bytes(), err2)
+				skip++
+				break
+			}
+
+			fails = append(fails, pth)
+			t.Errorf("%v: %v", pth, err)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, v := range fails {
+		t.Log(v)
+	}
+	t.Logf("files %v, skip %v, ok %v, fails %v", files, skip, ok, len(fails))
 }
 
 func TestTranslate(t *testing.T) {
@@ -1539,18 +1631,28 @@ func TestMake(t *testing.T) {
 		t.Skip()
 	}
 
+	tmp := t.TempDir()
+	CC := defaultCfg().CC
+	if !filepath.IsAbs(CC) {
+		var err error
+		if CC, err = filepath.Abs(CC); err != nil {
+			t.Fatal(err)
+		}
+	}
+	os.Setenv("FAKE_CC_CC", CC)
+	base := filepath.Base(CC)
 	oldCC := os.Getenv("CC")
 
 	defer os.Setenv("CC", oldCC)
 
-	tmp := t.TempDir()
-	cc := filepath.Join(tmp, "fakecc")
-	if runtime.GOOS == "windows" {
-		cc += ".exe"
-	}
+	os.Setenv("CC", base)
+	cc := filepath.Join(tmp, base)
 	mustShell(t, "go", "build", "-o", cc, "fakecc.go")
-	os.Setenv("CC", cc)
-	os.Setenv("FAKE_CC_CC", defaultCfg().CC)
+	oldPath := os.Getenv("PATH")
+
+	defer os.Setenv("PATH", oldPath)
+
+	os.Setenv("PATH", tmp+string(os.PathListSeparator)+oldPath)
 	var files, ok, skip, fails int32
 	all := []string{
 		"darwin/amd64",
@@ -1649,6 +1751,7 @@ func TestMake(t *testing.T) {
 				"linux/s390x",
 			},
 		},
+		{"github.com/git/git/archive/refs/tags/v2.35.1.tar.gz", "git-2.35.1", cfg.noConfigure(), all},
 
 		//TODO need support for __auto_type: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/gcc/Typeof.html
 		//
