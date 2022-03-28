@@ -45,7 +45,7 @@ const (
 	ANDAND            // '&&'
 	ANDASSIGN         // '&='
 	ARROW             // '->'
-	ASM               // 'asm'
+	ASM               // '__asm'
 	ATOMIC            // '_Atomic'
 	ATTRIBUTE         // '__attribute__'
 	AUTO              // 'auto'

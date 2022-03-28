@@ -31,7 +31,7 @@ package cc // import "modernc.org/cc/v4"
 	ANDAND			"&&"
 	ANDASSIGN		"&="
 	ARROW			"->"
-	ASM			"asm"
+	ASM			"__asm"
 	ATOMIC			"_Atomic"
 	ATTRIBUTE		"__attribute__"
 	AUTO			"auto"
@@ -453,10 +453,10 @@ package cc // import "modernc.org/cc/v4"
 			|	InitDeclaratorList ',' InitDeclarator
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
-			/*yy:example register int i asm("r0"); */
+			/*yy:example register int i __asm("r0"); */
 /*yy:case Decl       */ InitDeclarator:
 				Declarator Asm
-			/*yy:example register int i asm("r0") = x; */
+			/*yy:example register int i __asm("r0") = x; */
 /*yy:case Init       */ |	Declarator Asm '=' Initializer
 
 			/* [0], 6.7.1 Storage-class specifiers	*/
@@ -832,7 +832,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Iteration  */ |	IterationStatement
 			/*yy:example int f() { return x; }*/
 /*yy:case Jump       */ |	JumpStatement
-			/*yy:example int f() { asm("nop"); }*/
+			/*yy:example int f() { __asm("nop"); }*/
 /*yy:case Asm        */ |	AsmStatement
 
 			/* [0], 6.8.1 Labeled statements */
@@ -922,9 +922,9 @@ package cc // import "modernc.org/cc/v4"
 			/*yy:example int f() {} */
 /*yy:case FuncDef    */ ExternalDeclaration:
 				FunctionDefinition
-			/*yy:example register int i asm("r0"); */
+			/*yy:example register int i __asm("r0"); */
 /*yy:case Decl       */ |	Declaration
-			/*yy:example asm("nop"); */
+			/*yy:example __asm("nop"); */
 /*yy:case AsmStmt    */ |	AsmStatement
 			/*yy:example ; */
 /*yy:case Empty      */ |	';'
@@ -943,42 +943,42 @@ package cc // import "modernc.org/cc/v4"
 
 			/* -------------------------------------- Extensions */
 
-			/*yy:example asm("nop": [a] b); */
+			/*yy:example __asm("nop": [a] b); */
 			AsmIndex:
 				'[' ExpressionList ']'
 
-			/*yy:example asm("nop": a); */
+			/*yy:example __asm("nop": a); */
 			AsmExpressionList:
 				AsmIndex AssignmentExpression
-			/*yy:example asm("nop": a, b); */
+			/*yy:example __asm("nop": a, b); */
 			|	AsmExpressionList ',' AsmIndex AssignmentExpression
 
-			/*yy:example asm("nop": a); */
+			/*yy:example __asm("nop": a); */
 			AsmArgList:
 				':' AsmExpressionList
-			/*yy:example asm("nop": a : b); */
+			/*yy:example __asm("nop": a : b); */
 			|	AsmArgList ':' AsmExpressionList
 
-			/*yy:example asm("nop"); */
+			/*yy:example __asm("nop"); */
 			Asm:
-				"asm" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
+				"__asm" AsmQualifierList '(' STRINGLITERAL AsmArgList ')'
  
-			/*yy:example void f() { asm("nop"); } */
+			/*yy:example void f() { __asm("nop"); } */
 			AsmStatement:
 				Asm ';'
 
-			/*yy:example asm volatile ("nop"); */
+			/*yy:example __asm volatile ("nop"); */
 /*yy:case Volatile   */ AsmQualifier:
 				"volatile"
-			/*yy:example asm inline ("nop"); */
+			/*yy:example __asm inline ("nop"); */
 /*yy:case Inline     */ |	"inline"
-			/*yy:example asm goto ("nop"); */
+			/*yy:example __asm goto ("nop"); */
 /*yy:case Goto       */ |	"goto"
 
-			/*yy:example asm inline ("nop"); */
+			/*yy:example __asm inline ("nop"); */
 			AsmQualifierList:
 				AsmQualifier
-			/*yy:example asm inline volatile ("nop"); */
+			/*yy:example __asm inline volatile ("nop"); */
 			|	AsmQualifierList AsmQualifier
 
 // https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html#Attribute-Syntax

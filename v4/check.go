@@ -979,7 +979,7 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool
 	elemT := t.Elem()
 	switch {
 	case t.IsIncomplete():
-		var x, y int64
+		var lo, hi int64
 		for ; n != nil; n = n.InitializerList {
 			if n.Designation != nil {
 				if !outer {
@@ -987,8 +987,8 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool
 				}
 
 				dl := n.Designation.DesignatorList
-				x, y = dl.Designator.index(c)
-				if x < 0 {
+				lo, hi = dl.Designator.index(c)
+				if lo < 0 {
 					return nil
 				}
 
@@ -998,15 +998,15 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool
 					return nil
 				}
 
-				x = mathutil.MaxInt64(x, y)
+				lo = mathutil.MaxInt64(lo, hi)
 			}
-			n.Initializer.check(c, elemT, off+x*elemT.Size())
-			x++
-			t.elems = mathutil.MaxInt64(t.elems, x)
+			n.Initializer.check(c, elemT, off+lo*elemT.Size())
+			lo++
+			t.elems = mathutil.MaxInt64(t.elems, lo)
 		}
 		return nil
 	default:
-		var x, y int64
+		var lo, hi int64
 		for ; n != nil; n = n.InitializerList {
 			if n.Designation != nil {
 				if !outer {
@@ -1014,37 +1014,44 @@ func (n *InitializerList) checkArray(c *ctx, t *ArrayType, off int64, outer bool
 				}
 
 				dl := n.Designation.DesignatorList
-				x, y = dl.Designator.index(c)
-				if x < 0 {
+				lo, hi = dl.Designator.index(c)
+				if lo < 0 {
 					return nil
 				}
 
-				if x >= t.elems {
-					c.errors.add(errorf("%v: index %v out of range for array of %v elements", dl.Designator.Position(), x, t.elems))
+				if lo >= t.elems {
+					c.errors.add(errorf("%v: index %v out of range for array of %v elements", dl.Designator.Position(), lo, t.elems))
 					return nil
 				}
 
-				if y >= t.elems {
-					c.errors.add(errorf("%v: index %v out of range for array of %v elements", dl.Designator.Position(), y, t.elems))
+				if hi >= t.elems {
+					c.errors.add(errorf("%v: index %v out of range for array of %v elements", dl.Designator.Position(), hi, t.elems))
 					return nil
+				}
+
+				switch {
+				case hi < 0:
+					n.Initializer.nelems = 1
+				default:
+					n.Initializer.nelems = hi - lo + 1
 				}
 
 				if dl := dl.DesignatorList; dl != nil {
-					//TODO if n = n.checkDesignatorList(dl, c, f.Type(), off+f.Offset()); n == nil { return nil }
-					c.errors.add(errorf("TODO %T", n))
-					return nil
+					if n = n.checkDesignatorList(dl, c, elemT, off+lo*elemT.Size(), hi >= 0); n == nil {
+						return nil
+					}
 				}
 
-				x = mathutil.MaxInt64(x, y)
+				lo = mathutil.MaxInt64(lo, hi)
 			}
-			if x >= t.elems {
-				c.errors.add(errorf("%v: index %v out of range for array of %v elements", x, t.elems))
+			if lo >= t.elems {
+				c.errors.add(errorf("%v: index %v out of range for array of %v elements", lo, t.elems))
 				return nil
 			}
 
-			n.Initializer.check(c, elemT, off+x*elemT.Size())
-			x++
-			if x == t.elems {
+			n.Initializer.check(c, elemT, off+lo*elemT.Size())
+			lo++
+			if lo == t.elems {
 				return n.InitializerList
 			}
 		}
@@ -1195,7 +1202,7 @@ func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64, outer bo
 			}
 
 			if dl := dl.DesignatorList; dl != nil {
-				if n = n.checkDesignatorList(dl, c, f.Type(), off+f.Offset()); n == nil {
+				if n = n.checkDesignatorList(dl, c, f.Type(), off+f.Offset(), false); n == nil {
 					return nil
 				}
 			}
@@ -1212,8 +1219,7 @@ func (n *InitializerList) checkStruct(c *ctx, t *StructType, off int64, outer bo
 	return n
 }
 
-func (n *InitializerList) checkDesignatorList(dl *DesignatorList, c *ctx, t Type, off int64) *InitializerList {
-	ranged := false
+func (n *InitializerList) checkDesignatorList(dl *DesignatorList, c *ctx, t Type, off int64, ranged bool) *InitializerList {
 	for ; dl != nil; dl = dl.DesignatorList {
 		switch x := t.(type) {
 		case *StructType:
@@ -1335,7 +1341,7 @@ func (n *InitializerList) checkUnion(c *ctx, t *UnionType, off int64, outer bool
 		}
 
 		if dl := dl.DesignatorList; dl != nil {
-			return n.checkDesignatorList(dl, c, f.Type(), off+f.Offset())
+			return n.checkDesignatorList(dl, c, f.Type(), off+f.Offset(), false)
 		}
 	}
 

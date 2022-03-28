@@ -42,6 +42,7 @@ var (
 
 #define __extension__
 #define __restrict_arr restrict
+#define asm __asm
 
 #ifndef __builtin_va_list
 #define __builtin_va_list __builtin_va_list
@@ -1648,6 +1649,9 @@ func TestMake(t *testing.T) {
 	os.Setenv("CC", base)
 	cc := filepath.Join(tmp, base)
 	mustShell(t, "go", "build", "-o", cc, "fakecc.go")
+	if !strings.HasPrefix(base, "gcc") {
+		mustShell(t, "cp", cc, filepath.Join(tmp, "gcc"))
+	}
 	oldPath := os.Getenv("PATH")
 
 	defer os.Setenv("PATH", oldPath)
@@ -1674,6 +1678,8 @@ func TestMake(t *testing.T) {
 		cfg.cflags = "-I/opt/homebrew/include"
 	case "freebsd", "openbsd;":
 		cfg.cflags = "-I/usr/local/include"
+	case "linux":
+		cfg.cflags = "-I/usr/include/openssl"
 	case "netbsd":
 		cfg.cflags = "-I/usr/pkg/include"
 	}
@@ -1759,7 +1765,6 @@ func TestMake(t *testing.T) {
 				"linux/arm",
 				"linux/arm64",
 				"linux/riscv64",
-				"linux/s390x",
 				"netbsd/amd64",
 				"openbsd/amd64",
 			},
@@ -1774,12 +1779,25 @@ func TestMake(t *testing.T) {
 				"linux/s390x",
 			},
 		},
-		{"download.redis.io/releases/redis-6.2.6.tar.gz", "redis-6.2.6", cfg.noConfigure(), all},
+		{"download.redis.io/releases/redis-6.2.6.tar.gz", "redis-6.2.6", cfg.noConfigure(),
+			[]string{
+				"darwin/amd64",
+				"freebsd/386",
+				"linux/386",
+				"linux/amd64",
+				"linux/arm",
+				"linux/arm64",
+				"linux/riscv64",
+				"linux/s390x",
+				"netbsd/amd64",
+				"openbsd/amd64",
+			},
+		},
+		{"c9x.me/git/qbe.tar.gz", "qbe", cfg.noConfigure(), all},
 
 		//TODO freebsd libc
 		//TODO netbsd libc
 		//TODO openbsd libc
-		//TODO qbe
 		//TODO tk
 	} {
 		if !filter(v.filter) {
@@ -1863,9 +1881,6 @@ func testMake(t *testing.T, archive, dir string, mcfg *makeCfg) (files, ok, skip
 	}
 	if !mcfg.disableConfigure {
 		mustShell(t, "./configure", args...)
-	}
-	if dir == "quickjs-master" {
-		mustShell(t, "sed", "-i", fmt.Sprintf("s|CC=$(CROSS_PREFIX)gcc|CC=$(CROSS_PREFIX)%s|", mcfg.cc), "Makefile")
 	}
 	switch goos {
 	case "darwin", "freebsd", "netbsd", "openbsd":

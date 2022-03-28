@@ -100,8 +100,8 @@ var keywords = map[string]rune{
 	"__uint128_t":   rune(UINT128),
 	"__volatile":    rune(VOLATILE),
 	"__volatile__":  rune(VOLATILE),
-	"asm":           rune(ASM),
-	"typeof":        rune(TYPEOF),
+	//TODO- "asm":           rune(ASM),
+	"typeof": rune(TYPEOF),
 }
 
 type parser struct {
