@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/pmezard/go-difflib v1.0.0
-	modernc.org/ccorpus2 v0.0.11
+	modernc.org/ccorpus2 v0.0.12
 	modernc.org/mathutil v1.4.1
 	modernc.org/strutil v1.1.1
 	modernc.org/token v1.0.0
