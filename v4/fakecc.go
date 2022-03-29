@@ -69,11 +69,18 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 )
 
 func fail(msg string, args ...interface{}) {
+	if cc.Dmesgs {
+		cc.Dmesg("fail: %s", fmt.Sprintf(msg, args...))
+	}
 	fmt.Fprintf(os.Stderr, msg, args...)
 	os.Exit(1)
 }
 
 func main() {
+	if cc.Dmesgs {
+		cc.Dmesg("start %q", os.Args)
+		defer cc.Dmesg("exit: 0")
+	}
 	fn := os.Getenv("FAKE_CC_LOG")
 	if fn == "" {
 		fail("FAKE_CC_LOG not set\n")
@@ -98,6 +105,9 @@ func main() {
 		a := append([]string{result, wd}, os.Args[1:]...)
 		if more != "" {
 			a = append(a, more)
+		}
+		if cc.Dmesgs {
+			cc.Dmesg("====\n%s----", strings.Join(a, "\n"))
 		}
 		var b bytes.Buffer
 		if err := json.NewEncoder(&b).Encode(a); err != nil {
@@ -125,11 +135,17 @@ func main() {
 	set := opt.NewSet()
 	var D, U, I []string
 	var E bool
-	set.Arg("D", true, func(opt, arg string) error { D = append(D, arg); return nil })
+	set.Arg("D", true, func(opt, arg string) error {
+		D = append(D, arg)
+		if cc.Dmesgs {
+			cc.Dmesg("DDDD %q %q %q", opt, arg, D)
+		}
+		return nil
+	})
 	set.Arg("I", true, func(opt, arg string) error { I = append(I, arg); return nil })
 	set.Arg("U", true, func(opt, arg string) error { U = append(U, arg); return nil })
 	set.Opt("E", func(opt string) error { E = true; return nil })
-	set.Opt("pthread", func(opt string) error { D = append(D, "_REENTRANT"); return nil })
+	set.Opt("MM", func(opt string) error { os.Exit(0); return nil })
 	var inputs []string
 	if err := set.Parse(os.Args[1:], func(arg string) error {
 		if strings.HasPrefix(arg, "-") {
@@ -151,7 +167,10 @@ func main() {
 
 	I = I[:len(I):len(I)]
 	os.Setenv("CC", CC)
-	cfg, err := cc.NewConfig(runtime.GOOS, runtime.GOARCH)
+	if cc.Dmesgs {
+		cc.Dmesg("CC now set to %s", CC)
+	}
+	cfg, err := cc.NewConfig(runtime.GOOS, runtime.GOARCH, os.Args[1:]...)
 	if err != nil {
 		fail("%v\n", err)
 	}

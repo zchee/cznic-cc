@@ -153,163 +153,163 @@ func ExampleArgumentExpressionList_case1() {
 }
 
 func ExampleAsm_case0() {
-	fmt.Println(exampleAST(260, "__asm(\"nop\");"))
+	fmt.Println(exampleAST(260, "__asm__(\"nop\");"))
 	// Output:
 	// &cc.Asm{
-	// · Token: example.c:1:1: '__asm' "__asm",
-	// · Token2: example.c:1:6: '(' "(",
-	// · Token3: example.c:1:7: string literal "\"nop\"",
-	// · Token4: example.c:1:12: ')' ")",
+	// · Token: example.c:1:1: '__asm__' "__asm__",
+	// · Token2: example.c:1:8: '(' "(",
+	// · Token3: example.c:1:9: string literal "\"nop\"",
+	// · Token4: example.c:1:14: ')' ")",
 	// }
 }
 
 func ExampleAsmArgList_case0() {
-	fmt.Println(exampleAST(258, "__asm(\"nop\": a);"))
+	fmt.Println(exampleAST(258, "__asm__(\"nop\": a);"))
 	// Output:
 	// &cc.AsmArgList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:14: identifier "a",
+	// · · · Token: example.c:1:16: identifier "a",
 	// · · },
 	// · },
-	// · Token: example.c:1:12: ':' ":",
+	// · Token: example.c:1:14: ':' ":",
 	// }
 }
 
 func ExampleAsmArgList_case1() {
-	fmt.Println(exampleAST(259, "__asm(\"nop\": a : b);"))
+	fmt.Println(exampleAST(259, "__asm__(\"nop\": a : b);"))
 	// Output:
 	// &cc.AsmArgList{
 	// · AsmArgList: &cc.AsmArgList{
 	// · · AsmExpressionList: &cc.AsmExpressionList{
 	// · · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · · Case: PrimaryExpressionIdent,
-	// · · · · Token: example.c:1:18: identifier "b",
+	// · · · · Token: example.c:1:20: identifier "b",
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:16: ':' ":",
+	// · · Token: example.c:1:18: ':' ":",
 	// · },
 	// · AsmExpressionList: &cc.AsmExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:14: identifier "a",
+	// · · · Token: example.c:1:16: identifier "a",
 	// · · },
 	// · },
-	// · Token: example.c:1:12: ':' ":",
+	// · Token: example.c:1:14: ':' ":",
 	// }
 }
 
 func ExampleAsmExpressionList_case0() {
-	fmt.Println(exampleAST(256, "__asm(\"nop\": a);"))
+	fmt.Println(exampleAST(256, "__asm__(\"nop\": a);"))
 	// Output:
 	// &cc.AsmExpressionList{
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: identifier "a",
+	// · · Token: example.c:1:16: identifier "a",
 	// · },
 	// }
 }
 
 func ExampleAsmExpressionList_case1() {
-	fmt.Println(exampleAST(257, "__asm(\"nop\": a, b);"))
+	fmt.Println(exampleAST(257, "__asm__(\"nop\": a, b);"))
 	// Output:
 	// &cc.AsmExpressionList{
 	// · AsmExpressionList: &cc.AsmExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:17: identifier "b",
+	// · · · Token: example.c:1:19: identifier "b",
 	// · · },
-	// · · Token: example.c:1:15: ',' ",",
+	// · · Token: example.c:1:17: ',' ",",
 	// · },
 	// · AssignmentExpression: &cc.PrimaryExpression{
 	// · · Case: PrimaryExpressionIdent,
-	// · · Token: example.c:1:14: identifier "a",
+	// · · Token: example.c:1:16: identifier "a",
 	// · },
 	// }
 }
 
 func ExampleAsmIndex_case0() {
-	fmt.Println(exampleAST(255, "__asm(\"nop\": [a] b);"))
+	fmt.Println(exampleAST(255, "__asm__(\"nop\": [a] b);"))
 	// Output:
 	// &cc.AsmIndex{
 	// · ExpressionList: &cc.ExpressionList{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:15: identifier "a",
+	// · · · Token: example.c:1:17: identifier "a",
 	// · · },
 	// · },
-	// · Token: example.c:1:14: '[' "[",
-	// · Token2: example.c:1:16: ']' "]",
+	// · Token: example.c:1:16: '[' "[",
+	// · Token2: example.c:1:18: ']' "]",
 	// }
 }
 
 func ExampleAsmQualifier_volatile() {
-	fmt.Println(exampleAST(262, "__asm volatile (\"nop\");"))
+	fmt.Println(exampleAST(262, "__asm__ volatile (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierVolatile,
-	// · Token: example.c:1:7: 'volatile' "volatile",
+	// · Token: example.c:1:9: 'volatile' "volatile",
 	// }
 }
 
 func ExampleAsmQualifier_inline() {
-	fmt.Println(exampleAST(263, "__asm inline (\"nop\");"))
+	fmt.Println(exampleAST(263, "__asm__ inline (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierInline,
-	// · Token: example.c:1:7: 'inline' "inline",
+	// · Token: example.c:1:9: 'inline' "inline",
 	// }
 }
 
 func ExampleAsmQualifier_goto() {
-	fmt.Println(exampleAST(264, "__asm goto (\"nop\");"))
+	fmt.Println(exampleAST(264, "__asm__ goto (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifier{
 	// · Case: AsmQualifierGoto,
-	// · Token: example.c:1:7: 'goto' "goto",
+	// · Token: example.c:1:9: 'goto' "goto",
 	// }
 }
 
 func ExampleAsmQualifierList_case0() {
-	fmt.Println(exampleAST(265, "__asm inline (\"nop\");"))
+	fmt.Println(exampleAST(265, "__asm__ inline (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
 	// · · Case: AsmQualifierInline,
-	// · · Token: example.c:1:7: 'inline' "inline",
+	// · · Token: example.c:1:9: 'inline' "inline",
 	// · },
 	// }
 }
 
 func ExampleAsmQualifierList_case1() {
-	fmt.Println(exampleAST(266, "__asm inline volatile (\"nop\");"))
+	fmt.Println(exampleAST(266, "__asm__ inline volatile (\"nop\");"))
 	// Output:
 	// &cc.AsmQualifierList{
 	// · AsmQualifier: &cc.AsmQualifier{
 	// · · Case: AsmQualifierInline,
-	// · · Token: example.c:1:7: 'inline' "inline",
+	// · · Token: example.c:1:9: 'inline' "inline",
 	// · },
 	// · AsmQualifierList: &cc.AsmQualifierList{
 	// · · AsmQualifier: &cc.AsmQualifier{
 	// · · · Case: AsmQualifierVolatile,
-	// · · · Token: example.c:1:14: 'volatile' "volatile",
+	// · · · Token: example.c:1:16: 'volatile' "volatile",
 	// · · },
 	// · },
 	// }
 }
 
 func ExampleAsmStatement_case0() {
-	fmt.Println(exampleAST(261, "void f() { __asm(\"nop\"); }"))
+	fmt.Println(exampleAST(261, "void f() { __asm__(\"nop\"); }"))
 	// Output:
 	// &cc.AsmStatement{
 	// · Asm: &cc.Asm{
-	// · · Token: example.c:1:12: '__asm' "__asm",
-	// · · Token2: example.c:1:17: '(' "(",
-	// · · Token3: example.c:1:18: string literal "\"nop\"",
-	// · · Token4: example.c:1:23: ')' ")",
+	// · · Token: example.c:1:12: '__asm__' "__asm__",
+	// · · Token2: example.c:1:19: '(' "(",
+	// · · Token3: example.c:1:20: string literal "\"nop\"",
+	// · · Token4: example.c:1:25: ')' ")",
 	// · },
-	// · Token: example.c:1:24: ';' ";",
+	// · Token: example.c:1:26: ';' ";",
 	// }
 }
 
@@ -2305,7 +2305,7 @@ func ExampleExternalDeclaration_funcDef() {
 }
 
 func ExampleExternalDeclaration_decl() {
-	fmt.Println(exampleAST(249, "register int i __asm(\"r0\");"))
+	fmt.Println(exampleAST(249, "register int i __asm__(\"r0\");"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · Case: ExternalDeclarationDecl,
@@ -2328,10 +2328,10 @@ func ExampleExternalDeclaration_decl() {
 	// · · InitDeclaratorList: &cc.InitDeclaratorList{
 	// · · · InitDeclarator: &cc.InitDeclarator{
 	// · · · · Asm: &cc.Asm{
-	// · · · · · Token: example.c:1:16: '__asm' "__asm",
-	// · · · · · Token2: example.c:1:21: '(' "(",
-	// · · · · · Token3: example.c:1:22: string literal "\"r0\"",
-	// · · · · · Token4: example.c:1:26: ')' ")",
+	// · · · · · Token: example.c:1:16: '__asm__' "__asm__",
+	// · · · · · Token2: example.c:1:23: '(' "(",
+	// · · · · · Token3: example.c:1:24: string literal "\"r0\"",
+	// · · · · · Token4: example.c:1:28: ')' ")",
 	// · · · · },
 	// · · · · Case: InitDeclaratorDecl,
 	// · · · · Declarator: &cc.Declarator{
@@ -2342,23 +2342,23 @@ func ExampleExternalDeclaration_decl() {
 	// · · · · },
 	// · · · },
 	// · · },
-	// · · Token: example.c:1:27: ';' ";",
+	// · · Token: example.c:1:29: ';' ";",
 	// · },
 	// }
 }
 
 func ExampleExternalDeclaration_asmStmt() {
-	fmt.Println(exampleAST(250, "__asm(\"nop\");"))
+	fmt.Println(exampleAST(250, "__asm__(\"nop\");"))
 	// Output:
 	// &cc.ExternalDeclaration{
 	// · AsmStatement: &cc.AsmStatement{
 	// · · Asm: &cc.Asm{
-	// · · · Token: example.c:1:1: '__asm' "__asm",
-	// · · · Token2: example.c:1:6: '(' "(",
-	// · · · Token3: example.c:1:7: string literal "\"nop\"",
-	// · · · Token4: example.c:1:12: ')' ")",
+	// · · · Token: example.c:1:1: '__asm__' "__asm__",
+	// · · · Token2: example.c:1:8: '(' "(",
+	// · · · Token3: example.c:1:9: string literal "\"nop\"",
+	// · · · Token4: example.c:1:14: ')' ")",
 	// · · },
-	// · · Token: example.c:1:13: ';' ";",
+	// · · Token: example.c:1:15: ';' ";",
 	// · },
 	// · Case: ExternalDeclarationAsmStmt,
 	// }
@@ -2653,14 +2653,14 @@ func ExampleInclusiveOrExpression_or() {
 }
 
 func ExampleInitDeclarator_decl() {
-	fmt.Println(exampleAST(101, "register int i __asm(\"r0\");"))
+	fmt.Println(exampleAST(101, "register int i __asm__(\"r0\");"))
 	// Output:
 	// &cc.InitDeclarator{
 	// · Asm: &cc.Asm{
-	// · · Token: example.c:1:16: '__asm' "__asm",
-	// · · Token2: example.c:1:21: '(' "(",
-	// · · Token3: example.c:1:22: string literal "\"r0\"",
-	// · · Token4: example.c:1:26: ')' ")",
+	// · · Token: example.c:1:16: '__asm__' "__asm__",
+	// · · Token2: example.c:1:23: '(' "(",
+	// · · Token3: example.c:1:24: string literal "\"r0\"",
+	// · · Token4: example.c:1:28: ')' ")",
 	// · },
 	// · Case: InitDeclaratorDecl,
 	// · Declarator: &cc.Declarator{
@@ -2673,14 +2673,14 @@ func ExampleInitDeclarator_decl() {
 }
 
 func ExampleInitDeclarator_init() {
-	fmt.Println(exampleAST(102, "register int i __asm(\"r0\") = x;"))
+	fmt.Println(exampleAST(102, "register int i __asm__(\"r0\") = x;"))
 	// Output:
 	// &cc.InitDeclarator{
 	// · Asm: &cc.Asm{
-	// · · Token: example.c:1:16: '__asm' "__asm",
-	// · · Token2: example.c:1:21: '(' "(",
-	// · · Token3: example.c:1:22: string literal "\"r0\"",
-	// · · Token4: example.c:1:26: ')' ")",
+	// · · Token: example.c:1:16: '__asm__' "__asm__",
+	// · · Token2: example.c:1:23: '(' "(",
+	// · · Token3: example.c:1:24: string literal "\"r0\"",
+	// · · Token4: example.c:1:28: ')' ")",
 	// · },
 	// · Case: InitDeclaratorInit,
 	// · Declarator: &cc.Declarator{
@@ -2692,11 +2692,11 @@ func ExampleInitDeclarator_init() {
 	// · Initializer: &cc.Initializer{
 	// · · AssignmentExpression: &cc.PrimaryExpression{
 	// · · · Case: PrimaryExpressionIdent,
-	// · · · Token: example.c:1:30: identifier "x",
+	// · · · Token: example.c:1:32: identifier "x",
 	// · · },
 	// · · Case: InitializerExpr,
 	// · },
-	// · Token: example.c:1:28: '=' "=",
+	// · Token: example.c:1:30: '=' "=",
 	// }
 }
 
@@ -4350,17 +4350,17 @@ func ExampleStatement_jump() {
 }
 
 func ExampleStatement_asm() {
-	fmt.Println(exampleAST(220, "int f() { __asm(\"nop\"); }"))
+	fmt.Println(exampleAST(220, "int f() { __asm__(\"nop\"); }"))
 	// Output:
 	// &cc.Statement{
 	// · AsmStatement: &cc.AsmStatement{
 	// · · Asm: &cc.Asm{
-	// · · · Token: example.c:1:11: '__asm' "__asm",
-	// · · · Token2: example.c:1:16: '(' "(",
-	// · · · Token3: example.c:1:17: string literal "\"nop\"",
-	// · · · Token4: example.c:1:22: ')' ")",
+	// · · · Token: example.c:1:11: '__asm__' "__asm__",
+	// · · · Token2: example.c:1:18: '(' "(",
+	// · · · Token3: example.c:1:19: string literal "\"nop\"",
+	// · · · Token4: example.c:1:24: ')' ")",
 	// · · },
-	// · · Token: example.c:1:23: ';' ";",
+	// · · Token: example.c:1:25: ';' ";",
 	// · },
 	// · Case: StatementAsm,
 	// }

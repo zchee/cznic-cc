@@ -33,23 +33,39 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+
+	"modernc.org/opt"
 )
+
+const DmesgsFile = "/tmp/cc.log"
 
 var (
 	isTesting  bool
 	traceFails bool
 )
 
+func init() { //TODO- DBG
+
+}
+
 // NewConfig returns the system C compiler configuration, or an error, if
 // any. The function will look for the compiler first in the environment
 // variable CC, then it'll try other options. Usually that means looking for
 // the "cc" and "gcc" binary, in that order.
 //
-// Execution of NewConfig is expensive, caching the results is recommended.
-func NewConfig(goos, goarch string) (r *Config, err error) {
-	cc, predefined, includePaths, sysIncludePaths, err := newConfig()
+// Additional arguments (flags) in opts are passed to the system C compiler
+// unchanged.  For example, the _REENTRANT preprocessor macro is defined when
+// the -pthread flag is present.  The set of recognized keywords is adjusted to
+// emulate gcc, see:
+//
+//	https://gcc.gnu.org/onlinedocs/gcc/Alternate-Keywords.html#Alternate-Keywords
+//
+// Execution of NewConfig is expensive, caching the results is recommended
+// wherever possible.
+func NewConfig(goos, goarch string, opts ...string) (r *Config, err error) {
+	cc, predefined, includePaths, sysIncludePaths, keywords, err := newConfig(opts)
 	if err != nil {
-		return nil, fmt.Errorf("DefaultConfig: %v", err)
+		return nil, fmt.Errorf("NewConfig: %v", err)
 	}
 
 	switch fmt.Sprintf("%s/%s", goos, goarch) {
@@ -73,10 +89,82 @@ func NewConfig(goos, goarch string) (r *Config, err error) {
 		HostSysIncludePaths: sysIncludePaths,
 		IncludePaths:        append([]string{""}, append(includePaths, sysIncludePaths...)...),
 		SysIncludePaths:     sysIncludePaths,
+		keywords:            keywords,
 	}, nil
 }
 
-func newConfig() (cc, predefined string, includePaths, sysIncludePaths []string, err error) {
+func newConfig(opts []string) (cc, predefined string, includePaths, sysIncludePaths []string, keywords map[string]rune, err error) {
+	if Dmesgs {
+		Dmesg("newConfig(%q)", opts)
+		defer func() {
+			Dmesg(`newConfig:
+	cc: %q
+	predefined: %s
+	includePaths: %v
+	sysIncludePaths: %v
+	err: %v`, cc, predefined, includePaths, sysIncludePaths, err)
+		}()
+	}
+	clone := func() {
+		if keywords == nil {
+			keywords = make(map[string]rune, len(defaultKeywords))
+			for k, v := range defaultKeywords {
+				keywords[k] = v
+			}
+		}
+	}
+	set := opt.NewSet()
+	set.Arg("o", true, func(string, string) error { return nil })
+	set.Opt("c", func(string) error { return nil })
+
+	// https://gcc.gnu.org/onlinedocs/gcc/C-Dialect-Options.html
+
+	set.Opt("ansi", func(string) error {
+		clone()
+		delete(keywords, "asm")
+		delete(keywords, "inline")
+		delete(keywords, "typeof")
+		return nil
+	})
+	set.Opt("fno-asm", func(string) error {
+		clone()
+		delete(keywords, "asm")
+		delete(keywords, "typeof")
+		return nil
+	})
+	set.Arg("std", false, func(nm, val string) error {
+		if !strings.HasPrefix(val, "gnu") {
+			clone()
+			delete(keywords, "asm")
+			delete(keywords, "typeof")
+			if Dmesgs {
+				Dmesg("asm deleted")
+			}
+		}
+		switch val {
+		case "c89", "c90", "iso9899:1990", "iso9899:199409":
+			clone()
+			delete(keywords, "inline")
+		}
+		return nil
+	})
+
+	var args []string
+	if err := set.Parse(opts, func(arg string) error {
+		if Dmesgs {
+			Dmesg("arg %q", arg)
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return nil
+		}
+
+		args = append(args, arg)
+		return nil
+	}); err != nil {
+		return "", "", nil, nil, nil, errorf("parsing %v: %v", opts, err)
+	}
+
+	opts = args[:len(args):len(args)]
 	for _, cc = range []string{os.Getenv("CC"), "cc", "gcc"} {
 		if cc == "" {
 			continue
@@ -87,12 +175,11 @@ func newConfig() (cc, predefined string, includePaths, sysIncludePaths []string,
 			continue
 		}
 
-		pre, err := exec.Command(cc, "-dM", "-E", "-").Output()
-		if err != nil {
-			continue
+		args := append(opts, "-dM", "-E", "-")
+		pre, err := exec.Command(cc, args...).CombinedOutput()
+		if Dmesgs {
+			Dmesg("newConfig.2 %s %v ----\n%s\n----: %v", cc, args, pre, err)
 		}
-
-		out, err := exec.Command(cc, "-v", "-E", "-").CombinedOutput()
 		if err != nil {
 			continue
 		}
@@ -101,7 +188,25 @@ func newConfig() (cc, predefined string, includePaths, sysIncludePaths []string,
 		if env("GOOS", runtime.GOOS) == "windows" {
 			sep = "\r\n"
 		}
-		a := strings.Split(string(out), sep)
+		a := strings.Split(string(pre), sep)
+		w := 0
+		for _, v := range a {
+			if strings.HasPrefix(v, "#") {
+				a[w] = v
+				w++
+			}
+		}
+		predefined = strings.Join(a[:w], "\n")
+		args = append(opts, "-v", "-E", "-")
+		out, err := exec.Command(cc, args...).CombinedOutput()
+		if Dmesgs {
+			Dmesg("newConfig.3 %s %v ----\n%s\n----: %v", cc, args, out, err)
+		}
+		if err != nil {
+			continue
+		}
+
+		a = strings.Split(string(out), sep)
 		for i := 0; i < len(a); {
 			switch a[i] {
 			case "#include \"...\" search starts here:":
@@ -119,7 +224,7 @@ func newConfig() (cc, predefined string, includePaths, sysIncludePaths []string,
 				for i = i + 1; i < len(a); {
 					switch v := a[i]; {
 					case strings.HasPrefix(v, "#") || v == "End of search list.":
-						return cc, string(pre), includePaths, sysIncludePaths, nil
+						return cc, predefined, includePaths, sysIncludePaths, keywords, nil
 					default:
 						sysIncludePaths = append(sysIncludePaths, strings.TrimSpace(v))
 						i++
@@ -130,7 +235,7 @@ func newConfig() (cc, predefined string, includePaths, sysIncludePaths []string,
 			}
 		}
 	}
-	return "", "", nil, nil, fmt.Errorf("cannot determine C compiler configuration")
+	return "", "", nil, nil, nil, errorf("cannot determine C compiler configuration")
 }
 
 // Source is a named part of a translation unit. The name argument is used for
@@ -167,6 +272,7 @@ type Config struct {
 	PragmaHandler       func([]Token) error
 	Predefined          string // The predefined macros from CC, filled by NewConfig.
 	SysIncludePaths     []string
+	keywords            map[string]rune
 
 	doNotInjectFunc bool // testing
 	fakeIncludes    bool // testing

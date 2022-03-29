@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var keywords = map[string]rune{
+var defaultKeywords = map[string]rune{
 	// C99
 	"_Bool":      rune(BOOL),
 	"_Complex":   rune(COMPLEX),
@@ -100,6 +100,7 @@ var keywords = map[string]rune{
 	"__uint128_t":   rune(UINT128),
 	"__volatile":    rune(VOLATILE),
 	"__volatile__":  rune(VOLATILE),
+	"asm":           rune(ASM),
 	"typeof":        rune(TYPEOF),
 }
 
@@ -107,6 +108,7 @@ type parser struct {
 	cpp        *cpp
 	fnScope    *Scope
 	funcTokens []Token
+	keywords   map[string]rune
 	prevNL     Token
 	scope      *Scope
 	toks       []Token
@@ -131,12 +133,19 @@ func newParser(cfg *Config, sources []Source) (*parser, error) {
 		{Ch: rune(STRINGLITERAL)},
 		{Ch: ';'},
 	}
+	if cfg.keywords == nil {
+		if Dmesgs {
+			Dmesg("using defaultKeywords")
+		}
+		cfg.keywords = defaultKeywords
+	}
 	funcTokens = funcTokens[:len(funcTokens):len(funcTokens)]
 	cpp.rune()
 	return &parser{
 		cpp:        cpp,
 		funcTokens: funcTokens,
 		scope:      &Scope{},
+		keywords:   cfg.keywords,
 	}, nil
 }
 
@@ -156,7 +165,7 @@ func (p *parser) closeScope() {
 }
 
 func (p *parser) isKeyword(s []byte) (r rune, ok bool) {
-	r, ok = keywords[string(s)]
+	r, ok = p.keywords[string(s)]
 	return r, ok
 }
 
@@ -1102,7 +1111,7 @@ func (p *parser) attributeValueListOpt() (r *AttributeValueList) {
 	case ')':
 		return nil
 	default:
-		if _, ok := keywords[string(p.toks[0].Src())]; ok {
+		if _, ok := p.isKeyword(p.toks[0].Src()); ok {
 			r = &AttributeValueList{AttributeValue: p.attributeValue()}
 			break
 		}
@@ -1134,7 +1143,7 @@ func (p *parser) attributeValue() (r *AttributeValue) {
 			return &AttributeValue{Case: AttributeValueIdent, Token: p.shift(false)}
 		}
 	default:
-		if _, ok := keywords[string(p.toks[0].Src())]; ok {
+		if _, ok := p.isKeyword(p.toks[0].Src()); ok {
 			r = &AttributeValue{Case: AttributeValueIdent, Token: p.shift(false)}
 			r.Token.Ch = rune(IDENTIFIER)
 			return r

@@ -3177,7 +3177,7 @@ out:
 			}
 
 			switch {
-			case args[0].Type().isCompatible(args[1].Type()):
+			case args[0].Type().Decay().isCompatible(args[1].Type().Decay()):
 				n.val = int1
 			default:
 				n.val = int0
@@ -3185,7 +3185,7 @@ out:
 			break out
 		case "__builtin_constant_p":
 			n.typ = c.intT
-			args := n.ArgumentExpressionList.check(c, 0)
+			args := n.ArgumentExpressionList.check(c, decay)
 			if len(args) != 1 {
 				c.errors.add(errorf("%v: expected one argument: (%s)", n.Position(), NodeSource(n.ArgumentExpressionList)))
 				break out

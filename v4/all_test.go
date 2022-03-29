@@ -42,7 +42,6 @@ var (
 
 #define __extension__
 #define __restrict_arr restrict
-#define asm __asm
 
 #ifndef __builtin_va_list
 #define __builtin_va_list __builtin_va_list
@@ -947,7 +946,10 @@ func TestStrCatSep(t *testing.T) {
 		{`int f() {` + "\n" + ` "a";}`, `"a"`, "\n ", "\n"},
 		{`int f() {` + "\n" + `"a";}`, `"a"`, "\n", "\n"},
 	} {
-		ast, err := Parse(&Config{doNotInjectFunc: true}, []Source{{Name: "test", Value: v.src}})
+		ast, err := Parse(
+			&Config{doNotInjectFunc: true},
+			[]Source{{Name: "test", Value: v.src}},
+		)
 		if err != nil {
 			t.Errorf("%v: %v", i, err)
 			continue
@@ -1648,7 +1650,11 @@ func TestMake(t *testing.T) {
 
 	os.Setenv("CC", base)
 	cc := filepath.Join(tmp, base)
-	mustShell(t, "go", "build", "-o", cc, "fakecc.go")
+	args := []string{"build", "-o", cc}
+	if Dmesgs {
+		args = append(args, "-tags=cc.dmesg")
+	}
+	mustShell(t, "go", append(args, "fakecc.go")...)
 	if !strings.HasPrefix(base, "gcc") {
 		mustShell(t, "cp", cc, filepath.Join(tmp, "gcc"))
 	}
@@ -1687,116 +1693,20 @@ func TestMake(t *testing.T) {
 		cfg     *makeCfg
 		filter  []string
 	}{
-		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", cfg.add("--disable-cpp"),
-			[]string{
-				"darwin/amd64",
-				"darwin/arm64",
-				"freebsd/386",
-				"freebsd/amd64",
-				"linux/386",
-				"linux/amd64",
-				"linux/arm",
-				"linux/arm64",
-				"linux/riscv64",
-				"linux/s390x",
-				"openbsd/amd64",
-			},
-		},
-		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", cfg,
-			[]string{
-				"darwin/amd64",
-				"darwin/arm64",
-				"freebsd/386",
-				"freebsd/amd64",
-				"linux/386",
-				"linux/amd64",
-				"linux/arm",
-				"linux/arm64",
-				"linux/riscv64",
-				"linux/s390x",
-				"openbsd/amd64",
-			},
-		},
+		{"ftp.pcre.org/pub/pcre.tar.gz", "pcre", cfg.add("--disable-cpp"), all},
+		{"ftp.pcre.org/pub/pcre2.tar.gz", "pcre2", cfg, all},
 		{"github.com/madler/zlib.tar.gz", "zlib", cfg, all},
 		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", cfg.add("--enable-corefoundation=no"), all},
-		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", cfg,
-			[]string{
-				"darwin/amd64",
-				"darwin/arm64",
-				"freebsd/amd64",
-				"linux/amd64",
-				"linux/arm",
-				"linux/arm64",
-				"linux/riscv64",
-				"linux/s390x",
-				"openbsd/amd64",
-			},
-		},
-		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", cfg,
-			[]string{
-				"darwin/amd64",
-				"linux/386",
-				"linux/amd64",
-				"linux/arm",
-				"linux/s390x",
-			},
-		},
-		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", cfg,
-			[]string{
-				"darwin/amd64",
-				"linux/386",
-				"linux/amd64",
-			},
-		},
-		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", cfg,
-			[]string{
-				"freebsd/386",
-				"freebsd/amd64",
-				"linux/386",
-				"linux/arm",
-				"openbsd/amd64",
-			},
-		},
-		{"musl.libc.org/releases/musl-1.2.2.tar.gz", "musl-1.2.2", cfg,
-			[]string{
-				"linux/386",
-				"linux/amd64",
-				"linux/arm",
-				"linux/arm64",
-				"linux/riscv64",
-				"linux/s390x",
-			},
-		},
-		{"github.com/git/git/archive/refs/tags/v2.35.1.tar.gz", "git-2.35.1", cfg.noConfigure(),
-			[]string{
-				"linux/amd64",
-				"linux/riscv64",
-				"netbsd/amd64",
-			},
-		},
-		{"github.com/bellard/quickjs/archive/refs/heads/quickjs-master/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(),
-			[]string{
-				"linux/386",
-				"linux/amd64",
-				"linux/arm64",
-				"linux/riscv64",
-				"linux/s390x",
-			},
-		},
-		{"download.redis.io/releases/redis-6.2.6.tar.gz", "redis-6.2.6", cfg.noConfigure(),
-			[]string{
-				"linux/arm",
-				"linux/riscv64",
-				"openbsd/amd64",
-			},
-		},
+		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", cfg, all},
+		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", cfg, all},
+		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", cfg, all},
+		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", cfg, all},
+		{"musl.libc.org/releases/musl-1.2.2.tar.gz", "musl-1.2.2", cfg, all},
+		{"github.com/git/git/archive/refs/tags/v2.35.1.tar.gz", "git-2.35.1", cfg.noConfigure(), all},
+		{"github.com/bellard/quickjs/archive/refs/heads/quickjs-master/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(), all},
+		{"download.redis.io/releases/redis-6.2.6.tar.gz", "redis-6.2.6", cfg.noConfigure(), all},
 		{"c9x.me/git/qbe.tar.gz", "qbe", cfg.noConfigure(), all},
 		{"git.postgresql.org/git/postgresql.tar.gz", "postgresql", cfg, all},
-
-		//TODO freebsd libc
-		//TODO netbsd libc
-		//TODO openbsd libc
-		//TODO tk
 	} {
 		if !filter(v.filter) {
 			continue
