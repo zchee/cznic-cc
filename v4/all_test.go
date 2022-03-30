@@ -89,6 +89,7 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 func init() {
 	flag.BoolVar(&traceFails, "trcfails", false, "")
 	isTesting = true
+	extendedErrors = true
 	var err error
 	if defaultCfg0, err = NewConfig(runtime.GOOS, runtime.GOARCH); err != nil {
 		panic(errorf("NewConfig: %v", err))
@@ -376,28 +377,31 @@ func h(v interface{}) string {
 
 func BenchmarkScanner(b *testing.B) {
 	debug.FreeOSMemory()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var chars int64
 		for _, path := range corpusIndex {
 			switch filepath.Ext(path) {
 			case ".c", ".h":
-				panic(todo(""))
-				// buf := corpus[path]
-				// chars += int64(len(buf))
-				// var s *scanner
-				// var err error
-				// if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
-				// 	s.close()
-				// 	b.Fatalf(msg, args...)
-				// }); err != nil {
-				// 	b.Fatal(path, err)
-				// }
-				// for {
-				// 	tok := s.cppScan()
-				// 	if tok.Ch == eof {
-				// 		break
-				// 	}
-				// }
+				buf, err := getCorpusFile(path)
+				if err != nil {
+					b.Fatal(err)
+				}
+
+				chars += int64(len(buf))
+				var s *scanner
+				if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+					s.close()
+					b.Fatalf(msg, args...)
+				}); err != nil {
+					b.Fatal(path, err)
+				}
+				for {
+					tok := s.cppScan()
+					if tok.Ch == eof {
+						break
+					}
+				}
 			}
 		}
 		b.SetBytes(chars)
@@ -531,6 +535,7 @@ func TestCPPParse(t *testing.T) {
 
 func BenchmarkCPPParse(b *testing.B) {
 	debug.FreeOSMemory()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var chars int64
 		for _, path := range corpusIndex {
@@ -540,27 +545,29 @@ func BenchmarkCPPParse(b *testing.B) {
 
 			switch filepath.Ext(path) {
 			case ".c", ".h":
-				panic(todo(""))
-				// buf := corpus[path]
-				// chars += int64(len(buf))
-				// var p *cppParser
-				// var err error
-				// if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
-				// 	p.close()
-				// 	b.Fatalf(msg, args...)
-				// }); err != nil {
-				// 	b.Fatal(path, err)
-				// }
+				buf, err := getCorpusFile(path)
+				if err != nil {
+					b.Fatal(err)
+				}
 
-				// ast := p.preprocessingFile()
-				// if len(ast) == 0 {
-				// 	b.Fatalf("%v: empty AST", path)
-				// }
+				chars += int64(len(buf))
+				var p *cppParser
+				if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+					p.close()
+					b.Fatalf(msg, args...)
+				}); err != nil {
+					b.Fatal(path, err)
+				}
 
-				// eol := ast[len(ast)-1]
-				// if _, ok := eol.(eofLine); !ok {
-				// 	b.Fatalf("%v: AST not terminated: %T", p.pos(), eol)
-				// }
+				ast := p.preprocessingFile()
+				if len(ast) == 0 {
+					b.Fatalf("%v: empty AST", path)
+				}
+
+				eol := ast[len(ast)-1]
+				if _, ok := eol.(eofLine); !ok {
+					b.Fatalf("%v: AST not terminated: %T", p.pos(), eol)
+				}
 			}
 		}
 		b.SetBytes(chars)
@@ -1686,6 +1693,20 @@ func TestMake(t *testing.T) {
 		// "darwin/amd64", //TODO PATH_MAX undefined
 		// "darwin/arm64", //TODO PATH_MAX undefined
 	}
+	mpfr := []string{
+		"darwin/amd64",
+		"darwin/arm64",
+		"freebsd/386",
+		"freebsd/amd64",
+		"linux/386",
+		"linux/amd64",
+		"linux/arm",
+		"linux/arm64",
+		"linux/s390x",
+		"netbsd/amd64",
+		"openbsd/amd64",
+		// "linux/riscv64", //TODO
+	}
 	qbe := []string{
 		"amd64",
 		"arm64",
@@ -1739,7 +1760,7 @@ func TestMake(t *testing.T) {
 		{"github.com/madler/zlib.tar.gz", "zlib", cfg, all},
 		{"sourceforge.net/projects/tcl/files/Tcl/tcl.tar.gz", "tcl/unix", cfg.add("--enable-corefoundation=no"), all},
 		{"gmplib.org/download/gmp/gmp-6.2.1.tar.gz", "gmp-6.2.1", cfg, all},
-		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", cfg, all},
+		{"www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz", "mpfr-4.1.0", cfg, mpfr},
 		{"ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz", "mpc-1.2.1", cfg, all},
 		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", cfg, hdf5},
 		{"musl.libc.org/releases/musl-1.2.2.tar.gz", "musl-1.2.2", cfg, []string{"linux"}},

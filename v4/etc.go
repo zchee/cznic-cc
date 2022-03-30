@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	extendedErrors = true // true: Errors will include origin info.
+	extendedErrors = false // true: Errors will include origin info.
 )
 
 // origin returns caller's short position, skipping skip frames.
