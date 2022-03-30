@@ -1649,6 +1649,9 @@ func TestMake(t *testing.T) {
 	if !strings.HasPrefix(base, "cc") {
 		mustShell(t, "cp", cc, filepath.Join(tmp, "cc"))
 	}
+	if !strings.HasPrefix(base, "clang") {
+		mustShell(t, "cp", cc, filepath.Join(tmp, "clang"))
+	}
 	oldPath := os.Getenv("PATH")
 
 	defer os.Setenv("PATH", oldPath)
@@ -1687,6 +1690,20 @@ func TestMake(t *testing.T) {
 		"amd64",
 		"arm64",
 		"riscv64",
+	}
+	qjs := []string{
+		"freebsd/386",
+		"freebsd/amd64",
+		"linux/386",
+		"linux/amd64",
+		"linux/arm",
+		"linux/arm64",
+		"linux/riscv64",
+		"linux/s390x",
+		"netbsd/amd64",
+		"openbsd/amd64",
+		// "darwin/amd64", //TODO PATH_MAX undefined
+		// "darwin/arm64", //TODO PATH_MAX undefined
 	}
 	redis := []string{
 		"darwin/amd64",
@@ -1727,7 +1744,7 @@ func TestMake(t *testing.T) {
 		{"www.hdfgroup.org/downloads/hdf5/source-code/hdf5-1.12.1.tar.gz", "hdf5-1.12.1", cfg, hdf5},
 		{"musl.libc.org/releases/musl-1.2.2.tar.gz", "musl-1.2.2", cfg, []string{"linux"}},
 		{"github.com/git/git/archive/refs/tags/v2.35.1.tar.gz", "git-2.35.1", cfg.noConfigure(), all},
-		{"github.com/bellard/quickjs/archive/refs/heads/quickjs-master/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(), all},
+		{"github.com/bellard/quickjs/archive/refs/heads/quickjs-master/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(), qjs},
 		{"download.redis.io/releases/redis-6.2.6.tar.gz", "redis-6.2.6", cfg.noConfigure(), redis},
 		{"c9x.me/git/qbe.tar.gz", "qbe", cfg.noConfigure(), qbe},
 		{"git.postgresql.org/git/postgresql.tar.gz", "postgresql", cfg, all},
