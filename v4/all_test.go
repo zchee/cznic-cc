@@ -1667,8 +1667,6 @@ func TestMake(t *testing.T) {
 		"openbsd/amd64",
 	}
 	hdf5 := []string{
-		// "darwin/amd64", //TODO PATH_MAX undefined
-		// "darwin/arm64", //TODO PATH_MAX undefined
 		"freebsd/386",
 		"freebsd/amd64",
 		"linux/386",
@@ -1679,6 +1677,8 @@ func TestMake(t *testing.T) {
 		"linux/s390x",
 		"netbsd/amd64",
 		"openbsd/amd64",
+		// "darwin/amd64", //TODO PATH_MAX undefined
+		// "darwin/arm64", //TODO PATH_MAX undefined
 	}
 	qbe := []string{
 		"amd64",
@@ -1686,18 +1686,18 @@ func TestMake(t *testing.T) {
 		"riscv64",
 	}
 	redis := []string{
-		// "netbsd/amd64", //TODO <sys/epoll.h> not found
 		"darwin/amd64",
 		"darwin/arm64",
 		"freebsd/386",
 		"freebsd/amd64",
 		"linux/386",
 		"linux/amd64",
-		"linux/arm",
 		"linux/arm64",
 		"linux/riscv64",
 		"linux/s390x",
 		"openbsd/amd64",
+		// "linux/arm",     //TODO <sys/event.h> not found
+		// "netbsd/amd64", //TODO <sys/epoll.h> not found
 	}
 	cfg := &makeCfg{cc: cc}
 	switch goos {
