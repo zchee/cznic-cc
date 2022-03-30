@@ -1646,6 +1646,9 @@ func TestMake(t *testing.T) {
 	if !strings.HasPrefix(base, "gcc") {
 		mustShell(t, "cp", cc, filepath.Join(tmp, "gcc"))
 	}
+	if !strings.HasPrefix(base, "cc") {
+		mustShell(t, "cp", cc, filepath.Join(tmp, "cc"))
+	}
 	oldPath := os.Getenv("PATH")
 
 	defer os.Setenv("PATH", oldPath)
@@ -1687,7 +1690,6 @@ func TestMake(t *testing.T) {
 	}
 	redis := []string{
 		"darwin/amd64",
-		"darwin/arm64",
 		"freebsd/386",
 		"freebsd/amd64",
 		"linux/386",
@@ -1696,7 +1698,8 @@ func TestMake(t *testing.T) {
 		"linux/riscv64",
 		"linux/s390x",
 		"openbsd/amd64",
-		// "linux/arm",     //TODO <sys/event.h> not found
+		// "darwin/arm64", //TODO SSIZE_MAX undefined
+		// "linux/arm",    //TODO <sys/event.h> not found
 		// "netbsd/amd64", //TODO <sys/epoll.h> not found
 	}
 	cfg := &makeCfg{cc: cc}
