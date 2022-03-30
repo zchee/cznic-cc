@@ -1706,7 +1706,6 @@ func TestMake(t *testing.T) {
 		// "darwin/arm64", //TODO PATH_MAX undefined
 	}
 	redis := []string{
-		"darwin/amd64",
 		"freebsd/386",
 		"freebsd/amd64",
 		"linux/386",
@@ -1715,6 +1714,7 @@ func TestMake(t *testing.T) {
 		"linux/riscv64",
 		"linux/s390x",
 		"openbsd/amd64",
+		// "darwin/amd64", //TODO SSIZE_MAX undefined
 		// "darwin/arm64", //TODO SSIZE_MAX undefined
 		// "linux/arm",    //TODO <sys/event.h> not found
 		// "netbsd/amd64", //TODO <sys/epoll.h> not found
