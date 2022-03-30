@@ -248,17 +248,6 @@ func newScannerSource(src Source) (s *scannerSource, err error) {
 		if s.buf, err = io.ReadAll(x); err != nil {
 			return nil, errorf("", err)
 		}
-	case fs.File:
-		fi, err := x.Stat()
-		if err != nil {
-			return nil, errorf("", err)
-		}
-
-		if sz := fi.Size(); sz >= math.MaxUint32 {
-			return nil, errorf("source too big: %v bytes", sz)
-		}
-
-		return newScannerSource(Source{src.Name, io.ReadCloser(x), nil})
 	case []byte:
 		s.buf = x
 	case io.Reader:

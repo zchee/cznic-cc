@@ -1479,22 +1479,6 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 	return files, ok, skip, int32(len(fails))
 }
 
-func buildDefs(D, U []string) string {
-	var a []string
-	for _, v := range D {
-		if i := strings.IndexByte(v, '='); i > 0 {
-			a = append(a, fmt.Sprintf("#define %s %s", v[:i], v[i+1:]))
-			continue
-		}
-
-		a = append(a, fmt.Sprintf("#define %s 1", v))
-	}
-	for _, v := range U {
-		a = append(a, fmt.Sprintf("#undef %s", v))
-	}
-	return strings.Join(a, "\n")
-}
-
 func shell(cmd string, args ...string) ([]byte, error) {
 	wd, err := absCwd()
 	if err != nil {
@@ -1631,7 +1615,7 @@ func untar(dst string, r io.Reader, canOverwrite func(fn string, fi os.FileInfo)
 
 func TestMake(t *testing.T) {
 	if testing.Short() {
-		t.Skip()
+		t.Skip("SKIP: -short")
 	}
 
 	tmp := t.TempDir()
@@ -1678,6 +1662,16 @@ func TestMake(t *testing.T) {
 		"netbsd/amd64",
 		"openbsd/amd64",
 	}
+	qbe := []string{
+		"darwin/amd64",
+		"darwin/arm64",
+		"freebsd/amd64",
+		"linux/amd64",
+		"linux/arm64",
+		"linux/riscv64",
+		"netbsd/amd64",
+		"openbsd/amd64",
+	}
 	cfg := &makeCfg{cc: cc}
 	switch goos {
 	case "darwin":
@@ -1705,7 +1699,7 @@ func TestMake(t *testing.T) {
 		{"github.com/git/git/archive/refs/tags/v2.35.1.tar.gz", "git-2.35.1", cfg.noConfigure(), all},
 		{"github.com/bellard/quickjs/archive/refs/heads/quickjs-master/quickjs-master.tar.gz", "quickjs-master", cfg.noConfigure(), all},
 		{"download.redis.io/releases/redis-6.2.6.tar.gz", "redis-6.2.6", cfg.noConfigure(), all},
-		{"c9x.me/git/qbe.tar.gz", "qbe", cfg.noConfigure(), all},
+		{"c9x.me/git/qbe.tar.gz", "qbe", cfg.noConfigure(), qbe},
 		{"git.postgresql.org/git/postgresql.tar.gz", "postgresql", cfg, all},
 	} {
 		if !filter(v.filter) {
@@ -1789,17 +1783,17 @@ func testMake(t *testing.T, archive, dir string, mcfg *makeCfg) (files, ok, skip
 	}
 	if !mcfg.disableConfigure {
 		if _, err := shell("./configure", args...); err != nil {
-			t.Skip(err)
+			t.Skipf("SKIP: ./configure: %v", err)
 		}
 	}
 	switch goos {
 	case "darwin", "freebsd", "netbsd", "openbsd":
 		if _, err := shell("gmake"); err != nil {
-			t.Skip(err)
+			t.Skipf("SKIP: gmake: %v", err)
 		}
 	default:
 		if _, err := shell("make"); err != nil {
-			t.Skip(err)
+			t.Skipf("SKIP: make: %v", err)
 		}
 	}
 	logf, err := os.ReadFile(fn)

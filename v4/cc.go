@@ -95,14 +95,13 @@ func NewConfig(goos, goarch string, opts ...string) (r *Config, err error) {
 
 func newConfig(opts []string) (cc, predefined string, includePaths, sysIncludePaths []string, keywords map[string]rune, err error) {
 	if Dmesgs {
-		Dmesg("newConfig(%q)", opts)
+		Dmesg("newConfig(%v)", opts)
 		defer func() {
-			Dmesg(`newConfig:
-	cc: %q
-	predefined: %s
-	includePaths: %v
-	sysIncludePaths: %v
-	err: %v`, cc, predefined, includePaths, sysIncludePaths, err)
+			var s string
+			if err != nil {
+				s = " (FAIL)"
+			}
+			Dmesg("newConfig: cc: %q includePaths: %v sysIncludePaths: %v err: %v%s", cc, includePaths, sysIncludePaths, err, s)
 		}()
 	}
 	clone := func() {
@@ -113,33 +112,32 @@ func newConfig(opts []string) (cc, predefined string, includePaths, sysIncludePa
 			}
 		}
 	}
+	var args []string
 	set := opt.NewSet()
-	set.Arg("o", true, func(string, string) error { return nil })
-	set.Opt("c", func(string) error { return nil })
 
 	// https://gcc.gnu.org/onlinedocs/gcc/C-Dialect-Options.html
 
-	set.Opt("ansi", func(string) error {
+	set.Opt("ansi", func(opt string) error {
+		args = append(args, opt)
 		clone()
 		delete(keywords, "asm")
 		delete(keywords, "inline")
 		delete(keywords, "typeof")
 		return nil
 	})
-	set.Opt("fno-asm", func(string) error {
+	set.Opt("fno-asm", func(opt string) error {
+		args = append(args, opt)
 		clone()
 		delete(keywords, "asm")
 		delete(keywords, "typeof")
 		return nil
 	})
-	set.Arg("std", false, func(nm, val string) error {
+	set.Arg("std", false, func(opt, val string) error {
+		args = append(args, fmt.Sprintf("%s=%s", opt, val))
 		if !strings.HasPrefix(val, "gnu") {
 			clone()
 			delete(keywords, "asm")
 			delete(keywords, "typeof")
-			if Dmesgs {
-				Dmesg("asm deleted")
-			}
 		}
 		switch val {
 		case "c89", "c90", "iso9899:1990", "iso9899:199409":
@@ -149,15 +147,7 @@ func newConfig(opts []string) (cc, predefined string, includePaths, sysIncludePa
 		return nil
 	})
 
-	var args []string
 	if err := set.Parse(opts, func(arg string) error {
-		if Dmesgs {
-			Dmesg("arg %q", arg)
-		}
-		if !strings.HasPrefix(arg, "-") {
-			return nil
-		}
-
 		args = append(args, arg)
 		return nil
 	}); err != nil {
@@ -177,10 +167,10 @@ func newConfig(opts []string) (cc, predefined string, includePaths, sysIncludePa
 
 		args := append(opts, "-dM", "-E", "-")
 		pre, err := exec.Command(cc, args...).CombinedOutput()
-		if Dmesgs {
-			Dmesg("newConfig.2 %s %v ----\n%s\n----: %v", cc, args, pre, err)
-		}
 		if err != nil {
+			if Dmesgs {
+				Dmesg("cc: %s %v ----\n%s\n----: %v", cc, args, pre, err)
+			}
 			continue
 		}
 
@@ -199,10 +189,10 @@ func newConfig(opts []string) (cc, predefined string, includePaths, sysIncludePa
 		predefined = strings.Join(a[:w], "\n")
 		args = append(opts, "-v", "-E", "-")
 		out, err := exec.Command(cc, args...).CombinedOutput()
-		if Dmesgs {
-			Dmesg("newConfig.3 %s %v ----\n%s\n----: %v", cc, args, out, err)
-		}
 		if err != nil {
+			if Dmesgs {
+				Dmesg("cc: %s %v ----\n%s\n----: %v", cc, args, pre, err)
+			}
 			continue
 		}
 

@@ -68,6 +68,11 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 `
 )
 
+var (
+	f        io.Writer
+	failFast = os.Getenv("FAKE_CC_FAIL_FAST")
+)
+
 func fail(msg string, args ...interface{}) {
 	if cc.Dmesgs {
 		cc.Dmesg("fail: %s", fmt.Sprintf(msg, args...))
@@ -75,6 +80,39 @@ func fail(msg string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, msg, args...)
 	os.Exit(1)
 }
+
+func report2(result, more string, rc int) {
+	wd, err := os.Getwd()
+	if err != nil {
+		fail("%v\n", err)
+	}
+
+	a := append([]string{result, wd}, fmt.Sprint(os.Args[1:]))
+	if more != "" {
+		a = append(a, more)
+	}
+	if cc.Dmesgs {
+		cc.Dmesg("==== report2 %s %v\n%s\n----", result, rc, strings.Join(a, "\n"))
+	}
+	var b bytes.Buffer
+	if err := json.NewEncoder(&b).Encode(a); err != nil {
+		fail("%v\n", err)
+	}
+
+	if _, err := f.Write(b.Bytes()); err != nil {
+		fail("%v\n", err)
+	}
+
+	if rc >= 0 {
+		os.Exit(rc)
+	}
+
+	if result == "FAIL" && failFast != "" {
+		os.Exit(1)
+	}
+}
+
+func report(result string, rc int) { report2(result, "", rc) }
 
 func main() {
 	if cc.Dmesgs {
@@ -91,44 +129,19 @@ func main() {
 		fail("FAKE_CC_CC not set\n")
 	}
 
-	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_RDWR|os.O_SYNC, 0660)
-	if err != nil {
+	var err error
+	if f, err = os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_RDWR|os.O_SYNC, 0660); err != nil {
 		fail("%v\n", err)
 	}
-
-	report2 := func(result, more string, rc int) {
-		wd, err := os.Getwd()
-		if err != nil {
-			fail("%v\n", err)
-		}
-
-		a := append([]string{result, wd}, os.Args[1:]...)
-		if more != "" {
-			a = append(a, more)
-		}
-		if cc.Dmesgs {
-			cc.Dmesg("====\n%s----", strings.Join(a, "\n"))
-		}
-		var b bytes.Buffer
-		if err := json.NewEncoder(&b).Encode(a); err != nil {
-			fail("%v\n", err)
-		}
-
-		if _, err := f.Write(b.Bytes()); err != nil {
-			fail("%v\n", err)
-		}
-
-		if rc >= 0 {
-			os.Exit(rc)
-		}
-	}
-	report := func(result string, rc int) { report2(result, "", rc) }
 
 	cmd := exec.Command(CC, os.Args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
+		if cc.Dmesgs {
+			cc.Dmesg("host C compiler returns %v", err.(*exec.ExitError).ExitCode())
+		}
 		report("SKIP", err.(*exec.ExitError).ExitCode())
 	}
 
@@ -137,15 +150,11 @@ func main() {
 	var E bool
 	set.Arg("D", true, func(opt, arg string) error {
 		D = append(D, arg)
-		if cc.Dmesgs {
-			cc.Dmesg("DDDD %q %q %q", opt, arg, D)
-		}
 		return nil
 	})
 	set.Arg("I", true, func(opt, arg string) error { I = append(I, arg); return nil })
 	set.Arg("U", true, func(opt, arg string) error { U = append(U, arg); return nil })
 	set.Opt("E", func(opt string) error { E = true; return nil })
-	set.Opt("MM", func(opt string) error { os.Exit(0); return nil })
 	var inputs []string
 	if err := set.Parse(os.Args[1:], func(arg string) error {
 		if strings.HasPrefix(arg, "-") {
@@ -167,10 +176,7 @@ func main() {
 
 	I = I[:len(I):len(I)]
 	os.Setenv("CC", CC)
-	if cc.Dmesgs {
-		cc.Dmesg("CC now set to %s", CC)
-	}
-	cfg, err := cc.NewConfig(runtime.GOOS, runtime.GOARCH, os.Args[1:]...)
+	cfg, err := cc.NewConfig(runtime.GOOS, runtime.GOARCH, sanitize(os.Args[1:])...)
 	if err != nil {
 		fail("%v\n", err)
 	}
@@ -209,6 +215,83 @@ func main() {
 
 		report("PASS", -1)
 	}
+}
+
+// Returns args suitable for passing to cc.NewConfig. Removes source file arguments.
+// Fails on unknown/unsupported flags.
+func sanitize(args []string) (r []string) {
+	var fails []string
+	set := opt.NewSet()
+
+	// Pass
+	set.Arg("D", true, func(opt, val string) error { r = append(r, fmt.Sprintf("%s%s", opt, val)); return nil })
+	set.Arg("O", true, func(opt, val string) error { r = append(r, fmt.Sprintf("%s%s", opt, val)); return nil })
+	set.Arg("U", true, func(opt, val string) error { r = append(r, fmt.Sprintf("%s%s", opt, val)); return nil })
+	set.Arg("std", true, func(opt, val string) error { r = append(r, fmt.Sprintf("%s=%s", opt, val)); return nil })
+	set.Opt("pthread", func(opt string) error { r = append(r, opt); return nil })
+
+	// Ignore
+	set.Arg("I", true, func(opt, val string) error { return nil })
+	set.Arg("MF", true, func(opt, val string) error { return nil })
+	set.Arg("MQ", true, func(opt, val string) error { return nil })
+	set.Arg("MT", true, func(opt, val string) error { return nil })
+	set.Arg("l", true, func(opt, val string) error { return nil })
+	set.Arg("o", true, func(opt, val string) error { return nil })
+	set.Opt("E", func(opt string) error { return nil })
+	set.Opt("M", func(opt string) error { return nil })
+	set.Opt("MD", func(opt string) error { return nil })
+	set.Opt("MM", func(opt string) error { return nil })
+	set.Opt("MMD", func(opt string) error { return nil })
+	set.Opt("MP", func(opt string) error { return nil })
+	set.Opt("S", func(opt string) error { return nil })
+	set.Opt("c", func(opt string) error { return nil })
+	set.Opt("nostdinc", func(opt string) error { return nil })
+	set.Opt("nostdlib", func(opt string) error { return nil })
+	set.Opt("pedantic", func(opt string) error { return nil })
+	set.Opt("pipe", func(opt string) error { return nil })
+	set.Opt("s", func(opt string) error { return nil })
+	set.Opt("shared", func(opt string) error { return nil })
+	set.Opt("static", func(opt string) error { return nil })
+	set.Opt("w", func(opt string) error { return nil })
+
+	if err := set.Parse(os.Args[1:], func(opt string) error {
+		if strings.HasPrefix(opt, "-W") {
+			return nil
+		}
+
+		if strings.HasPrefix(opt, "-dump") {
+			return nil
+		}
+
+		if strings.HasPrefix(opt, "-f") {
+			return nil
+		}
+
+		if strings.HasPrefix(opt, "-g") {
+			return nil
+		}
+
+		if strings.HasPrefix(opt, "-m") {
+			return nil
+		}
+
+		if strings.HasPrefix(opt, "-") {
+			fails = append(fails, opt)
+			return nil
+		}
+
+		if !strings.HasSuffix(opt, ".c") && !strings.HasSuffix(opt, ".h") {
+			r = append(r, opt)
+		}
+		return nil
+	}); err != nil || len(fails) != 0 {
+		report2("FAIL", fmt.Sprintf("sanitize: %v %v\n", fails, err), 1)
+	}
+
+	if cc.Dmesgs {
+		cc.Dmesg("sanitize %v -> %v", args, r)
+	}
+	return r
 }
 
 func buildDefs(D, U []string) string {

@@ -134,9 +134,6 @@ func newParser(cfg *Config, sources []Source) (*parser, error) {
 		{Ch: ';'},
 	}
 	if cfg.keywords == nil {
-		if Dmesgs {
-			Dmesg("using defaultKeywords")
-		}
 		cfg.keywords = defaultKeywords
 	}
 	funcTokens = funcTokens[:len(funcTokens):len(funcTokens)]

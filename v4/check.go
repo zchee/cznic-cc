@@ -54,7 +54,6 @@ type ctx struct {
 	pcharT       Type
 	ptrDiffT0    Type
 	pvoidT       Type
-	pwcharT0     Type
 	sizeT0       Type
 	voidT        Type
 	wcharT0      Type
@@ -258,13 +257,6 @@ func (c *ctx) sizeT(n Node) Type {
 		}
 	}
 	return c.sizeT0
-}
-
-func (c *ctx) pwcharT(n Node) Type {
-	if c.pwcharT0 == nil {
-		c.pwcharT0 = c.newPointerType(c.wcharT(n))
-	}
-	return c.pwcharT0
 }
 
 type typer struct{ typ Type }
@@ -1069,7 +1061,7 @@ func (n *Designator) index(c *ctx) (lo, hi int64) {
 			return -1, -1
 		}
 
-		return lo, -1
+		return lo, hi
 	case DesignatorIndex2: // '[' ConstantExpression "..." ConstantExpression ']'
 		lo = arrayIndex(c, n.ConstantExpression)
 		hi = arrayIndex(c, n.ConstantExpression2)
@@ -1690,12 +1682,12 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 //          AttributeSpecifier
 //  |       AttributeSpecifierList AttributeSpecifier
 func (n *AttributeSpecifierList) check(c *ctx) *Attributes {
-	var attr Attributes
+	attr := newAttributes()
 	for ; n != nil; n = n.AttributeSpecifierList {
-		n.AttributeSpecifier.check(c, &attr)
+		n.AttributeSpecifier.check(c, attr)
 	}
 	if attr.isNonZero {
-		return &attr
+		return attr
 	}
 
 	return nil
@@ -1972,7 +1964,7 @@ func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 
 		c.errors.add(errorf("%v: undefined type name: %s", n.Position(), n.Token.Src()))
 	case TypeSpecifierTypeofExpr: // "typeof" '(' ExpressionList ')'
-		return n.ExpressionList.check(c, decay)
+		return n.ExpressionList.check(c, 0)
 	case TypeSpecifierTypeofType: // "typeof" '(' TypeName ')'
 		return n.TypeName.check(c)
 	case TypeSpecifierAtomic: // AtomicTypeSpecifier
@@ -2045,7 +2037,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 			t = c.intT
 		case min >= 0 && max <= math.MaxUint32:
 			t = c.ast.kinds[UInt]
-		case min >= math.MinInt64 && max < math.MaxInt64:
+		case max < math.MaxInt64:
 			t = c.ast.kinds[Long]
 			if t.Size() < 8 {
 				t = c.ast.kinds[LongLong]
@@ -3176,12 +3168,7 @@ out:
 				break out
 			}
 
-			switch {
-			case args[0].Type().Decay().isCompatible(args[1].Type().Decay()):
-				n.val = int1
-			default:
-				n.val = int0
-			}
+			n.val = bool2int(args[0].Type().isCompatible(args[1].Type()))
 			break out
 		case "__builtin_constant_p":
 			n.typ = c.intT
@@ -3191,12 +3178,7 @@ out:
 				break out
 			}
 
-			switch args[0].Value() {
-			case nil, Unknown:
-				n.val = int0
-			default:
-				n.val = int1
-			}
+			n.val = bool2int(args[0].Value() != Unknown)
 			break out
 		default:
 			mode = mode.add(implicitFuncDef)

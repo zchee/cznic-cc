@@ -15,9 +15,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"modernc.org/mathutil"
 	"modernc.org/strutil"
-	mtoken "modernc.org/token"
 )
 
 var (
@@ -219,14 +217,14 @@ func tokens2CppTokens(s []Token, skipFirstSep bool) (r []cppToken) {
 	return r
 }
 
-func preprocessingTokens2Tokens(s []cppToken) (r []Token) {
-	for _, v := range s {
-		if v.Ch != ' ' {
-			r = append(r, v.Token)
-		}
-	}
-	return r
-}
+// func preprocessingTokens2Tokens(s []cppToken) (r []Token) {
+// 	for _, v := range s {
+// 		if v.Ch != ' ' {
+// 			r = append(r, v.Token)
+// 		}
+// 	}
+// 	return r
+// }
 
 func toksTrim(s cppTokens) cppTokens {
 	for len(s) != 0 && s[0].Ch == ' ' {
@@ -435,16 +433,16 @@ func extractPos(s string) (p token.Position, ok bool) {
 	return token.Position{Filename: prefix + a[0], Line: line, Column: col}, true
 }
 
-func findPosition(n Node) (r mtoken.Position) {
-	var out Node
-	var depth int
-	findNode("Token", n, mathutil.MaxInt, &out, &depth)
-	if x, ok := out.(Token); ok {
-		return x.Position()
-	}
-
-	return r
-}
+// func findPosition(n Node) (r mtoken.Position) {
+// 	var out Node
+// 	var depth int
+// 	findNode("Token", n, mathutil.MaxInt, &out, &depth)
+// 	if x, ok := out.(Token); ok {
+// 		return x.Position()
+// 	}
+//
+// 	return r
+// }
 
 func findNode(typ string, n Node, depth int, out *Node, pdepth *int) {
 	if depth >= *pdepth {
@@ -509,6 +507,7 @@ func bool2int(b bool) Int64Value {
 	return int0
 }
 
+//lint:ignore U1000 debug helper
 func pos(n Node) (r token.Position) {
 	if n != nil {
 		r = token.Position(n.Position())
@@ -517,6 +516,7 @@ func pos(n Node) (r token.Position) {
 	return r
 }
 
+//lint:ignore U1000 debug helper
 func position(n Node) (r token.Position) {
 	if n != nil {
 		r = token.Position(n.Position())

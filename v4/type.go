@@ -602,13 +602,7 @@ func (n *FunctionType) Undecay() Type { return n }
 func (n *FunctionType) FieldAlign() int { return 1 }
 
 // IsIncomplete implements Type.
-func (n *FunctionType) IsIncomplete() bool {
-	if n == nil {
-		return true
-	}
-
-	return false
-}
+func (n *FunctionType) IsIncomplete() bool { return n == nil }
 
 // Kind implements Type.
 func (n *FunctionType) Kind() Kind { return Function }
@@ -735,13 +729,7 @@ func (n *PointerType) FieldAlign() int {
 }
 
 // IsIncomplete implements Type.
-func (n *PointerType) IsIncomplete() bool {
-	if n == nil {
-		return true
-	}
-
-	return false
-}
+func (n *PointerType) IsIncomplete() bool { return n == nil }
 
 // Kind implements Type.
 func (n *PointerType) Kind() Kind { return Ptr }
@@ -1654,7 +1642,7 @@ func (n *EnumType) str(b *strings.Builder, useTag bool) *strings.Builder {
 	return b
 }
 
-func isObjectType(t Type) bool { return t.Kind() != Function && !t.IsIncomplete() }
+// func isObjectType(t Type) bool { return t.Kind() != Function && !t.IsIncomplete() }
 
 func isLvalue(t Type) bool { return t.Kind() != Function && t.Kind() != Void }
 

@@ -730,11 +730,13 @@ func (c *cpp) shift() (r Token) {
 	return r
 }
 
+//lint:ignore U1000 debug helper
 func (c *cpp) indent() string {
 	c.indentLevel++
 	return fmt.Sprintf("\t%s", strings.Repeat("· ", c.indentLevel-1))
 }
 
+//lint:ignore U1000 debug helper
 func (c *cpp) undent() string {
 	c.indentLevel--
 	return fmt.Sprintf("\t%s", strings.Repeat("· ", c.indentLevel))
@@ -830,8 +832,6 @@ ret:
 	if !outer {
 		goto more
 	}
-
-	return
 }
 
 // [1], pg 2.
@@ -1268,11 +1268,6 @@ func (c *cpp) apSelect(m *Macro, t cppToken, AP []cppTokens, i int) cppTokens {
 	return c.varArgs(t, AP[i:])
 }
 
-func (c *cpp) varArgsP(t cppToken, AP []cppTokens) *cppTokens {
-	r := c.varArgs(t, AP)
-	return &r
-}
-
 func (c *cpp) varArgs(t cppToken, AP []cppTokens) (r cppTokens) {
 	// trc("  %s%v %v (%v)", c.indent(), &t, toksDump(AP), origin(2))
 	// defer func() { trc("->%sout %v", c.undent(), toksDump(r)) }()
@@ -1691,20 +1686,6 @@ func (c *cpp) includeArg(s cppTokens) (r string) {
 	default:
 		return ""
 	}
-}
-
-func (c *cpp) sysInclude(n Node, nm string) {
-	var err error
-	var g group
-	for _, v := range c.cfg.SysIncludePaths {
-		pth := filepath.Join(v, nm)
-		if g, err = c.group(Source{pth, nil, c.cfg.FS}); err == nil {
-			c.push(g)
-			return
-		}
-	}
-
-	c.eh("%v: include file not found: %s", n.Position(), nm)
 }
 
 func (c *cpp) ifGroup(ig *ifGroup) bool {
@@ -2581,12 +2562,12 @@ func (c *cpp) intConst(t Token) (r interface{}) {
 		}
 
 		return int64(n)
+	case "llu", "lu", "u", "ul", "ull":
+		return n
 	default:
 		panic(todo(""))
 		// c.err(t, "invalid suffix: %v", s0)
 		// fallthrough
-	case "llu", "lu", "u", "ul", "ull":
-		return n
 	}
 }
 
