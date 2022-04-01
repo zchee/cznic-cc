@@ -53,6 +53,9 @@ func (n *Declarator) IsAtomic() bool { return n.isAtomic }
 // was present in the declaration of n.
 func (n *Declarator) IsThreadLocal() bool { return n.isThreadLocal }
 
+// IsTypename reports whether n is a typedef.
+func (n *Declarator) IsTypename() bool { return n.isTypename }
+
 // Alignas reports whether the _Alignas specifier was present in the
 // declaration specifiers of n, if non-zero.
 func (n *Declarator) Alignas() int { return n.alignas }
