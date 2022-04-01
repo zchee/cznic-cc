@@ -92,6 +92,10 @@ func (n *DirectDeclarator) isFn() bool {
 // PrimaryExpressionIdent.
 func (n *PrimaryExpression) ResolvedTo() Node { return n.resolvedTo }
 
+// Macro returns the single token, object-like, constant macro that produced
+// this node, if any.
+func (n *PrimaryExpression) Macro() *Macro { return n.m }
+
 // Associated returns the selected association of n, if any.
 func (n *GenericSelection) Associated() *GenericAssociation { return n.assoc }
 

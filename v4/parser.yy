@@ -133,10 +133,11 @@ package cc // import "modernc.org/cc/v4"
 %%
 
 		        /* [0], 6.5.1 Primary expressions */
+			/*yy:field	m	*Macro		*/
 			/*yy:field	resolutionScope	*Scope	*/
 			/*yy:field	resolvedTo	Node	*/
-			/*yy:field	typer	*/
-			/*yy:field	valuer	*/
+			/*yy:field	typer			*/
+			/*yy:field	valuer			*/
 			/*yy:example int i = x; */
 /*yy:case Ident      */
 			PrimaryExpression:

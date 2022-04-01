@@ -334,15 +334,17 @@ func (p *parser) parse() (ast *AST, err error) {
 		errors = append(errors, s)
 	}
 	tu := p.translationUnit()
+	p.cpp.mmap = nil
 	switch p.rune(false) {
 	case eof:
 		t := p.shift(false)
 		t.Set(append(p.prevNL.Sep(), p.prevNL.Src()...), nil)
 		return &AST{
 			ABI:             p.cpp.cfg.ABI,
-			TranslationUnit: tu,
 			EOF:             t,
-			scope:           p.scope,
+			Macros:          p.cpp.macros,
+			Scope:           p.scope,
+			TranslationUnit: tu,
 		}, errors.err()
 	default:
 		t := p.shift(false)
@@ -2241,19 +2243,19 @@ func (p *parser) primaryExpression(checkTypeName bool) (r *PrimaryExpression) {
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 		return nil
 	case rune(CHARCONST):
-		return &PrimaryExpression{Case: PrimaryExpressionChar, Token: p.shift(false)}
+		r = &PrimaryExpression{Case: PrimaryExpressionChar, Token: p.shift(false)}
 	case rune(FLOATCONST):
-		return &PrimaryExpression{Case: PrimaryExpressionFloat, Token: p.shift(false)}
+		r = &PrimaryExpression{Case: PrimaryExpressionFloat, Token: p.shift(false)}
 	case rune(IDENTIFIER):
-		return &PrimaryExpression{Case: PrimaryExpressionIdent, Token: p.shift(false), resolutionScope: p.scope}
+		r = &PrimaryExpression{Case: PrimaryExpressionIdent, Token: p.shift(false), resolutionScope: p.scope}
 	case rune(INTCONST):
-		return &PrimaryExpression{Case: PrimaryExpressionInt, Token: p.shift(false)}
+		r = &PrimaryExpression{Case: PrimaryExpressionInt, Token: p.shift(false)}
 	case rune(LONGCHARCONST):
-		return &PrimaryExpression{Case: PrimaryExpressionLChar, Token: p.shift(false)}
+		r = &PrimaryExpression{Case: PrimaryExpressionLChar, Token: p.shift(false)}
 	case rune(LONGSTRINGLITERAL):
-		return &PrimaryExpression{Case: PrimaryExpressionLString, Token: p.shift(false)}
+		r = &PrimaryExpression{Case: PrimaryExpressionLString, Token: p.shift(false)}
 	case rune(STRINGLITERAL):
-		return &PrimaryExpression{Case: PrimaryExpressionString, Token: p.shift(false)}
+		r = &PrimaryExpression{Case: PrimaryExpressionString, Token: p.shift(false)}
 	case '(':
 		switch p.peek(1, false).Ch {
 		case '{':
@@ -2268,6 +2270,8 @@ func (p *parser) primaryExpression(checkTypeName bool) (r *PrimaryExpression) {
 		p.cpp.eh("%v: unexpected %v, expected primary expression", t.Position(), runeName(t.Ch))
 		return nil
 	}
+	r.m = p.cpp.mmap[mmapKey{r.Token.s, r.Token.pos}]
+	return r
 }
 
 // generic-selection:

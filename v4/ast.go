@@ -3827,6 +3827,7 @@ func (n PrimaryExpressionCase) String() string {
 //	|       '(' CompoundStatement ')'  // Case PrimaryExpressionStmt
 //	|       GenericSelection           // Case PrimaryExpressionGeneric
 type PrimaryExpression struct {
+	m               *Macro
 	resolutionScope *Scope
 	resolvedTo      Node
 	typer

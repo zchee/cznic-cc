@@ -5,6 +5,7 @@
 package cc // import "modernc.org/cc/v4"
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"os"
@@ -388,6 +389,7 @@ type Macro struct {
 	MinArgs int // m x: 0, m() x: 0, m(...): 0, m(a) a: 1, m(a, ...): 1, m(a, b): 2, m(a, b, ...): 2.
 	VarArg  int // m(a): -1, m(...): 0, m(a, ...): 1, m(a...): 0, m(a, b...): 1.
 
+	IsConst  bool // Defined only once or all definitions are the same.
 	IsFnLike bool // m: false, m(): true, m(x): true.
 }
 
@@ -405,6 +407,7 @@ func newMacro(nm Token, params []Token, replList []cppToken, minArgs, varArg int
 		}
 	}
 	return &Macro{
+		IsConst:         true,
 		IsFnLike:        isFnLike,
 		MinArgs:         minArgs,
 		Name:            nm,
@@ -413,6 +416,30 @@ func newMacro(nm Token, params []Token, replList []cppToken, minArgs, varArg int
 		params:          fp,
 		replacementList: replList,
 	}, nil
+}
+
+func (m *Macro) isSame(n *Macro) bool {
+	if !bytes.Equal(m.Name.Src(), n.Name.Src()) ||
+		len(m.params) != len(n.params) ||
+		len(m.replacementList) != len(n.replacementList) ||
+		m.MinArgs != n.MinArgs ||
+		m.VarArg != n.VarArg ||
+		m.IsFnLike != n.IsFnLike {
+		return false
+	}
+
+	for i, v := range m.params {
+		if n.params[i] != v {
+			return false
+		}
+	}
+	for i, v := range m.replacementList {
+		if !bytes.Equal(v.Src(), n.replacementList[i].Src()) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (m *Macro) is(s string) int {
@@ -666,6 +693,11 @@ func (p *cppTokens) rune() rune {
 	return p.peek(0).Ch
 }
 
+type mmapKey struct {
+	s   *scannerSource
+	pos uint32
+}
+
 // cpp is the C preprocessor.
 type cpp struct {
 	cfg         *Config
@@ -674,6 +706,7 @@ type cpp struct {
 	groups      map[string]group
 	indentLevel int // debug dumps
 	macros      map[string]*Macro
+	mmap        map[mmapKey]*Macro
 	sources     []Source
 	stack       []interface{}
 	tok         Token
@@ -701,9 +734,10 @@ func newCPP(cfg *Config, sources []Source, eh errHandler) (*cpp, error) {
 	}
 	c := &cpp{
 		cfg:     cfg,
-		groups:  map[string]group{},
 		eh:      eh,
+		groups:  map[string]group{},
 		macros:  map[string]*Macro{},
+		mmap:    map[mmapKey]*Macro{},
 		sources: sources,
 	}
 	c.tokenizer = newTokenizer(c)
@@ -839,12 +873,18 @@ func (c *cpp) subst(eval bool, m *Macro, IS cppTokens, FP []string, AP []cppToke
 	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	var expandedArgs map[int]cppTokens
+	is0 := IS
 more:
 	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(IS))
 	if len(IS) == 0 {
 		// if IS is {} then
 		//	return hsadd(HS,OS);
-		return c.hsAdd(HS, OS)
+		r = c.hsAdd(HS, OS)
+		if !m.IsFnLike && len(is0) == 1 && m.IsConst && len(r) == 1 {
+			t := r[0]
+			c.mmap[mmapKey{t.s, t.pos}] = m
+		}
+		return r
 	}
 
 	t := IS[0]
@@ -1126,6 +1166,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		nmt := t
 		t.Ch = rune(PPNUMBER)
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
+		m.IsConst = false
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -1147,6 +1188,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		t.Ch = rune(STRINGLITERAL)
 		t.Set(t.Sep(), []byte(fmt.Sprintf(`"%s"`, t.Position().Filename)))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
+		m.IsConst = false
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -1159,6 +1201,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		t.Ch = rune(PPNUMBER)
 		t.Set(t.Sep(), []byte(fmt.Sprintf(`%d`, t.Position().Line)))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
+		m.IsConst = false
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -1183,6 +1226,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		t.Ch = rune(STRINGLITERAL)
 		t.Set(t.Sep(), []byte(time.Now().Format("\"15:04:05\"")))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
+		m.IsConst = false
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -2731,6 +2775,9 @@ func (c *cpp) newMacro(nm Token, params []Token, replList []cppToken, minArgs, v
 		return
 	}
 
+	if ex := c.macros[s]; ex != nil && (!ex.IsConst || !m.isSame(ex)) {
+		m.IsConst = false
+	}
 	c.macros[s] = m
 }
 

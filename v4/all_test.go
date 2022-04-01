@@ -1394,6 +1394,7 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 			}
 		}
 		apth := pth
+		afi := fi
 		p.exec(func() {
 			if *oTrace {
 				fmt.Fprintln(os.Stderr, apth)
@@ -1447,8 +1448,8 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 
 			defer f.Close()
 
-			b := make([]byte, fi.Size())
-			if n, _ := f.Read(b); int64(n) != fi.Size() {
+			b := make([]byte, afi.Size())
+			if n, _ := f.Read(b); int64(n) != afi.Size() {
 				err = errorf("%v: short read", apth)
 				return
 			}

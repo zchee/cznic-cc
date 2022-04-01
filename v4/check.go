@@ -216,7 +216,7 @@ func (c *ctx) decay(t Type, mode flags) Type {
 
 func (c *ctx) wcharT(n Node) Type {
 	if c.wcharT0 == nil {
-		if s := c.ast.scope.Nodes["wchar_t"]; len(s) != 0 {
+		if s := c.ast.Scope.Nodes["wchar_t"]; len(s) != 0 {
 			if d, ok := s[0].(*Declarator); ok && d.isTypename {
 				c.wcharT0 = d.Type()
 			}
@@ -231,7 +231,7 @@ func (c *ctx) wcharT(n Node) Type {
 
 func (c *ctx) ptrDiffT(n Node) Type {
 	if c.ptrDiffT0 == nil {
-		if s := c.ast.scope.Nodes["ptrdiff_t"]; len(s) != 0 {
+		if s := c.ast.Scope.Nodes["ptrdiff_t"]; len(s) != 0 {
 			if d, ok := s[0].(*Declarator); ok && d.isTypename {
 				c.ptrDiffT0 = d.Type()
 			}
@@ -246,7 +246,7 @@ func (c *ctx) ptrDiffT(n Node) Type {
 
 func (c *ctx) sizeT(n Node) Type {
 	if c.sizeT0 == nil {
-		if s := c.ast.scope.Nodes["size_t"]; len(s) != 0 {
+		if s := c.ast.Scope.Nodes["size_t"]; len(s) != 0 {
 			if d, ok := s[0].(*Declarator); ok && d.isTypename {
 				c.sizeT0 = d.Type()
 			}
@@ -307,9 +307,10 @@ func (v valuer) Value() Value {
 type AST struct {
 	ABI             *ABI
 	EOF             Token
+	Macros          map[string]*Macro
+	Scope           *Scope // File scope.
 	TranslationUnit *TranslationUnit
 	kinds           map[Kind]Type
-	scope           *Scope
 }
 
 func (n *AST) check() error {
@@ -2066,7 +2067,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 		}
 
 		n.typ = c.newEnumType(tag, nil, nil)
-		c.ast.scope.declare(tag, n)
+		c.ast.Scope.declare(tag, n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2159,7 +2160,7 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 		default:
 			n.typ = c.newStructType(tag, nil, -1, 1)
 		}
-		c.ast.scope.declare(tag, n)
+		c.ast.Scope.declare(tag, n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
