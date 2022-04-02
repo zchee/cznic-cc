@@ -36,6 +36,32 @@ var (
 	int0 = Int64Value(0)
 )
 
+type valuer struct{ val Value }
+
+// Value returns the value of a node or UnknownValue if it is undetermined. The
+// dynamic type of a Value is one of
+//
+//	*ComplexLongDoubleValue
+//	*LongDoubleValue
+//	*UnknownValue
+//	*ZeroValue
+//	Complex128Value
+//	Complex64Value
+//	Float64Value
+//	Int64Value
+//	StringValue
+//	UInt64Value
+//	UTF16StringValue
+//	UTF32StringValue
+//	VoidValue
+func (v valuer) Value() Value {
+	if v.val != nil {
+		return v.val
+	}
+
+	return Unknown
+}
+
 type Value interface {
 	isValue()
 }

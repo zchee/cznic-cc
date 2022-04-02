@@ -984,6 +984,7 @@ func (n *CastExpression) Position() (r token.Position) {
 //	CompoundStatement:
 //	        '{' BlockItemList '}'
 type CompoundStatement struct {
+	scope         *Scope
 	BlockItemList *BlockItemList
 	Token         Token
 	Token2        Token

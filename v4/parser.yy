@@ -848,6 +848,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Default    */ |	"default" ':' Statement
 
 			/* [0], 6.8.2 Compound statement */
+			/*yy:field	scope	*Scope	*/
 			/*yy:example int f() { __label__ L; int i; } 		*/
 			CompoundStatement:
 				'{' BlockItemList '}'

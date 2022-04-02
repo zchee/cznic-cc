@@ -143,6 +143,104 @@ func newCtx(ast *AST) *ctx {
 	return c
 }
 
+func (c *ctx) checkScope(s *Scope) {
+	for _, ns := range s.Nodes {
+		var (
+			ds  []*Declarator
+			es  []*Enumerator
+			ess []*EnumSpecifier
+			lds []*LabelDeclaration
+			lss []*LabeledStatement
+			ps  []*Parameter
+			sus []*StructOrUnionSpecifier
+		)
+		for _, n := range ns {
+			switch x := n.(type) {
+			case *Declarator:
+				ds = append(ds, x)
+			case *Enumerator:
+				es = append(es, x)
+			case *EnumSpecifier:
+				ess = append(ess, x)
+			case *LabelDeclaration:
+				lds = append(lds, x)
+			case *LabeledStatement:
+				lss = append(lss, x)
+			case *Parameter:
+				ps = append(ps, x)
+			case *StructOrUnionSpecifier:
+				sus = append(sus, x)
+			default:
+				c.errors.add(errorf("TODO %T", x))
+			}
+		}
+		if len(ds) > 1 {
+			a := ds[0]
+			t := a.Type()
+			switch {
+			case s.Parent != nil:
+				if t.Kind() != Function {
+					c.errors.add(errorf("%v: redeclaration of '%s' at %v:", a.Position(), a.Name(), ds[1].Position()))
+					break
+				}
+
+				fallthrough
+			case s.Parent == nil:
+				for _, b := range ds[1:] {
+					u := b.Type()
+					if !t.isCompatible(u) {
+						c.errors.add(errorf("%v: conflicting types for '%s', previous declaration at %v, %s and %s", b.Position(), a.Name(), a.Position(), t, u))
+						return
+					}
+				}
+
+				switch {
+				case t.Kind() == Function:
+					f := t.(*FunctionType)
+					if len(f.fp) != 0 {
+						break
+					}
+
+					for _, b := range ds[1:] {
+						if g := b.Type().(*FunctionType); len(g.fp) != 0 {
+							t = g
+							break
+						}
+					}
+				case t.IsIncomplete():
+					for _, b := range ds[1:] {
+						if u := b.Type(); !u.IsIncomplete() {
+							t = u
+							break
+						}
+					}
+				}
+				for i := range ds {
+					ds[i].typ = t
+				}
+			}
+		}
+		if len(ess) > 1 {
+			c.errors.add(errorf("TODO %T", ess[0]))
+		}
+		if len(es) > 1 {
+			c.errors.add(errorf("TODO %T", es[0]))
+		}
+		if len(lds) > 1 {
+			c.errors.add(errorf("TODO %T", lds[0]))
+		}
+		if len(lss) > 1 {
+			c.errors.add(errorf("TODO %T", lss[0]))
+		}
+		if len(ps) > 1 {
+			c.errors.add(errorf("TODO %T", lss[0]))
+		}
+		if len(sus) > 1 {
+			c.errors.add(errorf("TODO %T", sus[0]))
+		}
+	}
+}
+
 func (c *ctx) convert(v Value, t Type) (r Value) {
 	if v == nil || v == Unknown {
 		return Unknown
@@ -217,8 +315,15 @@ func (c *ctx) decay(t Type, mode flags) Type {
 func (c *ctx) wcharT(n Node) Type {
 	if c.wcharT0 == nil {
 		if s := c.ast.Scope.Nodes["wchar_t"]; len(s) != 0 {
-			if d, ok := s[0].(*Declarator); ok && d.isTypename {
+			if d, ok := s[0].(*Declarator); ok && d.isTypename && d.Type() != Invalid {
 				c.wcharT0 = d.Type()
+			}
+		}
+		if c.wcharT0 == nil {
+			if s := c.ast.Scope.Nodes["__predefined_wchar_t"]; len(s) != 0 {
+				if d, ok := s[0].(*Declarator); ok && d.isTypename && d.Type() != Invalid {
+					c.wcharT0 = d.Type()
+				}
 			}
 		}
 		if c.wcharT0 == nil {
@@ -232,8 +337,15 @@ func (c *ctx) wcharT(n Node) Type {
 func (c *ctx) ptrDiffT(n Node) Type {
 	if c.ptrDiffT0 == nil {
 		if s := c.ast.Scope.Nodes["ptrdiff_t"]; len(s) != 0 {
-			if d, ok := s[0].(*Declarator); ok && d.isTypename {
+			if d, ok := s[0].(*Declarator); ok && d.isTypename && d.Type() != Invalid {
 				c.ptrDiffT0 = d.Type()
+			}
+		}
+		if c.ptrDiffT0 == nil {
+			if s := c.ast.Scope.Nodes["__predefined_ptrdiff_t"]; len(s) != 0 {
+				if d, ok := s[0].(*Declarator); ok && d.isTypename && d.Type() != Invalid {
+					c.ptrDiffT0 = d.Type()
+				}
 			}
 		}
 		if c.ptrDiffT0 == nil {
@@ -247,8 +359,15 @@ func (c *ctx) ptrDiffT(n Node) Type {
 func (c *ctx) sizeT(n Node) Type {
 	if c.sizeT0 == nil {
 		if s := c.ast.Scope.Nodes["size_t"]; len(s) != 0 {
-			if d, ok := s[0].(*Declarator); ok && d.isTypename {
+			if d, ok := s[0].(*Declarator); ok && d.isTypename && d.Type() != Invalid {
 				c.sizeT0 = d.Type()
+			}
+		}
+		if c.sizeT0 == nil {
+			if s := c.ast.Scope.Nodes["__predefined_size_t"]; len(s) != 0 {
+				if d, ok := s[0].(*Declarator); ok && d.isTypename && d.Type() != Invalid {
+					c.sizeT0 = d.Type()
+				}
 			}
 		}
 		if c.sizeT0 == nil {
@@ -259,50 +378,10 @@ func (c *ctx) sizeT(n Node) Type {
 	return c.sizeT0
 }
 
-type typer struct{ typ Type }
-
-func newTyper(t Type) typer { return typer{typ: t} }
-
-// Type returns the type of a node or an *InvalidType type value, if the type
-// is unknown/undetermined.
-func (t typer) Type() Type {
-	if t.typ != nil {
-		return t.typ
-	}
-
-	return Invalid
-}
-
 type resolver struct{ resolved *Scope }
 
 // ResolvedIn returns the scope an identifier was resolved in, if any.
 func (n resolver) ResolvedIn() *Scope { return n.resolved }
-
-type valuer struct{ val Value }
-
-// Value returns the value of a node or UnknownValue if it is undetermined. The
-// dynamic type of a Value is one of
-//
-//	*ComplexLongDoubleValue
-//	*LongDoubleValue
-//	*UnknownValue
-//	*ZeroValue
-//	Complex128Value
-//	Complex64Value
-//	Float64Value
-//	Int64Value
-//	StringValue
-//	UInt64Value
-//	UTF16StringValue
-//	UTF32StringValue
-//	VoidValue
-func (v valuer) Value() Value {
-	if v.val != nil {
-		return v.val
-	}
-
-	return Unknown
-}
 
 type AST struct {
 	ABI             *ABI
@@ -318,6 +397,7 @@ func (n *AST) check() error {
 	for l := n.TranslationUnit; l != nil; l = l.TranslationUnit {
 		l.ExternalDeclaration.check(c)
 	}
+	c.checkScope(n.Scope)
 	return c.errors.err()
 }
 
@@ -412,6 +492,9 @@ func (n *AsmQualifier) check(c *ctx) {
 func (n *FunctionDefinition) check(c *ctx) {
 	d := n.Declarator
 	d.check(c, n.DeclarationSpecifiers.check(c, &d.isExtern, &d.isStatic, &d.isAtomic, &d.isThreadLocal, &d.isConst, &d.isVolatile, &d.isInline, &d.isRegister, &d.isAuto, &d.isNoreturn, &d.isRestrict, &d.alignas))
+	if x, ok := d.Type().(*FunctionType); ok {
+		x.implicitResult = true
+	}
 	switch d.DirectDeclarator.Case {
 	case DirectDeclaratorFuncIdent:
 		ft, ok := d.Type().(*FunctionType)
@@ -430,6 +513,9 @@ func (n *FunctionDefinition) check(c *ctx) {
 			}
 			ft.fp = append(ft.fp, param)
 		}
+		ft2 := c.newFunctionType2(ft.Result(), ft.fp)
+		ft2.implicitResult = ft.implicitResult
+		d.typ = ft2
 	}
 	c.fnScope = n.scope
 	defer func() { c.fnScope = nil }()
@@ -470,6 +556,7 @@ func (n *CompoundStatement) check(c *ctx) (r Type) {
 	for l := n.BlockItemList; l != nil; l = l.BlockItemList {
 		r = l.BlockItem.check(c)
 	}
+	c.checkScope(n.scope)
 	return r
 }
 
@@ -2067,7 +2154,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 		}
 
 		n.typ = c.newEnumType(tag, nil, nil)
-		c.ast.Scope.declare(tag, n)
+		c.ast.Scope.declare(&c.errors, tag, n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2160,7 +2247,7 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 		default:
 			n.typ = c.newStructType(tag, nil, -1, 1)
 		}
-		c.ast.Scope.declare(tag, n)
+		c.ast.Scope.declare(&c.errors, tag, n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2999,7 +3086,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 
 	defer func() {
 		if r == nil || r == Invalid {
-			c.errors.add(errorf("TODO %T missed/failed type check", n))
+			c.errors.add(errorf("TODO %T missed/failed type check %v", n, n.Case))
 			return
 		}
 	}()

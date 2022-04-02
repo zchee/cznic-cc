@@ -476,7 +476,7 @@ func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundSt
 				if s := dd.params; s != nil {
 					for nm, nodes := range s.Nodes {
 						for _, node := range nodes {
-							p.scope.declare(nm, node)
+							p.scope.declare(p.cpp.eh, nm, node)
 						}
 					}
 				}
@@ -495,7 +495,7 @@ func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundSt
 	if isFnScope && d != nil && !p.cpp.cfg.doNotInjectFunc {
 		p.injectFuncTokens(lbrace, d.Name())
 	}
-	return &CompoundStatement{Token: lbrace, BlockItemList: p.blockItemListOpt(), Token2: p.must('}')}
+	return &CompoundStatement{Token: lbrace, BlockItemList: p.blockItemListOpt(), Token2: p.must('}'), scope: p.scope}
 }
 
 var funcTokensText = [][]byte{
@@ -600,7 +600,7 @@ again:
 func (p *parser) labelDeclaration() (r *LabelDeclaration) {
 	r = &LabelDeclaration{Token: p.shift(false), IdentifierList: p.identifierList(false), Token2: p.must(';')}
 	for l := r.IdentifierList; l != nil; l = l.IdentifierList {
-		p.scope.declare(l.Token2.SrcStr(), r)
+		p.scope.declare(p.cpp.eh, l.Token2.SrcStr(), r)
 	}
 	return r
 }
@@ -806,7 +806,7 @@ func (p *parser) labeledStatement() (r *LabeledStatement) {
 			t := p.shift(false)
 			p.cpp.eh("%v: unexpected label", t.Position())
 		default:
-			p.fnScope.declare(r.Token.SrcStr(), r)
+			p.fnScope.declare(p.cpp.eh, r.Token.SrcStr(), r)
 		}
 		return r
 	default:
@@ -1054,7 +1054,7 @@ func (p *parser) declaration(ds *DeclarationSpecifiers, d *Declarator, declare b
 		r.Initializer = p.initializer()
 		r.Token3 = p.must(';')
 		r.Declarator.visible = visible(r.Token3.seq)
-		p.scope.declare(nm.SrcStr(), r.Declarator)
+		p.scope.declare(p.cpp.eh, nm.SrcStr(), r.Declarator)
 		return r
 	}
 
@@ -2323,7 +2323,7 @@ func (p *parser) declarator(ptr *Pointer, ds *DeclarationSpecifiers, declare boo
 	}
 	if declare {
 		r.visible = visible(p.seq) // [0]6.2.1,7
-		p.scope.declare(r.Name(), r)
+		p.scope.declare(p.cpp.eh, r.Name(), r)
 	}
 	return r
 }
@@ -2421,7 +2421,7 @@ func (p *parser) identifierList(declare bool) (r *IdentifierList) {
 		r = &IdentifierList{Token2: p.shift(false)}
 		if declare {
 			param := &Parameter{name: r.Token2, visible: visible(r.Token2.seq)}
-			p.scope.declare(r.Token2.SrcStr(), param)
+			p.scope.declare(p.cpp.eh, r.Token2.SrcStr(), param)
 			r.parameters = append(r.parameters, param)
 		}
 	default:
@@ -2436,7 +2436,7 @@ func (p *parser) identifierList(declare bool) (r *IdentifierList) {
 		il := &IdentifierList{Token: p.shift(false), Token2: p.must(rune(IDENTIFIER))}
 		if declare {
 			param := &Parameter{name: il.Token2, visible: visible(il.Token2.seq)}
-			p.scope.declare(il.Token2.SrcStr(), param)
+			p.scope.declare(p.cpp.eh, il.Token2.SrcStr(), param)
 			r0.parameters = append(r0.parameters, param)
 		}
 		prev.IdentifierList = il
@@ -2570,7 +2570,7 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 				r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 				if declare {
 					r.visible = visible(p.seq) // [0]6.2.1,7
-					p.scope.declare(r.Name(), r)
+					p.scope.declare(p.cpp.eh, r.Name(), r)
 				}
 				return r
 			default:
@@ -2593,7 +2593,7 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 				r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 				if declare {
 					r.visible = visible(p.seq) // [0]6.2.1,7
-					p.scope.declare(r.Name(), r)
+					p.scope.declare(p.cpp.eh, r.Name(), r)
 				}
 				return r
 			default:
@@ -2631,7 +2631,7 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 					if declare {
 						r.visible = visible(p.seq) // [0]6.2.1,7
-						p.scope.declare(r.Name(), r)
+						p.scope.declare(p.cpp.eh, r.Name(), r)
 					}
 					return r
 				default:
@@ -2647,7 +2647,7 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					r := &Declarator{Pointer: ptr0, DirectDeclarator: dd}
 					if declare {
 						r.visible = visible(p.seq) // [0]6.2.1,7
-						p.scope.declare(r.Name(), r)
+						p.scope.declare(p.cpp.eh, r.Name(), r)
 					}
 					return r
 				default:
@@ -2687,7 +2687,7 @@ func (p *parser) declaratorOrAbstractDeclarator(declare bool) (r Node) {
 					r := &Declarator{Pointer: ptr0, DirectDeclarator: p.directDeclarator2(dd, declare)}
 					if declare {
 						r.visible = visible(p.seq) // [0]6.2.1,7
-						p.scope.declare(r.Name(), r)
+						p.scope.declare(p.cpp.eh, r.Name(), r)
 					}
 					return r
 				default:
@@ -3202,7 +3202,7 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 		case '{':
 			r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), Token3: p.shift(false), EnumeratorList: p.enumeratorList()}
 			r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
-			p.scope.declare(r.Token2.SrcStr(), r)
+			p.scope.declare(p.cpp.eh, r.Token2.SrcStr(), r)
 		default:
 			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false), resolutionScope: p.scope}
 		}
@@ -3275,7 +3275,7 @@ func (p *parser) enumerator() (r *Enumerator) {
 		return nil
 	}
 	r.visible = visible(r.Token.seq + 1)
-	p.scope.declare(r.Token.SrcStr(), r)
+	p.scope.declare(p.cpp.eh, r.Token.SrcStr(), r)
 	return r
 }
 
@@ -3301,7 +3301,7 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 			return nil
 		case '{':
-			p.scope.declare(r.Token.SrcStr(), r)
+			p.scope.declare(p.cpp.eh, r.Token.SrcStr(), r)
 			r.Case = StructOrUnionSpecifierDef
 			r.Token2 = p.shift(false)
 			r.StructDeclarationList = p.structDeclarationList()
@@ -3459,30 +3459,34 @@ func (p *parser) structOrUnion() *StructOrUnion {
 //
 // The dynamic type of a Node in the Nodes map is one of
 //
-//  Node type           Binded by
-//  -----------------   ---------
-//  *Declarator         Parse
-//  *EnumType           Translate
-//  *LabelDeclaration   Parse
-//  *LabeledStatement   Parse
-//  *Parameter          Parse
-//  *StructType         Translate
-//  *UnionType          Translate
+//  Node type                   Note
+//  -----------------           ----
+//  *Declarator
+//  *EnumSpecifier              binds the tag
+//  *Enumerator
+//  *LabelDeclaration
+//  *LabeledStatement           case LabeledStatementLabel
+//  *Parameter
+//  *StructOrUnionSpecifier     binds the tag
 type Scope struct {
-	childs []*Scope
 	Nodes  map[string][]Node
 	Parent *Scope
 }
 
-func newScope(parent *Scope) (r *Scope) {
-	r = &Scope{Parent: parent}
-	if parent != nil {
-		parent.childs = append(parent.childs, r)
+func newScope(parent *Scope) (r *Scope) { return &Scope{Parent: parent} }
+
+func (s *Scope) err(eh interface{}, err error) {
+	switch x := eh.(type) {
+	case *errors:
+		x.add(err)
+	case errHandler:
+		x(err.Error())
+	default:
+		panic(todo("internal error: %T", x))
 	}
-	return r
 }
 
-func (s *Scope) declare(nm string, n Node) {
+func (s *Scope) declare(eh interface{}, nm string, n Node) {
 	// trc("%v: %q %T, visible %v (scope %p) (%v:)", n.Position(), nm, n, n.(interface{ Visible() int }).Visible(), s, origin(2))
 	if s.Nodes != nil {
 		s.Nodes[nm] = append(s.Nodes[nm], n)

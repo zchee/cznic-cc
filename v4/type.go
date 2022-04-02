@@ -221,6 +221,20 @@ const (
 	maxKind
 )
 
+type typer struct{ typ Type }
+
+func newTyper(t Type) typer { return typer{typ: t} }
+
+// Type returns the type of a node or an *InvalidType type value, if the type
+// is unknown/undetermined.
+func (t typer) Type() Type {
+	if t.typ != nil {
+		return t.typ
+	}
+
+	return Invalid
+}
+
 // Type is the representation of a C type.
 //
 // The dynamic type of a Type is one of
@@ -372,6 +386,8 @@ func (n *PredefinedType) isCompatible(t Type) bool {
 	switch x := t.(type) {
 	case *PredefinedType:
 		return n == x || n.Kind() == x.Kind()
+	case *UnionType:
+		return x.isCompatible(n)
 	default:
 		return false
 	}
@@ -509,6 +525,8 @@ type FunctionType struct {
 
 	minArgs int
 	maxArgs int // -1: unlimited
+
+	implicitResult bool
 }
 
 func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadic bool) (r *FunctionType) {
@@ -529,11 +547,22 @@ func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadi
 	if isVariadic {
 		r.maxArgs = -1
 	}
-	if len(fp) == 1 {
+	switch len(fp) {
+	case 0:
+		r.maxArgs = -1
+	case 1:
 		if t := fp[0].Type(); t != nil && t.Kind() == Void {
 			r.minArgs = 0
 			r.maxArgs = 0
 		}
+	}
+	return r
+}
+
+func (c *ctx) newFunctionType2(result Type, fp []*Parameter) (r *FunctionType) {
+	r = &FunctionType{c: c, result: newTyper(result), fp: fp, minArgs: len(fp), maxArgs: len(fp)}
+	if len(fp) == 0 {
+		r.maxArgs = -1
 	}
 	return r
 }
@@ -552,17 +581,30 @@ func (n *FunctionType) isCompatible(t Type) bool {
 			return true
 		}
 
-		if len(n.fp) != len(x.fp) || n.minArgs != x.minArgs || n.maxArgs != x.maxArgs || !n.Result().isCompatible(x.Result()) {
+		resultOk := n.implicitResult || x.implicitResult || n.Result().isCompatible(x.Result())
+		if len(n.fp) == 0 || len(x.fp) == 0 {
+			return resultOk
+		}
+
+		if len(n.fp) != len(x.fp) || n.minArgs != x.minArgs || n.maxArgs != x.maxArgs || !resultOk {
 			return false
 		}
 
 		for i, v := range n.fp {
-			if !v.Type().isCompatible(x.fp[i].Type()) {
+			t := v.Type()
+			w := x.fp[i]
+			u := w.Type()
+			if !t.isCompatible(u) && !integerPromotion(t).isCompatible(integerPromotion(u)) && !t.Decay().isCompatible(u.Decay()) {
+				if Dmesgs {
+					Dmesg("%v %v and %v %v", t, t.Kind(), u, u.Kind())
+				}
 				return false
 			}
 		}
 
 		return true
+	case *UnionType:
+		return x.isCompatible(n)
 	default:
 		return false
 	}
@@ -671,6 +713,8 @@ func (n *PointerType) isCompatible(t Type) bool {
 	switch x := t.(type) {
 	case *PointerType:
 		return n == x || n.Elem().isCompatible(x.Elem())
+	case *UnionType:
+		return x.isCompatible(n)
 	default:
 		return false
 	}
@@ -1171,7 +1215,7 @@ func (n *UnionType) isCompatible(t Type) bool {
 
 		return n == x || n.structType.isCompatible(&x.structType)
 	default:
-		return false
+		return len(n.fields) == 1 && n.fields[0].Type().isCompatible(t)
 	}
 }
 
@@ -1369,7 +1413,7 @@ func (n *ArrayType) setAttr(a *Attributes) Type {
 func (n *ArrayType) isCompatible(t Type) bool {
 	switch x := t.(type) {
 	case *ArrayType:
-		return (n.Len() == x.Len() || n.Len() < 0 && x.Len() < 0) && n.Elem().isCompatible(x.Elem())
+		return n.Elem().isCompatible(x.Elem()) && (n.Len() < 0 || x.Len() < 0 || n.Len() == x.Len())
 	default:
 		return false
 	}
@@ -1532,11 +1576,21 @@ func (n *EnumType) isCompatible(t Type) bool {
 			return n.isCompatible(x.forward.Type())
 		}
 
+		if n == x {
+			return true
+		}
+
 		if n.tag != x.tag {
 			return false
 		}
 
-		return n.isCompatible(x.typ.Type()) //TODO members and values must be the same
+		if !n.typ.Type().isCompatible(x.typ.Type()) { //TODO members and values must be the same
+			return false
+		}
+
+		return true
+	case *UnionType:
+		return x.isCompatible(n)
 	default:
 		return false
 	}

@@ -53,25 +53,19 @@ typedef void *__builtin_va_list;
 #define __builtin_va_arg(va, type) (*(type*)__builtin_va_arg_impl(va))
 #endif
 
-#define __builtin_offsetof(type, member) ((size_t)&(((type*)0)->member))
+#define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
 #define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl((t1)0, (t2)0)
 
 #ifdef __SIZE_TYPE__
-typedef __SIZE_TYPE__ size_t;
-#else
-#error __SIZE_TYPE__ undefined
+typedef __SIZE_TYPE__ __predefined_size_t;
 #endif
 
 #ifdef __WCHAR_TYPE__
-typedef __WCHAR_TYPE__ wchar_t;
-#else
-#error __WCHAR_TYPE__ undefined
+typedef __WCHAR_TYPE__ __predefined_wchar_t;
 #endif
 
 #ifdef __PTRDIFF_TYPE__
-typedef __PTRDIFF_TYPE__ ptrdiff_t;
-#else
-#error __PTRDIFF_TYPE__ undefined
+typedef __PTRDIFF_TYPE__ __predefined_ptrdiff_t;
 #endif
 
 #define __FUNCTION__ __func__
