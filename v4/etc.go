@@ -7,6 +7,7 @@ package cc // import "modernc.org/cc/v4"
 import (
 	"fmt"
 	"go/token"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"modernc.org/strutil"
+	mtoken "modernc.org/token"
 )
 
 var (
@@ -522,4 +524,50 @@ func position(n Node) (r token.Position) {
 		r = token.Position(n.Position())
 	}
 	return r
+}
+
+type fsetItem struct {
+	file *mtoken.File
+
+	off  int32
+	size int32
+}
+
+type fset struct {
+	items []fsetItem
+
+	off int32
+	sz  int32
+}
+
+func newFset() *fset { return &fset{} }
+
+func (f *fset) add(file *mtoken.File) (r int32, err error) {
+	r = f.off
+	if off := int(f.off) + file.Size() + 1; off > 0 && off <= math.MaxInt32 {
+		it := fsetItem{file, r, int32(file.Size())}
+		f.items = append(f.items, it)
+		f.off = int32(off)
+		return r, nil
+	}
+
+	return -1, fmt.Errorf("file set size overflow")
+}
+
+func (f *fset) Position(pos int32) mtoken.Position {
+	l, h := 0, int(len(f.items))-1
+	var it fsetItem
+	for l <= h {
+		m := (l + h) / 2
+		switch it = f.items[m]; {
+		case pos < it.off:
+			h = m - 1
+		case pos > it.off+it.size:
+			l = m + 1
+		default:
+			return it.file.Position(mtoken.Pos(pos - it.off))
+		}
+	}
+	it = f.items[l-1]
+	return it.file.Position(mtoken.Pos(pos - it.off))
 }

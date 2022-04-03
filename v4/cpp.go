@@ -59,8 +59,8 @@ type cppParser struct {
 
 // newCppParser returns a newly created cppParser. The errHandler function is invoked on
 // parser errors.
-func newCppParser(src Source, eh errHandler) (*cppParser, error) {
-	s, err := newScanner(src, eh)
+func newCppParser(fset *fset, src Source, eh errHandler) (*cppParser, error) {
+	s, err := newScanner(fset, src, eh)
 	if err != nil {
 		return nil, err
 	}
@@ -703,6 +703,7 @@ type cpp struct {
 	cfg         *Config
 	eh          errHandler
 	eof         eofLine
+	fset        *fset
 	groups      map[string]group
 	indentLevel int // debug dumps
 	macros      map[string]*Macro
@@ -720,7 +721,7 @@ type cpp struct {
 }
 
 // newCPP returns a newly created cpp.
-func newCPP(cfg *Config, sources []Source, eh errHandler) (*cpp, error) {
+func newCPP(cfg *Config, fset *fset, sources []Source, eh errHandler) (*cpp, error) {
 	m := map[string]struct{}{}
 	for _, v := range sources {
 		if _, ok := m[v.Name]; ok {
@@ -735,6 +736,7 @@ func newCPP(cfg *Config, sources []Source, eh errHandler) (*cpp, error) {
 	c := &cpp{
 		cfg:     cfg,
 		eh:      eh,
+		fset:    fset,
 		groups:  map[string]group{},
 		macros:  map[string]*Macro{},
 		mmap:    map[mmapKey]*Macro{},
@@ -821,7 +823,7 @@ more:
 			if src == "__COUNTER__" {
 				r := m.replacementList[0]
 				r.s = t.s
-				r.pos = t.pos
+				r.off = t.off
 				r.Set(t.Sep(), []byte(fmt.Sprint(c.counter)))
 				c.counter++
 				m.replacementList[0] = r
@@ -829,6 +831,9 @@ more:
 			// if TS is T^HS • TS’ and T is a "()-less macro" then
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
 			subst = c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil)
+			for i := range subst {
+				subst[i].off = T.off
+			}
 			TS.prepend(&subst)
 			goto more
 		case m.IsFnLike:
@@ -852,6 +857,9 @@ more:
 				//	check TS’ is actuals • )^HS’ • TS’’ and actuals are "correct for T"
 				//	return expand(subst(ts(T),fp(T),actuals,(HS∩HS’)∪{T},{}) • TS’’);
 				subst = c.subst(eval, m, m.ts(), m.fp(), args, HS.cap(rparen.hs).add(src), nil)
+				for i := range subst {
+					subst[i].off = T.off
+				}
 				TS.prepend(&subst)
 				goto more
 			}
@@ -882,7 +890,7 @@ more:
 		r = c.hsAdd(HS, OS)
 		if !m.IsFnLike && len(is0) == 1 && m.IsConst && len(r) == 1 {
 			t := r[0]
-			c.mmap[mmapKey{t.s, t.pos}] = m
+			c.mmap[mmapKey{t.s, t.off}] = m
 		}
 		return r
 	}
@@ -1119,7 +1127,7 @@ func (c *cpp) parsePragma(ts tokenSequence) {
 	s = s[1 : len(s)-1]
 	s = strings.ReplaceAll(s, `\"`, `"`)
 	s = strings.ReplaceAll(s, `\\`, `\`)
-	sc, err := newScanner(Source{"_Pragma_", s, nil}, c.eh)
+	sc, err := newScanner(c.fset, Source{"_Pragma_", s, nil}, c.eh)
 	if err != nil {
 		c.eh("%v: %v", t2.Position(), err)
 		return
@@ -1147,16 +1155,18 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 			r := m.replacementList[0]
 			r.Ch = rune(STRINGLITERAL)
 			r.s = t.s
-			r.pos = t.pos
+			r.off = t.off
 			s := fmt.Sprintf(`"%s"`, t.Position().Filename)
 			r.Set(t.Sep(), []byte(s))
+			m.replacementList[0] = r
 		case "__LINE__":
 			r := m.replacementList[0]
 			r.Ch = rune(PPNUMBER)
 			r.s = t.s
-			r.pos = t.pos
+			r.off = t.off
 			s := fmt.Sprintf(`%d`, t.Position().Line)
 			r.Set(t.Sep(), []byte(s))
+			m.replacementList[0] = r
 		}
 		return m
 	}
@@ -2819,7 +2829,7 @@ func (c *cpp) group(src Source) (group, error) {
 		return g, nil
 	}
 
-	p, err := newCppParser(src, c.eh)
+	p, err := newCppParser(c.fset, src, c.eh)
 	if err != nil {
 		return nil, err
 	}

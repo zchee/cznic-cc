@@ -147,8 +147,8 @@ type Node interface {
 // Token is the lexical token produced by the scanner.
 type Token struct { // 32 bytes on a 64 bit machine.
 	s   *scannerSource
-	Ch  rune   // '*' or IDENTIFIER etc.
-	pos uint32 // Index into ss.buf of the original token.
+	Ch  rune // '*' or IDENTIFIER etc.
+	off uint32
 	seq int32  // Sequence number, determines scope boundaries.
 	sep uint32 // Index into .ss.buf of the preceding white space, including comments. Length is .src-.sep.
 	src uint32 // Index into .ss.buf, length is in .len.
@@ -156,11 +156,12 @@ type Token struct { // 32 bytes on a 64 bit machine.
 }
 
 // newToken returns a newly created Token. The pos field is set equal to src.
-func newToken(s *scannerSource, ch rune, sep, src, len uint32) Token {
+func newToken(s *scannerSource, ch rune, sep, src, len uint32) (r Token) {
+	// defer func() { trc("", r) }() //TODO-
 	return Token{
 		s:   s,
 		Ch:  ch,
-		pos: src,
+		off: src + uint32(s.fsOff),
 		sep: sep,
 		src: src,
 		len: len,
@@ -223,20 +224,24 @@ func (t *Token) Set(sep, src []byte) error {
 }
 
 // Position implements Node.
-func (t Token) Position() token.Position { return t.s.pos(t.pos) }
+func (t Token) Position() token.Position {
+	return t.s.fset.Position(int32(t.off) + int32(t.s.pos0))
+}
 
 // scannerSource captures source code and the associated position information.
 type scannerSource struct {
 	buf  []byte
 	file *token.File
+	fset *fset
 
-	len  uint32 // Len of source code in .buf.
-	pos0 token.Pos
+	fsOff int32
+	len   uint32 // Len of source code in .buf.
+	pos0  token.Pos
 }
 
 // newScannerSource returns a new scanner source.
-func newScannerSource(src Source) (s *scannerSource, err error) {
-	s = &scannerSource{}
+func newScannerSource(fset *fset, src Source) (s *scannerSource, err error) {
+	s = &scannerSource{fset: fset}
 	switch x := src.Value.(type) {
 	case io.ReadCloser:
 		defer func() {
@@ -257,7 +262,7 @@ func newScannerSource(src Source) (s *scannerSource, err error) {
 	case nil:
 		if fs := src.FS; fs != nil {
 			if f, err := fs.Open(filepath.ToSlash(src.Name)); err == nil {
-				return newScannerSource(Source{src.Name, f, nil})
+				return newScannerSource(fset, Source{src.Name, f, nil})
 			}
 		}
 
@@ -266,7 +271,7 @@ func newScannerSource(src Source) (s *scannerSource, err error) {
 			return nil, errorf("", err)
 		}
 
-		return newScannerSource(Source{src.Name, fs.File(f), nil})
+		return newScannerSource(fset, Source{src.Name, fs.File(f), nil})
 	case string:
 		s.buf = []byte(x)
 	default:
@@ -283,15 +288,12 @@ func newScannerSource(src Source) (s *scannerSource, err error) {
 	s.len = uint32(len(s.buf))
 	s.file = token.NewFile(src.Name, int(s.len))
 	s.pos0 = s.file.Pos(0)
-	return s, nil
+	s.fsOff, err = fset.add(s.file)
+	return s, err
 }
 
 // pos returns a token.Position representing off.
 func (s *scannerSource) pos(off uint32) token.Position {
-	if s == nil { //TODO-
-		panic(todo("", off))
-	}
-
 	return s.file.PositionFor(token.Pos(off)+s.pos0, true)
 }
 
@@ -314,8 +316,8 @@ type scanner struct {
 
 // newScanner returns a new scanner. The errHandler function is invoked on
 // scanner errors.
-func newScanner(src Source, eh errHandler) (*scanner, error) {
-	s, err := newScannerSource(src)
+func newScanner(fset *fset, src Source, eh errHandler) (*scanner, error) {
+	s, err := newScannerSource(fset, src)
 	if err != nil {
 		return nil, err
 	}

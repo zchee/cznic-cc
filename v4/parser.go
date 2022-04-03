@@ -116,8 +116,8 @@ type parser struct {
 	seq int32
 }
 
-func newParser(cfg *Config, sources []Source) (*parser, error) {
-	cpp, err := newCPP(cfg, sources, nil)
+func newParser(cfg *Config, fset *fset, sources []Source) (*parser, error) {
+	cpp, err := newCPP(cfg, fset, sources, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ func (p *parser) injectFuncTokens(lbrace Token, nm string) {
 	for i := range p.funcTokens {
 		pt := &p.funcTokens[i]
 		pt.s = lbrace.s
-		pt.pos = lbrace.pos
+		pt.off = lbrace.off
 		pt.seq = lbrace.seq
 		if i != 7 {
 			pt.Set(nil, funcTokensText[i])
@@ -2273,7 +2273,7 @@ func (p *parser) primaryExpression(checkTypeName bool) (r *PrimaryExpression) {
 		p.cpp.eh("%v: unexpected %v, expected primary expression", t.Position(), runeName(t.Ch))
 		return nil
 	}
-	r.m = p.cpp.mmap[mmapKey{r.Token.s, r.Token.pos}]
+	r.m = p.cpp.mmap[mmapKey{r.Token.s, r.Token.off}]
 	return r
 }
 

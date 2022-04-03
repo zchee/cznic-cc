@@ -299,7 +299,7 @@ func (e errors) err() error {
 // Preprocess preprocesses a translation unit, consisting of inputs in sources,
 // and writes the result to w.
 func Preprocess(cfg *Config, sources []Source, w io.Writer) (err error) {
-	cpp, err := newCPP(cfg, sources, nil)
+	cpp, err := newCPP(cfg, newFset(), sources, nil)
 	if err != nil {
 		return err
 	}
@@ -365,7 +365,7 @@ func preprocess(cpp *cpp, w io.Writer) (err error) {
 // Parse preprocesses and parses a translation unit, consisting of inputs in
 // sources.
 func Parse(cfg *Config, sources []Source) (*AST, error) {
-	p, err := newParser(cfg, sources)
+	p, err := newParser(cfg, newFset(), sources)
 	if err != nil {
 		return nil, err
 	}

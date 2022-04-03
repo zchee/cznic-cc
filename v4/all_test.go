@@ -182,7 +182,7 @@ func TestScannerSource(t *testing.T) {
 }
 
 func testScannerSource(t *testing.T, name string, value interface{}, exp []byte, mustFail bool) {
-	ss, err := newScannerSource(Source{name, value, nil})
+	ss, err := newScannerSource(newFset(), Source{name, value, nil})
 	if err != nil != mustFail {
 		t.Fatalf("(%q, %T): %v", name, value, err)
 	}
@@ -197,7 +197,7 @@ func testScannerSource(t *testing.T, name string, value interface{}, exp []byte,
 }
 
 func TestToken(t *testing.T) {
-	s, err := newScannerSource(Source{"test", `abc
+	s, err := newScannerSource(newFset(), Source{"test", `abc
 def
  ghi
 `, nil})
@@ -322,7 +322,7 @@ func TestScanner(t *testing.T) {
 
 				chars0 += int64(len(buf))
 				var s *scanner
-				if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+				if s, err = newScanner(newFset(), Source{path, buf, nil}, func(msg string, args ...interface{}) {
 					s.close()
 					err = fmt.Errorf(msg, args...)
 				}); err != nil {
@@ -384,7 +384,7 @@ func BenchmarkScanner(b *testing.B) {
 
 				chars += int64(len(buf))
 				var s *scanner
-				if s, err = newScanner(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+				if s, err = newScanner(newFset(), Source{path, buf, nil}, func(msg string, args ...interface{}) {
 					s.close()
 					b.Fatalf(msg, args...)
 				}); err != nil {
@@ -430,7 +430,7 @@ func TestCPPParse0(t *testing.T) {
 
 			chars += int64(len(buf))
 			var p *cppParser
-			if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+			if p, err = newCppParser(newFset(), Source{path, buf, nil}, func(msg string, args ...interface{}) {
 				p.close()
 				t.Fatalf(msg, args...)
 			}); err != nil {
@@ -498,7 +498,7 @@ func TestCPPParse(t *testing.T) {
 				}()
 
 				var p *cppParser
-				if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+				if p, err = newCppParser(newFset(), Source{path, buf, nil}, func(msg string, args ...interface{}) {
 					p.close()
 					err = fmt.Errorf(msg, args...)
 				}); err != nil {
@@ -546,7 +546,7 @@ func BenchmarkCPPParse(b *testing.B) {
 
 				chars += int64(len(buf))
 				var p *cppParser
-				if p, err = newCppParser(Source{path, buf, nil}, func(msg string, args ...interface{}) {
+				if p, err = newCppParser(newFset(), Source{path, buf, nil}, func(msg string, args ...interface{}) {
 					p.close()
 					b.Fatalf(msg, args...)
 				}); err != nil {
@@ -625,7 +625,7 @@ func testCPPExpand(t *testing.T, dir string, blacklist map[string]struct{}, fake
 			fmt.Fprintln(os.Stderr, path)
 		}
 		var b strings.Builder
-		if c, err = newCPP(cfg, []Source{{path, nil, nil}}, nil); err != nil {
+		if c, err = newCPP(cfg, newFset(), []Source{{path, nil, nil}}, nil); err != nil {
 			t.Fatalf("%v: %v", path, err)
 		}
 
