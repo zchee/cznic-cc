@@ -495,7 +495,7 @@ func (p *parser) compoundStatement(isFnScope bool, d *Declarator) (r *CompoundSt
 	if isFnScope && d != nil && !p.cpp.cfg.doNotInjectFunc {
 		p.injectFuncTokens(lbrace, d.Name())
 	}
-	return &CompoundStatement{Token: lbrace, BlockItemList: p.blockItemListOpt(), Token2: p.must('}'), scope: p.scope}
+	return &CompoundStatement{Token: lbrace, BlockItemList: p.blockItemListOpt(), Token2: p.must('}'), lexicalScoper: newLexicalScoper(p.scope)}
 }
 
 var funcTokensText = [][]byte{
@@ -2250,7 +2250,7 @@ func (p *parser) primaryExpression(checkTypeName bool) (r *PrimaryExpression) {
 	case rune(FLOATCONST):
 		r = &PrimaryExpression{Case: PrimaryExpressionFloat, Token: p.shift(false)}
 	case rune(IDENTIFIER):
-		r = &PrimaryExpression{Case: PrimaryExpressionIdent, Token: p.shift(false), resolutionScope: p.scope}
+		r = &PrimaryExpression{Case: PrimaryExpressionIdent, Token: p.shift(false), lexicalScoper: newLexicalScoper(p.scope)}
 	case rune(INTCONST):
 		r = &PrimaryExpression{Case: PrimaryExpressionInt, Token: p.shift(false)}
 	case rune(LONGCHARCONST):
@@ -2317,7 +2317,7 @@ func (p *parser) declarator(ptr *Pointer, ds *DeclarationSpecifiers, declare boo
 	if ptr == nil {
 		ptr = p.pointer(true)
 	}
-	r = &Declarator{Pointer: ptr, DirectDeclarator: p.directDeclarator(declare)}
+	r = &Declarator{Pointer: ptr, DirectDeclarator: p.directDeclarator(declare), lexicalScoper: newLexicalScoper(p.scope)}
 	if ds != nil {
 		r.isTypename = ds.isTypedef
 	}
@@ -3067,7 +3067,7 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 	case rune(DOUBLE):
 		return &TypeSpecifier{Case: TypeSpecifierDouble, Token: p.shift(false)}
 	case rune(ENUM):
-		return &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier(), resolutionScope: p.scope}
+		return &TypeSpecifier{Case: TypeSpecifierEnum, EnumSpecifier: p.enumSpecifier(), lexicalScoper: newLexicalScoper(p.scope)}
 	case rune(FLOAT):
 		return &TypeSpecifier{Case: TypeSpecifierFloat, Token: p.shift(false)}
 	case rune(INT):
@@ -3079,7 +3079,7 @@ func (p *parser) typeSpecifier() *TypeSpecifier {
 	case rune(SHORT):
 		return &TypeSpecifier{Case: TypeSpecifierShort, Token: p.shift(false)}
 	case rune(TYPENAME):
-		return &TypeSpecifier{Case: TypeSpecifierTypeName, Token: p.shift(true), resolutionScope: p.scope}
+		return &TypeSpecifier{Case: TypeSpecifierTypeName, Token: p.shift(true), lexicalScoper: newLexicalScoper(p.scope)}
 	case rune(UNSIGNED):
 		return &TypeSpecifier{Case: TypeSpecifierUnsigned, Token: p.shift(false)}
 	case
@@ -3204,7 +3204,7 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 			r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
 			p.scope.declare(p.cpp.eh, r.Token2.SrcStr(), r)
 		default:
-			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false), resolutionScope: p.scope}
+			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false), lexicalScoper: newLexicalScoper(p.scope)}
 		}
 	case '{':
 		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), EnumeratorList: p.enumeratorList()}
@@ -3309,7 +3309,7 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 			return r
 		default:
-			r.resolutionScope = p.scope
+			r.lexicalScope = p.scope
 			r.Case = StructOrUnionSpecifierTag
 			return r
 		}
@@ -3599,3 +3599,12 @@ type visible int32
 
 // Visible reports the token sequence number where the visibility of a name starts.
 func (v visible) Visible() int { return int(v) }
+
+type lexicalScoper struct {
+	lexicalScope *Scope
+}
+
+func newLexicalScoper(s *Scope) lexicalScoper { return lexicalScoper{s} }
+
+// LexicalScope provides the scope a node appears in.
+func (n lexicalScoper) LexicalScope() *Scope { return n.lexicalScope }

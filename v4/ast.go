@@ -984,7 +984,7 @@ func (n *CastExpression) Position() (r token.Position) {
 //	CompoundStatement:
 //	        '{' BlockItemList '}'
 type CompoundStatement struct {
-	scope         *Scope
+	lexicalScoper
 	BlockItemList *BlockItemList
 	Token         Token
 	Token2        Token
@@ -1326,6 +1326,7 @@ func (n *DeclarationSpecifiers) Position() (r token.Position) {
 //	        Pointer DirectDeclarator
 type Declarator struct {
 	alignas int
+	lexicalScoper
 	typer
 	visible
 	resolver
@@ -1897,8 +1898,8 @@ func (n EnumSpecifierCase) String() string {
 //	        "enum" IDENTIFIER '{' EnumeratorList ',' '}'  // Case EnumSpecifierDef
 //	|       "enum" IDENTIFIER                             // Case EnumSpecifierTag
 type EnumSpecifier struct {
+	lexicalScoper
 	visible
-	resolutionScope *Scope
 	typer
 	Case           EnumSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumeratorList *EnumeratorList
@@ -3828,9 +3829,9 @@ func (n PrimaryExpressionCase) String() string {
 //	|       '(' CompoundStatement ')'  // Case PrimaryExpressionStmt
 //	|       GenericSelection           // Case PrimaryExpressionGeneric
 type PrimaryExpression struct {
-	m               *Macro
-	resolutionScope *Scope
-	resolvedTo      Node
+	m *Macro
+	lexicalScoper
+	resolvedTo Node
 	typer
 	valuer
 	Case              PrimaryExpressionCase `PrettyPrint:"stringer,zero"`
@@ -4643,8 +4644,8 @@ func (n StructOrUnionSpecifierCase) String() string {
 type StructOrUnionSpecifier struct {
 	AttributeSpecifierList  *AttributeSpecifierList
 	AttributeSpecifierList2 *AttributeSpecifierList
+	lexicalScoper
 	visible
-	resolutionScope *Scope
 	typer
 	Case                  StructOrUnionSpecifierCase `PrettyPrint:"stringer,zero"`
 	StructDeclarationList *StructDeclarationList
@@ -4993,7 +4994,7 @@ func (n TypeSpecifierCase) String() string {
 //	|       "_Float32x"                      // Case TypeSpecifierFloat32x
 //	|       "_Float64x"                      // Case TypeSpecifierFloat64x
 type TypeSpecifier struct {
-	resolutionScope        *Scope
+	lexicalScoper
 	AtomicTypeSpecifier    *AtomicTypeSpecifier
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier

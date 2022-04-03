@@ -21,53 +21,6 @@ import (
 	"modernc.org/opt"
 )
 
-const (
-	builtin = `
-
-#define __extension__
-#define __restrict_arr restrict
-
-#ifndef __builtin_va_list
-#define __builtin_va_list __builtin_va_list
-typedef void *__builtin_va_list;
-#endif
-
-#ifndef __builtin_va_arg
-#define __builtin_va_arg __builtin_va_arg
-#define __builtin_va_arg(va, type) (*(type*)__builtin_va_arg_impl(va))
-#endif
-
-#define __builtin_offsetof(type, member) ((size_t)&(((type*)0)->member))
-#define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl((t1)0, (t2)0)
-
-#ifdef __SIZE_TYPE__
-typedef __SIZE_TYPE__ size_t;
-#else
-#error __SIZE_TYPE__ undefined
-#endif
-
-#ifdef __WCHAR_TYPE__
-typedef __WCHAR_TYPE__ wchar_t;
-#else
-#error __WCHAR_TYPE__ undefined
-#endif
-
-#ifdef __PTRDIFF_TYPE__
-typedef __PTRDIFF_TYPE__ ptrdiff_t;
-#else
-#error __PTRDIFF_TYPE__ undefined
-#endif
-
-#define __FUNCTION__ __func__
-#define __PRETTY_FUNCTION__ __func__
-
-#ifdef __clang__
-#define __builtin_convertvector(src, type) (*(type*)&src)
-#endif
-
-`
-)
-
 var (
 	f        io.Writer
 	failFast = os.Getenv("FAKE_CC_FAIL_FAST")
@@ -193,7 +146,7 @@ func main() {
 
 		sources := []cc.Source{
 			{Name: "<predefined>", Value: cfg.Predefined},
-			{Name: "<builtin>", Value: builtin},
+			{Name: "<builtin>", Value: cc.Builtin},
 		}
 		if defs != "" {
 			sources = append(sources, cc.Source{Name: "<command-line>", Value: defs})

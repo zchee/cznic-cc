@@ -556,7 +556,7 @@ func (n *CompoundStatement) check(c *ctx) (r Type) {
 	for l := n.BlockItemList; l != nil; l = l.BlockItemList {
 		r = l.BlockItem.check(c)
 	}
-	c.checkScope(n.scope)
+	c.checkScope(n.LexicalScope())
 	return r
 }
 
@@ -2046,7 +2046,7 @@ func (n *TypeSpecifier) check(c *ctx, isAtomic *bool) (r Type) {
 	case TypeSpecifierEnum: // EnumSpecifier
 		return n.EnumSpecifier.check(c)
 	case TypeSpecifierTypeName: // TYPENAME
-		if x, ok := n.resolutionScope.ident(n.Token).(*Declarator); ok && x.isTypename {
+		if x, ok := n.LexicalScope().ident(n.Token).(*Declarator); ok && x.isTypename {
 			return x.Type()
 		}
 
@@ -2141,7 +2141,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 		}
 		n.typ = c.newEnumType(tag, t, list)
 	case EnumSpecifierTag: // "enum" IDENTIFIER
-		if x := n.resolutionScope.enum(n.Token2); x != nil {
+		if x := n.LexicalScope().enum(n.Token2); x != nil {
 			switch {
 			case x.typ == nil:
 				t := c.newEnumType(tag, nil, nil)
@@ -2217,7 +2217,7 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 
 		n.StructDeclarationList.check(c, n)
 	case StructOrUnionSpecifierTag: // StructOrUnion IDENTIFIER
-		if x := n.resolutionScope.structOrUnion(n.Token); x != nil {
+		if x := n.LexicalScope().structOrUnion(n.Token); x != nil {
 			if n.StructOrUnion.Case != x.StructOrUnion.Case {
 				c.errors.add(errorf("%v: mismatched struct/union tag", n.Token.Position()))
 				break
@@ -3428,7 +3428,7 @@ out:
 	switch n.Case {
 	case PrimaryExpressionIdent: // IDENTIFIER
 		var d *Declarator
-		switch x := n.resolutionScope.ident(n.Token).(type) {
+		switch x := n.LexicalScope().ident(n.Token).(type) {
 		case *Declarator:
 			d = x
 			n.typ = d.Type()
@@ -3442,7 +3442,7 @@ out:
 			n.typ = x.Type()
 			break out
 		default:
-			d = n.resolutionScope.builtin(n.Token)
+			d = n.LexicalScope().builtin(n.Token)
 			if d == nil {
 				if mode.has(implicitFuncDef) {
 					n.typ = c.implicitFunc

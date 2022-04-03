@@ -38,46 +38,7 @@ var (
 	corpusIndex []string
 	re          *regexp.Regexp
 	defaultCfg0 *Config
-	builtin     = `
-
-#define __extension__
-#define __restrict_arr restrict
-
-#ifndef __builtin_va_list
-#define __builtin_va_list __builtin_va_list
-typedef void *__builtin_va_list;
-#endif
-
-#ifndef __builtin_va_arg
-#define __builtin_va_arg __builtin_va_arg
-#define __builtin_va_arg(va, type) (*(type*)__builtin_va_arg_impl(va))
-#endif
-
-#define __builtin_offsetof(type, member) ((__SIZE_TYPE__)&(((type*)0)->member))
-#define __builtin_types_compatible_p(t1, t2) __builtin_types_compatible_p_impl((t1)0, (t2)0)
-
-#ifdef __SIZE_TYPE__
-typedef __SIZE_TYPE__ __predefined_size_t;
-#endif
-
-#ifdef __WCHAR_TYPE__
-typedef __WCHAR_TYPE__ __predefined_wchar_t;
-#endif
-
-#ifdef __PTRDIFF_TYPE__
-typedef __PTRDIFF_TYPE__ __predefined_ptrdiff_t;
-#endif
-
-#define __FUNCTION__ __func__
-#define __PRETTY_FUNCTION__ __func__
-
-#ifdef __clang__
-#define __builtin_convertvector(src, type) (*(type*)&src)
-#endif
-
-`
-
-	oTrace = flag.Bool("trc", false, "Print tested paths.")
+	oTrace      = flag.Bool("trc", false, "Print tested paths.")
 )
 
 func init() {
@@ -797,7 +758,7 @@ func testTranslationPhase4(t *testing.T, cfg *Config, dir string, blacklist map[
 				cfg,
 				[]Source{
 					{Name: "<predefined>", Value: cfg.Predefined},
-					{Name: "<builtin>", Value: builtin},
+					{Name: "<builtin>", Value: Builtin},
 					{Name: apth, FS: cfs},
 				},
 				io.Discard,
@@ -1027,7 +988,7 @@ func testParserBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 
 		sources := []Source{
 			{Name: "<predefined>", Value: cfg.Predefined},
-			{Name: "<builtin>", Value: builtin},
+			{Name: "<builtin>", Value: Builtin},
 			{Name: pth},
 		}
 		_, err = Parse(cfg, sources)
@@ -1168,7 +1129,7 @@ func testParse(t *testing.T, cfg *Config, dir string, blacklist map[string]struc
 					cfg,
 					[]Source{
 						{Name: "<predefined>", Value: cfg.Predefined},
-						{Name: "<builtin>", Value: builtin},
+						{Name: "<builtin>", Value: Builtin},
 						{Name: apth, FS: cfs},
 					},
 				); err == nil {
@@ -1278,7 +1239,7 @@ func testTranslateBug(t *testing.T, dir string, blacklist map[string]struct{}) {
 
 		sources := []Source{
 			{Name: "<predefined>", Value: cfg.Predefined},
-			{Name: "<builtin>", Value: builtin},
+			{Name: "<builtin>", Value: Builtin},
 			{Name: pth},
 		}
 		_, err = Translate(cfg, sources)
@@ -1421,7 +1382,7 @@ func testTranslate(t *testing.T, cfg *Config, dir string, blacklist map[string]s
 					cfg,
 					[]Source{
 						{Name: "<predefined>", Value: cfg.Predefined},
-						{Name: "<builtin>", Value: builtin},
+						{Name: "<builtin>", Value: Builtin},
 						{Name: apth, FS: cfs},
 					},
 				); err == nil {
