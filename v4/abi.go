@@ -465,7 +465,7 @@ func (a *ABI) isSignedInteger(k Kind) bool {
 		return true
 	case Char:
 		return a.signedChar
-	default:
-		panic(todo("", k))
 	}
+
+	return false
 }

@@ -3420,6 +3420,10 @@ func (n *PrimaryExpression) check(c *ctx, mode flags) (r Type) {
 			return
 		}
 
+		if n.m != nil && n.m.Value() == Unknown && n.Value() != Unknown {
+			n.m.val = n.val
+			n.m.typ = n.typ
+		}
 		n.typ = c.decay(r, mode)
 		r = n.Type()
 	}()

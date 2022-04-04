@@ -2224,7 +2224,9 @@ func (p *parser) argumentExpressionListOpt(checkTypeName bool) (r *ArgumentExpre
 	r = &ArgumentExpressionList{AssignmentExpression: p.assignmentExpression(checkTypeName)}
 	prev := r
 	for p.rune(false) == ',' {
-		prev.ArgumentExpressionList = &ArgumentExpressionList{Token: p.shift(false), AssignmentExpression: p.assignmentExpression(checkTypeName)}
+		ael := &ArgumentExpressionList{Token: p.shift(false), AssignmentExpression: p.assignmentExpression(checkTypeName)}
+		prev.ArgumentExpressionList = ael
+		prev = ael
 		p.rune(false)
 	}
 	p.rune(false)

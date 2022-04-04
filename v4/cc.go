@@ -429,8 +429,8 @@ func Translate(cfg *Config, sources []Source) (*AST, error) {
 	return ast, nil
 }
 
-// NodeSource returns the source form of s. Non-empty separators preceding
-// tokens are replaced by a single ' '.
+// NodeSource returns the source form of s. Non-empty separators between tokens
+// are replaced by a single ' '.
 func NodeSource(s ...Node) string {
 	var a []Token
 	for _, n := range s {
@@ -438,8 +438,8 @@ func NodeSource(s ...Node) string {
 	}
 	sort.Slice(a, func(i, j int) bool { return a[i].seq < a[j].seq })
 	var b strings.Builder
-	for _, t := range a {
-		if len(t.Sep()) != 0 {
+	for i, t := range a {
+		if i != 0 && len(t.Sep()) != 0 {
 			b.WriteByte(' ')
 		}
 		b.Write(t.Src())

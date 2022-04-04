@@ -385,6 +385,8 @@ type Macro struct {
 	Params          []Token
 	params          []string
 	replacementList cppTokens
+	typer
+	valuer
 
 	MinArgs int // m x: 0, m() x: 0, m(...): 0, m(a) a: 1, m(a, ...): 1, m(a, b): 2, m(a, b, ...): 2.
 	VarArg  int // m(a): -1, m(...): 0, m(a, ...): 1, m(a...): 0, m(a, b...): 1.
@@ -417,6 +419,9 @@ func newMacro(nm Token, params []Token, replList []cppToken, minArgs, varArg int
 		replacementList: replList,
 	}, nil
 }
+
+// Position implements Node.
+func (m *Macro) Position() token.Position { return m.Name.Position() }
 
 func (m *Macro) isSame(n *Macro) bool {
 	if !bytes.Equal(m.Name.Src(), n.Name.Src()) ||
@@ -830,9 +835,14 @@ more:
 			}
 			// if TS is T^HS • TS’ and T is a "()-less macro" then
 			//	return expand(subst(ts(T),{},{},HS∪{T},{}) • TS’);
-			subst = c.subst(eval, m, m.ts(), nil, nil, HS.add(src), nil)
+			repl := m.ts()
+			subst = c.subst(eval, m, repl, nil, nil, HS.add(src), nil)
 			for i := range subst {
 				subst[i].off = T.off
+			}
+			if len(repl) == 1 && len(subst) == 1 && m.IsConst {
+				t := subst[0]
+				c.mmap[mmapKey{t.s, t.off}] = m
 			}
 			TS.prepend(&subst)
 			goto more
@@ -881,17 +891,12 @@ func (c *cpp) subst(eval bool, m *Macro, IS cppTokens, FP []string, AP []cppToke
 	// trc("* %s%v, HS %v, FP %v, AP %v, OS %v (%v)", c.indent(), toksDump(IS), &HS, FP, toksDump(AP), toksDump(OS), origin(2))
 	// defer func() { trc("->%s%v", c.undent(), toksDump(r)) }()
 	var expandedArgs map[int]cppTokens
-	is0 := IS
 more:
 	// trc("  %[2]s%v %v", c.undent(), c.indent(), &t, toksDump(IS))
 	if len(IS) == 0 {
 		// if IS is {} then
 		//	return hsadd(HS,OS);
 		r = c.hsAdd(HS, OS)
-		if !m.IsFnLike && len(is0) == 1 && m.IsConst && len(r) == 1 {
-			t := r[0]
-			c.mmap[mmapKey{t.s, t.off}] = m
-		}
 		return r
 	}
 
@@ -1177,6 +1182,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		t.Ch = rune(PPNUMBER)
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		m.IsConst = false
+		m.val = nil
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -1199,6 +1205,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		t.Set(t.Sep(), []byte(fmt.Sprintf(`"%s"`, t.Position().Filename)))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		m.IsConst = false
+		m.val = nil
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -1212,6 +1219,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		t.Set(t.Sep(), []byte(fmt.Sprintf(`%d`, t.Position().Line)))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		m.IsConst = false
+		m.val = nil
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -1237,6 +1245,7 @@ func (c *cpp) macro(t Token, nm string) *Macro {
 		t.Set(t.Sep(), []byte(time.Now().Format("\"15:04:05\"")))
 		m, err := newMacro(nmt, nil, []cppToken{{Token: t}}, 0, -1, false)
 		m.IsConst = false
+		m.val = nil
 		if err != nil {
 			c.eh("%v", errorf("", err))
 			return nil
@@ -2787,6 +2796,7 @@ func (c *cpp) newMacro(nm Token, params []Token, replList []cppToken, minArgs, v
 
 	if ex := c.macros[s]; ex != nil && (!ex.IsConst || !m.isSame(ex)) {
 		m.IsConst = false
+		m.val = nil
 	}
 	c.macros[s] = m
 }
