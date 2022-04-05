@@ -28,60 +28,6 @@ var (
 	// is comparable.
 	Invalid Type = &InvalidType{}
 
-	arithmeticKinds = [maxKind]bool{
-		Bool:              true,
-		Char:              true,
-		ComplexChar:       true,
-		ComplexDouble:     true,
-		ComplexFloat:      true,
-		ComplexInt:        true,
-		ComplexLong:       true,
-		ComplexLongDouble: true,
-		ComplexLongLong:   true,
-		ComplexShort:      true,
-		ComplexUInt:       true,
-		ComplexUShort:     true,
-		Decimal128:        true,
-		Decimal32:         true,
-		Decimal64:         true,
-		Double:            true,
-		Enum:              true,
-		Float128:          true,
-		Float128x:         true,
-		Float16:           true,
-		Float32:           true,
-		Float32x:          true,
-		Float64:           true,
-		Float64x:          true,
-		Float:             true,
-		Int128:            true,
-		Int:               true,
-		Long:              true,
-		LongDouble:        true,
-		LongLong:          true,
-		SChar:             true,
-		Short:             true,
-		UChar:             true,
-		UInt128:           true,
-		UInt:              true,
-		ULong:             true,
-		ULongLong:         true,
-		UShort:            true,
-	}
-
-	floatinPointKinds = [maxKind]bool{
-		Double:     true,
-		Float128:   true,
-		Float128x:  true,
-		Float16:    true,
-		Float32:    true,
-		Float32x:   true,
-		Float64:    true,
-		Float64x:   true,
-		Float:      true,
-		LongDouble: true,
-	}
-
 	integerKinds = [maxKind]bool{
 		Bool:      true,
 		Char:      true,
@@ -98,6 +44,22 @@ var (
 		ULong:     true,
 		ULongLong: true,
 		UShort:    true,
+	}
+
+	realFloatingPointKinds = [maxKind]bool{
+		Decimal128: true,
+		Decimal32:  true,
+		Decimal64:  true,
+		Double:     true,
+		Float128:   true,
+		Float128x:  true,
+		Float16:    true,
+		Float32:    true,
+		Float32x:   true,
+		Float64:    true,
+		Float64x:   true,
+		Float:      true,
+		LongDouble: true,
 	}
 
 	complexKinds = [maxKind]bool{
@@ -144,29 +106,22 @@ var (
 		UInt128:   7,
 	}
 
-	realKinds = [maxKind]bool{
-		Bool:       true,
-		Char:       true,
-		Decimal32:  true,
-		Decimal64:  true,
-		Double:     true,
-		Enum:       true,
-		Float:      true,
-		Int128:     true,
-		Int:        true,
-		Long:       true,
-		LongDouble: true,
-		LongLong:   true,
-		SChar:      true,
-		Short:      true,
-		UChar:      true,
-		UInt:       true,
-		ULong:      true,
-		ULongLong:  true,
-		UShort:     true,
-		UInt128:    true,
-	}
+	realKinds       [maxKind]bool
+	arithmeticKinds [maxKind]bool
 )
+
+func init() {
+	for i, v := range integerKinds {
+		realKinds[i] = realKinds[i] || v
+	}
+	for i, v := range realFloatingPointKinds {
+		realKinds[i] = realKinds[i] || v
+	}
+	arithmeticKinds = realKinds
+	for i, v := range complexKinds {
+		arithmeticKinds[i] = arithmeticKinds[i] || v
+	}
+}
 
 type Kind int
 
@@ -267,10 +222,6 @@ type Type interface {
 	// Kind reports the kind of a type.
 	Kind() Kind
 
-	// Name returns the type name of a type or an empty string. C types are
-	// associated with names using typedef.
-	Name() string
-
 	// Size reports the size of a type in bytes. Incomplete or invalid types may
 	// report a negative size.
 	Size() int64
@@ -280,6 +231,9 @@ type Type interface {
 	// may change. Namely, the returned value is not suitable for directly
 	// determining type identity.
 	String() string
+
+	// Typedef returns the associated typedef declarator of this type, if any.
+	Typedef() *Declarator
 
 	// Undecay reverses Decay() if the type is a pointer and was produced by
 	// Decay() and the result was different than the Decay() receiver. Otherwise
@@ -292,14 +246,14 @@ type Type interface {
 
 	isCompatible(Type) bool
 	setAttr(*Attributes) Type
-	setName(nm string) Type
+	setName(d *Declarator) Type
 	str(b *strings.Builder, useTag bool) *strings.Builder
 }
 
-type namer string
+type namer struct{ d *Declarator }
 
-// Name implements Type
-func (n namer) Name() string { return string(n) }
+// Typedef implements Type
+func (n namer) Typedef() *Declarator { return n.d }
 
 type InvalidType struct{}
 
@@ -325,10 +279,10 @@ func (n *InvalidType) Undecay() Type { return n }
 func (n *InvalidType) FieldAlign() int { return 1 }
 
 // Name implements Type.
-func (n *InvalidType) Name() string { return "" }
+func (n *InvalidType) Typedef() *Declarator { return nil }
 
 // setName implements Type.
-func (n *InvalidType) setName(nm string) Type { return n }
+func (n *InvalidType) setName(*Declarator) Type { return n }
 
 func (n *InvalidType) isCompatible(Type) bool { return false }
 
@@ -394,9 +348,9 @@ func (n *PredefinedType) isCompatible(t Type) bool {
 }
 
 // setName implements Type.
-func (n *PredefinedType) setName(nm string) Type {
+func (n *PredefinedType) setName(d *Declarator) Type {
 	r := *n
-	r.namer = namer(nm)
+	r.namer = namer{d}
 	return &r
 }
 
@@ -442,7 +396,7 @@ func (n *PredefinedType) FieldAlign() int {
 func (n *PredefinedType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *PredefinedType) str(b *strings.Builder, useTag bool) *strings.Builder {
-	if s := n.Name(); s != "" {
+	if s := n.Typedef().Name(); s != "" {
 		b.WriteString(s)
 		return b
 	}
@@ -469,7 +423,7 @@ func (n *PredefinedType) Size() int64 {
 		return -1
 	}
 
-	if isIntegerType(n) || isFloatingPointType(n) {
+	if IsIntegerType(n) || isFloatingPointType(n) {
 		if v := n.VectorSize(); v > 0 {
 			return v
 		}
@@ -611,9 +565,9 @@ func (n *FunctionType) isCompatible(t Type) bool {
 }
 
 // setName implements Type.
-func (n *FunctionType) setName(nm string) Type {
+func (n *FunctionType) setName(d *Declarator) Type {
 	r := *n
-	r.namer = namer(nm)
+	r.namer = namer{d}
 	return &r
 }
 
@@ -662,7 +616,7 @@ func (n *FunctionType) Size() int64 {
 func (n *FunctionType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *FunctionType) str(b *strings.Builder, useTag bool) *strings.Builder {
-	if s := n.Name(); s != "" {
+	if s := n.Typedef().Name(); s != "" {
 		b.WriteString(s)
 		return b
 	}
@@ -721,9 +675,9 @@ func (n *PointerType) isCompatible(t Type) bool {
 }
 
 // setName implements Type.
-func (n *PointerType) setName(nm string) Type {
+func (n *PointerType) setName(d *Declarator) Type {
 	r := *n
-	r.namer = namer(nm)
+	r.namer = namer{d}
 	return &r
 }
 
@@ -795,7 +749,7 @@ func (n *PointerType) Size() int64 {
 func (n *PointerType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *PointerType) str(b *strings.Builder, useTag bool) *strings.Builder {
-	if s := n.Name(); s != "" {
+	if s := n.Typedef().Name(); s != "" {
 		b.WriteString(s)
 		return b
 	}
@@ -849,7 +803,7 @@ type structType struct {
 	fields []*Field
 	m      map[string]*Field
 	size   int64
-	tag    string
+	tag    Token
 
 	align   int
 	isUnion bool
@@ -963,10 +917,13 @@ type StructType struct {
 	vectorSizer
 }
 
-func (c *ctx) newStructType(tag string, fields []*Field, size int64, align int) (r *StructType) {
+func (c *ctx) newStructType(tag Token, fields []*Field, size int64, align int) (r *StructType) {
 	r = &StructType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align}}
 	return r
 }
+
+// Tag returns n's tag, if any.
+func (n *StructType) Tag() Token { return n.tag }
 
 // Attributes implemets Type.
 func (n *StructType) Attributes() *Attributes {
@@ -1006,9 +963,9 @@ func (n *StructType) isCompatible(t Type) bool {
 }
 
 // setName implements Type.
-func (n *StructType) setName(nm string) Type {
+func (n *StructType) setName(d *Declarator) Type {
 	r := *n
-	r.namer = namer(nm)
+	r.namer = namer{d}
 	return &r
 }
 
@@ -1140,15 +1097,15 @@ func (n *StructType) str(b *strings.Builder, useTag bool) *strings.Builder {
 		return b
 	}
 
-	if s := n.Name(); s != "" {
+	if s := n.Typedef().Name(); s != "" {
 		b.WriteString(s)
 		return b
 	}
 
 	b.WriteString("struct")
-	if n.tag != "" {
+	if s := n.tag.SrcStr(); s != "" {
 		b.WriteByte(' ')
-		b.WriteString(n.tag)
+		b.WriteString(s)
 		if useTag {
 			return b
 		}
@@ -1178,9 +1135,12 @@ type UnionType struct {
 	vectorSizer
 }
 
-func (c *ctx) newUnionType(tag string, fields []*Field, size int64, align int) *UnionType {
+func (c *ctx) newUnionType(tag Token, fields []*Field, size int64, align int) *UnionType {
 	return &UnionType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true}}
 }
+
+// Tag returns n's tag, if any.
+func (n *UnionType) Tag() Token { return n.tag }
 
 // Attributes implemets Type.
 func (n *UnionType) Attributes() *Attributes {
@@ -1220,9 +1180,9 @@ func (n *UnionType) isCompatible(t Type) bool {
 }
 
 // setName implements Type.
-func (n *UnionType) setName(nm string) Type {
+func (n *UnionType) setName(d *Declarator) Type {
 	r := *n
-	r.namer = namer(nm)
+	r.namer = namer{d}
 	return &r
 }
 
@@ -1354,15 +1314,15 @@ func (n *UnionType) str(b *strings.Builder, useTag bool) *strings.Builder {
 		return b
 	}
 
-	if s := n.Name(); s != "" {
+	if s := n.Typedef().Name(); s != "" {
 		b.WriteString(s)
 		return b
 	}
 
 	b.WriteString("union")
-	if n.tag != "" {
+	if s := n.tag.SrcStr(); s != "" {
 		b.WriteByte(' ')
-		b.WriteString(n.tag)
+		b.WriteString(s)
 		if useTag {
 			return b
 		}
@@ -1420,9 +1380,9 @@ func (n *ArrayType) isCompatible(t Type) bool {
 }
 
 // setName implements Type.
-func (n *ArrayType) setName(nm string) Type {
+func (n *ArrayType) setName(d *Declarator) Type {
 	r := *n
-	r.namer = namer(nm)
+	r.namer = namer{d}
 	return &r
 }
 
@@ -1509,7 +1469,7 @@ func (n *ArrayType) Size() int64 {
 func (n *ArrayType) String() string { return n.str(&strings.Builder{}, false).String() }
 
 func (n *ArrayType) str(b *strings.Builder, useTag bool) *strings.Builder {
-	if s := n.Name(); s != "" {
+	if s := n.Typedef().Name(); s != "" {
 		b.WriteString(s)
 		return b
 	}
@@ -1527,14 +1487,20 @@ type EnumType struct {
 	enums   []*Enumerator
 	forward *EnumSpecifier
 	namer
-	tag string
+	tag Token
 	typ typer
 	vectorSizer
 }
 
-func (c *ctx) newEnumType(tag string, typ Type, enums []*Enumerator) *EnumType {
+func (c *ctx) newEnumType(tag Token, typ Type, enums []*Enumerator) *EnumType {
 	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums}
 }
+
+// Tag returns n's tag, if any.
+func (n *EnumType) Tag() Token { return n.tag }
+
+// Enumerators returns enumerators defined by n.
+func (n *EnumType) Enumerators() []*Enumerator { return n.enums }
 
 // Attributes implemets Type.
 func (n *EnumType) Attributes() *Attributes {
@@ -1597,9 +1563,9 @@ func (n *EnumType) isCompatible(t Type) bool {
 }
 
 // setName implements Type.
-func (n *EnumType) setName(nm string) Type {
+func (n *EnumType) setName(d *Declarator) Type {
 	r := *n
-	r.namer = namer(nm)
+	r.namer = namer{d}
 	return &r
 }
 
@@ -1679,15 +1645,13 @@ func (n *EnumType) str(b *strings.Builder, useTag bool) *strings.Builder {
 		return b
 	}
 
-	if s := n.Name(); s != "" {
+	if s := n.Typedef().Name(); s != "" {
 		b.WriteString(s)
 		return b
 	}
 
 	b.WriteString("enum ")
-	if n.tag != "" {
-		b.WriteString(n.tag)
-	}
+	b.WriteString(n.tag.SrcStr())
 	if n.forward != nil {
 		return b
 	}
@@ -1708,9 +1672,10 @@ func isPointerType(t Type) bool { return t.Kind() == Ptr }
 
 func isVectorType(t Type) bool { a := t.Attributes(); return a != nil && a.vectorSize > 0 }
 
-func isIntegerType(t Type) bool { return integerKinds[t.Kind()] }
+// IsIntegerType reports whether t is an integer type.
+func IsIntegerType(t Type) bool { return integerKinds[t.Kind()] }
 
-func isFloatingPointType(t Type) bool { return floatinPointKinds[t.Kind()] }
+func isFloatingPointType(t Type) bool { return realFloatingPointKinds[t.Kind()] }
 
 func isComplexType(t Type) bool { return complexKinds[t.Kind()] }
 
@@ -1719,6 +1684,18 @@ func isScalarType(t Type) bool { return isArithmeticType(t) || t.Kind() == Ptr }
 func isArithmeticType(t Type) bool { return arithmeticKinds[t.Kind()] }
 
 func isRealType(t Type) bool { return realKinds[t.Kind()] }
+
+// IsSignedInteger reports whether t is a signed integer type.
+func IsSignedInteger(t Type) bool {
+	switch x := t.(type) {
+	case *PredefinedType:
+		return x.c.ast.ABI.isSignedInteger(x.Kind())
+	case *EnumType:
+		return IsSignedInteger(x.UnderlyingType())
+	default:
+		return false
+	}
+}
 
 // [0] 6.3.1.8 Usual arithmetic conversions
 func usualArithmeticConversions(a, b Type) (r Type) {
@@ -1836,7 +1813,7 @@ func usualArithmeticConversions(a, b Type) (r Type) {
 
 	// Otherwise, the integer promotions are performed on both operands.
 
-	if !isIntegerType(a) || !isIntegerType(b) {
+	if !IsIntegerType(a) || !IsIntegerType(b) {
 		panic(todo("internal error: %s and %s", a, b))
 	}
 

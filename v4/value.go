@@ -1071,7 +1071,7 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 		n.val = n.PrimaryExpression.eval(c, mode)
 	case PostfixExpressionIndex: // PostfixExpression '[' Expression ']'
 		switch {
-		case isPointerType(n.PostfixExpression.Type()) && isIntegerType(n.ExpressionList.Type()):
+		case isPointerType(n.PostfixExpression.Type()) && IsIntegerType(n.ExpressionList.Type()):
 			switch v := n.PostfixExpression.eval(c, mode).(type) {
 			case *UnknownValue:
 				// nop
@@ -1126,7 +1126,7 @@ func (n *PostfixExpression) eval(c *ctx, mode flags) (r Value) {
 				// trc("%v: %v %v [%v %v] %T", n.Token.Position(), n.PostfixExpression.Value(), n.PostfixExpression.Type(), n.ExpressionList.Value(), n.ExpressionList.Type(), v)
 				c.errors.add(errorf("TODO %v %T", n.Case, v))
 			}
-		case isIntegerType(n.PostfixExpression.Type()) && isPointerType(n.ExpressionList.Type()):
+		case IsIntegerType(n.PostfixExpression.Type()) && isPointerType(n.ExpressionList.Type()):
 			switch v := n.ExpressionList.eval(c, mode).(type) {
 			case *UnknownValue:
 				// nop

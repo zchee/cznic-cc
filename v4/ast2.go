@@ -6,6 +6,10 @@ package cc // import "modernc.org/cc/v4"
 
 // Name returns the name of n.
 func (n *Declarator) Name() string {
+	if n == nil {
+		return ""
+	}
+
 	if dn := n.DirectDeclarator.name(); dn != nil {
 		return dn.Token.SrcStr()
 	}

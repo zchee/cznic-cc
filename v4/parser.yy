@@ -431,6 +431,7 @@ package cc // import "modernc.org/cc/v4"
 				"_Static_assert" '(' ConstantExpression ',' STRINGLITERAL ')'
 
 			/*yy:field	AttributeSpecifierList	*AttributeSpecifierList	*/
+			/*yy:field	typer						*/
 			/*yy:field	isTypedef	bool				*/
 			/*yy:example __attribute__((a)) static int i; */
 /*yy:case Storage    */ DeclarationSpecifiers:

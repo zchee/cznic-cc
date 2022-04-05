@@ -1262,15 +1262,16 @@ func (n DeclarationSpecifiersCase) String() string {
 //	|       "__attribute__"                              // Case DeclarationSpecifiersAttr
 type DeclarationSpecifiers struct {
 	AttributeSpecifierList *AttributeSpecifierList
-	isTypedef              bool
-	AlignmentSpecifier     *AlignmentSpecifier
-	Case                   DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
-	DeclarationSpecifiers  *DeclarationSpecifiers
-	FunctionSpecifier      *FunctionSpecifier
-	StorageClassSpecifier  *StorageClassSpecifier
-	Token                  Token
-	TypeQualifier          *TypeQualifier
-	TypeSpecifier          *TypeSpecifier
+	typer
+	isTypedef             bool
+	AlignmentSpecifier    *AlignmentSpecifier
+	Case                  DeclarationSpecifiersCase `PrettyPrint:"stringer,zero"`
+	DeclarationSpecifiers *DeclarationSpecifiers
+	FunctionSpecifier     *FunctionSpecifier
+	StorageClassSpecifier *StorageClassSpecifier
+	Token                 Token
+	TypeQualifier         *TypeQualifier
+	TypeSpecifier         *TypeSpecifier
 }
 
 // String implements fmt.Stringer.

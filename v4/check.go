@@ -221,10 +221,12 @@ func (c *ctx) checkScope(s *Scope) {
 			}
 		}
 		if len(ess) > 1 {
-			c.errors.add(errorf("TODO %T", ess[0]))
+			a := ess[1]
+			c.errors.add(errorf("%v: redeclaration of 'enum %s' at %v:", a.Position(), a.Token2.Src(), ess[0].Position()))
 		}
 		if len(es) > 1 {
-			c.errors.add(errorf("TODO %T", es[0]))
+			a := es[1]
+			c.errors.add(errorf("%v: redeclaration of enumerator '%s' at %v:", a.Position(), a.Token.Src(), es[0].Position()))
 		}
 		if len(lds) > 1 {
 			c.errors.add(errorf("TODO %T", lds[0]))
@@ -866,7 +868,7 @@ func (n *Initializer) check(c *ctx, t Type, off int64) {
 				return
 			}
 
-			if isIntegerType(exprT) {
+			if IsIntegerType(exprT) {
 				n.val = c.convert(n.Value(), t)
 				return
 			}
@@ -940,7 +942,7 @@ func (n *Initializer) checkExprArray(c *ctx, t *ArrayType, exprT Type, off int64
 		// Successive wide characters of the wide string literal (including the
 		// terminating null wide character if there is room or if the array is of
 		// unknown size) initialize the elements of the array.
-		if isIntegerType(x) && x.Size() == c.wcharT(n).Size() {
+		if IsIntegerType(x) && x.Size() == c.wcharT(n).Size() {
 			switch x := v.(type) {
 			case UTF16StringValue:
 				if t.IsIncomplete() {
@@ -1192,7 +1194,7 @@ func int64Value(c *ctx, n ExpressionNode) (int64, bool) {
 	}
 
 	switch t := n.check(c, decay); {
-	case isIntegerType(t):
+	case IsIntegerType(t):
 		switch x := n.eval(c, 0).(type) {
 		case Int64Value:
 			return int64(x), true
@@ -1453,7 +1455,7 @@ func (n *Declarator) check(c *ctx, t Type) (r Type) {
 
 	r = n.DirectDeclarator.check(c, n.Pointer.check(c, t))
 	if n.isTypename {
-		r = r.setName(n.Name())
+		r = r.setName(n)
 	}
 	n.typ = r
 	return n.Type()
@@ -1707,6 +1709,7 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 		if attr != nil {
 			r = r.setAttr(attr)
 		}
+		n.typ = r
 	}(n)
 
 	var attrs []*Attributes
@@ -2094,10 +2097,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 		}
 	}()
 
-	tag := ""
-	if n.Token2.s != nil {
-		tag = n.Token2.SrcStr()
-	}
+	tag := n.Token2
 	switch n.Case {
 	case EnumSpecifierDef: // "enum" IDENTIFIER '{' EnumeratorList ',' '}'
 		var t Type
@@ -2154,7 +2154,7 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 		}
 
 		n.typ = c.newEnumType(tag, nil, nil)
-		c.ast.Scope.declare(&c.errors, tag, n)
+		c.ast.Scope.declare(&c.errors, tag.SrcStr(), n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2196,10 +2196,7 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 		return n.Type()
 	}
 
-	tag := ""
-	if n.Token.s != nil {
-		tag = n.Token.SrcStr()
-	}
+	tag := n.Token
 	switch n.Case {
 	case StructOrUnionSpecifierDef: // StructOrUnion IDENTIFIER '{' StructDeclarationList '}'
 		defer func() {
@@ -2247,7 +2244,7 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 		default:
 			n.typ = c.newStructType(tag, nil, -1, 1)
 		}
-		c.ast.Scope.declare(&c.errors, tag, n)
+		c.ast.Scope.declare(&c.errors, tag.SrcStr(), n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
 	}
@@ -2450,7 +2447,7 @@ func (n *StructDeclarator) check(c *ctx, t Type, isAtomic, isConst, isVolatile, 
 		return &Field{declarator: n.Declarator, typ: newTyper(n.Declarator.check(c, t))}
 	case StructDeclaratorBitField: // Declarator ':' ConstantExpression
 		t := n.ConstantExpression.check(c, decay)
-		if !isIntegerType(t) {
+		if !IsIntegerType(t) {
 			c.errors.add(errorf("%v: expected integer expression: %s", n.ConstantExpression.Position(), t))
 			break
 		}
@@ -2543,7 +2540,7 @@ func (n *AssignmentExpression) check(c *ctx, mode flags) (r Type) {
 			isPointerType(a) && isPointerType(b),
 
 			// — the left operand is a pointer and the right is a null pointer constant; or
-			isPointerType(a) && isIntegerType(b),
+			isPointerType(a) && IsIntegerType(b),
 
 			// — the left operand has type _Bool and the right is a pointer.
 			a.Kind() == Bool && isPointerType(b):
@@ -2606,10 +2603,10 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 			n.typ = t2
 		case
 			// one operand is a pointer and the other is a null pointer constant; or
-			isPointerType(t2) && isIntegerType(t3):
+			isPointerType(t2) && IsIntegerType(t3):
 			n.typ = t2
 		case
-			isIntegerType(t2) && isPointerType(t3):
+			IsIntegerType(t2) && isPointerType(t3):
 			n.typ = t3
 		case t2.Kind() == Void:
 			n.typ = t2
@@ -2709,7 +2706,7 @@ func (n *InclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 	case InclusiveOrExpressionOr: // InclusiveOrExpression '|' ExclusiveOrExpression
 		mode = mode.add(decay)
 		switch a, b := n.InclusiveOrExpression.check(c, mode), n.ExclusiveOrExpression.check(c, mode); {
-		case !isIntegerType(a) || !isIntegerType(b):
+		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = usualArithmeticConversions(a, b)
@@ -2741,7 +2738,7 @@ func (n *ExclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 	case ExclusiveOrExpressionXor: // ExclusiveOrExpression '^' AndExpression
 		mode = mode.add(decay)
 		switch a, b := n.ExclusiveOrExpression.check(c, mode), n.AndExpression.check(c, mode); {
-		case !isIntegerType(a) || !isIntegerType(b):
+		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = usualArithmeticConversions(a, b)
@@ -2773,7 +2770,7 @@ func (n *AndExpression) check(c *ctx, mode flags) (r Type) {
 	case AndExpressionAnd: // AndExpression '&' EqualityExpression
 		mode = mode.add(decay)
 		switch a, b := n.AndExpression.check(c, mode), n.EqualityExpression.check(c, mode); {
-		case !isIntegerType(a) || !isIntegerType(b):
+		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = usualArithmeticConversions(a, b)
@@ -2821,7 +2818,7 @@ func (n *EqualityExpression) check(c *ctx, mode flags) (r Type) {
 			isPointerType(a) && isPointerType(b),
 
 			// one operand is a pointer and the other is a null pointer constant.
-			isPointerType(a) && isIntegerType(b) || isPointerType(b) && isIntegerType(a):
+			isPointerType(a) && IsIntegerType(b) || isPointerType(b) && IsIntegerType(a):
 
 			n.typ = c.intT
 		default:
@@ -2950,9 +2947,9 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 		case
 			// or one operand shall be a pointer to an object type and the other shall have
 			// integer type.
-			isPointerType(a) && isIntegerType(b):
+			isPointerType(a) && IsIntegerType(b):
 			n.typ = a
-		case isIntegerType(a) && isPointerType(b):
+		case IsIntegerType(a) && isPointerType(b):
 			n.typ = b
 		default:
 			c.errors.add(errorf("%v: invalid operands: %s and %s", n.Token.Position(), a, b))
@@ -2972,7 +2969,7 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 		case
 			// the left operand is a pointer to an object type and the right operand has
 			// integer type.
-			isPointerType(a) && isIntegerType(b):
+			isPointerType(a) && IsIntegerType(b):
 			n.typ = a
 		default:
 			c.errors.add(errorf("%v: invalid operands: %s and %s", n.Token.Position(), a, b))
@@ -3017,7 +3014,7 @@ func (n *MultiplicativeExpression) check(c *ctx, mode flags) (r Type) {
 	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
 		mode = mode.add(decay)
 		switch a, b := n.MultiplicativeExpression.check(c, mode), n.CastExpression.check(c, mode); {
-		case !isIntegerType(a) || !isIntegerType(b):
+		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = usualArithmeticConversions(a, b)
@@ -3138,7 +3135,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 	case UnaryExpressionCpl: // '~' CastExpression
 		t := n.CastExpression.check(c, mode.add(decay))
 		switch {
-		case isIntegerType(t):
+		case IsIntegerType(t):
 			n.typ = integerPromotion(t)
 		case isComplexType(t): // GCC extension, complex conjugate
 			n.typ = t
@@ -3234,13 +3231,13 @@ out:
 		// expression shall have integer type, and the result has type ‘‘type’’.
 		mode = mode.add(decay)
 		switch t1, t2 := n.PostfixExpression.check(c, mode), n.ExpressionList.check(c, mode); {
-		case isPointerType(t1) && isIntegerType(t2):
+		case isPointerType(t1) && IsIntegerType(t2):
 			n.typ = t1.(*PointerType).Elem()
-		case isPointerType(t2) && isIntegerType(t1):
+		case isPointerType(t2) && IsIntegerType(t1):
 			n.typ = t2.(*PointerType).Elem()
-		case isVectorType(t1) && isIntegerType(t2):
+		case isVectorType(t1) && IsIntegerType(t2):
 			n.typ = t1
-		case isVectorType(t2) && isIntegerType(t1):
+		case isVectorType(t2) && IsIntegerType(t1):
 			n.typ = t2
 		default:
 			c.errors.add(errorf("%v: one of the expressions shall be a pointer and the other shall have integer type: %s and %s", n.Token.Position(), t1, t2))
