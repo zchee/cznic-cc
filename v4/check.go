@@ -2139,12 +2139,12 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 		for _, v := range list {
 			v.typ = t
 		}
-		n.typ = c.newEnumType(tag, t, list)
+		n.typ = c.newEnumType(n.LexicalScope(), tag, t, list)
 	case EnumSpecifierTag: // "enum" IDENTIFIER
 		if x := n.LexicalScope().enum(n.Token2); x != nil {
 			switch {
 			case x.typ == nil:
-				t := c.newEnumType(tag, nil, nil)
+				t := c.newEnumType(n.LexicalScope(), tag, nil, nil)
 				t.forward = x
 				n.typ = t
 			default:
@@ -2153,7 +2153,9 @@ func (n *EnumSpecifier) check(c *ctx) (r Type) {
 			break
 		}
 
-		n.typ = c.newEnumType(tag, nil, nil)
+		t := c.newEnumType(n.LexicalScope(), tag, nil, nil)
+		t.isIncomplete0 = true
+		n.typ = t
 		c.ast.Scope.declare(&c.errors, tag.SrcStr(), n)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -2207,9 +2209,9 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 
 		switch {
 		case n.StructOrUnion.Case == StructOrUnionUnion:
-			n.typ = c.newUnionType(tag, nil, -1, 1)
+			n.typ = c.newUnionType(n.LexicalScope(), tag, nil, -1, 1)
 		default:
-			n.typ = c.newStructType(tag, nil, -1, 1)
+			n.typ = c.newStructType(n.LexicalScope(), tag, nil, -1, 1)
 		}
 
 		n.StructDeclarationList.check(c, n)
@@ -2224,11 +2226,11 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 			case x.typ == nil:
 				switch {
 				case n.StructOrUnion.Case == StructOrUnionUnion:
-					t := c.newUnionType(tag, nil, -1, 1)
+					t := c.newUnionType(n.LexicalScope(), tag, nil, -1, 1)
 					t.forward = x
 					n.typ = t
 				default:
-					t := c.newStructType(tag, nil, -1, 1)
+					t := c.newStructType(n.LexicalScope(), tag, nil, -1, 1)
 					t.forward = x
 					n.typ = t
 				}
@@ -2240,9 +2242,13 @@ func (n *StructOrUnionSpecifier) check(c *ctx) (r Type) {
 
 		switch {
 		case n.StructOrUnion.Case == StructOrUnionUnion:
-			n.typ = c.newUnionType(tag, nil, -1, 1)
+			t := c.newUnionType(n.LexicalScope(), tag, nil, -1, 1)
+			t.isIncomplete0 = true
+			n.typ = t
 		default:
-			n.typ = c.newStructType(tag, nil, -1, 1)
+			t := c.newStructType(n.LexicalScope(), tag, nil, -1, 1)
+			t.isIncomplete0 = true
+			n.typ = t
 		}
 		c.ast.Scope.declare(&c.errors, tag.SrcStr(), n)
 	default:
@@ -3286,8 +3292,8 @@ out:
 			break
 		}
 
-		n.typ = pt.Elem().(*FunctionType).Result()
-		//TODO check args
+		ft := pt.Elem().(*FunctionType)
+		n.typ = ft.Result()
 	case PostfixExpressionSelect: // PostfixExpression '.' IDENTIFIER
 		nm := n.Token2.SrcStr()
 		switch t := n.PostfixExpression.check(c, mode.add(decay)); t.Kind() {

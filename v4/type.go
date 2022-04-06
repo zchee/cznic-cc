@@ -521,6 +521,13 @@ func (c *ctx) newFunctionType2(result Type, fp []*Parameter) (r *FunctionType) {
 	return r
 }
 
+// MinArgs returns the minimum number of arguments n expects.
+func (n *FunctionType) MinArgs() int { return n.minArgs }
+
+// MaxArgs returns the maximum number of arguments n expects. Variadic
+// functions return a negative value.
+func (n *FunctionType) MaxArgs() int { return n.maxArgs }
+
 // setAttr implements Type.
 func (n *FunctionType) setAttr(a *Attributes) Type {
 	m := *n
@@ -802,14 +809,20 @@ func (n *Field) Offset() int64 { return n.offsetBytes }
 type structType struct {
 	fields []*Field
 	m      map[string]*Field
+	scope  *Scope
 	size   int64
 	tag    Token
 
-	align   int
-	isUnion bool
+	align         int
+	isIncomplete0 bool
+	isUnion       bool
 }
 
 func (n *structType) isIncomplete() bool {
+	if n.isIncomplete0 {
+		return true
+	}
+
 	for i, v := range n.fields {
 		if v.Type().IsIncomplete() {
 			if x, ok := v.Type().(*ArrayType); ok && x.IsVLA() {
@@ -917,9 +930,18 @@ type StructType struct {
 	vectorSizer
 }
 
-func (c *ctx) newStructType(tag Token, fields []*Field, size int64, align int) (r *StructType) {
-	r = &StructType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align}}
+func (c *ctx) newStructType(scope *Scope, tag Token, fields []*Field, size int64, align int) (r *StructType) {
+	r = &StructType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, scope: scope}}
 	return r
+}
+
+// LexicalScope provides the scope the definition of n appears in.
+func (n *StructType) LexicalScope() *Scope {
+	if n.forward != nil {
+		return n.forward.LexicalScope()
+	}
+
+	return n.scope
 }
 
 // Tag returns n's tag, if any.
@@ -1135,8 +1157,17 @@ type UnionType struct {
 	vectorSizer
 }
 
-func (c *ctx) newUnionType(tag Token, fields []*Field, size int64, align int) *UnionType {
-	return &UnionType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true}}
+func (c *ctx) newUnionType(scope *Scope, tag Token, fields []*Field, size int64, align int) *UnionType {
+	return &UnionType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true, scope: scope}}
+}
+
+// LexicalScope provides the scope the definition of n appears in.
+func (n *UnionType) LexicalScope() *Scope {
+	if n.forward != nil {
+		return n.forward.LexicalScope()
+	}
+
+	return n.scope
 }
 
 // Tag returns n's tag, if any.
@@ -1487,13 +1518,25 @@ type EnumType struct {
 	enums   []*Enumerator
 	forward *EnumSpecifier
 	namer
-	tag Token
-	typ typer
+	scope *Scope
+	tag   Token
+	typ   typer
 	vectorSizer
+
+	isIncomplete0 bool
 }
 
-func (c *ctx) newEnumType(tag Token, typ Type, enums []*Enumerator) *EnumType {
-	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums}
+func (c *ctx) newEnumType(scope *Scope, tag Token, typ Type, enums []*Enumerator) *EnumType {
+	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums, scope: scope}
+}
+
+// LexicalScope provides the scope the definition of n appears in.
+func (n *EnumType) LexicalScope() *Scope {
+	if n.forward != nil {
+		return n.forward.LexicalScope()
+	}
+
+	return n.scope
 }
 
 // Tag returns n's tag, if any.
@@ -1617,7 +1660,7 @@ func (n *EnumType) IsIncomplete() bool {
 		return n.forward.Type().IsIncomplete()
 	}
 
-	return n.typ.Type().IsIncomplete()
+	return n.isIncomplete0 || n.typ.Type().IsIncomplete()
 }
 
 // Kind implements Type.

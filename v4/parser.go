@@ -434,6 +434,7 @@ func (p *parser) functionDefinition(ds *DeclarationSpecifiers, d *Declarator) (r
 		r.scope = p.fnScope
 		p.fnScope = nil
 	}()
+	d.isFuncDef = true
 	return &FunctionDefinition{DeclarationSpecifiers: ds, Declarator: d, DeclarationList: p.declarationListOpt(), CompoundStatement: p.compoundStatement(true, d)}
 }
 
@@ -3202,14 +3203,14 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 	case rune(IDENTIFIER):
 		switch p.peek(2, true).Ch {
 		case '{':
-			r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), Token3: p.shift(false), EnumeratorList: p.enumeratorList()}
+			r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), Token3: p.shift(false), EnumeratorList: p.enumeratorList(), lexicalScoper: newLexicalScoper(p.scope)}
 			r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
 			p.scope.declare(p.cpp.eh, r.Token2.SrcStr(), r)
 		default:
 			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false), lexicalScoper: newLexicalScoper(p.scope)}
 		}
 	case '{':
-		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), EnumeratorList: p.enumeratorList()}
+		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), EnumeratorList: p.enumeratorList(), lexicalScoper: newLexicalScoper(p.scope)}
 	default:
 		t := p.shift(false)
 		p.cpp.eh("%v: unexpected %v, expected enum specifier", t.Position(), runeName(t.Ch))
@@ -3294,9 +3295,9 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 		p.cpp.eh("%v: unexpected EOF", p.toks[0].Position())
 		return nil
 	case '{':
-		return &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attrs, Token2: p.shift(false), StructDeclarationList: p.structDeclarationList(), Token3: p.must('}'), AttributeSpecifierList2: p.attributeSpecifierListOpt()}
+		return &StructOrUnionSpecifier{Case: StructOrUnionSpecifierDef, StructOrUnion: sou, AttributeSpecifierList: attrs, Token2: p.shift(false), StructDeclarationList: p.structDeclarationList(), Token3: p.must('}'), AttributeSpecifierList2: p.attributeSpecifierListOpt(), lexicalScoper: newLexicalScoper(p.scope)}
 	case rune(IDENTIFIER):
-		r = &StructOrUnionSpecifier{StructOrUnion: sou, AttributeSpecifierList: attrs, Token: p.shift(false)}
+		r = &StructOrUnionSpecifier{StructOrUnion: sou, AttributeSpecifierList: attrs, Token: p.shift(false), lexicalScoper: newLexicalScoper(p.scope)}
 		r.visible = visible(r.Token.seq + 1) // [0]6.2.1,7
 		switch p.rune(false) {
 		case eof:
@@ -3311,7 +3312,6 @@ func (p *parser) structOrUnionSpecifier() (r *StructOrUnionSpecifier) {
 			r.AttributeSpecifierList = p.attributeSpecifierListOpt()
 			return r
 		default:
-			r.lexicalScope = p.scope
 			r.Case = StructOrUnionSpecifierTag
 			return r
 		}

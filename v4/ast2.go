@@ -25,6 +25,32 @@ func (n *Declarator) isFn() bool {
 	return n.DirectDeclarator.isFn()
 }
 
+// Linkage descibes linkage of identifiers ([0]6.2.2).
+type Linkage int
+
+// Values of type Linkage
+const (
+	External Linkage = iota
+	Internal
+	None
+)
+
+func (n *Declarator) Linkage() Linkage {
+	if n.IsTypename() {
+		return None
+	}
+
+	if n.IsStatic() {
+		return Internal
+	}
+
+	if n.IsExtern() || n.LexicalScope().Parent == nil {
+		return External
+	}
+
+	return None
+}
+
 // IsExtern reports whether the storage class specifier 'extern' was present in
 // the declaration of n.
 func (n *Declarator) IsExtern() bool { return n.isExtern }

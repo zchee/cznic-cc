@@ -1335,6 +1335,7 @@ type Declarator struct {
 	isAuto           bool
 	isConst          bool
 	isExtern         bool
+	isFuncDef        bool
 	isInline         bool
 	isNoreturn       bool
 	isParam          bool
