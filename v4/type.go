@@ -555,7 +555,7 @@ func (n *FunctionType) isCompatible(t Type) bool {
 			t := v.Type()
 			w := x.fp[i]
 			u := w.Type()
-			if !t.isCompatible(u) && !integerPromotion(t).isCompatible(integerPromotion(u)) && !t.Decay().isCompatible(u.Decay()) {
+			if !t.isCompatible(u) && !IntegerPromotion(t).isCompatible(IntegerPromotion(u)) && !t.Decay().isCompatible(u.Decay()) {
 				if Dmesgs {
 					Dmesg("%v %v and %v %v", t, t.Kind(), u, u.Kind())
 				}
@@ -1943,12 +1943,6 @@ func usualArithmeticConversions(a, b Type) (r Type) {
 	panic(todo(""))
 }
 
-// [0]6.3.1.1-2
-//
-// If an int can represent all values of the original type, the value is
-// converted to an int; otherwise, it is converted to an unsigned int. These
-// are called the integer promotions. All other types are unchanged by the
-// integer promotions.
 func integerPromotionKind(k Kind) Kind {
 	switch k {
 	case Char, SChar, UChar, Short, UShort:
@@ -1958,7 +1952,13 @@ func integerPromotionKind(k Kind) Kind {
 	}
 }
 
-func integerPromotion(t Type) Type {
+// IntegerPromotion performs the type conversion defined in [0]6.3.1.1-2.
+//
+// If an int can represent all values of the original type, the value is
+// converted to an int; otherwise, it is converted to an unsigned int. These
+// are called the integer promotions. All other types are unchanged by the
+// integer promotions.
+func IntegerPromotion(t Type) Type {
 	switch t.Kind() {
 	case Char, SChar, UChar, Short, UShort:
 		return t.(*PredefinedType).c.ast.kinds[Int]

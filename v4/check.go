@@ -251,33 +251,46 @@ func (c *ctx) convert(v Value, t Type) (r Value) {
 	if t.Kind() == Enum {
 		t = t.(*EnumType).UnderlyingType()
 	}
+	if IsIntegerType(t) {
+		switch {
+		case t.Size() > 8:
+			return Unknown
+		case IsSignedInteger(t):
+			m := Int64Value(-1)
+			if t.Size() < 8 {
+				m = Int64Value(1)<<(8*t.Size()) - 1
+			}
+			switch x := v.(type) {
+			case Int64Value:
+				switch {
+				case x < 0:
+					return x | ^m
+				default:
+					return x & m
+				}
+			case UInt64Value:
+				switch y := Int64Value(x); {
+				case y < 0:
+					return y | ^m
+				default:
+					return y & m
+				}
+			}
+		default:
+			m := ^UInt64Value(0)
+			if t.Size() < 8 {
+				m = UInt64Value(1)<<(8*t.Size()) - 1
+			}
+			switch x := v.(type) {
+			case Int64Value:
+				return UInt64Value(x) & m
+			case UInt64Value:
+				return x & m
+			}
+		}
+	}
 
 	switch t.Kind() {
-	case Int, Long, LongLong, Char, SChar, Short:
-		m := Int64Value(1)<<(8*t.Size()) - 1
-		switch x := v.(type) {
-		case Int64Value:
-			if x < 0 {
-				return x | ^m
-			}
-
-			return x & m
-		case UInt64Value:
-			y := Int64Value(x)
-			if y < 0 {
-				return y | ^m
-			}
-
-			return y & m
-		}
-	case ULong, UInt, ULongLong, UChar, UShort:
-		m := UInt64Value(1)<<(8*t.Size()) - 1
-		switch x := v.(type) {
-		case Int64Value:
-			return UInt64Value(x) & m
-		case UInt64Value:
-			return x & m
-		}
 	case Bool:
 		switch x := v.(type) {
 		case Int64Value:
@@ -2916,7 +2929,7 @@ func (n *ShiftExpression) check(c *ctx, mode flags) (r Type) {
 		case !isScalarType(a) || !isScalarType(b):
 			c.errors.add(errorf("%v: operands shall be a scalars: %s and %s", n.Token.Position(), a, b))
 		default:
-			n.typ = integerPromotion(a)
+			n.typ = IntegerPromotion(a)
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -3134,7 +3147,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		UnaryExpressionPlus,  // '+' CastExpression
 		UnaryExpressionMinus: // '-' CastExpression
 
-		n.typ = integerPromotion(n.CastExpression.check(c, mode.add(decay)))
+		n.typ = IntegerPromotion(n.CastExpression.check(c, mode.add(decay)))
 		if !isArithmeticType(n.Type()) {
 			c.errors.add(errorf("%v: expected arithmetic type: %s", n.Position(), n.CastExpression.Type()))
 		}
@@ -3142,7 +3155,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		t := n.CastExpression.check(c, mode.add(decay))
 		switch {
 		case IsIntegerType(t):
-			n.typ = integerPromotion(t)
+			n.typ = IntegerPromotion(t)
 		case isComplexType(t): // GCC extension, complex conjugate
 			n.typ = t
 		default:
