@@ -537,7 +537,6 @@ type fset struct {
 	items []fsetItem
 
 	off int32
-	sz  int32
 }
 
 func newFset() *fset { return &fset{} }

@@ -3477,17 +3477,6 @@ type Scope struct {
 
 func newScope(parent *Scope) (r *Scope) { return &Scope{Parent: parent} }
 
-func (s *Scope) err(eh interface{}, err error) {
-	switch x := eh.(type) {
-	case *errors:
-		x.add(err)
-	case errHandler:
-		x(err.Error())
-	default:
-		panic(todo("internal error: %T", x))
-	}
-}
-
 func (s *Scope) declare(eh interface{}, nm string, n Node) {
 	// trc("%v: %q %T, visible %v (scope %p) (%v:)", n.Position(), nm, n, n.(interface{ Visible() int }).Visible(), s, origin(2))
 	if s.Nodes != nil {

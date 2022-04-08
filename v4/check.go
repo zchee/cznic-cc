@@ -140,6 +140,8 @@ func newCtx(ast *AST) *ctx {
 	c.voidT = c.ast.kinds[Void]
 	c.pvoidT = c.newPointerType(c.voidT)
 	c.implicitFunc = c.newPointerType(c.newFunctionType(c.intT, nil, false))
+
+	ast.Void = c.voidT
 	return c
 }
 
@@ -404,6 +406,7 @@ type AST struct {
 	Macros          map[string]*Macro
 	Scope           *Scope // File scope.
 	TranslationUnit *TranslationUnit
+	Void            Type // Valid only after Translate
 	kinds           map[Kind]Type
 }
 
