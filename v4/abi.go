@@ -455,8 +455,8 @@ func NewABI(os, arch string) (*ABI, error) {
 	return &ABI{
 		ByteOrder:  byteOrder,
 		SignedChar: signedChars[[2]string{os, arch}],
-		goarch:     goarch,
-		goos:       goos,
+		goarch:     arch,
+		goos:       os,
 		types:      types,
 	}, nil
 }
