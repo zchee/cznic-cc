@@ -1722,6 +1722,10 @@ func (n *DeclarationSpecifiers) check(c *ctx, isExtern, isStatic, isAtomic, isTh
 			return
 		}
 
+		if _, ok := r.(*PredefinedType); ok && r.Size() < 0 { // Not supported on target
+			c.errors.add(errorf("%s not supported on %s/%s", r, c.ast.ABI.goos, c.ast.ABI.goarch))
+			r = Invalid
+		}
 		if attr != nil {
 			r = r.setAttr(attr)
 		}

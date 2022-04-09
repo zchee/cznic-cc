@@ -40,7 +40,7 @@ func (n *Declarator) Linkage() Linkage {
 		return None
 	}
 
-	if n.IsStatic() {
+	if n.IsStatic() && n.LexicalScope().Parent == nil {
 		return Internal
 	}
 

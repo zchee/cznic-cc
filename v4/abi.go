@@ -408,10 +408,12 @@ var (
 
 // ABI describes selected parts of the Application Binary Interface.
 type ABI struct {
-	byteOrder binary.ByteOrder
+	ByteOrder binary.ByteOrder
+	goarch    string
+	goos      string
 	types     map[Kind]abiType
 
-	signedChar bool
+	SignedChar bool
 }
 
 type abiType struct {
@@ -451,9 +453,11 @@ func NewABI(os, arch string) (*ABI, error) {
 		types[ck] = ct
 	}
 	return &ABI{
-		byteOrder:  byteOrder,
+		ByteOrder:  byteOrder,
+		SignedChar: signedChars[[2]string{os, arch}],
+		goarch:     goarch,
+		goos:       goos,
 		types:      types,
-		signedChar: signedChars[[2]string{os, arch}],
 	}, nil
 }
 
@@ -464,7 +468,7 @@ func (a *ABI) isSignedInteger(k Kind) bool {
 	case SChar, Int, Long, LongLong, Short, Int128:
 		return true
 	case Char:
-		return a.signedChar
+		return a.SignedChar
 	}
 
 	return false
