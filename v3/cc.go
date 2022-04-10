@@ -795,13 +795,13 @@ func HostConfig(cpp string, opts ...string) (predefined string, includePaths, sy
 	if cpp == "" {
 		cpp = "cpp"
 	}
-	args := append(append([]string{"-dM"}, opts...), os.DevNull)
+	args := append(append([]string{"-dM", "-E", "-"}, opts...), os.DevNull)
 	pre, err := exec.Command(cpp, args...).Output()
 	if err != nil {
 		return "", nil, nil, err
 	}
 
-	args = append(append([]string{"-v"}, opts...), os.DevNull)
+	args = append(append([]string{"-v", "-E", "-"}, opts...), os.DevNull)
 	out, err := exec.Command(cpp, args...).CombinedOutput()
 	if err != nil {
 		return "", nil, nil, err

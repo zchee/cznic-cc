@@ -867,7 +867,9 @@ func (t *NamedType) Equal(u Type) bool {
 func (t *NamedType) Kind() TypeKind { return t.Type.Kind() }
 
 // assign implements Type.
-func (t *NamedType) assign(ctx *context, n Node, op Operand) Operand { return t.Type.assign(ctx, n, op) }
+func (t *NamedType) assign(ctx *context, n Node, op Operand) Operand {
+	return t.Type.assign(ctx, n, op)
+}
 
 // IsPointerType implements Type.
 func (t *NamedType) IsPointerType() bool { return t.Type.IsPointerType() }
