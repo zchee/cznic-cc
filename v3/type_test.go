@@ -195,6 +195,11 @@ func testTranslateDir(t *testing.T, cfg *Config, predef, dir string, hfiles bool
 	if cfg.ABI.Types[Ptr].Size == 4 {
 		blacklist["pr70355.c"] = struct{}{} // /* { dg-require-effective-target int128 } */
 	}
+	if runtime.GOOS == "windows" && runtime.GOARCH == "arm64" {
+		blacklist["pr61375.c"] = struct{}{} //TODO
+		blacklist["pr65170.c"] = struct{}{} //TODO
+		blacklist["pr70355.c"] = struct{}{} //TODO
+	}
 	var re *regexp.Regexp
 	if s := *oRE; s != "" {
 		re = regexp.MustCompile(s)
