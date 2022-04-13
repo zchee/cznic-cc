@@ -3671,6 +3671,7 @@ func (n PostfixExpressionCase) String() string {
 type PostfixExpression struct {
 	typer
 	valuer
+	field                  *Field
 	ArgumentExpressionList *ArgumentExpressionList
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
 	ExpressionList         *ExpressionList

@@ -180,8 +180,9 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Default    */	|	"default" ':' AssignmentExpression
 
 		        /* [0], 6.5.2 Postfix operators */
-			/*yy:field	typer	*/
-			/*yy:field	valuer	*/
+			/*yy:field	typer		*/
+			/*yy:field	valuer		*/
+			/*yy:field	field	*Field	*/
 			/*yy:example*/
 /*yy:case Primary    */ PostfixExpression:
 				PrimaryExpression

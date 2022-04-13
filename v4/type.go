@@ -785,6 +785,24 @@ type Field struct {
 	isBitField bool
 }
 
+// Parent reports the parent of n, if any. A field has a parent when it's
+// resolved in certain contexts, for example:
+//
+//	struct {
+//		int a;
+//		struct {
+//			int b;
+//			int c;
+//			int d;
+//		} e;
+//		int f;
+//	} g;
+//
+// A postfix expression node for 'g.a' will have the field 'a' attached, with
+// no parent.  A postfix expression node for 'g.c' will have the field 'c'
+// attached, with parent field 'e'.
+func (n *Field) Parent() *Field { return n.parent }
+
 func (n *Field) path() (r []int) {
 	if n.parent != nil {
 		r = n.parent.path()
@@ -1740,8 +1758,10 @@ func IsSignedInteger(t Type) bool {
 	}
 }
 
-// [0] 6.3.1.8 Usual arithmetic conversions
-func usualArithmeticConversions(a, b Type) (r Type) {
+// UsualArithmeticConversions returns the common type of a binary operation.
+//
+//   [0] 6.3.1.8 Usual arithmetic conversions
+func UsualArithmeticConversions(a, b Type) (r Type) {
 	if a.Kind() == Enum {
 		a = a.(*EnumType).UnderlyingType()
 	}

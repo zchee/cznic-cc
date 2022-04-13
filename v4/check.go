@@ -2614,7 +2614,7 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 		case
 			// both operands have arithmetic type;
 			isArithmeticType(t2) && isArithmeticType(t3):
-			n.typ = usualArithmeticConversions(t2, t3)
+			n.typ = UsualArithmeticConversions(t2, t3)
 		case
 			// both operands have the same structure or union type;
 			(t2.Kind() == Struct || t2.Kind() == Union) && t3.Kind() == t2.Kind():
@@ -2735,7 +2735,7 @@ func (n *InclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
-			n.typ = usualArithmeticConversions(a, b)
+			n.typ = UsualArithmeticConversions(a, b)
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -2767,7 +2767,7 @@ func (n *ExclusiveOrExpression) check(c *ctx, mode flags) (r Type) {
 		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
-			n.typ = usualArithmeticConversions(a, b)
+			n.typ = UsualArithmeticConversions(a, b)
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -2799,7 +2799,7 @@ func (n *AndExpression) check(c *ctx, mode flags) (r Type) {
 		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
-			n.typ = usualArithmeticConversions(a, b)
+			n.typ = UsualArithmeticConversions(a, b)
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -2969,7 +2969,7 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 		case
 			// For addition, either both operands shall have arithmetic type
 			isArithmeticType(a) && isArithmeticType(b):
-			n.typ = usualArithmeticConversions(a, b)
+			n.typ = UsualArithmeticConversions(a, b)
 		case
 			// or one operand shall be a pointer to an object type and the other shall have
 			// integer type.
@@ -2986,7 +2986,7 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 		case
 			// both operands have arithmetic type;
 			isArithmeticType(a) && isArithmeticType(b):
-			n.typ = usualArithmeticConversions(a, b)
+			n.typ = UsualArithmeticConversions(a, b)
 		case
 			// both operands are pointers to qualified or unqualified versions of
 			// compatible object types;
@@ -3035,7 +3035,7 @@ func (n *MultiplicativeExpression) check(c *ctx, mode flags) (r Type) {
 		case !isArithmeticType(a) || !isArithmeticType(b):
 			c.errors.add(errorf("%v: operands shall have arithmetic type: %s and %s", n.Token.Position(), a, b))
 		default:
-			n.typ = usualArithmeticConversions(a, b)
+			n.typ = UsualArithmeticConversions(a, b)
 		}
 	case MultiplicativeExpressionMod: // MultiplicativeExpression '%' CastExpression
 		mode = mode.add(decay)
@@ -3043,7 +3043,7 @@ func (n *MultiplicativeExpression) check(c *ctx, mode flags) (r Type) {
 		case !IsIntegerType(a) || !IsIntegerType(b):
 			c.errors.add(errorf("%v: operands shall have integer type: %s and %s", n.Token.Position(), a, b))
 		default:
-			n.typ = usualArithmeticConversions(a, b)
+			n.typ = UsualArithmeticConversions(a, b)
 		}
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -3326,6 +3326,7 @@ out:
 			}
 
 			n.typ = f.Type()
+			n.field = f
 		case Union:
 			st := t.(*UnionType)
 			f := st.FieldByName(nm)
@@ -3335,6 +3336,7 @@ out:
 			}
 
 			n.typ = f.Type()
+			n.field = f
 		default:
 			c.errors.add(errorf("%v: expected a struct or union: %s", n.Token.Position(), t))
 		}

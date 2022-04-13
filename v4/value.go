@@ -339,7 +339,7 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 		t1 := n.EqualityExpression.Type()
 		t2 := n.RelationalExpression.Type()
 		if isArithmeticType(t1) && isArithmeticType(t2) {
-			t1 = usualArithmeticConversions(t1, t2)
+			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
 		switch x := c.convert(n.EqualityExpression.eval(c, mode), t1).(type) {
@@ -370,7 +370,7 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 		t1 := n.EqualityExpression.Type()
 		t2 := n.RelationalExpression.Type()
 		if isArithmeticType(t1) && isArithmeticType(t2) {
-			t1 = usualArithmeticConversions(t1, t2)
+			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
 		switch x := c.convert(n.EqualityExpression.eval(c, mode), t1).(type) {
@@ -416,7 +416,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
 		if isArithmeticType(t1) && isArithmeticType(t2) {
-			t1 = usualArithmeticConversions(t1, t2)
+			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
 		switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {
@@ -457,7 +457,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
 		if isArithmeticType(t1) && isArithmeticType(t2) {
-			t1 = usualArithmeticConversions(t1, t2)
+			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
 		switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {
@@ -498,7 +498,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
 		if isArithmeticType(t1) && isArithmeticType(t2) {
-			t1 = usualArithmeticConversions(t1, t2)
+			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
 		switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {
@@ -539,7 +539,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
 		if isArithmeticType(t1) && isArithmeticType(t2) {
-			t1 = usualArithmeticConversions(t1, t2)
+			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
 		switch x := c.convert(n.RelationalExpression.eval(c, mode), t1).(type) {

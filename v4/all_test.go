@@ -1311,19 +1311,19 @@ func TestTranslate(t *testing.T) {
 	case "linux/s390x":
 		blacklistCompCert["aes.c"] = struct{}{} // Unsupported endianness.
 	case "windows/arm64":
-		blacklistGCC["pr49218.c"] = struct{}{} //TODO
-		blacklistGCC["pr54471.c"] = struct{}{} //TODO
-		blacklistGCC["pr61375.c"] = struct{}{} //TODO
-		blacklistGCC["pr63302.c"] = struct{}{} //TODO
-		blacklistGCC["pr65170.c"] = struct{}{} //TODO
-		blacklistGCC["pr70355.c"] = struct{}{} //TODO
-		blacklistGCC["pr84169.c"] = struct{}{} //TODO
-		blacklistGCC["pr84748.c"] = struct{}{} //TODO
-		blacklistGCC["pr85582-2.c"] = struct{}{} //TODO
-		blacklistGCC["pr85582-3.c"] = struct{}{} //TODO
-		blacklistGCC["pr92904.c"] = struct{}{} //TODO
-		blacklistGCC["pr93213.c"] = struct{}{} //TODO
-		blacklistGCC["pr98474.c"] = struct{}{} //TODO
+		blacklistGCC["pr49218.c"] = struct{}{}     //TODO
+		blacklistGCC["pr54471.c"] = struct{}{}     //TODO
+		blacklistGCC["pr61375.c"] = struct{}{}     //TODO
+		blacklistGCC["pr63302.c"] = struct{}{}     //TODO
+		blacklistGCC["pr65170.c"] = struct{}{}     //TODO
+		blacklistGCC["pr70355.c"] = struct{}{}     //TODO
+		blacklistGCC["pr84169.c"] = struct{}{}     //TODO
+		blacklistGCC["pr84748.c"] = struct{}{}     //TODO
+		blacklistGCC["pr85582-2.c"] = struct{}{}   //TODO
+		blacklistGCC["pr85582-3.c"] = struct{}{}   //TODO
+		blacklistGCC["pr92904.c"] = struct{}{}     //TODO
+		blacklistGCC["pr93213.c"] = struct{}{}     //TODO
+		blacklistGCC["pr98474.c"] = struct{}{}     //TODO
 		blacklistMakarov["setjmp2.c"] = struct{}{} //TODO
 	}
 	var files, ok, skip, fails int32
