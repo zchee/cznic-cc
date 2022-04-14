@@ -1740,9 +1740,10 @@ func isFloatingPointType(t Type) bool { return realFloatingPointKinds[t.Kind()] 
 
 func isComplexType(t Type) bool { return complexKinds[t.Kind()] }
 
-func isScalarType(t Type) bool { return isArithmeticType(t) || t.Kind() == Ptr }
+func isScalarType(t Type) bool { return IsArithmeticType(t) || t.Kind() == Ptr }
 
-func isArithmeticType(t Type) bool { return arithmeticKinds[t.Kind()] }
+// IsArithmeticType reports whether t is an arithmetic type.
+func IsArithmeticType(t Type) bool { return arithmeticKinds[t.Kind()] }
 
 func isRealType(t Type) bool { return realKinds[t.Kind()] }
 

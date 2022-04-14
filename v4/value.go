@@ -338,7 +338,7 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 	case EqualityExpressionEq: // EqualityExpression "==" RelationalExpression
 		t1 := n.EqualityExpression.Type()
 		t2 := n.RelationalExpression.Type()
-		if isArithmeticType(t1) && isArithmeticType(t2) {
+		if IsArithmeticType(t1) && IsArithmeticType(t2) {
 			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
@@ -369,7 +369,7 @@ func (n *EqualityExpression) eval(c *ctx, mode flags) (r Value) {
 	case EqualityExpressionNeq: // EqualityExpression "!=" RelationalExpression
 		t1 := n.EqualityExpression.Type()
 		t2 := n.RelationalExpression.Type()
-		if isArithmeticType(t1) && isArithmeticType(t2) {
+		if IsArithmeticType(t1) && IsArithmeticType(t2) {
 			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
@@ -415,7 +415,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 	case RelationalExpressionLt: // RelationalExpression '<' ShiftExpression
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
-		if isArithmeticType(t1) && isArithmeticType(t2) {
+		if IsArithmeticType(t1) && IsArithmeticType(t2) {
 			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
@@ -456,7 +456,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 	case RelationalExpressionGt: // RelationalExpression '>' ShiftExpression
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
-		if isArithmeticType(t1) && isArithmeticType(t2) {
+		if IsArithmeticType(t1) && IsArithmeticType(t2) {
 			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
@@ -497,7 +497,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 	case RelationalExpressionLeq: // RelationalExpression "<=" ShiftExpression
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
-		if isArithmeticType(t1) && isArithmeticType(t2) {
+		if IsArithmeticType(t1) && IsArithmeticType(t2) {
 			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}
@@ -538,7 +538,7 @@ func (n *RelationalExpression) eval(c *ctx, mode flags) (r Value) {
 	case RelationalExpressionGeq: // RelationalExpression ">=" ShiftExpression
 		t1 := n.RelationalExpression.Type()
 		t2 := n.ShiftExpression.Type()
-		if isArithmeticType(t1) && isArithmeticType(t2) {
+		if IsArithmeticType(t1) && IsArithmeticType(t2) {
 			t1 = UsualArithmeticConversions(t1, t2)
 			t2 = t1
 		}

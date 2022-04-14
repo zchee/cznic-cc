@@ -2549,7 +2549,7 @@ func (n *AssignmentExpression) check(c *ctx, mode flags) (r Type) {
 		case
 			// — the left operand has qualified or unqualified arithmetic type and the
 			// right has arithmetic type;
-			isArithmeticType(a) && isArithmeticType(b),
+			IsArithmeticType(a) && IsArithmeticType(b),
 
 			// — the left operand has a qualified or unqualified version of a structure or
 			// union type compatible with the type of the right;
@@ -2613,7 +2613,7 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 		switch t3 := n.ConditionalExpression.check(c, mode); {
 		case
 			// both operands have arithmetic type;
-			isArithmeticType(t2) && isArithmeticType(t3):
+			IsArithmeticType(t2) && IsArithmeticType(t3):
 			n.typ = UsualArithmeticConversions(t2, t3)
 		case
 			// both operands have the same structure or union type;
@@ -2834,7 +2834,7 @@ func (n *EqualityExpression) check(c *ctx, mode flags) (r Type) {
 		switch a, b := n.EqualityExpression.check(c, mode), n.RelationalExpression.check(c, mode); {
 		case
 			// both operands have arithmetic type;
-			isArithmeticType(a) && isArithmeticType(b),
+			IsArithmeticType(a) && IsArithmeticType(b),
 
 			// both operands are pointers to qualified or unqualified versions of
 			// compatible types;
@@ -2968,7 +2968,7 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 		switch a, b := n.AdditiveExpression.check(c, mode), n.MultiplicativeExpression.check(c, mode); {
 		case
 			// For addition, either both operands shall have arithmetic type
-			isArithmeticType(a) && isArithmeticType(b):
+			IsArithmeticType(a) && IsArithmeticType(b):
 			n.typ = UsualArithmeticConversions(a, b)
 		case
 			// or one operand shall be a pointer to an object type and the other shall have
@@ -2985,7 +2985,7 @@ func (n *AdditiveExpression) check(c *ctx, mode flags) (r Type) {
 		switch a, b := n.AdditiveExpression.check(c, mode), n.MultiplicativeExpression.check(c, mode); {
 		case
 			// both operands have arithmetic type;
-			isArithmeticType(a) && isArithmeticType(b):
+			IsArithmeticType(a) && IsArithmeticType(b):
 			n.typ = UsualArithmeticConversions(a, b)
 		case
 			// both operands are pointers to qualified or unqualified versions of
@@ -3032,7 +3032,7 @@ func (n *MultiplicativeExpression) check(c *ctx, mode flags) (r Type) {
 
 		mode = mode.add(decay)
 		switch a, b := n.MultiplicativeExpression.check(c, mode), n.CastExpression.check(c, mode); {
-		case !isArithmeticType(a) || !isArithmeticType(b):
+		case !IsArithmeticType(a) || !IsArithmeticType(b):
 			c.errors.add(errorf("%v: operands shall have arithmetic type: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = UsualArithmeticConversions(a, b)
@@ -3155,7 +3155,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		UnaryExpressionMinus: // '-' CastExpression
 
 		n.typ = IntegerPromotion(n.CastExpression.check(c, mode.add(decay)))
-		if !isArithmeticType(n.Type()) {
+		if !IsArithmeticType(n.Type()) {
 			c.errors.add(errorf("%v: expected arithmetic type: %s", n.Position(), n.CastExpression.Type()))
 		}
 	case UnaryExpressionCpl: // '~' CastExpression
