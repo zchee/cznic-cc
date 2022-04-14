@@ -480,11 +480,12 @@ type FunctionType struct {
 	minArgs int
 	maxArgs int // -1: unlimited
 
-	implicitResult bool
+	hasImplicitResult bool
+	isVariadic        bool
 }
 
 func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadic bool) (r *FunctionType) {
-	r = &FunctionType{c: c, result: newTyper(result), minArgs: len(fp), maxArgs: len(fp)}
+	r = &FunctionType{c: c, result: newTyper(result), minArgs: len(fp), maxArgs: len(fp), isVariadic: isVariadic}
 	for _, n := range fp {
 		p := &Parameter{}
 		p.typ = n.Type()
@@ -521,6 +522,9 @@ func (c *ctx) newFunctionType2(result Type, fp []*Parameter) (r *FunctionType) {
 	return r
 }
 
+// IsVariadic reports whether n is variadic.
+func (n *FunctionType) IsVariadic() bool { return n.isVariadic }
+
 // MinArgs returns the minimum number of arguments n expects.
 func (n *FunctionType) MinArgs() int { return n.minArgs }
 
@@ -542,7 +546,7 @@ func (n *FunctionType) isCompatible(t Type) bool {
 			return true
 		}
 
-		resultOk := n.implicitResult || x.implicitResult || n.Result().isCompatible(x.Result())
+		resultOk := n.hasImplicitResult || x.hasImplicitResult || n.Result().isCompatible(x.Result())
 		if len(n.fp) == 0 || len(x.fp) == 0 {
 			return resultOk
 		}

@@ -841,6 +841,7 @@ package cc // import "modernc.org/cc/v4"
 /*yy:case Asm        */ |	AsmStatement
 
 			/* [0], 6.8.1 Labeled statements */
+			/*yy:field	caseOrdinal	int	*/
 			/*yy:example int f() { L: goto L; } */
 /*yy:case Label      */ LabeledStatement:
 				IDENTIFIER ':' Statement
@@ -885,6 +886,7 @@ package cc // import "modernc.org/cc/v4"
 				ExpressionList ';'
 
 			/* [0], 6.8.4 Selection statements */
+			/*yy:field	switchCases int	*/
 			/*yy:example int f() { if(x) y(); } */
 /*yy:case If         */ SelectionStatement:
 				"if" '(' ExpressionList ')' Statement %prec BELOW_ELSE

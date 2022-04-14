@@ -3141,6 +3141,7 @@ func (n LabeledStatementCase) String() string {
 //	|       "case" ConstantExpression "..." ConstantExpression ':' Statement  // Case LabeledStatementRange
 //	|       "default" ':' Statement                                           // Case LabeledStatementDefault
 type LabeledStatement struct {
+	caseOrdinal         int
 	Case                LabeledStatementCase `PrettyPrint:"stringer,zero"`
 	ConstantExpression  ExpressionNode
 	ConstantExpression2 ExpressionNode
@@ -3989,6 +3990,7 @@ func (n SelectionStatementCase) String() string {
 //	|       "if" '(' ExpressionList ')' Statement "else" Statement  // Case SelectionStatementIfElse
 //	|       "switch" '(' ExpressionList ')' Statement               // Case SelectionStatementSwitch
 type SelectionStatement struct {
+	switchCases    int
 	Case           SelectionStatementCase `PrettyPrint:"stringer,zero"`
 	ExpressionList *ExpressionList
 	Statement      *Statement

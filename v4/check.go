@@ -57,6 +57,10 @@ type ctx struct {
 	sizeT0       Type
 	voidT        Type
 	wcharT0      Type
+
+	inLoop      int
+	inSwitch    int
+	switchCases int
 }
 
 func newCtx(ast *AST) *ctx {
@@ -511,7 +515,7 @@ func (n *FunctionDefinition) check(c *ctx) {
 	d := n.Declarator
 	d.check(c, n.DeclarationSpecifiers.check(c, &d.isExtern, &d.isStatic, &d.isAtomic, &d.isThreadLocal, &d.isConst, &d.isVolatile, &d.isInline, &d.isRegister, &d.isAuto, &d.isNoreturn, &d.isRestrict, &d.alignas))
 	if x, ok := d.Type().(*FunctionType); ok {
-		x.implicitResult = true
+		x.hasImplicitResult = true
 	}
 	switch d.DirectDeclarator.Case {
 	case DirectDeclaratorFuncIdent:
@@ -532,7 +536,7 @@ func (n *FunctionDefinition) check(c *ctx) {
 			ft.fp = append(ft.fp, param)
 		}
 		ft2 := c.newFunctionType2(ft.Result(), ft.fp)
-		ft2.implicitResult = ft.implicitResult
+		ft2.hasImplicitResult = ft.hasImplicitResult
 		d.typ = ft2
 	}
 	c.fnScope = n.scope
@@ -642,13 +646,28 @@ func (n *LabeledStatement) check(c *ctx) (r Type) {
 	case LabeledStatementLabel: // IDENTIFIER ':' Statement
 		return n.Statement.check(c)
 	case LabeledStatementCaseLabel: // "case" ConstantExpression ':' Statement
+		if c.inSwitch == 0 {
+			c.errors.add(errorf("%v: case label not within a switch statement", n.Position()))
+		}
+		n.caseOrdinal = c.switchCases
+		c.switchCases++
 		n.ConstantExpression.check(c, decay)
 		return n.Statement.check(c)
 	case LabeledStatementRange: // "case" ConstantExpression "..." ConstantExpression ':' Statement
+		if c.inSwitch == 0 {
+			c.errors.add(errorf("%v: case label not within a switch statement", n.Position()))
+		}
+		n.caseOrdinal = c.switchCases
+		c.switchCases++
 		n.ConstantExpression.check(c, decay)
 		n.ConstantExpression2.check(c, decay)
 		return n.Statement.check(c)
 	case LabeledStatementDefault: // "default" ':' Statement
+		if c.inSwitch == 0 {
+			c.errors.add(errorf("%v: default label not within a switch statement", n.Position()))
+		}
+		n.caseOrdinal = c.switchCases
+		c.switchCases++
 		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -665,8 +684,12 @@ func (n *IterationStatement) check(c *ctx) (r Type) {
 	case IterationStatementWhile: // "while" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
 		n.ExpressionList.eval(c, decay)
+		c.inLoop++
+		defer func() { c.inLoop-- }()
 		return n.Statement.check(c)
 	case IterationStatementDo: // "do" Statement "while" '(' ExpressionList ')' ';'
+		c.inLoop++
+		defer func() { c.inLoop-- }()
 		r = n.Statement.check(c)
 		n.ExpressionList.check(c, decay)
 		n.ExpressionList.eval(c, decay)
@@ -678,6 +701,8 @@ func (n *IterationStatement) check(c *ctx) (r Type) {
 		n.ExpressionList2.eval(c, decay)
 		n.ExpressionList3.check(c, decay)
 		n.ExpressionList3.eval(c, decay)
+		c.inLoop++
+		defer func() { c.inLoop-- }()
 		return n.Statement.check(c)
 	case IterationStatementForDecl: // "for" '(' Declaration ExpressionList ';' ExpressionList ')' Statement
 		n.Declaration.check(c)
@@ -685,6 +710,8 @@ func (n *IterationStatement) check(c *ctx) (r Type) {
 		n.ExpressionList.eval(c, decay)
 		n.ExpressionList2.check(c, decay)
 		n.ExpressionList2.eval(c, decay)
+		c.inLoop++
+		defer func() { c.inLoop-- }()
 		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))
@@ -712,9 +739,13 @@ out:
 		n.ExpressionList.check(c, decay)
 		n.ExpressionList.eval(c, decay)
 	case JumpStatementContinue: // "continue" ';'
-		//TODO
+		if c.inLoop == 0 {
+			c.errors.add(errorf("%v: continue statement not within a loop", n.Position()))
+		}
 	case JumpStatementBreak: // "break" ';'
-		//TODO
+		if c.inLoop+c.inSwitch == 0 {
+			c.errors.add(errorf("%v: break statement not within loop or switch", n.Position()))
+		}
 	case JumpStatementReturn: // "return" ExpressionList ';'
 		r = n.ExpressionList.check(c, decay)
 		n.ExpressionList.eval(c, decay)
@@ -749,6 +780,14 @@ func (n *SelectionStatement) check(c *ctx) (r Type) {
 	case SelectionStatementSwitch: // "switch" '(' ExpressionList ')' Statement
 		n.ExpressionList.check(c, decay)
 		n.ExpressionList.eval(c, decay)
+		c.inSwitch++
+		switchCases := c.switchCases
+		c.switchCases = 0
+		defer func() {
+			c.inSwitch--
+			n.switchCases = c.switchCases
+			c.switchCases = switchCases
+		}()
 		return n.Statement.check(c)
 	default:
 		c.errors.add(errorf("internal error: %v", n.Case))

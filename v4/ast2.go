@@ -142,3 +142,12 @@ func (n *Initializer) Len() int64 { return n.nelems }
 // Field reports the resolved field for cases PostfixExpressionSelect and
 // PostfixExpressionPSelect.
 func (n *PostfixExpression) Field() *Field { return n.field }
+
+// Cases returns the combined number of "case" and "default" labels in a switch
+// statement. Valid for Case == SelectionStatementSwitch.
+func (n *SelectionStatement) Cases() int { return n.switchCases }
+
+// CaseOrdinal returns the zero based ordinal number of a labeled statement
+// withing a switch statement.  Valid only for Case LabeledStatementCaseLabel
+// and LabeledStatementDefault.
+func (n *LabeledStatement) CaseOrdinal() int { return n.caseOrdinal }
