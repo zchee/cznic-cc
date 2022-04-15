@@ -5,7 +5,7 @@
 //go:generate rm -f ast.go
 //go:generate yy -o /dev/null -position -astImport "\"fmt\"\n\n\"modernc.org/token\"" -prettyString PrettyString -kind Case -noListKind -noPrivateHelpers -forceOptPos parser.yy
 //go:generate sed -i "s/\\*.*Expression$/ExpressionNode/" ast.go
-//go:generate stringer -output stringer.go -linecomment -type=tokCh,Kind,Linkage
+//go:generate stringer -output stringer.go -linecomment -type=tokCh,Kind,Linkage,StorageDuration
 //go:generate sh -c "go test -run ^Example |fe"
 
 // Package cc is a C99 compiler front end.

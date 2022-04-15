@@ -17,6 +17,19 @@ func (n *Declarator) Name() string {
 	return ""
 }
 
+// NameTok returns the name token of n.
+func (n *Declarator) NameTok() (r Token) {
+	if n == nil {
+		return r
+	}
+
+	if dn := n.DirectDeclarator.name(); dn != nil {
+		return dn.Token
+	}
+
+	return r
+}
+
 func (n *Declarator) isFn() bool {
 	if n == nil {
 		return false
@@ -25,7 +38,7 @@ func (n *Declarator) isFn() bool {
 	return n.DirectDeclarator.isFn()
 }
 
-// Linkage descibes linkage of identifiers ([0]6.2.2).
+// Linkage describes linkage of identifiers ([0]6.2.2).
 type Linkage int
 
 // Values of type Linkage
@@ -49,6 +62,27 @@ func (n *Declarator) Linkage() Linkage {
 	}
 
 	return None
+}
+
+// StorageDuration describes storage duration of objects ([0]6.2.4).
+type StorageDuration int
+
+// Values of type StorageDuration
+const (
+	Static StorageDuration = iota
+	Automatic
+	Allocated
+)
+
+func (n *Declarator) StorageDuration() StorageDuration {
+	switch l := n.Linkage(); {
+	case l == External || l == Internal || n.IsStatic():
+		return Static
+	case l == None && !n.IsStatic():
+		return Automatic
+	}
+
+	panic(todo(""))
 }
 
 // IsExtern reports whether the storage class specifier 'extern' was present in

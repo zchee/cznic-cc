@@ -222,6 +222,9 @@ type Type interface {
 	// Kind reports the kind of a type.
 	Kind() Kind
 
+	// Pointer returns a pointer to a type.
+	Pointer() Type
+
 	// Size reports the size of a type in bytes. Incomplete or invalid types may
 	// report a negative size.
 	Size() int64
@@ -256,6 +259,9 @@ type namer struct{ d *Declarator }
 func (n namer) Typedef() *Declarator { return n.d }
 
 type InvalidType struct{}
+
+// Pointer implements Type.
+func (n InvalidType) Pointer() Type { return Invalid }
 
 // setAttr implements Type.
 func (n InvalidType) setAttr(*Attributes) Type { return Invalid }
@@ -308,11 +314,20 @@ type PredefinedType struct {
 	c    *ctx
 	kind Kind
 	namer
+	ptr    Type
 	vector *ArrayType
 }
 
 func (c *ctx) newPredefinedType(kind Kind) *PredefinedType {
 	return &PredefinedType{c: c, kind: kind}
+}
+
+// Pointer implements Type.
+func (n *PredefinedType) Pointer() Type {
+	if n.ptr == nil {
+		n.ptr = n.c.newPointerType(n)
+	}
+	return n.ptr
 }
 
 // VectorSize implements Type.
@@ -474,6 +489,7 @@ type FunctionType struct {
 	c  *ctx
 	fp []*Parameter
 	namer
+	ptr    Type
 	result typer
 	vectorSizer
 
@@ -512,6 +528,14 @@ func (c *ctx) newFunctionType(result Type, fp []*ParameterDeclaration, isVariadi
 		}
 	}
 	return r
+}
+
+// Pointer implements Type.
+func (n *FunctionType) Pointer() Type {
+	if n.ptr == nil {
+		n.ptr = n.c.newPointerType(n)
+	}
+	return n.ptr
 }
 
 func (c *ctx) newFunctionType2(result Type, fp []*Parameter) (r *FunctionType) {
@@ -657,8 +681,22 @@ type PointerType struct {
 	c    *ctx
 	elem typer
 	namer
+	ptr     Type
 	undecay Type
 	vectorSizer
+}
+
+// NewPointerType returns an elem pointer.
+func newPointerType(elem Type) (r *PointerType) {
+	panic(todo(""))
+}
+
+// Pointer implements Type.
+func (n *PointerType) Pointer() Type {
+	if n.ptr == nil {
+		n.ptr = n.c.newPointerType(n)
+	}
+	return n.ptr
 }
 
 func (c *ctx) newPointerType(elem Type) (r *PointerType) {
@@ -948,6 +986,7 @@ type StructType struct {
 	c       *ctx
 	forward *StructOrUnionSpecifier
 	namer
+	ptr Type
 	structType
 	vectorSizer
 }
@@ -955,6 +994,14 @@ type StructType struct {
 func (c *ctx) newStructType(scope *Scope, tag Token, fields []*Field, size int64, align int) (r *StructType) {
 	r = &StructType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, scope: scope}}
 	return r
+}
+
+// Pointer implements Type.
+func (n *StructType) Pointer() Type {
+	if n.ptr == nil {
+		n.ptr = n.c.newPointerType(n)
+	}
+	return n.ptr
 }
 
 // LexicalScope provides the scope the definition of n appears in.
@@ -1175,12 +1222,21 @@ type UnionType struct {
 	c       *ctx
 	forward *StructOrUnionSpecifier
 	namer
+	ptr Type
 	structType
 	vectorSizer
 }
 
 func (c *ctx) newUnionType(scope *Scope, tag Token, fields []*Field, size int64, align int) *UnionType {
 	return &UnionType{c: c, structType: structType{tag: tag, fields: fields, size: size, align: align, isUnion: true, scope: scope}}
+}
+
+// Pointer implements Type.
+func (n *UnionType) Pointer() Type {
+	if n.ptr == nil {
+		n.ptr = n.c.newPointerType(n)
+	}
+	return n.ptr
 }
 
 // LexicalScope provides the scope the definition of n appears in.
@@ -1408,12 +1464,21 @@ type ArrayType struct {
 	elems int64
 	expr  ExpressionNode
 	namer
+	ptr Type
 	vectorSizer
 }
 
 func (c *ctx) newArrayType(elem Type, elems int64, expr ExpressionNode) (r *ArrayType) {
 	r = &ArrayType{c: c, elem: newTyper(elem), elems: elems, expr: expr}
 	return r
+}
+
+// Pointer implements Type.
+func (n *ArrayType) Pointer() Type {
+	if n.ptr == nil {
+		n.ptr = n.c.newPointerType(n)
+	}
+	return n.ptr
 }
 
 // setAttr implements Type.
@@ -1536,10 +1601,12 @@ func (n *ArrayType) str(b *strings.Builder, useTag bool) *strings.Builder {
 }
 
 type EnumType struct {
+	c       *ctx
 	attr    attributer
 	enums   []*Enumerator
 	forward *EnumSpecifier
 	namer
+	ptr   Type
 	scope *Scope
 	tag   Token
 	typ   typer
@@ -1549,7 +1616,15 @@ type EnumType struct {
 }
 
 func (c *ctx) newEnumType(scope *Scope, tag Token, typ Type, enums []*Enumerator) *EnumType {
-	return &EnumType{tag: tag, typ: newTyper(typ), enums: enums, scope: scope}
+	return &EnumType{c: c, tag: tag, typ: newTyper(typ), enums: enums, scope: scope}
+}
+
+// Pointer implements Type.
+func (n *EnumType) Pointer() Type {
+	if n.ptr == nil {
+		n.ptr = n.c.newPointerType(n)
+	}
+	return n.ptr
 }
 
 // LexicalScope provides the scope the definition of n appears in.

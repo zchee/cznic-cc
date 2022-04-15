@@ -3393,6 +3393,7 @@ out:
 				}
 
 				n.typ = f.Type()
+				n.field = f
 			case Union:
 				st := et.(*UnionType)
 				f := st.FieldByName(nm)
@@ -3402,6 +3403,7 @@ out:
 				}
 
 				n.typ = f.Type()
+				n.field = f
 			default:
 				c.errors.add(errorf("%v: expected a pointer to struct or union: %s", n.Token.Position(), t))
 			}
