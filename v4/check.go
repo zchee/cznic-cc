@@ -1272,7 +1272,7 @@ func (n *InitializerList) checkEnum(c *ctx, t *EnumType, off int64, outer bool) 
 		return nil
 	}
 
-	if isScalarType(t) {
+	if IsScalarType(t) {
 		n.Initializer.check(c, t, off)
 		return n.InitializerList
 	}
@@ -1291,7 +1291,7 @@ func (n *InitializerList) checkPointer(c *ctx, t *PointerType, off int64, outer 
 		return nil
 	}
 
-	if isScalarType(t) {
+	if IsScalarType(t) {
 		n.Initializer.check(c, t, off)
 		return n.InitializerList
 	}
@@ -1310,7 +1310,7 @@ func (n *InitializerList) checkPredefined(c *ctx, t *PredefinedType, off int64, 
 		return nil
 	}
 
-	if isScalarType(t) {
+	if IsScalarType(t) {
 		n.Initializer.check(c, t, off)
 		return n.InitializerList
 	}
@@ -2639,7 +2639,7 @@ func (n *ConditionalExpression) check(c *ctx, mode flags) (r Type) {
 	case ConditionalExpressionCond: // LogicalOrExpression '?' ExpressionList ':' ConditionalExpression
 		mode = mode.add(decay)
 		t1 := n.LogicalOrExpression.check(c, mode)
-		if !isScalarType(t1) {
+		if !IsScalarType(t1) {
 			c.errors.add(errorf("%v: operand shall have scalar type: %s", n.LogicalOrExpression.Position(), t1))
 			break
 		}
@@ -2707,7 +2707,7 @@ func (n *LogicalOrExpression) check(c *ctx, mode flags) (r Type) {
 	case LogicalOrExpressionLOr: // LogicalOrExpression "||" LogicalAndExpression
 		mode = mode.add(decay)
 		switch a, b := n.LogicalOrExpression.check(c, mode), n.LogicalAndExpression.check(c, mode); {
-		case !isScalarType(a) || !isScalarType(b):
+		case !IsScalarType(a) || !IsScalarType(b):
 			c.errors.add(errorf("%v: operands shall be scalars: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = c.intT
@@ -2739,7 +2739,7 @@ func (n *LogicalAndExpression) check(c *ctx, mode flags) (r Type) {
 	case LogicalAndExpressionLAnd: // LogicalAndExpression "&&" InclusiveOrExpression
 		mode = mode.add(decay)
 		switch a, b := n.LogicalAndExpression.check(c, mode), n.InclusiveOrExpression.check(c, mode); {
-		case !isScalarType(a) || !isScalarType(b):
+		case !IsScalarType(a) || !IsScalarType(b):
 			c.errors.add(errorf("%v: operands shall be scalars: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = c.intT
@@ -2927,7 +2927,7 @@ func (n *RelationalExpression) check(c *ctx, mode flags) (r Type) {
 		switch a, b := n.RelationalExpression.check(c, mode), n.ShiftExpression.check(c, mode); {
 		case
 			// both operands have real type;
-			isRealType(a) && isRealType(b),
+			IsRealType(a) && IsRealType(b),
 			// both operands are pointers to qualified or unqualified versions of
 			// compatible object types;
 			//
@@ -2935,7 +2935,7 @@ func (n *RelationalExpression) check(c *ctx, mode flags) (r Type) {
 			// compatible incomplete types
 			//
 			// gcc allows mixing ints and pointers
-			isScalarType(a) && isScalarType(b):
+			IsScalarType(a) && IsScalarType(b):
 
 			// ok
 		default:
@@ -2972,7 +2972,7 @@ func (n *ShiftExpression) check(c *ctx, mode flags) (r Type) {
 
 		mode = mode.add(decay)
 		switch a, b := n.ShiftExpression.check(c, mode), n.AdditiveExpression.check(c, mode); {
-		case !isScalarType(a) || !isScalarType(b):
+		case !IsScalarType(a) || !IsScalarType(b):
 			c.errors.add(errorf("%v: operands shall be a scalars: %s and %s", n.Token.Position(), a, b))
 		default:
 			n.typ = IntegerPromotion(a)
@@ -3161,7 +3161,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		UnaryExpressionDec: // "--" UnaryExpression
 
 		n.typ = n.UnaryExpression.check(c, mode.add(decay))
-		if !isRealType(n.Type()) && !isPointerType(n.Type()) {
+		if !IsRealType(n.Type()) && !isPointerType(n.Type()) {
 			c.errors.add(errorf("%v: operand shall have real or pointer type: %s", n.UnaryExpression.Position(), n.Type()))
 		}
 	case UnaryExpressionAddrof: // '&' CastExpression
@@ -3202,14 +3202,14 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		switch {
 		case IsIntegerType(t):
 			n.typ = IntegerPromotion(t)
-		case isComplexType(t): // GCC extension, complex conjugate
+		case IsComplexType(t): // GCC extension, complex conjugate
 			n.typ = t
 		default:
 			c.errors.add(errorf("%v: expected integer type: %s", n.Position(), n.CastExpression.Type()))
 		}
 	case UnaryExpressionNot: // '!' CastExpression
 		t := n.CastExpression.check(c, mode.add(decay))
-		if !isScalarType(t) {
+		if !IsScalarType(t) {
 			c.errors.add(errorf("%v: expected scalar type: %s", n.Position(), n.CastExpression.Type()))
 		}
 		n.typ = c.intT
@@ -3251,7 +3251,7 @@ func (n *UnaryExpression) check(c *ctx, mode flags) (r Type) {
 		UnaryExpressionReal: // "__real__" UnaryExpression
 
 		t := n.UnaryExpression.check(c, mode.add(decay))
-		if !isComplexType(t) {
+		if !IsComplexType(t) {
 			c.errors.add(errorf("%v: expected complex type: %s", n.Position(), t))
 			break
 		}

@@ -438,7 +438,7 @@ func (n *PredefinedType) Size() int64 {
 		return -1
 	}
 
-	if IsIntegerType(n) || isFloatingPointType(n) {
+	if IsIntegerType(n) || IsFloatingPointType(n) {
 		if v := n.VectorSize(); v > 0 {
 			return v
 		}
@@ -1815,16 +1815,20 @@ func isVectorType(t Type) bool { a := t.Attributes(); return a != nil && a.vecto
 // IsIntegerType reports whether t is an integer type.
 func IsIntegerType(t Type) bool { return integerKinds[t.Kind()] }
 
-func isFloatingPointType(t Type) bool { return realFloatingPointKinds[t.Kind()] }
+// IsFloatingPointType reports whether t is a floating point type.
+func IsFloatingPointType(t Type) bool { return realFloatingPointKinds[t.Kind()] }
 
-func isComplexType(t Type) bool { return complexKinds[t.Kind()] }
+// IsComplexType reports whether t is a complex type.
+func IsComplexType(t Type) bool { return complexKinds[t.Kind()] }
 
-func isScalarType(t Type) bool { return IsArithmeticType(t) || t.Kind() == Ptr }
+// IsScalarType reports whether t is a scalar type.
+func IsScalarType(t Type) bool { return IsArithmeticType(t) || t.Kind() == Ptr }
 
 // IsArithmeticType reports whether t is an arithmetic type.
 func IsArithmeticType(t Type) bool { return arithmeticKinds[t.Kind()] }
 
-func isRealType(t Type) bool { return realKinds[t.Kind()] }
+// IsRealType reports whether t is a real type.
+func IsRealType(t Type) bool { return realKinds[t.Kind()] }
 
 // IsSignedInteger reports whether t is a signed integer type.
 func IsSignedInteger(t Type) bool {
@@ -1938,7 +1942,7 @@ func UsualArithmeticConversions(a, b Type) (r Type) {
 	}
 
 	// ---- gcc complex integers
-	if isComplexType(a) || isComplexType(b) {
+	if IsComplexType(a) || IsComplexType(b) {
 		if a.Kind() == b.Kind() {
 			return a
 		}
