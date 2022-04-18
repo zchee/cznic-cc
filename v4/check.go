@@ -145,6 +145,9 @@ func newCtx(ast *AST) *ctx {
 	c.pvoidT = c.newPointerType(c.voidT)
 	c.implicitFunc = c.newPointerType(c.newFunctionType(c.intT, nil, false))
 
+	ast.Double = c.ast.kinds[Double]
+	ast.Float = c.ast.kinds[Float]
+	ast.LongDouble = c.ast.kinds[LongDouble]
 	ast.Void = c.voidT
 	return c
 }
@@ -406,7 +409,10 @@ func (n resolver) ResolvedIn() *Scope { return n.resolved }
 
 type AST struct {
 	ABI             *ABI
+	Double          Type // Valid only after Translate
 	EOF             Token
+	Float           Type // Valid only after Translate
+	LongDouble      Type // Valid only after Translate
 	Macros          map[string]*Macro
 	Scope           *Scope // File scope.
 	TranslationUnit *TranslationUnit

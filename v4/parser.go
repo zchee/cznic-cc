@@ -3210,7 +3210,7 @@ func (p *parser) enumSpecifier() (r *EnumSpecifier) {
 			return &EnumSpecifier{Case: EnumSpecifierTag, Token: p.shift(false), Token2: p.shift(false), lexicalScoper: newLexicalScoper(p.scope)}
 		}
 	case '{':
-		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token2: p.shift(false), EnumeratorList: p.enumeratorList(), lexicalScoper: newLexicalScoper(p.scope)}
+		r = &EnumSpecifier{Case: EnumSpecifierDef, Token: p.shift(false), Token3: p.shift(false), EnumeratorList: p.enumeratorList(), lexicalScoper: newLexicalScoper(p.scope)}
 	default:
 		t := p.shift(false)
 		p.cpp.eh("%v: unexpected %v, expected enum specifier", t.Position(), runeName(t.Ch))

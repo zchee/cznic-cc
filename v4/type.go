@@ -1640,7 +1640,13 @@ func (n *EnumType) LexicalScope() *Scope {
 func (n *EnumType) Tag() Token { return n.tag }
 
 // Enumerators returns enumerators defined by n.
-func (n *EnumType) Enumerators() []*Enumerator { return n.enums }
+func (n *EnumType) Enumerators() []*Enumerator {
+	if n.forward != nil {
+		return n.forward.Type().(*EnumType).Enumerators()
+	}
+
+	return n.enums
+}
 
 // Attributes implemets Type.
 func (n *EnumType) Attributes() *Attributes {
