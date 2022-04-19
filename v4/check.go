@@ -206,14 +206,10 @@ func (c *ctx) checkScope(s *Scope) {
 				switch {
 				case t.Kind() == Function:
 					f := t.(*FunctionType)
-					if len(f.fp) != 0 {
-						break
-					}
-
 					for _, b := range ds[1:] {
-						if g := b.Type().(*FunctionType); len(g.fp) != 0 {
+						if g := b.Type().(*FunctionType); lessFunctionType(f, g) {
 							t = g
-							break
+							f = g
 						}
 					}
 				case t.IsIncomplete():
@@ -250,6 +246,28 @@ func (c *ctx) checkScope(s *Scope) {
 			c.errors.add(errorf("TODO %T", sus[0]))
 		}
 	}
+}
+
+func lessFunctionType(a, b *FunctionType) bool {
+	switch p, q := a.Parameters(), b.Parameters(); {
+	case len(p) == 0:
+		if len(q) != 0 {
+			return true
+		}
+	default:
+		if len(q) == 0 {
+			return false
+		}
+
+		if p[0].Name() != "" {
+			return false
+		}
+
+		if q[0].Name() != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *ctx) convert(v Value, t Type) (r Value) {

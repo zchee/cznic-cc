@@ -3496,7 +3496,29 @@ func (s *Scope) ident(t Token) Node {
 		return nil
 	}
 
-	if _, ok := a[0].(*Declarator); !ok {
+	d, ok := a[0].(*Declarator)
+	if !ok {
+		return a[0]
+	}
+
+	if d.Type().Kind() == Function {
+		f := d.Type().(*FunctionType)
+		for _, v := range a {
+			x, ok := v.(*Declarator)
+			if !ok {
+				continue
+			}
+
+			g, ok := x.Type().(*FunctionType)
+			if !ok {
+				continue
+			}
+
+			if lessFunctionType(f, g) {
+				return v
+			}
+		}
+
 		return a[0]
 	}
 

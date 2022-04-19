@@ -77,6 +77,10 @@ typedef __PTRDIFF_TYPE__ __predefined_ptrdiff_t;
 #ifdef __clang__
 #define __builtin_convertvector(src, type) (*(type*)&src)
 #endif
+
+__UINT16_TYPE__ __builtin_bswap16 (__UINT16_TYPE__ x);
+__UINT32_TYPE__ __builtin_bswap32 (__UINT32_TYPE__ x);
+__UINT64_TYPE__ __builtin_bswap64 (__UINT64_TYPE__ x);
 `
 )
 
