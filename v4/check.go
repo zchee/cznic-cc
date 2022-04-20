@@ -197,7 +197,7 @@ func (c *ctx) checkScope(s *Scope) {
 			case s.Parent == nil:
 				for _, b := range ds[1:] {
 					u := b.Type()
-					if !t.isCompatible(u) {
+					if !t.IsCompatible(u) {
 						c.errors.add(errorf("%v: conflicting types for '%s', previous declaration at %v, %s and %s", b.Position(), a.Name(), a.Position(), t, u))
 						return
 					}
@@ -1127,7 +1127,7 @@ func (n *Initializer) checkExprStruct(c *ctx, t *StructType, exprT Type, off int
 
 		n.check(c, f.Type(), off)
 	case *StructType:
-		if !t.isCompatible(x) {
+		if !t.IsCompatible(x) {
 			c.errors.add(errorf("%v: incompatible types: %s and %s", n.AssignmentExpression.Position(), t, x))
 		}
 	default:
@@ -1155,7 +1155,7 @@ func (n *Initializer) checkExprUnion(c *ctx, t *UnionType, exprT Type, off int64
 
 		n.check(c, f.Type(), off)
 	case *UnionType:
-		if !t.isCompatible(x) {
+		if !t.IsCompatible(x) {
 			c.errors.add(errorf("%v: incompatible types: %s and %s", n.AssignmentExpression.Position(), t, x))
 		}
 	default:
@@ -3398,7 +3398,7 @@ out:
 				break out
 			}
 
-			n.val = bool2int(args[0].Type().isCompatible(args[1].Type()))
+			n.val = bool2int(args[0].Type().IsCompatible(args[1].Type()))
 			break out
 		case "__builtin_constant_p":
 			n.typ = c.intT
@@ -3647,7 +3647,7 @@ func (n *GenericAssociationList) check(c *ctx, mode flags, ctrl Type) (assoc *Ge
 	for ; n != nil; n = n.GenericAssociationList {
 		switch assoc = n.GenericAssociation; assoc.Case {
 		case GenericAssociationType: // TypeName ':' AssignmentExpression
-			if t := assoc.TypeName.check(c); ctrl.isCompatible(t) {
+			if t := assoc.TypeName.check(c); ctrl.IsCompatible(t) {
 				return assoc, assoc.AssignmentExpression.check(c, decay)
 			}
 		case GenericAssociationDefault: //  "default" ':' AssignmentExpression

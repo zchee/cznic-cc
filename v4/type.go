@@ -216,6 +216,9 @@ type Type interface {
 	// in a struct/union.
 	FieldAlign() int
 
+	// IsCompatible reports type compatibility as defined in [0]6.2.7/1.
+	IsCompatible(Type) bool
+
 	// IsIncomplete reports whether the size of a type is not determined.
 	IsIncomplete() bool
 
@@ -247,7 +250,6 @@ type Type interface {
 	// > 0.
 	VectorSize() int64
 
-	isCompatible(Type) bool
 	setAttr(*Attributes) Type
 	setName(d *Declarator) Type
 	str(b *strings.Builder, useTag bool) *strings.Builder
@@ -290,7 +292,7 @@ func (n *InvalidType) Typedef() *Declarator { return nil }
 // setName implements Type.
 func (n *InvalidType) setName(*Declarator) Type { return n }
 
-func (n *InvalidType) isCompatible(Type) bool { return false }
+func (n *InvalidType) IsCompatible(Type) bool { return false }
 
 // String implements Type.
 func (n *InvalidType) String() string { return "<invalid type>" }
@@ -351,12 +353,16 @@ func (n *PredefinedType) setAttr(a *Attributes) Type {
 	return &m
 }
 
-func (n *PredefinedType) isCompatible(t Type) bool {
+func (n *PredefinedType) IsCompatible(t Type) bool {
+	if n == t {
+		return true
+	}
+
 	switch x := t.(type) {
 	case *PredefinedType:
 		return n == x || n.Kind() == x.Kind()
 	case *UnionType:
-		return x.isCompatible(n)
+		return x.IsCompatible(n)
 	default:
 		return false
 	}
@@ -563,14 +569,18 @@ func (n *FunctionType) setAttr(a *Attributes) Type {
 	return &m
 }
 
-func (n *FunctionType) isCompatible(t Type) bool {
+func (n *FunctionType) IsCompatible(t Type) bool {
+	if n == t {
+		return true
+	}
+
 	switch x := t.(type) {
 	case *FunctionType:
 		if n == x {
 			return true
 		}
 
-		resultOk := n.hasImplicitResult || x.hasImplicitResult || n.Result().isCompatible(x.Result())
+		resultOk := n.hasImplicitResult || x.hasImplicitResult || n.Result().IsCompatible(x.Result())
 		if len(n.fp) == 0 || len(x.fp) == 0 {
 			return resultOk
 		}
@@ -583,7 +593,7 @@ func (n *FunctionType) isCompatible(t Type) bool {
 			t := v.Type()
 			w := x.fp[i]
 			u := w.Type()
-			if !t.isCompatible(u) && !IntegerPromotion(t).isCompatible(IntegerPromotion(u)) && !t.Decay().isCompatible(u.Decay()) {
+			if !t.IsCompatible(u) && !IntegerPromotion(t).IsCompatible(IntegerPromotion(u)) && !t.Decay().IsCompatible(u.Decay()) {
 				if Dmesgs {
 					Dmesg("%v %v and %v %v", t, t.Kind(), u, u.Kind())
 				}
@@ -593,7 +603,7 @@ func (n *FunctionType) isCompatible(t Type) bool {
 
 		return true
 	case *UnionType:
-		return x.isCompatible(n)
+		return x.IsCompatible(n)
 	default:
 		return false
 	}
@@ -712,12 +722,16 @@ func (n *PointerType) setAttr(a *Attributes) Type {
 	return &m
 }
 
-func (n *PointerType) isCompatible(t Type) bool {
+func (n *PointerType) IsCompatible(t Type) bool {
+	if n == t {
+		return true
+	}
+
 	switch x := t.(type) {
 	case *PointerType:
-		return n == x || n.Elem().isCompatible(x.Elem())
+		return n == x || n.Elem().IsCompatible(x.Elem())
 	case *UnionType:
-		return x.isCompatible(n)
+		return x.IsCompatible(n)
 	default:
 		return false
 	}
@@ -899,7 +913,7 @@ func (n *structType) isIncomplete() bool {
 	return false
 }
 
-func (n *structType) isCompatible(m *structType) bool {
+func (n *structType) IsCompatible(m *structType) bool {
 	if n == m {
 		return true
 	}
@@ -909,7 +923,7 @@ func (n *structType) isCompatible(m *structType) bool {
 	}
 
 	for i, v := range n.fields {
-		if w := m.fields[i]; v.Name() != w.Name() || !v.Type().isCompatible(w.Type()) {
+		if w := m.fields[i]; v.Name() != w.Name() || !v.Type().IsCompatible(w.Type()) {
 			return false
 		}
 	}
@@ -1036,18 +1050,22 @@ func (n *StructType) setAttr(a *Attributes) Type {
 	return &m
 }
 
-func (n *StructType) isCompatible(t Type) bool {
+func (n *StructType) IsCompatible(t Type) bool {
+	if n == t {
+		return true
+	}
+
 	if n.forward != nil {
-		return n.forward.Type().isCompatible(t)
+		return n.forward.Type().IsCompatible(t)
 	}
 
 	switch x := t.(type) {
 	case *StructType:
 		if x.forward != nil {
-			return n.isCompatible(x.forward.Type())
+			return n.IsCompatible(x.forward.Type())
 		}
 
-		return n == x || n.structType.isCompatible(&x.structType)
+		return n == x || n.structType.IsCompatible(&x.structType)
 	default:
 		return false
 	}
@@ -1271,20 +1289,24 @@ func (n *UnionType) setAttr(a *Attributes) Type {
 	return &m
 }
 
-func (n *UnionType) isCompatible(t Type) bool {
+func (n *UnionType) IsCompatible(t Type) bool {
+	if n == t {
+		return true
+	}
+
 	if n.forward != nil {
-		return n.forward.Type().isCompatible(t)
+		return n.forward.Type().IsCompatible(t)
 	}
 
 	switch x := t.(type) {
 	case *UnionType:
 		if x.forward != nil {
-			return n.isCompatible(x.forward.Type())
+			return n.IsCompatible(x.forward.Type())
 		}
 
-		return n == x || n.structType.isCompatible(&x.structType)
+		return n == x || n.structType.IsCompatible(&x.structType)
 	default:
-		return len(n.fields) == 1 && n.fields[0].Type().isCompatible(t)
+		return len(n.fields) == 1 && n.fields[0].Type().IsCompatible(t)
 	}
 }
 
@@ -1488,10 +1510,14 @@ func (n *ArrayType) setAttr(a *Attributes) Type {
 	return &m
 }
 
-func (n *ArrayType) isCompatible(t Type) bool {
+func (n *ArrayType) IsCompatible(t Type) bool {
+	if n == t {
+		return true
+	}
+
 	switch x := t.(type) {
 	case *ArrayType:
-		return n.Elem().isCompatible(x.Elem()) && (n.Len() < 0 || x.Len() < 0 || n.Len() == x.Len())
+		return n.Elem().IsCompatible(x.Elem()) && (n.Len() < 0 || x.Len() < 0 || n.Len() == x.Len())
 	default:
 		return false
 	}
@@ -1677,15 +1703,19 @@ func (n *EnumType) UnderlyingType() Type {
 	return n.typ.Type()
 }
 
-func (n *EnumType) isCompatible(t Type) bool {
+func (n *EnumType) IsCompatible(t Type) bool {
+	if n == t {
+		return true
+	}
+
 	if n.forward != nil {
-		return n.forward.Type().isCompatible(t)
+		return n.forward.Type().IsCompatible(t)
 	}
 
 	switch x := t.(type) {
 	case *EnumType:
 		if x.forward != nil {
-			return n.isCompatible(x.forward.Type())
+			return n.IsCompatible(x.forward.Type())
 		}
 
 		if n == x {
@@ -1696,13 +1726,13 @@ func (n *EnumType) isCompatible(t Type) bool {
 			return false
 		}
 
-		if !n.typ.Type().isCompatible(x.typ.Type()) { //TODO members and values must be the same
+		if !n.typ.Type().IsCompatible(x.typ.Type()) { //TODO members and values must be the same
 			return false
 		}
 
 		return true
 	case *UnionType:
-		return x.isCompatible(n)
+		return x.IsCompatible(n)
 	default:
 		return false
 	}

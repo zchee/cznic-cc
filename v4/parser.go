@@ -1755,8 +1755,8 @@ func (p *parser) castExpression(checkTypeName bool) (r, u ExpressionNode) {
 				return r, nil
 			}
 		case p.isExpression(ch) || ch == '{':
-			r := &CastExpression{Case: CastExpressionUnary, UnaryExpression: p.unaryExpression(Token{}, nil, Token{}, checkTypeName)}
-			return r, r.UnaryExpression
+			r = p.unaryExpression(Token{}, nil, Token{}, checkTypeName)
+			return r, r
 		}
 
 		t := p.shift(false)
