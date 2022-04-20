@@ -978,10 +978,15 @@ func (p *parser) asmIndexOpt() *AsmIndex {
 //  expression:
 // 	assignment-expression
 // 	expression , assignment-expression
-func (p *parser) expression(opt bool) (r *ExpressionList) {
-	var prev *ExpressionList
+func (p *parser) expression(opt bool) ExpressionNode {
+	var r, prev *ExpressionList
 	if p.isExpression(p.rune(false)) {
-		r = &ExpressionList{AssignmentExpression: p.assignmentExpression(true)}
+		ae := p.assignmentExpression(true)
+		if p.rune(false) != ',' {
+			return ae
+		}
+
+		r = &ExpressionList{AssignmentExpression: ae}
 		prev = r
 		for p.rune(false) == ',' {
 			el := &ExpressionList{Token: p.shift(false), AssignmentExpression: p.assignmentExpression(true)}
@@ -3433,8 +3438,7 @@ func (p *parser) structDeclarator() (r *StructDeclarator) {
 //  constant-expression:
 // 	conditional-expression
 func (p *parser) constantExpression() ExpressionNode {
-	r := &ConstantExpression{}
-	r.ConditionalExpression, _ = p.conditionalExpression(true)
+	r, _ := p.conditionalExpression(true)
 	return r
 }
 

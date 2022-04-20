@@ -402,7 +402,7 @@ func (n *AsmExpressionList) Position() (r token.Position) {
 //	AsmIndex:
 //	        '[' ExpressionList ']'
 type AsmIndex struct {
-	ExpressionList *ExpressionList
+	ExpressionList ExpressionNode
 	Token          Token
 	Token2         Token
 }
@@ -1041,7 +1041,7 @@ type ConditionalExpression struct {
 	valuer
 	Case                  ConditionalExpressionCase `PrettyPrint:"stringer,zero"`
 	ConditionalExpression ExpressionNode
-	ExpressionList        *ExpressionList
+	ExpressionList        ExpressionNode
 	LogicalOrExpression   ExpressionNode
 	Token                 Token
 	Token2                Token
@@ -2223,7 +2223,7 @@ func (n *ExpressionList) Position() (r token.Position) {
 type ExpressionStatement struct {
 	AttributeSpecifierList *AttributeSpecifierList
 	declarationSpecifiers  *DeclarationSpecifiers
-	ExpressionList         *ExpressionList
+	ExpressionList         ExpressionNode
 	Token                  Token
 }
 
@@ -2236,8 +2236,10 @@ func (n *ExpressionStatement) Position() (r token.Position) {
 		return r
 	}
 
-	if p := n.ExpressionList.Position(); p.IsValid() {
-		return p
+	if n.ExpressionList != nil {
+		if p := n.ExpressionList.Position(); p.IsValid() {
+			return p
+		}
 	}
 
 	return n.Token.Position()
@@ -2841,9 +2843,9 @@ func (n IterationStatementCase) String() string {
 type IterationStatement struct {
 	Case            IterationStatementCase `PrettyPrint:"stringer,zero"`
 	Declaration     *Declaration
-	ExpressionList  *ExpressionList
-	ExpressionList2 *ExpressionList
-	ExpressionList3 *ExpressionList
+	ExpressionList  ExpressionNode
+	ExpressionList2 ExpressionNode
+	ExpressionList3 ExpressionNode
 	Statement       *Statement
 	Token           Token
 	Token2          Token
@@ -3015,7 +3017,7 @@ func (n JumpStatementCase) String() string {
 //	|       "return" ExpressionList ';'    // Case JumpStatementReturn
 type JumpStatement struct {
 	Case           JumpStatementCase `PrettyPrint:"stringer,zero"`
-	ExpressionList *ExpressionList
+	ExpressionList ExpressionNode
 	Token          Token
 	Token2         Token
 	Token3         Token
@@ -3675,7 +3677,7 @@ type PostfixExpression struct {
 	field                  *Field
 	ArgumentExpressionList *ArgumentExpressionList
 	Case                   PostfixExpressionCase `PrettyPrint:"stringer,zero"`
-	ExpressionList         *ExpressionList
+	ExpressionList         ExpressionNode
 	InitializerList        *InitializerList
 	PostfixExpression      ExpressionNode
 	PrimaryExpression      ExpressionNode
@@ -3840,7 +3842,7 @@ type PrimaryExpression struct {
 	valuer
 	Case              PrimaryExpressionCase `PrettyPrint:"stringer,zero"`
 	CompoundStatement *CompoundStatement
-	ExpressionList    *ExpressionList
+	ExpressionList    ExpressionNode
 	GenericSelection  *GenericSelection
 	Token             Token
 	Token2            Token
@@ -3992,7 +3994,7 @@ func (n SelectionStatementCase) String() string {
 type SelectionStatement struct {
 	switchCases    int
 	Case           SelectionStatementCase `PrettyPrint:"stringer,zero"`
-	ExpressionList *ExpressionList
+	ExpressionList ExpressionNode
 	Statement      *Statement
 	Statement2     *Statement
 	Token          Token
@@ -5003,7 +5005,7 @@ type TypeSpecifier struct {
 	AtomicTypeSpecifier    *AtomicTypeSpecifier
 	Case                   TypeSpecifierCase `PrettyPrint:"stringer,zero"`
 	EnumSpecifier          *EnumSpecifier
-	ExpressionList         *ExpressionList
+	ExpressionList         ExpressionNode
 	StructOrUnionSpecifier *StructOrUnionSpecifier
 	Token                  Token
 	Token2                 Token
